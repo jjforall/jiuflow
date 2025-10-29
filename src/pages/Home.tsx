@@ -3,10 +3,12 @@ import { Button } from "@/components/ui/button";
 import Navigation from "@/components/Navigation";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { translations } from "@/lib/translations";
+import { useHeroImages } from "@/hooks/useHeroImages";
 
 const Home = () => {
   const { language } = useLanguage();
   const t = translations[language];
+  const { currentImage, isLoading, currentIndex, totalImages } = useHeroImages();
 
   return (
     <div className="min-h-screen">
@@ -15,13 +17,48 @@ const Home = () => {
       <main className="pt-16">
         {/* Hero Section */}
         <section className="relative h-screen flex items-center justify-center overflow-hidden">
+          {/* Background Image/Video */}
           <div className="absolute inset-0 bg-muted">
-            <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-              <div className="text-center">
-                <div className="text-6xl mb-4">🥋</div>
-                <p className="text-sm">4K Overhead View</p>
+            {isLoading ? (
+              <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+                <div className="text-center">
+                  <div className="text-6xl mb-4 animate-pulse">🥋</div>
+                  <p className="text-sm">Loading...</p>
+                </div>
               </div>
-            </div>
+            ) : currentImage ? (
+              <>
+                <img 
+                  src={currentImage.url} 
+                  alt="Jiu-Jitsu Training"
+                  className="w-full h-full object-cover transition-opacity duration-1000"
+                />
+                <div className="absolute inset-0 bg-black/40" />
+                
+                {/* Image indicators */}
+                {totalImages > 1 && (
+                  <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-2 z-20">
+                    {Array.from({ length: totalImages }).map((_, idx) => (
+                      <div
+                        key={idx}
+                        className={`h-1 transition-all duration-300 ${
+                          idx === currentIndex 
+                            ? 'w-8 bg-white' 
+                            : 'w-1 bg-white/50'
+                        }`}
+                      />
+                    ))}
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+                <div className="text-center">
+                  <div className="text-6xl mb-4">🥋</div>
+                  <p className="text-sm">4K Overhead View</p>
+                </div>
+              </div>
+            )}
           </div>
           
           <div className="relative z-10 text-center px-6 max-w-4xl mx-auto animate-fade-up">
