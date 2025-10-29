@@ -8,7 +8,7 @@ import { useHeroImages } from "@/hooks/useHeroImages";
 const Home = () => {
   const { language } = useLanguage();
   const t = translations[language];
-  const { currentImage, isLoading, currentIndex, totalImages } = useHeroImages();
+  const { images, isLoading, currentIndex, totalImages } = useHeroImages();
 
   return (
     <div className="min-h-screen">
@@ -26,13 +26,22 @@ const Home = () => {
                   <p className="text-sm">Loading...</p>
                 </div>
               </div>
-            ) : currentImage ? (
+            ) : images.length > 0 ? (
               <>
-                <img 
-                  src={currentImage.url} 
-                  alt="Jiu-Jitsu Training"
-                  className="w-full h-full object-cover transition-opacity duration-1000"
-                />
+                {/* Multiple images overlaid with fade transitions */}
+                {images.map((image, idx) => (
+                  <div
+                    key={image.id}
+                    className="absolute inset-0 transition-opacity duration-1000 ease-in-out"
+                    style={{ opacity: idx === currentIndex ? 1 : 0 }}
+                  >
+                    <img 
+                      src={image.url} 
+                      alt={`Jiu-Jitsu Training ${idx + 1}`}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                ))}
                 <div className="absolute inset-0 bg-black/40" />
                 
                 {/* Image indicators */}
