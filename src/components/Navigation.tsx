@@ -66,9 +66,28 @@ const Navigation = () => {
             </div>
           </div>
 
+          {/* Mobile: Language Switcher + Hamburger */}
+          <div className="flex md:hidden items-center gap-3">
+            {/* Language Switcher */}
+            <div className="flex items-center gap-2">
+              {languages.map((lang) => (
+                <button
+                  key={lang.code}
+                  onClick={() => setLanguage(lang.code)}
+                  className={`text-xs font-light px-2 py-1 transition-smooth ${
+                    language === lang.code
+                      ? "text-foreground border-b border-foreground"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {lang.label}
+                </button>
+              ))}
+            </div>
+
           {/* Mobile Hamburger Menu */}
           <Sheet open={isOpen} onOpenChange={setIsOpen}>
-            <SheetTrigger asChild className="md:hidden">
+            <SheetTrigger asChild>
               <Button variant="ghost" size="icon">
                 <Menu className="h-6 w-6" />
               </Button>
@@ -89,28 +108,10 @@ const Navigation = () => {
                     {link.label}
                   </Link>
                 ))}
-                
-                <div className="flex items-center gap-4 pt-6 border-t border-border">
-                  {languages.map((lang) => (
-                    <button
-                      key={lang.code}
-                      onClick={() => {
-                        setLanguage(lang.code);
-                        setIsOpen(false);
-                      }}
-                      className={`text-sm font-light px-3 py-2 transition-smooth ${
-                        language === lang.code
-                          ? "text-foreground border border-foreground"
-                          : "text-muted-foreground hover:text-foreground border border-border"
-                      }`}
-                    >
-                      {lang.label}
-                    </button>
-                  ))}
-                </div>
               </nav>
             </SheetContent>
           </Sheet>
+          </div>
         </div>
       </div>
     </nav>
