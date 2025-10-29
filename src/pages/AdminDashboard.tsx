@@ -7,8 +7,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import Navigation from "@/components/Navigation";
-import { Upload, Trash2, Edit } from "lucide-react";
+import { Upload, Trash2, Edit, Users } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface Technique {
   id: string;
@@ -23,6 +24,14 @@ interface Technique {
   display_order: number;
 }
 
+interface Profile {
+  id: string;
+  email: string | null;
+  created_at: string;
+  updated_at: string;
+  stripe_customer_id: string | null;
+}
+
 const AdminDashboard = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -31,6 +40,11 @@ const AdminDashboard = () => {
   const [uploadingVideo, setUploadingVideo] = useState(false);
   const [editingTechnique, setEditingTechnique] = useState<Technique | null>(null);
   const [showEditDialog, setShowEditDialog] = useState(false);
+  const [profiles, setProfiles] = useState<Profile[]>([]);
+  const [loadingProfiles, setLoadingProfiles] = useState(false);
+  const [editingProfile, setEditingProfile] = useState<Profile | null>(null);
+  const [showEditProfileDialog, setShowEditProfileDialog] = useState(false);
+  const [adminPassword, setAdminPassword] = useState("");
 
   // Form state
   const [formData, setFormData] = useState({
@@ -249,6 +263,83 @@ const AdminDashboard = () => {
     navigate("/admin");
   };
 
+  const loadProfiles = async () => {
+    if (!adminPassword) {
+      toast({
+        title: "パスワードを入力してください",
+        description: "会員一覧を表示するにはパスワードが必要です",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setLoadingProfiles(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("admin-users", {
+        body: { action: "list", password: adminPassword },
+      });
+
+      if (error) throw error;
+      if (data.error) throw new Error(data.error);
+
+      setProfiles(data.profiles || []);
+      toast({
+        title: "読み込み完了",
+        description: `${data.profiles?.length || 0}件の会員を読み込みました`,
+      });
+    } catch (error: any) {
+      toast({
+        title: "エラー",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setLoadingProfiles(false);
+    }
+  };
+
+  const handleEditProfile = (profile: Profile) => {
+    setEditingProfile(profile);
+    setShowEditProfileDialog(true);
+  };
+
+  const handleUpdateProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingProfile || !adminPassword) return;
+
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("admin-users", {
+        body: {
+          action: "update",
+          password: adminPassword,
+          id: editingProfile.id,
+          stripe_customer_id: editingProfile.stripe_customer_id,
+        },
+      });
+
+      if (error) throw error;
+      if (data.error) throw new Error(data.error);
+
+      toast({
+        title: "更新完了",
+        description: "会員情報を更新しました",
+      });
+
+      setShowEditProfileDialog(false);
+      setEditingProfile(null);
+      loadProfiles();
+    } catch (error: any) {
+      toast({
+        title: "エラー",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
@@ -261,6 +352,17 @@ const AdminDashboard = () => {
               Logout
             </Button>
           </div>
+
+          <Tabs defaultValue="techniques" className="w-full">
+            <TabsList className="grid w-full grid-cols-2 mb-8">
+              <TabsTrigger value="techniques">テクニック管理</TabsTrigger>
+              <TabsTrigger value="users">
+                <Users className="w-4 h-4 mr-2" />
+                会員管理
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="techniques">{/* ... keep existing code */}
 
           {/* Add Technique Form */}
           <div className="border border-border p-8 mb-12">
@@ -406,6 +508,60 @@ const AdminDashboard = () => {
               ))}
             </div>
           </div>
+            </TabsContent>
+
+            <TabsContent value="users">
+              <div className="border border-border p-8 mb-8">
+                <h2 className="text-2xl font-light mb-4">会員一覧の読み込み</h2>
+                <p className="text-sm text-muted-foreground mb-4">
+                  管理者パスワードを入力して会員一覧を表示します
+                </p>
+                <div className="flex gap-4">
+                  <Input
+                    type="password"
+                    placeholder="管理者パスワード"
+                    value={adminPassword}
+                    onChange={(e) => setAdminPassword(e.target.value)}
+                    className="flex-1"
+                  />
+                  <Button onClick={loadProfiles} disabled={loadingProfiles}>
+                    {loadingProfiles ? "読み込み中..." : "会員一覧を表示"}
+                  </Button>
+                </div>
+              </div>
+
+              {profiles.length > 0 && (
+                <div>
+                  <h2 className="text-2xl font-light mb-6">会員一覧 ({profiles.length}名)</h2>
+                  <div className="space-y-4">
+                    {profiles.map((profile) => (
+                      <div key={profile.id} className="border border-border p-6">
+                        <div className="flex justify-between items-start">
+                          <div className="flex-1">
+                            <p className="text-sm text-muted-foreground mb-1">メール: {profile.email || "未設定"}</p>
+                            <p className="text-xs text-muted-foreground mb-1">ID: {profile.id}</p>
+                            <p className="text-xs text-muted-foreground mb-1">
+                              登録日: {new Date(profile.created_at).toLocaleDateString("ja-JP")}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              Stripe ID: {profile.stripe_customer_id || "未設定"}
+                            </p>
+                          </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleEditProfile(profile)}
+                          >
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
 
@@ -508,6 +664,38 @@ const AdminDashboard = () => {
                 Cancel
               </Button>
             </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Profile Dialog */}
+      <Dialog open={showEditProfileDialog} onOpenChange={setShowEditProfileDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>会員情報編集</DialogTitle>
+          </DialogHeader>
+          
+          <form onSubmit={handleUpdateProfile} className="space-y-4">
+            <div>
+              <label className="block text-sm mb-2">メールアドレス</label>
+              <Input value={editingProfile?.email || ""} disabled />
+            </div>
+
+            <div>
+              <label className="block text-sm mb-2">Stripe Customer ID</label>
+              <Input
+                value={editingProfile?.stripe_customer_id || ""}
+                onChange={(e) => setEditingProfile(editingProfile ? {
+                  ...editingProfile,
+                  stripe_customer_id: e.target.value
+                } : null)}
+                placeholder="cus_xxxxx"
+              />
+            </div>
+
+            <Button type="submit" size="lg" disabled={isLoading} className="w-full">
+              {isLoading ? "更新中..." : "更新"}
+            </Button>
           </form>
         </DialogContent>
       </Dialog>

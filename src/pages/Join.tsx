@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 
 // Stripe price IDs
 const PRICE_IDS = {
-  founder: "price_1SNQoODqLakc8NxkYIcIaWg2",
+  founder: "price_1SNUnFDqLakc8NxkNzqSs2UR",
   monthly: "price_1SNQoeDqLakc8NxkEUVTTs3k",
   annual: "price_1SNQoqDqLakc8NxkOaQIL8wX",
 };
