@@ -14,7 +14,54 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      techniques: {
+        Row: {
+          category: string
+          created_at: string | null
+          description: string | null
+          description_ja: string | null
+          description_pt: string | null
+          display_order: number | null
+          id: string
+          name: string
+          name_ja: string
+          name_pt: string
+          thumbnail_url: string | null
+          updated_at: string | null
+          video_url: string | null
+        }
+        Insert: {
+          category: string
+          created_at?: string | null
+          description?: string | null
+          description_ja?: string | null
+          description_pt?: string | null
+          display_order?: number | null
+          id?: string
+          name: string
+          name_ja: string
+          name_pt: string
+          thumbnail_url?: string | null
+          updated_at?: string | null
+          video_url?: string | null
+        }
+        Update: {
+          category?: string
+          created_at?: string | null
+          description?: string | null
+          description_ja?: string | null
+          description_pt?: string | null
+          display_order?: number | null
+          id?: string
+          name?: string
+          name_ja?: string
+          name_pt?: string
+          thumbnail_url?: string | null
+          updated_at?: string | null
+          video_url?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
