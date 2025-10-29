@@ -1,19 +1,84 @@
 import Navigation from "@/components/Navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { translations } from "@/lib/translations";
-import { Link } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+
+// Stripe price IDs
+const PRICE_IDS = {
+  lifetime: "price_1SNQoODqLakc8NxkYIcIaWg2",
+  monthly: "price_1SNQoeDqLakc8NxkEUVTTs3k",
+  annual: "price_1SNQoqDqLakc8NxkOaQIL8wX",
+};
 
 const Join = () => {
   const { language } = useLanguage();
   const t = translations[language];
   const [email, setEmail] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const [searchParams] = useSearchParams();
+
+  // Check for payment status in URL
+  useEffect(() => {
+    if (searchParams.get("success") === "true") {
+      toast({
+        title: t.join.payment?.success || "Payment successful!",
+        description: t.join.payment?.successDesc || "Thank you for your purchase.",
+      });
+    } else if (searchParams.get("canceled") === "true") {
+      toast({
+        title: t.join.payment?.canceled || "Payment canceled",
+        description: t.join.payment?.canceledDesc || "Your payment was canceled.",
+        variant: "destructive",
+      });
+    }
+  }, [searchParams, toast, t.join.payment]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     console.log("Email submitted:", email);
+  };
+
+  const handleCheckout = async (priceId: string, isSubscription: boolean) => {
+    setIsLoading(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        toast({
+          title: t.join.payment?.loginRequired || "Login required",
+          description: t.join.payment?.loginRequiredDesc || "Please login to continue with payment.",
+          variant: "destructive",
+        });
+        navigate("/auth");
+        return;
+      }
+
+      const functionName = isSubscription ? "create-checkout" : "create-payment";
+      const { data, error } = await supabase.functions.invoke(functionName, {
+        body: { priceId },
+      });
+
+      if (error) throw error;
+      if (data?.url) {
+        window.open(data.url, "_blank");
+      }
+    } catch (error) {
+      console.error("Checkout error:", error);
+      toast({
+        title: t.join.payment?.error || "Payment error",
+        description: t.join.payment?.errorDesc || "An error occurred. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -40,20 +105,31 @@ const Join = () => {
           </div>
 
           {/* Pricing */}
-          <div className="grid md:grid-cols-2 gap-8 mb-16 animate-fade-up">
-            {/* Free Trial */}
+          <div className="grid md:grid-cols-3 gap-8 mb-16 animate-fade-up">
+            {/* Lifetime Plan */}
             <div className="border border-border p-8">
-              <h2 className="text-2xl font-light mb-4">{t.join.free.title}</h2>
+              <h2 className="text-2xl font-light mb-4">{t.join.lifetime?.title || "Lifetime Plan"}</h2>
               <div className="text-4xl font-light mb-6">
-                {t.join.free.price}<span className="text-lg text-muted-foreground">{t.join.free.period}</span>
+                ¥500<span className="text-lg text-muted-foreground">{t.join.lifetime?.period || " one-time"}</span>
               </div>
+              <p className="text-sm text-muted-foreground mb-4">{t.join.lifetime?.limited || "Limited to first 100 users"}</p>
               <ul className="space-y-3 mb-8 text-muted-foreground font-light">
-                {t.join.free.features.map((feature, i) => (
+                {(t.join.lifetime?.features || [
+                  "Unlimited access",
+                  "All techniques",
+                  "One-time payment"
+                ]).map((feature, i) => (
                   <li key={i}>• {feature}</li>
                 ))}
               </ul>
-              <Button variant="outline" className="w-full" size="lg">
-                {t.join.free.cta}
+              <Button 
+                variant="outline" 
+                className="w-full" 
+                size="lg"
+                onClick={() => handleCheckout(PRICE_IDS.lifetime, false)}
+                disabled={isLoading}
+              >
+                {t.join.lifetime?.cta || "Get Lifetime Access"}
               </Button>
             </div>
 
@@ -71,8 +147,41 @@ const Join = () => {
                   <li key={i}>• {feature}</li>
                 ))}
               </ul>
-              <Button variant="default" className="w-full" size="lg">
+              <Button 
+                variant="default" 
+                className="w-full" 
+                size="lg"
+                onClick={() => handleCheckout(PRICE_IDS.monthly, true)}
+                disabled={isLoading}
+              >
                 {t.join.monthly.cta}
+              </Button>
+            </div>
+
+            {/* Annual */}
+            <div className="border border-border p-8">
+              <h2 className="text-2xl font-light mb-4">{t.join.annual?.title || "Annual Plan"}</h2>
+              <div className="text-4xl font-light mb-6">
+                ¥29,000<span className="text-lg text-muted-foreground">{t.join.annual?.period || "/year"}</span>
+              </div>
+              <p className="text-sm text-muted-foreground mb-4">{t.join.annual?.savings || "Save 17% vs monthly"}</p>
+              <ul className="space-y-3 mb-8 text-muted-foreground font-light">
+                {(t.join.annual?.features || [
+                  "All monthly features",
+                  "Annual billing",
+                  "Best value"
+                ]).map((feature, i) => (
+                  <li key={i}>• {feature}</li>
+                ))}
+              </ul>
+              <Button 
+                variant="outline" 
+                className="w-full" 
+                size="lg"
+                onClick={() => handleCheckout(PRICE_IDS.annual, true)}
+                disabled={isLoading}
+              >
+                {t.join.annual?.cta || "Subscribe Annually"}
               </Button>
             </div>
           </div>
