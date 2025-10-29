@@ -14,6 +14,84 @@ export type Database = {
   }
   public: {
     Tables: {
+      lifetime_plan_count: {
+        Row: {
+          count: number
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          count?: number
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          count?: number
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string | null
+          id: string
+          stripe_customer_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          id: string
+          stripe_customer_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          stripe_customer_id?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      subscriptions: {
+        Row: {
+          created_at: string
+          current_period_end: string | null
+          id: string
+          plan_type: string | null
+          status: string | null
+          stripe_price_id: string | null
+          stripe_subscription_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          current_period_end?: string | null
+          id?: string
+          plan_type?: string | null
+          status?: string | null
+          stripe_price_id?: string | null
+          stripe_subscription_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          current_period_end?: string | null
+          id?: string
+          plan_type?: string | null
+          status?: string | null
+          stripe_price_id?: string | null
+          stripe_subscription_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       techniques: {
         Row: {
           category: string
