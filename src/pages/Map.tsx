@@ -1,33 +1,84 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { translations } from "@/lib/translations";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 interface Technique {
   id: string;
+  name: string;
+  name_ja: string;
+  name_pt: string;
+  description: string | null;
+  description_ja: string | null;
+  description_pt: string | null;
   category: "pull" | "control" | "submission";
+  video_url: string | null;
+  display_order: number;
 }
-
-const techniques: Technique[] = [
-  { id: "closed-guard-pull", category: "pull" },
-  { id: "closed-guard", category: "control" },
-  { id: "armbar-closed", category: "submission" },
-  { id: "triangle-closed", category: "submission" },
-];
 
 const Map = () => {
   const { language } = useLanguage();
   const t = translations[language];
-  const [selectedTech, setSelectedTech] = useState<string | null>(null);
+  const { toast } = useToast();
+  const [selectedTech, setSelectedTech] = useState<Technique | null>(null);
+  const [techniques, setTechniques] = useState<Technique[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    loadTechniques();
+  }, []);
+
+  const loadTechniques = async () => {
+    setIsLoading(true);
+    const { data, error } = await supabase
+      .from("techniques")
+      .select("*")
+      .order("display_order", { ascending: true });
+
+    if (error) {
+      toast({
+        title: "Error loading techniques",
+        description: error.message,
+        variant: "destructive",
+      });
+      setIsLoading(false);
+      return;
+    }
+
+    setTechniques((data as Technique[]) || []);
+    setIsLoading(false);
+  };
+
+  const getTechniqueName = (tech: Technique) => {
+    switch (language) {
+      case "ja":
+        return tech.name_ja;
+      case "pt":
+        return tech.name_pt;
+      default:
+        return tech.name;
+    }
+  };
+
+  const getTechniqueDescription = (tech: Technique) => {
+    switch (language) {
+      case "ja":
+        return tech.description_ja;
+      case "pt":
+        return tech.description_pt;
+      default:
+        return tech.description;
+    }
+  };
 
   const categoryColors = {
     pull: "border-secondary",
     control: "border-accent",
     submission: "border-foreground",
   };
-
-  const selectedTechData = selectedTech ? t.map.techniques[selectedTech as keyof typeof t.map.techniques] : null;
 
   return (
     <div className="min-h-screen">
@@ -41,6 +92,17 @@ const Map = () => {
               {t.map.subtitle}
             </p>
           </div>
+
+          {isLoading ? (
+            <div className="text-center py-12">
+              <p className="text-muted-foreground">{language === "ja" ? "読み込み中..." : language === "pt" ? "Carregando..." : "Loading..."}</p>
+            </div>
+          ) : techniques.length === 0 ? (
+            <div className="text-center py-12">
+              <p className="text-muted-foreground">{language === "ja" ? "テクニックがまだ追加されていません" : language === "pt" ? "Nenhuma técnica adicionada ainda" : "No techniques added yet"}</p>
+            </div>
+          ) : (
+            <>
 
           {/* Map Flow */}
           <div className="mb-20">
@@ -70,56 +132,67 @@ const Map = () => {
                   </h3>
                   {techniques
                     .filter((tech) => tech.category === category)
-                    .map((tech) => {
-                      const techData = t.map.techniques[tech.id as keyof typeof t.map.techniques];
-                      return (
-                        <button
-                          key={tech.id}
-                          onClick={() => setSelectedTech(tech.id)}
-                          className={`w-full text-left p-6 border ${
-                            categoryColors[category as keyof typeof categoryColors]
-                          } transition-smooth hover:bg-muted ${
-                            selectedTech === tech.id ? "bg-muted" : ""
-                          }`}
-                        >
-                          <div className="font-light mb-1">{techData.name}</div>
-                          <div className="text-sm text-muted-foreground">{techData.nameLocal}</div>
-                        </button>
-                      );
-                    })}
+                    .map((tech) => (
+                      <button
+                        key={tech.id}
+                        onClick={() => setSelectedTech(tech)}
+                        className={`w-full text-left p-6 border ${
+                          categoryColors[category as keyof typeof categoryColors]
+                        } transition-smooth hover:bg-muted ${
+                          selectedTech?.id === tech.id ? "bg-muted" : ""
+                        }`}
+                      >
+                        <div className="font-light mb-1">{getTechniqueName(tech)}</div>
+                        {tech.video_url && (
+                          <div className="text-xs text-muted-foreground mt-2">▶ Video available</div>
+                        )}
+                      </button>
+                    ))}
                 </div>
               ))}
             </div>
           </div>
 
           {/* Selected Technique Detail */}
-          {selectedTechData && (
+          {selectedTech && (
             <div className="border border-border p-8 animate-fade-in">
               <div className="grid md:grid-cols-2 gap-8">
-                <div className="aspect-video bg-muted flex items-center justify-center">
-                  <div className="text-center text-muted-foreground">
-                    <div className="text-4xl mb-2">▶</div>
-                    <div className="text-sm">Video Player</div>
-                  </div>
+                <div>
+                  {selectedTech.video_url ? (
+                    <video
+                      src={selectedTech.video_url}
+                      controls
+                      className="w-full rounded border border-border"
+                    >
+                      Your browser does not support the video tag.
+                    </video>
+                  ) : (
+                    <div className="aspect-video bg-muted flex items-center justify-center">
+                      <div className="text-center text-muted-foreground">
+                        <div className="text-4xl mb-2">▶</div>
+                        <div className="text-sm">
+                          {language === "ja" ? "動画なし" : language === "pt" ? "Sem vídeo" : "No video"}
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
                 
                 <div>
-                  <h2 className="text-3xl font-light mb-2">{selectedTechData.name}</h2>
-                  <h3 className="text-xl text-muted-foreground font-light mb-6">
-                    {selectedTechData.nameLocal}
-                  </h3>
-                  <p className="text-muted-foreground font-light mb-6">
-                    {selectedTechData.desc}
-                  </p>
-                  <Link
-                    to={`/video/${selectedTech}`}
-                    className="inline-block border border-foreground px-8 py-3 transition-smooth hover:bg-foreground hover:text-background"
-                  >
-                    {t.map.viewDetail}
-                  </Link>
+                  <h2 className="text-3xl font-light mb-2">{getTechniqueName(selectedTech)}</h2>
+                  <span className="inline-block px-3 py-1 text-xs border border-border mb-6">
+                    {selectedTech.category}
+                  </span>
+                  {getTechniqueDescription(selectedTech) && (
+                    <p className="text-muted-foreground font-light mb-6">
+                      {getTechniqueDescription(selectedTech)}
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
+          )}
+          </>
           )}
         </div>
       </main>
