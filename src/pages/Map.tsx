@@ -84,11 +84,11 @@ const Map = () => {
     <div className="min-h-screen">
       <Navigation />
       
-      <main className="pt-32 pb-20 px-6">
+      <main className="pt-24 md:pt-32 pb-12 md:pb-20 px-4 md:px-6">
         <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-20 animate-fade-up">
-            <h1 className="text-5xl md:text-6xl font-light mb-6">{t.map.title}</h1>
-            <p className="text-xl text-muted-foreground font-light">
+          <div className="text-center mb-12 md:mb-20 animate-fade-up">
+            <h1 className="text-3xl md:text-5xl lg:text-6xl font-light mb-4 md:mb-6">{t.map.title}</h1>
+            <p className="text-base md:text-xl text-muted-foreground font-light">
               {t.map.subtitle}
             </p>
           </div>
@@ -105,29 +105,29 @@ const Map = () => {
             <>
 
           {/* Map Flow */}
-          <div className="mb-20">
-            <div className="flex items-center justify-center gap-8 mb-12">
-              <div className="text-center">
-                <div className="text-sm font-light text-muted-foreground mb-2">{t.map.pull}</div>
-                <div className="w-24 h-1 bg-secondary"></div>
+          <div className="mb-12 md:mb-20">
+            <div className="flex flex-col md:flex-row items-center justify-center gap-4 md:gap-8 mb-8 md:mb-12">
+              <div className="text-center w-full md:w-auto">
+                <div className="text-xs md:text-sm font-light text-muted-foreground mb-2">{t.map.pull}</div>
+                <div className="w-full md:w-24 h-1 bg-secondary"></div>
               </div>
-              <div className="text-muted-foreground">→</div>
-              <div className="text-center">
-                <div className="text-sm font-light text-muted-foreground mb-2">{t.map.control}</div>
-                <div className="w-24 h-1 bg-accent"></div>
+              <div className="text-muted-foreground rotate-90 md:rotate-0">→</div>
+              <div className="text-center w-full md:w-auto">
+                <div className="text-xs md:text-sm font-light text-muted-foreground mb-2">{t.map.control}</div>
+                <div className="w-full md:w-24 h-1 bg-accent"></div>
               </div>
-              <div className="text-muted-foreground">→</div>
-              <div className="text-center">
-                <div className="text-sm font-light text-muted-foreground mb-2">{t.map.submission}</div>
-                <div className="w-24 h-1 bg-foreground"></div>
+              <div className="text-muted-foreground rotate-90 md:rotate-0">→</div>
+              <div className="text-center w-full md:w-auto">
+                <div className="text-xs md:text-sm font-light text-muted-foreground mb-2">{t.map.submission}</div>
+                <div className="w-full md:w-24 h-1 bg-foreground"></div>
               </div>
             </div>
 
             {/* Techniques Grid */}
-            <div className="grid md:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
               {["pull", "control", "submission"].map((category) => (
-                <div key={category} className="space-y-4">
-                  <h3 className="text-lg font-light border-b border-border pb-2">
+                <div key={category} className="space-y-3 md:space-y-4">
+                  <h3 className="text-base md:text-lg font-light border-b border-border pb-2">
                     {t.map[category as keyof typeof t.map] as string}
                   </h3>
                   {techniques
@@ -136,11 +136,11 @@ const Map = () => {
                       <Link
                         key={tech.id}
                         to={`/video/${tech.id}`}
-                        className={`block w-full text-left p-6 border ${
+                        className={`block w-full text-left p-4 md:p-6 border ${
                           categoryColors[category as keyof typeof categoryColors]
                         } transition-smooth hover:bg-muted`}
                       >
-                        <div className="font-light mb-1">{getTechniqueName(tech)}</div>
+                        <div className="font-light mb-1 text-sm md:text-base">{getTechniqueName(tech)}</div>
                         {tech.video_url && (
                           <div className="text-xs text-muted-foreground mt-2">▶ Video available</div>
                         )}
