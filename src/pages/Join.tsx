@@ -23,8 +23,12 @@ const Join = () => {
   const { language } = useLanguage();
   const t = translations[language];
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [showVideoModal, setShowVideoModal] = useState(false);
+  const [showSignupModal, setShowSignupModal] = useState(false);
+  const [pendingPriceId, setPendingPriceId] = useState<string | null>(null);
+  const [pendingIsSubscription, setPendingIsSubscription] = useState(false);
   const [sampleVideoUrl, setSampleVideoUrl] = useState<string | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -67,21 +71,46 @@ const Join = () => {
     console.log("Email submitted:", email);
   };
 
-  const handleCheckout = async (priceId: string, isSubscription: boolean) => {
+  const handleSignup = async (e: React.FormEvent) => {
+    e.preventDefault();
     setIsLoading(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session) {
-        toast({
-          title: t.join.payment?.loginRequired || "Login required",
-          description: t.join.payment?.loginRequiredDesc || "Please login to continue with payment.",
-          variant: "destructive",
-        });
-        navigate("/auth");
-        return;
-      }
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/`,
+        },
+      });
 
+      if (error) throw error;
+
+      toast({
+        title: language === "ja" ? "アカウントを作成しました" : "Account created",
+        description: language === "ja" ? "決済ページに移動します..." : "Redirecting to checkout...",
+      });
+
+      setShowSignupModal(false);
+      
+      // Proceed with checkout
+      if (pendingPriceId) {
+        await proceedToCheckout(pendingPriceId, pendingIsSubscription);
+      }
+    } catch (error: any) {
+      console.error("Signup error:", error);
+      toast({
+        title: t.join.payment?.error || "Signup error",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const proceedToCheckout = async (priceId: string, isSubscription: boolean) => {
+    setIsLoading(true);
+    try {
       const functionName = isSubscription ? "create-checkout" : "create-payment";
       const { data, error } = await supabase.functions.invoke(functionName, {
         body: { priceId },
@@ -101,6 +130,20 @@ const Join = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleCheckout = async (priceId: string, isSubscription: boolean) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session) {
+      // Show signup modal instead of redirecting to auth page
+      setPendingPriceId(priceId);
+      setPendingIsSubscription(isSubscription);
+      setShowSignupModal(true);
+      return;
+    }
+
+    await proceedToCheckout(priceId, isSubscription);
   };
 
   return (
@@ -144,6 +187,48 @@ const Join = () => {
                   </div>
                 )}
               </div>
+            </DialogContent>
+          </Dialog>
+
+          {/* Signup Modal */}
+          <Dialog open={showSignupModal} onOpenChange={setShowSignupModal}>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle>
+                  {language === "ja" ? "アカウント作成" : language === "pt" ? "Criar conta" : "Create Account"}
+                </DialogTitle>
+              </DialogHeader>
+              <form onSubmit={handleSignup} className="space-y-4">
+                <div>
+                  <Input
+                    type="email"
+                    placeholder={language === "ja" ? "メールアドレス" : "Email"}
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                  />
+                </div>
+                <div>
+                  <Input
+                    type="password"
+                    placeholder={language === "ja" ? "パスワード" : "Password"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    minLength={6}
+                  />
+                </div>
+                <Button type="submit" className="w-full" disabled={isLoading}>
+                  {isLoading
+                    ? (language === "ja" ? "作成中..." : "Creating...")
+                    : (language === "ja" ? "アカウントを作成して決済へ" : "Create & Proceed to Checkout")}
+                </Button>
+                <p className="text-xs text-muted-foreground text-center">
+                  {language === "ja"
+                    ? "アカウント作成後、自動的に決済ページへ移動します"
+                    : "After creating your account, you'll be redirected to checkout"}
+                </p>
+              </form>
             </DialogContent>
           </Dialog>
 
