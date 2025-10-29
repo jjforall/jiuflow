@@ -1,12 +1,16 @@
 import { Link, useLocation } from "react-router-dom";
+import { useState } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { translations } from "@/lib/translations";
 import { Button } from "@/components/ui/button";
+import { Menu, X } from "lucide-react";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
 const Navigation = () => {
   const location = useLocation();
   const { language, setLanguage } = useLanguage();
   const t = translations[language];
+  const [isOpen, setIsOpen] = useState(false);
 
   const links = [
     { to: "/", label: t.nav.home },
@@ -29,7 +33,8 @@ const Navigation = () => {
             Brotherhood Jiu-Jitsu
           </Link>
           
-          <div className="flex items-center gap-8">
+          {/* Desktop Navigation */}
+          <div className="hidden md:flex items-center gap-8">
             {links.map((link) => (
               <Link
                 key={link.to}
@@ -60,6 +65,52 @@ const Navigation = () => {
               ))}
             </div>
           </div>
+
+          {/* Mobile Hamburger Menu */}
+          <Sheet open={isOpen} onOpenChange={setIsOpen}>
+            <SheetTrigger asChild className="md:hidden">
+              <Button variant="ghost" size="icon">
+                <Menu className="h-6 w-6" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="right" className="w-[300px] sm:w-[400px]">
+              <nav className="flex flex-col gap-6 mt-8">
+                {links.map((link) => (
+                  <Link
+                    key={link.to}
+                    to={link.to}
+                    onClick={() => setIsOpen(false)}
+                    className={`text-lg font-light transition-smooth ${
+                      location.pathname === link.to
+                        ? "text-foreground"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {link.label}
+                  </Link>
+                ))}
+                
+                <div className="flex items-center gap-4 pt-6 border-t border-border">
+                  {languages.map((lang) => (
+                    <button
+                      key={lang.code}
+                      onClick={() => {
+                        setLanguage(lang.code);
+                        setIsOpen(false);
+                      }}
+                      className={`text-sm font-light px-3 py-2 transition-smooth ${
+                        language === lang.code
+                          ? "text-foreground border border-foreground"
+                          : "text-muted-foreground hover:text-foreground border border-border"
+                      }`}
+                    >
+                      {lang.label}
+                    </button>
+                  ))}
+                </div>
+              </nav>
+            </SheetContent>
+          </Sheet>
         </div>
       </div>
     </nav>
