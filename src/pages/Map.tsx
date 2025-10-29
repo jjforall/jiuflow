@@ -1,49 +1,25 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import Navigation from "@/components/Navigation";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { translations } from "@/lib/translations";
 
 interface Technique {
   id: string;
-  name: string;
-  nameJp: string;
   category: "pull" | "control" | "submission";
-  description: string;
-  videoId?: string;
 }
 
 const techniques: Technique[] = [
-  {
-    id: "closed-guard-pull",
-    name: "Closed Guard Pull",
-    nameJp: "クローズドガード引き込み",
-    category: "pull",
-    description: "試合開始から相手をコントロール下に置く基本的な引き込み。",
-  },
-  {
-    id: "closed-guard",
-    name: "Closed Guard Control",
-    nameJp: "クローズドガードコントロール",
-    category: "control",
-    description: "相手の動きを制限し、攻撃のチャンスを作り出すポジション。",
-  },
-  {
-    id: "armbar-closed",
-    name: "Armbar from Closed Guard",
-    nameJp: "クローズドガードからの腕十字",
-    category: "submission",
-    description: "クローズドガードから最も基本的な一本技。",
-  },
-  {
-    id: "triangle-closed",
-    name: "Triangle from Closed Guard",
-    nameJp: "クローズドガードからの三角絞め",
-    category: "submission",
-    description: "足を使った強力な絞め技。",
-  },
+  { id: "closed-guard-pull", category: "pull" },
+  { id: "closed-guard", category: "control" },
+  { id: "armbar-closed", category: "submission" },
+  { id: "triangle-closed", category: "submission" },
 ];
 
 const Map = () => {
-  const [selectedTech, setSelectedTech] = useState<Technique | null>(null);
+  const { language } = useLanguage();
+  const t = translations[language];
+  const [selectedTech, setSelectedTech] = useState<string | null>(null);
 
   const categoryColors = {
     pull: "border-secondary",
@@ -51,11 +27,7 @@ const Map = () => {
     submission: "border-foreground",
   };
 
-  const categoryLabels = {
-    pull: "引き込み",
-    control: "コントロール",
-    submission: "一本",
-  };
+  const selectedTechData = selectedTech ? t.map.techniques[selectedTech as keyof typeof t.map.techniques] : null;
 
   return (
     <div className="min-h-screen">
@@ -64,9 +36,9 @@ const Map = () => {
       <main className="pt-32 pb-20 px-6">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-20 animate-fade-up">
-            <h1 className="text-5xl md:text-6xl font-light mb-6">Technique Map</h1>
+            <h1 className="text-5xl md:text-6xl font-light mb-6">{t.map.title}</h1>
             <p className="text-xl text-muted-foreground font-light">
-              技の流れを体系的に理解する
+              {t.map.subtitle}
             </p>
           </div>
 
@@ -74,17 +46,17 @@ const Map = () => {
           <div className="mb-20">
             <div className="flex items-center justify-center gap-8 mb-12">
               <div className="text-center">
-                <div className="text-sm font-light text-muted-foreground mb-2">Pull</div>
+                <div className="text-sm font-light text-muted-foreground mb-2">{t.map.pull}</div>
                 <div className="w-24 h-1 bg-secondary"></div>
               </div>
               <div className="text-muted-foreground">→</div>
               <div className="text-center">
-                <div className="text-sm font-light text-muted-foreground mb-2">Control</div>
+                <div className="text-sm font-light text-muted-foreground mb-2">{t.map.control}</div>
                 <div className="w-24 h-1 bg-accent"></div>
               </div>
               <div className="text-muted-foreground">→</div>
               <div className="text-center">
-                <div className="text-sm font-light text-muted-foreground mb-2">Submission</div>
+                <div className="text-sm font-light text-muted-foreground mb-2">{t.map.submission}</div>
                 <div className="w-24 h-1 bg-foreground"></div>
               </div>
             </div>
@@ -94,31 +66,34 @@ const Map = () => {
               {["pull", "control", "submission"].map((category) => (
                 <div key={category} className="space-y-4">
                   <h3 className="text-lg font-light border-b border-border pb-2">
-                    {categoryLabels[category as keyof typeof categoryLabels]}
+                    {t.map[category as keyof typeof t.map] as string}
                   </h3>
                   {techniques
                     .filter((tech) => tech.category === category)
-                    .map((tech) => (
-                      <button
-                        key={tech.id}
-                        onClick={() => setSelectedTech(tech)}
-                        className={`w-full text-left p-6 border ${
-                          categoryColors[category as keyof typeof categoryColors]
-                        } transition-smooth hover:bg-muted ${
-                          selectedTech?.id === tech.id ? "bg-muted" : ""
-                        }`}
-                      >
-                        <div className="font-light mb-1">{tech.name}</div>
-                        <div className="text-sm text-muted-foreground">{tech.nameJp}</div>
-                      </button>
-                    ))}
+                    .map((tech) => {
+                      const techData = t.map.techniques[tech.id as keyof typeof t.map.techniques];
+                      return (
+                        <button
+                          key={tech.id}
+                          onClick={() => setSelectedTech(tech.id)}
+                          className={`w-full text-left p-6 border ${
+                            categoryColors[category as keyof typeof categoryColors]
+                          } transition-smooth hover:bg-muted ${
+                            selectedTech === tech.id ? "bg-muted" : ""
+                          }`}
+                        >
+                          <div className="font-light mb-1">{techData.name}</div>
+                          <div className="text-sm text-muted-foreground">{techData.nameLocal}</div>
+                        </button>
+                      );
+                    })}
                 </div>
               ))}
             </div>
           </div>
 
           {/* Selected Technique Detail */}
-          {selectedTech && (
+          {selectedTechData && (
             <div className="border border-border p-8 animate-fade-in">
               <div className="grid md:grid-cols-2 gap-8">
                 <div className="aspect-video bg-muted flex items-center justify-center">
@@ -129,18 +104,18 @@ const Map = () => {
                 </div>
                 
                 <div>
-                  <h2 className="text-3xl font-light mb-2">{selectedTech.name}</h2>
+                  <h2 className="text-3xl font-light mb-2">{selectedTechData.name}</h2>
                   <h3 className="text-xl text-muted-foreground font-light mb-6">
-                    {selectedTech.nameJp}
+                    {selectedTechData.nameLocal}
                   </h3>
                   <p className="text-muted-foreground font-light mb-6">
-                    {selectedTech.description}
+                    {selectedTechData.desc}
                   </p>
                   <Link
-                    to={`/video/${selectedTech.id}`}
+                    to={`/video/${selectedTech}`}
                     className="inline-block border border-foreground px-8 py-3 transition-smooth hover:bg-foreground hover:text-background"
                   >
-                    詳しく見る
+                    {t.map.viewDetail}
                   </Link>
                 </div>
               </div>

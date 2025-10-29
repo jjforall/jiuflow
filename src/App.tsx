@@ -9,26 +9,29 @@ import Video from "./pages/Video";
 import About from "./pages/About";
 import Join from "./pages/Join";
 import NotFound from "./pages/NotFound";
+import { LanguageProvider } from "./contexts/LanguageContext";
 
 const queryClient = new QueryClient();
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/map" element={<Map />} />
-          <Route path="/video/:id" element={<Video />} />
-          <Route path="/about" element={<About />} />
-          <Route path="/join" element={<Join />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
+  <LanguageProvider>
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/map" element={<Map />} />
+            <Route path="/video/:id" element={<Video />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/join" element={<Join />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </TooltipProvider>
+    </QueryClientProvider>
+  </LanguageProvider>
 );
 
 export default App;

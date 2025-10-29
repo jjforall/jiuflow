@@ -1,29 +1,18 @@
 import Navigation from "@/components/Navigation";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { translations } from "@/lib/translations";
 
 const team = [
-  {
-    name: "良蔵 Ryozo",
-    role: "Instructor",
-    description: "技術の体系化と指導",
-  },
-  {
-    name: "あい Ai",
-    role: "Director",
-    description: "映像制作とディレクション",
-  },
-  {
-    name: "濱田 Yuki",
-    role: "Producer",
-    description: "プロジェクト全体の統括",
-  },
-  {
-    name: "野島 Nojima",
-    role: "System",
-    description: "システム開発と技術基盤",
-  },
+  { name: "良蔵 Ryozo", role: "Instructor", roleKey: "instructor" },
+  { name: "あい Ai", role: "Director", roleKey: "director" },
+  { name: "濱田 Yuki", role: "Producer", roleKey: "producer" },
+  { name: "野島 Nojima", role: "System", roleKey: "system" },
 ];
 
 const About = () => {
+  const { language } = useLanguage();
+  const t = translations[language];
+
   return (
     <div className="min-h-screen">
       <Navigation />
@@ -31,26 +20,22 @@ const About = () => {
       <main className="pt-32 pb-20 px-6">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-20 animate-fade-up">
-            <h1 className="text-5xl md:text-6xl font-light mb-6">About</h1>
-            <p className="text-xl text-muted-foreground font-light max-w-2xl mx-auto">
-              柔術を、映像で体系化する。<br />
-              それが私たちのミッション。
+            <h1 className="text-5xl md:text-6xl font-light mb-6">{t.about.title}</h1>
+            <p className="text-xl text-muted-foreground font-light max-w-2xl mx-auto whitespace-pre-line">
+              {t.about.subtitle}
             </p>
           </div>
 
           <div className="mb-20 animate-fade-up">
             <div className="prose prose-lg max-w-none">
               <p className="text-lg font-light text-muted-foreground leading-relaxed mb-6">
-                Brotherhood Jiu-Jitsu、JYU LAB、ROLL BASE。
+                {t.about.intro1}
               </p>
-              <p className="text-lg font-light text-muted-foreground leading-relaxed mb-6">
-                私たちは柔術の技術を、映像という形で体系化し、<br />
-                誰もが理解しやすい形で提供することを目指しています。
+              <p className="text-lg font-light text-muted-foreground leading-relaxed mb-6 whitespace-pre-line">
+                {t.about.intro2}
               </p>
-              <p className="text-lg font-light text-muted-foreground leading-relaxed">
-                上面からの4K映像、明確な技の流れ、<br />
-                そして一つひとつの動きに込められた意味。<br />
-                それらを通じて、柔術の本質を伝えていきます。
+              <p className="text-lg font-light text-muted-foreground leading-relaxed whitespace-pre-line">
+                {t.about.intro3}
               </p>
             </div>
           </div>
@@ -58,7 +43,7 @@ const About = () => {
           {/* Team */}
           <div className="animate-fade-up">
             <h2 className="text-3xl font-light mb-12 text-center border-b border-border pb-4">
-              Team
+              {t.about.team}
             </h2>
             <div className="grid md:grid-cols-2 gap-8">
               {team.map((member) => (
@@ -69,7 +54,7 @@ const About = () => {
                   <h3 className="text-2xl font-light mb-2">{member.name}</h3>
                   <div className="text-sm text-accent mb-4">{member.role}</div>
                   <p className="font-light text-muted-foreground">
-                    {member.description}
+                    {t.about.roles[member.roleKey as keyof typeof t.about.roles]}
                   </p>
                 </div>
               ))}

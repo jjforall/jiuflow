@@ -1,13 +1,24 @@
 import { Link, useLocation } from "react-router-dom";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { translations } from "@/lib/translations";
+import { Button } from "@/components/ui/button";
 
 const Navigation = () => {
   const location = useLocation();
+  const { language, setLanguage } = useLanguage();
+  const t = translations[language];
 
   const links = [
-    { to: "/", label: "Home" },
-    { to: "/map", label: "Map" },
-    { to: "/about", label: "About" },
-    { to: "/join", label: "Join" },
+    { to: "/", label: t.nav.home },
+    { to: "/map", label: t.nav.map },
+    { to: "/about", label: t.nav.about },
+    { to: "/join", label: t.nav.join },
+  ];
+
+  const languages: Array<{ code: "ja" | "en" | "pt"; label: string }> = [
+    { code: "ja", label: "日本語" },
+    { code: "en", label: "EN" },
+    { code: "pt", label: "PT" },
   ];
 
   return (
@@ -32,6 +43,22 @@ const Navigation = () => {
                 {link.label}
               </Link>
             ))}
+            
+            <div className="flex items-center gap-2 border-l border-border pl-6">
+              {languages.map((lang) => (
+                <button
+                  key={lang.code}
+                  onClick={() => setLanguage(lang.code)}
+                  className={`text-xs font-light px-2 py-1 transition-smooth ${
+                    language === lang.code
+                      ? "text-foreground border-b border-foreground"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {lang.label}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       </div>
