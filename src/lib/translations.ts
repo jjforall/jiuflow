@@ -98,12 +98,12 @@ export const translations = {
         title: "まずはサンプルを見てみる",
         cta: "サンプル動画を見る",
       },
-      lifetime: {
-        title: "ライフタイムプラン",
+      founder: {
+        title: "ファウンダープラン",
         price: "¥500",
-        period: " 買い切り",
+        period: "/月 生涯",
         limited: "先着100名限定",
-        features: ["すべての技が見放題", "永久アクセス", "買い切り"],
+        features: ["すべての技が見放題", "生涯月額500円", "買い切りより更にお得"],
         cta: "今すぐ購入",
       },
       monthly: {
@@ -261,13 +261,13 @@ export const translations = {
         features: ["Access all techniques", "Learn with 4K video", "Access technique map"],
         cta: "Start Free",
       },
-      lifetime: {
-        title: "Lifetime Plan",
+      founder: {
+        title: "Founder Plan",
         price: "¥500",
-        period: " one-time",
+        period: "/month lifetime",
         limited: "Limited to first 100 users",
-        features: ["Access all techniques", "Permanent access", "One-time payment"],
-        cta: "Get Lifetime Access",
+        features: ["Access all techniques", "Lifetime ¥500/month", "Better than one-time payment"],
+        cta: "Get Founder Access",
       },
       monthly: {
         title: "Monthly Plan",
@@ -417,13 +417,13 @@ export const translations = {
         title: "Assista uma Amostra Primeiro",
         cta: "Assistir Vídeo de Amostra",
       },
-      lifetime: {
-        title: "Plano Vitalício",
+      founder: {
+        title: "Plano Fundador",
         price: "¥500",
-        period: " pagamento único",
+        period: "/mês vitalício",
         limited: "Limitado aos primeiros 100 usuários",
-        features: ["Acesse todas as técnicas", "Acesso permanente", "Pagamento único"],
-        cta: "Obter Acesso Vitalício",
+        features: ["Acesse todas as técnicas", "¥500/mês vitalício", "Melhor que pagamento único"],
+        cta: "Obter Acesso Fundador",
       },
       monthly: {
         title: "Plano Mensal",

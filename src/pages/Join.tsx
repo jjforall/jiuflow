@@ -4,22 +4,27 @@ import { Input } from "@/components/ui/input";
 import { useState, useEffect } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { translations } from "@/lib/translations";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 // Stripe price IDs
 const PRICE_IDS = {
-  lifetime: "price_1SNQoODqLakc8NxkYIcIaWg2",
+  founder: "price_1SNQoODqLakc8NxkYIcIaWg2",
   monthly: "price_1SNQoeDqLakc8NxkEUVTTs3k",
   annual: "price_1SNQoqDqLakc8NxkOaQIL8wX",
 };
+
+// Sample video ID
+const SAMPLE_VIDEO_ID = "6a70670c-e9f8-4a8b-adce-8e703ac56bee";
 
 const Join = () => {
   const { language } = useLanguage();
   const t = translations[language];
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [showVideoModal, setShowVideoModal] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
   const [searchParams] = useSearchParams();
@@ -97,27 +102,42 @@ const Join = () => {
           {/* Sample Video Section */}
           <div className="border border-border p-8 mb-16 animate-fade-up text-center">
             <h2 className="text-2xl font-light mb-4">{t.join.sampleVideo.title}</h2>
-            <Link to="/video/6a70670c-e9f8-4a8b-adce-8e703ac56bee">
-              <Button variant="outline" size="lg">
-                {t.join.sampleVideo.cta}
-              </Button>
-            </Link>
+            <Button variant="outline" size="lg" onClick={() => setShowVideoModal(true)}>
+              {t.join.sampleVideo.cta}
+            </Button>
           </div>
+
+          {/* Video Modal */}
+          <Dialog open={showVideoModal} onOpenChange={setShowVideoModal}>
+            <DialogContent className="max-w-4xl">
+              <DialogHeader>
+                <DialogTitle>{t.join.sampleVideo.title}</DialogTitle>
+              </DialogHeader>
+              <div className="aspect-video">
+                <iframe
+                  src={`https://jkiohqfamhiykurxrhsn.supabase.co/storage/v1/object/public/technique-videos/${SAMPLE_VIDEO_ID}.mp4`}
+                  className="w-full h-full"
+                  allowFullScreen
+                  title="Sample Video"
+                />
+              </div>
+            </DialogContent>
+          </Dialog>
 
           {/* Pricing */}
           <div className="grid md:grid-cols-3 gap-8 mb-16 animate-fade-up">
-            {/* Lifetime Plan */}
+            {/* Founder Plan */}
             <div className="border border-border p-8">
-              <h2 className="text-2xl font-light mb-4">{t.join.lifetime?.title || "Lifetime Plan"}</h2>
+              <h2 className="text-2xl font-light mb-4">{t.join.founder?.title || "Founder Plan"}</h2>
               <div className="text-4xl font-light mb-6">
-                ¥500<span className="text-lg text-muted-foreground">{t.join.lifetime?.period || " one-time"}</span>
+                ¥500<span className="text-lg text-muted-foreground">{t.join.founder?.period || "/month lifetime"}</span>
               </div>
-              <p className="text-sm text-muted-foreground mb-4">{t.join.lifetime?.limited || "Limited to first 100 users"}</p>
+              <p className="text-sm text-muted-foreground mb-4">{t.join.founder?.limited || "Limited to first 100 users"}</p>
               <ul className="space-y-3 mb-8 text-muted-foreground font-light">
-                {(t.join.lifetime?.features || [
+                {(t.join.founder?.features || [
                   "Unlimited access",
-                  "All techniques",
-                  "One-time payment"
+                  "Lifetime ¥500/month",
+                  "Better than one-time"
                 ]).map((feature, i) => (
                   <li key={i}>• {feature}</li>
                 ))}
@@ -126,10 +146,10 @@ const Join = () => {
                 variant="outline" 
                 className="w-full" 
                 size="lg"
-                onClick={() => handleCheckout(PRICE_IDS.lifetime, false)}
+                onClick={() => handleCheckout(PRICE_IDS.founder, false)}
                 disabled={isLoading}
               >
-                {t.join.lifetime?.cta || "Get Lifetime Access"}
+                {t.join.founder?.cta || "Get Founder Access"}
               </Button>
             </div>
 
