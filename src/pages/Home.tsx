@@ -42,7 +42,7 @@ const Home = () => {
                     />
                   </div>
                 ))}
-                <div className="absolute inset-0 bg-black/40" />
+                <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/60" />
                 
                 {/* Image indicators */}
                 {totalImages > 1 && (
@@ -71,10 +71,10 @@ const Home = () => {
           </div>
           
           <div className="relative z-10 text-center px-6 max-w-4xl mx-auto animate-fade-up">
-            <h1 className="text-6xl md:text-8xl font-light mb-6 tracking-tight">
+            <h1 className="text-6xl md:text-8xl font-light mb-6 tracking-tight text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)]">
               {t.home.hero.title}
             </h1>
-            <p className="text-xl md:text-2xl font-light mb-12 text-muted-foreground whitespace-pre-line">
+            <p className="text-xl md:text-2xl font-light mb-12 text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)] whitespace-pre-line">
               {t.home.hero.subtitle}
             </p>
             
