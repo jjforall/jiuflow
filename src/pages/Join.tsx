@@ -25,9 +25,26 @@ const Join = () => {
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [showVideoModal, setShowVideoModal] = useState(false);
+  const [sampleVideoUrl, setSampleVideoUrl] = useState<string | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
   const [searchParams] = useSearchParams();
+
+  // Fetch sample video URL
+  useEffect(() => {
+    const fetchSampleVideo = async () => {
+      const { data } = await supabase
+        .from("techniques")
+        .select("video_url")
+        .eq("id", SAMPLE_VIDEO_ID)
+        .maybeSingle();
+      
+      if (data?.video_url) {
+        setSampleVideoUrl(data.video_url);
+      }
+    };
+    fetchSampleVideo();
+  }, []);
 
   // Check for payment status in URL
   useEffect(() => {
@@ -114,12 +131,18 @@ const Join = () => {
                 <DialogTitle>{t.join.sampleVideo.title}</DialogTitle>
               </DialogHeader>
               <div className="aspect-video">
-                <iframe
-                  src={`https://jkiohqfamhiykurxrhsn.supabase.co/storage/v1/object/public/technique-videos/${SAMPLE_VIDEO_ID}.mp4`}
-                  className="w-full h-full"
-                  allowFullScreen
-                  title="Sample Video"
-                />
+                {sampleVideoUrl ? (
+                  <video
+                    src={sampleVideoUrl}
+                    className="w-full h-full"
+                    controls
+                    autoPlay
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center bg-muted">
+                    <p className="text-muted-foreground">Loading video...</p>
+                  </div>
+                )}
               </div>
             </DialogContent>
           </Dialog>
