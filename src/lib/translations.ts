@@ -100,10 +100,10 @@ export const translations = {
       },
       founder: {
         title: "ファウンダープラン",
-        price: "¥500",
+        price: "¥980",
         period: "/月 生涯",
-        limited: "先着100名限定",
-        features: ["すべての技が見放題", "生涯月額500円", "買い切りより更にお得"],
+        limited: "11月末まで限定",
+        features: ["すべての技が見放題", "生涯月額980円", "買い切りより更にお得"],
         cta: "今すぐ購入",
       },
       monthly: {
@@ -263,10 +263,10 @@ export const translations = {
       },
       founder: {
         title: "Founder Plan",
-        price: "¥500",
+        price: "¥980",
         period: "/month lifetime",
-        limited: "Limited to first 100 users",
-        features: ["Access all techniques", "Lifetime ¥500/month", "Better than one-time payment"],
+        limited: "Limited until end of November",
+        features: ["Access all techniques", "Lifetime ¥980/month", "Better than one-time payment"],
         cta: "Get Founder Access",
       },
       monthly: {
@@ -419,10 +419,10 @@ export const translations = {
       },
       founder: {
         title: "Plano Fundador",
-        price: "¥500",
+        price: "¥980",
         period: "/mês vitalício",
-        limited: "Limitado aos primeiros 100 usuários",
-        features: ["Acesse todas as técnicas", "¥500/mês vitalício", "Melhor que pagamento único"],
+        limited: "Limitado até o final de novembro",
+        features: ["Acesse todas as técnicas", "¥980/mês vitalício", "Melhor que pagamento único"],
         cta: "Obter Acesso Fundador",
       },
       monthly: {

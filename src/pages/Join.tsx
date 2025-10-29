@@ -9,6 +9,40 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
+const useCountdown = () => {
+  const [timeLeft, setTimeLeft] = useState({
+    days: 0,
+    hours: 0,
+    minutes: 0,
+    seconds: 0,
+  });
+
+  useEffect(() => {
+    const targetDate = new Date("2025-11-30T23:59:59+09:00").getTime();
+
+    const updateCountdown = () => {
+      const now = new Date().getTime();
+      const difference = targetDate - now;
+
+      if (difference > 0) {
+        setTimeLeft({
+          days: Math.floor(difference / (1000 * 60 * 60 * 24)),
+          hours: Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
+          minutes: Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60)),
+          seconds: Math.floor((difference % (1000 * 60)) / 1000),
+        });
+      }
+    };
+
+    updateCountdown();
+    const interval = setInterval(updateCountdown, 1000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  return timeLeft;
+};
+
 // Stripe price IDs
 const PRICE_IDS = {
   founder: "price_1SNUnFDqLakc8NxkNzqSs2UR",
@@ -22,6 +56,7 @@ const SAMPLE_VIDEO_ID = "6a70670c-e9f8-4a8b-adce-8e703ac56bee";
 const Join = () => {
   const { language } = useLanguage();
   const t = translations[language];
+  const countdown = useCountdown();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -250,7 +285,31 @@ const Join = () => {
               <div className="text-4xl font-light mb-6">
                 ¥980<span className="text-lg text-muted-foreground">{t.join.founder?.period || "/month lifetime"}</span>
               </div>
-              <p className="text-sm text-muted-foreground mb-4">{t.join.founder?.limited || "Limited to first 100 users"}</p>
+              <p className="text-sm text-muted-foreground mb-4">{t.join.founder?.limited || "Limited until end of November"}</p>
+              <div className="bg-muted/50 p-4 mb-4 text-center">
+                <p className="text-xs text-muted-foreground mb-2">{language === "ja" ? "終了まで" : "Ends in"}</p>
+                <div className="flex justify-center gap-2 text-sm">
+                  <div className="flex flex-col items-center">
+                    <span className="font-mono text-lg">{countdown.days}</span>
+                    <span className="text-xs text-muted-foreground">{language === "ja" ? "日" : "days"}</span>
+                  </div>
+                  <span className="text-lg">:</span>
+                  <div className="flex flex-col items-center">
+                    <span className="font-mono text-lg">{countdown.hours}</span>
+                    <span className="text-xs text-muted-foreground">{language === "ja" ? "時間" : "hrs"}</span>
+                  </div>
+                  <span className="text-lg">:</span>
+                  <div className="flex flex-col items-center">
+                    <span className="font-mono text-lg">{countdown.minutes}</span>
+                    <span className="text-xs text-muted-foreground">{language === "ja" ? "分" : "min"}</span>
+                  </div>
+                  <span className="text-lg">:</span>
+                  <div className="flex flex-col items-center">
+                    <span className="font-mono text-lg">{countdown.seconds}</span>
+                    <span className="text-xs text-muted-foreground">{language === "ja" ? "秒" : "sec"}</span>
+                  </div>
+                </div>
+              </div>
               <ul className="space-y-3 mb-8 text-muted-foreground font-light">
                 {(t.join.founder?.features || [
                   "Unlimited access",
