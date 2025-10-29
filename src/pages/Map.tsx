@@ -133,65 +133,24 @@ const Map = () => {
                   {techniques
                     .filter((tech) => tech.category === category)
                     .map((tech) => (
-                      <button
+                      <Link
                         key={tech.id}
-                        onClick={() => setSelectedTech(tech)}
-                        className={`w-full text-left p-6 border ${
+                        to={`/video/${tech.id}`}
+                        className={`block w-full text-left p-6 border ${
                           categoryColors[category as keyof typeof categoryColors]
-                        } transition-smooth hover:bg-muted ${
-                          selectedTech?.id === tech.id ? "bg-muted" : ""
-                        }`}
+                        } transition-smooth hover:bg-muted`}
                       >
                         <div className="font-light mb-1">{getTechniqueName(tech)}</div>
                         {tech.video_url && (
                           <div className="text-xs text-muted-foreground mt-2">▶ Video available</div>
                         )}
-                      </button>
+                      </Link>
                     ))}
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Selected Technique Detail */}
-          {selectedTech && (
-            <div className="border border-border p-8 animate-fade-in">
-              <div className="grid md:grid-cols-2 gap-8">
-                <div>
-                  {selectedTech.video_url ? (
-                    <video
-                      src={selectedTech.video_url}
-                      controls
-                      className="w-full rounded border border-border"
-                    >
-                      Your browser does not support the video tag.
-                    </video>
-                  ) : (
-                    <div className="aspect-video bg-muted flex items-center justify-center">
-                      <div className="text-center text-muted-foreground">
-                        <div className="text-4xl mb-2">▶</div>
-                        <div className="text-sm">
-                          {language === "ja" ? "動画なし" : language === "pt" ? "Sem vídeo" : "No video"}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-                
-                <div>
-                  <h2 className="text-3xl font-light mb-2">{getTechniqueName(selectedTech)}</h2>
-                  <span className="inline-block px-3 py-1 text-xs border border-border mb-6">
-                    {selectedTech.category}
-                  </span>
-                  {getTechniqueDescription(selectedTech) && (
-                    <p className="text-muted-foreground font-light mb-6">
-                      {getTechniqueDescription(selectedTech)}
-                    </p>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
           </>
           )}
         </div>
