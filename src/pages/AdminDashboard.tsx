@@ -7,7 +7,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import Navigation from "@/components/Navigation";
-import { Upload, Trash2 } from "lucide-react";
+import { Upload, Trash2, Edit } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 interface Technique {
   id: string;
@@ -28,6 +29,8 @@ const AdminDashboard = () => {
   const [techniques, setTechniques] = useState<Technique[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [uploadingVideo, setUploadingVideo] = useState(false);
+  const [editingTechnique, setEditingTechnique] = useState<Technique | null>(null);
+  const [showEditDialog, setShowEditDialog] = useState(false);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -122,6 +125,79 @@ const AdminDashboard = () => {
       });
 
       // Reset form
+      setFormData({
+        name: "",
+        name_ja: "",
+        name_pt: "",
+        description: "",
+        description_ja: "",
+        description_pt: "",
+        category: "pull",
+      });
+      setVideoFile(null);
+
+      loadTechniques();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+      setUploadingVideo(false);
+    }
+  };
+
+  const handleEdit = (technique: Technique) => {
+    setEditingTechnique(technique);
+    setFormData({
+      name: technique.name,
+      name_ja: technique.name_ja,
+      name_pt: technique.name_pt,
+      description: technique.description || "",
+      description_ja: technique.description_ja || "",
+      description_pt: technique.description_pt || "",
+      category: technique.category as "pull" | "control" | "submission",
+    });
+    setShowEditDialog(true);
+  };
+
+  const handleUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingTechnique) return;
+
+    setIsLoading(true);
+    setUploadingVideo(true);
+
+    try {
+      let videoUrl = editingTechnique.video_url;
+
+      if (videoFile) {
+        const newVideoUrl = await handleVideoUpload(videoFile);
+        if (!newVideoUrl) {
+          throw new Error("Failed to upload video");
+        }
+        videoUrl = newVideoUrl;
+      }
+
+      const { error } = await supabase
+        .from("techniques")
+        .update({
+          ...formData,
+          video_url: videoUrl,
+        })
+        .eq("id", editingTechnique.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Technique updated successfully",
+      });
+
+      setShowEditDialog(false);
+      setEditingTechnique(null);
       setFormData({
         name: "",
         name_ja: "",
@@ -297,13 +373,22 @@ const AdminDashboard = () => {
                         {technique.category}
                       </span>
                     </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleDelete(technique.id)}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleEdit(technique)}
+                      >
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDelete(technique.id)}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
                   </div>
                   
                   {technique.video_url && (
@@ -323,6 +408,109 @@ const AdminDashboard = () => {
           </div>
         </div>
       </div>
+
+      {/* Edit Dialog */}
+      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Technique</DialogTitle>
+          </DialogHeader>
+          
+          <form onSubmit={handleUpdate} className="space-y-6">
+            <div className="grid md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm mb-2">Name (EN)</label>
+                <Input
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm mb-2">Name (JA)</label>
+                <Input
+                  value={formData.name_ja}
+                  onChange={(e) => setFormData({ ...formData, name_ja: e.target.value })}
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm mb-2">Name (PT)</label>
+                <Input
+                  value={formData.name_pt}
+                  onChange={(e) => setFormData({ ...formData, name_pt: e.target.value })}
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="grid md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm mb-2">Description (EN)</label>
+                <Textarea
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                />
+              </div>
+              <div>
+                <label className="block text-sm mb-2">Description (JA)</label>
+                <Textarea
+                  value={formData.description_ja}
+                  onChange={(e) => setFormData({ ...formData, description_ja: e.target.value })}
+                />
+              </div>
+              <div>
+                <label className="block text-sm mb-2">Description (PT)</label>
+                <Textarea
+                  value={formData.description_pt}
+                  onChange={(e) => setFormData({ ...formData, description_pt: e.target.value })}
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm mb-2">Category</label>
+              <Select
+                value={formData.category}
+                onValueChange={(value: any) => setFormData({ ...formData, category: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="pull">Pull</SelectItem>
+                  <SelectItem value="control">Control</SelectItem>
+                  <SelectItem value="submission">Submission</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <label className="block text-sm mb-2">Video File (leave empty to keep current)</label>
+              <div className="border border-border p-4 rounded">
+                <input
+                  type="file"
+                  accept="video/*"
+                  onChange={(e) => setVideoFile(e.target.files?.[0] || null)}
+                  className="w-full"
+                />
+                {uploadingVideo && (
+                  <p className="text-sm text-muted-foreground mt-2">Uploading video...</p>
+                )}
+              </div>
+            </div>
+
+            <div className="flex gap-2">
+              <Button type="submit" disabled={isLoading}>
+                {isLoading ? "Updating..." : "Update Technique"}
+              </Button>
+              <Button type="button" variant="outline" onClick={() => setShowEditDialog(false)}>
+                Cancel
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
