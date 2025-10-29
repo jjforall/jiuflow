@@ -248,7 +248,7 @@ const Join = () => {
             <div className="border border-border p-8">
               <h2 className="text-2xl font-light mb-4">{t.join.founder?.title || "Founder Plan"}</h2>
               <div className="text-4xl font-light mb-6">
-                ¥500<span className="text-lg text-muted-foreground">{t.join.founder?.period || "/month lifetime"}</span>
+                ¥980<span className="text-lg text-muted-foreground">{t.join.founder?.period || "/month lifetime"}</span>
               </div>
               <p className="text-sm text-muted-foreground mb-4">{t.join.founder?.limited || "Limited to first 100 users"}</p>
               <ul className="space-y-3 mb-8 text-muted-foreground font-light">
