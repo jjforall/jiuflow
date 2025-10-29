@@ -94,6 +94,10 @@ export const translations = {
     join: {
       title: "Join",
       subtitle: "まずは「見る」から始めよう。",
+      sampleVideo: {
+        title: "まずはサンプルを見てみる",
+        cta: "サンプル動画を見る",
+      },
       free: {
         title: "無料体験",
         price: "¥0",
@@ -227,6 +231,10 @@ export const translations = {
     join: {
       title: "Join",
       subtitle: "Start by watching.",
+      sampleVideo: {
+        title: "Watch a Sample First",
+        cta: "Watch Sample Video",
+      },
       free: {
         title: "Free Trial",
         price: "$0",
@@ -360,6 +368,10 @@ export const translations = {
     join: {
       title: "Participar",
       subtitle: "Comece assistindo.",
+      sampleVideo: {
+        title: "Assista uma Amostra Primeiro",
+        cta: "Assistir Vídeo de Amostra",
+      },
       free: {
         title: "Teste Grátis",
         price: "$0",

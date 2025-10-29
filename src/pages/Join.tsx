@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { translations } from "@/lib/translations";
+import { Link } from "react-router-dom";
 
 const Join = () => {
   const { language } = useLanguage();
@@ -26,6 +27,16 @@ const Join = () => {
             <p className="text-xl text-muted-foreground font-light">
               {t.join.subtitle}
             </p>
+          </div>
+
+          {/* Sample Video Section */}
+          <div className="border border-border p-8 mb-16 animate-fade-up text-center">
+            <h2 className="text-2xl font-light mb-4">{t.join.sampleVideo.title}</h2>
+            <Link to="/video/6a70670c-e9f8-4a8b-adce-8e703ac56bee">
+              <Button variant="outline" size="lg">
+                {t.join.sampleVideo.cta}
+              </Button>
+            </Link>
           </div>
 
           {/* Pricing */}
