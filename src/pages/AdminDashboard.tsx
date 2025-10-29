@@ -288,7 +288,7 @@ const AdminDashboard = () => {
             <div className="grid gap-4">
               {techniques.map((technique) => (
                 <div key={technique.id} className="border border-border p-6">
-                  <div className="flex justify-between items-start">
+                  <div className="flex justify-between items-start mb-4">
                     <div>
                       <h3 className="text-xl font-light mb-2">{technique.name}</h3>
                       <p className="text-sm text-muted-foreground mb-1">{technique.name_ja}</p>
@@ -305,6 +305,18 @@ const AdminDashboard = () => {
                       <Trash2 className="w-4 h-4" />
                     </Button>
                   </div>
+                  
+                  {technique.video_url && (
+                    <div className="mt-4">
+                      <video
+                        src={technique.video_url}
+                        controls
+                        className="w-full max-w-2xl rounded border border-border"
+                      >
+                        Your browser does not support the video tag.
+                      </video>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
