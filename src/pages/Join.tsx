@@ -75,7 +75,7 @@ const Join = () => {
     e.preventDefault();
     setIsLoading(true);
     try {
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -85,12 +85,22 @@ const Join = () => {
 
       if (error) throw error;
 
+      // Wait for session to be established
+      if (!data.session) {
+        throw new Error(language === "ja" 
+          ? "セッションの確立に失敗しました。もう一度お試しください。" 
+          : "Failed to establish session. Please try again.");
+      }
+
       toast({
         title: language === "ja" ? "アカウントを作成しました" : "Account created",
         description: language === "ja" ? "決済ページに移動します..." : "Redirecting to checkout...",
       });
 
       setShowSignupModal(false);
+      
+      // Wait a moment for the session to fully propagate
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
       // Proceed with checkout
       if (pendingPriceId) {
