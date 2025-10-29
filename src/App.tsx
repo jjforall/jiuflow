@@ -8,6 +8,8 @@ import Map from "./pages/Map";
 import Video from "./pages/Video";
 import About from "./pages/About";
 import Join from "./pages/Join";
+import AdminLogin from "./pages/AdminLogin";
+import AdminDashboard from "./pages/AdminDashboard";
 import NotFound from "./pages/NotFound";
 import { LanguageProvider } from "./contexts/LanguageContext";
 
@@ -23,10 +25,12 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/map" element={<Map />} />
-            <Route path="/video/:id" element={<Video />} />
-            <Route path="/about" element={<About />} />
-            <Route path="/join" element={<Join />} />
-            <Route path="*" element={<NotFound />} />
+          <Route path="/video/:id" element={<Video />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/join" element={<Join />} />
+          <Route path="/admin" element={<AdminLogin />} />
+          <Route path="/admin/dashboard" element={<AdminDashboard />} />
+          <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
       </TooltipProvider>

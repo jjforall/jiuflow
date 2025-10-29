@@ -4,6 +4,7 @@ import Navigation from "@/components/Navigation";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { translations } from "@/lib/translations";
 import { useHeroImages } from "@/hooks/useHeroImages";
+import Footer from "@/components/Footer";
 
 const Home = () => {
   const { language } = useLanguage();
@@ -139,6 +140,8 @@ const Home = () => {
           </div>
         </section>
       </main>
+      
+      <Footer />
     </div>
   );
 };
