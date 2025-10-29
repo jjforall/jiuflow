@@ -9,7 +9,7 @@ const Footer = () => {
       <div className="container mx-auto px-6 py-12">
         <div className="grid md:grid-cols-4 gap-8 mb-8">
           <div>
-            <h3 className="font-light mb-4">Brotherhood Jiu-Jitsu</h3>
+            <h3 className="font-light mb-4">jiuflow</h3>
             <p className="text-sm text-muted-foreground font-light">
               {language === "ja" && "柔術を、体系で学ぶ。"}
               {language === "en" && "Learn Jiu-Jitsu Systematically."}
@@ -65,7 +65,7 @@ const Footer = () => {
         </div>
         
         <div className="pt-8 border-t border-border text-center text-sm text-muted-foreground">
-          <p>&copy; 2025 Brotherhood Jiu-Jitsu. All rights reserved.</p>
+          <p>&copy; 2025 jiuflow. All rights reserved.</p>
         </div>
       </div>
     </footer>

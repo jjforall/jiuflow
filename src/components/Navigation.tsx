@@ -30,7 +30,7 @@ const Navigation = () => {
       <div className="container mx-auto px-6 py-4">
         <div className="flex items-center justify-between">
           <Link to="/" className="text-xl font-light tracking-tight">
-            Brotherhood Jiu-Jitsu
+            jiuflow
           </Link>
           
           {/* Desktop Navigation */}
