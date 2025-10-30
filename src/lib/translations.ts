@@ -101,9 +101,9 @@ export const translations = {
       founder: {
         title: "ファウンダープラン",
         price: "¥980",
-        period: "/月 生涯",
+        period: "/月（生涯）",
         limited: "11月末まで限定",
-        features: ["すべての技が見放題", "生涯月額980円", "買い切りより更にお得"],
+        features: ["すべての技が見放題", "生涯¥980/月", "買い切りより更にお得"],
         cta: "今すぐ購入",
       },
       monthly: {
