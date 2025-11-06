@@ -65,6 +65,7 @@ const Join = () => {
   const [pendingPriceId, setPendingPriceId] = useState<string | null>(null);
   const [pendingIsSubscription, setPendingIsSubscription] = useState(false);
   const [sampleVideoUrl, setSampleVideoUrl] = useState<string | null>(null);
+  const [couponCode, setCouponCode] = useState("");
   const navigate = useNavigate();
   const { toast } = useToast();
   const [searchParams] = useSearchParams();
@@ -158,7 +159,7 @@ const Join = () => {
     try {
       const functionName = isSubscription ? "create-checkout" : "create-payment";
       const { data, error } = await supabase.functions.invoke(functionName, {
-        body: { priceId },
+        body: { priceId, couponCode: couponCode.trim() || undefined },
       });
 
       if (error) throw error;
@@ -276,6 +277,38 @@ const Join = () => {
               </form>
             </DialogContent>
           </Dialog>
+
+          {/* Coupon Code Section */}
+          <div className="border border-border p-6 mb-8 animate-fade-up">
+            <h3 className="text-lg font-light mb-3 text-center">
+              {language === "ja" ? "クーポンコードをお持ちの方" : "Have a coupon code?"}
+            </h3>
+            <div className="flex gap-3 max-w-md mx-auto">
+              <Input
+                type="text"
+                placeholder={language === "ja" ? "クーポンコードを入力" : "Enter coupon code"}
+                value={couponCode}
+                onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                className="flex-1"
+              />
+              {couponCode && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setCouponCode("")}
+                >
+                  {language === "ja" ? "クリア" : "Clear"}
+                </Button>
+              )}
+            </div>
+            {couponCode && (
+              <p className="text-xs text-muted-foreground text-center mt-2">
+                {language === "ja" 
+                  ? "決済時にクーポンコードが適用されます" 
+                  : "Coupon will be applied at checkout"}
+              </p>
+            )}
+          </div>
 
           {/* Pricing */}
           <div className="grid md:grid-cols-3 gap-8 mb-16 animate-fade-up">

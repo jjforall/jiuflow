@@ -24,7 +24,7 @@ serve(async (req) => {
     const user = data.user;
     if (!user?.email) throw new Error("User not authenticated or email not available");
 
-    const { priceId } = await req.json();
+    const { priceId, couponCode } = await req.json();
     if (!priceId) throw new Error("Price ID is required");
 
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", { 
@@ -37,7 +37,7 @@ serve(async (req) => {
       customerId = customers.data[0].id;
     }
 
-    const session = await stripe.checkout.sessions.create({
+    const sessionConfig: any = {
       customer: customerId,
       customer_email: customerId ? undefined : user.email,
       line_items: [
@@ -49,7 +49,14 @@ serve(async (req) => {
       mode: "payment",
       success_url: `${req.headers.get("origin")}/join?success=true`,
       cancel_url: `${req.headers.get("origin")}/join?canceled=true`,
-    });
+    };
+
+    // Add coupon code if provided
+    if (couponCode) {
+      sessionConfig.discounts = [{ coupon: couponCode }];
+    }
+
+    const session = await stripe.checkout.sessions.create(sessionConfig);
 
     return new Response(JSON.stringify({ url: session.url }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
