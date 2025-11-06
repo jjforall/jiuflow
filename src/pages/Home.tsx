@@ -11,6 +11,7 @@ const Home = () => {
   const t = translations[language];
   const { images, isLoading, currentIndex, totalImages } = useHeroImages();
 
+
   return (
     <div className="min-h-screen">
       <Navigation />
