@@ -45,6 +45,12 @@ const AdminDashboard = () => {
   const [editingProfile, setEditingProfile] = useState<Profile | null>(null);
   const [showEditProfileDialog, setShowEditProfileDialog] = useState(false);
   const [adminPassword, setAdminPassword] = useState("");
+  const [showCreateUserDialog, setShowCreateUserDialog] = useState(false);
+  const [newUserData, setNewUserData] = useState({
+    email: "",
+    password: "",
+    role: "user" as "admin" | "user",
+  });
 
   // Form state
   const [formData, setFormData] = useState({
@@ -340,6 +346,47 @@ const AdminDashboard = () => {
     }
   };
 
+  const handleCreateUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        throw new Error("認証が必要です");
+      }
+
+      const { data, error } = await supabase.functions.invoke("create-user", {
+        body: newUserData,
+      });
+
+      if (error) throw error;
+      if (data.error) throw new Error(data.error);
+
+      toast({
+        title: "ユーザー作成成功",
+        description: `${newUserData.email} を作成しました`,
+      });
+
+      setShowCreateUserDialog(false);
+      setNewUserData({
+        email: "",
+        password: "",
+        role: "user",
+      });
+      loadProfiles();
+    } catch (error: any) {
+      toast({
+        title: "エラー",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
@@ -512,14 +559,23 @@ const AdminDashboard = () => {
 
             <TabsContent value="users">
               <div className="border border-border p-8 mb-8">
-                <h2 className="text-2xl font-light mb-4">会員一覧の読み込み</h2>
-                <p className="text-sm text-muted-foreground mb-4">
-                  管理者パスワードを入力して会員一覧を表示します
-                </p>
+                <div className="flex justify-between items-center mb-6">
+                  <div>
+                    <h2 className="text-2xl font-light mb-2">ユーザー管理</h2>
+                    <p className="text-sm text-muted-foreground">
+                      新規ユーザーの作成と既存ユーザーの管理
+                    </p>
+                  </div>
+                  <Button onClick={() => setShowCreateUserDialog(true)}>
+                    <Users className="w-4 h-4 mr-2" />
+                    新規ユーザー作成
+                  </Button>
+                </div>
+
                 <div className="flex gap-4">
                   <Input
                     type="password"
-                    placeholder="管理者パスワード"
+                    placeholder="管理者パスワード（会員一覧表示用）"
                     value={adminPassword}
                     onChange={(e) => setAdminPassword(e.target.value)}
                     className="flex-1"
@@ -696,6 +752,70 @@ const AdminDashboard = () => {
             <Button type="submit" size="lg" disabled={isLoading} className="w-full">
               {isLoading ? "更新中..." : "更新"}
             </Button>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Create User Dialog */}
+      <Dialog open={showCreateUserDialog} onOpenChange={setShowCreateUserDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>新規ユーザー作成</DialogTitle>
+          </DialogHeader>
+          
+          <form onSubmit={handleCreateUser} className="space-y-4">
+            <div>
+              <label className="block text-sm mb-2">メールアドレス</label>
+              <Input
+                type="email"
+                value={newUserData.email}
+                onChange={(e) => setNewUserData({ ...newUserData, email: e.target.value })}
+                placeholder="user@example.com"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm mb-2">パスワード</label>
+              <Input
+                type="password"
+                value={newUserData.password}
+                onChange={(e) => setNewUserData({ ...newUserData, password: e.target.value })}
+                placeholder="パスワード（6文字以上）"
+                required
+                minLength={6}
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm mb-2">ロール</label>
+              <Select
+                value={newUserData.role}
+                onValueChange={(value: "admin" | "user") => setNewUserData({ ...newUserData, role: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="user">一般ユーザー</SelectItem>
+                  <SelectItem value="admin">管理者</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex gap-2">
+              <Button type="submit" size="lg" disabled={isLoading} className="flex-1">
+                {isLoading ? "作成中..." : "ユーザーを作成"}
+              </Button>
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => setShowCreateUserDialog(false)}
+                disabled={isLoading}
+              >
+                キャンセル
+              </Button>
+            </div>
           </form>
         </DialogContent>
       </Dialog>
