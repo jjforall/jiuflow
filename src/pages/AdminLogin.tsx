@@ -4,8 +4,10 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import Navigation from "@/components/Navigation";
+import { supabase } from "@/integrations/supabase/client";
 
 const AdminLogin = () => {
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
@@ -15,24 +17,58 @@ const AdminLogin = () => {
     e.preventDefault();
     setIsLoading(true);
 
-    // Simple password check using environment variable
-    // In production, this should use proper authentication
-    if (password === "admin123") { // Temporary - will be replaced with proper auth
-      sessionStorage.setItem("admin_authenticated", "true");
-      toast({
-        title: "Login successful",
-        description: "Welcome to admin panel",
+    try {
+      // Use Supabase authentication
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
       });
-      navigate("/admin/dashboard");
-    } else {
+
+      if (error) {
+        toast({
+          title: "Login failed",
+          description: error.message,
+          variant: "destructive",
+        });
+        setIsLoading(false);
+        return;
+      }
+
+      if (data.session) {
+        // Check if user is admin
+        const { data: userRoles, error: rolesError } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", data.user.id)
+          .eq("role", "admin")
+          .maybeSingle();
+
+        if (rolesError || !userRoles) {
+          toast({
+            title: "Access denied",
+            description: "Admin access required",
+            variant: "destructive",
+          });
+          await supabase.auth.signOut();
+          setIsLoading(false);
+          return;
+        }
+
+        toast({
+          title: "Login successful",
+          description: "Welcome to admin panel",
+        });
+        navigate("/admin/dashboard");
+      }
+    } catch (error: any) {
       toast({
         title: "Login failed",
-        description: "Invalid password",
+        description: error.message,
         variant: "destructive",
       });
+    } finally {
+      setIsLoading(false);
     }
-
-    setIsLoading(false);
   };
 
   return (
@@ -51,12 +87,25 @@ const AdminLogin = () => {
           <form onSubmit={handleLogin} className="space-y-6">
             <div>
               <Input
+                type="email"
+                placeholder="Email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full"
+                required
+                disabled={isLoading}
+              />
+            </div>
+
+            <div>
+              <Input
                 type="password"
                 placeholder="Password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full"
                 required
+                disabled={isLoading}
               />
             </div>
 

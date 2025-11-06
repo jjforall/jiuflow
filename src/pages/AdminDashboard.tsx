@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import Navigation from "@/components/Navigation";
 import { Upload, Trash2, Edit, Users } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface Technique {
@@ -65,14 +66,37 @@ const AdminDashboard = () => {
   const [videoFile, setVideoFile] = useState<File | null>(null);
 
   useEffect(() => {
-    // Check authentication
-    const isAuth = sessionStorage.getItem("admin_authenticated");
-    if (!isAuth) {
-      navigate("/admin");
-      return;
-    }
+    const checkAuthAndLoad = async () => {
+      // Check Supabase authentication
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        navigate("/admin");
+        return;
+      }
 
-    loadTechniques();
+      // Check if user is admin
+      const { data: userRoles, error: rolesError } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", session.user.id)
+        .eq("role", "admin")
+        .maybeSingle();
+
+      if (rolesError || !userRoles) {
+        toast({
+          title: "Access denied",
+          description: "Admin access required",
+          variant: "destructive",
+        });
+        navigate("/admin");
+        return;
+      }
+
+      loadTechniques();
+    };
+
+    checkAuthAndLoad();
   }, [navigate]);
 
   const loadTechniques = async () => {
@@ -264,8 +288,8 @@ const AdminDashboard = () => {
     loadTechniques();
   };
 
-  const handleLogout = () => {
-    sessionStorage.removeItem("admin_authenticated");
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
     navigate("/admin");
   };
 
@@ -351,12 +375,6 @@ const AdminDashboard = () => {
     setIsLoading(true);
 
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session) {
-        throw new Error("認証が必要です");
-      }
-
       const { data, error } = await supabase.functions.invoke("create-user", {
         body: newUserData,
       });
@@ -375,7 +393,11 @@ const AdminDashboard = () => {
         password: "",
         role: "user",
       });
-      loadProfiles();
+      
+      // Reload profiles if admin password is set
+      if (adminPassword) {
+        loadProfiles();
+      }
     } catch (error: any) {
       toast({
         title: "エラー",
@@ -761,6 +783,9 @@ const AdminDashboard = () => {
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>新規ユーザー作成</DialogTitle>
+            <DialogPrimitive.Description className="text-sm text-muted-foreground">
+              新しいユーザーアカウントを作成します
+            </DialogPrimitive.Description>
           </DialogHeader>
           
           <form onSubmit={handleCreateUser} className="space-y-4">
