@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { translations } from "@/lib/translations";
 import { Button } from "@/components/ui/button";
-import { Menu, X } from "lucide-react";
+import { Menu, LogIn } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
 const Navigation = () => {
@@ -48,6 +48,15 @@ const Navigation = () => {
                 {link.label}
               </Link>
             ))}
+            
+            <span className="text-muted-foreground">|</span>
+            
+            <Link to="/login">
+              <Button variant="ghost" size="sm" className="gap-2">
+                <LogIn className="h-4 w-4" />
+                {language === "ja" ? "ログイン" : language === "pt" ? "Login" : "Login"}
+              </Button>
+            </Link>
             
             <div className="flex items-center gap-2 border-l border-border pl-6">
               {languages.map((lang) => (
@@ -108,6 +117,15 @@ const Navigation = () => {
                     {link.label}
                   </Link>
                 ))}
+                
+                <div className="border-t border-border pt-6">
+                  <Link to="/login" onClick={() => setIsOpen(false)}>
+                    <Button variant="outline" className="w-full gap-2">
+                      <LogIn className="h-4 w-4" />
+                      {language === "ja" ? "ログイン" : language === "pt" ? "Login" : "Login"}
+                    </Button>
+                  </Link>
+                </div>
               </nav>
             </SheetContent>
           </Sheet>
