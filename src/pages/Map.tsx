@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { translations } from "@/lib/translations";
@@ -23,13 +23,32 @@ const Map = () => {
   const { language } = useLanguage();
   const t = translations[language];
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [selectedTech, setSelectedTech] = useState<Technique | null>(null);
   const [techniques, setTechniques] = useState<Technique[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
 
   useEffect(() => {
-    loadTechniques();
-  }, []);
+    const checkAuthAndLoadTechniques = async () => {
+      // Check if user is authenticated
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        // Redirect to login page if not authenticated
+        navigate("/login", { 
+          state: { from: { pathname: "/map" } },
+          replace: true 
+        });
+        return;
+      }
+
+      setIsCheckingAuth(false);
+      loadTechniques();
+    };
+
+    checkAuthAndLoadTechniques();
+  }, [navigate]);
 
   const loadTechniques = async () => {
     setIsLoading(true);
@@ -93,7 +112,7 @@ const Map = () => {
             </p>
           </div>
 
-          {isLoading ? (
+          {isCheckingAuth || isLoading ? (
             <div className="text-center py-12">
               <p className="text-muted-foreground">{language === "ja" ? "読み込み中..." : language === "pt" ? "Carregando..." : "Loading..."}</p>
             </div>

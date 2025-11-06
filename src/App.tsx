@@ -8,6 +8,7 @@ import { LanguageProvider } from "./contexts/LanguageContext";
 
 // Lazy load route components for better performance
 const Home = lazy(() => import("./pages/Home"));
+const Login = lazy(() => import("./pages/Login"));
 const Map = lazy(() => import("./pages/Map"));
 const Video = lazy(() => import("./pages/Video"));
 const About = lazy(() => import("./pages/About"));
@@ -28,6 +29,7 @@ const App = () => (
           <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
             <Routes>
               <Route path="/" element={<Home />} />
+              <Route path="/login" element={<Login />} />
               <Route path="/map" element={<Map />} />
               <Route path="/video/:id" element={<Video />} />
               <Route path="/about" element={<About />} />

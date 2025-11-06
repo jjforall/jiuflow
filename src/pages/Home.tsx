@@ -81,8 +81,13 @@ const Home = () => {
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link to="/map">
+              <Link to="/login">
                 <Button variant="default" size="lg" className="min-w-[200px]">
+                  {language === "ja" ? "ログイン" : language === "pt" ? "Login" : "Login"}
+                </Button>
+              </Link>
+              <Link to="/map">
+                <Button variant="outline" size="lg" className="min-w-[200px]">
                   {t.home.hero.viewMap}
                 </Button>
               </Link>

@@ -1,4 +1,4 @@
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import Navigation from "@/components/Navigation";
 import { Button } from "@/components/ui/button";
@@ -25,14 +25,34 @@ const Video = () => {
   const { language } = useLanguage();
   const t = translations[language];
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [technique, setTechnique] = useState<Technique | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
 
   useEffect(() => {
-    if (id) {
-      loadTechnique();
-    }
-  }, [id]);
+    const checkAuthAndLoadTechnique = async () => {
+      // Check if user is authenticated
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        // Redirect to login page if not authenticated
+        navigate("/login", { 
+          state: { from: { pathname: `/video/${id}` } },
+          replace: true 
+        });
+        return;
+      }
+
+      setIsCheckingAuth(false);
+      
+      if (id) {
+        loadTechnique();
+      }
+    };
+
+    checkAuthAndLoadTechnique();
+  }, [id, navigate]);
 
   const loadTechnique = async () => {
     if (!id) return;
@@ -80,7 +100,7 @@ const Video = () => {
     }
   };
 
-  if (isLoading) {
+  if (isCheckingAuth || isLoading) {
     return (
       <div className="min-h-screen">
         <Navigation />
