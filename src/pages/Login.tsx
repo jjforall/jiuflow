@@ -8,6 +8,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { translations } from "@/lib/translations";
 import Footer from "@/components/Footer";
 import Navigation from "@/components/Navigation";
+import { Skeleton } from "@/components/ui/skeleton";
 import { z } from "zod";
 import { loginFormSchema, signupFormSchema, getPasswordStrength } from "@/lib/validators";
 import { Progress } from "@/components/ui/progress";
@@ -19,6 +20,7 @@ const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
   const [passwordStrength, setPasswordStrength] = useState({ score: 0, feedback: [] as string[] });
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const navigate = useNavigate();
   const location = useLocation();
   const { language } = useLanguage();
@@ -32,6 +34,7 @@ const Login = () => {
         const from = (location.state as any)?.from?.pathname || "/map";
         navigate(from, { replace: true });
       }
+      setIsCheckingAuth(false);
     };
     checkAuth();
   }, [navigate, location]);
@@ -122,6 +125,28 @@ const Login = () => {
       setIsLoading(false);
     }
   };
+
+  if (isCheckingAuth) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navigation />
+        <div className="pt-32 pb-20 px-6 animate-fade-in">
+          <div className="max-w-md mx-auto space-y-8">
+            <div className="text-center space-y-4">
+              <div className="h-12 w-2/3 bg-muted/50 animate-pulse rounded mx-auto" />
+              <div className="h-6 w-3/4 bg-muted/50 animate-pulse rounded mx-auto" />
+            </div>
+            <div className="space-y-6">
+              <div className="h-12 w-full bg-muted/50 animate-pulse rounded" />
+              <div className="h-12 w-full bg-muted/50 animate-pulse rounded" />
+              <div className="h-12 w-full bg-muted/50 animate-pulse rounded" />
+            </div>
+          </div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">

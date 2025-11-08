@@ -8,7 +8,9 @@ import { translations } from "@/lib/translations";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useSubscription } from "@/hooks/useSubscription";
+import { useAuth } from "@/hooks/useAuth";
 import { Lock } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface Technique {
   id: string;
@@ -29,6 +31,7 @@ const Video = () => {
   const t = translations[language];
   const navigate = useNavigate();
   const { subscribed, loading: subscriptionLoading } = useSubscription();
+  const { isAdmin } = useAuth();
   const [technique, setTechnique] = useState<Technique | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
@@ -108,14 +111,14 @@ const Video = () => {
         <main className="pt-32 pb-20 px-6 animate-fade-in">
           <div className="max-w-4xl mx-auto space-y-8">
             <div className="space-y-4">
-              <div className="h-10 w-1/3 bg-muted/50 animate-pulse rounded" />
-              <div className="h-6 w-1/2 bg-muted/50 animate-pulse rounded" />
+              <Skeleton className="h-10 w-1/3" />
+              <Skeleton className="h-6 w-1/2" />
             </div>
-            <div className="aspect-video w-full bg-muted/50 animate-pulse rounded-lg" />
+            <Skeleton className="aspect-video w-full rounded-lg" />
             <div className="space-y-3">
-              <div className="h-4 w-full bg-muted/50 animate-pulse rounded" />
-              <div className="h-4 w-5/6 bg-muted/50 animate-pulse rounded" />
-              <div className="h-4 w-4/6 bg-muted/50 animate-pulse rounded" />
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-5/6" />
+              <Skeleton className="h-4 w-4/6" />
             </div>
           </div>
         </main>
@@ -124,7 +127,7 @@ const Video = () => {
     );
   }
 
-  if (!subscribed) {
+  if (!subscribed && !isAdmin) {
     return (
       <div className="min-h-screen">
         <Navigation />
