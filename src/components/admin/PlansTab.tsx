@@ -405,6 +405,45 @@ export const PlansTab = () => {
     }
   };
 
+  const handleDeleteCoupon = async (couponId: string, couponName: string) => {
+    if (!confirm(`クーポン「${couponName || couponId}」を削除しますか？\n\n※ 使用済みのクーポンは削除できません。`)) {
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData.session?.access_token;
+      if (!accessToken) {
+        throw new Error("ログインが必要です");
+      }
+
+      const { data, error } = await supabase.functions.invoke("delete-coupon", {
+        body: { couponId },
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+
+      if (error) throw error;
+      if (data.error) throw new Error(data.error);
+
+      toast({
+        title: "削除完了",
+        description: `クーポン「${couponName || couponId}」を削除しました`,
+      });
+
+      loadCoupons();
+    } catch (error: any) {
+      toast({
+        title: "エラー",
+        description: error.message || "クーポンの削除に失敗しました。使用済みのクーポンは削除できません。",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const formatPrice = (amount: number, currency: string) => {
     // JPYは最小単位が「円」なので100で割らない。USD、EUR等は「セント」なので100で割る
     const actualAmount = currency.toLowerCase() === 'jpy' ? amount : amount / 100;
@@ -626,14 +665,24 @@ export const PlansTab = () => {
                         コード: <code className="bg-muted px-2 py-1 rounded">{coupon.id}</code>
                       </CardDescription>
                     </div>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => handleEditCoupon(coupon)}
-                      disabled={loading}
-                    >
-                      <Edit className="w-4 h-4" />
-                    </Button>
+                    <div className="flex gap-1">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleEditCoupon(coupon)}
+                        disabled={loading}
+                      >
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleDeleteCoupon(coupon.id, coupon.name || "")}
+                        disabled={loading}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
                   </div>
                 </CardHeader>
                 <CardContent>
