@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import Navigation from "@/components/Navigation";
-import { Upload, Trash2, Edit, Users } from "lucide-react";
+import { Upload, Trash2, Edit, Users, ShieldCheck } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -310,10 +310,16 @@ const AdminDashboard = () => {
 
       if (error) throw error;
 
-      setProfiles(data || []);
+      const sorted = (data || []).sort((a, b) => {
+        const aAdmin = a.user_roles?.some(r => r.role === 'admin') ? 1 : 0;
+        const bAdmin = b.user_roles?.some(r => r.role === 'admin') ? 1 : 0;
+        return bAdmin - aAdmin || new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      });
+
+      setProfiles(sorted);
       toast({
         title: "読み込み完了",
-        description: `${data?.length || 0}件の会員を読み込みました`,
+        description: `${sorted.length}件の会員を読み込みました（管理者${sorted.filter(p => p.user_roles?.some(r => r.role === 'admin')).length}名）`,
       });
     } catch (error: any) {
       toast({
@@ -425,26 +431,15 @@ const AdminDashboard = () => {
           description: "ユーザーの管理者権限を削除しました",
         });
       } else {
-        // Add admin role
+        // Add admin role (idempotent)
         const { error } = await supabase
           .from("user_roles")
-          .insert({
+          .upsert({
             user_id: userId,
             role: "admin",
-          });
+          }, { onConflict: 'user_id,role', ignoreDuplicates: true });
 
-        // Handle duplicate key error (user already has admin role)
-        if (error) {
-          if (error.code === '23505') {
-            toast({
-              title: "既に管理者です",
-              description: "このユーザーは既に管理者権限を持っています",
-            });
-            loadProfiles();
-            return;
-          }
-          throw error;
-        }
+        if (error) throw error;
 
         toast({
           title: "管理者権限を付与しました",
@@ -662,7 +657,13 @@ const AdminDashboard = () => {
                 </div>
               ) : profiles.length > 0 ? (
                 <div>
-                  <h2 className="text-2xl font-light mb-6">会員一覧 ({profiles.length}名)</h2>
+                  <h2 className="text-2xl font-light mb-6 flex items-center gap-3">
+                    会員一覧 ({profiles.length}名)
+                    <span className="inline-flex items-center gap-1 text-sm px-2 py-1 rounded bg-accent text-accent-foreground">
+                      <ShieldCheck className="w-4 h-4" />
+                      管理者 {profiles.filter(p => p.user_roles?.some(r => r.role === 'admin')).length}名
+                    </span>
+                  </h2>
                   <div className="space-y-4">
                     {profiles.map((profile) => {
                       const isAdmin = profile.user_roles?.some(role => role.role === 'admin') || false;
