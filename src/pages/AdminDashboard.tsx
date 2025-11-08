@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import Navigation from "@/components/Navigation";
-import { Upload, Trash2, Edit, Users, ShieldCheck, Search } from "lucide-react";
+import { Upload, Trash2, Edit, Users, ShieldCheck, Search, Key } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -55,6 +55,9 @@ const AdminDashboard = () => {
   });
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<"date" | "email" | "role">("date");
+  const [showPasswordDialog, setShowPasswordDialog] = useState(false);
+  const [passwordChangeUserId, setPasswordChangeUserId] = useState<string | null>(null);
+  const [newPassword, setNewPassword] = useState("");
 
   // Form state
   const [formData, setFormData] = useState({
@@ -497,6 +500,48 @@ const AdminDashboard = () => {
     }
   };
 
+  const handlePasswordChange = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!passwordChangeUserId || !newPassword) return;
+
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("update-user-password", {
+        body: {
+          userId: passwordChangeUserId,
+          newPassword: newPassword,
+        },
+      });
+
+      if (error) throw error;
+      if (data.error) throw new Error(data.error);
+
+      toast({
+        title: "パスワード変更完了",
+        description: "ユーザーのパスワードを変更しました",
+      });
+
+      setShowPasswordDialog(false);
+      setPasswordChangeUserId(null);
+      setNewPassword("");
+    } catch (error: any) {
+      console.error("Password change error:", error);
+      toast({
+        title: "エラー",
+        description: error.message || "パスワードの変更に失敗しました",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const openPasswordDialog = (userId: string) => {
+    setPasswordChangeUserId(userId);
+    setNewPassword("");
+    setShowPasswordDialog(true);
+  };
+
   // Filter and sort profiles
   const filteredProfiles = profiles.filter(profile => {
     const query = searchQuery.toLowerCase();
@@ -841,8 +886,16 @@ const AdminDashboard = () => {
                                       "未設定"
                                     )}
                                   </td>
-                                  <td className="p-4">
+                                   <td className="p-4">
                                     <div className="flex gap-2 justify-end">
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => openPasswordDialog(profile.id)}
+                                        disabled={isLoading}
+                                      >
+                                        <Key className="w-4 h-4" />
+                                      </Button>
                                       <Button
                                         variant={isAdmin ? "destructive" : "default"}
                                         size="sm"
@@ -1074,6 +1127,52 @@ const AdminDashboard = () => {
                 type="button" 
                 variant="outline" 
                 onClick={() => setShowCreateUserDialog(false)}
+                disabled={isLoading}
+              >
+                キャンセル
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Password Change Dialog */}
+      <Dialog open={showPasswordDialog} onOpenChange={setShowPasswordDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>パスワード変更</DialogTitle>
+            <DialogPrimitive.Description className="text-sm text-muted-foreground">
+              ユーザーの新しいパスワードを設定します
+            </DialogPrimitive.Description>
+          </DialogHeader>
+          
+          <form onSubmit={handlePasswordChange} className="space-y-4">
+            <div>
+              <label className="block text-sm mb-2">新しいパスワード</label>
+              <Input
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="新しいパスワード（6文字以上）"
+                required
+                minLength={6}
+              />
+              <p className="text-xs text-muted-foreground mt-2">
+                ※ パスワードは6文字以上で設定してください
+              </p>
+            </div>
+
+            <div className="flex gap-2">
+              <Button type="submit" size="lg" disabled={isLoading} className="flex-1">
+                {isLoading ? "変更中..." : "パスワードを変更"}
+              </Button>
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => {
+                  setShowPasswordDialog(false);
+                  setNewPassword("");
+                }}
                 disabled={isLoading}
               >
                 キャンセル
