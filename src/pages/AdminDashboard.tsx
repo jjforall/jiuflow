@@ -67,6 +67,7 @@ const AdminDashboard = () => {
     category: "pull" as "pull" | "control" | "submission",
   });
   const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [isTranslating, setIsTranslating] = useState(false);
 
   useEffect(() => {
     const checkAuthAndLoad = async () => {
@@ -143,6 +144,56 @@ const AdminDashboard = () => {
       return null;
     }
   };
+
+  const handleTranslate = async (text: string, field: 'name' | 'description') => {
+    if (!text.trim()) return;
+    
+    setIsTranslating(true);
+    try {
+      // Translate to English
+      const enResponse = await supabase.functions.invoke('translate-technique', {
+        body: { text, targetLang: 'en' }
+      });
+
+      if (enResponse.error) throw enResponse.error;
+
+      // Translate to Portuguese
+      const ptResponse = await supabase.functions.invoke('translate-technique', {
+        body: { text, targetLang: 'pt' }
+      });
+
+      if (ptResponse.error) throw ptResponse.error;
+
+      // Update form data with translations
+      if (field === 'name') {
+        setFormData(prev => ({
+          ...prev,
+          name: enResponse.data.translatedText,
+          name_pt: ptResponse.data.translatedText
+        }));
+      } else {
+        setFormData(prev => ({
+          ...prev,
+          description: enResponse.data.translatedText,
+          description_pt: ptResponse.data.translatedText
+        }));
+      }
+
+      toast({
+        title: "翻訳完了",
+        description: "英語とポルトガル語への翻訳が完了しました。必要に応じて編集してください。",
+      });
+    } catch (error: any) {
+      toast({
+        title: "翻訳エラー",
+        description: error.message || "翻訳に失敗しました",
+        variant: "destructive",
+      });
+    } finally {
+      setIsTranslating(false);
+    }
+  };
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -500,14 +551,21 @@ const AdminDashboard = () => {
                   <Input
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    placeholder="自動翻訳後に編集可能"
                     required
                   />
                 </div>
                 <div>
-                  <label className="block text-sm mb-2">Name (JA)</label>
+                  <label className="block text-sm mb-2">Name (JA) *</label>
                   <Input
                     value={formData.name_ja}
                     onChange={(e) => setFormData({ ...formData, name_ja: e.target.value })}
+                    onBlur={(e) => {
+                      if (e.target.value && !formData.name && !formData.name_pt) {
+                        handleTranslate(e.target.value, 'name');
+                      }
+                    }}
+                    placeholder="日本語で入力すると自動翻訳されます"
                     required
                   />
                 </div>
@@ -516,6 +574,7 @@ const AdminDashboard = () => {
                   <Input
                     value={formData.name_pt}
                     onChange={(e) => setFormData({ ...formData, name_pt: e.target.value })}
+                    placeholder="自動翻訳後に編集可能"
                     required
                   />
                 </div>
@@ -527,6 +586,7 @@ const AdminDashboard = () => {
                   <Textarea
                     value={formData.description}
                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    placeholder="自動翻訳後に編集可能"
                   />
                 </div>
                 <div>
@@ -534,6 +594,12 @@ const AdminDashboard = () => {
                   <Textarea
                     value={formData.description_ja}
                     onChange={(e) => setFormData({ ...formData, description_ja: e.target.value })}
+                    onBlur={(e) => {
+                      if (e.target.value && !formData.description && !formData.description_pt) {
+                        handleTranslate(e.target.value, 'description');
+                      }
+                    }}
+                    placeholder="日本語で入力すると自動翻訳されます"
                   />
                 </div>
                 <div>
@@ -541,6 +607,7 @@ const AdminDashboard = () => {
                   <Textarea
                     value={formData.description_pt}
                     onChange={(e) => setFormData({ ...formData, description_pt: e.target.value })}
+                    placeholder="自動翻訳後に編集可能"
                   />
                 </div>
               </div>
@@ -577,9 +644,9 @@ const AdminDashboard = () => {
                 </div>
               </div>
 
-              <Button type="submit" size="lg" disabled={isLoading}>
+              <Button type="submit" size="lg" disabled={isLoading || isTranslating}>
                 <Upload className="w-4 h-4 mr-2" />
-                {isLoading ? "Adding..." : "Add Technique"}
+                {isTranslating ? "翻訳中..." : isLoading ? "追加中..." : "テクニックを追加"}
               </Button>
             </form>
           </div>
