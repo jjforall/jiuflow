@@ -55,6 +55,7 @@ export const PlansTab = () => {
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [editingCoupon, setEditingCoupon] = useState<Coupon | null>(null);
   const [showEditCouponDialog, setShowEditCouponDialog] = useState(false);
+  const [showCreateCouponDialog, setShowCreateCouponDialog] = useState(false);
   
   const [formData, setFormData] = useState({
     name: "",
@@ -66,6 +67,14 @@ export const PlansTab = () => {
 
   const [couponFormData, setCouponFormData] = useState({
     name: "",
+  });
+
+  const [newCouponFormData, setNewCouponFormData] = useState({
+    id: "",
+    name: "",
+    percent_off: "",
+    duration: "once" as "once" | "forever" | "repeating",
+    duration_in_months: "",
   });
 
   useEffect(() => {
@@ -345,6 +354,57 @@ export const PlansTab = () => {
     setShowEditCouponDialog(true);
   };
 
+  const handleCreateCoupon = async () => {
+    setLoading(true);
+
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData.session?.access_token;
+      if (!accessToken) {
+        throw new Error("ログインが必要です");
+      }
+
+      const { data, error } = await supabase.functions.invoke("create-coupon", {
+        body: {
+          id: newCouponFormData.id || undefined,
+          name: newCouponFormData.name,
+          percent_off: newCouponFormData.percent_off ? parseFloat(newCouponFormData.percent_off) : undefined,
+          duration: newCouponFormData.duration,
+          duration_in_months: newCouponFormData.duration === "repeating" && newCouponFormData.duration_in_months
+            ? parseInt(newCouponFormData.duration_in_months)
+            : undefined,
+        },
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+
+      if (error) throw error;
+      if (data.error) throw new Error(data.error);
+
+      toast({
+        title: "クーポン作成完了",
+        description: `クーポン「${newCouponFormData.id || data.coupon.id}」を作成しました`,
+      });
+
+      setShowCreateCouponDialog(false);
+      setNewCouponFormData({
+        id: "",
+        name: "",
+        percent_off: "",
+        duration: "once",
+        duration_in_months: "",
+      });
+      loadCoupons();
+    } catch (error: any) {
+      toast({
+        title: "エラー",
+        description: error.message || "クーポンの作成に失敗しました",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const formatPrice = (amount: number, currency: string) => {
     // JPYは最小単位が「円」なので100で割らない。USD、EUR等は「セント」なので100で割る
     const actualAmount = currency.toLowerCase() === 'jpy' ? amount : amount / 100;
@@ -541,6 +601,14 @@ export const PlansTab = () => {
       </TabsContent>
 
       <TabsContent value="coupons" className="space-y-6">
+        <div className="flex justify-between items-center">
+          <div></div>
+          <Button onClick={() => setShowCreateCouponDialog(true)}>
+            <Plus className="w-4 h-4 mr-2" />
+            新規クーポン作成
+          </Button>
+        </div>
+        
         {coupons.length === 0 ? (
           <div className="text-center py-12 text-muted-foreground">クーポンがまだありません</div>
         ) : (
@@ -633,6 +701,95 @@ export const PlansTab = () => {
               </Button>
               <Button onClick={handleUpdateCoupon} disabled={loading}>
                 {loading ? "更新中..." : "更新"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showCreateCouponDialog} onOpenChange={setShowCreateCouponDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>新規クーポン作成</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm mb-2">クーポンコード（英数字のみ、空欄で自動生成）</label>
+              <Input
+                value={newCouponFormData.id}
+                onChange={(e) => setNewCouponFormData({ ...newCouponFormData, id: e.target.value.toUpperCase() })}
+                placeholder="例: FIRSTMOVE"
+              />
+            </div>
+            <div>
+              <label className="block text-sm mb-2">表示名</label>
+              <Input
+                value={newCouponFormData.name}
+                onChange={(e) => setNewCouponFormData({ ...newCouponFormData, name: e.target.value })}
+                placeholder="例: 1ヶ月無料クーポン"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm mb-2">割引率（%）</label>
+              <Input
+                type="number"
+                value={newCouponFormData.percent_off}
+                onChange={(e) => setNewCouponFormData({ ...newCouponFormData, percent_off: e.target.value })}
+                placeholder="例: 100"
+                min="0"
+                max="100"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm mb-2">期間</label>
+              <Select
+                value={newCouponFormData.duration}
+                onValueChange={(value: any) => setNewCouponFormData({ ...newCouponFormData, duration: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="once">1回のみ</SelectItem>
+                  <SelectItem value="forever">永続</SelectItem>
+                  <SelectItem value="repeating">指定期間</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {newCouponFormData.duration === "repeating" && (
+              <div>
+                <label className="block text-sm mb-2">適用期間（ヶ月）</label>
+                <Input
+                  type="number"
+                  value={newCouponFormData.duration_in_months}
+                  onChange={(e) => setNewCouponFormData({ ...newCouponFormData, duration_in_months: e.target.value })}
+                  placeholder="例: 1"
+                  min="1"
+                  required
+                />
+              </div>
+            )}
+            <div className="flex gap-2 justify-end">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setShowCreateCouponDialog(false);
+                  setNewCouponFormData({
+                    id: "",
+                    name: "",
+                    percent_off: "",
+                    duration: "once",
+                    duration_in_months: "",
+                  });
+                }}
+              >
+                キャンセル
+              </Button>
+              <Button onClick={handleCreateCoupon} disabled={loading}>
+                {loading ? "作成中..." : "作成"}
               </Button>
             </div>
           </div>
