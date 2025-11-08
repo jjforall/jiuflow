@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml">
+  
+  <!-- Homepage -->
+  <url>
+    <loc>https://jiuflow.lovableproject.com/</loc>
+    <lastmod>2025-11-08</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jiuflow.lovableproject.com/?lang=en"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://jiuflow.lovableproject.com/?lang=ja"/>
+    <xhtml:link rel="alternate" hreflang="pt" href="https://jiuflow.lovableproject.com/?lang=pt"/>
+  </url>
+
+  <!-- About Page -->
+  <url>
+    <loc>https://jiuflow.lovableproject.com/about</loc>
+    <lastmod>2025-11-08</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jiuflow.lovableproject.com/about?lang=en"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://jiuflow.lovableproject.com/about?lang=ja"/>
+    <xhtml:link rel="alternate" hreflang="pt" href="https://jiuflow.lovableproject.com/about?lang=pt"/>
+  </url>
+
+  <!-- Map Page -->
+  <url>
+    <loc>https://jiuflow.lovableproject.com/map</loc>
+    <lastmod>2025-11-08</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jiuflow.lovableproject.com/map?lang=en"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://jiuflow.lovableproject.com/map?lang=ja"/>
+    <xhtml:link rel="alternate" hreflang="pt" href="https://jiuflow.lovableproject.com/map?lang=pt"/>
+  </url>
+
+  <!-- Join Page -->
+  <url>
+    <loc>https://jiuflow.lovableproject.com/join</loc>
+    <lastmod>2025-11-08</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://jiuflow.lovableproject.com/join?lang=en"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://jiuflow.lovableproject.com/join?lang=ja"/>
+    <xhtml:link rel="alternate" hreflang="pt" href="https://jiuflow.lovableproject.com/join?lang=pt"/>
+  </url>
+
+  <!-- Login Page -->
+  <url>
+    <loc>https://jiuflow.lovableproject.com/login</loc>
+    <lastmod>2025-11-08</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+
+</urlset>
