@@ -414,29 +414,6 @@ const Join = () => {
             </div>
           </div>
 
-          {/* Email Form */}
-          <div className="border border-border p-8 animate-fade-up">
-            <h3 className="text-2xl font-light mb-4 text-center">
-              {t.join.newsletter.title}
-            </h3>
-            <p className="text-muted-foreground font-light text-center mb-6">
-              {t.join.newsletter.desc}
-            </p>
-            <form onSubmit={handleSubmit} className="flex gap-4">
-              <Input
-                type="email"
-                placeholder={t.join.newsletter.placeholder}
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="flex-1"
-                required
-              />
-              <Button type="submit" variant="default">
-                {t.join.newsletter.cta}
-              </Button>
-            </form>
-          </div>
-
           {/* FAQ */}
           <div className="mt-16 animate-fade-up">
             <h3 className="text-2xl font-light mb-8 text-center border-b border-border pb-4">
