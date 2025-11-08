@@ -11,6 +11,7 @@ import { Upload, Trash2, Edit, Users, ShieldCheck, Search, Key } from "lucide-re
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { PlansTab } from "@/components/admin/PlansTab";
 
 interface Technique {
   id: string;
@@ -575,11 +576,15 @@ const AdminDashboard = () => {
           </div>
 
           <Tabs defaultValue="techniques" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-8">
+            <TabsList className="grid w-full grid-cols-3 mb-8">
               <TabsTrigger value="techniques">テクニック管理</TabsTrigger>
               <TabsTrigger value="users">
                 <Users className="w-4 h-4 mr-2" />
                 会員管理
+              </TabsTrigger>
+              <TabsTrigger value="plans">
+                <ShieldCheck className="w-4 h-4 mr-2" />
+                プラン管理
               </TabsTrigger>
             </TabsList>
 
@@ -1181,6 +1186,10 @@ const AdminDashboard = () => {
           </form>
         </DialogContent>
       </Dialog>
+
+      <TabsContent value="plans">
+        <PlansTab />
+      </TabsContent>
     </div>
   );
 };
