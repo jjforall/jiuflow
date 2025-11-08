@@ -111,6 +111,12 @@ const Map = () => {
       
       <main className="pt-24 md:pt-32 pb-12 md:pb-20 px-4 md:px-6">
         <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-12 md:mb-20 animate-fade-up">
+            <h1 className="text-3xl md:text-5xl lg:text-6xl font-light mb-4 md:mb-6">{t.map.title}</h1>
+            <p className="text-base md:text-xl text-muted-foreground font-light">
+              {t.map.subtitle}
+            </p>
+          </div>
 
           {isCheckingAuth || isLoading || subscriptionLoading ? (
             <div className="animate-fade-in space-y-8">
@@ -183,15 +189,21 @@ const Map = () => {
                             categoryColors[category as keyof typeof categoryColors]
                           } transition-smooth hover:bg-muted overflow-hidden`}
                         >
-                          {tech.thumbnail_url && (
-                            <div className="aspect-video w-full overflow-hidden">
+                          <div className="aspect-video w-full overflow-hidden bg-muted flex items-center justify-center">
+                            {tech.thumbnail_url ? (
                               <img 
                                 src={tech.thumbnail_url} 
                                 alt={getTechniqueName(tech)}
                                 className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  e.currentTarget.style.display = 'none';
+                                  e.currentTarget.parentElement!.innerHTML = '<div class="text-muted-foreground text-4xl">▶</div>';
+                                }}
                               />
-                            </div>
-                          )}
+                            ) : (
+                              <div className="text-muted-foreground text-4xl">▶</div>
+                            )}
+                          </div>
                           <div className="p-4">
                             <div className="font-light text-sm md:text-base">{getTechniqueName(tech)}</div>
                           </div>
