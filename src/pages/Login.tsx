@@ -66,6 +66,20 @@ const Login = () => {
           return;
         }
 
+        if (data.user && !data.session) {
+          // Email confirmation required
+          toast({
+            title: language === "ja" ? "確認メールを送信しました" : language === "pt" ? "E-mail de confirmação enviado" : "Confirmation email sent",
+            description: language === "ja" 
+              ? "メールアドレスに送信された確認リンクをクリックしてください" 
+              : language === "pt" 
+              ? "Clique no link de confirmação enviado para seu e-mail" 
+              : "Please click the confirmation link sent to your email",
+          });
+          setIsLoading(false);
+          return;
+        }
+
         if (data.user) {
           toast({
             title: language === "ja" ? "登録成功" : language === "pt" ? "Registro bem-sucedido" : "Sign up successful",

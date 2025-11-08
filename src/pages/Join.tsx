@@ -122,11 +122,17 @@ const Join = () => {
 
       if (error) throw error;
 
-      // Wait for session to be established
+      // Check if email confirmation is required
       if (!data.session) {
-        throw new Error(language === "ja" 
-          ? "セッションの確立に失敗しました。もう一度お試しください。" 
-          : "Failed to establish session. Please try again.");
+        toast({
+          title: language === "ja" ? "確認メールを送信しました" : "Confirmation email sent",
+          description: language === "ja" 
+            ? "メールアドレスに送信された確認リンクをクリックしてから、再度ログインしてください" 
+            : "Please click the confirmation link sent to your email, then log in again",
+        });
+        setShowSignupModal(false);
+        setIsLoading(false);
+        return;
       }
 
       toast({
