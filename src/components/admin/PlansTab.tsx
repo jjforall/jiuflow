@@ -99,27 +99,50 @@ export const PlansTab = () => {
         throw new Error("ログインが必要です（セッションが見つかりません）");
       }
 
-      const { data, error } = await supabase.functions.invoke("manage-plans", {
-        body: {
-          action: "create",
-          name: formData.name,
-          description: formData.description,
-          priceAmount: parseInt(formData.priceAmount),
-          currency: formData.currency,
-          interval: formData.interval || undefined,
-        },
-        headers: { Authorization: `Bearer ${accessToken}` },
-      });
+      if (editingProduct) {
+        // 更新モード
+        const { data, error } = await supabase.functions.invoke("manage-plans", {
+          body: {
+            action: "update",
+            productId: editingProduct.id,
+            name: formData.name,
+            description: formData.description,
+          },
+          headers: { Authorization: `Bearer ${accessToken}` },
+        });
 
-      if (error) throw error;
-      if (data.error) throw new Error(data.error);
+        if (error) throw error;
+        if (data.error) throw new Error(data.error);
 
-      toast({
-        title: "プラン作成完了",
-        description: "新しいプランを作成しました",
-      });
+        toast({
+          title: "更新完了",
+          description: "プランを更新しました",
+        });
+      } else {
+        // 作成モード
+        const { data, error } = await supabase.functions.invoke("manage-plans", {
+          body: {
+            action: "create",
+            name: formData.name,
+            description: formData.description,
+            priceAmount: parseInt(formData.priceAmount),
+            currency: formData.currency,
+            interval: formData.interval || undefined,
+          },
+          headers: { Authorization: `Bearer ${accessToken}` },
+        });
+
+        if (error) throw error;
+        if (data.error) throw new Error(data.error);
+
+        toast({
+          title: "プラン作成完了",
+          description: "新しいプランを作成しました",
+        });
+      }
 
       setShowCreateDialog(false);
+      setEditingProduct(null);
       setFormData({
         name: "",
         description: "",
@@ -131,12 +154,24 @@ export const PlansTab = () => {
     } catch (error: any) {
       toast({
         title: "エラー",
-        description: error.message || "プランの作成に失敗しました",
+        description: error.message || "処理に失敗しました",
         variant: "destructive",
       });
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleEditProduct = (product: Product) => {
+    setEditingProduct(product);
+    setFormData({
+      name: product.name,
+      description: product.description || "",
+      priceAmount: "",
+      currency: "jpy",
+      interval: "month",
+    });
+    setShowCreateDialog(true);
   };
 
   const handleUpdateProduct = async (productId: string, updates: any) => {
@@ -230,7 +265,19 @@ export const PlansTab = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-light">プラン管理</h2>
-        <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+        <Dialog open={showCreateDialog} onOpenChange={(open) => {
+          setShowCreateDialog(open);
+          if (!open) {
+            setEditingProduct(null);
+            setFormData({
+              name: "",
+              description: "",
+              priceAmount: "",
+              currency: "jpy",
+              interval: "month",
+            });
+          }
+        }}>
           <DialogTrigger asChild>
             <Button>
               <Plus className="w-4 h-4 mr-2" />
@@ -239,7 +286,7 @@ export const PlansTab = () => {
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>新規プラン作成</DialogTitle>
+              <DialogTitle>{editingProduct ? "プラン編集" : "新規プラン作成"}</DialogTitle>
             </DialogHeader>
             <form onSubmit={handleCreatePlan} className="space-y-4">
               <div>
@@ -260,50 +307,54 @@ export const PlansTab = () => {
                   rows={3}
                 />
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm mb-2">価格（円）</label>
-                  <Input
-                    type="number"
-                    value={formData.priceAmount}
-                    onChange={(e) => setFormData({ ...formData, priceAmount: e.target.value })}
-                    placeholder="1000"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm mb-2">通貨</label>
-                  <Select value={formData.currency} onValueChange={(value) => setFormData({ ...formData, currency: value })}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="jpy">JPY (¥)</SelectItem>
-                      <SelectItem value="usd">USD ($)</SelectItem>
-                      <SelectItem value="eur">EUR (€)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm mb-2">請求サイクル</label>
-                <Select value={formData.interval} onValueChange={(value: any) => setFormData({ ...formData, interval: value })}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">一回払い</SelectItem>
-                    <SelectItem value="month">月額</SelectItem>
-                    <SelectItem value="year">年額</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              {!editingProduct && (
+                <>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm mb-2">価格（円）</label>
+                      <Input
+                        type="number"
+                        value={formData.priceAmount}
+                        onChange={(e) => setFormData({ ...formData, priceAmount: e.target.value })}
+                        placeholder="1000"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm mb-2">通貨</label>
+                      <Select value={formData.currency} onValueChange={(value) => setFormData({ ...formData, currency: value })}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="jpy">JPY (¥)</SelectItem>
+                          <SelectItem value="usd">USD ($)</SelectItem>
+                          <SelectItem value="eur">EUR (€)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm mb-2">請求サイクル</label>
+                    <Select value={formData.interval} onValueChange={(value: any) => setFormData({ ...formData, interval: value })}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="">一回払い</SelectItem>
+                        <SelectItem value="month">月額</SelectItem>
+                        <SelectItem value="year">年額</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </>
+              )}
               <div className="flex gap-2 justify-end">
                 <Button type="button" variant="outline" onClick={() => setShowCreateDialog(false)}>
                   キャンセル
                 </Button>
                 <Button type="submit" disabled={loading}>
-                  {loading ? "作成中..." : "作成"}
+                  {loading ? "処理中..." : editingProduct ? "更新" : "作成"}
                 </Button>
               </div>
             </form>
@@ -328,6 +379,14 @@ export const PlansTab = () => {
                     )}
                   </div>
                   <div className="flex gap-1">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => handleEditProduct(product)}
+                      disabled={loading}
+                    >
+                      <Edit className="w-4 h-4" />
+                    </Button>
                     <Button
                       size="sm"
                       variant="ghost"
