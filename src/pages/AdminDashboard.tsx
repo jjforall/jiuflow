@@ -74,7 +74,7 @@ const AdminDashboard = () => {
     description: "",
     description_ja: "",
     description_pt: "",
-    category: "pull" as "pull" | "control" | "submission" | "pass-guard",
+    category: "pull" as "pull" | "control" | "submission" | "guard-pass",
   });
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [isTranslating, setIsTranslating] = useState(false);
@@ -337,7 +337,7 @@ const AdminDashboard = () => {
       description: technique.description || "",
       description_ja: technique.description_ja || "",
       description_pt: technique.description_pt || "",
-      category: technique.category as "pull" | "control" | "submission" | "pass-guard",
+      category: technique.category as "pull" | "control" | "submission" | "guard-pass",
     });
     setShowEditDialog(true);
   };

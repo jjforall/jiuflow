@@ -15,7 +15,7 @@ interface Technique {
   description: string | null;
   description_ja: string | null;
   description_pt: string | null;
-  category: "pull" | "control" | "submission" | "pass-guard";
+  category: "pull" | "control" | "submission" | "guard-pass";
   video_url: string | null;
   display_order: number;
 }
@@ -96,7 +96,7 @@ const Map = () => {
 
   const categoryColors = {
     pull: "border-secondary",
-    "pass-guard": "border-primary",
+    "guard-pass": "border-primary",
     control: "border-accent",
     submission: "border-foreground",
   };
@@ -134,7 +134,7 @@ const Map = () => {
               </div>
               <div className="text-muted-foreground rotate-90 md:rotate-0">→</div>
               <div className="text-center w-full md:w-auto">
-                <div className="text-xs md:text-sm font-light text-muted-foreground mb-2">{t.map.passGuard}</div>
+                <div className="text-xs md:text-sm font-light text-muted-foreground mb-2">{t.map.guardPass}</div>
                 <div className="w-full md:w-24 h-1 bg-primary"></div>
               </div>
               <div className="text-muted-foreground rotate-90 md:rotate-0">→</div>
@@ -151,7 +151,7 @@ const Map = () => {
 
             {/* Techniques Grid */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6 md:gap-8">
-              {["pull", "pass-guard", "control", "submission"].map((category) => (
+              {["pull", "guard-pass", "control", "submission"].map((category) => (
                 <div key={category} className="space-y-3 md:space-y-4">
                   <h3 className="text-base md:text-lg font-light border-b border-border pb-2">
                     {t.map[category as keyof typeof t.map] as string}
