@@ -4,7 +4,7 @@ export const translations = {
       home: "Home",
       map: "Map",
       about: "About",
-      join: "Join",
+      join: "Subscribe",
     },
     home: {
       hero: {
@@ -93,7 +93,7 @@ export const translations = {
       },
     },
     join: {
-      title: "Join",
+      title: "Subscribe",
       subtitle: "まずは「見る」から始めよう。",
       sampleVideo: {
         title: "まずはサンプルを見てみる",
@@ -161,7 +161,7 @@ export const translations = {
       home: "Home",
       map: "Map",
       about: "About",
-      join: "Join",
+      join: "Subscribe",
     },
     home: {
       hero: {
@@ -250,7 +250,7 @@ export const translations = {
       },
     },
     join: {
-      title: "Join",
+      title: "Subscribe",
       subtitle: "Start by watching.",
       sampleVideo: {
         title: "Watch a Sample First",
@@ -325,7 +325,7 @@ export const translations = {
       home: "Início",
       map: "Mapa",
       about: "Sobre",
-      join: "Participar",
+      join: "Assinar",
     },
     home: {
       hero: {
@@ -414,7 +414,7 @@ export const translations = {
       },
     },
     join: {
-      title: "Participar",
+      title: "Assinar",
       subtitle: "Comece assistindo.",
       sampleVideo: {
         title: "Assista uma Amostra Primeiro",
