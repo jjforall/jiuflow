@@ -95,7 +95,7 @@ serve(async (req) => {
       priceId = subscription.items.data[0].price.id;
       
       // Determine plan type based on price ID
-      if (priceId === "price_1SNUnFDqLakc8NxkNzqSs2UR") {
+      if (priceId === "price_1SR3ZmDqLakc8NxkNdqL5BtO") {
         planType = "founder";
       } else if (priceId === "price_1SNQoeDqLakc8NxkEUVTTs3k") {
         planType = "monthly";

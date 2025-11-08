@@ -46,7 +46,7 @@ const useCountdown = () => {
 
 // Stripe price IDs
 const PRICE_IDS = {
-  founder: "price_1SNUnFDqLakc8NxkNzqSs2UR",
+  founder: "price_1SR3ZmDqLakc8NxkNdqL5BtO",
   monthly: "price_1SNQoeDqLakc8NxkEUVTTs3k",
   annual: "price_1SNQoqDqLakc8NxkOaQIL8wX",
 };
@@ -363,7 +363,7 @@ const Join = () => {
                 variant="outline" 
                 className="w-full" 
                 size="lg"
-                onClick={() => handleCheckout(PRICE_IDS.founder, false)}
+                onClick={() => handleCheckout(PRICE_IDS.founder, true)}
                 disabled={isLoading}
               >
                 {t.join.founder?.cta || "Get Founder Access"}
