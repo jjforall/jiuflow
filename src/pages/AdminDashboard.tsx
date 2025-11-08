@@ -652,29 +652,49 @@ const AdminDashboard = () => {
                 <div>
                   <h2 className="text-2xl font-light mb-6">会員一覧 ({profiles.length}名)</h2>
                   <div className="space-y-4">
-                    {profiles.map((profile) => (
-                      <div key={profile.id} className="border border-border p-6">
-                        <div className="flex justify-between items-start">
-                          <div className="flex-1">
-                            <p className="text-sm text-muted-foreground mb-1">メール: {profile.email || "未設定"}</p>
-                            <p className="text-xs text-muted-foreground mb-1">ID: {profile.id}</p>
-                            <p className="text-xs text-muted-foreground mb-1">
-                              登録日: {new Date(profile.created_at).toLocaleDateString("ja-JP")}
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              Stripe ID: {profile.stripe_customer_id || "未設定"}
-                            </p>
+                    {profiles.map((profile) => {
+                      const isAdmin = profile.user_roles?.some(role => role.role === 'admin') || false;
+                      return (
+                        <div key={profile.id} className="border border-border p-6">
+                          <div className="flex justify-between items-start">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-2">
+                                <p className="text-sm text-muted-foreground">メール: {profile.email || "未設定"}</p>
+                                {isAdmin && (
+                                  <span className="px-2 py-1 text-xs bg-primary text-primary-foreground rounded">
+                                    管理者
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-xs text-muted-foreground mb-1">ID: {profile.id}</p>
+                              <p className="text-xs text-muted-foreground mb-1">
+                                登録日: {new Date(profile.created_at).toLocaleDateString("ja-JP")}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                Stripe ID: {profile.stripe_customer_id || "未設定"}
+                              </p>
+                            </div>
+                            <div className="flex gap-2">
+                              <Button
+                                variant={isAdmin ? "destructive" : "default"}
+                                size="sm"
+                                onClick={() => handleToggleAdmin(profile.id, isAdmin)}
+                                disabled={isLoading}
+                              >
+                                {isAdmin ? "管理者解除" : "管理者に設定"}
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleEditProfile(profile)}
+                              >
+                                <Edit className="w-4 h-4" />
+                              </Button>
+                            </div>
                           </div>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleEditProfile(profile)}
-                          >
-                            <Edit className="w-4 h-4" />
-                          </Button>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               ) : (
