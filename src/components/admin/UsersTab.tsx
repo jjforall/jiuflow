@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Users, Search, Key, UserPlus } from "lucide-react";
+import { Users, Search, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Profile, NewUserData } from "@/types/admin";
@@ -13,12 +13,7 @@ import {
   PasswordChangeDialog 
 } from "./dialogs";
 
-interface UsersTabProps {
-  adminPassword: string;
-  setAdminPassword: (password: string) => void;
-}
-
-export const UsersTab = ({ adminPassword, setAdminPassword }: UsersTabProps) => {
+export const UsersTab = () => {
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loadingProfiles, setLoadingProfiles] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -86,19 +81,11 @@ export const UsersTab = ({ adminPassword, setAdminPassword }: UsersTabProps) => 
   };
 
   const handleUpdateProfile = async (profile: Profile) => {
-    if (!adminPassword) {
-      toast.error("エラー", {
-        description: "管理者パスワードが必要です",
-      });
-      return;
-    }
-
     setIsLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke("admin-users", {
         body: {
           action: "update",
-          password: adminPassword,
           id: profile.id,
           stripe_customer_id: profile.stripe_customer_id,
         },
@@ -238,144 +225,122 @@ export const UsersTab = ({ adminPassword, setAdminPassword }: UsersTabProps) => 
   });
 
   return (
-    <div>
-      {/* Admin Password Input */}
-      <div className="mb-8 p-6 border border-border rounded-lg bg-muted/50">
-        <div className="flex items-center gap-2 mb-2">
-          <Key className="h-4 w-4" />
-          <h3 className="font-medium">管理者パスワード</h3>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-semibold">会員管理</h2>
+        <div className="flex gap-2">
+          <Button onClick={loadProfiles} variant="outline" disabled={loadingProfiles}>
+            {loadingProfiles ? "読み込み中..." : "リロード"}
+          </Button>
+          <Button onClick={() => setShowCreateUserDialog(true)}>
+            <UserPlus className="h-4 w-4 mr-2" />
+            新規ユーザー作成
+          </Button>
         </div>
-        <p className="text-sm text-muted-foreground mb-4">
-          会員管理機能を使用するには管理者パスワードを入力してください
-        </p>
-        <Input
-          type="password"
-          placeholder="管理者パスワードを入力..."
-          value={adminPassword}
-          onChange={(e) => setAdminPassword(e.target.value)}
-          className="max-w-md"
-        />
       </div>
 
-      {adminPassword && (
-        <div className="space-y-6">
-          {/* Header */}
-          <div className="flex justify-between items-center">
-            <h2 className="text-2xl font-semibold">会員管理</h2>
-            <div className="flex gap-2">
-              <Button onClick={loadProfiles} variant="outline" disabled={loadingProfiles}>
-                {loadingProfiles ? "読み込み中..." : "リロード"}
-              </Button>
-              <Button onClick={() => setShowCreateUserDialog(true)}>
-                <UserPlus className="h-4 w-4 mr-2" />
-                新規ユーザー作成
-              </Button>
-            </div>
-          </div>
-
-          {/* Search and Sort */}
-          <div className="flex gap-4">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-              <Input
-                type="text"
-                placeholder="メールアドレスまたはStripe IDで検索..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
-              <SelectTrigger className="w-[200px]">
-                <SelectValue placeholder="並び替え" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="date">作成日順</SelectItem>
-                <SelectItem value="email">メール順</SelectItem>
-                <SelectItem value="role">権限順</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Users Table */}
-          <div className="border rounded-lg overflow-hidden">
-            <table className="w-full">
-              <thead className="bg-muted">
-                <tr>
-                  <th className="px-4 py-3 text-left">メールアドレス</th>
-                  <th className="px-4 py-3 text-left">Stripe ID</th>
-                  <th className="px-4 py-3 text-left">権限</th>
-                  <th className="px-4 py-3 text-left">作成日</th>
-                  <th className="px-4 py-3 text-right">アクション</th>
-                </tr>
-              </thead>
-              <tbody>
-                {loadingProfiles ? (
-                  <tr>
-                    <td colSpan={5} className="px-4 py-8 text-center">
-                      読み込み中...
-                    </td>
-                  </tr>
-                ) : filteredProfiles.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">
-                      ユーザーが見つかりませんでした
-                    </td>
-                  </tr>
-                ) : (
-                  filteredProfiles.map((profile) => {
-                    const isAdmin = profile.user_roles?.some(r => r.role === 'admin');
-                    return (
-                      <tr key={profile.id} className="border-t hover:bg-muted/50">
-                        <td className="px-4 py-3">
-                          {profile.email || 'N/A'}
-                        </td>
-                        <td className="px-4 py-3 text-sm text-muted-foreground">
-                          {profile.stripe_customer_id || 'N/A'}
-                        </td>
-                        <td className="px-4 py-3">
-                          <Badge variant={isAdmin ? "default" : "secondary"}>
-                            {isAdmin ? '管理者' : 'ユーザー'}
-                          </Badge>
-                        </td>
-                        <td className="px-4 py-3 text-sm text-muted-foreground">
-                          {new Date(profile.created_at).toLocaleString('ja-JP')}
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className="flex gap-2 justify-end">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleEditProfile(profile)}
-                            >
-                              編集
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => openPasswordDialog(profile.id)}
-                            >
-                              パスワード変更
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant={isAdmin ? "destructive" : "default"}
-                              onClick={() => handleToggleAdmin(profile.id, isAdmin)}
-                              disabled={isLoading}
-                            >
-                              {isAdmin ? '管理者解除' : '管理者にする'}
-                            </Button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
-          </div>
+      {/* Search and Sort */}
+      <div className="flex gap-4">
+        <div className="flex-1 relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+          <Input
+            type="text"
+            placeholder="メールアドレスまたはStripe IDで検索..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10"
+          />
         </div>
-      )}
+        <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
+          <SelectTrigger className="w-[200px]">
+            <SelectValue placeholder="並び替え" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="date">作成日順</SelectItem>
+            <SelectItem value="email">メール順</SelectItem>
+            <SelectItem value="role">権限順</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Users Table */}
+      <div className="border rounded-lg overflow-hidden">
+        <table className="w-full">
+          <thead className="bg-muted">
+            <tr>
+              <th className="px-4 py-3 text-left">メールアドレス</th>
+              <th className="px-4 py-3 text-left">Stripe ID</th>
+              <th className="px-4 py-3 text-left">権限</th>
+              <th className="px-4 py-3 text-left">作成日</th>
+              <th className="px-4 py-3 text-right">アクション</th>
+            </tr>
+          </thead>
+          <tbody>
+            {loadingProfiles ? (
+              <tr>
+                <td colSpan={5} className="px-4 py-8 text-center">
+                  読み込み中...
+                </td>
+              </tr>
+            ) : filteredProfiles.length === 0 ? (
+              <tr>
+                <td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">
+                  ユーザーが見つかりませんでした
+                </td>
+              </tr>
+            ) : (
+              filteredProfiles.map((profile) => {
+                const isAdmin = profile.user_roles?.some(r => r.role === 'admin');
+                return (
+                  <tr key={profile.id} className="border-t hover:bg-muted/50">
+                    <td className="px-4 py-3">
+                      {profile.email || 'N/A'}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-muted-foreground">
+                      {profile.stripe_customer_id || 'N/A'}
+                    </td>
+                    <td className="px-4 py-3">
+                      <Badge variant={isAdmin ? "default" : "secondary"}>
+                        {isAdmin ? '管理者' : 'ユーザー'}
+                      </Badge>
+                    </td>
+                    <td className="px-4 py-3 text-sm text-muted-foreground">
+                      {new Date(profile.created_at).toLocaleString('ja-JP')}
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex gap-2 justify-end">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleEditProfile(profile)}
+                        >
+                          編集
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => openPasswordDialog(profile.id)}
+                        >
+                          パスワード変更
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant={isAdmin ? "destructive" : "default"}
+                          onClick={() => handleToggleAdmin(profile.id, isAdmin)}
+                          disabled={isLoading}
+                        >
+                          {isAdmin ? '管理者解除' : '管理者にする'}
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })
+            )}
+          </tbody>
+        </table>
+      </div>
 
       {/* Dialogs */}
       <CreateUserDialog

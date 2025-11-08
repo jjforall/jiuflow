@@ -16,7 +16,6 @@ import { SubscriptionsTab } from "@/components/admin/SubscriptionsTab";
 const AdminDashboard = () => {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
-  const [adminPassword, setAdminPassword] = useState("");
 
   useEffect(() => {
     const checkAuthAndLoad = async () => {
@@ -100,10 +99,7 @@ const AdminDashboard = () => {
             </TabsContent>
 
             <TabsContent value="users" className="space-y-6">
-              <UsersTab 
-                adminPassword={adminPassword} 
-                setAdminPassword={setAdminPassword}
-              />
+              <UsersTab />
             </TabsContent>
 
             <TabsContent value="subscriptions">
