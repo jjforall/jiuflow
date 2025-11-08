@@ -59,17 +59,30 @@ serve(async (req) => {
       apiVersion: "2025-08-27.basil",
     });
 
-    // Get all active subscriptions
+    // Get all subscriptions with customer expansion only
     const subscriptions = await stripe.subscriptions.list({
       status: 'all',
       limit: 100,
-      expand: ['data.customer', 'data.items.data.price.product'],
+      expand: ['data.customer'],
     });
 
-    const subscriptionList = subscriptions.data.map((sub: Stripe.Subscription) => {
+    // Map subscriptions and fetch product details separately
+    const subscriptionList = await Promise.all(subscriptions.data.map(async (sub: Stripe.Subscription) => {
       const customer = sub.customer as Stripe.Customer;
       const price = sub.items.data[0]?.price;
-      const product = price?.product as Stripe.Product;
+      
+      // Fetch product separately if needed
+      let productName = 'N/A';
+      if (price && typeof price.product === 'string') {
+        try {
+          const product = await stripe.products.retrieve(price.product);
+          productName = product.name;
+        } catch (error) {
+          console.error('Error fetching product:', error);
+        }
+      } else if (price && typeof price.product === 'object') {
+        productName = (price.product as Stripe.Product).name || 'N/A';
+      }
 
       return {
         id: sub.id,
@@ -80,12 +93,12 @@ serve(async (req) => {
         amount: price?.unit_amount ? price.unit_amount / 100 : 0,
         currency: price?.currency || 'jpy',
         interval: price?.recurring?.interval || 'month',
-        product_name: product?.name || 'N/A',
+        product_name: productName,
         current_period_start: new Date(sub.current_period_start * 1000).toISOString(),
         current_period_end: new Date(sub.current_period_end * 1000).toISOString(),
         created: new Date(sub.created * 1000).toISOString(),
       };
-    });
+    }));
 
     return new Response(JSON.stringify({ subscriptions: subscriptionList }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
