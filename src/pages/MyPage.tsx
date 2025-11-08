@@ -40,7 +40,19 @@ const MyPage = () => {
   const checkSubscription = async () => {
     setIsLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke("check-subscription");
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error(language === "ja" ? "ログインが必要です" : "Login required");
+        navigate("/login");
+        return;
+      }
+
+      const { data, error } = await supabase.functions.invoke("check-subscription", {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
+      
       if (error) throw error;
       setSubscription(data);
     } catch (error) {
