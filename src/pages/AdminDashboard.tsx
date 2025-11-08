@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PlansTab } from "@/components/admin/PlansTab";
+import { SubscriptionsTab } from "@/components/admin/SubscriptionsTab";
 
 interface Technique {
   id: string;
@@ -673,11 +674,14 @@ const AdminDashboard = () => {
           </div>
 
           <Tabs defaultValue="techniques" className="w-full">
-            <TabsList className="grid w-full grid-cols-3 mb-8">
+            <TabsList className="grid w-full grid-cols-4 mb-8">
               <TabsTrigger value="techniques">テクニック管理</TabsTrigger>
               <TabsTrigger value="users">
                 <Users className="w-4 h-4 mr-2" />
                 会員管理
+              </TabsTrigger>
+              <TabsTrigger value="subscriptions">
+                サブスク管理
               </TabsTrigger>
               <TabsTrigger value="plans">
                 <ShieldCheck className="w-4 h-4 mr-2" />
@@ -1153,6 +1157,10 @@ const AdminDashboard = () => {
                   </div>
                 );
               })()}
+            </TabsContent>
+
+            <TabsContent value="subscriptions">
+              <SubscriptionsTab />
             </TabsContent>
 
             <TabsContent value="plans">
