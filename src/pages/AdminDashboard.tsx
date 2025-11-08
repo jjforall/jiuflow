@@ -767,7 +767,7 @@ const AdminDashboard = () => {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="pull">Pull (引き込み)</SelectItem>
-                    <SelectItem value="pass-guard">Pass Guard (ガード突破)</SelectItem>
+                    <SelectItem value="guard-pass">Guard Pass (ガード突破)</SelectItem>
                     <SelectItem value="control">Control (コントロール)</SelectItem>
                     <SelectItem value="submission">Submission (一本)</SelectItem>
                   </SelectContent>
@@ -1052,6 +1052,10 @@ const AdminDashboard = () => {
                 );
               })()}
             </TabsContent>
+
+            <TabsContent value="plans">
+              <PlansTab />
+            </TabsContent>
           </Tabs>
         </div>
       </div>
@@ -1126,7 +1130,7 @@ const AdminDashboard = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="pull">Pull (引き込み)</SelectItem>
-                  <SelectItem value="pass-guard">Pass Guard (ガード突破)</SelectItem>
+                  <SelectItem value="guard-pass">Guard Pass (ガード突破)</SelectItem>
                   <SelectItem value="control">Control (コントロール)</SelectItem>
                   <SelectItem value="submission">Submission (一本)</SelectItem>
                 </SelectContent>
@@ -1302,9 +1306,6 @@ const AdminDashboard = () => {
         </DialogContent>
       </Dialog>
 
-      <TabsContent value="plans">
-        <PlansTab />
-      </TabsContent>
     </div>
   );
 };
