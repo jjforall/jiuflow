@@ -81,16 +81,6 @@ const MyPage = () => {
     return date.toLocaleDateString(language === "ja" ? "ja-JP" : language === "pt" ? "pt-BR" : "en-US");
   };
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-muted-foreground">
-          {language === "ja" ? "読み込み中..." : "Loading..."}
-        </p>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen">
       <Navigation />
@@ -106,7 +96,15 @@ const MyPage = () => {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-6 animate-fade-up">
+          {isLoading ? (
+            <div className="text-center py-20 animate-fade-up">
+              <p className="text-muted-foreground">
+                {language === "ja" ? "読み込み中..." : "Loading..."}
+              </p>
+            </div>
+          ) : (
+            <>
+              <div className="grid md:grid-cols-2 gap-6 animate-fade-up">
             {/* User Info Card */}
             <Card>
               <CardHeader>
@@ -192,6 +190,8 @@ const MyPage = () => {
                 : (language === "ja" ? "サブスクリプション情報を更新" : language === "pt" ? "Atualizar informações" : "Refresh Subscription Info")}
             </Button>
           </div>
+            </>
+          )}
         </div>
       </main>
 
