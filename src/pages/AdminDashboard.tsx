@@ -446,6 +446,25 @@ const AdminDashboard = () => {
     }
   };
 
+  // Filter and sort profiles
+  const filteredProfiles = profiles.filter(profile => {
+    const query = searchQuery.toLowerCase();
+    return (
+      profile.email?.toLowerCase().includes(query) ||
+      profile.stripe_customer_id?.toLowerCase().includes(query)
+    );
+  }).sort((a, b) => {
+    if (sortBy === "role") {
+      const aAdmin = a.user_roles?.some(r => r.role === 'admin') ? 1 : 0;
+      const bAdmin = b.user_roles?.some(r => r.role === 'admin') ? 1 : 0;
+      return bAdmin - aAdmin;
+    } else if (sortBy === "email") {
+      return (a.email || '').localeCompare(b.email || '');
+    } else {
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    }
+  });
+
   return (
     <div className="min-h-screen bg-background">
       <Navigation />

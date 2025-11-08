@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { translations } from "@/lib/translations";
 import { Button } from "@/components/ui/button";
-import { Menu, LogIn, User, LogOut } from "lucide-react";
+import { Menu, LogIn, User, LogOut, ShieldCheck } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { supabase } from "@/integrations/supabase/client";
 import { User as SupabaseUser } from "@supabase/supabase-js";
@@ -22,22 +22,42 @@ const Navigation = () => {
   const t = translations[language];
   const [isOpen, setIsOpen] = useState(false);
   const [user, setUser] = useState<SupabaseUser | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         setUser(session?.user ?? null);
+        if (session?.user) {
+          checkAdminStatus(session.user.id);
+        } else {
+          setIsAdmin(false);
+        }
       }
     );
 
     // Check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
+      if (session?.user) {
+        checkAdminStatus(session.user.id);
+      }
     });
 
     return () => subscription.unsubscribe();
   }, []);
+
+  const checkAdminStatus = async (userId: string) => {
+    const { data } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", userId)
+      .eq("role", "admin")
+      .maybeSingle();
+    
+    setIsAdmin(!!data);
+  };
 
   const handleLogout = async () => {
     const { error } = await supabase.auth.signOut();
@@ -101,6 +121,12 @@ const Navigation = () => {
                     <User className="h-4 w-4" />
                     {language === "ja" ? "マイページ" : language === "pt" ? "Minha Página" : "My Page"}
                   </DropdownMenuItem>
+                  {isAdmin && (
+                    <DropdownMenuItem onClick={() => navigate("/admin/dashboard")} className="gap-2 cursor-pointer">
+                      <ShieldCheck className="h-4 w-4" />
+                      {language === "ja" ? "管理画面" : language === "pt" ? "Painel de Administração" : "Admin Dashboard"}
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuItem onClick={handleLogout} className="gap-2 cursor-pointer">
                     <LogOut className="h-4 w-4" />
                     {language === "ja" ? "ログアウト" : language === "pt" ? "Sair" : "Logout"}
@@ -185,6 +211,14 @@ const Navigation = () => {
                           {language === "ja" ? "マイページ" : language === "pt" ? "Minha Página" : "My Page"}
                         </Button>
                       </Link>
+                      {isAdmin && (
+                        <Link to="/admin/dashboard" onClick={() => setIsOpen(false)}>
+                          <Button variant="outline" className="w-full gap-2">
+                            <ShieldCheck className="h-4 w-4" />
+                            {language === "ja" ? "管理画面" : language === "pt" ? "Painel de Administração" : "Admin Dashboard"}
+                          </Button>
+                        </Link>
+                      )}
                       <Button 
                         variant="outline" 
                         className="w-full gap-2"
