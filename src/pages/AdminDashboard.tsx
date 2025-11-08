@@ -433,7 +433,18 @@ const AdminDashboard = () => {
             role: "admin",
           });
 
-        if (error) throw error;
+        // Handle duplicate key error (user already has admin role)
+        if (error) {
+          if (error.code === '23505') {
+            toast({
+              title: "既に管理者です",
+              description: "このユーザーは既に管理者権限を持っています",
+            });
+            loadProfiles();
+            return;
+          }
+          throw error;
+        }
 
         toast({
           title: "管理者権限を付与しました",
@@ -443,9 +454,10 @@ const AdminDashboard = () => {
 
       loadProfiles();
     } catch (error: any) {
+      console.error("Toggle admin error:", error);
       toast({
         title: "エラー",
-        description: error.message,
+        description: error.message || "権限の変更に失敗しました",
         variant: "destructive",
       });
     } finally {
