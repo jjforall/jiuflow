@@ -67,9 +67,3 @@ port = 54321
 
 [analytics]
 enabled = false
-
-[functions.admin-users]
-verify_jwt = false
-
-[functions.update-user-password]
-verify_jwt = false

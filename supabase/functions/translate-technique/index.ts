@@ -13,9 +13,24 @@ serve(async (req) => {
   try {
     const { text, targetLang } = await req.json();
     
+    // Input validation
     if (!text || !targetLang) {
       return new Response(
         JSON.stringify({ error: 'Text and target language are required' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (typeof text !== 'string' || text.length === 0 || text.length > 5000) {
+      return new Response(
+        JSON.stringify({ error: 'Text must be a string between 1 and 5000 characters' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (!['en', 'pt', 'ja'].includes(targetLang)) {
+      return new Response(
+        JSON.stringify({ error: 'Target language must be en, pt, or ja' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
