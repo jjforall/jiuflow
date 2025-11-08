@@ -90,22 +90,35 @@ export const PlansTab = () => {
         throw new Error("管理者としてログインが必要です（セッションが見つかりません）");
       }
 
+      console.log("[PlansTab] Calling manage-plans with action: list");
       const { data, error } = await supabase.functions.invoke("manage-plans", {
         body: { action: "list" },
         headers: { Authorization: `Bearer ${accessToken}` },
       });
+
+      console.log("[PlansTab] Response:", { data, error });
 
       if (error) throw error;
       if ((data as any).error) throw new Error((data as any).error);
 
       // jiuflow関連のプランのみフィルタリング
       const allProducts = (data as any).products || [];
-      const jiuflowProducts = allProducts.filter((product: Product) => 
-        product.prices.some(price => JIUFLOW_PRICE_IDS.includes(price.id))
-      );
+      console.log("[PlansTab] All products count:", allProducts.length);
+      console.log("[PlansTab] JIUFLOW_PRICE_IDS:", JIUFLOW_PRICE_IDS);
       
+      const jiuflowProducts = allProducts.filter((product: Product) => {
+        const hasJiuflowPrice = product.prices.some(price => JIUFLOW_PRICE_IDS.includes(price.id));
+        console.log(`[PlansTab] Product ${product.name} (${product.id}):`, {
+          hasJiuflowPrice,
+          priceIds: product.prices.map(p => p.id)
+        });
+        return hasJiuflowPrice;
+      });
+      
+      console.log("[PlansTab] Filtered jiuflow products count:", jiuflowProducts.length);
       setProducts(jiuflowProducts);
     } catch (error: any) {
+      console.error("[PlansTab] Error:", error);
       toast.error("エラー", {
         description: error.message || "プラン一覧の取得に失敗しました",
       });
