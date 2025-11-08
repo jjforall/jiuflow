@@ -56,21 +56,29 @@ serve(async (req) => {
     logStep("Action requested", { action });
 
     if (action === "list") {
-      // List all products with their prices
-      const products = await stripe.products.list({ active: true, limit: 100 });
-      const productsWithPrices = await Promise.all(
-        products.data.map(async (product: Stripe.Product) => {
-          const prices = await stripe.prices.list({
-            product: product.id,
-            active: true,
-          });
-          return {
-            ...product,
-            prices: prices.data,
-          };
-        })
-      );
+      // List all prices with product expanded (single API call)
+      const prices = await stripe.prices.list({ 
+        active: true, 
+        limit: 100,
+        expand: ['data.product']
+      });
 
+      // Group prices by product
+      const productMap = new Map();
+      prices.data.forEach((price: any) => {
+        const product = price.product;
+        if (typeof product === 'object' && product.active) {
+          if (!productMap.has(product.id)) {
+            productMap.set(product.id, {
+              ...product,
+              prices: []
+            });
+          }
+          productMap.get(product.id).prices.push(price);
+        }
+      });
+
+      const productsWithPrices = Array.from(productMap.values());
       logStep("Products listed", { count: productsWithPrices.length });
 
       return new Response(JSON.stringify({ products: productsWithPrices }), {
