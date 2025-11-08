@@ -11,6 +11,7 @@ import { useSubscription } from "@/hooks/useSubscription";
 import { useAuth } from "@/hooks/useAuth";
 import { Lock } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { VideoPlayer } from "@/components/VideoPlayer";
 
 interface Technique {
   id: string;
@@ -200,14 +201,7 @@ const Video = () => {
         <div className="w-full bg-muted">
           <div className="max-w-6xl mx-auto">
             {technique.video_url ? (
-              <video
-                src={technique.video_url}
-                controls
-                autoPlay
-                className="w-full"
-              >
-                Your browser does not support the video tag.
-              </video>
+              <VideoPlayer videoUrl={technique.video_url} autoPlay />
             ) : (
               <div className="aspect-video flex items-center justify-center">
                 <div className="text-center text-muted-foreground">
