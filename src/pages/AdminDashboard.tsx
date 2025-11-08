@@ -416,36 +416,20 @@ const AdminDashboard = () => {
   const handleToggleAdmin = async (userId: string, isCurrentlyAdmin: boolean) => {
     setIsLoading(true);
     try {
-      if (isCurrentlyAdmin) {
-        // Remove admin role
-        const { error } = await supabase
-          .from("user_roles")
-          .delete()
-          .eq("user_id", userId)
-          .eq("role", "admin");
+      const { data, error } = await supabase.functions.invoke("manage-roles", {
+        body: {
+          targetUserId: userId,
+          makeAdmin: !isCurrentlyAdmin,
+        },
+      });
 
-        if (error) throw error;
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
 
-        toast({
-          title: "管理者権限を削除しました",
-          description: "ユーザーの管理者権限を削除しました",
-        });
-      } else {
-        // Add admin role (idempotent)
-        const { error } = await supabase
-          .from("user_roles")
-          .upsert({
-            user_id: userId,
-            role: "admin",
-          }, { onConflict: 'user_id,role', ignoreDuplicates: true });
-
-        if (error) throw error;
-
-        toast({
-          title: "管理者権限を付与しました",
-          description: "ユーザーを管理者に設定しました",
-        });
-      }
+      toast({
+        title: !isCurrentlyAdmin ? "管理者権限を付与しました" : "管理者権限を削除しました",
+        description: !isCurrentlyAdmin ? "ユーザーを管理者に設定しました" : "ユーザーの管理者権限を削除しました",
+      });
 
       loadProfiles();
     } catch (error: any) {
