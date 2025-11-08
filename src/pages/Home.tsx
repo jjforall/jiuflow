@@ -29,7 +29,6 @@ const Home = () => {
                 <div className="flex flex-col sm:flex-row gap-4 justify-center pt-6">
                   <Skeleton className="h-12 w-[200px] mx-auto sm:mx-0" />
                   <Skeleton className="h-12 w-[200px] mx-auto sm:mx-0" />
-                  <Skeleton className="h-12 w-[200px] mx-auto sm:mx-0" />
                 </div>
               </div>
             </section>
@@ -116,11 +115,6 @@ const Home = () => {
                   <Link to="/login">
                     <Button variant="default" size="lg" className="min-w-[200px]">
                       {language === "ja" ? "ログイン" : language === "pt" ? "Login" : "Login"}
-                    </Button>
-                  </Link>
-                  <Link to="/map">
-                    <Button variant="outline" size="lg" className="min-w-[200px]">
-                      {t.home.hero.viewMap}
                     </Button>
                   </Link>
                   <Link to="/join">
