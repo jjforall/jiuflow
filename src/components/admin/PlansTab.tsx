@@ -49,14 +49,21 @@ export const PlansTab = () => {
   const loadPlans = async () => {
     setLoading(true);
     try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData.session?.access_token;
+      if (!accessToken) {
+        throw new Error("管理者としてログインが必要です（セッションが見つかりません）");
+      }
+
       const { data, error } = await supabase.functions.invoke("manage-plans", {
         body: { action: "list" },
+        headers: { Authorization: `Bearer ${accessToken}` },
       });
 
       if (error) throw error;
-      if (data.error) throw new Error(data.error);
+      if ((data as any).error) throw new Error((data as any).error);
 
-      setProducts(data.products || []);
+      setProducts((data as any).products || []);
     } catch (error: any) {
       toast({
         title: "エラー",
@@ -73,6 +80,12 @@ export const PlansTab = () => {
     setLoading(true);
 
     try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData.session?.access_token;
+      if (!accessToken) {
+        throw new Error("ログインが必要です（セッションが見つかりません）");
+      }
+
       const { data, error } = await supabase.functions.invoke("manage-plans", {
         body: {
           action: "create",
@@ -82,6 +95,7 @@ export const PlansTab = () => {
           currency: formData.currency,
           interval: formData.interval || undefined,
         },
+        headers: { Authorization: `Bearer ${accessToken}` },
       });
 
       if (error) throw error;
@@ -115,12 +129,19 @@ export const PlansTab = () => {
   const handleUpdateProduct = async (productId: string, updates: any) => {
     setLoading(true);
     try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData.session?.access_token;
+      if (!accessToken) {
+        throw new Error("ログインが必要です（セッションが見つかりません）");
+      }
+
       const { data, error } = await supabase.functions.invoke("manage-plans", {
         body: {
           action: "update",
           productId,
           ...updates,
         },
+        headers: { Authorization: `Bearer ${accessToken}` },
       });
 
       if (error) throw error;
@@ -148,11 +169,18 @@ export const PlansTab = () => {
 
     setLoading(true);
     try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData.session?.access_token;
+      if (!accessToken) {
+        throw new Error("ログインが必要です（セッションが見つかりません）");
+      }
+
       const { data, error } = await supabase.functions.invoke("manage-plans", {
         body: {
           action: "archive",
           productId,
         },
+        headers: { Authorization: `Bearer ${accessToken}` },
       });
 
       if (error) throw error;
