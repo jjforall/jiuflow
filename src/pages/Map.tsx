@@ -6,6 +6,9 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { translations } from "@/lib/translations";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useSubscription } from "@/hooks/useSubscription";
+import { Button } from "@/components/ui/button";
+import { Lock } from "lucide-react";
 
 interface Technique {
   id: string;
@@ -25,6 +28,7 @@ const Map = () => {
   const t = translations[language];
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { subscribed, loading: subscriptionLoading } = useSubscription();
   const [selectedTech, setSelectedTech] = useState<Technique | null>(null);
   const [techniques, setTechniques] = useState<Technique[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -114,9 +118,40 @@ const Map = () => {
             </p>
           </div>
 
-          {isCheckingAuth || isLoading ? (
+          {isCheckingAuth || isLoading || subscriptionLoading ? (
             <div className="text-center py-12">
               <p className="text-muted-foreground">{language === "ja" ? "読み込み中..." : language === "pt" ? "Carregando..." : "Loading..."}</p>
+            </div>
+          ) : !subscribed ? (
+            <div className="text-center py-12 animate-fade-up">
+              <div className="max-w-md mx-auto bg-muted/50 border border-border p-8 rounded-lg">
+                <Lock className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
+                <h2 className="text-2xl font-light mb-4">
+                  {language === "ja" 
+                    ? "プレミアムコンテンツ" 
+                    : language === "pt" 
+                    ? "Conteúdo Premium" 
+                    : "Premium Content"}
+                </h2>
+                <p className="text-muted-foreground mb-6">
+                  {language === "ja" 
+                    ? "このコンテンツを閲覧するには、サブスクリプションへの登録が必要です。" 
+                    : language === "pt" 
+                    ? "Para visualizar este conteúdo, você precisa de uma assinatura ativa." 
+                    : "To view this content, you need an active subscription."}
+                </p>
+                <Button 
+                  onClick={() => navigate("/join")}
+                  size="lg"
+                  className="w-full"
+                >
+                  {language === "ja" 
+                    ? "プランを見る" 
+                    : language === "pt" 
+                    ? "Ver Planos" 
+                    : "View Plans"}
+                </Button>
+              </div>
             </div>
           ) : techniques.length === 0 ? (
             <div className="text-center py-12">
@@ -124,7 +159,6 @@ const Map = () => {
             </div>
           ) : (
             <>
-
           {/* Map Flow */}
           <div className="mb-12 md:mb-20">
             <div className="flex flex-col md:flex-row items-center justify-center gap-4 md:gap-8 mb-8 md:mb-12">

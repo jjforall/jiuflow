@@ -7,6 +7,8 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { translations } from "@/lib/translations";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useSubscription } from "@/hooks/useSubscription";
+import { Lock } from "lucide-react";
 
 interface Technique {
   id: string;
@@ -27,6 +29,7 @@ const Video = () => {
   const t = translations[language];
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { subscribed, loading: subscriptionLoading } = useSubscription();
   const [technique, setTechnique] = useState<Technique | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
@@ -101,7 +104,7 @@ const Video = () => {
     }
   };
 
-  if (isCheckingAuth || isLoading) {
+  if (isCheckingAuth || isLoading || subscriptionLoading) {
     return (
       <div className="min-h-screen">
         <Navigation />
@@ -110,6 +113,56 @@ const Video = () => {
             {language === "ja" ? "読み込み中..." : language === "pt" ? "Carregando..." : "Loading..."}
           </p>
         </div>
+      </div>
+    );
+  }
+
+  if (!subscribed) {
+    return (
+      <div className="min-h-screen">
+        <Navigation />
+        <main className="pt-32 pb-20 px-6">
+          <div className="max-w-md mx-auto text-center animate-fade-up">
+            <div className="bg-muted/50 border border-border p-8 rounded-lg">
+              <Lock className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
+              <h1 className="text-2xl font-light mb-4">
+                {language === "ja" 
+                  ? "プレミアムコンテンツ" 
+                  : language === "pt" 
+                  ? "Conteúdo Premium" 
+                  : "Premium Content"}
+              </h1>
+              <p className="text-muted-foreground mb-6">
+                {language === "ja" 
+                  ? "この動画を視聴するには、サブスクリプションへの登録が必要です。" 
+                  : language === "pt" 
+                  ? "Para assistir este vídeo, você precisa de uma assinatura ativa." 
+                  : "To watch this video, you need an active subscription."}
+              </p>
+              <div className="space-y-3">
+                <Button 
+                  onClick={() => navigate("/join")}
+                  size="lg"
+                  className="w-full"
+                >
+                  {language === "ja" 
+                    ? "プランを見る" 
+                    : language === "pt" 
+                    ? "Ver Planos" 
+                    : "View Plans"}
+                </Button>
+                <Button 
+                  variant="outline"
+                  onClick={() => navigate("/map")}
+                  className="w-full"
+                >
+                  {t.video.backToMap}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </main>
+        <Footer />
       </div>
     );
   }
