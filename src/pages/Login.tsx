@@ -18,6 +18,7 @@ const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isSignUp, setIsSignUp] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
@@ -36,7 +37,7 @@ const Login = () => {
     checkAuth();
   }, [navigate, location]);
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
@@ -44,30 +45,62 @@ const Login = () => {
       // Validate input
       loginSchema.parse({ email, password });
 
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (error) {
-        toast({
-          title: language === "ja" ? "ログイン失敗" : language === "pt" ? "Falha no login" : "Login failed",
-          description: error.message,
-          variant: "destructive",
-        });
-        setIsLoading(false);
-        return;
-      }
-
-      if (data.session) {
-        toast({
-          title: language === "ja" ? "ログイン成功" : language === "pt" ? "Login bem-sucedido" : "Login successful",
-          description: language === "ja" ? "ようこそ" : language === "pt" ? "Bem-vindo" : "Welcome",
+      if (isSignUp) {
+        // Sign up flow
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            emailRedirectTo: `${window.location.origin}/`,
+          },
         });
 
-        // Redirect to the page they tried to access, or to map
-        const from = (location.state as any)?.from?.pathname || "/map";
-        navigate(from, { replace: true });
+        if (error) {
+          toast({
+            title: language === "ja" ? "登録失敗" : language === "pt" ? "Falha no registro" : "Sign up failed",
+            description: error.message,
+            variant: "destructive",
+          });
+          setIsLoading(false);
+          return;
+        }
+
+        if (data.user) {
+          toast({
+            title: language === "ja" ? "登録成功" : language === "pt" ? "Registro bem-sucedido" : "Sign up successful",
+            description: language === "ja" ? "アカウントが作成されました" : language === "pt" ? "Conta criada" : "Account created",
+          });
+
+          // Redirect to map after successful signup
+          navigate("/map", { replace: true });
+        }
+      } else {
+        // Login flow
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+
+        if (error) {
+          toast({
+            title: language === "ja" ? "ログイン失敗" : language === "pt" ? "Falha no login" : "Login failed",
+            description: error.message,
+            variant: "destructive",
+          });
+          setIsLoading(false);
+          return;
+        }
+
+        if (data.session) {
+          toast({
+            title: language === "ja" ? "ログイン成功" : language === "pt" ? "Login bem-sucedido" : "Login successful",
+            description: language === "ja" ? "ようこそ" : language === "pt" ? "Bem-vindo" : "Welcome",
+          });
+
+          // Redirect to the page they tried to access, or to map
+          const from = (location.state as any)?.from?.pathname || "/map";
+          navigate(from, { replace: true });
+        }
       }
     } catch (validationError) {
       if (validationError instanceof z.ZodError) {
@@ -90,18 +123,26 @@ const Login = () => {
         <div className="max-w-md mx-auto">
           <div className="text-center mb-12">
             <h1 className="text-4xl font-light mb-4">
-              {language === "ja" ? "ログイン" : language === "pt" ? "Login" : "Login"}
+              {isSignUp 
+                ? (language === "ja" ? "新規登録" : language === "pt" ? "Registrar" : "Sign Up")
+                : (language === "ja" ? "ログイン" : language === "pt" ? "Login" : "Login")}
             </h1>
             <p className="text-muted-foreground font-light">
-              {language === "ja" 
-                ? "動画コンテンツにアクセスするにはログインしてください" 
-                : language === "pt" 
-                ? "Faça login para acessar o conteúdo de vídeo" 
-                : "Login to access video content"}
+              {isSignUp
+                ? (language === "ja" 
+                  ? "アカウントを作成して始めましょう" 
+                  : language === "pt" 
+                  ? "Crie sua conta para começar" 
+                  : "Create your account to get started")
+                : (language === "ja" 
+                  ? "動画コンテンツにアクセスするにはログインしてください" 
+                  : language === "pt" 
+                  ? "Faça login para acessar o conteúdo de vídeo" 
+                  : "Login to access video content")}
             </p>
           </div>
 
-          <form onSubmit={handleLogin} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <Input
                 type="email"
@@ -133,10 +174,34 @@ const Login = () => {
               disabled={isLoading}
             >
               {isLoading 
-                ? (language === "ja" ? "ログイン中..." : language === "pt" ? "Entrando..." : "Logging in...") 
-                : (language === "ja" ? "ログイン" : language === "pt" ? "Entrar" : "Login")}
+                ? (isSignUp
+                  ? (language === "ja" ? "登録中..." : language === "pt" ? "Registrando..." : "Signing up...")
+                  : (language === "ja" ? "ログイン中..." : language === "pt" ? "Entrando..." : "Logging in..."))
+                : (isSignUp
+                  ? (language === "ja" ? "登録" : language === "pt" ? "Registrar" : "Sign Up")
+                  : (language === "ja" ? "ログイン" : language === "pt" ? "Entrar" : "Login"))}
             </Button>
           </form>
+
+          <div className="mt-6 text-center">
+            <button
+              type="button"
+              onClick={() => setIsSignUp(!isSignUp)}
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors font-light"
+            >
+              {isSignUp
+                ? (language === "ja" 
+                  ? "既にアカウントをお持ちですか？ログイン" 
+                  : language === "pt" 
+                  ? "Já tem uma conta? Entrar" 
+                  : "Already have an account? Login")
+                : (language === "ja" 
+                  ? "アカウントをお持ちでないですか？新規登録" 
+                  : language === "pt" 
+                  ? "Não tem uma conta? Registrar" 
+                  : "Don't have an account? Sign up")}
+            </button>
+          </div>
         </div>
       </div>
     </div>
