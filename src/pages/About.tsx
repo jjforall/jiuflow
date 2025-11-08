@@ -2,13 +2,6 @@ import Navigation from "@/components/Navigation";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { translations } from "@/lib/translations";
 
-const team = [
-  { name: "良蔵 Ryozo", role: "Instructor", roleKey: "instructor" },
-  { name: "あい Ai", role: "Director", roleKey: "director" },
-  { name: "濱田 Yuki", role: "Producer", roleKey: "producer" },
-  { name: "野島 Nojima", role: "System", roleKey: "system" },
-];
-
 const About = () => {
   const { language } = useLanguage();
   const t = translations[language];
@@ -26,38 +19,49 @@ const About = () => {
             </p>
           </div>
 
+          {/* Mission */}
           <div className="mb-20 animate-fade-up">
             <div className="prose prose-lg max-w-none">
-              <p className="text-lg font-light text-muted-foreground leading-relaxed mb-6">
-                {t.about.intro1}
-              </p>
-              <p className="text-lg font-light text-muted-foreground leading-relaxed mb-6 whitespace-pre-line">
-                {t.about.intro2}
-              </p>
               <p className="text-lg font-light text-muted-foreground leading-relaxed whitespace-pre-line">
-                {t.about.intro3}
+                {t.about.mission}
               </p>
             </div>
           </div>
 
-          {/* Team */}
-          <div className="animate-fade-up">
-            <h2 className="text-3xl font-light mb-12 text-center border-b border-border pb-4">
-              {t.about.team}
+          {/* Team Roles */}
+          <div className="mb-20 animate-fade-up">
+            <h2 className="text-3xl font-light mb-8 text-center border-b border-border pb-4">
+              {t.about.teamTitle}
             </h2>
-            <div className="grid md:grid-cols-2 gap-8">
-              {team.map((member) => (
+            <div className="grid md:grid-cols-2 gap-6 mb-6">
+              {t.about.teamRoles.map((role, index) => (
                 <div
-                  key={member.name}
-                  className="border border-border p-8 transition-smooth hover:bg-muted"
+                  key={index}
+                  className="border border-border p-6 transition-smooth hover:bg-muted"
                 >
-                  <h3 className="text-2xl font-light mb-2">{member.name}</h3>
-                  <div className="text-sm text-accent mb-4">{member.role}</div>
-                  <p className="font-light text-muted-foreground">
-                    {t.about.roles[member.roleKey as keyof typeof t.about.roles]}
-                  </p>
+                  <p className="font-light text-foreground">{role}</p>
                 </div>
               ))}
+            </div>
+            <p className="text-sm text-muted-foreground text-center font-light">
+              {t.about.teamNote}
+            </p>
+          </div>
+
+          {/* Instructor */}
+          <div className="animate-fade-up">
+            <h2 className="text-3xl font-light mb-8 text-center border-b border-border pb-4">
+              {t.about.instructorTitle}
+            </h2>
+            <div className="border border-border p-8">
+              <h3 className="text-3xl font-light mb-6 text-center">{t.about.instructor.name}</h3>
+              <div className="space-y-4 text-muted-foreground font-light leading-relaxed">
+                <p>{t.about.instructor.birth}</p>
+                <p>{t.about.instructor.achievement1}</p>
+                <p>{t.about.instructor.achievement2}</p>
+                <p>{t.about.instructor.philosophy}</p>
+                <p>{t.about.instructor.approach}</p>
+              </div>
             </div>
           </div>
         </div>
