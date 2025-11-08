@@ -31,6 +31,7 @@ interface Profile {
   created_at: string;
   updated_at: string;
   stripe_customer_id: string | null;
+  user_roles?: Array<{ role: string }>;
 }
 
 const AdminDashboard = () => {
@@ -299,7 +300,12 @@ const AdminDashboard = () => {
     try {
       const { data, error } = await supabase
         .from("profiles")
-        .select("*")
+        .select(`
+          *,
+          user_roles (
+            role
+          )
+        `)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
@@ -390,6 +396,52 @@ const AdminDashboard = () => {
       if (adminPassword) {
         loadProfiles();
       }
+    } catch (error: any) {
+      toast({
+        title: "エラー",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleToggleAdmin = async (userId: string, isCurrentlyAdmin: boolean) => {
+    setIsLoading(true);
+    try {
+      if (isCurrentlyAdmin) {
+        // Remove admin role
+        const { error } = await supabase
+          .from("user_roles")
+          .delete()
+          .eq("user_id", userId)
+          .eq("role", "admin");
+
+        if (error) throw error;
+
+        toast({
+          title: "管理者権限を削除しました",
+          description: "ユーザーの管理者権限を削除しました",
+        });
+      } else {
+        // Add admin role
+        const { error } = await supabase
+          .from("user_roles")
+          .insert({
+            user_id: userId,
+            role: "admin",
+          });
+
+        if (error) throw error;
+
+        toast({
+          title: "管理者権限を付与しました",
+          description: "ユーザーを管理者に設定しました",
+        });
+      }
+
+      loadProfiles();
     } catch (error: any) {
       toast({
         title: "エラー",
