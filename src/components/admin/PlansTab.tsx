@@ -27,6 +27,13 @@ interface Product {
   prices: Price[];
 }
 
+// jiuflow関連のPrice IDsのみを表示
+const JIUFLOW_PRICE_IDS = [
+  "price_1SR3ZmDqLakc8NxkNdqL5BtO", // Founder Access - ¥980/month
+  "price_1SNQoeDqLakc8NxkEUVTTs3k", // Monthly Plan - ¥2,900/month
+  "price_1SNQoqDqLakc8NxkOaQIL8wX", // Annual Plan - ¥29,000/year
+];
+
 export const PlansTab = () => {
   const { toast } = useToast();
   const [products, setProducts] = useState<Product[]>([]);
@@ -63,7 +70,13 @@ export const PlansTab = () => {
       if (error) throw error;
       if ((data as any).error) throw new Error((data as any).error);
 
-      setProducts((data as any).products || []);
+      // jiuflow関連のプランのみフィルタリング
+      const allProducts = (data as any).products || [];
+      const jiuflowProducts = allProducts.filter((product: Product) => 
+        product.prices.some(price => JIUFLOW_PRICE_IDS.includes(price.id))
+      );
+      
+      setProducts(jiuflowProducts);
     } catch (error: any) {
       toast({
         title: "エラー",
