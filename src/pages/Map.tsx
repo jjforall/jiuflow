@@ -7,6 +7,7 @@ import { translations } from "@/lib/translations";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useSubscription } from "@/hooks/useSubscription";
+import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Lock } from "lucide-react";
 
@@ -28,6 +29,7 @@ const Map = () => {
   const t = translations[language];
   const navigate = useNavigate();
   const { subscribed, loading: subscriptionLoading } = useSubscription();
+  const { isAdmin } = useAuth();
   const [selectedTech, setSelectedTech] = useState<Technique | null>(null);
   const [techniques, setTechniques] = useState<Technique[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -131,7 +133,7 @@ const Map = () => {
                 ))}
               </div>
             </div>
-          ) : !subscribed ? (
+          ) : !subscribed && !isAdmin ? (
             <div className="text-center py-12 animate-fade-up">
               <div className="max-w-md mx-auto bg-muted/50 border border-border p-8 rounded-lg">
                 <Lock className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
