@@ -65,6 +65,9 @@ const AdminDashboard = () => {
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
   const [passwordChangeUserId, setPasswordChangeUserId] = useState<string | null>(null);
   const [newPassword, setNewPassword] = useState("");
+  const [techniqueSearchQuery, setTechniqueSearchQuery] = useState("");
+  const [techniqueCategoryFilter, setTechniqueCategoryFilter] = useState<string>("all");
+  const [techniqueSortBy, setTechniqueSortBy] = useState<"order" | "name" | "category">("order");
 
   // Form state
   const [formData, setFormData] = useState({
@@ -820,51 +823,150 @@ const AdminDashboard = () => {
 
           {/* Techniques List */}
           <div>
-            <h2 className="text-2xl font-light mb-6">Existing Techniques</h2>
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-light">テクニック一覧</h2>
+            </div>
 
-            <div className="grid gap-4">
-              {techniques.map((technique) => (
-                <div key={technique.id} className="border border-border p-6">
-                  <div className="flex justify-between items-start mb-4">
-                    <div>
-                      <h3 className="text-xl font-light mb-2">{technique.name}</h3>
-                      <p className="text-sm text-muted-foreground mb-1">{technique.name_ja}</p>
-                      <p className="text-sm text-muted-foreground mb-2">{technique.name_pt}</p>
-                      <span className="inline-block px-3 py-1 text-xs border border-border">
-                        {technique.category}
-                      </span>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleEdit(technique)}
-                      >
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleDelete(technique.id)}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </div>
-                  
-                  {technique.video_url && (
-                    <div className="mt-4">
-                      <video
-                        src={technique.video_url}
-                        controls
-                        className="w-full max-w-2xl rounded border border-border"
-                      >
-                        Your browser does not support the video tag.
-                      </video>
-                    </div>
-                  )}
-                </div>
-              ))}
+            {/* Filters and Search */}
+            <div className="flex gap-4 mb-6">
+              <div className="flex-1">
+                <Input
+                  placeholder="テクニック名で検索..."
+                  value={techniqueSearchQuery}
+                  onChange={(e) => setTechniqueSearchQuery(e.target.value)}
+                />
+              </div>
+              <Select value={techniqueCategoryFilter} onValueChange={setTechniqueCategoryFilter}>
+                <SelectTrigger className="w-[200px]">
+                  <SelectValue placeholder="カテゴリーで絞り込み" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">すべて</SelectItem>
+                  <SelectItem value="pull">Pull</SelectItem>
+                  <SelectItem value="guard-pass">Guard Pass</SelectItem>
+                  <SelectItem value="control">Control</SelectItem>
+                  <SelectItem value="submission">Submission</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={techniqueSortBy} onValueChange={(value: any) => setTechniqueSortBy(value)}>
+                <SelectTrigger className="w-[200px]">
+                  <SelectValue placeholder="並び替え" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="order">表示順</SelectItem>
+                  <SelectItem value="name">名前順</SelectItem>
+                  <SelectItem value="category">カテゴリー順</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Table */}
+            <div className="border border-border rounded-lg overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-border bg-muted/50">
+                      <th className="text-left p-4 font-medium w-20">サムネイル</th>
+                      <th className="text-left p-4 font-medium">名前</th>
+                      <th className="text-left p-4 font-medium w-32">カテゴリー</th>
+                      <th className="text-left p-4 font-medium w-24">順序</th>
+                      <th className="text-right p-4 font-medium w-32">操作</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(() => {
+                      let filtered = techniques.filter(tech => {
+                        const matchesSearch = 
+                          tech.name.toLowerCase().includes(techniqueSearchQuery.toLowerCase()) ||
+                          tech.name_ja.toLowerCase().includes(techniqueSearchQuery.toLowerCase()) ||
+                          tech.name_pt.toLowerCase().includes(techniqueSearchQuery.toLowerCase());
+                        const matchesCategory = techniqueCategoryFilter === "all" || tech.category === techniqueCategoryFilter;
+                        return matchesSearch && matchesCategory;
+                      });
+
+                      filtered = [...filtered].sort((a, b) => {
+                        if (techniqueSortBy === "name") {
+                          return a.name.localeCompare(b.name);
+                        } else if (techniqueSortBy === "category") {
+                          return a.category.localeCompare(b.category) || a.display_order - b.display_order;
+                        } else {
+                          return a.display_order - b.display_order;
+                        }
+                      });
+
+                      return filtered.map((technique, index) => (
+                        <tr 
+                          key={technique.id} 
+                          className={`border-b border-border hover:bg-muted/50 transition-colors ${
+                            index % 2 === 0 ? '' : 'bg-muted/20'
+                          }`}
+                        >
+                          <td className="p-4">
+                            {technique.video_url ? (
+                              <div className="w-16 h-12 rounded overflow-hidden border border-border">
+                                <video
+                                  src={technique.video_url}
+                                  className="w-full h-full object-cover"
+                                />
+                              </div>
+                            ) : (
+                              <div className="w-16 h-12 rounded bg-muted flex items-center justify-center">
+                                <span className="text-xs text-muted-foreground">No video</span>
+                              </div>
+                            )}
+                          </td>
+                          <td className="p-4">
+                            <div>
+                              <p className="font-medium text-sm">{technique.name}</p>
+                              <p className="text-xs text-muted-foreground mt-1">{technique.name_ja}</p>
+                              <p className="text-xs text-muted-foreground">{technique.name_pt}</p>
+                            </div>
+                          </td>
+                          <td className="p-4">
+                            <span className="inline-block px-2 py-1 text-xs border border-border rounded">
+                              {technique.category}
+                            </span>
+                          </td>
+                          <td className="p-4 text-sm text-muted-foreground">
+                            #{technique.display_order}
+                          </td>
+                          <td className="p-4">
+                            <div className="flex gap-2 justify-end">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleEdit(technique)}
+                              >
+                                <Edit className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleDelete(technique.id)}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      ));
+                    })()}
+                  </tbody>
+                </table>
+              </div>
+              <div className="p-4 border-t border-border bg-muted/20 text-sm text-muted-foreground">
+                {(() => {
+                  const filtered = techniques.filter(tech => {
+                    const matchesSearch = 
+                      tech.name.toLowerCase().includes(techniqueSearchQuery.toLowerCase()) ||
+                      tech.name_ja.toLowerCase().includes(techniqueSearchQuery.toLowerCase()) ||
+                      tech.name_pt.toLowerCase().includes(techniqueSearchQuery.toLowerCase());
+                    const matchesCategory = techniqueCategoryFilter === "all" || tech.category === techniqueCategoryFilter;
+                    return matchesSearch && matchesCategory;
+                  });
+                  return `${filtered.length}件 / 全${techniques.length}件`;
+                })()}
+              </div>
             </div>
           </div>
             </TabsContent>
