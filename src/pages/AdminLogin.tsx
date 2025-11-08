@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { translations } from "@/lib/translations";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -18,7 +18,6 @@ const AdminLogin = () => {
   const [showSetup, setShowSetup] = useState(false);
   const [isCheckingSetup, setIsCheckingSetup] = useState(true);
   const navigate = useNavigate();
-  const { toast } = useToast();
 
   useEffect(() => {
     checkIfSetupNeeded();
@@ -60,18 +59,15 @@ const AdminLogin = () => {
       if (error) throw error;
       if (data.error) throw new Error(data.error);
 
-      toast({
-        title: "初期セットアップ完了",
+      toast.success("初期セットアップ完了", {
         description: "管理者アカウントを作成しました。ログインしてください。",
       });
 
       setShowSetup(false);
       checkIfSetupNeeded();
     } catch (error: any) {
-      toast({
-        title: "セットアップ失敗",
+      toast.error("セットアップ失敗", {
         description: error.message,
-        variant: "destructive",
       });
     } finally {
       setIsLoading(false);
@@ -90,10 +86,8 @@ const AdminLogin = () => {
       });
 
       if (error) {
-        toast({
-          title: "Login failed",
+        toast.error("Login failed", {
           description: error.message,
-          variant: "destructive",
         });
         setIsLoading(false);
         return;
@@ -109,27 +103,22 @@ const AdminLogin = () => {
           .maybeSingle();
 
         if (rolesError || !userRoles) {
-          toast({
-            title: "Access denied",
+          toast.error("Access denied", {
             description: "Admin access required",
-            variant: "destructive",
           });
           await supabase.auth.signOut();
           setIsLoading(false);
           return;
         }
 
-        toast({
-          title: "Login successful",
+        toast.success("Login successful", {
           description: "Welcome to admin panel",
         });
         navigate("/admin/dashboard");
       }
     } catch (error: any) {
-      toast({
-        title: "Login failed",
+      toast.error("Login failed", {
         description: error.message,
-        variant: "destructive",
       });
     } finally {
       setIsLoading(false);
@@ -171,12 +160,12 @@ const AdminLogin = () => {
                 <div>
                   <Input
                     type="password"
-                    placeholder="パスワード（6文字以上）"
+                    placeholder="パスワード（12文字以上）"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     className="w-full"
                     required
-                    minLength={6}
+                    minLength={12}
                     disabled={isLoading}
                   />
                 </div>

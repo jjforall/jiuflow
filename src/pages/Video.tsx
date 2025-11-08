@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { translations } from "@/lib/translations";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { useSubscription } from "@/hooks/useSubscription";
 import { Lock } from "lucide-react";
 
@@ -27,7 +27,6 @@ const Video = () => {
   const { id } = useParams<{ id: string }>();
   const { language } = useLanguage();
   const t = translations[language];
-  const { toast } = useToast();
   const navigate = useNavigate();
   const { subscribed, loading: subscriptionLoading } = useSubscription();
   const [technique, setTechnique] = useState<Technique | null>(null);
@@ -69,10 +68,8 @@ const Video = () => {
       .maybeSingle();
 
     if (error) {
-      toast({
-        title: "Error loading technique",
+      toast.error("Error loading technique", {
         description: error.message,
-        variant: "destructive",
       });
       setIsLoading(false);
       return;

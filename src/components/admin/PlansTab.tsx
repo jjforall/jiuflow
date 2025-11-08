@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Plus, Edit, Trash2, Tag } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -47,7 +47,6 @@ const JIUFLOW_PRICE_IDS = [
 ];
 
 export const PlansTab = () => {
-  const { toast } = useToast();
   const [products, setProducts] = useState<Product[]>([]);
   const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [loading, setLoading] = useState(false);
@@ -107,10 +106,8 @@ export const PlansTab = () => {
       
       setProducts(jiuflowProducts);
     } catch (error: any) {
-      toast({
-        title: "エラー",
+      toast.error("エラー", {
         description: error.message || "プラン一覧の取得に失敗しました",
-        variant: "destructive",
       });
     } finally {
       setLoading(false);
@@ -143,8 +140,7 @@ export const PlansTab = () => {
         if (error) throw error;
         if (data.error) throw new Error(data.error);
 
-        toast({
-          title: "更新完了",
+        toast.success("更新完了", {
           description: "プランを更新しました",
         });
       } else {
@@ -164,8 +160,7 @@ export const PlansTab = () => {
         if (error) throw error;
         if (data.error) throw new Error(data.error);
 
-        toast({
-          title: "プラン作成完了",
+        toast.success("プラン作成完了", {
           description: "新しいプランを作成しました",
         });
       }
@@ -181,10 +176,8 @@ export const PlansTab = () => {
       });
       loadPlans();
     } catch (error: any) {
-      toast({
-        title: "エラー",
+      toast.error("エラー", {
         description: error.message || "処理に失敗しました",
-        variant: "destructive",
       });
     } finally {
       setLoading(false);
@@ -224,17 +217,14 @@ export const PlansTab = () => {
       if (error) throw error;
       if (data.error) throw new Error(data.error);
 
-      toast({
-        title: "更新完了",
+      toast.success("更新完了", {
         description: "プランを更新しました",
       });
 
       loadPlans();
     } catch (error: any) {
-      toast({
-        title: "エラー",
+      toast.error("エラー", {
         description: error.message || "プランの更新に失敗しました",
-        variant: "destructive",
       });
     } finally {
       setLoading(false);
@@ -263,17 +253,14 @@ export const PlansTab = () => {
       if (error) throw error;
       if (data.error) throw new Error(data.error);
 
-      toast({
-        title: "アーカイブ完了",
+      toast.success("アーカイブ完了", {
         description: "プランをアーカイブしました",
       });
 
       loadPlans();
     } catch (error: any) {
-      toast({
-        title: "エラー",
+      toast.error("エラー", {
         description: error.message || "プランのアーカイブに失敗しました",
-        variant: "destructive",
       });
     } finally {
       setLoading(false);
@@ -328,8 +315,7 @@ export const PlansTab = () => {
       if (error) throw error;
       if (data.error) throw new Error(data.error);
 
-      toast({
-        title: "更新完了",
+      toast.success("更新完了", {
         description: `クーポン「${couponFormData.name}」に更新しました`,
       });
 
@@ -338,10 +324,8 @@ export const PlansTab = () => {
       setCouponFormData({ name: "" });
       loadCoupons();
     } catch (error: any) {
-      toast({
-        title: "エラー",
+      toast.error("エラー", {
         description: error.message || "クーポンの更新に失敗しました",
-        variant: "destructive",
       });
     } finally {
       setLoading(false);
@@ -380,8 +364,7 @@ export const PlansTab = () => {
       if (error) throw error;
       if (data.error) throw new Error(data.error);
 
-      toast({
-        title: "クーポン作成完了",
+      toast.success("クーポン作成完了", {
         description: `クーポン「${newCouponFormData.id || data.coupon.id}」を作成しました`,
       });
 
@@ -395,10 +378,8 @@ export const PlansTab = () => {
       });
       loadCoupons();
     } catch (error: any) {
-      toast({
-        title: "エラー",
+      toast.error("エラー", {
         description: error.message || "クーポンの作成に失敗しました",
-        variant: "destructive",
       });
     } finally {
       setLoading(false);
@@ -427,17 +408,14 @@ export const PlansTab = () => {
       if (error) throw error;
       if (data.error) throw new Error(data.error);
 
-      toast({
-        title: "削除完了",
+      toast.success("削除完了", {
         description: `クーポン「${couponName || couponId}」を削除しました`,
       });
 
       loadCoupons();
     } catch (error: any) {
-      toast({
-        title: "エラー",
+      toast.error("エラー", {
         description: error.message || "クーポンの削除に失敗しました。使用済みのクーポンは削除できません。",
-        variant: "destructive",
       });
     } finally {
       setLoading(false);

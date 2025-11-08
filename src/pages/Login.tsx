@@ -3,26 +3,24 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { translations } from "@/lib/translations";
 import Footer from "@/components/Footer";
 import Navigation from "@/components/Navigation";
 import { z } from "zod";
-
-const loginSchema = z.object({
-  email: z.string().email("有効なメールアドレスを入力してください"),
-  password: z.string().min(6, "パスワードは6文字以上である必要があります"),
-});
+import { loginFormSchema, signupFormSchema, getPasswordStrength } from "@/lib/validators";
+import { Progress } from "@/components/ui/progress";
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
+  const [passwordStrength, setPasswordStrength] = useState({ score: 0, feedback: [] as string[] });
   const navigate = useNavigate();
   const location = useLocation();
-  const { toast } = useToast();
   const { language } = useLanguage();
   const t = translations[language];
 
@@ -44,7 +42,11 @@ const Login = () => {
 
     try {
       // Validate input
-      loginSchema.parse({ email, password });
+      if (isSignUp) {
+        signupFormSchema.parse({ email, password, confirmPassword });
+      } else {
+        loginFormSchema.parse({ email, password });
+      }
 
       if (isSignUp) {
         // Sign up flow
@@ -57,10 +59,8 @@ const Login = () => {
         });
 
         if (error) {
-          toast({
-            title: language === "ja" ? "登録失敗" : language === "pt" ? "Falha no registro" : "Sign up failed",
+          toast.error(language === "ja" ? "登録失敗" : language === "pt" ? "Falha no registro" : "Sign up failed", {
             description: error.message,
-            variant: "destructive",
           });
           setIsLoading(false);
           return;
@@ -68,8 +68,7 @@ const Login = () => {
 
         if (data.user && !data.session) {
           // Email confirmation required
-          toast({
-            title: language === "ja" ? "確認メールを送信しました" : language === "pt" ? "E-mail de confirmação enviado" : "Confirmation email sent",
+          toast.success(language === "ja" ? "確認メールを送信しました" : language === "pt" ? "E-mail de confirmação enviado" : "Confirmation email sent", {
             description: language === "ja" 
               ? "メールアドレスに送信された確認リンクをクリックしてください" 
               : language === "pt" 
@@ -81,8 +80,7 @@ const Login = () => {
         }
 
         if (data.user) {
-          toast({
-            title: language === "ja" ? "登録成功" : language === "pt" ? "Registro bem-sucedido" : "Sign up successful",
+          toast.success(language === "ja" ? "登録成功" : language === "pt" ? "Registro bem-sucedido" : "Sign up successful", {
             description: language === "ja" ? "アカウントが作成されました" : language === "pt" ? "Conta criada" : "Account created",
           });
 
@@ -97,18 +95,15 @@ const Login = () => {
         });
 
         if (error) {
-          toast({
-            title: language === "ja" ? "ログイン失敗" : language === "pt" ? "Falha no login" : "Login failed",
+          toast.error(language === "ja" ? "ログイン失敗" : language === "pt" ? "Falha no login" : "Login failed", {
             description: error.message,
-            variant: "destructive",
           });
           setIsLoading(false);
           return;
         }
 
         if (data.session) {
-          toast({
-            title: language === "ja" ? "ログイン成功" : language === "pt" ? "Login bem-sucedido" : "Login successful",
+          toast.success(language === "ja" ? "ログイン成功" : language === "pt" ? "Login bem-sucedido" : "Login successful", {
             description: language === "ja" ? "ようこそ" : language === "pt" ? "Bem-vindo" : "Welcome",
           });
 
@@ -119,10 +114,8 @@ const Login = () => {
       }
     } catch (validationError) {
       if (validationError instanceof z.ZodError) {
-        toast({
-          title: language === "ja" ? "入力エラー" : language === "pt" ? "Erro de entrada" : "Input error",
+        toast.error(language === "ja" ? "入力エラー" : language === "pt" ? "Erro de entrada" : "Input error", {
           description: validationError.errors[0].message,
-          variant: "destructive",
         });
       }
     } finally {
@@ -201,7 +194,12 @@ const Login = () => {
           <div className="mt-6 text-center">
             <button
               type="button"
-              onClick={() => setIsSignUp(!isSignUp)}
+              onClick={() => {
+                setIsSignUp(!isSignUp);
+                setPassword("");
+                setConfirmPassword("");
+                setPasswordStrength({ score: 0, feedback: [] });
+              }}
               className="text-sm text-muted-foreground hover:text-foreground transition-colors font-light"
             >
               {isSignUp

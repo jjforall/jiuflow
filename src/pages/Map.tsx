@@ -5,7 +5,7 @@ import Footer from "@/components/Footer";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { translations } from "@/lib/translations";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { useSubscription } from "@/hooks/useSubscription";
 import { Button } from "@/components/ui/button";
 import { Lock } from "lucide-react";
@@ -26,7 +26,6 @@ interface Technique {
 const Map = () => {
   const { language } = useLanguage();
   const t = translations[language];
-  const { toast } = useToast();
   const navigate = useNavigate();
   const { subscribed, loading: subscriptionLoading } = useSubscription();
   const [selectedTech, setSelectedTech] = useState<Technique | null>(null);
@@ -63,10 +62,8 @@ const Map = () => {
       .order("display_order", { ascending: true });
 
     if (error) {
-      toast({
-        title: "Error loading techniques",
+      toast.error("Error loading techniques", {
         description: error.message,
-        variant: "destructive",
       });
       setIsLoading(false);
       return;

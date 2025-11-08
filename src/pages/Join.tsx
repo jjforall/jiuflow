@@ -7,7 +7,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { translations } from "@/lib/translations";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 const useCountdown = () => {
@@ -19,7 +19,8 @@ const useCountdown = () => {
   });
 
   useEffect(() => {
-    const targetDate = new Date("2025-11-30T23:59:59+09:00").getTime();
+    const endDateStr = import.meta.env.VITE_FOUNDER_PLAN_END_DATE || "2025-11-30T23:59:59+09:00";
+    const targetDate = new Date(endDateStr).getTime();
 
     const updateCountdown = () => {
       const now = new Date().getTime();
@@ -68,7 +69,6 @@ const Join = () => {
   const [sampleVideoUrl, setSampleVideoUrl] = useState<string | null>(null);
   const [couponCode, setCouponCode] = useState("");
   const navigate = useNavigate();
-  const { toast } = useToast();
   const [searchParams] = useSearchParams();
 
   // Fetch sample video URL
@@ -90,18 +90,15 @@ const Join = () => {
   // Check for payment status in URL
   useEffect(() => {
     if (searchParams.get("success") === "true") {
-      toast({
-        title: t.join.payment?.success || "Payment successful!",
+      toast.success(t.join.payment?.success || "Payment successful!", {
         description: t.join.payment?.successDesc || "Thank you for your purchase.",
       });
     } else if (searchParams.get("canceled") === "true") {
-      toast({
-        title: t.join.payment?.canceled || "Payment canceled",
+      toast.error(t.join.payment?.canceled || "Payment canceled", {
         description: t.join.payment?.canceledDesc || "Your payment was canceled.",
-        variant: "destructive",
       });
     }
-  }, [searchParams, toast, t.join.payment]);
+  }, [searchParams, t.join.payment]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -124,8 +121,7 @@ const Join = () => {
 
       // Check if email confirmation is required
       if (!data.session) {
-        toast({
-          title: language === "ja" ? "確認メールを送信しました" : "Confirmation email sent",
+        toast.success(language === "ja" ? "確認メールを送信しました" : "Confirmation email sent", {
           description: language === "ja" 
             ? "メールアドレスに送信された確認リンクをクリックしてから、再度ログインしてください" 
             : "Please click the confirmation link sent to your email, then log in again",
@@ -135,8 +131,7 @@ const Join = () => {
         return;
       }
 
-      toast({
-        title: language === "ja" ? "アカウントを作成しました" : "Account created",
+      toast.success(language === "ja" ? "アカウントを作成しました" : "Account created", {
         description: language === "ja" ? "決済ページに移動します..." : "Redirecting to checkout...",
       });
 
@@ -151,10 +146,8 @@ const Join = () => {
       }
     } catch (error: any) {
       console.error("Signup error:", error);
-      toast({
-        title: t.join.payment?.error || "Signup error",
+      toast.error(t.join.payment?.error || "Signup error", {
         description: error.message,
-        variant: "destructive",
       });
     } finally {
       setIsLoading(false);
@@ -175,10 +168,8 @@ const Join = () => {
       }
     } catch (error) {
       console.error("Checkout error:", error);
-      toast({
-        title: t.join.payment?.error || "Payment error",
+      toast.error(t.join.payment?.error || "Payment error", {
         description: t.join.payment?.errorDesc || "An error occurred. Please try again.",
-        variant: "destructive",
       });
     } finally {
       setIsLoading(false);
