@@ -1,10 +1,14 @@
 import Navigation from "@/components/Navigation";
+import Footer from "@/components/Footer";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { translations } from "@/lib/translations";
+import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
 
 const About = () => {
   const { language } = useLanguage();
   const t = translations[language];
+  const navigate = useNavigate();
 
   return (
     <div className="min-h-screen">
@@ -44,8 +48,37 @@ const About = () => {
               </div>
             </div>
           </div>
+
+          {/* CTA Section */}
+          <div className="mt-20 text-center animate-fade-up">
+            <div className="border border-border p-12 bg-muted/30">
+              <h2 className="text-3xl font-light mb-6">始めてみませんか？</h2>
+              <p className="text-muted-foreground mb-8 font-light">
+                柔術を、体系的に。静かに、深く学ぶ。
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <Button
+                  size="lg"
+                  variant="outline"
+                  onClick={() => navigate("/join")}
+                  className="font-light"
+                >
+                  プランを見る
+                </Button>
+                <Button
+                  size="lg"
+                  onClick={() => navigate("/login")}
+                  className="font-light"
+                >
+                  今すぐ始める
+                </Button>
+              </div>
+            </div>
+          </div>
         </div>
       </main>
+      
+      <Footer />
     </div>
   );
 };
