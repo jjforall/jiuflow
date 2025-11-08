@@ -49,9 +49,9 @@ const useCountdown = () => {
 
 // Stripe price IDs
 const PRICE_IDS = {
-  founder: "price_1SR3ZmDqLakc8NxkNdqL5BtO",
-  monthly: "price_1SNQoeDqLakc8NxkEUVTTs3k",
-  annual: "price_1SNQoqDqLakc8NxkOaQIL8wX",
+  founder: "price_1SR3ZmDqLakc8NxkNdqL5BtO", // ¥980/month
+  monthly: "price_1SNQoeDqLakc8NxkEUVTTs3k", // ¥2,900/month
+  annual: "price_1SNQoqDqLakc8NxkOaQIL8wX",  // ¥29,000/year
 };
 
 // Sample video ID
@@ -346,15 +346,15 @@ const Join = () => {
 
               {/* Pricing */}
               <div className="grid md:grid-cols-3 gap-8 mb-16 animate-fade-up">
-                {/* Founder Plan */}
+                {/* Founder Access */}
                 <div className="border border-border p-8">
                   <h3 className="text-2xl font-light mb-4">
-                    {language === "ja" ? "創設者プラン" : language === "pt" ? "Plano Fundador" : "Founder Plan"}
+                    {language === "ja" ? "創設者アクセス" : language === "pt" ? "Acesso Fundador" : "Founder Access"}
                   </h3>
                   <div className="mb-6">
-                    <div className="text-4xl font-light mb-2">¥9,800</div>
+                    <div className="text-4xl font-light mb-2">¥980</div>
                     <div className="text-sm text-muted-foreground font-light">
-                      {language === "ja" ? "買い切り（生涯アクセス）" : language === "pt" ? "Pagamento único (acesso vitalício)" : "One-time (Lifetime Access)"}
+                      {language === "ja" ? "月額（期間限定・永久価格）" : language === "pt" ? "Por mês (preço limitado e permanente)" : "per month (limited time forever)"}
                     </div>
                     <div className="text-xs text-muted-foreground mt-2">
                       {language === "ja" ? "残り" : language === "pt" ? "Restam" : "Remaining"} {countdown.days}
@@ -373,12 +373,12 @@ const Join = () => {
                     </li>
                     <li className="flex items-start">
                       <span className="mr-2">✓</span>
-                      <span>{language === "ja" ? "生涯サポート" : language === "pt" ? "Suporte vitalício" : "Lifetime support"}</span>
+                      <span>{language === "ja" ? "¥980/月を永久に維持" : language === "pt" ? "Manter ¥980/mês para sempre" : "Keep ¥980/month forever"}</span>
                     </li>
                   </ul>
                   <Button
                     className="w-full"
-                    onClick={() => handleCheckout(PRICE_IDS.founder, false)}
+                    onClick={() => handleCheckout(PRICE_IDS.founder, true)}
                     disabled={isLoading}
                   >
                     {language === "ja" ? "今すぐ参加" : language === "pt" ? "Participar agora" : "Join Now"}
@@ -394,7 +394,7 @@ const Join = () => {
                     {language === "ja" ? "月額プラン" : language === "pt" ? "Plano Mensal" : "Monthly Plan"}
                   </h3>
                   <div className="mb-6">
-                    <div className="text-4xl font-light mb-2">¥1,480</div>
+                    <div className="text-4xl font-light mb-2">¥2,900</div>
                     <div className="text-sm text-muted-foreground font-light">
                       {language === "ja" ? "月額（いつでもキャンセル可能）" : language === "pt" ? "Por mês (cancele a qualquer momento)" : "per month (cancel anytime)"}
                     </div>
@@ -428,9 +428,9 @@ const Join = () => {
                     {language === "ja" ? "年額プラン" : language === "pt" ? "Plano Anual" : "Annual Plan"}
                   </h3>
                   <div className="mb-6">
-                    <div className="text-4xl font-light mb-2">¥14,800</div>
+                    <div className="text-4xl font-light mb-2">¥29,000</div>
                     <div className="text-sm text-muted-foreground font-light">
-                      {language === "ja" ? "年額（2ヶ月分お得）" : language === "pt" ? "Por ano (economize 2 meses)" : "per year (save 2 months)"}
+                      {language === "ja" ? "年額（約2ヶ月分お得）" : language === "pt" ? "Por ano (economize cerca de 2 meses)" : "per year (save ~2 months)"}
                     </div>
                   </div>
                   <ul className="space-y-3 mb-6 text-sm font-light">
