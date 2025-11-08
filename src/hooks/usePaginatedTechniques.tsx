@@ -12,6 +12,7 @@ interface Technique {
   description_pt: string | null;
   category: string;
   video_url: string | null;
+  thumbnail_url: string | null;
   display_order: number;
 }
 

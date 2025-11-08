@@ -27,6 +27,7 @@ interface Technique {
   description_pt: string | null;
   category: string;
   video_url: string | null;
+  thumbnail_url: string | null;
   display_order: number;
 }
 
@@ -47,6 +48,7 @@ export const TechniquesManagement = () => {
   const [uploadQueue, setUploadQueue] = useState<UploadProgress[]>([]);
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [isTranslating, setIsTranslating] = useState(false);
+  const [isGeneratingThumbnails, setIsGeneratingThumbnails] = useState(false);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -69,6 +71,63 @@ export const TechniquesManagement = () => {
   const deleteTechnique = useDeleteTechnique();
   const createTechnique = useCreateTechnique();
 
+  const generateThumbnail = async (videoUrl: string): Promise<Blob> => {
+    return new Promise((resolve, reject) => {
+      const video = document.createElement('video');
+      video.crossOrigin = 'anonymous';
+      video.src = videoUrl;
+      
+      video.addEventListener('loadeddata', () => {
+        video.currentTime = 1; // Seek to 1 second
+      });
+      
+      video.addEventListener('seeked', () => {
+        try {
+          const canvas = document.createElement('canvas');
+          canvas.width = video.videoWidth;
+          canvas.height = video.videoHeight;
+          const ctx = canvas.getContext('2d');
+          
+          if (!ctx) {
+            reject(new Error('Could not get canvas context'));
+            return;
+          }
+          
+          ctx.drawImage(video, 0, 0);
+          canvas.toBlob((blob) => {
+            if (blob) {
+              resolve(blob);
+            } else {
+              reject(new Error('Failed to create thumbnail blob'));
+            }
+          }, 'image/jpeg', 0.8);
+        } catch (error) {
+          reject(error);
+        }
+      });
+      
+      video.addEventListener('error', () => {
+        reject(new Error('Failed to load video'));
+      });
+    });
+  };
+
+  const uploadThumbnail = async (thumbnailBlob: Blob, techniqueId: string): Promise<string> => {
+    const filePath = `${techniqueId}.jpg`;
+    
+    const { error: uploadError } = await supabase.storage
+      .from('technique-videos')
+      .upload(`thumbnails/${filePath}`, thumbnailBlob, { upsert: true });
+
+    if (uploadError) throw uploadError;
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('technique-videos')
+      .getPublicUrl(`thumbnails/${filePath}`);
+
+    return publicUrl;
+  };
+
   const handleVideoUpload = async (file: File, techniqueId?: string) => {
     const fileName = file.name;
     const fileExt = fileName.split('.').pop();
@@ -87,7 +146,7 @@ export const TechniquesManagement = () => {
       const progressInterval = setInterval(() => {
         setUploadQueue(prev => prev.map(item => 
           item.fileName === fileName && item.status === 'uploading'
-            ? { ...item, progress: Math.min(item.progress + 20, 90) }
+            ? { ...item, progress: Math.min(item.progress + 10, 80) }
             : item
         ));
       }, 500);
@@ -104,13 +163,32 @@ export const TechniquesManagement = () => {
         .from('technique-videos')
         .getPublicUrl(filePath);
 
+      // Generate thumbnail
+      setUploadQueue(prev => prev.map(item => 
+        item.fileName === fileName 
+          ? { ...item, progress: 90 }
+          : item
+      ));
+
+      let thumbnailUrl: string | null = null;
+      try {
+        const thumbnailBlob = await generateThumbnail(publicUrl);
+        const tempId = techniqueId || crypto.randomUUID();
+        thumbnailUrl = await uploadThumbnail(thumbnailBlob, tempId);
+      } catch (error) {
+        console.error('Failed to generate thumbnail:', error);
+        toast.error('サムネイル生成エラー', {
+          description: 'サムネイルの生成に失敗しましたが、動画はアップロードされました'
+        });
+      }
+
       setUploadQueue(prev => prev.map(item => 
         item.fileName === fileName 
           ? { ...item, progress: 100, status: 'complete' }
           : item
       ));
 
-      return publicUrl;
+      return { videoUrl: publicUrl, thumbnailUrl };
     } catch (error) {
       setUploadQueue(prev => prev.map(item => 
         item.fileName === fileName 
@@ -121,19 +199,66 @@ export const TechniquesManagement = () => {
     }
   };
 
+  const handleGenerateMissingThumbnails = async () => {
+    if (!data?.data) return;
+    
+    const techniquesWithoutThumbnails = data.data.filter(
+      tech => tech.video_url && !tech.thumbnail_url
+    );
+    
+    if (techniquesWithoutThumbnails.length === 0) {
+      toast.info('すべての動画にサムネイルがあります');
+      return;
+    }
+    
+    setIsGeneratingThumbnails(true);
+    let successCount = 0;
+    let failCount = 0;
+    
+    for (const technique of techniquesWithoutThumbnails) {
+      try {
+        const thumbnailBlob = await generateThumbnail(technique.video_url!);
+        const thumbnailUrl = await uploadThumbnail(thumbnailBlob, technique.id);
+        
+        await supabase
+          .from('techniques')
+          .update({ thumbnail_url: thumbnailUrl })
+          .eq('id', technique.id);
+        
+        successCount++;
+      } catch (error) {
+        console.error(`Failed to generate thumbnail for ${technique.name}:`, error);
+        failCount++;
+      }
+    }
+    
+    setIsGeneratingThumbnails(false);
+    
+    toast.success('サムネイル生成完了', {
+      description: `成功: ${successCount}, 失敗: ${failCount}`
+    });
+    
+    // Refresh the list
+    window.location.reload();
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     try {
       let videoUrl = editingTechnique?.video_url;
+      let thumbnailUrl = editingTechnique?.thumbnail_url;
       
       if (videoFile) {
-        videoUrl = await handleVideoUpload(videoFile, editingTechnique?.id);
+        const result = await handleVideoUpload(videoFile, editingTechnique?.id);
+        videoUrl = result.videoUrl;
+        thumbnailUrl = result.thumbnailUrl;
       }
 
       const techniqueData = {
         ...formData,
         video_url: videoUrl,
+        thumbnail_url: thumbnailUrl,
         display_order: editingTechnique?.display_order || 0,
       };
 
@@ -236,10 +361,19 @@ export const TechniquesManagement = () => {
     <div>
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-semibold">技術管理</h2>
-        <Button onClick={() => setShowEditDialog(true)}>
-          <Upload className="h-4 w-4 mr-2" />
-          新規技術追加
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            onClick={handleGenerateMissingThumbnails}
+            variant="outline"
+            disabled={isGeneratingThumbnails}
+          >
+            {isGeneratingThumbnails ? 'サムネイル生成中...' : 'サムネイル一括生成'}
+          </Button>
+          <Button onClick={() => setShowEditDialog(true)}>
+            <Upload className="h-4 w-4 mr-2" />
+            新規技術追加
+          </Button>
+        </div>
       </div>
 
       {/* Search and Filter Controls */}
