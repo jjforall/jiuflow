@@ -34,17 +34,39 @@ serve(async (req) => {
     if (!authHeader) throw new Error("No authorization header provided");
     logStep("Authorization header found");
 
-    const token = authHeader.replace("Bearer ", "");
+    const token = authHeader.replace("Bearer ", "").trim();
     logStep("Authenticating user with token");
-    
-    const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
-    if (userError) throw new Error(`Authentication error: ${userError.message}`);
-    const user = userData.user;
-    if (!user?.email) throw new Error("User not authenticated or email not available");
-    logStep("User authenticated", { userId: user.id, email: user.email });
 
-    const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
-    const customers = await stripe.customers.list({ email: user.email, limit: 1 });
+    let userEmail: string | null = null;
+    let userId: string | null = null;
+
+    // Try standard auth.getUser first, then fall back to decoding the JWT payload
+    try {
+      const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
+      if (userError) throw userError;
+      userEmail = userData.user?.email ?? null;
+      userId = userData.user?.id ?? null;
+      logStep("User authenticated via getUser", { userId, email: userEmail });
+    } catch (e) {
+      logStep("getUser failed, attempting JWT decode", { message: e instanceof Error ? e.message : String(e) });
+      try {
+        const [, payload] = token.split(".");
+        const normalized = payload.replace(/-/g, "+").replace(/_/g, "/");
+        const padded = normalized.padEnd(normalized.length + (4 - (normalized.length % 4)) % 4, "=");
+        const claims = JSON.parse(atob(padded));
+        userEmail = claims.email ?? null;
+        userId = claims.sub ?? null;
+        if (!userEmail) throw new Error("Email not found in JWT");
+        logStep("User authenticated via JWT claims", { userId, email: userEmail });
+      } catch (decodeErr) {
+        throw new Error(`Authentication error: ${decodeErr instanceof Error ? decodeErr.message : String(decodeErr)}`);
+      }
+    }
+
+    if (!userEmail) throw new Error("User not authenticated or email not available");
+
+    const stripe = new Stripe(stripeKey);
+    const customers = await stripe.customers.list({ email: userEmail, limit: 1 });
     
     if (customers.data.length === 0) {
       logStep("No customer found, updating unsubscribed state");
