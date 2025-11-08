@@ -68,6 +68,7 @@ const Join = () => {
   const [pendingIsSubscription, setPendingIsSubscription] = useState(false);
   const [sampleVideoUrl, setSampleVideoUrl] = useState<string | null>(null);
   const [couponCode, setCouponCode] = useState("");
+  const [initialLoading, setInitialLoading] = useState(true);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
@@ -83,6 +84,7 @@ const Join = () => {
       if (data?.video_url) {
         setSampleVideoUrl(data.video_url);
       }
+      setInitialLoading(false);
     };
     fetchSampleVideo();
   }, []);
@@ -191,250 +193,190 @@ const Join = () => {
       
       <main className="pt-32 pb-20 px-6">
         <div className="max-w-3xl mx-auto">
-          <div className="text-center mb-16 animate-fade-up">
-            <h1 className="text-5xl md:text-6xl font-light mb-6">{t.join.title}</h1>
-            <p className="text-xl text-muted-foreground font-light">
-              {t.join.subtitle}
-            </p>
-          </div>
-
-          {/* Sample Video Section */}
-          <div className="border border-border p-8 mb-16 animate-fade-up text-center">
-            <h2 className="text-2xl font-light mb-4">{t.join.sampleVideo.title}</h2>
-            <Button variant="outline" size="lg" onClick={() => setShowVideoModal(true)}>
-              {t.join.sampleVideo.cta}
-            </Button>
-          </div>
-
-          {/* Video Modal */}
-          <Dialog open={showVideoModal} onOpenChange={setShowVideoModal}>
-            <DialogContent className="max-w-4xl">
-              <DialogHeader>
-                <DialogTitle>{t.join.sampleVideo.title}</DialogTitle>
-              </DialogHeader>
-              <div className="aspect-video">
-                {sampleVideoUrl ? (
-                  <video
-                    src={sampleVideoUrl}
-                    className="w-full h-full"
-                    controls
-                    autoPlay
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center bg-muted">
-                    <p className="text-muted-foreground">Loading video...</p>
+          {initialLoading ? (
+            <div className="animate-fade-in space-y-8">
+              <div className="text-center space-y-4">
+                <div className="h-12 w-2/3 bg-muted/50 animate-pulse rounded mx-auto" />
+                <div className="h-6 w-1/2 bg-muted/50 animate-pulse rounded mx-auto" />
+              </div>
+              <div className="border border-border p-8">
+                <div className="h-8 w-1/3 bg-muted/50 animate-pulse rounded mb-4 mx-auto" />
+                <div className="h-10 w-1/2 bg-muted/50 animate-pulse rounded mx-auto" />
+              </div>
+              <div className="grid md:grid-cols-3 gap-8">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="border border-border p-8 space-y-4">
+                    <div className="h-8 w-2/3 bg-muted/50 animate-pulse rounded" />
+                    <div className="h-12 w-full bg-muted/50 animate-pulse rounded" />
+                    <div className="space-y-2">
+                      <div className="h-4 w-full bg-muted/50 animate-pulse rounded" />
+                      <div className="h-4 w-5/6 bg-muted/50 animate-pulse rounded" />
+                      <div className="h-4 w-4/6 bg-muted/50 animate-pulse rounded" />
+                    </div>
                   </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <>
+              <div className="text-center mb-16 animate-fade-up">
+                <h1 className="text-5xl md:text-6xl font-light mb-6">{t.join.title}</h1>
+                <p className="text-xl text-muted-foreground font-light">
+                  {t.join.subtitle}
+                </p>
+              </div>
+
+              {/* Sample Video Section */}
+              <div className="border border-border p-8 mb-16 animate-fade-up text-center">
+                <h2 className="text-2xl font-light mb-4">{t.join.sampleVideo.title}</h2>
+                <Button variant="outline" size="lg" onClick={() => setShowVideoModal(true)}>
+                  {t.join.sampleVideo.cta}
+                </Button>
+              </div>
+
+              {/* Video Modal */}
+              <Dialog open={showVideoModal} onOpenChange={setShowVideoModal}>
+                <DialogContent className="max-w-4xl">
+                  <DialogHeader>
+                    <DialogTitle>{t.join.sampleVideo.title}</DialogTitle>
+                  </DialogHeader>
+                  <div className="aspect-video">
+                    {sampleVideoUrl ? (
+                      <video
+                        src={sampleVideoUrl}
+                        className="w-full h-full"
+                        controls
+                        autoPlay
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-muted">
+                        <p className="text-muted-foreground">Loading video...</p>
+                      </div>
+                    )}
+                  </div>
+                </DialogContent>
+              </Dialog>
+
+              {/* Signup Modal */}
+              <Dialog open={showSignupModal} onOpenChange={setShowSignupModal}>
+                <DialogContent className="max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>
+                      {language === "ja" ? "アカウント作成" : language === "pt" ? "Criar conta" : "Create Account"}
+                    </DialogTitle>
+                  </DialogHeader>
+                  <form onSubmit={handleSignup} className="space-y-4">
+                    <div>
+                      <Input
+                        type="email"
+                        placeholder={language === "ja" ? "メールアドレス" : "Email"}
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Input
+                        type="password"
+                        placeholder={language === "ja" ? "パスワード" : "Password"}
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                        minLength={6}
+                      />
+                    </div>
+                    <Button type="submit" className="w-full" disabled={isLoading}>
+                      {isLoading
+                        ? (language === "ja" ? "作成中..." : "Creating...")
+                        : (language === "ja" ? "アカウントを作成して決済へ" : "Create & Proceed to Checkout")}
+                    </Button>
+                    <p className="text-xs text-muted-foreground text-center">
+                      {language === "ja"
+                        ? "アカウント作成後、自動的に決済ページへ移動します"
+                        : "After creating your account, you'll be redirected to checkout"}
+                    </p>
+                  </form>
+                </DialogContent>
+              </Dialog>
+
+              {/* Coupon Code Section */}
+              <div className="border border-border p-6 mb-8 animate-fade-up">
+                <h3 className="text-lg font-light mb-3 text-center">
+                  {language === "ja" ? "クーポンコードをお持ちの方" : "Have a coupon code?"}
+                </h3>
+                <div className="flex gap-3 max-w-md mx-auto">
+                  <Input
+                    type="text"
+                    placeholder={language === "ja" ? "クーポンコードを入力" : "Enter coupon code"}
+                    value={couponCode}
+                    onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                    className="flex-1"
+                  />
+                  {couponCode && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setCouponCode("")}
+                    >
+                      {language === "ja" ? "クリア" : "Clear"}
+                    </Button>
+                  )}
+                </div>
+                {couponCode && (
+                  <p className="text-xs text-muted-foreground text-center mt-2">
+                    {language === "ja" 
+                      ? "決済時にクーポンコードが適用されます" 
+                      : "Coupon will be applied at checkout"}
+                  </p>
                 )}
               </div>
-            </DialogContent>
-          </Dialog>
 
-          {/* Signup Modal */}
-          <Dialog open={showSignupModal} onOpenChange={setShowSignupModal}>
-            <DialogContent className="max-w-md">
-              <DialogHeader>
-                <DialogTitle>
-                  {language === "ja" ? "アカウント作成" : language === "pt" ? "Criar conta" : "Create Account"}
-                </DialogTitle>
-              </DialogHeader>
-              <form onSubmit={handleSignup} className="space-y-4">
-                <div>
-                  <Input
-                    type="email"
-                    placeholder={language === "ja" ? "メールアドレス" : "Email"}
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                  />
+              {/* Pricing */}
+              <div className="grid md:grid-cols-3 gap-8 mb-16 animate-fade-up">
+                {/* Founder Plan */}
+                <div className="border border-border p-8">
+...
                 </div>
-                <div>
-                  <Input
-                    type="password"
-                    placeholder={language === "ja" ? "パスワード" : "Password"}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    minLength={6}
-                  />
+
+                {/* Monthly */}
+                <div className="border border-foreground p-8 relative">
+...
                 </div>
-                <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading
-                    ? (language === "ja" ? "作成中..." : "Creating...")
-                    : (language === "ja" ? "アカウントを作成して決済へ" : "Create & Proceed to Checkout")}
-                </Button>
-                <p className="text-xs text-muted-foreground text-center">
-                  {language === "ja"
-                    ? "アカウント作成後、自動的に決済ページへ移動します"
-                    : "After creating your account, you'll be redirected to checkout"}
-                </p>
-              </form>
-            </DialogContent>
-          </Dialog>
 
-          {/* Coupon Code Section */}
-          <div className="border border-border p-6 mb-8 animate-fade-up">
-            <h3 className="text-lg font-light mb-3 text-center">
-              {language === "ja" ? "クーポンコードをお持ちの方" : "Have a coupon code?"}
-            </h3>
-            <div className="flex gap-3 max-w-md mx-auto">
-              <Input
-                type="text"
-                placeholder={language === "ja" ? "クーポンコードを入力" : "Enter coupon code"}
-                value={couponCode}
-                onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
-                className="flex-1"
-              />
-              {couponCode && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setCouponCode("")}
-                >
-                  {language === "ja" ? "クリア" : "Clear"}
-                </Button>
-              )}
-            </div>
-            {couponCode && (
-              <p className="text-xs text-muted-foreground text-center mt-2">
-                {language === "ja" 
-                  ? "決済時にクーポンコードが適用されます" 
-                  : "Coupon will be applied at checkout"}
-              </p>
-            )}
-          </div>
-
-          {/* Pricing */}
-          <div className="grid md:grid-cols-3 gap-8 mb-16 animate-fade-up">
-            {/* Founder Plan */}
-            <div className="border border-border p-8">
-              <h2 className="text-2xl font-light mb-4">{t.join.founder?.title || "Founder Plan"}</h2>
-              <div className="text-4xl font-light mb-6">
-                ¥980<span className="text-lg text-muted-foreground">{t.join.founder?.period || "/month lifetime"}</span>
+                {/* Annual */}
+                <div className="border border-border p-8">
+...
+                </div>
               </div>
-              <p className="text-sm text-muted-foreground mb-4">{t.join.founder?.limited || "Limited until end of November"}</p>
-              <div className="bg-muted/50 p-4 mb-4 text-center">
-                <p className="text-xs text-muted-foreground mb-2">{language === "ja" ? "終了まで" : "Ends in"}</p>
-                <div className="flex justify-center gap-2 text-sm">
-                  <div className="flex flex-col items-center">
-                    <span className="font-mono text-lg">{countdown.days}</span>
-                    <span className="text-xs text-muted-foreground">{language === "ja" ? "日" : "days"}</span>
+
+              {/* FAQ */}
+              <div className="mt-16 animate-fade-up">
+                <h3 className="text-2xl font-light mb-8 text-center border-b border-border pb-4">
+                  {t.join.faq.title}
+                </h3>
+                <div className="space-y-6">
+                  <div>
+                    <h4 className="font-light mb-2">{t.join.faq.q1.q}</h4>
+                    <p className="text-muted-foreground font-light text-sm">
+                      {t.join.faq.q1.a}
+                    </p>
                   </div>
-                  <span className="text-lg">:</span>
-                  <div className="flex flex-col items-center">
-                    <span className="font-mono text-lg">{countdown.hours}</span>
-                    <span className="text-xs text-muted-foreground">{language === "ja" ? "時間" : "hrs"}</span>
+                  <div>
+                    <h4 className="font-light mb-2">{t.join.faq.q2.q}</h4>
+                    <p className="text-muted-foreground font-light text-sm">
+                      {t.join.faq.q2.a}
+                    </p>
                   </div>
-                  <span className="text-lg">:</span>
-                  <div className="flex flex-col items-center">
-                    <span className="font-mono text-lg">{countdown.minutes}</span>
-                    <span className="text-xs text-muted-foreground">{language === "ja" ? "分" : "min"}</span>
-                  </div>
-                  <span className="text-lg">:</span>
-                  <div className="flex flex-col items-center">
-                    <span className="font-mono text-lg">{countdown.seconds}</span>
-                    <span className="text-xs text-muted-foreground">{language === "ja" ? "秒" : "sec"}</span>
+                  <div>
+                    <h4 className="font-light mb-2">{t.join.faq.q3.q}</h4>
+                    <p className="text-muted-foreground font-light text-sm">
+                      {t.join.faq.q3.a}
+                    </p>
                   </div>
                 </div>
               </div>
-              <ul className="space-y-3 mb-8 text-muted-foreground font-light">
-                {(t.join.founder?.features || [
-                  "Unlimited access",
-                  "Lifetime ¥500/month",
-                  "Better than one-time"
-                ]).map((feature, i) => (
-                  <li key={i}>• {feature}</li>
-                ))}
-              </ul>
-              <Button 
-                variant="outline" 
-                className="w-full" 
-                size="lg"
-                onClick={() => handleCheckout(PRICE_IDS.founder, true)}
-                disabled={isLoading}
-              >
-                {t.join.founder?.cta || "Get Founder Access"}
-              </Button>
-            </div>
-
-            {/* Monthly */}
-            <div className="border border-foreground p-8 relative">
-              <div className="absolute top-0 right-0 bg-foreground text-background px-4 py-1 text-xs">
-                {t.join.monthly.recommended}
-              </div>
-              <h2 className="text-2xl font-light mb-4">{t.join.monthly.title}</h2>
-              <div className="text-4xl font-light mb-6">
-                {t.join.monthly.price}<span className="text-lg text-muted-foreground">{t.join.monthly.period}</span>
-              </div>
-              <ul className="space-y-3 mb-8 text-muted-foreground font-light">
-                {t.join.monthly.features.map((feature, i) => (
-                  <li key={i}>• {feature}</li>
-                ))}
-              </ul>
-              <Button 
-                variant="default" 
-                className="w-full" 
-                size="lg"
-                onClick={() => handleCheckout(PRICE_IDS.monthly, true)}
-                disabled={isLoading}
-              >
-                {t.join.monthly.cta}
-              </Button>
-            </div>
-
-            {/* Annual */}
-            <div className="border border-border p-8">
-              <h2 className="text-2xl font-light mb-4">{t.join.annual?.title || "Annual Plan"}</h2>
-              <div className="text-4xl font-light mb-6">
-                ¥29,000<span className="text-lg text-muted-foreground">{t.join.annual?.period || "/year"}</span>
-              </div>
-              <p className="text-sm text-muted-foreground mb-4">{t.join.annual?.savings || "Save 17% vs monthly"}</p>
-              <ul className="space-y-3 mb-8 text-muted-foreground font-light">
-                {(t.join.annual?.features || [
-                  "All monthly features",
-                  "Annual billing",
-                  "Best value"
-                ]).map((feature, i) => (
-                  <li key={i}>• {feature}</li>
-                ))}
-              </ul>
-              <Button 
-                variant="outline" 
-                className="w-full" 
-                size="lg"
-                onClick={() => handleCheckout(PRICE_IDS.annual, true)}
-                disabled={isLoading}
-              >
-                {t.join.annual?.cta || "Subscribe Annually"}
-              </Button>
-            </div>
-          </div>
-
-          {/* FAQ */}
-          <div className="mt-16 animate-fade-up">
-            <h3 className="text-2xl font-light mb-8 text-center border-b border-border pb-4">
-              {t.join.faq.title}
-            </h3>
-            <div className="space-y-6">
-              <div>
-                <h4 className="font-light mb-2">{t.join.faq.q1.q}</h4>
-                <p className="text-muted-foreground font-light text-sm">
-                  {t.join.faq.q1.a}
-                </p>
-              </div>
-              <div>
-                <h4 className="font-light mb-2">{t.join.faq.q2.q}</h4>
-                <p className="text-muted-foreground font-light text-sm">
-                  {t.join.faq.q2.a}
-                </p>
-              </div>
-              <div>
-                <h4 className="font-light mb-2">{t.join.faq.q3.q}</h4>
-                <p className="text-muted-foreground font-light text-sm">
-                  {t.join.faq.q3.a}
-                </p>
-              </div>
-            </div>
-          </div>
+            </>
+          )}
         </div>
       </main>
       <Footer />
