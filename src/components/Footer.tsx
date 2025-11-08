@@ -44,23 +44,10 @@ const Footer = () => {
           </div>
           
           <div>
-            <h4 className="font-light mb-4 text-sm">Contact</h4>
+            <h4 className="font-light mb-4 text-sm">Social</h4>
             <ul className="space-y-2 text-sm text-muted-foreground">
-              <li>Email: info@bjj.example</li>
               <li>Instagram: @brotherhoodbjj</li>
             </ul>
-          </div>
-          
-          <div>
-            <h4 className="font-light mb-4 text-sm">Admin</h4>
-            <Link 
-              to="/admin" 
-              className="text-sm text-muted-foreground hover:text-foreground transition-smooth"
-            >
-              {language === "ja" && "管理画面"}
-              {language === "en" && "Admin Panel"}
-              {language === "pt" && "Painel Admin"}
-            </Link>
           </div>
         </div>
         
