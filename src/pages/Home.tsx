@@ -114,8 +114,16 @@ const Home = () => {
 
             <div className="grid md:grid-cols-3 gap-12">
               <div className="text-center">
-                <div className="w-16 h-16 mx-auto mb-6 border border-border flex items-center justify-center">
-                  <span className="text-2xl">📹</span>
+                <div className="w-20 h-20 mx-auto mb-6 rounded-lg overflow-hidden relative">
+                  <img 
+                    src={images[0]?.url || "/placeholder.svg"} 
+                    alt="4K Overhead View"
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-black/40" />
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <span className="text-3xl font-light text-white drop-shadow-lg">📹</span>
+                  </div>
                 </div>
                 <h3 className="text-xl font-light mb-3">{t.home.clarity.overhead.title}</h3>
                 <p className="text-muted-foreground font-light whitespace-pre-line">
@@ -124,8 +132,16 @@ const Home = () => {
               </div>
 
               <div className="text-center">
-                <div className="w-16 h-16 mx-auto mb-6 border border-border flex items-center justify-center">
-                  <span className="text-2xl">🗺️</span>
+                <div className="w-20 h-20 mx-auto mb-6 rounded-lg overflow-hidden relative">
+                  <img 
+                    src={images[1]?.url || "/placeholder.svg"} 
+                    alt="Systematic Map"
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-black/40" />
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <span className="text-3xl font-light text-white drop-shadow-lg">🗺️</span>
+                  </div>
                 </div>
                 <h3 className="text-xl font-light mb-3">{t.home.clarity.systematic.title}</h3>
                 <p className="text-muted-foreground font-light whitespace-pre-line">
@@ -134,8 +150,16 @@ const Home = () => {
               </div>
 
               <div className="text-center">
-                <div className="w-16 h-16 mx-auto mb-6 border border-border flex items-center justify-center">
-                  <span className="text-2xl">🎯</span>
+                <div className="w-20 h-20 mx-auto mb-6 rounded-lg overflow-hidden relative">
+                  <img 
+                    src={images[2]?.url || "/placeholder.svg"} 
+                    alt="Focused Learning"
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-black/40" />
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <span className="text-3xl font-light text-white drop-shadow-lg">🎯</span>
+                  </div>
                 </div>
                 <h3 className="text-xl font-light mb-3">{t.home.clarity.focused.title}</h3>
                 <p className="text-muted-foreground font-light whitespace-pre-line">
