@@ -1,16 +1,53 @@
-import { Link, useLocation } from "react-router-dom";
-import { useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { translations } from "@/lib/translations";
 import { Button } from "@/components/ui/button";
-import { Menu, LogIn } from "lucide-react";
+import { Menu, LogIn, User, LogOut } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { supabase } from "@/integrations/supabase/client";
+import { User as SupabaseUser } from "@supabase/supabase-js";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { toast } from "sonner";
 
 const Navigation = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const { language, setLanguage } = useLanguage();
   const t = translations[language];
   const [isOpen, setIsOpen] = useState(false);
+  const [user, setUser] = useState<SupabaseUser | null>(null);
+
+  useEffect(() => {
+    // Set up auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        setUser(session?.user ?? null);
+      }
+    );
+
+    // Check for existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const handleLogout = async () => {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      toast.error("ログアウトに失敗しました");
+    } else {
+      toast.success("ログアウトしました");
+      navigate("/");
+    }
+  };
 
   const links = [
     { to: "/", label: t.nav.home },
@@ -51,12 +88,29 @@ const Navigation = () => {
             
             <span className="text-muted-foreground">|</span>
             
-            <Link to="/login">
-              <Button variant="ghost" size="sm" className="gap-2">
-                <LogIn className="h-4 w-4" />
-                {language === "ja" ? "ログイン" : language === "pt" ? "Login" : "Login"}
-              </Button>
-            </Link>
+            {user ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm" className="gap-2">
+                    <User className="h-4 w-4" />
+                    {language === "ja" ? "マイページ" : language === "pt" ? "Minha Página" : "My Page"}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={handleLogout} className="gap-2 cursor-pointer">
+                    <LogOut className="h-4 w-4" />
+                    {language === "ja" ? "ログアウト" : language === "pt" ? "Sair" : "Logout"}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <Link to="/login">
+                <Button variant="ghost" size="sm" className="gap-2">
+                  <LogIn className="h-4 w-4" />
+                  {language === "ja" ? "ログイン" : language === "pt" ? "Login" : "Login"}
+                </Button>
+              </Link>
+            )}
             
             <div className="flex items-center gap-2 border-l border-border pl-6">
               {languages.map((lang) => (
@@ -119,12 +173,26 @@ const Navigation = () => {
                 ))}
                 
                 <div className="border-t border-border pt-6">
-                  <Link to="/login" onClick={() => setIsOpen(false)}>
-                    <Button variant="outline" className="w-full gap-2">
-                      <LogIn className="h-4 w-4" />
-                      {language === "ja" ? "ログイン" : language === "pt" ? "Login" : "Login"}
+                  {user ? (
+                    <Button 
+                      variant="outline" 
+                      className="w-full gap-2"
+                      onClick={() => {
+                        handleLogout();
+                        setIsOpen(false);
+                      }}
+                    >
+                      <LogOut className="h-4 w-4" />
+                      {language === "ja" ? "ログアウト" : language === "pt" ? "Sair" : "Logout"}
                     </Button>
-                  </Link>
+                  ) : (
+                    <Link to="/login" onClick={() => setIsOpen(false)}>
+                      <Button variant="outline" className="w-full gap-2">
+                        <LogIn className="h-4 w-4" />
+                        {language === "ja" ? "ログイン" : language === "pt" ? "Login" : "Login"}
+                      </Button>
+                    </Link>
+                  )}
                 </div>
               </nav>
             </SheetContent>
