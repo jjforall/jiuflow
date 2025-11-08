@@ -57,7 +57,12 @@ export const usePaginatedTechniques = (
       }
 
       // Apply sorting
-      const sortColumn = filters.sortBy || 'display_order';
+      const sortByMapping = {
+        'order': 'display_order',
+        'name': 'name',
+        'category': 'category'
+      };
+      const sortColumn = sortByMapping[filters.sortBy as keyof typeof sortByMapping] || 'display_order';
       const sortDirection = filters.sortDirection || 'asc';
       query = query.order(sortColumn, { ascending: sortDirection === 'asc' });
 
