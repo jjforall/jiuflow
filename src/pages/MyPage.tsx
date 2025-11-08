@@ -97,10 +97,18 @@ const MyPage = () => {
           </div>
 
           {isLoading ? (
-            <div className="text-center py-20 animate-fade-up">
-              <p className="text-muted-foreground">
-                {language === "ja" ? "読み込み中..." : "Loading..."}
-              </p>
+            <div className="animate-fade-in space-y-8">
+              <div className="grid md:grid-cols-2 gap-6">
+                {[1, 2].map((i) => (
+                  <div key={i} className="space-y-4 border border-border rounded-lg p-6">
+                    <div className="h-6 w-1/3 bg-muted/50 animate-pulse rounded" />
+                    <div className="space-y-3">
+                      <div className="h-4 w-full bg-muted/50 animate-pulse rounded" />
+                      <div className="h-4 w-3/4 bg-muted/50 animate-pulse rounded" />
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           ) : (
             <>

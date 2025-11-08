@@ -105,11 +105,21 @@ const Video = () => {
     return (
       <div className="min-h-screen">
         <Navigation />
-        <div className="pt-32 text-center">
-          <p className="text-muted-foreground">
-            {language === "ja" ? "読み込み中..." : language === "pt" ? "Carregando..." : "Loading..."}
-          </p>
-        </div>
+        <main className="pt-32 pb-20 px-6 animate-fade-in">
+          <div className="max-w-4xl mx-auto space-y-8">
+            <div className="space-y-4">
+              <div className="h-10 w-1/3 bg-muted/50 animate-pulse rounded" />
+              <div className="h-6 w-1/2 bg-muted/50 animate-pulse rounded" />
+            </div>
+            <div className="aspect-video w-full bg-muted/50 animate-pulse rounded-lg" />
+            <div className="space-y-3">
+              <div className="h-4 w-full bg-muted/50 animate-pulse rounded" />
+              <div className="h-4 w-5/6 bg-muted/50 animate-pulse rounded" />
+              <div className="h-4 w-4/6 bg-muted/50 animate-pulse rounded" />
+            </div>
+          </div>
+        </main>
+        <Footer />
       </div>
     );
   }
