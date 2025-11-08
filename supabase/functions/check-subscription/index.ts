@@ -77,40 +77,66 @@ serve(async (req) => {
     const customerId = customers.data[0].id;
     logStep("Found Stripe customer", { customerId });
 
+    // Save Stripe Customer ID to profiles table if not already saved
+    if (userId) {
+      try {
+        const { error: updateError } = await supabaseClient
+          .from('profiles')
+          .update({ stripe_customer_id: customerId })
+          .eq('id', userId);
+        
+        if (updateError) {
+          logStep("Failed to update stripe_customer_id", { error: updateError.message });
+        } else {
+          logStep("Successfully updated stripe_customer_id in profiles");
+        }
+      } catch (updateErr) {
+        logStep("Error updating profiles", { error: updateErr instanceof Error ? updateErr.message : String(updateErr) });
+      }
+    }
+
     const subscriptions = await stripe.subscriptions.list({
       customer: customerId,
       status: "active",
       limit: 1,
     });
     const hasActiveSub = subscriptions.data.length > 0;
-    let planType = null;
+    let productId = null;
     let subscriptionEnd = null;
-    let priceId = null;
 
     if (hasActiveSub) {
       const subscription = subscriptions.data[0];
-      subscriptionEnd = new Date(subscription.current_period_end * 1000).toISOString();
-      priceId = subscription.items.data[0].price.id;
       
-      // Determine plan type based on price ID
-      if (priceId === "price_1SR3ZmDqLakc8NxkNdqL5BtO") {
-        planType = "founder";
-      } else if (priceId === "price_1SNQoeDqLakc8NxkEUVTTs3k") {
-        planType = "monthly";
-      } else if (priceId === "price_1SNQoqDqLakc8NxkOaQIL8wX") {
-        planType = "annual";
+      // Safe date conversion with error handling
+      try {
+        const periodEnd = subscription.current_period_end;
+        if (periodEnd && typeof periodEnd === 'number') {
+          subscriptionEnd = new Date(periodEnd * 1000).toISOString();
+        }
+      } catch (dateError) {
+        logStep("Date conversion error", { error: dateError instanceof Error ? dateError.message : String(dateError) });
+        subscriptionEnd = null;
       }
       
-      logStep("Active subscription found", { subscriptionId: subscription.id, endDate: subscriptionEnd, planType });
+      // Get product ID from the subscription
+      const priceData = subscription.items.data[0]?.price;
+      if (priceData && typeof priceData.product === 'string') {
+        productId = priceData.product;
+      }
+      
+      logStep("Active subscription found", { 
+        subscriptionId: subscription.id, 
+        endDate: subscriptionEnd, 
+        productId 
+      });
     } else {
       logStep("No active subscription found");
     }
 
     return new Response(JSON.stringify({
       subscribed: hasActiveSub,
-      plan_type: planType,
-      subscription_end: subscriptionEnd,
-      price_id: priceId
+      product_id: productId,
+      subscription_end: subscriptionEnd
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,

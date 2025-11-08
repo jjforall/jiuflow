@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { RefreshCw } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 
 interface Subscription {
   id: string;
@@ -24,7 +24,6 @@ interface Subscription {
 export const SubscriptionsTab = () => {
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [loading, setLoading] = useState(true);
-  const { toast } = useToast();
 
   const fetchSubscriptions = async () => {
     try {
@@ -32,11 +31,7 @@ export const SubscriptionsTab = () => {
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session) {
-        toast({
-          title: "エラー",
-          description: "認証が必要です",
-          variant: "destructive",
-        });
+        toast.error("認証が必要です");
         return;
       }
 
@@ -51,11 +46,7 @@ export const SubscriptionsTab = () => {
       setSubscriptions(data.subscriptions || []);
     } catch (error) {
       console.error("Error fetching subscriptions:", error);
-      toast({
-        title: "エラー",
-        description: "サブスクリプション情報の取得に失敗しました",
-        variant: "destructive",
-      });
+      toast.error("サブスクリプション情報の取得に失敗しました");
     } finally {
       setLoading(false);
     }
