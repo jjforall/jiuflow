@@ -26,6 +26,12 @@ interface Technique {
   display_order: number;
 }
 
+interface UploadProgress {
+  fileName: string;
+  progress: number;
+  status: 'uploading' | 'complete' | 'error';
+}
+
 interface Profile {
   id: string;
   email: string | null;
@@ -40,7 +46,7 @@ const AdminDashboard = () => {
   const { toast } = useToast();
   const [techniques, setTechniques] = useState<Technique[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [uploadingVideo, setUploadingVideo] = useState(false);
+  const [uploadQueue, setUploadQueue] = useState<UploadProgress[]>([]);
   const [editingTechnique, setEditingTechnique] = useState<Technique | null>(null);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [profiles, setProfiles] = useState<Profile[]>([]);
@@ -68,7 +74,7 @@ const AdminDashboard = () => {
     description: "",
     description_ja: "",
     description_pt: "",
-    category: "pull" as "pull" | "control" | "submission",
+    category: "pull" as "pull" | "control" | "submission" | "pass-guard",
   });
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [isTranslating, setIsTranslating] = useState(false);
@@ -126,21 +132,58 @@ const AdminDashboard = () => {
     setTechniques(data || []);
   };
 
-  const handleVideoUpload = async (file: File): Promise<string | null> => {
+  const handleVideoUpload = async (file: File, progressId: string): Promise<string | null> => {
     try {
       const fileExt = file.name.split(".").pop();
       const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`;
       const filePath = `videos/${fileName}`;
 
+      // Update progress to uploading
+      setUploadQueue(prev => prev.map(item => 
+        item.fileName === progressId 
+          ? { ...item, progress: 0, status: 'uploading' as const }
+          : item
+      ));
+
+      // Simulate upload progress (Supabase doesn't provide real-time progress)
+      const progressInterval = setInterval(() => {
+        setUploadQueue(prev => prev.map(item => 
+          item.fileName === progressId && item.progress < 90
+            ? { ...item, progress: item.progress + 10 }
+            : item
+        ));
+      }, 300);
+
       const { error: uploadError } = await supabase.storage
         .from("technique-videos")
         .upload(filePath, file);
 
-      if (uploadError) throw uploadError;
+      clearInterval(progressInterval);
+
+      if (uploadError) {
+        setUploadQueue(prev => prev.map(item => 
+          item.fileName === progressId 
+            ? { ...item, status: 'error' as const }
+            : item
+        ));
+        throw uploadError;
+      }
 
       const { data } = supabase.storage
         .from("technique-videos")
         .getPublicUrl(filePath);
+
+      // Update progress to complete
+      setUploadQueue(prev => prev.map(item => 
+        item.fileName === progressId 
+          ? { ...item, progress: 100, status: 'complete' as const }
+          : item
+      ));
+
+      // Remove from queue after 2 seconds
+      setTimeout(() => {
+        setUploadQueue(prev => prev.filter(item => item.fileName !== progressId));
+      }, 2000);
 
       return data.publicUrl;
     } catch (error) {
@@ -201,19 +244,51 @@ const AdminDashboard = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate form
+    if (!formData.name_ja) {
+      toast({
+        title: "エラー",
+        description: "日本語の名前を入力してください",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsLoading(true);
-    setUploadingVideo(true);
 
     try {
       let videoUrl = null;
+      const progressId = `upload-${Date.now()}`;
 
       if (videoFile) {
-        videoUrl = await handleVideoUpload(videoFile);
-        if (!videoUrl) {
-          throw new Error("Failed to upload video");
-        }
+        // Add to upload queue
+        setUploadQueue(prev => [...prev, {
+          fileName: videoFile.name,
+          progress: 0,
+          status: 'uploading',
+        }]);
+
+        // Upload video in background (non-blocking)
+        handleVideoUpload(videoFile, videoFile.name).then(url => {
+          if (url) {
+            // Update the technique with video URL after upload completes
+            supabase
+              .from("techniques")
+              .update({ video_url: url })
+              .eq("name_ja", formData.name_ja)
+              .then(() => {
+                toast({
+                  title: "ビデオアップロード完了",
+                  description: `${videoFile.name} のアップロードが完了しました`,
+                });
+                loadTechniques();
+              });
+          }
+        });
       }
 
+      // Insert technique immediately without waiting for video
       const { error } = await supabase.from("techniques").insert({
         ...formData,
         video_url: videoUrl,
@@ -223,11 +298,13 @@ const AdminDashboard = () => {
       if (error) throw error;
 
       toast({
-        title: "Success",
-        description: "Technique added successfully",
+        title: "テクニック追加完了",
+        description: videoFile 
+          ? "テクニックを追加しました。ビデオは背景でアップロード中です。"
+          : "テクニックを追加しました",
       });
 
-      // Reset form
+      // Reset form immediately so user can continue
       setFormData({
         name: "",
         name_ja: "",
@@ -242,13 +319,12 @@ const AdminDashboard = () => {
       loadTechniques();
     } catch (error: any) {
       toast({
-        title: "Error",
+        title: "エラー",
         description: error.message,
         variant: "destructive",
       });
     } finally {
       setIsLoading(false);
-      setUploadingVideo(false);
     }
   };
 
@@ -261,7 +337,7 @@ const AdminDashboard = () => {
       description: technique.description || "",
       description_ja: technique.description_ja || "",
       description_pt: technique.description_pt || "",
-      category: technique.category as "pull" | "control" | "submission",
+      category: technique.category as "pull" | "control" | "submission" | "pass-guard",
     });
     setShowEditDialog(true);
   };
@@ -271,17 +347,34 @@ const AdminDashboard = () => {
     if (!editingTechnique) return;
 
     setIsLoading(true);
-    setUploadingVideo(true);
 
     try {
       let videoUrl = editingTechnique.video_url;
 
       if (videoFile) {
-        const newVideoUrl = await handleVideoUpload(videoFile);
-        if (!newVideoUrl) {
-          throw new Error("Failed to upload video");
-        }
-        videoUrl = newVideoUrl;
+        // Add to upload queue
+        setUploadQueue(prev => [...prev, {
+          fileName: videoFile.name,
+          progress: 0,
+          status: 'uploading',
+        }]);
+
+        // Upload in background
+        handleVideoUpload(videoFile, videoFile.name).then(url => {
+          if (url) {
+            supabase
+              .from("techniques")
+              .update({ video_url: url })
+              .eq("id", editingTechnique.id)
+              .then(() => {
+                toast({
+                  title: "ビデオアップロード完了",
+                  description: `${videoFile.name} のアップロードが完了しました`,
+                });
+                loadTechniques();
+              });
+          }
+        });
       }
 
       const { error } = await supabase
@@ -295,8 +388,10 @@ const AdminDashboard = () => {
       if (error) throw error;
 
       toast({
-        title: "Success",
-        description: "Technique updated successfully",
+        title: "更新完了",
+        description: videoFile
+          ? "テクニックを更新しました。ビデオは背景でアップロード中です。"
+          : "テクニックを更新しました",
       });
 
       setShowEditDialog(false);
@@ -321,7 +416,6 @@ const AdminDashboard = () => {
       });
     } finally {
       setIsLoading(false);
-      setUploadingVideo(false);
     }
   };
 
@@ -672,9 +766,10 @@ const AdminDashboard = () => {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="pull">Pull</SelectItem>
-                    <SelectItem value="control">Control</SelectItem>
-                    <SelectItem value="submission">Submission</SelectItem>
+                    <SelectItem value="pull">Pull (引き込み)</SelectItem>
+                    <SelectItem value="pass-guard">Pass Guard (ガード突破)</SelectItem>
+                    <SelectItem value="control">Control (コントロール)</SelectItem>
+                    <SelectItem value="submission">Submission (一本)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -688,11 +783,33 @@ const AdminDashboard = () => {
                     onChange={(e) => setVideoFile(e.target.files?.[0] || null)}
                     className="w-full"
                   />
-                  {uploadingVideo && (
-                    <p className="text-sm text-muted-foreground mt-2">Uploading video...</p>
-                  )}
                 </div>
               </div>
+
+              {/* Upload Progress Indicators */}
+              {uploadQueue.length > 0 && (
+                <div className="space-y-2 p-4 border border-border rounded">
+                  <h3 className="text-sm font-medium mb-2">アップロード状況</h3>
+                  {uploadQueue.map((upload, index) => (
+                    <div key={index} className="space-y-1">
+                      <div className="flex justify-between text-sm">
+                        <span className="truncate max-w-xs">{upload.fileName}</span>
+                        <span>{upload.progress}%</span>
+                      </div>
+                      <div className="w-full bg-muted rounded-full h-2">
+                        <div 
+                          className={`h-2 rounded-full transition-all ${
+                            upload.status === 'complete' ? 'bg-green-500' : 
+                            upload.status === 'error' ? 'bg-red-500' : 
+                            'bg-primary'
+                          }`}
+                          style={{ width: `${upload.progress}%` }}
+                        ></div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
 
               <Button type="submit" size="lg" disabled={isLoading || isTranslating}>
                 <Upload className="w-4 h-4 mr-2" />
@@ -1008,9 +1125,10 @@ const AdminDashboard = () => {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="pull">Pull</SelectItem>
-                  <SelectItem value="control">Control</SelectItem>
-                  <SelectItem value="submission">Submission</SelectItem>
+                  <SelectItem value="pull">Pull (引き込み)</SelectItem>
+                  <SelectItem value="pass-guard">Pass Guard (ガード突破)</SelectItem>
+                  <SelectItem value="control">Control (コントロール)</SelectItem>
+                  <SelectItem value="submission">Submission (一本)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -1024,9 +1142,6 @@ const AdminDashboard = () => {
                   onChange={(e) => setVideoFile(e.target.files?.[0] || null)}
                   className="w-full"
                 />
-                {uploadingVideo && (
-                  <p className="text-sm text-muted-foreground mt-2">Uploading video...</p>
-                )}
               </div>
             </div>
 
