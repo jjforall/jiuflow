@@ -348,17 +348,112 @@ const Join = () => {
               <div className="grid md:grid-cols-3 gap-8 mb-16 animate-fade-up">
                 {/* Founder Plan */}
                 <div className="border border-border p-8">
-...
+                  <h3 className="text-2xl font-light mb-4">
+                    {language === "ja" ? "創設者プラン" : language === "pt" ? "Plano Fundador" : "Founder Plan"}
+                  </h3>
+                  <div className="mb-6">
+                    <div className="text-4xl font-light mb-2">¥9,800</div>
+                    <div className="text-sm text-muted-foreground font-light">
+                      {language === "ja" ? "買い切り（生涯アクセス）" : language === "pt" ? "Pagamento único (acesso vitalício)" : "One-time (Lifetime Access)"}
+                    </div>
+                    <div className="text-xs text-muted-foreground mt-2">
+                      {language === "ja" ? "残り" : language === "pt" ? "Restam" : "Remaining"} {countdown.days}
+                      {language === "ja" ? "日" : language === "pt" ? " dias " : " days "}
+                      {countdown.hours}:{countdown.minutes}:{countdown.seconds}
+                    </div>
+                  </div>
+                  <ul className="space-y-3 mb-6 text-sm font-light">
+                    <li className="flex items-start">
+                      <span className="mr-2">✓</span>
+                      <span>{language === "ja" ? "全技術動画へのアクセス" : language === "pt" ? "Acesso a todos os vídeos técnicos" : "Access to all technique videos"}</span>
+                    </li>
+                    <li className="flex items-start">
+                      <span className="mr-2">✓</span>
+                      <span>{language === "ja" ? "新規コンテンツの追加" : language === "pt" ? "Novos conteúdos adicionados" : "New content additions"}</span>
+                    </li>
+                    <li className="flex items-start">
+                      <span className="mr-2">✓</span>
+                      <span>{language === "ja" ? "生涯サポート" : language === "pt" ? "Suporte vitalício" : "Lifetime support"}</span>
+                    </li>
+                  </ul>
+                  <Button
+                    className="w-full"
+                    onClick={() => handleCheckout(PRICE_IDS.founder, false)}
+                    disabled={isLoading}
+                  >
+                    {language === "ja" ? "今すぐ参加" : language === "pt" ? "Participar agora" : "Join Now"}
+                  </Button>
                 </div>
 
                 {/* Monthly */}
                 <div className="border border-foreground p-8 relative">
-...
+                  <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-foreground text-background px-4 py-1 text-xs font-light">
+                    {language === "ja" ? "人気" : language === "pt" ? "Popular" : "Most Popular"}
+                  </div>
+                  <h3 className="text-2xl font-light mb-4">
+                    {language === "ja" ? "月額プラン" : language === "pt" ? "Plano Mensal" : "Monthly Plan"}
+                  </h3>
+                  <div className="mb-6">
+                    <div className="text-4xl font-light mb-2">¥1,480</div>
+                    <div className="text-sm text-muted-foreground font-light">
+                      {language === "ja" ? "月額（いつでもキャンセル可能）" : language === "pt" ? "Por mês (cancele a qualquer momento)" : "per month (cancel anytime)"}
+                    </div>
+                  </div>
+                  <ul className="space-y-3 mb-6 text-sm font-light">
+                    <li className="flex items-start">
+                      <span className="mr-2">✓</span>
+                      <span>{language === "ja" ? "全技術動画へのアクセス" : language === "pt" ? "Acesso a todos os vídeos técnicos" : "Access to all technique videos"}</span>
+                    </li>
+                    <li className="flex items-start">
+                      <span className="mr-2">✓</span>
+                      <span>{language === "ja" ? "新規コンテンツの追加" : language === "pt" ? "Novos conteúdos adicionados" : "New content additions"}</span>
+                    </li>
+                    <li className="flex items-start">
+                      <span className="mr-2">✓</span>
+                      <span>{language === "ja" ? "柔軟な支払い" : language === "pt" ? "Pagamento flexível" : "Flexible payment"}</span>
+                    </li>
+                  </ul>
+                  <Button
+                    className="w-full"
+                    onClick={() => handleCheckout(PRICE_IDS.monthly, true)}
+                    disabled={isLoading}
+                  >
+                    {language === "ja" ? "月額で始める" : language === "pt" ? "Começar mensalmente" : "Start Monthly"}
+                  </Button>
                 </div>
 
                 {/* Annual */}
                 <div className="border border-border p-8">
-...
+                  <h3 className="text-2xl font-light mb-4">
+                    {language === "ja" ? "年額プラン" : language === "pt" ? "Plano Anual" : "Annual Plan"}
+                  </h3>
+                  <div className="mb-6">
+                    <div className="text-4xl font-light mb-2">¥14,800</div>
+                    <div className="text-sm text-muted-foreground font-light">
+                      {language === "ja" ? "年額（2ヶ月分お得）" : language === "pt" ? "Por ano (economize 2 meses)" : "per year (save 2 months)"}
+                    </div>
+                  </div>
+                  <ul className="space-y-3 mb-6 text-sm font-light">
+                    <li className="flex items-start">
+                      <span className="mr-2">✓</span>
+                      <span>{language === "ja" ? "全技術動画へのアクセス" : language === "pt" ? "Acesso a todos os vídeos técnicos" : "Access to all technique videos"}</span>
+                    </li>
+                    <li className="flex items-start">
+                      <span className="mr-2">✓</span>
+                      <span>{language === "ja" ? "新規コンテンツの追加" : language === "pt" ? "Novos conteúdos adicionados" : "New content additions"}</span>
+                    </li>
+                    <li className="flex items-start">
+                      <span className="mr-2">✓</span>
+                      <span>{language === "ja" ? "最大の節約" : language === "pt" ? "Melhor economia" : "Best value"}</span>
+                    </li>
+                  </ul>
+                  <Button
+                    className="w-full"
+                    onClick={() => handleCheckout(PRICE_IDS.annual, true)}
+                    disabled={isLoading}
+                  >
+                    {language === "ja" ? "年額で始める" : language === "pt" ? "Começar anualmente" : "Start Annually"}
+                  </Button>
                 </div>
               </div>
 
