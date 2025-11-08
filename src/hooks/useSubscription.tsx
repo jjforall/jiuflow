@@ -67,9 +67,11 @@ export const useSubscription = () => {
   useEffect(() => {
     checkSubscription();
 
-    // Listen for auth state changes
+    // Listen for auth state changes - defer async calls to prevent deadlock
     const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
-      checkSubscription();
+      setTimeout(() => {
+        checkSubscription();
+      }, 0);
     });
 
     return () => subscription.unsubscribe();

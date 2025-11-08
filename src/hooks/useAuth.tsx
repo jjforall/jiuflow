@@ -29,14 +29,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     });
 
     // Listen for changes on auth state (sign in, sign out, etc.)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
+      setIsLoading(false);
+      
+      // Defer async operations to prevent deadlock
       if (session?.user) {
-        await checkAdminStatus(session.user.id);
+        setTimeout(() => {
+          checkAdminStatus(session.user.id);
+        }, 0);
       } else {
         setIsAdmin(false);
       }
-      setIsLoading(false);
     });
 
     return () => subscription.unsubscribe();
