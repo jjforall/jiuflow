@@ -6,8 +6,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Plus, Edit, Trash2 } from "lucide-react";
+import { Plus, Edit, Trash2, Tag } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface Price {
   id: string;
@@ -27,6 +28,17 @@ interface Product {
   prices: Price[];
 }
 
+interface Coupon {
+  id: string;
+  name: string | null;
+  percent_off: number | null;
+  amount_off: number | null;
+  currency: string | null;
+  duration: string;
+  duration_in_months: number | null;
+  valid: boolean;
+}
+
 // jiuflow関連のPrice IDsのみを表示
 const JIUFLOW_PRICE_IDS = [
   "price_1SR3ZmDqLakc8NxkNdqL5BtO", // Founder Access - ¥980/month
@@ -37,9 +49,12 @@ const JIUFLOW_PRICE_IDS = [
 export const PlansTab = () => {
   const { toast } = useToast();
   const [products, setProducts] = useState<Product[]>([]);
+  const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [loading, setLoading] = useState(false);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [editingCoupon, setEditingCoupon] = useState<Coupon | null>(null);
+  const [showEditCouponDialog, setShowEditCouponDialog] = useState(false);
   
   const [formData, setFormData] = useState({
     name: "",
@@ -49,8 +64,13 @@ export const PlansTab = () => {
     interval: "month" as "month" | "year" | "",
   });
 
+  const [couponFormData, setCouponFormData] = useState({
+    name: "",
+  });
+
   useEffect(() => {
     loadPlans();
+    loadCoupons();
   }, []);
 
   const loadPlans = async () => {
@@ -251,6 +271,80 @@ export const PlansTab = () => {
     }
   };
 
+  const loadCoupons = async () => {
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData.session?.access_token;
+      if (!accessToken) return;
+
+      const response = await fetch(
+        `https://jkiohqfamhiykurxrhsn.supabase.co/functions/v1/list-coupons`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+          },
+          body: JSON.stringify({ limit: 100 }),
+        }
+      );
+
+      if (!response.ok) throw new Error("Failed to fetch coupons");
+      const data = await response.json();
+      setCoupons(data.coupons || []);
+    } catch (error: any) {
+      console.error("Error loading coupons:", error);
+    }
+  };
+
+  const handleUpdateCoupon = async () => {
+    if (!editingCoupon) return;
+    setLoading(true);
+
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData.session?.access_token;
+      if (!accessToken) {
+        throw new Error("ログインが必要です");
+      }
+
+      const { data, error } = await supabase.functions.invoke("update-coupon", {
+        body: {
+          couponId: editingCoupon.id,
+          name: couponFormData.name,
+        },
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+
+      if (error) throw error;
+      if (data.error) throw new Error(data.error);
+
+      toast({
+        title: "更新完了",
+        description: `クーポン「${couponFormData.name}」に更新しました`,
+      });
+
+      setShowEditCouponDialog(false);
+      setEditingCoupon(null);
+      setCouponFormData({ name: "" });
+      loadCoupons();
+    } catch (error: any) {
+      toast({
+        title: "エラー",
+        description: error.message || "クーポンの更新に失敗しました",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEditCoupon = (coupon: Coupon) => {
+    setEditingCoupon(coupon);
+    setCouponFormData({ name: coupon.name || "" });
+    setShowEditCouponDialog(true);
+  };
+
   const formatPrice = (amount: number, currency: string) => {
     // JPYは最小単位が「円」なので100で割らない。USD、EUR等は「セント」なので100で割る
     const actualAmount = currency.toLowerCase() === 'jpy' ? amount : amount / 100;
@@ -263,8 +357,16 @@ export const PlansTab = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-light">プラン管理</h2>
+      <h2 className="text-2xl font-light">プラン・クーポン管理</h2>
+      
+      <Tabs defaultValue="plans" className="w-full">
+        <TabsList>
+          <TabsTrigger value="plans">プラン管理</TabsTrigger>
+          <TabsTrigger value="coupons">クーポン管理</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="plans" className="space-y-6">
+        <div className="flex justify-between items-center">
         <Dialog open={showCreateDialog} onOpenChange={(open) => {
           setShowCreateDialog(open);
           if (!open) {
@@ -436,6 +538,106 @@ export const PlansTab = () => {
           ))}
         </div>
       )}
+      </TabsContent>
+
+      <TabsContent value="coupons" className="space-y-6">
+        {coupons.length === 0 ? (
+          <div className="text-center py-12 text-muted-foreground">クーポンがまだありません</div>
+        ) : (
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {coupons.map((coupon) => (
+              <Card key={coupon.id}>
+                <CardHeader>
+                  <div className="flex justify-between items-start">
+                    <div className="flex-1">
+                      <CardTitle className="text-xl flex items-center gap-2">
+                        <Tag className="w-5 h-5" />
+                        {coupon.name || coupon.id}
+                      </CardTitle>
+                      <CardDescription className="mt-2">
+                        コード: <code className="bg-muted px-2 py-1 rounded">{coupon.id}</code>
+                      </CardDescription>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => handleEditCoupon(coupon)}
+                      disabled={loading}
+                    >
+                      <Edit className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">割引:</span>
+                      <span className="font-medium">
+                        {coupon.percent_off
+                          ? `${coupon.percent_off}% OFF`
+                          : coupon.amount_off && coupon.currency
+                          ? formatPrice(coupon.amount_off, coupon.currency)
+                          : "N/A"}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">期間:</span>
+                      <span>
+                        {coupon.duration === "once"
+                          ? "1回のみ"
+                          : coupon.duration === "forever"
+                          ? "永続"
+                          : `${coupon.duration_in_months}ヶ月`}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">状態:</span>
+                      <span className={coupon.valid ? "text-green-600" : "text-red-600"}>
+                        {coupon.valid ? "有効" : "無効"}
+                      </span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+      </TabsContent>
+      </Tabs>
+
+      <Dialog open={showEditCouponDialog} onOpenChange={setShowEditCouponDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>クーポン名を変更</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm mb-2">クーポンコード（変更不可）</label>
+              <Input value={editingCoupon?.id || ""} disabled />
+            </div>
+            <div>
+              <label className="block text-sm mb-2">表示名</label>
+              <Input
+                value={couponFormData.name}
+                onChange={(e) => setCouponFormData({ name: e.target.value })}
+                placeholder="例: FIRSTMOVE"
+              />
+            </div>
+            <div className="flex gap-2 justify-end">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowEditCouponDialog(false)}
+              >
+                キャンセル
+              </Button>
+              <Button onClick={handleUpdateCoupon} disabled={loading}>
+                {loading ? "更新中..." : "更新"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
