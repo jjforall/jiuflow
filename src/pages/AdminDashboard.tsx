@@ -94,6 +94,7 @@ const AdminDashboard = () => {
       }
 
       loadTechniques();
+      loadProfiles();  // Load profiles automatically on mount
     };
 
     checkAuthAndLoad();
@@ -294,28 +295,19 @@ const AdminDashboard = () => {
   };
 
   const loadProfiles = async () => {
-    if (!adminPassword) {
-      toast({
-        title: "パスワードを入力してください",
-        description: "会員一覧を表示するにはパスワードが必要です",
-        variant: "destructive",
-      });
-      return;
-    }
-
     setLoadingProfiles(true);
     try {
-      const { data, error } = await supabase.functions.invoke("admin-users", {
-        body: { action: "list", password: adminPassword },
-      });
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .order("created_at", { ascending: false });
 
       if (error) throw error;
-      if (data.error) throw new Error(data.error);
 
-      setProfiles(data.profiles || []);
+      setProfiles(data || []);
       toast({
         title: "読み込み完了",
-        description: `${data.profiles?.length || 0}件の会員を読み込みました`,
+        description: `${data?.length || 0}件の会員を読み込みました`,
       });
     } catch (error: any) {
       toast({
@@ -588,27 +580,23 @@ const AdminDashboard = () => {
                       新規ユーザーの作成と既存ユーザーの管理
                     </p>
                   </div>
-                  <Button onClick={() => setShowCreateUserDialog(true)}>
-                    <Users className="w-4 h-4 mr-2" />
-                    新規ユーザー作成
-                  </Button>
-                </div>
-
-                <div className="flex gap-4">
-                  <Input
-                    type="password"
-                    placeholder="管理者パスワード（会員一覧表示用）"
-                    value={adminPassword}
-                    onChange={(e) => setAdminPassword(e.target.value)}
-                    className="flex-1"
-                  />
-                  <Button onClick={loadProfiles} disabled={loadingProfiles}>
-                    {loadingProfiles ? "読み込み中..." : "会員一覧を表示"}
-                  </Button>
+                  <div className="flex gap-3">
+                    <Button variant="outline" onClick={loadProfiles} disabled={loadingProfiles}>
+                      {loadingProfiles ? "更新中..." : "一覧を更新"}
+                    </Button>
+                    <Button onClick={() => setShowCreateUserDialog(true)}>
+                      <Users className="w-4 h-4 mr-2" />
+                      新規ユーザー作成
+                    </Button>
+                  </div>
                 </div>
               </div>
 
-              {profiles.length > 0 && (
+              {loadingProfiles ? (
+                <div className="text-center py-12">
+                  <p className="text-muted-foreground">読み込み中...</p>
+                </div>
+              ) : profiles.length > 0 ? (
                 <div>
                   <h2 className="text-2xl font-light mb-6">会員一覧 ({profiles.length}名)</h2>
                   <div className="space-y-4">
@@ -636,6 +624,10 @@ const AdminDashboard = () => {
                       </div>
                     ))}
                   </div>
+                </div>
+              ) : (
+                <div className="text-center py-12 border border-border rounded-lg">
+                  <p className="text-muted-foreground">会員が登録されていません</p>
                 </div>
               )}
             </TabsContent>
