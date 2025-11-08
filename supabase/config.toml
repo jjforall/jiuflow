@@ -67,3 +67,6 @@ port = 54321
 
 [analytics]
 enabled = false
+
+[functions.sync-stripe-customers]
+verify_jwt = true
