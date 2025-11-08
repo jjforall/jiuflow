@@ -121,9 +121,6 @@ const Home = () => {
                     className="w-full h-full object-cover"
                   />
                   <div className="absolute inset-0 bg-black/40" />
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <span className="text-3xl font-light text-white drop-shadow-lg">📹</span>
-                  </div>
                 </div>
                 <h3 className="text-xl font-light mb-3">{t.home.clarity.overhead.title}</h3>
                 <p className="text-muted-foreground font-light whitespace-pre-line">
@@ -139,9 +136,6 @@ const Home = () => {
                     className="w-full h-full object-cover"
                   />
                   <div className="absolute inset-0 bg-black/40" />
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <span className="text-3xl font-light text-white drop-shadow-lg">🗺️</span>
-                  </div>
                 </div>
                 <h3 className="text-xl font-light mb-3">{t.home.clarity.systematic.title}</h3>
                 <p className="text-muted-foreground font-light whitespace-pre-line">
@@ -157,9 +151,6 @@ const Home = () => {
                     className="w-full h-full object-cover"
                   />
                   <div className="absolute inset-0 bg-black/40" />
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <span className="text-3xl font-light text-white drop-shadow-lg">🎯</span>
-                  </div>
                 </div>
                 <h3 className="text-xl font-light mb-3">{t.home.clarity.focused.title}</h3>
                 <p className="text-muted-foreground font-light whitespace-pre-line">
