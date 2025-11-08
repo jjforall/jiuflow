@@ -100,11 +100,6 @@ const Join = () => {
     }
   }, [searchParams, t.join.payment]);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    console.log("Email submitted:", email);
-  };
-
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
