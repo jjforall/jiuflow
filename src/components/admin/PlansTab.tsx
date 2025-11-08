@@ -217,10 +217,12 @@ export const PlansTab = () => {
   };
 
   const formatPrice = (amount: number, currency: string) => {
+    // JPYは最小単位が「円」なので100で割らない。USD、EUR等は「セント」なので100で割る
+    const actualAmount = currency.toLowerCase() === 'jpy' ? amount : amount / 100;
     const formatted = new Intl.NumberFormat('ja-JP', {
       style: 'currency',
       currency: currency.toUpperCase(),
-    }).format(amount / 100);
+    }).format(actualAmount);
     return formatted;
   };
 
