@@ -81,14 +81,6 @@ export const translations = {
       title: "About",
       subtitle: "柔術を、映像で体系化する──\nそれが私たちのミッションです。",
       mission: "私たちは、技術としての柔術を映像というフォーマットで整理し、誰もが理解しやすく、続けやすく、そして長く強くなれる形で提供します。\n上からの4K撮影。明確に見える技の流れ。そして、ひとつひとつの動きに込められた意味。\nそれらを通じて、柔術の本質を伝えていきます。",
-      teamTitle: "担当チーム",
-      teamRoles: [
-        "映像制作・企画ディレクション",
-        "技術の体系化・指導設計",
-        "システム開発・配信基盤構築",
-        "プロジェクト全体統括",
-      ],
-      teamNote: "※担当者名は掲載せず、コンセプト重視の表現としています",
       instructorTitle: "担当インストラクター紹介",
       instructor: {
         name: "村田良蔵",
@@ -245,14 +237,6 @@ export const translations = {
       title: "About",
       subtitle: "Systematize Jiu-Jitsu through video.\nThat is our mission.",
       mission: "We organize Jiu-Jitsu as a technical discipline through video format, providing it in a way that is easy to understand, sustainable, and enables long-term growth.\n4K overhead filming. Clearly visible technique flows. And the meaning embedded in each movement.\nThrough these, we convey the essence of Jiu-Jitsu.",
-      teamTitle: "Team",
-      teamRoles: [
-        "Video Production & Planning Direction",
-        "Technique Systematization & Instructional Design",
-        "System Development & Distribution Platform",
-        "Overall Project Management",
-      ],
-      teamNote: "*Names not listed, concept-focused presentation",
       instructorTitle: "Lead Instructor",
       instructor: {
         name: "Ryozo Murata",
@@ -416,14 +400,6 @@ export const translations = {
       title: "Sobre",
       subtitle: "Sistematizar o Jiu-Jitsu através de vídeo.\nEssa é a nossa missão.",
       mission: "Organizamos o Jiu-Jitsu como disciplina técnica através do formato de vídeo, fornecendo de uma forma que seja fácil de entender, sustentável e que permita crescimento a longo prazo.\nFilmagem aérea 4K. Fluxos de técnicas claramente visíveis. E o significado incorporado em cada movimento.\nAtravés disso, transmitimos a essência do Jiu-Jitsu.",
-      teamTitle: "Equipe",
-      teamRoles: [
-        "Produção de Vídeo & Direção de Planejamento",
-        "Sistematização de Técnicas & Design Instrucional",
-        "Desenvolvimento de Sistema & Plataforma de Distribuição",
-        "Gestão Geral do Projeto",
-      ],
-      teamNote: "*Nomes não listados, apresentação focada no conceito",
       instructorTitle: "Instrutor Principal",
       instructor: {
         name: "Ryozo Murata",

@@ -28,26 +28,6 @@ const About = () => {
             </div>
           </div>
 
-          {/* Team Roles */}
-          <div className="mb-20 animate-fade-up">
-            <h2 className="text-3xl font-light mb-8 text-center border-b border-border pb-4">
-              {t.about.teamTitle}
-            </h2>
-            <div className="grid md:grid-cols-2 gap-6 mb-6">
-              {t.about.teamRoles.map((role, index) => (
-                <div
-                  key={index}
-                  className="border border-border p-6 transition-smooth hover:bg-muted"
-                >
-                  <p className="font-light text-foreground">{role}</p>
-                </div>
-              ))}
-            </div>
-            <p className="text-sm text-muted-foreground text-center font-light">
-              {t.about.teamNote}
-            </p>
-          </div>
-
           {/* Instructor */}
           <div className="animate-fade-up">
             <h2 className="text-3xl font-light mb-8 text-center border-b border-border pb-4">
