@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import Navigation from "@/components/Navigation";
-import { Upload, Trash2, Edit, Users, ShieldCheck } from "lucide-react";
+import { Upload, Trash2, Edit, Users, ShieldCheck, Search } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -53,6 +53,8 @@ const AdminDashboard = () => {
     password: "",
     role: "user" as "admin" | "user",
   });
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sortBy, setSortBy] = useState<"date" | "email" | "role">("date");
 
   // Form state
   const [formData, setFormData] = useState({
@@ -633,72 +635,161 @@ const AdminDashboard = () => {
                     </Button>
                   </div>
                 </div>
+
+                <div className="flex gap-4 mt-6">
+                  <div className="flex-1">
+                    <Input
+                      placeholder="メールアドレスまたはStripe IDで検索..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                    />
+                  </div>
+                  <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
+                    <SelectTrigger className="w-[200px]">
+                      <SelectValue placeholder="並び替え" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="date">登録日順</SelectItem>
+                      <SelectItem value="email">メール順</SelectItem>
+                      <SelectItem value="role">管理者優先</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
 
               {loadingProfiles ? (
                 <div className="text-center py-12">
                   <p className="text-muted-foreground">読み込み中...</p>
                 </div>
-              ) : profiles.length > 0 ? (
-                <div>
-                  <h2 className="text-2xl font-light mb-6 flex items-center gap-3">
-                    会員一覧 ({profiles.length}名)
-                    <span className="inline-flex items-center gap-1 text-sm px-2 py-1 rounded bg-accent text-accent-foreground">
-                      <ShieldCheck className="w-4 h-4" />
-                      管理者 {profiles.filter(p => p.user_roles?.some(r => r.role === 'admin')).length}名
-                    </span>
-                  </h2>
-                  <div className="space-y-4">
-                    {profiles.map((profile) => {
-                      const isAdmin = profile.user_roles?.some(role => role.role === 'admin') || false;
-                      return (
-                        <div key={profile.id} className="border border-border p-6">
-                          <div className="flex justify-between items-start">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-2">
-                                <p className="text-sm text-muted-foreground">メール: {profile.email || "未設定"}</p>
-                                {isAdmin && (
-                                  <span className="px-2 py-1 text-xs bg-primary text-primary-foreground rounded">
-                                    管理者
-                                  </span>
-                                )}
-                              </div>
-                              <p className="text-xs text-muted-foreground mb-1">ID: {profile.id}</p>
-                              <p className="text-xs text-muted-foreground mb-1">
-                                登録日: {new Date(profile.created_at).toLocaleDateString("ja-JP")}
-                              </p>
-                              <p className="text-xs text-muted-foreground">
-                                Stripe ID: {profile.stripe_customer_id || "未設定"}
-                              </p>
-                            </div>
-                            <div className="flex gap-2">
-                              <Button
-                                variant={isAdmin ? "destructive" : "default"}
-                                size="sm"
-                                onClick={() => handleToggleAdmin(profile.id, isAdmin)}
-                                disabled={isLoading}
-                              >
-                                {isAdmin ? "管理者解除" : "管理者に設定"}
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleEditProfile(profile)}
-                              >
-                                <Edit className="w-4 h-4" />
-                              </Button>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
+              ) : (() => {
+                // Filter and sort profiles
+                let filtered = profiles.filter(profile => {
+                  if (!searchQuery) return true;
+                  const query = searchQuery.toLowerCase();
+                  return (
+                    profile.email?.toLowerCase().includes(query) ||
+                    profile.stripe_customer_id?.toLowerCase().includes(query) ||
+                    profile.id.toLowerCase().includes(query)
+                  );
+                });
+
+                // Sort profiles
+                filtered = [...filtered].sort((a, b) => {
+                  if (sortBy === "date") {
+                    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+                  } else if (sortBy === "email") {
+                    return (a.email || "").localeCompare(b.email || "");
+                  } else if (sortBy === "role") {
+                    const aAdmin = a.user_roles?.some(r => r.role === 'admin') ? 1 : 0;
+                    const bAdmin = b.user_roles?.some(r => r.role === 'admin') ? 1 : 0;
+                    return bAdmin - aAdmin || new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+                  }
+                  return 0;
+                });
+
+                return filtered.length > 0 ? (
+                  <div>
+                    <div className="flex items-center justify-between mb-6">
+                      <h2 className="text-2xl font-light flex items-center gap-3">
+                        会員一覧 ({filtered.length}/{profiles.length}名)
+                        <span className="inline-flex items-center gap-1 text-sm px-2 py-1 rounded bg-accent text-accent-foreground">
+                          <ShieldCheck className="w-4 h-4" />
+                          管理者 {filtered.filter(p => p.user_roles?.some(r => r.role === 'admin')).length}名
+                        </span>
+                      </h2>
+                    </div>
+                    
+                    <div className="border border-border rounded-lg overflow-hidden">
+                      <div className="overflow-x-auto">
+                        <table className="w-full">
+                          <thead>
+                            <tr className="border-b border-border bg-muted/50">
+                              <th className="text-left p-4 font-medium">ロール</th>
+                              <th className="text-left p-4 font-medium">メールアドレス</th>
+                              <th className="text-left p-4 font-medium">登録日</th>
+                              <th className="text-left p-4 font-medium">Stripe ID</th>
+                              <th className="text-right p-4 font-medium">操作</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {filtered.map((profile, index) => {
+                              const isAdmin = profile.user_roles?.some(role => role.role === 'admin') || false;
+                              return (
+                                <tr 
+                                  key={profile.id} 
+                                  className={`border-b border-border hover:bg-muted/50 transition-colors ${
+                                    index % 2 === 0 ? '' : 'bg-muted/20'
+                                  }`}
+                                >
+                                  <td className="p-4">
+                                    {isAdmin ? (
+                                      <span className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-primary text-primary-foreground rounded">
+                                        <ShieldCheck className="w-3 h-3" />
+                                        管理者
+                                      </span>
+                                    ) : (
+                                      <span className="text-xs text-muted-foreground">一般</span>
+                                    )}
+                                  </td>
+                                  <td className="p-4">
+                                    <div>
+                                      <p className="font-medium">{profile.email || "未設定"}</p>
+                                      <p className="text-xs text-muted-foreground mt-1">
+                                        ID: {profile.id.slice(0, 8)}...
+                                      </p>
+                                    </div>
+                                  </td>
+                                  <td className="p-4 text-sm">
+                                    {new Date(profile.created_at).toLocaleDateString("ja-JP", {
+                                      year: 'numeric',
+                                      month: '2-digit',
+                                      day: '2-digit'
+                                    })}
+                                  </td>
+                                  <td className="p-4 text-sm text-muted-foreground">
+                                    {profile.stripe_customer_id ? (
+                                      <code className="text-xs bg-muted px-2 py-1 rounded">
+                                        {profile.stripe_customer_id.slice(0, 20)}...
+                                      </code>
+                                    ) : (
+                                      "未設定"
+                                    )}
+                                  </td>
+                                  <td className="p-4">
+                                    <div className="flex gap-2 justify-end">
+                                      <Button
+                                        variant={isAdmin ? "destructive" : "default"}
+                                        size="sm"
+                                        onClick={() => handleToggleAdmin(profile.id, isAdmin)}
+                                        disabled={isLoading}
+                                      >
+                                        {isAdmin ? "管理者解除" : "管理者設定"}
+                                      </Button>
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => handleEditProfile(profile)}
+                                      >
+                                        <Edit className="w-4 h-4" />
+                                      </Button>
+                                    </div>
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              ) : (
-                <div className="text-center py-12 border border-border rounded-lg">
-                  <p className="text-muted-foreground">会員が登録されていません</p>
-                </div>
-              )}
+                ) : (
+                  <div className="text-center py-12 border border-border rounded-lg">
+                    <p className="text-muted-foreground">
+                      {searchQuery ? "検索結果がありません" : "会員が登録されていません"}
+                    </p>
+                  </div>
+                );
+              })()}
             </TabsContent>
           </Tabs>
         </div>
