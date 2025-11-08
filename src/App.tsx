@@ -13,6 +13,7 @@ const Map = lazy(() => import("./pages/Map"));
 const Video = lazy(() => import("./pages/Video"));
 const About = lazy(() => import("./pages/About"));
 const Join = lazy(() => import("./pages/Join"));
+const MyPage = lazy(() => import("./pages/MyPage"));
 const AdminLogin = lazy(() => import("./pages/AdminLogin"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 const NotFound = lazy(() => import("./pages/NotFound"));
@@ -34,6 +35,7 @@ const App = () => (
               <Route path="/video/:id" element={<Video />} />
               <Route path="/about" element={<About />} />
               <Route path="/join" element={<Join />} />
+              <Route path="/mypage" element={<MyPage />} />
               <Route path="/admin" element={<AdminLogin />} />
               <Route path="/admin/dashboard" element={<AdminDashboard />} />
               <Route path="*" element={<NotFound />} />

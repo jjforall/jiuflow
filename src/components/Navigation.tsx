@@ -97,6 +97,10 @@ const Navigation = () => {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => navigate("/mypage")} className="gap-2 cursor-pointer">
+                    <User className="h-4 w-4" />
+                    {language === "ja" ? "マイページ" : language === "pt" ? "Minha Página" : "My Page"}
+                  </DropdownMenuItem>
                   <DropdownMenuItem onClick={handleLogout} className="gap-2 cursor-pointer">
                     <LogOut className="h-4 w-4" />
                     {language === "ja" ? "ログアウト" : language === "pt" ? "Sair" : "Logout"}
@@ -172,19 +176,27 @@ const Navigation = () => {
                   </Link>
                 ))}
                 
-                <div className="border-t border-border pt-6">
+                <div className="border-t border-border pt-6 space-y-3">
                   {user ? (
-                    <Button 
-                      variant="outline" 
-                      className="w-full gap-2"
-                      onClick={() => {
-                        handleLogout();
-                        setIsOpen(false);
-                      }}
-                    >
-                      <LogOut className="h-4 w-4" />
-                      {language === "ja" ? "ログアウト" : language === "pt" ? "Sair" : "Logout"}
-                    </Button>
+                    <>
+                      <Link to="/mypage" onClick={() => setIsOpen(false)}>
+                        <Button variant="outline" className="w-full gap-2">
+                          <User className="h-4 w-4" />
+                          {language === "ja" ? "マイページ" : language === "pt" ? "Minha Página" : "My Page"}
+                        </Button>
+                      </Link>
+                      <Button 
+                        variant="outline" 
+                        className="w-full gap-2"
+                        onClick={() => {
+                          handleLogout();
+                          setIsOpen(false);
+                        }}
+                      >
+                        <LogOut className="h-4 w-4" />
+                        {language === "ja" ? "ログアウト" : language === "pt" ? "Sair" : "Logout"}
+                      </Button>
+                    </>
                   ) : (
                     <Link to="/login" onClick={() => setIsOpen(false)}>
                       <Button variant="outline" className="w-full gap-2">
