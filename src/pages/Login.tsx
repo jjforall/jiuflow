@@ -24,7 +24,7 @@ const Login = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { language } = useLanguage();
-  const t = translations[language];
+  const t = translations[language] || translations.ja; // Fallback to Japanese
 
   useEffect(() => {
     // Check if user is already logged in

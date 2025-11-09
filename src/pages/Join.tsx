@@ -59,7 +59,7 @@ const SAMPLE_VIDEO_ID = "6a70670c-e9f8-4a8b-adce-8e703ac56bee";
 
 const Join = () => {
   const { language } = useLanguage();
-  const t = translations[language];
+  const t = translations[language] || translations.ja; // Fallback to Japanese
   const countdown = useCountdown();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");

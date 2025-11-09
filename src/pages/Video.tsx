@@ -29,7 +29,7 @@ interface Technique {
 const Video = () => {
   const { id } = useParams<{ id: string }>();
   const { language } = useLanguage();
-  const t = translations[language];
+  const t = translations[language] || translations.ja; // Fallback to Japanese
   const navigate = useNavigate();
   const { subscribed, loading: subscriptionLoading } = useSubscription();
   const { isAdmin } = useAuth();

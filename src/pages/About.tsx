@@ -9,7 +9,7 @@ import { useState, useEffect } from "react";
 
 const About = () => {
   const { language } = useLanguage();
-  const t = translations[language];
+  const t = translations[language] || translations.ja; // Fallback to Japanese
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
 
