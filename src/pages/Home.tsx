@@ -1,15 +1,15 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import Navigation from "@/components/Navigation";
-import { useLanguage } from "@/contexts/LanguageContext";
+import { useTranslation } from "@/hooks/useTranslation";
 import { translations } from "@/lib/translations";
 import { useHeroImages } from "@/hooks/useHeroImages";
 import Footer from "@/components/Footer";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const Home = () => {
-  const { language } = useLanguage();
-  const t = translations[language];
+  const { language } = useTranslation();
+  const t = translations[language] || translations.ja; // Fallback to Japanese
   const { images, isLoading, currentIndex, totalImages } = useHeroImages();
 
 
