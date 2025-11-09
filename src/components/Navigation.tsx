@@ -19,7 +19,7 @@ const Navigation = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { language, setLanguage } = useLanguage();
-  const t = translations[language];
+  const t = translations[language] || translations.ja; // Fallback to Japanese
   const [isOpen, setIsOpen] = useState(false);
   const [user, setUser] = useState<SupabaseUser | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
