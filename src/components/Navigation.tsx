@@ -76,19 +76,19 @@ const Navigation = () => {
     { to: "/join", label: t.nav.join },
   ];
 
-  const languages: Array<{ code: "ja" | "en" | "pt" | "es" | "fr" | "de" | "zh" | "ko" | "it" | "ru" | "ar" | "hi"; label: string }> = [
-    { code: "ja", label: "🇯🇵" },
-    { code: "en", label: "🇺🇸" },
-    { code: "pt", label: "🇧🇷" },
-    { code: "es", label: "🇪🇸" },
-    { code: "fr", label: "🇫🇷" },
-    { code: "de", label: "🇩🇪" },
-    { code: "zh", label: "🇨🇳" },
-    { code: "ko", label: "🇰🇷" },
-    { code: "it", label: "🇮🇹" },
-    { code: "ru", label: "🇷🇺" },
-    { code: "ar", label: "🇸🇦" },
-    { code: "hi", label: "🇮🇳" },
+  const languages: Array<{ code: "ja" | "en" | "pt" | "es" | "fr" | "de" | "zh" | "ko" | "it" | "ru" | "ar" | "hi"; label: string; name: string }> = [
+    { code: "ja", label: "🇯🇵", name: "日本語" },
+    { code: "en", label: "🇺🇸", name: "English" },
+    { code: "pt", label: "🇧🇷", name: "Português" },
+    { code: "es", label: "🇪🇸", name: "Español" },
+    { code: "fr", label: "🇫🇷", name: "Français" },
+    { code: "de", label: "🇩🇪", name: "Deutsch" },
+    { code: "zh", label: "🇨🇳", name: "中文" },
+    { code: "ko", label: "🇰🇷", name: "한국어" },
+    { code: "it", label: "🇮🇹", name: "Italiano" },
+    { code: "ru", label: "🇷🇺", name: "Русский" },
+    { code: "ar", label: "🇸🇦", name: "العربية" },
+    { code: "hi", label: "🇮🇳", name: "हिन्दी" },
   ];
 
   return (
@@ -155,11 +155,11 @@ const Navigation = () => {
               <select
                 value={language}
                 onChange={(e) => setLanguage(e.target.value as any)}
-                className="text-xs font-light px-2 py-1 bg-background border border-border rounded-md transition-smooth hover:border-foreground"
+                className="text-sm font-light px-3 py-1.5 bg-background border border-border rounded-md transition-smooth hover:border-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
               >
                 {languages.map((lang) => (
                   <option key={lang.code} value={lang.code}>
-                    {lang.label}
+                    {lang.label} {lang.name}
                   </option>
                 ))}
               </select>
@@ -172,11 +172,11 @@ const Navigation = () => {
             <select
               value={language}
               onChange={(e) => setLanguage(e.target.value as any)}
-              className="text-xs font-light px-2 py-1 bg-background border border-border rounded-md"
+              className="text-sm font-light px-2 py-1 bg-background border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20"
             >
               {languages.map((lang) => (
                 <option key={lang.code} value={lang.code}>
-                  {lang.label}
+                  {lang.label} {lang.name}
                 </option>
               ))}
             </select>
