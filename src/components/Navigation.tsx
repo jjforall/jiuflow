@@ -76,10 +76,19 @@ const Navigation = () => {
     { to: "/join", label: t.nav.join },
   ];
 
-  const languages: Array<{ code: "ja" | "en" | "pt"; label: string }> = [
-    { code: "ja", label: "日本語" },
-    { code: "en", label: "EN" },
-    { code: "pt", label: "PT" },
+  const languages: Array<{ code: "ja" | "en" | "pt" | "es" | "fr" | "de" | "zh" | "ko" | "it" | "ru" | "ar" | "hi"; label: string }> = [
+    { code: "ja", label: "🇯🇵" },
+    { code: "en", label: "🇺🇸" },
+    { code: "pt", label: "🇧🇷" },
+    { code: "es", label: "🇪🇸" },
+    { code: "fr", label: "🇫🇷" },
+    { code: "de", label: "🇩🇪" },
+    { code: "zh", label: "🇨🇳" },
+    { code: "ko", label: "🇰🇷" },
+    { code: "it", label: "🇮🇹" },
+    { code: "ru", label: "🇷🇺" },
+    { code: "ar", label: "🇸🇦" },
+    { code: "hi", label: "🇮🇳" },
   ];
 
   return (
@@ -142,41 +151,35 @@ const Navigation = () => {
               </Link>
             )}
             
-            <div className="flex items-center gap-2 border-l border-border pl-6">
-              {languages.map((lang) => (
-                <button
-                  key={lang.code}
-                  onClick={() => setLanguage(lang.code)}
-                  className={`text-xs font-light px-2 py-1 transition-smooth ${
-                    language === lang.code
-                      ? "text-foreground border-b border-foreground"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  {lang.label}
-                </button>
-              ))}
+            <div className="border-l border-border pl-6">
+              <select
+                value={language}
+                onChange={(e) => setLanguage(e.target.value as any)}
+                className="text-xs font-light px-2 py-1 bg-background border border-border rounded-md transition-smooth hover:border-foreground"
+              >
+                {languages.map((lang) => (
+                  <option key={lang.code} value={lang.code}>
+                    {lang.label}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
 
           {/* Mobile: Language Switcher + Hamburger */}
           <div className="flex md:hidden items-center gap-3">
             {/* Language Switcher */}
-            <div className="flex items-center gap-2">
+            <select
+              value={language}
+              onChange={(e) => setLanguage(e.target.value as any)}
+              className="text-xs font-light px-2 py-1 bg-background border border-border rounded-md"
+            >
               {languages.map((lang) => (
-                <button
-                  key={lang.code}
-                  onClick={() => setLanguage(lang.code)}
-                  className={`text-xs font-light px-2 py-1 transition-smooth ${
-                    language === lang.code
-                      ? "text-foreground border-b border-foreground"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
+                <option key={lang.code} value={lang.code}>
                   {lang.label}
-                </button>
+                </option>
               ))}
-            </div>
+            </select>
 
           {/* Mobile Hamburger Menu */}
           <Sheet open={isOpen} onOpenChange={setIsOpen}>
