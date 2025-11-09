@@ -10,9 +10,10 @@ export const useTranslation = () => {
   const [cache, setCache] = useState<TranslationCache>({});
 
   const t = (key: string, defaultText?: string): string => {
-    // まず既存の翻訳を確認
+    // まず既存の翻訳を確認（存在しない言語は英語にフォールバック）
     const keys = key.split(".");
-    let value: any = translations[language];
+    const pack: any = translations[language] || translations.en;
+    let value: any = pack;
     
     for (const k of keys) {
       if (value && typeof value === "object") {
@@ -23,8 +24,24 @@ export const useTranslation = () => {
       }
     }
 
-    if (value && typeof value === "string") {
+    if (typeof value === "string") {
       return value;
+    }
+
+    // キーが欠落している場合も英語にフォールバック
+    if (language !== "en") {
+      let fallback: any = translations.en;
+      for (const k of keys) {
+        if (fallback && typeof fallback === "object") {
+          fallback = fallback[k];
+        } else {
+          fallback = undefined;
+          break;
+        }
+      }
+      if (typeof fallback === "string") {
+        return fallback;
+      }
     }
 
     // デフォルトテキストがあればそれを使用
