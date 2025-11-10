@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "@/components/ui/sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { z } from "zod";
 
@@ -14,7 +14,6 @@ const contactSchema = z.object({
 });
 
 export const ContactForm = () => {
-  const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
@@ -36,26 +35,15 @@ export const ContactForm = () => {
 
       if (error) throw error;
 
-      toast({
-        title: "送信完了",
-        description: "お問い合わせありがとうございます。できるだけ早くご返信いたします。",
-      });
+      toast.success("お問い合わせありがとうございます。できるだけ早くご返信いたします。");
 
       setFormData({ name: "", email: "", subject: "", message: "" });
     } catch (error) {
       if (error instanceof z.ZodError) {
-        toast({
-          title: "入力エラー",
-          description: error.errors[0].message,
-          variant: "destructive",
-        });
+        toast.error(error.errors[0].message);
       } else {
         console.error("Contact form error:", error);
-        toast({
-          title: "送信エラー",
-          description: "送信に失敗しました。もう一度お試しください。",
-          variant: "destructive",
-        });
+        toast.error("送信に失敗しました。もう一度お試しください。");
       }
     } finally {
       setIsSubmitting(false);
