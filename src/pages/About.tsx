@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useState, useEffect } from "react";
+import { ContactForm } from "@/components/ContactForm";
 
 const About = () => {
   const { t } = useTranslation();
@@ -114,6 +115,20 @@ const About = () => {
                 Website → www.ryozo-murata.com
               </a>
             </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Contact Form Section */}
+      <section className="py-16 px-6 max-w-4xl mx-auto">
+        <h2 className="text-4xl font-light mb-8">Contact</h2>
+        <div className="space-y-6">
+          <p className="text-lg">
+            ✉️ お問い合わせ、新しい技の共有、ご提案などがございましたら、<br />
+            お気軽にご連絡ください。
+          </p>
+          <div className="border border-border p-8 bg-muted/10">
+            <ContactForm />
           </div>
         </div>
       </section>
