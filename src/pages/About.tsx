@@ -100,13 +100,18 @@ const About = () => {
           <div className="space-y-4 text-lg">
             <p className="mb-6">💬 ご意見・提案・最新情報などは以下からどうぞ：</p>
             <p>
-              <a href="https://instagram.com/ryozo_murata" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
-                Instagram → @ryozo_murata
+              <a href="https://www.instagram.com/ryozomurata/" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                Instagram → @ryozomurata
               </a>
             </p>
             <p>
-              <a href="https://twitter.com/ryozo_bjj" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
-                X（Twitter） → @ryozo_bjj
+              <a href="https://www.facebook.com/profile.php?id=100006313396750" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                Facebook
+              </a>
+            </p>
+            <p>
+              <a href="https://www.ryozo-murata.com" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                Website → www.ryozo-murata.com
               </a>
             </p>
           </div>
