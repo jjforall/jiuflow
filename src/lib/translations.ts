@@ -5,6 +5,7 @@ export const translations = {
       map: "Map",
       about: "About",
       join: "Subscribe",
+      login: "ログイン",
     },
     home: {
       hero: {
@@ -89,12 +90,16 @@ export const translations = {
         achievement1: "ブラジリアン柔術において、北海道初のグレイシー直系黒帯。",
         achievement2: "2018年・2019年、 SJJIF（スポーツ柔術国際連盟）世界選手権マスター２黒帯フェザー級で優勝。日本人初の世界チャンピオン。2025年、IBJJF世界マスター選手権 初出場で銅メダル（フェザー級黒帯マスター3）。",
         philosophy: "道場代表・実業家・指導者としても活動し、「怪我なく、毎日続けられる柔術」「ライフスタイルとしての柔術」をテーマに、ヨガ・身体構造・ウェルネスの視点も取り入れています。",
-        approach: "選手としても指導者としても、自身が\"始めは弱かった\"ところからコツコツ積み上げた経験を持ち、「安全で、長くできて、強い柔術」の実現を目指しています。",
+      approach: "選手としても指導者としても、自身が\"始めは弱かった\"ところからコツコツ積み上げた経験を持ち、「安全で、長くできて、強い柔術」の実現を目指しています。",
       },
+      closing: "静かに、深く学ぶ柔術。\n安全で、長くできて、強くなる。\nその一歩を、ここから始めてみませんか？",
     },
     join: {
       title: "Subscribe",
       subtitle: "まずは「見る」から始めよう。",
+      cta: {
+        button: "今すぐ始める",
+      },
       sampleVideo: {
         title: "まずはサンプルを見てみる",
         cta: "サンプル動画を見る",
@@ -162,6 +167,7 @@ export const translations = {
       map: "Map",
       about: "About",
       join: "Subscribe",
+      login: "Login",
     },
     home: {
       hero: {
@@ -246,12 +252,16 @@ export const translations = {
         achievement1: "First Gracie direct lineage black belt in Hokkaido for Brazilian Jiu-Jitsu.",
         achievement2: "2018 & 2019 SJJIF World Championship Master 2 Black Belt Featherweight Champion. First Japanese world champion.",
         philosophy: "As a gym owner, entrepreneur, and instructor, works with themes of 'injury-free, daily sustainable Jiu-Jitsu' and 'Jiu-Jitsu as a lifestyle,' incorporating perspectives from yoga, body structure, and wellness.",
-        approach: "Both as a competitor and instructor, brings experience of steadily building up from 'being weak at first,' aiming to realize 'safe, sustainable, and strong Jiu-Jitsu.'",
+      approach: "Both as a competitor and instructor, brings experience of steadily building up from 'being weak at first,' aiming to realize 'safe, sustainable, and strong Jiu-Jitsu.'",
       },
+      closing: "Learn Jiu-Jitsu quietly and deeply.\nSafe, sustainable, and strong.\nWhy not start your journey here?",
     },
     join: {
       title: "Subscribe",
       subtitle: "Start by watching.",
+      cta: {
+        button: "Get Started",
+      },
       sampleVideo: {
         title: "Watch a Sample First",
         cta: "Watch Sample Video",
@@ -326,6 +336,7 @@ export const translations = {
       map: "Mapa",
       about: "Sobre",
       join: "Assinar",
+      login: "Entrar",
     },
     home: {
       hero: {
@@ -410,12 +421,16 @@ export const translations = {
         achievement1: "Primeira faixa preta de linhagem direta Gracie em Hokkaido para Jiu-Jitsu Brasileiro.",
         achievement2: "Campeão Mundial SJJIF 2018 e 2019 Master 2 Faixa Preta Peso Pena. Primeiro campeão mundial japonês.",
         philosophy: "Como proprietário de academia, empresário e instrutor, trabalha com temas de 'Jiu-Jitsu sem lesões e sustentável diariamente' e 'Jiu-Jitsu como estilo de vida,' incorporando perspectivas de yoga, estrutura corporal e bem-estar.",
-        approach: "Tanto como competidor quanto instrutor, traz experiência de construção constante a partir de 'ser fraco no início,' visando realizar 'Jiu-Jitsu seguro, sustentável e forte.'",
+      approach: "Tanto como competidor quanto instrutor, traz experiência de construção constante a partir de 'ser fraco no início,' visando realizar 'Jiu-Jitsu seguro, sustentável e forte.'",
       },
+      closing: "Aprenda Jiu-Jitsu de forma silenciosa e profunda.\nSeguro, sustentável e forte.\nPor que não começar sua jornada aqui?",
     },
     join: {
       title: "Assinar",
       subtitle: "Comece assistindo.",
+      cta: {
+        button: "Começar Agora",
+      },
       sampleVideo: {
         title: "Assista uma Amostra Primeiro",
         cta: "Assistir Vídeo de Amostra",
