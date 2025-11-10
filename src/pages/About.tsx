@@ -1,15 +1,13 @@
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
-import { useLanguage } from "@/contexts/LanguageContext";
-import { translations } from "@/lib/translations";
+import { useTranslation } from "@/hooks/useTranslation";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useState, useEffect } from "react";
 
 const About = () => {
-  const { language } = useLanguage();
-  const t = translations[language] || translations.ja; // Fallback to Japanese
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
 
@@ -159,9 +157,9 @@ const About = () => {
           ) : (
             <>
               <div className="text-center mb-20 animate-fade-up">
-            <h1 className="text-5xl md:text-6xl font-light mb-6">{t.about.title}</h1>
+            <h1 className="text-5xl md:text-6xl font-light mb-6">{t("about.title")}</h1>
             <p className="text-xl text-muted-foreground font-light max-w-2xl mx-auto whitespace-pre-line">
-              {t.about.subtitle}
+              {t("about.subtitle")}
             </p>
               </div>
 
@@ -169,7 +167,7 @@ const About = () => {
               <div className="mb-20 animate-fade-up">
                 <div className="prose prose-lg max-w-none">
                   <p className="text-lg font-light text-muted-foreground leading-relaxed whitespace-pre-line">
-                    {t.about.mission}
+                    {t("about.mission")}
                   </p>
                 </div>
               </div>
@@ -177,16 +175,16 @@ const About = () => {
               {/* Instructor */}
               <div className="animate-fade-up">
                 <h2 className="text-3xl font-light mb-8 text-center border-b border-border pb-4">
-                  {t.about.instructorTitle}
+                  {t("about.instructorTitle")}
                 </h2>
                 <div className="border border-border p-8">
-                  <h3 className="text-3xl font-light mb-6 text-center">{t.about.instructor.name}</h3>
+                  <h3 className="text-3xl font-light mb-6 text-center">{t("about.instructor.name")}</h3>
                   <div className="space-y-4 text-muted-foreground font-light leading-relaxed">
-                    <p>{t.about.instructor.birth}</p>
-                    <p>{t.about.instructor.achievement1}</p>
-                    <p>{t.about.instructor.achievement2}</p>
-                    <p>{t.about.instructor.philosophy}</p>
-                    <p>{t.about.instructor.approach}</p>
+                    <p>{t("about.instructor.birth")}</p>
+                    <p>{t("about.instructor.achievement1")}</p>
+                    <p>{t("about.instructor.achievement2")}</p>
+                    <p>{t("about.instructor.philosophy")}</p>
+                    <p>{t("about.instructor.approach")}</p>
                   </div>
                 </div>
               </div>
