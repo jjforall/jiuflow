@@ -126,7 +126,7 @@ const Home = () => {
                     </Button>
                   </Link>
                   <Link to="/login" className="w-full sm:w-auto">
-                    <Button variant="outline" size="lg" className="w-full sm:min-w-[200px] border-white/30 text-white hover:bg-white/10 backdrop-blur-sm">
+                    <Button variant="outline" size="lg" className="w-full sm:min-w-[200px] bg-transparent border-white/30 text-white hover:bg-white/10 backdrop-blur-sm">
                       {t.nav.login}
                     </Button>
                   </Link>
