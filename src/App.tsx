@@ -7,6 +7,8 @@ import { LanguageProvider } from "./contexts/LanguageContext";
 import { AuthProvider } from "./hooks/useAuth";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { ErrorBoundary } from "./components/ErrorBoundary";
+import Navigation from "@/components/Navigation";
+import Footer from "@/components/Footer";
 
 // Lazy load route components for better performance
 const Home = lazy(() => import("./pages/Home"));
@@ -30,7 +32,15 @@ const App = () => (
           <Sonner position="top-center" richColors closeButton />
           <BrowserRouter>
             <AuthProvider>
-              <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
+              <Suspense fallback={
+                <div className="min-h-screen">
+                  <Navigation />
+                  <main className="pt-16">
+                    <div className="h-[60vh] flex items-center justify-center text-muted-foreground">Loading...</div>
+                  </main>
+                  <Footer />
+                </div>
+              }>
                 <Routes>
                 <Route path="/" element={<Home />} />
                 <Route path="/login" element={<Login />} />
