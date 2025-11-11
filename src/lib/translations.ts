@@ -4,15 +4,16 @@ export const translations = {
       home: "Home",
       map: "技マップ",
       about: "About",
-      join: "Subscribe",
+      join: "料金プラン",
       login: "ログイン",
     },
     home: {
       hero: {
-        title: "From Pull to Submission.",
-        subtitle: "柔術を、体系で学ぶ。",
+        title: "Flow Over Force",
+        subtitle: "静かに、深く学ぶ柔術。\n安全で、長くできて、強くなる。",
         viewMap: "技マップを見る",
-        freeTrial: "無料で体験する",
+        freeTrial: "今すぐ無料で始める",
+        valueProposition: "白帯〜黒帯までの技を\n4K俯瞰映像で体系的に学べる",
       },
       clarity: {
         title: "Learn Jiu-Jitsu with Clarity.",
@@ -164,17 +165,18 @@ export const translations = {
   en: {
     nav: {
       home: "Home",
-      map: "Technique Map",
+      map: "Techniques",
       about: "About",
-      join: "Subscribe",
+      join: "Pricing",
       login: "Login",
     },
     home: {
       hero: {
-        title: "From Pull to Submission.",
-        subtitle: "Learn Jiu-Jitsu Systematically.",
+        title: "Flow Over Force",
+        subtitle: "Learn Jiu-Jitsu with Clarity.\nSafe, Sustainable, and Effective.",
         viewMap: "View Technique Map",
         freeTrial: "Start Free Trial",
+        valueProposition: "Learn Brazilian Jiu-Jitsu techniques\nfrom white to black belt with 4K overhead videos",
       },
       clarity: {
         title: "Learn Jiu-Jitsu with Clarity.",
@@ -333,17 +335,18 @@ export const translations = {
   pt: {
     nav: {
       home: "Início",
-      map: "Mapa de Técnicas",
+      map: "Técnicas",
       about: "Sobre",
-      join: "Assinar",
+      join: "Preços",
       login: "Entrar",
     },
     home: {
       hero: {
-        title: "Da Puxada à Finalização.",
-        subtitle: "Aprenda Jiu-Jitsu Sistematicamente.",
+        title: "Flow Over Force",
+        subtitle: "Aprenda Jiu-Jitsu com Clareza.\nSeguro, Sustentável e Eficaz.",
         viewMap: "Ver Mapa de Técnicas",
         freeTrial: "Começar Teste Grátis",
+        valueProposition: "Aprenda técnicas de Jiu-Jitsu Brasileiro\nda faixa branca à preta com vídeos 4K aéreos",
       },
       clarity: {
         title: "Aprenda Jiu-Jitsu com Clareza.",

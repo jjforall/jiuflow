@@ -72,6 +72,7 @@ const Home = () => {
                           src={image.url} 
                           alt={`Jiu-Jitsu Training ${idx + 1}`}
                           className="w-full h-full object-cover"
+                          loading="lazy"
                         />
                       </div>
                     ))}
@@ -103,22 +104,29 @@ const Home = () => {
                 )}
               </div>
               
-              <div className="relative z-10 text-center px-6 max-w-4xl mx-auto animate-fade-up">
-                <h1 className="text-6xl md:text-8xl font-light mb-6 tracking-tight text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)]">
+              <div className="relative z-10 text-center px-6 max-w-4xl mx-auto animate-fade-up space-y-8">
+                <h1 className="text-6xl md:text-8xl font-light mb-4 tracking-tight text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)]">
                   {t.home.hero.title}
                 </h1>
-                <p className="text-xl md:text-2xl font-light mb-12 text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)] whitespace-pre-line">
+                <p className="text-xl md:text-2xl font-light text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)] whitespace-pre-line">
                   {t.home.hero.subtitle}
                 </p>
                 
-                <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                  <Link to="/join">
-                    <Button variant="default" size="lg" className="min-w-[200px]">
+                {/* Value Proposition */}
+                <div className="bg-black/40 backdrop-blur-sm border border-white/20 rounded-lg p-6 max-w-2xl mx-auto">
+                  <p className="text-lg md:text-xl font-light text-white whitespace-pre-line">
+                    {t.home.hero.valueProposition}
+                  </p>
+                </div>
+                
+                <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
+                  <Link to="/join" className="w-full sm:w-auto">
+                    <Button size="lg" className="w-full sm:min-w-[240px] text-lg font-medium bg-primary hover:bg-primary/90 shadow-lg hover:shadow-xl transition-all">
                       {t.home.hero.freeTrial}
                     </Button>
                   </Link>
-                  <Link to="/login">
-                    <Button variant="outline" size="lg" className="min-w-[200px]">
+                  <Link to="/login" className="w-full sm:w-auto">
+                    <Button variant="outline" size="lg" className="w-full sm:min-w-[200px] border-white/30 text-white hover:bg-white/10 backdrop-blur-sm">
                       {t.nav.login}
                     </Button>
                   </Link>
@@ -145,6 +153,7 @@ const Home = () => {
                         src={images[0]?.url || "/placeholder.svg"} 
                         alt="4K Overhead View"
                         className="w-full h-full object-cover"
+                        loading="lazy"
                       />
                       <div className="absolute inset-0 bg-black/40" />
                     </div>
@@ -160,6 +169,7 @@ const Home = () => {
                         src={images[1]?.url || "/placeholder.svg"} 
                         alt="Systematic Map"
                         className="w-full h-full object-cover"
+                        loading="lazy"
                       />
                       <div className="absolute inset-0 bg-black/40" />
                     </div>
@@ -175,6 +185,7 @@ const Home = () => {
                         src={images[2]?.url || "/placeholder.svg"} 
                         alt="Focused Learning"
                         className="w-full h-full object-cover"
+                        loading="lazy"
                       />
                       <div className="absolute inset-0 bg-black/40" />
                     </div>
