@@ -203,7 +203,7 @@ serve(async (req) => {
 
     throw new Error(`Unknown action: ${action}`);
 
-  } catch (error) {
+  } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     logStep("ERROR", { message: errorMessage });
     return new Response(JSON.stringify({ error: errorMessage }), {

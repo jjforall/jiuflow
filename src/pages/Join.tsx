@@ -144,10 +144,10 @@ const Join = () => {
       if (pendingPriceId) {
         await proceedToCheckout(pendingPriceId, pendingIsSubscription);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Signup error:", error);
       toast.error(t.join.payment?.error || "Signup error", {
-        description: error.message,
+        description: (error instanceof Error ? error.message : String(error)),
       });
     } finally {
       setIsLoading(false);
@@ -166,7 +166,7 @@ const Join = () => {
       if (data?.url) {
         window.open(data.url, "_blank");
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("Checkout error:", error);
       toast.error(t.join.payment?.error || "Payment error", {
         description: t.join.payment?.errorDesc || "An error occurred. Please try again.",

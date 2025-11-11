@@ -66,9 +66,9 @@ export const UsersTab = () => {
       toast.success("読み込み完了", {
         description: `${sorted.length}件の会員を読み込みました（管理者${sorted.filter(p => p.user_roles?.some(r => r.role === 'admin')).length}名）`,
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast.error("エラー", {
-        description: error.message,
+        description: (error instanceof Error ? error.message : String(error)),
       });
     } finally {
       setLoadingProfiles(false);
@@ -101,9 +101,9 @@ export const UsersTab = () => {
       setShowEditProfileDialog(false);
       setEditingProfile(null);
       loadProfiles();
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast.error("エラー", {
-        description: error.message,
+        description: (error instanceof Error ? error.message : String(error)),
       });
     } finally {
       setIsLoading(false);
@@ -132,9 +132,9 @@ export const UsersTab = () => {
       });
       
       loadProfiles();
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast.error("エラー", {
-        description: error.message,
+        description: (error instanceof Error ? error.message : String(error)),
       });
     } finally {
       setIsLoading(false);
@@ -159,10 +159,10 @@ export const UsersTab = () => {
       });
 
       loadProfiles();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Toggle admin error:", error);
       toast.error("エラー", {
-        description: error.message || "権限の変更に失敗しました",
+        description: (error instanceof Error ? error.message : String(error)) || "権限の変更に失敗しました",
       });
     } finally {
       setIsLoading(false);
@@ -189,10 +189,10 @@ export const UsersTab = () => {
       setShowPasswordDialog(false);
       setPasswordChangeUserId(null);
       setNewPassword("");
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Password change error:", error);
       toast.error("エラー", {
-        description: error.message || "パスワードの変更に失敗しました",
+        description: (error instanceof Error ? error.message : String(error)) || "パスワードの変更に失敗しました",
       });
     } finally {
       setIsLoading(false);

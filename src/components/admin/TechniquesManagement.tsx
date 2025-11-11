@@ -101,7 +101,7 @@ export const TechniquesManagement = () => {
               reject(new Error('Failed to create thumbnail blob'));
             }
           }, 'image/jpeg', 0.8);
-        } catch (error) {
+        } catch (error: unknown) {
           reject(error);
         }
       });
@@ -175,7 +175,7 @@ export const TechniquesManagement = () => {
         const thumbnailBlob = await generateThumbnail(publicUrl);
         const tempId = techniqueId || crypto.randomUUID();
         thumbnailUrl = await uploadThumbnail(thumbnailBlob, tempId);
-      } catch (error) {
+      } catch (error: unknown) {
         console.error('Failed to generate thumbnail:', error);
         toast.error('サムネイル生成エラー', {
           description: 'サムネイルの生成に失敗しましたが、動画はアップロードされました'
@@ -189,7 +189,7 @@ export const TechniquesManagement = () => {
       ));
 
       return { videoUrl: publicUrl, thumbnailUrl };
-    } catch (error) {
+    } catch (error: unknown) {
       setUploadQueue(prev => prev.map(item => 
         item.fileName === fileName 
           ? { ...item, status: 'error' }
@@ -226,7 +226,7 @@ export const TechniquesManagement = () => {
           .eq('id', technique.id);
         
         successCount++;
-      } catch (error) {
+      } catch (error: unknown) {
         console.error(`Failed to generate thumbnail for ${technique.name}:`, error);
         failCount++;
       }
@@ -273,7 +273,7 @@ export const TechniquesManagement = () => {
 
       resetForm();
       setShowEditDialog(false);
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error saving technique:', error);
     }
   };
@@ -311,7 +311,7 @@ export const TechniquesManagement = () => {
           description: "自動翻訳が完了しました",
         });
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Translation error:', error);
       toast.error("翻訳エラー", {
         description: "翻訳中にエラーが発生しました",
@@ -344,7 +344,7 @@ export const TechniquesManagement = () => {
       description: technique.description || "",
       description_ja: technique.description_ja || "",
       description_pt: technique.description_pt || "",
-      category: technique.category as any,
+      category: technique.category as "guard" | "sweep" | "submission" | "pass" | "position" | "escape" | "other",
     });
     setShowEditDialog(true);
   };
@@ -352,7 +352,7 @@ export const TechniquesManagement = () => {
   if (error) {
     return (
       <div className="text-center text-red-600 p-8">
-        エラーが発生しました: {error.message}
+        エラーが発生しました: {(error instanceof Error ? error.message : String(error))}
       </div>
     );
   }

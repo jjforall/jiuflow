@@ -19,15 +19,15 @@ interface SubscriptionStatus {
 const MyPage = () => {
   const { language } = useLanguage();
   const navigate = useNavigate();
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<{ id: string; email?: string } | null>(null);
   const [subscription, setSubscription] = useState<SubscriptionStatus | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     checkAuth();
-  }, []);
+  }, [checkAuth]);  
 
-  const checkAuth = async () => {
+  const checkAuth = useCallback(async () => {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
       navigate("/login");
@@ -35,7 +35,7 @@ const MyPage = () => {
     }
     setUser(session.user);
     await checkSubscription();
-  };
+  }, [navigate]);
 
   const checkSubscription = async () => {
     setIsLoading(true);
@@ -55,7 +55,7 @@ const MyPage = () => {
       
       if (error) throw error;
       setSubscription(data);
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("Subscription check error:", error);
       toast.error(language === "ja" ? "サブスクリプション情報の取得に失敗しました" : "Failed to fetch subscription");
     } finally {

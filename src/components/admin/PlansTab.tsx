@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import type { Product } from "@/types/admin";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -99,10 +100,10 @@ export const PlansTab = () => {
       console.log("[PlansTab] Response:", { data, error });
 
       if (error) throw error;
-      if ((data as any).error) throw new Error((data as any).error);
+      if (data && typeof data === "object" && "error" in data) throw new Error((data as { error: string }).error);
 
       // jiuflow関連のプランのみフィルタリング
-      const allProducts = (data as any).products || [];
+      const allProducts = (data && typeof data === "object" && "products" in data ? (data as { products: Product[] }).products : []);
       console.log("[PlansTab] All products count:", allProducts.length);
       console.log("[PlansTab] JIUFLOW_PRICE_IDS:", JIUFLOW_PRICE_IDS);
       
@@ -117,10 +118,10 @@ export const PlansTab = () => {
       
       console.log("[PlansTab] Filtered jiuflow products count:", jiuflowProducts.length);
       setProducts(jiuflowProducts);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("[PlansTab] Error:", error);
       toast.error("エラー", {
-        description: error.message || "プラン一覧の取得に失敗しました",
+        description: (error instanceof Error ? error.message : String(error)) || "プラン一覧の取得に失敗しました",
       });
     } finally {
       setLoading(false);
@@ -188,9 +189,9 @@ export const PlansTab = () => {
         interval: "month",
       });
       loadPlans();
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast.error("エラー", {
-        description: error.message || "処理に失敗しました",
+        description: (error instanceof Error ? error.message : String(error)) || "処理に失敗しました",
       });
     } finally {
       setLoading(false);
@@ -235,9 +236,9 @@ export const PlansTab = () => {
       });
 
       loadPlans();
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast.error("エラー", {
-        description: error.message || "プランの更新に失敗しました",
+        description: (error instanceof Error ? error.message : String(error)) || "プランの更新に失敗しました",
       });
     } finally {
       setLoading(false);
@@ -271,9 +272,9 @@ export const PlansTab = () => {
       });
 
       loadPlans();
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast.error("エラー", {
-        description: error.message || "プランのアーカイブに失敗しました",
+        description: (error instanceof Error ? error.message : String(error)) || "プランのアーカイブに失敗しました",
       });
     } finally {
       setLoading(false);
@@ -301,7 +302,7 @@ export const PlansTab = () => {
       if (!response.ok) throw new Error("Failed to fetch coupons");
       const data = await response.json();
       setCoupons(data.coupons || []);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error loading coupons:", error);
     }
   };
@@ -336,9 +337,9 @@ export const PlansTab = () => {
       setEditingCoupon(null);
       setCouponFormData({ name: "" });
       loadCoupons();
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast.error("エラー", {
-        description: error.message || "クーポンの更新に失敗しました",
+        description: (error instanceof Error ? error.message : String(error)) || "クーポンの更新に失敗しました",
       });
     } finally {
       setLoading(false);
@@ -390,9 +391,9 @@ export const PlansTab = () => {
         duration_in_months: "",
       });
       loadCoupons();
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast.error("エラー", {
-        description: error.message || "クーポンの作成に失敗しました",
+        description: (error instanceof Error ? error.message : String(error)) || "クーポンの作成に失敗しました",
       });
     } finally {
       setLoading(false);
@@ -426,9 +427,9 @@ export const PlansTab = () => {
       });
 
       loadCoupons();
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast.error("エラー", {
-        description: error.message || "クーポンの削除に失敗しました。使用済みのクーポンは削除できません。",
+        description: (error instanceof Error ? error.message : String(error)) || "クーポンの削除に失敗しました。使用済みのクーポンは削除できません。",
       });
     } finally {
       setLoading(false);
@@ -528,7 +529,7 @@ export const PlansTab = () => {
                   </div>
                   <div>
                     <label className="block text-sm mb-2">請求サイクル</label>
-                    <Select value={formData.interval} onValueChange={(value: any) => setFormData({ ...formData, interval: value })}>
+                    <Select value={formData.interval} onValueChange={(value: "month" | "year" | "") => setFormData({ ...formData, interval: value })}>
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
@@ -786,7 +787,7 @@ export const PlansTab = () => {
               <label className="block text-sm mb-2">期間</label>
               <Select
                 value={newCouponFormData.duration}
-                onValueChange={(value: any) => setNewCouponFormData({ ...newCouponFormData, duration: value })}
+                onValueChange={(value: "once" | "forever" | "repeating") => setNewCouponFormData({ ...newCouponFormData, duration: value })}
               >
                 <SelectTrigger>
                   <SelectValue />

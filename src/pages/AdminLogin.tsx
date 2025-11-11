@@ -40,7 +40,7 @@ const AdminLogin = () => {
 
       // If no admin users exist, show setup form
       setShowSetup(!data || data.length === 0);
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error:', error);
     } finally {
       setIsCheckingSetup(false);
@@ -65,9 +65,9 @@ const AdminLogin = () => {
 
       setShowSetup(false);
       checkIfSetupNeeded();
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast.error("セットアップ失敗", {
-        description: error.message,
+        description: (error instanceof Error ? error.message : String(error)),
       });
     } finally {
       setIsLoading(false);
@@ -87,7 +87,7 @@ const AdminLogin = () => {
 
       if (error) {
         toast.error("Login failed", {
-          description: error.message,
+          description: (error instanceof Error ? error.message : String(error)),
         });
         setIsLoading(false);
         return;
@@ -116,9 +116,9 @@ const AdminLogin = () => {
         });
         navigate("/admin/dashboard");
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast.error("Login failed", {
-        description: error.message,
+        description: (error instanceof Error ? error.message : String(error)),
       });
     } finally {
       setIsLoading(false);

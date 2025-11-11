@@ -63,7 +63,7 @@ const Login = () => {
 
         if (error) {
           toast.error(language === "ja" ? "登録失敗" : language === "pt" ? "Falha no registro" : "Sign up failed", {
-            description: error.message,
+            description: (error instanceof Error ? error.message : String(error)),
           });
           setIsLoading(false);
           return;
@@ -99,7 +99,7 @@ const Login = () => {
 
         if (error) {
           toast.error(language === "ja" ? "ログイン失敗" : language === "pt" ? "Falha no login" : "Login failed", {
-            description: error.message,
+            description: (error instanceof Error ? error.message : String(error)),
           });
           setIsLoading(false);
           return;

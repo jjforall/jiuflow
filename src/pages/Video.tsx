@@ -61,7 +61,7 @@ const Video = () => {
     checkAuthAndLoadTechnique();
   }, [id, navigate]);
 
-  const loadTechnique = async () => {
+  const loadTechnique = useCallback(async () => {
     if (!id) return;
     
     setIsLoading(true);
@@ -81,7 +81,7 @@ const Video = () => {
 
     setTechnique(data as Technique);
     setIsLoading(false);
-  };
+  }, [id]);
 
   const getTechniqueName = (tech: Technique) => {
     switch (language) {

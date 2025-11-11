@@ -71,7 +71,7 @@ serve(async (req) => {
         status: 200,
       }
     );
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("Error creating coupon:", error);
     const message = error instanceof Error ? error.message : String(error);
     return new Response(
