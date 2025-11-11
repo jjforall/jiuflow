@@ -13,13 +13,13 @@ export const useTranslation = () => {
     // まず既存の翻訳を確認（存在しない言語は英語にフォールバック）
     const keys = key.split(".");
     const pack: any = translations[language] || translations.en;
-    let value: string | number | boolean = pack;
+    let value: any = pack;
     
     for (const k of keys) {
       if (value && typeof value === "object") {
         value = value[k];
       } else {
-        value = undefined;
+        value = null;
         break;
       }
     }

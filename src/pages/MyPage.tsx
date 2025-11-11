@@ -1,7 +1,7 @@
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -23,10 +23,6 @@ const MyPage = () => {
   const [subscription, setSubscription] = useState<SubscriptionStatus | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    checkAuth();
-  }, [checkAuth]);  
-
   const checkAuth = useCallback(async () => {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
@@ -36,6 +32,10 @@ const MyPage = () => {
     setUser(session.user);
     await checkSubscription();
   }, [navigate]);
+
+  useEffect(() => {
+    checkAuth();
+  }, [checkAuth]);
 
   const checkSubscription = async () => {
     setIsLoading(true);
@@ -147,9 +147,9 @@ const MyPage = () => {
                   <Calendar className="h-4 w-4 text-muted-foreground" />
                   <div>
                     <p className="text-xs text-muted-foreground">
-                      {language === "ja" ? "登録日" : language === "pt" ? "Data de registro" : "Registration Date"}
+                      {language === "ja" ? "ユーザーID" : language === "pt" ? "ID do usuário" : "User ID"}
                     </p>
-                    <p className="font-light">{formatDate(user?.created_at)}</p>
+                    <p className="font-light text-xs">{user?.id.slice(0, 8)}...</p>
                   </div>
                 </div>
               </CardContent>

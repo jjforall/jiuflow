@@ -344,7 +344,7 @@ export const TechniquesManagement = () => {
       description: technique.description || "",
       description_ja: technique.description_ja || "",
       description_pt: technique.description_pt || "",
-      category: technique.category as "guard" | "sweep" | "submission" | "pass" | "position" | "escape" | "other",
+      category: technique.category as "pull" | "control" | "submission" | "guard-pass",
     });
     setShowEditDialog(true);
   };
