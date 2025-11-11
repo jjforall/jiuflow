@@ -112,14 +112,14 @@ const Home = () => {
                 </p>
                 
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                  <Link to="/login">
+                  <Link to="/join">
                     <Button variant="default" size="lg" className="min-w-[200px]">
-                      {language === "ja" ? "ログイン" : language === "pt" ? "Login" : "Login"}
+                      {t.home.hero.freeTrial}
                     </Button>
                   </Link>
-                  <Link to="/join">
+                  <Link to="/login">
                     <Button variant="outline" size="lg" className="min-w-[200px]">
-                      {t.home.hero.freeTrial}
+                      {t.nav.login}
                     </Button>
                   </Link>
                 </div>

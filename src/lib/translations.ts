@@ -2,7 +2,7 @@ export const translations = {
   ja: {
     nav: {
       home: "Home",
-      map: "Map",
+      map: "技マップ",
       about: "About",
       join: "Subscribe",
       login: "ログイン",
@@ -164,7 +164,7 @@ export const translations = {
   en: {
     nav: {
       home: "Home",
-      map: "Map",
+      map: "Technique Map",
       about: "About",
       join: "Subscribe",
       login: "Login",
@@ -333,7 +333,7 @@ export const translations = {
   pt: {
     nav: {
       home: "Início",
-      map: "Mapa",
+      map: "Mapa de Técnicas",
       about: "Sobre",
       join: "Assinar",
       login: "Entrar",

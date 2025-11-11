@@ -151,35 +151,49 @@ const Navigation = () => {
               </Link>
             )}
             
-            <div className="border-l border-border pl-6">
-              <select
-                value={language}
-                onChange={(e) => setLanguage(e.target.value as any)}
-                className="text-sm font-light px-3 py-1.5 bg-background border border-border rounded-md transition-smooth hover:border-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
-              >
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="gap-2">
+                  {languages.find(l => l.code === language)?.label}
+                  <span className="text-xs">{languages.find(l => l.code === language)?.name}</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
                 {languages.map((lang) => (
-                  <option key={lang.code} value={lang.code}>
-                    {lang.label} {lang.name}
-                  </option>
+                  <DropdownMenuItem
+                    key={lang.code}
+                    onClick={() => setLanguage(lang.code)}
+                    className={`cursor-pointer gap-2 ${language === lang.code ? 'bg-muted' : ''}`}
+                  >
+                    <span>{lang.label}</span>
+                    <span className="text-sm">{lang.name}</span>
+                  </DropdownMenuItem>
                 ))}
-              </select>
-            </div>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
 
           {/* Mobile: Language Switcher + Hamburger */}
           <div className="flex md:hidden items-center gap-3">
-            {/* Language Switcher */}
-            <select
-              value={language}
-              onChange={(e) => setLanguage(e.target.value as any)}
-              className="text-sm font-light px-2 py-1 bg-background border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20"
-            >
-              {languages.map((lang) => (
-                <option key={lang.code} value={lang.code}>
-                  {lang.label} {lang.name}
-                </option>
-              ))}
-            </select>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="gap-1 px-2">
+                  {languages.find(l => l.code === language)?.label}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-40">
+                {languages.map((lang) => (
+                  <DropdownMenuItem
+                    key={lang.code}
+                    onClick={() => setLanguage(lang.code)}
+                    className={`cursor-pointer gap-2 ${language === lang.code ? 'bg-muted' : ''}`}
+                  >
+                    <span>{lang.label}</span>
+                    <span className="text-sm">{lang.name}</span>
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
 
           {/* Mobile Hamburger Menu */}
           <Sheet open={isOpen} onOpenChange={setIsOpen}>
