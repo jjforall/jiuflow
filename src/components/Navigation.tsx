@@ -2,6 +2,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { translations } from "@/lib/translations";
+import { prefetchRoute } from "@/utils/routePrefetch";
 import { Button } from "@/components/ui/button";
 import { Menu, LogIn, User, LogOut, ShieldCheck } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -110,6 +111,8 @@ const Navigation = () => {
                     ? "text-foreground"
                     : "text-muted-foreground hover:text-foreground"
                 }`}
+                onMouseEnter={() => prefetchRoute(link.to)}
+                onFocus={() => prefetchRoute(link.to)}
               >
                 {link.label}
               </Link>
@@ -214,6 +217,7 @@ const Navigation = () => {
                         ? "text-foreground"
                         : "text-muted-foreground hover:text-foreground"
                     }`}
+                    onTouchStart={() => prefetchRoute(link.to)}
                   >
                     {link.label}
                   </Link>

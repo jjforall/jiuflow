@@ -7,6 +7,7 @@ import { LanguageProvider } from "./contexts/LanguageContext";
 import { AuthProvider } from "./hooks/useAuth";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { ErrorBoundary } from "./components/ErrorBoundary";
+import { RoutePrefetcher } from "./components/RoutePrefetcher";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 
@@ -32,6 +33,7 @@ const App = () => (
           <Sonner position="top-center" richColors closeButton />
           <BrowserRouter>
             <AuthProvider>
+              <RoutePrefetcher />
               <Suspense fallback={
                 <div className="min-h-screen">
                   <Navigation />

@@ -70,7 +70,7 @@ const Join = () => {
   const [pendingIsSubscription, setPendingIsSubscription] = useState(false);
   const [sampleVideoUrl, setSampleVideoUrl] = useState<string | null>(null);
   const [couponCode, setCouponCode] = useState("");
-  const [initialLoading, setInitialLoading] = useState(true);
+  
   const { isLoading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -87,7 +87,7 @@ const Join = () => {
       if (data?.video_url) {
         setSampleVideoUrl(data.video_url);
       }
-      setInitialLoading(false);
+      
     };
     fetchSampleVideo();
   }, []);
@@ -190,7 +190,7 @@ const Join = () => {
     await proceedToCheckout(priceId, isSubscription);
   };
 
-  if (authLoading || initialLoading) {
+  if (authLoading) {
     return (
       <div className="min-h-screen">
         <Navigation />
