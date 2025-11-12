@@ -65,7 +65,8 @@ const Join = () => {
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [showVideoModal, setShowVideoModal] = useState(false);
-  const [showSignupModal, setShowSignupModal] = useState(false);
+  const [showEmailModal, setShowEmailModal] = useState(false);
+  const [email, setEmail] = useState("");
   const [pendingPriceId, setPendingPriceId] = useState<string | null>(null);
   const [pendingIsSubscription, setPendingIsSubscription] = useState(false);
   const [sampleVideoUrl, setSampleVideoUrl] = useState<string | null>(null);
@@ -95,76 +96,46 @@ const Join = () => {
   // Check for payment status in URL
   useEffect(() => {
     if (searchParams.get("success") === "true") {
-      toast.success(t.join.payment?.success || "Payment successful!", {
-        description: t.join.payment?.successDesc || "Thank you for your purchase.",
-      });
+      toast.success(
+        language === "ja" 
+          ? "決済完了！メールを確認してください" 
+          : "Payment complete! Check your email",
+        {
+          description: language === "ja"
+            ? "ログイン用のマジックリンクをメールで送信しました"
+            : "We sent you a magic link to log in",
+        }
+      );
     } else if (searchParams.get("canceled") === "true") {
       toast.error(t.join.payment?.canceled || "Payment canceled", {
         description: t.join.payment?.canceledDesc || "Your payment was canceled.",
       });
     }
-  }, [searchParams, t.join.payment]);
+  }, [searchParams, t.join.payment, language]);
 
-  const handleSignup = async (e: React.FormEvent) => {
+  const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
-    try {
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/`,
-        },
-      });
-
-      if (error) throw error;
-
-      // Check if email confirmation is required
-      if (!data.session) {
-        toast.success(language === "ja" ? "確認メールを送信しました" : "Confirmation email sent", {
-          description: language === "ja" 
-            ? "メールアドレスに送信された確認リンクをクリックしてから、再度ログインしてください" 
-            : "Please click the confirmation link sent to your email, then log in again",
-        });
-        setShowSignupModal(false);
-        setIsLoading(false);
-        return;
-      }
-
-      toast.success(language === "ja" ? "アカウントを作成しました" : "Account created", {
-        description: language === "ja" ? "決済ページに移動します..." : "Redirecting to checkout...",
-      });
-
-      setShowSignupModal(false);
-      
-      // Wait a moment for the session to fully propagate
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Proceed with checkout
-      if (pendingPriceId) {
-        await proceedToCheckout(pendingPriceId, pendingIsSubscription);
-      }
-    } catch (error: unknown) {
-      console.error("Signup error:", error);
-      toast.error(t.join.payment?.error || "Signup error", {
-        description: (error instanceof Error ? error.message : String(error)),
-      });
-    } finally {
-      setIsLoading(false);
-    }
+    if (!email || !pendingPriceId) return;
+    
+    setShowEmailModal(false);
+    await proceedToCheckout(pendingPriceId, pendingIsSubscription, email);
   };
 
-  const proceedToCheckout = async (priceId: string, isSubscription: boolean) => {
+  const proceedToCheckout = async (priceId: string, isSubscription: boolean, userEmail: string) => {
     setIsLoading(true);
     try {
       const functionName = isSubscription ? "create-checkout" : "create-payment";
       const { data, error } = await supabase.functions.invoke(functionName, {
-        body: { priceId, couponCode: couponCode.trim() || undefined },
+        body: { 
+          priceId, 
+          email: userEmail,
+          couponCode: couponCode.trim() || undefined 
+        },
       });
 
       if (error) throw error;
       if (data?.url) {
-        window.open(data.url, "_blank");
+        window.location.href = data.url;
       }
     } catch (error: unknown) {
       console.error("Checkout error:", error);
@@ -177,17 +148,9 @@ const Join = () => {
   };
 
   const handleCheckout = async (priceId: string, isSubscription: boolean) => {
-    const { data: { session } } = await supabase.auth.getSession();
-    
-    if (!session) {
-      // Show signup modal instead of redirecting to auth page
-      setPendingPriceId(priceId);
-      setPendingIsSubscription(isSubscription);
-      setShowSignupModal(true);
-      return;
-    }
-
-    await proceedToCheckout(priceId, isSubscription);
+    setPendingPriceId(priceId);
+    setPendingIsSubscription(isSubscription);
+    setShowEmailModal(true);
   };
 
   if (authLoading) {
@@ -270,15 +233,15 @@ const Join = () => {
                 </DialogContent>
               </Dialog>
 
-              {/* Signup Modal */}
-              <Dialog open={showSignupModal} onOpenChange={setShowSignupModal}>
+              {/* Email Modal */}
+              <Dialog open={showEmailModal} onOpenChange={setShowEmailModal}>
                 <DialogContent className="max-w-md">
                   <DialogHeader>
                     <DialogTitle>
-                      {language === "ja" ? "アカウント作成" : language === "pt" ? "Criar conta" : "Create Account"}
+                      {language === "ja" ? "メールアドレスを入力" : language === "pt" ? "Digite seu e-mail" : "Enter your email"}
                     </DialogTitle>
                   </DialogHeader>
-                  <form onSubmit={handleSignup} className="space-y-4">
+                  <form onSubmit={handleEmailSubmit} className="space-y-4">
                     <div>
                       <Input
                         type="email"
@@ -288,25 +251,15 @@ const Join = () => {
                         required
                       />
                     </div>
-                    <div>
-                      <Input
-                        type="password"
-                        placeholder={language === "ja" ? "パスワード" : "Password"}
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        required
-                        minLength={6}
-                      />
-                    </div>
                     <Button type="submit" className="w-full" disabled={isLoading}>
                       {isLoading
-                        ? (language === "ja" ? "作成中..." : "Creating...")
-                        : (language === "ja" ? "アカウントを作成して決済へ" : "Create & Proceed to Checkout")}
+                        ? (language === "ja" ? "処理中..." : "Processing...")
+                        : (language === "ja" ? "決済へ進む" : "Proceed to Checkout")}
                     </Button>
                     <p className="text-xs text-muted-foreground text-center">
                       {language === "ja"
-                        ? "アカウント作成後、自動的に決済ページへ移動します"
-                        : "After creating your account, you'll be redirected to checkout"}
+                        ? "決済完了後、このメールアドレスにログイン用のリンクを送信します"
+                        : "After payment, we'll send a login link to this email"}
                     </p>
                   </form>
                 </DialogContent>
