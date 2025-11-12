@@ -61,12 +61,10 @@ const Join = () => {
   const { language } = useLanguage();
   const t = translations[language] || translations.ja; // Fallback to Japanese
   const countdown = useCountdown();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [checkoutEmail, setCheckoutEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [showVideoModal, setShowVideoModal] = useState(false);
   const [showEmailModal, setShowEmailModal] = useState(false);
-  const [email, setEmail] = useState("");
   const [pendingPriceId, setPendingPriceId] = useState<string | null>(null);
   const [pendingIsSubscription, setPendingIsSubscription] = useState(false);
   const [sampleVideoUrl, setSampleVideoUrl] = useState<string | null>(null);
@@ -115,10 +113,10 @@ const Join = () => {
 
   const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !pendingPriceId) return;
+    if (!checkoutEmail || !pendingPriceId) return;
     
     setShowEmailModal(false);
-    await proceedToCheckout(pendingPriceId, pendingIsSubscription, email);
+    await proceedToCheckout(pendingPriceId, pendingIsSubscription, checkoutEmail);
   };
 
   const proceedToCheckout = async (priceId: string, isSubscription: boolean, userEmail: string) => {
@@ -246,8 +244,8 @@ const Join = () => {
                       <Input
                         type="email"
                         placeholder={language === "ja" ? "メールアドレス" : "Email"}
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
+                        value={checkoutEmail}
+                        onChange={(e) => setCheckoutEmail(e.target.value)}
                         required
                       />
                     </div>

@@ -85,11 +85,10 @@ serve(async (req) => {
       }
 
       // Send magic link
-      const origin = Deno.env.get("SUPABASE_URL")?.replace("/supabase", "") || "http://localhost:8080";
       const { error: magicLinkError } = await supabaseAdmin.auth.signInWithOtp({
         email,
         options: {
-          emailRedirectTo: `${origin}/auth/callback`,
+          emailRedirectTo: `${req.headers.get("origin") || "http://localhost:8080"}/`,
         },
       });
 
