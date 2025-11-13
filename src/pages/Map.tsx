@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
@@ -9,7 +9,8 @@ import { toast } from "sonner";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { Lock } from "lucide-react";
+import { Lock, Loader2 } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface Technique {
   id: string;
@@ -31,50 +32,15 @@ const Map = () => {
   const navigate = useNavigate();
   const { subscribed, loading: subscriptionLoading } = useSubscription();
   const { isAdmin } = useAuth();
-  const [selectedTech, setSelectedTech] = useState<Technique | null>(null);
   const [techniques, setTechniques] = useState<Technique[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+  const [page, setPage] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const observerTarget = useRef<HTMLDivElement>(null);
+  const PAGE_SIZE = 10;
 
-  useEffect(() => {
-    const checkAuthAndLoadTechniques = async () => {
-      // Check if user is authenticated
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session) {
-        // Redirect to login page if not authenticated
-        navigate("/login", { 
-          state: { from: { pathname: "/map" } },
-          replace: true 
-        });
-        return;
-      }
-
-      setIsCheckingAuth(false);
-      loadTechniques();
-    };
-
-    checkAuthAndLoadTechniques();
-  }, [navigate]);
-
-  const loadTechniques = async () => {
-    setIsLoading(true);
-    const { data, error } = await supabase
-      .from("techniques")
-      .select("*")
-      .order("display_order", { ascending: true });
-
-    if (error) {
-      toast.error("Error loading techniques", {
-        description: error.message,
-      });
-      setIsLoading(false);
-      return;
-    }
-
-    setTechniques((data as Technique[]) || []);
-    setIsLoading(false);
-  };
 
   const getTechniqueName = (tech: Technique) => {
     switch (language) {
@@ -98,11 +64,32 @@ const Map = () => {
     }
   };
 
-  const categoryColors = {
-    pull: "border-secondary",
-    "guard-pass": "border-primary",
-    control: "border-accent",
-    submission: "border-foreground",
+  const categoryLabels: Record<string, { en: string; ja: string; pt: string }> = {
+    pull: { en: "Pull", ja: "引き込み", pt: "Puxada" },
+    "guard-pass": { en: "Guard Pass", ja: "ガードパス", pt: "Passagem de Guarda" },
+    control: { en: "Control", ja: "コントロール", pt: "Controle" },
+    submission: { en: "Submission", ja: "極め技", pt: "Finalização" },
+  };
+
+  const getCategoryLabel = (category: string) => {
+    const labels = categoryLabels[category];
+    if (!labels) return category;
+    
+    switch (language) {
+      case "ja":
+        return labels.ja;
+      case "pt":
+        return labels.pt;
+      default:
+        return labels.en;
+    }
+  };
+
+  const categoryColors: Record<string, string> = {
+    pull: "bg-secondary/10 border-secondary hover:bg-secondary/20",
+    "guard-pass": "bg-primary/10 border-primary hover:bg-primary/20",
+    control: "bg-accent/10 border-accent hover:bg-accent/20",
+    submission: "bg-destructive/10 border-destructive hover:bg-destructive/20",
   };
 
   return (
@@ -171,47 +158,77 @@ const Map = () => {
             </div>
           ) : (
             <div className="animate-fade-up">
-
               {/* Techniques Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-6 md:gap-8">
-                {["pull", "guard-pass", "control", "submission"].map((category) => (
-                  <div key={category} className="space-y-3 md:space-y-4">
-                    <h3 className="text-base md:text-lg font-light border-b border-border pb-2">
-                      {t.map[category as keyof typeof t.map] as string}
-                    </h3>
-                    {techniques
-                      .filter((tech) => tech.category === category)
-                      .map((tech) => (
-                        <Link
-                          key={tech.id}
-                          to={`/video/${tech.id}`}
-                          className={`block w-full text-left border ${
-                            categoryColors[category as keyof typeof categoryColors]
-                          } transition-smooth hover:bg-muted overflow-hidden`}
-                        >
-                          <div className="aspect-video w-full overflow-hidden bg-muted flex items-center justify-center">
-                            {tech.thumbnail_url ? (
-                              <img 
-                                src={tech.thumbnail_url} 
-                                alt={getTechniqueName(tech)}
-                                className="w-full h-full object-cover"
-                                onError={(e) => {
-                                  e.currentTarget.style.display = 'none';
-                                  e.currentTarget.parentElement!.innerHTML = '<div class="text-muted-foreground text-4xl">▶</div>';
-                                }}
-                              />
-                            ) : (
-                              <div className="text-muted-foreground text-4xl">▶</div>
-                            )}
-                          </div>
-                          <div className="p-4">
-                            <div className="font-light text-sm md:text-base">{getTechniqueName(tech)}</div>
-                          </div>
-                        </Link>
-                      ))}
-                  </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
+                {techniques.map((tech) => (
+                  <Link
+                    key={tech.id}
+                    to={`/video/${tech.id}`}
+                    className={`group block border rounded-lg overflow-hidden transition-all ${
+                      categoryColors[tech.category]
+                    }`}
+                  >
+                    <div className="aspect-video w-full overflow-hidden bg-muted/50 relative">
+                      {tech.thumbnail_url ? (
+                        <img 
+                          src={tech.thumbnail_url} 
+                          alt={getTechniqueName(tech)}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          loading="lazy"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                            const parent = e.currentTarget.parentElement;
+                            if (parent) {
+                              parent.innerHTML = '<div class="absolute inset-0 flex items-center justify-center"><div class="text-muted-foreground text-4xl">▶</div></div>';
+                            }
+                          }}
+                        />
+                      ) : (
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <div className="text-muted-foreground text-4xl">▶</div>
+                        </div>
+                      )}
+                      <div className="absolute top-2 right-2">
+                        <span className="text-xs px-2 py-1 rounded bg-background/80 backdrop-blur-sm">
+                          {getCategoryLabel(tech.category)}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="p-3 md:p-4">
+                      <h3 className="font-medium text-sm md:text-base mb-1 line-clamp-2">
+                        {getTechniqueName(tech)}
+                      </h3>
+                      {getTechniqueDescription(tech) && (
+                        <p className="text-xs md:text-sm text-muted-foreground line-clamp-2">
+                          {getTechniqueDescription(tech)}
+                        </p>
+                      )}
+                    </div>
+                  </Link>
                 ))}
               </div>
+
+              {/* Infinite Scroll Observer */}
+              {hasMore && (
+                <div ref={observerTarget} className="flex justify-center py-8">
+                  {isLoadingMore && (
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      <span className="text-sm">
+                        {language === "ja" ? "読み込み中..." : language === "pt" ? "Carregando..." : "Loading..."}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {!hasMore && techniques.length > 0 && (
+                <div className="text-center py-8">
+                  <p className="text-sm text-muted-foreground">
+                    {language === "ja" ? "すべてのテクニックを表示しました" : language === "pt" ? "Todas as técnicas foram exibidas" : "All techniques displayed"}
+                  </p>
+                </div>
+              )}
             </div>
           )}
         </div>
