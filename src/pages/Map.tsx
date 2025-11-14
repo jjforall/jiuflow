@@ -9,8 +9,9 @@ import { toast } from "sonner";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { Lock, Loader2 } from "lucide-react";
+import { Lock, Loader2, Upload } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { VideoUploadDialog } from "@/components/VideoUploadDialog";
 
 interface Technique {
   id: string;
@@ -38,6 +39,7 @@ const Map = () => {
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [showUploadDialog, setShowUploadDialog] = useState(false);
   const observerTarget = useRef<HTMLDivElement>(null);
   const PAGE_SIZE = 10;
 
@@ -223,10 +225,43 @@ const Map = () => {
               )}
 
               {!hasMore && techniques.length > 0 && (
-                <div className="text-center py-8">
-                  <p className="text-sm text-muted-foreground">
-                    {language === "ja" ? "すべてのテクニックを表示しました" : language === "pt" ? "Todas as técnicas foram exibidas" : "All techniques displayed"}
-                  </p>
+                <div className="space-y-8 mt-12">
+                  <div className="p-8 border-2 border-dashed border-border rounded-lg text-center space-y-4 bg-card">
+                    <div className="max-w-2xl mx-auto space-y-3">
+                      <h3 className="text-2xl font-bold text-foreground">
+                        {language === "ja" ? "あなたの動画を投稿してみよう！" : language === "pt" ? "Publique seus vídeos!" : "Share Your Videos!"}
+                      </h3>
+                      <p className="text-muted-foreground">
+                        {language === "ja" 
+                          ? "試合動画、テクニック動画など、どんな動画でもお気軽に投稿してください。" 
+                          : language === "pt" 
+                          ? "Compartilhe vídeos de lutas, técnicas e muito mais!" 
+                          : "Share match videos, technique videos, and more!"}
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        {language === "ja" 
+                          ? "※ テクニック動画の場合、一部使わせていただく可能性があります。" 
+                          : language === "pt" 
+                          ? "* Vídeos de técnicas podem ser parcialmente utilizados." 
+                          : "* Technique videos may be partially used."}
+                      </p>
+                      <p className="text-sm font-medium text-primary">
+                        {language === "ja" 
+                          ? "再生数に応じた収益をお返しします。" 
+                          : language === "pt" 
+                          ? "Ganhe com base nas visualizações!" 
+                          : "Earn revenue based on views!"}
+                      </p>
+                      <Button 
+                        onClick={() => setShowUploadDialog(true)}
+                        size="lg"
+                        className="mt-4"
+                      >
+                        <Upload className="mr-2 h-5 w-5" />
+                        {language === "ja" ? "動画を投稿する" : language === "pt" ? "Publicar vídeo" : "Upload Video"}
+                      </Button>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
@@ -234,6 +269,10 @@ const Map = () => {
         </div>
       </main>
       <Footer />
+      <VideoUploadDialog 
+        open={showUploadDialog} 
+        onOpenChange={setShowUploadDialog}
+      />
     </div>
   );
 };
