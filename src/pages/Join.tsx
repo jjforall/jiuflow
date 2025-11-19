@@ -61,12 +61,8 @@ const Join = () => {
   const { language } = useLanguage();
   const t = translations[language] || translations.ja; // Fallback to Japanese
   const countdown = useCountdown();
-  const [checkoutEmail, setCheckoutEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [showVideoModal, setShowVideoModal] = useState(false);
-  const [showEmailModal, setShowEmailModal] = useState(false);
-  const [pendingPriceId, setPendingPriceId] = useState<string | null>(null);
-  const [pendingIsSubscription, setPendingIsSubscription] = useState(false);
   const [sampleVideoUrl, setSampleVideoUrl] = useState<string | null>(null);
   const [couponCode, setCouponCode] = useState("");
   
@@ -111,22 +107,13 @@ const Join = () => {
     }
   }, [searchParams, t.join.payment, language]);
 
-  const handleEmailSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!checkoutEmail || !pendingPriceId) return;
-    
-    setShowEmailModal(false);
-    await proceedToCheckout(pendingPriceId, pendingIsSubscription, checkoutEmail);
-  };
-
-  const proceedToCheckout = async (priceId: string, isSubscription: boolean, userEmail: string) => {
+  const handleCheckout = async (priceId: string, isSubscription: boolean) => {
     setIsLoading(true);
     try {
       const functionName = isSubscription ? "create-checkout" : "create-payment";
       const { data, error } = await supabase.functions.invoke(functionName, {
         body: { 
           priceId, 
-          email: userEmail,
           couponCode: couponCode.trim() || undefined 
         },
       });
@@ -143,12 +130,6 @@ const Join = () => {
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const handleCheckout = async (priceId: string, isSubscription: boolean) => {
-    setPendingPriceId(priceId);
-    setPendingIsSubscription(isSubscription);
-    setShowEmailModal(true);
   };
 
   if (authLoading) {
@@ -231,37 +212,6 @@ const Join = () => {
                 </DialogContent>
               </Dialog>
 
-              {/* Email Modal */}
-              <Dialog open={showEmailModal} onOpenChange={setShowEmailModal}>
-                <DialogContent className="max-w-md">
-                  <DialogHeader>
-                    <DialogTitle>
-                      {language === "ja" ? "メールアドレスを入力" : language === "pt" ? "Digite seu e-mail" : "Enter your email"}
-                    </DialogTitle>
-                  </DialogHeader>
-                  <form onSubmit={handleEmailSubmit} className="space-y-4">
-                    <div>
-                      <Input
-                        type="email"
-                        placeholder={language === "ja" ? "メールアドレス" : "Email"}
-                        value={checkoutEmail}
-                        onChange={(e) => setCheckoutEmail(e.target.value)}
-                        required
-                      />
-                    </div>
-                    <Button type="submit" className="w-full" disabled={isLoading}>
-                      {isLoading
-                        ? (language === "ja" ? "処理中..." : "Processing...")
-                        : (language === "ja" ? "決済へ進む" : "Proceed to Checkout")}
-                    </Button>
-                    <p className="text-xs text-muted-foreground text-center">
-                      {language === "ja"
-                        ? "決済完了後、このメールアドレスにログイン用のリンクを送信します"
-                        : "After payment, we'll send a login link to this email"}
-                    </p>
-                  </form>
-                </DialogContent>
-              </Dialog>
 
               {/* Coupon Code Section */}
               <div className="border border-border p-6 mb-8 animate-fade-up">
