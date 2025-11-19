@@ -16,16 +16,14 @@ serve(async (req) => {
   );
 
   try {
-    const { priceId, couponCode, email } = await req.json();
+    const { priceId, couponCode } = await req.json();
     if (!priceId) throw new Error("Price ID is required");
-    if (!email) throw new Error("Email is required");
 
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", { 
       apiVersion: "2025-08-27.basil" 
     });
 
     const sessionConfig: any = {
-      customer_email: email,
       customer_creation: "always",
       line_items: [
         {
