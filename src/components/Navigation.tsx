@@ -125,23 +125,23 @@ const Navigation = () => {
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="sm" className="gap-2">
                     <User className="h-4 w-4" />
-                    {language === "ja" ? "マイページ" : language === "pt" ? "Minha Página" : "My Page"}
+                    {t.nav.myPage || (language === "ja" ? "マイページ" : language === "pt" ? "Minha Página" : "My Page")}
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem onClick={() => navigate("/mypage")} className="gap-2 cursor-pointer">
                     <User className="h-4 w-4" />
-                    {language === "ja" ? "マイページ" : language === "pt" ? "Minha Página" : "My Page"}
+                    {t.nav.myPage || (language === "ja" ? "マイページ" : language === "pt" ? "Minha Página" : "My Page")}
                   </DropdownMenuItem>
                   {isAdmin && (
                     <DropdownMenuItem onClick={() => navigate("/admin/dashboard")} className="gap-2 cursor-pointer">
                       <ShieldCheck className="h-4 w-4" />
-                      {language === "ja" ? "管理画面" : language === "pt" ? "Painel de Administração" : "Admin Dashboard"}
+                      {t.nav.adminDashboard || (language === "ja" ? "管理画面" : language === "pt" ? "Painel de Administração" : "Admin Dashboard")}
                     </DropdownMenuItem>
                   )}
                   <DropdownMenuItem onClick={handleLogout} className="gap-2 cursor-pointer">
                     <LogOut className="h-4 w-4" />
-                    {language === "ja" ? "ログアウト" : language === "pt" ? "Sair" : "Logout"}
+                    {t.nav.logout || (language === "ja" ? "ログアウト" : language === "pt" ? "Sair" : "Logout")}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -149,7 +149,7 @@ const Navigation = () => {
               <Link to="/login">
                 <Button variant="ghost" size="sm" className="gap-2">
                   <LogIn className="h-4 w-4" />
-                  {language === "ja" ? "ログイン" : language === "pt" ? "Login" : "Login"}
+                  {t.nav.login}
                 </Button>
               </Link>
             )}
@@ -229,14 +229,14 @@ const Navigation = () => {
                       <Link to="/mypage" onClick={() => setIsOpen(false)}>
                         <Button variant="outline" className="w-full gap-2">
                           <User className="h-4 w-4" />
-                          {language === "ja" ? "マイページ" : language === "pt" ? "Minha Página" : "My Page"}
+                          {t.nav.myPage || (language === "ja" ? "マイページ" : language === "pt" ? "Minha Página" : "My Page")}
                         </Button>
                       </Link>
                       {isAdmin && (
                         <Link to="/admin/dashboard" onClick={() => setIsOpen(false)}>
                           <Button variant="outline" className="w-full gap-2">
                             <ShieldCheck className="h-4 w-4" />
-                            {language === "ja" ? "管理画面" : language === "pt" ? "Painel de Administração" : "Admin Dashboard"}
+                            {t.nav.adminDashboard || (language === "ja" ? "管理画面" : language === "pt" ? "Painel de Administração" : "Admin Dashboard")}
                           </Button>
                         </Link>
                       )}
@@ -249,14 +249,14 @@ const Navigation = () => {
                         }}
                       >
                         <LogOut className="h-4 w-4" />
-                        {language === "ja" ? "ログアウト" : language === "pt" ? "Sair" : "Logout"}
+                        {t.nav.logout || (language === "ja" ? "ログアウト" : language === "pt" ? "Sair" : "Logout")}
                       </Button>
                     </>
                   ) : (
                     <Link to="/login" onClick={() => setIsOpen(false)}>
                       <Button variant="outline" className="w-full gap-2">
                         <LogIn className="h-4 w-4" />
-                        {language === "ja" ? "ログイン" : language === "pt" ? "Login" : "Login"}
+                        {t.nav.login}
                       </Button>
                     </Link>
                   )}
