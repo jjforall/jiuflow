@@ -179,9 +179,19 @@ const Login = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="login-password">
-                    {language === "ja" ? "パスワード" : "Password"}
-                  </Label>
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="login-password">
+                      {language === "ja" ? "パスワード" : "Password"}
+                    </Label>
+                    <Button
+                      type="button"
+                      variant="link"
+                      className="p-0 h-auto text-sm"
+                      onClick={() => navigate("/reset-password")}
+                    >
+                      {language === "ja" ? "パスワードを忘れた？" : "Forgot password?"}
+                    </Button>
+                  </div>
                   <Input
                     id="login-password"
                     type="password"

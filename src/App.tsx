@@ -14,6 +14,8 @@ import Footer from "@/components/Footer";
 // Lazy load route components for better performance
 const Home = lazy(() => import("./pages/Home"));
 const Login = lazy(() => import("./pages/Login"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
+const UpdatePassword = lazy(() => import("./pages/UpdatePassword"));
 const Map = lazy(() => import("./pages/Map"));
 const Video = lazy(() => import("./pages/Video"));
 const About = lazy(() => import("./pages/About"));
@@ -47,6 +49,8 @@ const App = () => (
                 <Routes>
                 <Route path="/" element={<Home />} />
                 <Route path="/login" element={<Login />} />
+                <Route path="/reset-password" element={<ResetPassword />} />
+                <Route path="/update-password" element={<UpdatePassword />} />
                 <Route path="/map" element={
                   <ProtectedRoute>
                     <Map />
