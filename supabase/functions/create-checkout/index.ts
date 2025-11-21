@@ -16,10 +16,11 @@ serve(async (req) => {
   );
 
   try {
-    const { priceId, couponCode } = await req.json();
+    const { priceId, couponCode, email } = await req.json();
     if (!priceId) throw new Error("Price ID is required");
 
     console.log("Creating checkout session for price:", priceId);
+    console.log("Email provided:", email || "none");
     if (couponCode) {
       console.log("Coupon code provided:", couponCode);
     }
@@ -38,11 +39,16 @@ serve(async (req) => {
       ],
       mode: "subscription",
       subscription_data: {
-        trial_period_days: 7, // 7日間の無料トライアル
+        trial_period_days: 7,
       },
       success_url: `${req.headers.get("origin")}/join?success=true`,
       cancel_url: `${req.headers.get("origin")}/join?canceled=true`,
     };
+
+    // Add email if provided
+    if (email) {
+      sessionConfig.customer_email = email;
+    }
 
     // Validate and add coupon code if provided
     if (couponCode) {
@@ -60,9 +66,9 @@ serve(async (req) => {
       }
     }
 
-    console.log("Creating Stripe checkout session...");
+    console.log("Creating Stripe checkout session with config:", JSON.stringify(sessionConfig, null, 2));
     const session = await stripe.checkout.sessions.create(sessionConfig);
-    console.log("Checkout session created:", session.id);
+    console.log("Checkout session created successfully:", session.id);
 
     return new Response(JSON.stringify({ url: session.url }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -70,6 +76,8 @@ serve(async (req) => {
     });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
+    console.error("Error creating checkout session:", message);
+    console.error("Full error:", error);
     return new Response(JSON.stringify({ error: message }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,
