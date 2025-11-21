@@ -246,45 +246,47 @@ const Join = () => {
               </div>
 
               {/* Pricing */}
-              <div className="grid md:grid-cols-3 gap-8 mb-16 animate-fade-up">
-                {/* Founder Access */}
-                <div className="border border-border p-8">
-                  <h3 className="text-2xl font-light mb-4">
-                    {language === "ja" ? "創設者アクセス" : language === "pt" ? "Acesso Fundador" : "Founder Access"}
-                  </h3>
-                  <div className="mb-6">
-                    <div className="text-4xl font-light mb-2">¥980</div>
-                    <div className="text-sm text-muted-foreground font-light">
-                      {language === "ja" ? "月額（期間限定・永久価格）" : language === "pt" ? "Por mês (preço limitado e permanente)" : "per month (limited time forever)"}
+              <div className={`grid ${couponCode === "MURATABJJ" ? "md:grid-cols-3" : "md:grid-cols-2"} gap-8 mb-16 animate-fade-up`}>
+                {/* Founder Access - Only show if coupon is MURATABJJ */}
+                {couponCode === "MURATABJJ" && (
+                  <div className="border border-border p-8">
+                    <h3 className="text-2xl font-light mb-4">
+                      {language === "ja" ? "創設者アクセス" : language === "pt" ? "Acesso Fundador" : "Founder Access"}
+                    </h3>
+                    <div className="mb-6">
+                      <div className="text-4xl font-light mb-2">¥980</div>
+                      <div className="text-sm text-muted-foreground font-light">
+                        {language === "ja" ? "月額（期間限定・永久価格）" : language === "pt" ? "Por mês (preço limitado e permanente)" : "per month (limited time forever)"}
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-2">
+                        {language === "ja" ? "残り" : language === "pt" ? "Restam" : "Remaining"} {countdown.days}
+                        {language === "ja" ? "日" : language === "pt" ? " dias " : " days "}
+                        {countdown.hours}:{countdown.minutes}:{countdown.seconds}
+                      </div>
                     </div>
-                    <div className="text-xs text-muted-foreground mt-2">
-                      {language === "ja" ? "残り" : language === "pt" ? "Restam" : "Remaining"} {countdown.days}
-                      {language === "ja" ? "日" : language === "pt" ? " dias " : " days "}
-                      {countdown.hours}:{countdown.minutes}:{countdown.seconds}
-                    </div>
+                    <ul className="space-y-3 mb-6 text-sm font-light">
+                      <li className="flex items-start">
+                        <span className="mr-2">✓</span>
+                        <span>{language === "ja" ? "全技術動画へのアクセス" : language === "pt" ? "Acesso a todos os vídeos técnicos" : "Access to all technique videos"}</span>
+                      </li>
+                      <li className="flex items-start">
+                        <span className="mr-2">✓</span>
+                        <span>{language === "ja" ? "新規コンテンツの追加" : language === "pt" ? "Novos conteúdos adicionados" : "New content additions"}</span>
+                      </li>
+                      <li className="flex items-start">
+                        <span className="mr-2">✓</span>
+                        <span>{language === "ja" ? "¥980/月を永久に維持" : language === "pt" ? "Manter ¥980/mês para sempre" : "Keep ¥980/month forever"}</span>
+                      </li>
+                    </ul>
+                    <Button
+                      className="w-full"
+                      onClick={() => handleCheckout(PRICE_IDS.founder, true)}
+                      disabled={isLoading}
+                    >
+                      {language === "ja" ? "今すぐ参加" : language === "pt" ? "Participar agora" : "Join Now"}
+                    </Button>
                   </div>
-                  <ul className="space-y-3 mb-6 text-sm font-light">
-                    <li className="flex items-start">
-                      <span className="mr-2">✓</span>
-                      <span>{language === "ja" ? "全技術動画へのアクセス" : language === "pt" ? "Acesso a todos os vídeos técnicos" : "Access to all technique videos"}</span>
-                    </li>
-                    <li className="flex items-start">
-                      <span className="mr-2">✓</span>
-                      <span>{language === "ja" ? "新規コンテンツの追加" : language === "pt" ? "Novos conteúdos adicionados" : "New content additions"}</span>
-                    </li>
-                    <li className="flex items-start">
-                      <span className="mr-2">✓</span>
-                      <span>{language === "ja" ? "¥980/月を永久に維持" : language === "pt" ? "Manter ¥980/mês para sempre" : "Keep ¥980/month forever"}</span>
-                    </li>
-                  </ul>
-                  <Button
-                    className="w-full"
-                    onClick={() => handleCheckout(PRICE_IDS.founder, true)}
-                    disabled={isLoading}
-                  >
-                    {language === "ja" ? "今すぐ参加" : language === "pt" ? "Participar agora" : "Join Now"}
-                  </Button>
-                </div>
+                )}
 
                 {/* Monthly */}
                 <div className="border border-foreground p-8 relative">
