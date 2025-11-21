@@ -30,7 +30,6 @@ serve(async (req) => {
     });
 
     const sessionConfig: any = {
-      customer_creation: "always",
       line_items: [
         {
           price: priceId,
