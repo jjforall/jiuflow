@@ -76,22 +76,36 @@ serve(async (req) => {
           } else {
             console.log("User created successfully:", newUser.user?.id);
             
-            // Send password reset email so user can set their own password
-            const { error: resetError } = await supabase.auth.resetPasswordForEmail(
-              customerEmail,
-              {
-                redirectTo: `${Deno.env.get("SUPABASE_URL")}/auth/v1/verify`,
-              }
-            );
+            // Send magic link for automatic login
+            const { error: magicLinkError } = await supabase.auth.signInWithOtp({
+              email: customerEmail,
+              options: {
+                emailRedirectTo: `https://jiuflow.com/map`,
+              },
+            });
 
-            if (resetError) {
-              console.error("Error sending password reset email:", resetError);
+            if (magicLinkError) {
+              console.error("Error sending magic link:", magicLinkError);
             } else {
-              console.log("Password reset email sent to:", customerEmail);
+              console.log("Magic link sent successfully to:", customerEmail);
             }
           }
         } else {
-          console.log("User already exists:", customerEmail);
+          console.log("User already exists, sending magic link:", customerEmail);
+          
+          // Send magic link for existing user
+          const { error: magicLinkError } = await supabase.auth.signInWithOtp({
+            email: customerEmail,
+            options: {
+              emailRedirectTo: `https://jiuflow.com/map`,
+            },
+          });
+
+          if (magicLinkError) {
+            console.error("Error sending magic link:", magicLinkError);
+          } else {
+            console.log("Magic link sent successfully to:", customerEmail);
+          }
         }
 
         // Get or create customer ID
