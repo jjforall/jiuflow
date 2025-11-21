@@ -61,12 +61,17 @@ const Navigation = () => {
   };
 
   const handleLogout = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-      toast.error(t.nav.logoutError || "ログアウトに失敗しました");
-    } else {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error && error.message !== "Session not found") {
+        toast.error(t.nav.logoutError || "ログアウトに失敗しました");
+        return;
+      }
       toast.success(t.nav.logoutSuccess || "ログアウトしました");
       navigate("/");
+    } catch (error) {
+      console.error('Error signing out:', error);
+      toast.error(t.nav.logoutError || "ログアウトに失敗しました");
     }
   };
 
