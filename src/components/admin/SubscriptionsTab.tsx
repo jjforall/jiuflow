@@ -3,8 +3,18 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { RefreshCw } from "lucide-react";
+import { RefreshCw, X } from "lucide-react";
 import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface Subscription {
   id: string;
@@ -24,6 +34,9 @@ interface Subscription {
 export const SubscriptionsTab = () => {
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [loading, setLoading] = useState(true);
+  const [cancelingId, setCancelingId] = useState<string | null>(null);
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [selectedSubscription, setSelectedSubscription] = useState<Subscription | null>(null);
 
   const fetchSubscriptions = async () => {
     try {
@@ -58,6 +71,46 @@ export const SubscriptionsTab = () => {
   useEffect(() => {
     fetchSubscriptions();
   }, []);
+
+  const handleCancelClick = (subscription: Subscription) => {
+    setSelectedSubscription(subscription);
+    setShowCancelDialog(true);
+  };
+
+  const handleCancelConfirm = async () => {
+    if (!selectedSubscription) return;
+
+    try {
+      setCancelingId(selectedSubscription.id);
+      
+      const { data, error } = await supabase.functions.invoke("cancel-subscription", {
+        body: { subscriptionId: selectedSubscription.id }
+      });
+
+      if (error) {
+        console.error("Function invocation error:", error);
+        throw error;
+      }
+
+      if (data?.error) {
+        console.error("Function returned error:", data.error);
+        throw new Error(data.error);
+      }
+
+      toast.success("サブスクリプションをキャンセルしました");
+      setShowCancelDialog(false);
+      setSelectedSubscription(null);
+      fetchSubscriptions();
+    } catch (error) {
+      console.error("Error canceling subscription:", error);
+      const errorMessage = error instanceof Error ? error.message : "キャンセルに失敗しました";
+      toast.error("エラー", {
+        description: errorMessage,
+      });
+    } finally {
+      setCancelingId(null);
+    }
+  };
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('ja-JP', {
@@ -121,6 +174,7 @@ export const SubscriptionsTab = () => {
                 <TableHead>期間</TableHead>
                 <TableHead>次回請求日</TableHead>
                 <TableHead>開始日</TableHead>
+                <TableHead className="text-right">アクション</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -147,6 +201,19 @@ export const SubscriptionsTab = () => {
                   <TableCell className="text-sm text-muted-foreground">
                     {formatDate(sub.created)}
                   </TableCell>
+                  <TableCell className="text-right">
+                    {sub.status === 'active' && (
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => handleCancelClick(sub)}
+                        disabled={cancelingId === sub.id}
+                      >
+                        <X className="h-4 w-4 mr-1" />
+                        {cancelingId === sub.id ? 'キャンセル中...' : 'キャンセル'}
+                      </Button>
+                    )}
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -157,6 +224,34 @@ export const SubscriptionsTab = () => {
       <div className="text-sm text-muted-foreground">
         合計: {subscriptions.length}件のサブスクリプション
       </div>
+
+      <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>サブスクリプションをキャンセル</AlertDialogTitle>
+            <AlertDialogDescription>
+              {selectedSubscription && (
+                <>
+                  <div className="mt-2">
+                    <p className="font-medium">{selectedSubscription.customer_name} ({selectedSubscription.customer_email})</p>
+                    <p className="text-sm mt-1">プラン: {selectedSubscription.product_name}</p>
+                    <p className="text-sm">金額: {formatCurrency(selectedSubscription.amount, selectedSubscription.currency)}/{selectedSubscription.interval === 'month' ? '月' : '年'}</p>
+                  </div>
+                  <p className="mt-4">
+                    このサブスクリプションをキャンセルしてもよろしいですか？この操作は取り消せません。
+                  </p>
+                </>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>キャンセル</AlertDialogCancel>
+            <AlertDialogAction onClick={handleCancelConfirm} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              キャンセル実行
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
