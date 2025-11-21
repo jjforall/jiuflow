@@ -213,33 +213,96 @@ const Map = () => {
             </div>
           ) : !subscribed && !isAdmin ? (
             <div className="text-center py-12 animate-fade-up">
-              <div className="max-w-md mx-auto bg-muted/50 border border-border p-8 rounded-lg">
-                <Lock className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
-                <h2 className="text-2xl font-light mb-4">
-                  {language === "ja" 
-                    ? "プレミアムコンテンツ" 
-                    : language === "pt" 
-                    ? "Conteúdo Premium" 
-                    : "Premium Content"}
-                </h2>
-                <p className="text-muted-foreground mb-6">
-                  {language === "ja" 
-                    ? "このコンテンツを閲覧するには、サブスクリプションへの登録が必要です。" 
-                    : language === "pt" 
-                    ? "Para visualizar este conteúdo, você precisa de uma assinatura ativa." 
-                    : "To view this content, you need an active subscription."}
-                </p>
-                <Button 
-                  onClick={() => navigate("/join")}
-                  size="lg"
-                  className="w-full"
-                >
-                  {language === "ja" 
-                    ? "プランを見る" 
-                    : language === "pt" 
-                    ? "Ver Planos" 
-                    : "View Plans"}
-                </Button>
+              <div className="max-w-2xl mx-auto space-y-8">
+                {/* Main Lock Card */}
+                <div className="bg-gradient-to-br from-primary/5 to-primary/10 border-2 border-primary/20 p-12 rounded-2xl shadow-xl">
+                  <div className="space-y-6">
+                    <div className="flex justify-center">
+                      <div className="p-6 bg-primary/10 rounded-full">
+                        <Lock className="w-16 h-16 text-primary" />
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-3">
+                      <h2 className="text-3xl md:text-4xl font-bold text-foreground">
+                        {language === "ja" 
+                          ? "プレミアム限定コンテンツ" 
+                          : language === "pt" 
+                          ? "Conteúdo Exclusivo Premium" 
+                          : "Premium Exclusive Content"}
+                      </h2>
+                      <p className="text-lg text-muted-foreground">
+                        {language === "ja" 
+                          ? "200以上の技術動画にアクセスして、あなたの柔術を次のレベルへ" 
+                          : language === "pt" 
+                          ? "Acesse mais de 200 vídeos técnicos e leve seu Jiu-Jitsu ao próximo nível" 
+                          : "Access 200+ technique videos and take your Jiu-Jitsu to the next level"}
+                      </p>
+                    </div>
+
+                    {/* Benefits List */}
+                    <div className="bg-background/50 backdrop-blur-sm p-6 rounded-lg border border-border">
+                      <ul className="space-y-3 text-left">
+                        {[
+                          language === "ja" ? "200以上のテクニック動画" : language === "pt" ? "Mais de 200 vídeos de técnicas" : "200+ technique videos",
+                          language === "ja" ? "初心者から上級者まで対応" : language === "pt" ? "Do iniciante ao avançado" : "From beginner to advanced",
+                          language === "ja" ? "新しいコンテンツを毎週追加" : language === "pt" ? "Novos conteúdos toda semana" : "New content added weekly",
+                          language === "ja" ? "カテゴリー別に整理された動画" : language === "pt" ? "Vídeos organizados por categoria" : "Videos organized by category",
+                        ].map((benefit, index) => (
+                          <li key={index} className="flex items-center gap-3">
+                            <div className="w-2 h-2 bg-primary rounded-full flex-shrink-0" />
+                            <span className="text-foreground">{benefit}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    {/* CTA Buttons */}
+                    <div className="space-y-3 pt-4">
+                      <Button 
+                        onClick={() => navigate("/join")}
+                        size="lg"
+                        className="w-full text-lg py-6"
+                      >
+                        {language === "ja" 
+                          ? "今すぐプランを見る" 
+                          : language === "pt" 
+                          ? "Ver Planos Agora" 
+                          : "View Plans Now"}
+                      </Button>
+                      <p className="text-sm text-muted-foreground">
+                        {language === "ja" 
+                          ? "7日間の無料トライアル付き" 
+                          : language === "pt" 
+                          ? "7 dias de teste grátis inclusos" 
+                          : "7-day free trial included"}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Additional Info */}
+                <div className="grid md:grid-cols-3 gap-4 text-sm">
+                  {[
+                    {
+                      title: language === "ja" ? "いつでもキャンセル可能" : language === "pt" ? "Cancele quando quiser" : "Cancel Anytime",
+                      desc: language === "ja" ? "違約金なし" : language === "pt" ? "Sem multas" : "No penalties"
+                    },
+                    {
+                      title: language === "ja" ? "全デバイス対応" : language === "pt" ? "Todos os dispositivos" : "All Devices",
+                      desc: language === "ja" ? "PC・スマホ・タブレット" : language === "pt" ? "PC, celular, tablet" : "PC, mobile, tablet"
+                    },
+                    {
+                      title: language === "ja" ? "安全な決済" : language === "pt" ? "Pagamento seguro" : "Secure Payment",
+                      desc: language === "ja" ? "Stripe決済" : language === "pt" ? "Via Stripe" : "Via Stripe"
+                    }
+                  ].map((item, index) => (
+                    <div key={index} className="p-4 bg-muted/50 rounded-lg">
+                      <p className="font-semibold text-foreground">{item.title}</p>
+                      <p className="text-muted-foreground text-xs">{item.desc}</p>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           ) : techniques.length === 0 ? (
