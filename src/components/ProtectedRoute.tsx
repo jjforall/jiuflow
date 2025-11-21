@@ -18,19 +18,27 @@ export const ProtectedRoute = ({
   const { user, isLoading, isAdmin } = useAuth();
   const location = useLocation();
 
+  // Show loading state while checking authentication
+  if (isLoading) {
+    return (
+      <div className="min-h-screen">
+        <Navigation />
+        <main className="pt-16">
+          <div className="h-[60vh] flex items-center justify-center text-muted-foreground">Loading...</div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
   // Not authenticated
-  if (!user && !isLoading) {
+  if (!user) {
     return <Navigate to={redirectTo} state={{ from: location }} replace />;
   }
 
   // Requires admin but user is not admin
-  if (user && requireAdmin && !isAdmin && !isLoading) {
+  if (requireAdmin && !isAdmin) {
     return <Navigate to="/" replace />;
-  }
-
-  // Only show loading on initial authentication check
-  if (isLoading) {
-    return null;
   }
 
   return <>{children}</>;

@@ -16,38 +16,11 @@ import { SubscriptionsTab } from "@/components/admin/SubscriptionsTab";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
-  const { signOut, isAdmin, isLoading: authLoading } = useAuth();
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    const checkAuthAndLoad = async () => {
-      if (authLoading) return;
-      
-      if (!isAdmin) {
-        toast.error("アクセス拒否", {
-          description: "管理者権限が必要です",
-        });
-        navigate("/");
-        return;
-      }
-
-      setIsLoading(false);
-    };
-
-    checkAuthAndLoad();
-  }, [navigate, isAdmin, authLoading]);
+  const { signOut } = useAuth();
 
   const handleLogout = async () => {
     await signOut();
   };
-
-  if (isLoading || authLoading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-lg">Loading...</div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-background">
