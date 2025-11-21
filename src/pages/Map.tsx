@@ -41,7 +41,7 @@ const Map = () => {
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [showUploadDialog, setShowUploadDialog] = useState(false);
   const observerTarget = useRef<HTMLDivElement>(null);
-  const PAGE_SIZE = 10;
+  const PAGE_SIZE = 50;
 
 
   const getTechniqueName = (tech: Technique) => {
