@@ -32,7 +32,7 @@ const Map = () => {
   const t = translations[language] || translations.ja; // Fallback to Japanese
   const navigate = useNavigate();
   const { subscribed, loading: subscriptionLoading } = useSubscription();
-  const { isAdmin } = useAuth();
+  const { isAdmin, user } = useAuth();
   const [techniques, setTechniques] = useState<Technique[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
@@ -144,10 +144,10 @@ const Map = () => {
 
   // Initial load
   useEffect(() => {
-    if (!isCheckingAuth && (subscribed || isAdmin)) {
+    if (!isCheckingAuth && user) {
       fetchTechniques(0);
     }
-  }, [isCheckingAuth, subscribed, isAdmin, fetchTechniques]);
+  }, [isCheckingAuth, user, fetchTechniques]);
 
   // Infinite scroll
   useEffect(() => {
@@ -205,7 +205,7 @@ const Map = () => {
                 ))}
               </div>
             </div>
-          ) : !subscribed && !isAdmin ? (
+          ) : !user ? (
             <div className="text-center py-12 animate-fade-up">
               <div className="max-w-2xl mx-auto space-y-8">
                 {/* Main Lock Card */}
