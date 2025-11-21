@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/hooks/useAuth";
+import { useSubscription } from "@/hooks/useSubscription";
 
 const useCountdown = () => {
   const [timeLeft, setTimeLeft] = useState({
@@ -66,7 +67,8 @@ const Join = () => {
   const [sampleVideoUrl, setSampleVideoUrl] = useState<string | null>(null);
   const [couponCode, setCouponCode] = useState("");
   
-  const { isLoading: authLoading } = useAuth();
+  const { isLoading: authLoading, user } = useAuth();
+  const { subscribed, loading: subscriptionLoading } = useSubscription();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
@@ -191,6 +193,28 @@ const Join = () => {
       
       <main className="pt-32 pb-20 px-6">
         <div className="max-w-3xl mx-auto">
+          {/* Banner for logged-in users without subscription */}
+          {user && !subscribed && !subscriptionLoading && (
+            <div className="mb-8 p-6 bg-primary/10 border border-primary rounded-lg animate-fade-up">
+              <div className="text-center space-y-3">
+                <h2 className="text-2xl font-bold text-primary">
+                  {language === "ja" 
+                    ? "ようこそ！" 
+                    : language === "pt" 
+                    ? "Bem-vindo!" 
+                    : "Welcome!"}
+                </h2>
+                <p className="text-foreground">
+                  {language === "ja" 
+                    ? "アカウント登録が完了しました。下記のプランから選んで、今すぐコンテンツへのアクセスを開始しましょう！" 
+                    : language === "pt" 
+                    ? "Registro concluído! Escolha um plano abaixo para começar a acessar o conteúdo!" 
+                    : "Registration complete! Choose a plan below to start accessing content!"}
+                </p>
+              </div>
+            </div>
+          )}
+
           {(
             <>
               <div className="text-center mb-16 animate-fade-up">
