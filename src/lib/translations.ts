@@ -1,9 +1,9 @@
 export const translations = {
   ja: {
     nav: {
-      home: "Home",
+      home: "ホーム",
       map: "技マップ",
-      about: "About",
+      about: "私たちについて",
       join: "料金プラン",
       login: "ログイン",
       myPage: "マイページ",
