@@ -3,6 +3,7 @@ import { createContext, useContext, useEffect, useState } from 'react';
 import { User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 
 interface AuthContextType {
   user: User | null;
@@ -72,13 +73,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const signOut = async () => {
     try {
       const { error } = await supabase.auth.signOut();
-      if (error) throw error;
+      if (error && error.message !== "Session not found") {
+        throw error;
+      }
       
       setUser(null);
       setIsAdmin(false);
       navigate('/login');
     } catch (error) {
       console.error('Error signing out:', error);
+      toast.error('ログアウトに失敗しました');
     }
   };
 

@@ -6,6 +6,7 @@ import Navigation from "@/components/Navigation";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Users, ShieldCheck, Grid3X3 } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 
 // Import tab components
 import { TechniquesManagement } from "@/components/admin/TechniquesManagement";
@@ -15,6 +16,7 @@ import { SubscriptionsTab } from "@/components/admin/SubscriptionsTab";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
+  const { signOut } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -50,8 +52,7 @@ const AdminDashboard = () => {
   }, [navigate]);
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
-    navigate("/admin");
+    await signOut();
   };
 
   if (isLoading) {
