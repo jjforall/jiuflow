@@ -44,7 +44,7 @@ export const UsersTab = () => {
   const loadProfiles = async () => {
     setLoadingProfiles(true);
     try {
-      const { data, error } = await supabase
+      const { data: profilesData, error: profilesError } = await supabase
         .from("profiles")
         .select(`
           *,
@@ -54,17 +54,30 @@ export const UsersTab = () => {
         `)
         .order("created_at", { ascending: false });
 
-      if (error) throw error;
+      if (profilesError) throw profilesError;
 
-      const sorted = (data || []).sort((a, b) => {
+      // Fetch subscription data for all users
+      const { data: subsData } = await supabase
+        .from("subscriptions")
+        .select("user_id, status, plan_type, current_period_end")
+        .in("status", ["active", "trialing"]);
+
+      // Merge subscription data with profiles
+      const profilesWithSubs = (profilesData || []).map(profile => ({
+        ...profile,
+        subscription: subsData?.find(sub => sub.user_id === profile.id)
+      }));
+
+      const sorted = profilesWithSubs.sort((a, b) => {
         const aAdmin = a.user_roles?.some(r => r.role === 'admin') ? 1 : 0;
         const bAdmin = b.user_roles?.some(r => r.role === 'admin') ? 1 : 0;
         return bAdmin - aAdmin || new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
       });
 
       setProfiles(sorted);
+      const subscribedCount = sorted.filter(p => p.subscription).length;
       toast.success("読み込み完了", {
-        description: `${sorted.length}件の会員を読み込みました（管理者${sorted.filter(p => p.user_roles?.some(r => r.role === 'admin')).length}名）`,
+        description: `${sorted.length}件の会員を読み込みました（管理者${sorted.filter(p => p.user_roles?.some(r => r.role === 'admin')).length}名、サブスク${subscribedCount}名）`,
       });
     } catch (error: unknown) {
       toast.error("エラー", {
@@ -271,6 +284,7 @@ export const UsersTab = () => {
             <tr>
               <th className="px-4 py-3 text-left">メールアドレス</th>
               <th className="px-4 py-3 text-left">Stripe ID</th>
+              <th className="px-4 py-3 text-left">サブスク</th>
               <th className="px-4 py-3 text-left">権限</th>
               <th className="px-4 py-3 text-left">作成日</th>
               <th className="px-4 py-3 text-right">アクション</th>
@@ -279,19 +293,20 @@ export const UsersTab = () => {
           <tbody>
             {loadingProfiles ? (
               <tr>
-                <td colSpan={5} className="px-4 py-8 text-center">
+                <td colSpan={6} className="px-4 py-8 text-center">
                   読み込み中...
                 </td>
               </tr>
             ) : filteredProfiles.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">
+                <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
                   ユーザーが見つかりませんでした
                 </td>
               </tr>
             ) : (
               filteredProfiles.map((profile) => {
                 const isAdmin = profile.user_roles?.some(r => r.role === 'admin');
+                const hasSub = profile.subscription;
                 return (
                   <tr key={profile.id} className="border-t hover:bg-muted/50">
                     <td className="px-4 py-3">
@@ -299,6 +314,15 @@ export const UsersTab = () => {
                     </td>
                     <td className="px-4 py-3 text-sm text-muted-foreground">
                       {profile.stripe_customer_id || 'N/A'}
+                    </td>
+                    <td className="px-4 py-3">
+                      {hasSub ? (
+                        <Badge variant="default" className="bg-green-600">
+                          {profile.subscription.plan_type || 'アクティブ'}
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline">未加入</Badge>
+                      )}
                     </td>
                     <td className="px-4 py-3">
                       <Badge variant={isAdmin ? "default" : "secondary"}>
