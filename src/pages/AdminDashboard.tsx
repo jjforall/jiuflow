@@ -16,28 +16,14 @@ import { SubscriptionsTab } from "@/components/admin/SubscriptionsTab";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
-  const { signOut } = useAuth();
+  const { signOut, isAdmin, isLoading: authLoading } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const checkAuthAndLoad = async () => {
-      // Check Supabase authentication
-      const { data: { session } } = await supabase.auth.getSession();
+      if (authLoading) return;
       
-      if (!session) {
-        navigate("/admin");
-        return;
-      }
-
-      // Check if user is admin
-      const { data: userRoles, error: rolesError } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", session.user.id)
-        .eq("role", "admin")
-        .maybeSingle();
-
-      if (rolesError || !userRoles) {
+      if (!isAdmin) {
         toast.error("アクセス拒否", {
           description: "管理者権限が必要です",
         });
@@ -49,13 +35,13 @@ const AdminDashboard = () => {
     };
 
     checkAuthAndLoad();
-  }, [navigate]);
+  }, [navigate, isAdmin, authLoading]);
 
   const handleLogout = async () => {
     await signOut();
   };
 
-  if (isLoading) {
+  if (isLoading || authLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-lg">Loading...</div>

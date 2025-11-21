@@ -26,6 +26,12 @@ export interface Profile {
   updated_at: string;
   stripe_customer_id: string | null;
   user_roles?: Array<{ role: string }>;
+  subscription?: {
+    user_id: string;
+    status: string;
+    plan_type: string | null;
+    current_period_end: string | null;
+  };
 }
 
 export interface Plan {
