@@ -72,17 +72,32 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const signOut = async () => {
     try {
+      // ローカルストレージをクリア
+      localStorage.clear();
+      
+      // Supabaseからサインアウト（セッションが存在しない場合もエラーにしない）
       const { error } = await supabase.auth.signOut();
-      if (error && error.message !== "Session not found") {
-        throw error;
+      
+      // セッションが見つからないエラーは無視
+      if (error && !error.message.includes("Session not found") && !error.message.includes("Auth session missing")) {
+        console.error('Sign out error:', error);
+        // エラーがあってもローカル状態はクリアする
       }
       
+      // 状態をクリア
+      setUser(null);
+      setIsAdmin(false);
+      
+      // ログインページへリダイレクト
+      navigate('/login');
+      toast.success('ログアウトしました');
+    } catch (error) {
+      console.error('Error signing out:', error);
+      // エラーが発生してもローカル状態はクリアして、ログインページへ遷移
       setUser(null);
       setIsAdmin(false);
       navigate('/login');
-    } catch (error) {
-      console.error('Error signing out:', error);
-      toast.error('ログアウトに失敗しました');
+      toast.success('ログアウトしました');
     }
   };
 
