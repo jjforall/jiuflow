@@ -125,7 +125,7 @@ serve(async (req) => {
         customer_name: customer.name || 'N/A',
         customer_id: customer.id,
         status: sub.status,
-        amount: price?.unit_amount ? price.unit_amount / 100 : 0,
+        amount: price?.unit_amount || 0,
         currency: price?.currency || 'jpy',
         interval: price?.recurring?.interval || 'month',
         product_name: productName,
