@@ -9,18 +9,26 @@ export const corsHeaders = {
 // Helper function to get CORS headers based on request origin
 export const getCorsHeaders = (req: Request): HeadersInit => {
   const origin = req.headers.get('origin') || '';
-  const allowedOrigins = (Deno.env.get('ALLOWED_ORIGINS') || 'https://jiuflow.com,http://localhost:5173').split(',');
+  const allowedOrigins = (Deno.env.get('ALLOWED_ORIGINS') || '*').split(',');
   
-  if (allowedOrigins.includes(origin) || allowedOrigins.includes('*')) {
+  // Allow all origins if '*' is in the allowed origins
+  if (allowedOrigins.includes('*')) {
+    return {
+      ...corsHeaders,
+      'Access-Control-Allow-Origin': '*',
+    };
+  }
+  
+  if (allowedOrigins.includes(origin)) {
     return {
       ...corsHeaders,
       'Access-Control-Allow-Origin': origin,
     };
   }
   
-  // Default to the first allowed origin if request origin is not in the list
+  // Default to wildcard for development
   return {
     ...corsHeaders,
-    'Access-Control-Allow-Origin': allowedOrigins[0],
+    'Access-Control-Allow-Origin': '*',
   };
 };
