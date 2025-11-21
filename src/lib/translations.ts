@@ -6,6 +6,9 @@ export const translations = {
       about: "About",
       join: "料金プラン",
       login: "ログイン",
+      myPage: "マイページ",
+      adminDashboard: "管理画面",
+      logout: "ログアウト",
     },
     home: {
       hero: {
@@ -169,6 +172,9 @@ export const translations = {
       about: "About",
       join: "Pricing",
       login: "Login",
+      myPage: "My Page",
+      adminDashboard: "Admin Dashboard",
+      logout: "Logout",
     },
     home: {
       hero: {
@@ -339,6 +345,9 @@ export const translations = {
       about: "Sobre",
       join: "Preços",
       login: "Entrar",
+      myPage: "Minha Página",
+      adminDashboard: "Painel de Administração",
+      logout: "Sair",
     },
     home: {
       hero: {
@@ -502,6 +511,9 @@ export const translations = {
       about: "Acerca de",
       join: "Precios",
       login: "Iniciar sesión",
+      myPage: "Mi Página",
+      adminDashboard: "Panel de Administración",
+      logout: "Cerrar sesión",
     },
     home: {
       hero: {
@@ -665,6 +677,9 @@ export const translations = {
       about: "À propos",
       join: "Tarifs",
       login: "Connexion",
+      myPage: "Ma Page",
+      adminDashboard: "Tableau de bord Admin",
+      logout: "Déconnexion",
     },
     home: {
       hero: {
@@ -828,6 +843,9 @@ export const translations = {
       about: "Über uns",
       join: "Preise",
       login: "Anmelden",
+      myPage: "Meine Seite",
+      adminDashboard: "Admin-Dashboard",
+      logout: "Abmelden",
     },
     home: {
       hero: {
@@ -991,6 +1009,9 @@ export const translations = {
       about: "关于",
       join: "定价",
       login: "登录",
+      myPage: "我的页面",
+      adminDashboard: "管理仪表板",
+      logout: "退出",
     },
     home: {
       hero: {
@@ -1154,6 +1175,9 @@ export const translations = {
       about: "소개",
       join: "가격",
       login: "로그인",
+      myPage: "마이 페이지",
+      adminDashboard: "관리자 대시보드",
+      logout: "로그아웃",
     },
     home: {
       hero: {
@@ -1317,6 +1341,9 @@ export const translations = {
       about: "Chi Siamo",
       join: "Prezzi",
       login: "Accedi",
+      myPage: "La Mia Pagina",
+      adminDashboard: "Dashboard Admin",
+      logout: "Esci",
     },
     home: {
       hero: {
@@ -1480,6 +1507,9 @@ export const translations = {
       about: "О нас",
       join: "Цены",
       login: "Войти",
+      myPage: "Моя Страница",
+      adminDashboard: "Панель Администратора",
+      logout: "Выйти",
     },
     home: {
       hero: {
@@ -1643,6 +1673,9 @@ export const translations = {
       about: "حول",
       join: "الأسعار",
       login: "تسجيل الدخول",
+      myPage: "صفحتي",
+      adminDashboard: "لوحة الإدارة",
+      logout: "تسجيل الخروج",
     },
     home: {
       hero: {
@@ -1806,6 +1839,9 @@ export const translations = {
       about: "के बारे में",
       join: "मूल्य निर्धारण",
       login: "लॉगिन",
+      myPage: "मेरा पेज",
+      adminDashboard: "एडमिन डैशबोर्ड",
+      logout: "लॉगआउट",
     },
     home: {
       hero: {
