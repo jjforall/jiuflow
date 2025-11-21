@@ -9,6 +9,8 @@ export const translations = {
       myPage: "マイページ",
       adminDashboard: "管理画面",
       logout: "ログアウト",
+      logoutSuccess: "ログアウトしました",
+      logoutError: "ログアウトに失敗しました",
     },
     home: {
       hero: {
@@ -175,6 +177,8 @@ export const translations = {
       myPage: "My Page",
       adminDashboard: "Admin Dashboard",
       logout: "Logout",
+      logoutSuccess: "Logged out successfully",
+      logoutError: "Logout failed",
     },
     home: {
       hero: {
@@ -348,6 +352,8 @@ export const translations = {
       myPage: "Minha Página",
       adminDashboard: "Painel de Administração",
       logout: "Sair",
+      logoutSuccess: "Logout realizado com sucesso",
+      logoutError: "Falha ao fazer logout",
     },
     home: {
       hero: {
@@ -514,6 +520,8 @@ export const translations = {
       myPage: "Mi Página",
       adminDashboard: "Panel de Administración",
       logout: "Cerrar sesión",
+      logoutSuccess: "Sesión cerrada exitosamente",
+      logoutError: "Error al cerrar sesión",
     },
     home: {
       hero: {
@@ -680,6 +688,8 @@ export const translations = {
       myPage: "Ma Page",
       adminDashboard: "Tableau de bord Admin",
       logout: "Déconnexion",
+      logoutSuccess: "Déconnexion réussie",
+      logoutError: "Échec de la déconnexion",
     },
     home: {
       hero: {
@@ -846,6 +856,8 @@ export const translations = {
       myPage: "Meine Seite",
       adminDashboard: "Admin-Dashboard",
       logout: "Abmelden",
+      logoutSuccess: "Erfolgreich abgemeldet",
+      logoutError: "Abmeldung fehlgeschlagen",
     },
     home: {
       hero: {
@@ -1012,6 +1024,8 @@ export const translations = {
       myPage: "我的页面",
       adminDashboard: "管理仪表板",
       logout: "退出",
+      logoutSuccess: "成功退出",
+      logoutError: "退出失败",
     },
     home: {
       hero: {
@@ -1178,6 +1192,8 @@ export const translations = {
       myPage: "마이 페이지",
       adminDashboard: "관리자 대시보드",
       logout: "로그아웃",
+      logoutSuccess: "로그아웃 성공",
+      logoutError: "로그아웃 실패",
     },
     home: {
       hero: {
@@ -1344,6 +1360,8 @@ export const translations = {
       myPage: "La Mia Pagina",
       adminDashboard: "Dashboard Admin",
       logout: "Esci",
+      logoutSuccess: "Disconnessione riuscita",
+      logoutError: "Disconnessione fallita",
     },
     home: {
       hero: {
@@ -1510,6 +1528,8 @@ export const translations = {
       myPage: "Моя Страница",
       adminDashboard: "Панель Администратора",
       logout: "Выйти",
+      logoutSuccess: "Выход выполнен успешно",
+      logoutError: "Ошибка выхода",
     },
     home: {
       hero: {
@@ -1676,6 +1696,8 @@ export const translations = {
       myPage: "صفحتي",
       adminDashboard: "لوحة الإدارة",
       logout: "تسجيل الخروج",
+      logoutSuccess: "تم تسجيل الخروج بنجاح",
+      logoutError: "فشل تسجيل الخروج",
     },
     home: {
       hero: {
@@ -1842,6 +1864,8 @@ export const translations = {
       myPage: "मेरा पेज",
       adminDashboard: "एडमिन डैशबोर्ड",
       logout: "लॉगआउट",
+      logoutSuccess: "लॉगआउट सफल",
+      logoutError: "लॉगआउट विफल",
     },
     home: {
       hero: {

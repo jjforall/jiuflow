@@ -63,9 +63,9 @@ const Navigation = () => {
   const handleLogout = async () => {
     const { error } = await supabase.auth.signOut();
     if (error) {
-      toast.error("ログアウトに失敗しました");
+      toast.error(t.nav.logoutError || "ログアウトに失敗しました");
     } else {
-      toast.success("ログアウトしました");
+      toast.success(t.nav.logoutSuccess || "ログアウトしました");
       navigate("/");
     }
   };
