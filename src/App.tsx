@@ -18,6 +18,7 @@ const Map = lazy(() => import("./pages/Map"));
 const Video = lazy(() => import("./pages/Video"));
 const About = lazy(() => import("./pages/About"));
 const Join = lazy(() => import("./pages/Join"));
+const PaymentSuccess = lazy(() => import("./pages/PaymentSuccess"));
 const MyPage = lazy(() => import("./pages/MyPage"));
 const AdminLogin = lazy(() => import("./pages/AdminLogin"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
@@ -58,6 +59,7 @@ const App = () => (
                 } />
                 <Route path="/about" element={<About />} />
                 <Route path="/join" element={<Join />} />
+                <Route path="/payment-success" element={<PaymentSuccess />} />
                 <Route path="/mypage" element={
                   <ProtectedRoute>
                     <MyPage />
