@@ -33,15 +33,19 @@ serve(async (req) => {
     const token = authHeader.replace('Bearer ', '');
     logStep("Authorization header found");
     
-    // Use service role client for admin operations
-    const supabaseAdmin = createClient(
+    // Create Supabase client with anon key for user authentication
+    const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
-      { auth: { persistSession: false } }
+      Deno.env.get("SUPABASE_ANON_KEY") ?? "",
+      {
+        global: {
+          headers: { Authorization: authHeader }
+        }
+      }
     );
 
-    // Verify user identity
-    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
+    // Verify user identity using the anon client
+    const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
     if (authError || !user) {
       logStep("Authentication failed", { error: authError?.message });
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
@@ -50,6 +54,13 @@ serve(async (req) => {
       });
     }
     logStep("User authenticated", { userId: user.id, email: user.email });
+
+    // Use service role client for admin check
+    const supabaseAdmin = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+      { auth: { persistSession: false } }
+    );
 
     // Verify admin role using service role client
     const { data: adminRole, error: roleError } = await supabaseAdmin
@@ -110,7 +121,7 @@ serve(async (req) => {
 
       return {
         id: sub.id,
-        customer_email: customer.email,
+        customer_email: customer.email || 'N/A',
         customer_name: customer.name || 'N/A',
         customer_id: customer.id,
         status: sub.status,
@@ -118,9 +129,9 @@ serve(async (req) => {
         currency: price?.currency || 'jpy',
         interval: price?.recurring?.interval || 'month',
         product_name: productName,
-        current_period_start: new Date(sub.current_period_start * 1000).toISOString(),
-        current_period_end: new Date(sub.current_period_end * 1000).toISOString(),
-        created: new Date(sub.created * 1000).toISOString(),
+        current_period_start: sub.current_period_start ? new Date(sub.current_period_start * 1000).toISOString() : new Date().toISOString(),
+        current_period_end: sub.current_period_end ? new Date(sub.current_period_end * 1000).toISOString() : new Date().toISOString(),
+        created: sub.created ? new Date(sub.created * 1000).toISOString() : new Date().toISOString(),
       };
     }));
 
