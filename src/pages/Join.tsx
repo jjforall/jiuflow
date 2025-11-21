@@ -108,16 +108,32 @@ const Join = () => {
   }, [searchParams, t.join.payment, language]);
 
   const handleCheckout = async (priceId: string, isSubscription: boolean) => {
+    // Check if user is logged in
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session) {
+      toast.error(
+        language === "ja" 
+          ? "ログインが必要です" 
+          : "Please log in first",
+        {
+          description: language === "ja"
+            ? "決済を行うにはログインしてください"
+            : "You need to log in to complete payment",
+        }
+      );
+      navigate("/login");
+      return;
+    }
+
     setIsLoading(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      
       const functionName = isSubscription ? "create-checkout" : "create-payment";
       const { data, error } = await supabase.functions.invoke(functionName, {
         body: { 
           priceId, 
           couponCode: couponCode.trim() || undefined,
-          email: session?.user?.email,
+          email: session.user.email,
         },
       });
 
