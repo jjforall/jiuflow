@@ -94,6 +94,94 @@ const Map = () => {
     submission: "bg-destructive/10 border-destructive hover:bg-destructive/20",
   };
 
+  // Check authentication
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setIsCheckingAuth(false);
+      
+      if (!session && !isAdmin) {
+        navigate("/login");
+      }
+    };
+    checkAuth();
+  }, [navigate, isAdmin]);
+
+  // Fetch techniques
+  const fetchTechniques = useCallback(async (pageNum: number) => {
+    if (pageNum === 0) {
+      setIsLoading(true);
+    } else {
+      setIsLoadingMore(true);
+    }
+
+    try {
+      const from = pageNum * PAGE_SIZE;
+      const to = from + PAGE_SIZE - 1;
+
+      const { data, error } = await supabase
+        .from("techniques")
+        .select("*")
+        .order("display_order", { ascending: true })
+        .range(from, to);
+
+      if (error) throw error;
+
+      if (data) {
+        if (pageNum === 0) {
+          setTechniques(data as Technique[]);
+        } else {
+          setTechniques((prev) => [...prev, ...(data as Technique[])]);
+        }
+        setHasMore(data.length === PAGE_SIZE);
+      }
+    } catch (error) {
+      console.error("Error fetching techniques:", error);
+      toast.error(
+        language === "ja" 
+          ? "技の読み込みに失敗しました" 
+          : "Failed to load techniques"
+      );
+    } finally {
+      setIsLoading(false);
+      setIsLoadingMore(false);
+    }
+  }, [language]);
+
+  // Initial load
+  useEffect(() => {
+    if (!isCheckingAuth && (subscribed || isAdmin)) {
+      fetchTechniques(0);
+    }
+  }, [isCheckingAuth, subscribed, isAdmin, fetchTechniques]);
+
+  // Infinite scroll
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore && !isLoadingMore) {
+          setPage((prev) => {
+            const nextPage = prev + 1;
+            fetchTechniques(nextPage);
+            return nextPage;
+          });
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    const currentTarget = observerTarget.current;
+    if (currentTarget) {
+      observer.observe(currentTarget);
+    }
+
+    return () => {
+      if (currentTarget) {
+        observer.unobserve(currentTarget);
+      }
+    };
+  }, [hasMore, isLoadingMore, fetchTechniques]);
+
   return (
     <div className="min-h-screen">
       <Navigation />
