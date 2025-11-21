@@ -109,6 +109,7 @@ const Map = () => {
 
   // Fetch techniques
   const fetchTechniques = useCallback(async (pageNum: number) => {
+    // 現状の件数規模ではページングせず全件取得して表示する
     if (pageNum === 0) {
       setIsLoading(true);
     } else {
@@ -116,24 +117,17 @@ const Map = () => {
     }
 
     try {
-      const from = pageNum * PAGE_SIZE;
-      const to = from + PAGE_SIZE - 1;
-
       const { data, error } = await supabase
         .from("techniques")
         .select("*")
-        .order("display_order", { ascending: true })
-        .range(from, to);
+        .order("display_order", { ascending: true });
 
       if (error) throw error;
 
       if (data) {
-        if (pageNum === 0) {
-          setTechniques(data as Technique[]);
-        } else {
-          setTechniques((prev) => [...prev, ...(data as Technique[])]);
-        }
-        setHasMore(data.length === PAGE_SIZE);
+        setTechniques(data as Technique[]);
+        // すべて一度に取得するので追加ロードは行わない
+        setHasMore(false);
       }
     } catch (error) {
       console.error("Error fetching techniques:", error);
