@@ -11,28 +11,49 @@ serve(async (req) => {
   }
 
   try {
-    const { email } = await req.json();
-    if (!email) {
-      return new Response(
-        JSON.stringify({ error: "Email is required" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    console.log("Checking payment for email:", email);
+    const { email, sessionId } = await req.json();
+    
+    let customerEmail = email;
 
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", { 
       apiVersion: "2025-08-27.basil" 
     });
 
+    // If sessionId is provided, get email from Stripe session
+    if (sessionId && !email) {
+      console.log("Getting email from session:", sessionId);
+      
+      const session = await stripe.checkout.sessions.retrieve(sessionId);
+      customerEmail = session.customer_email || session.customer_details?.email;
+      
+      if (!customerEmail) {
+        return new Response(
+          JSON.stringify({ 
+            error: "no_email",
+            message: "セッションからメールアドレスを取得できませんでした。"
+          }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    }
+
+    if (!customerEmail) {
+      return new Response(
+        JSON.stringify({ error: "Email or sessionId is required" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    console.log("Checking payment for email:", customerEmail);
+
     // Check if customer exists in Stripe
     const customers = await stripe.customers.list({ 
-      email: email.toLowerCase().trim(), 
+      email: customerEmail.toLowerCase().trim(), 
       limit: 1 
     });
 
     if (customers.data.length === 0) {
-      console.log("No Stripe customer found for:", email);
+      console.log("No Stripe customer found for:", customerEmail);
       return new Response(
         JSON.stringify({ 
           error: "payment_not_found",
@@ -74,7 +95,7 @@ serve(async (req) => {
     }
 
     // Payment is valid, send magic link
-    console.log("Payment verified, sending magic link to:", email);
+    console.log("Payment verified, sending magic link to:", customerEmail);
 
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
@@ -82,7 +103,7 @@ serve(async (req) => {
     );
 
     const { error: magicLinkError } = await supabase.auth.signInWithOtp({
-      email: email.toLowerCase().trim(),
+      email: customerEmail.toLowerCase().trim(),
       options: {
         emailRedirectTo: `${req.headers.get("origin")}/map`,
       },
@@ -96,12 +117,13 @@ serve(async (req) => {
       );
     }
 
-    console.log("Magic link sent successfully to:", email);
+    console.log("Magic link sent successfully to:", customerEmail);
 
     return new Response(
       JSON.stringify({ 
         success: true,
-        message: "ログインリンクをメールで送信しました。メールを確認してください。"
+        message: "ログインリンクをメールで送信しました。メールを確認してください。",
+        email: customerEmail
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
