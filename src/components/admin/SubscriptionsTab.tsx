@@ -28,18 +28,8 @@ export const SubscriptionsTab = () => {
   const fetchSubscriptions = async () => {
     try {
       setLoading(true);
-      const { data: { session } } = await supabase.auth.getSession();
       
-      if (!session) {
-        toast.error("認証が必要です");
-        return;
-      }
-
-      const { data, error } = await supabase.functions.invoke("list-subscriptions", {
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-        },
-      });
+      const { data, error } = await supabase.functions.invoke("list-subscriptions");
 
       if (error) {
         console.error("Function invocation error:", error);
