@@ -7,15 +7,23 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+const logStep = (step: string, details?: any) => {
+  const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
+  console.log(`[LIST-SUBSCRIPTIONS] ${step}${detailsStr}`);
+};
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
+    logStep("Function started");
+
     // Authentication check
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
+      logStep("No authorization header");
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 401,
@@ -23,6 +31,7 @@ serve(async (req) => {
     }
 
     const token = authHeader.replace('Bearer ', '');
+    logStep("Authorization header found");
     
     // Use service role client for admin operations
     const supabaseAdmin = createClient(
@@ -34,11 +43,13 @@ serve(async (req) => {
     // Verify user identity
     const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
     if (authError || !user) {
+      logStep("Authentication failed", { error: authError?.message });
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 401,
       });
     }
+    logStep("User authenticated", { userId: user.id, email: user.email });
 
     // Verify admin role using service role client
     const { data: adminRole, error: roleError } = await supabaseAdmin
@@ -49,15 +60,27 @@ serve(async (req) => {
       .maybeSingle();
 
     if (roleError || !adminRole) {
+      logStep("Admin check failed", { error: roleError?.message });
       return new Response(JSON.stringify({ error: 'Forbidden: Admin access required' }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 403,
       });
     }
+    logStep("Admin verified");
 
-    const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
+    const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
+    if (!stripeKey) {
+      logStep("Stripe key not found");
+      return new Response(JSON.stringify({ error: 'Stripe configuration error' }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 500,
+      });
+    }
+
+    const stripe = new Stripe(stripeKey, {
       apiVersion: "2025-08-27.basil",
     });
+    logStep("Stripe initialized");
 
     // Get all subscriptions with customer expansion only
     const subscriptions = await stripe.subscriptions.list({
@@ -65,6 +88,7 @@ serve(async (req) => {
       limit: 100,
       expand: ['data.customer'],
     });
+    logStep("Fetched subscriptions", { count: subscriptions.data.length });
 
     // Map subscriptions and fetch product details separately
     const subscriptionList = await Promise.all(subscriptions.data.map(async (sub: Stripe.Subscription) => {
@@ -100,11 +124,13 @@ serve(async (req) => {
       };
     }));
 
+    logStep("Returning subscriptions", { count: subscriptionList.length });
     return new Response(JSON.stringify({ subscriptions: subscriptionList }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });
   } catch (error) {
+    logStep("ERROR", { message: error instanceof Error ? error.message : 'Unknown error' });
     console.error('Error listing subscriptions:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return new Response(JSON.stringify({ error: errorMessage }), {

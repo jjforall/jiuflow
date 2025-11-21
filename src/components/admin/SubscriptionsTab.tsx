@@ -41,12 +41,25 @@ export const SubscriptionsTab = () => {
         },
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Function invocation error:", error);
+        throw error;
+      }
 
-      setSubscriptions(data.subscriptions || []);
+      if (data?.error) {
+        console.error("Function returned error:", data.error);
+        throw new Error(data.error);
+      }
+
+      setSubscriptions(data?.subscriptions || []);
+      toast.success(`${data?.subscriptions?.length || 0}件のサブスクリプションを読み込みました`);
     } catch (error) {
       console.error("Error fetching subscriptions:", error);
-      toast.error("サブスクリプション情報の取得に失敗しました");
+      const errorMessage = error instanceof Error ? error.message : "サブスクリプション情報の取得に失敗しました";
+      toast.error("エラー", {
+        description: errorMessage,
+      });
+      setSubscriptions([]);
     } finally {
       setLoading(false);
     }
