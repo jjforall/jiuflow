@@ -19,6 +19,11 @@ serve(async (req) => {
     const { priceId, couponCode } = await req.json();
     if (!priceId) throw new Error("Price ID is required");
 
+    console.log("Creating payment session for price:", priceId);
+    if (couponCode) {
+      console.log("Coupon code provided:", couponCode);
+    }
+
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", { 
       apiVersion: "2025-08-27.basil" 
     });
@@ -36,12 +41,25 @@ serve(async (req) => {
       cancel_url: `${req.headers.get("origin")}/join?canceled=true`,
     };
 
-    // Add coupon code if provided
+    // Validate and add coupon code if provided
     if (couponCode) {
-      sessionConfig.discounts = [{ coupon: couponCode }];
+      try {
+        const coupon = await stripe.coupons.retrieve(couponCode);
+        console.log("Coupon found:", coupon.id, "Valid:", coupon.valid);
+        if (coupon.valid) {
+          sessionConfig.discounts = [{ coupon: couponCode }];
+        } else {
+          console.warn("Coupon is not valid:", couponCode);
+        }
+      } catch (couponError) {
+        console.error("Coupon not found or invalid:", couponCode, couponError);
+        // Continue without coupon if it's invalid
+      }
     }
 
+    console.log("Creating Stripe payment session...");
     const session = await stripe.checkout.sessions.create(sessionConfig);
+    console.log("Payment session created:", session.id);
 
     return new Response(JSON.stringify({ url: session.url }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
