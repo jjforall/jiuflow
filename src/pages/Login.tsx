@@ -11,6 +11,10 @@ import { toast } from "sonner";
 import { z } from "zod";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
+const emailSchema = z.object({
+  email: z.string().trim().email({ message: "有効なメールアドレスを入力してください" }).max(255),
+});
+
 const authSchema = z.object({
   email: z.string().trim().email({ message: "有効なメールアドレスを入力してください" }).max(255),
   password: z.string().min(6, { message: "パスワードは6文字以上である必要があります" }).max(100),
@@ -41,34 +45,71 @@ const Login = () => {
     return () => subscription.unsubscribe();
   }, [navigate]);
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleMagicLinkLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
     try {
-      const validated = authSchema.parse({ email, password });
+      const validated = emailSchema.parse({ email });
       
-      const { error } = await supabase.auth.signInWithPassword({
-        email: validated.email,
-        password: validated.password,
-      });
+      // Check payment and send magic link
+      const { data, error } = await supabase.functions.invoke(
+        "check-payment-and-send-magic-link",
+        {
+          body: { email: validated.email },
+        }
+      );
 
       if (error) {
-        if (error.message.includes("Invalid login credentials")) {
+        console.error("Magic link error:", error);
+        toast.error(
+          language === "ja" 
+            ? "エラーが発生しました" 
+            : "An error occurred"
+        );
+        return;
+      }
+
+      if (data?.error) {
+        if (data.error === "payment_not_found") {
           toast.error(
             language === "ja" 
-              ? "メールアドレスまたはパスワードが正しくありません" 
-              : "Invalid email or password"
+              ? "決済が見つかりませんでした。先に決済を完了してください。" 
+              : "Payment not found. Please complete payment first.",
+            {
+              description: language === "ja" 
+                ? "「参加する」ページから決済を完了してください" 
+                : "Please complete payment from the Join page",
+            }
+          );
+        } else if (data.error === "payment_not_completed") {
+          toast.error(
+            language === "ja" 
+              ? "決済がまだ完了していません" 
+              : "Payment not completed yet",
+            {
+              description: language === "ja" 
+                ? "決済を完了してから再度お試しください" 
+                : "Please complete payment and try again",
+            }
           );
         } else {
-          toast.error(error.message);
+          toast.error(data.message || data.error);
         }
         return;
       }
 
       toast.success(
-        language === "ja" ? "ログインしました" : "Logged in successfully"
+        language === "ja" 
+          ? "ログインリンクをメールで送信しました" 
+          : "Login link sent to your email",
+        {
+          description: language === "ja" 
+            ? "メールを確認してログインしてください" 
+            : "Check your email to log in",
+        }
       );
+      setEmail("");
     } catch (error) {
       if (error instanceof z.ZodError) {
         toast.error(error.errors[0].message);
@@ -156,7 +197,7 @@ const Login = () => {
             </TabsList>
             
             <TabsContent value="login">
-              <form onSubmit={handleLogin} className="space-y-6 border border-border p-8">
+              <form onSubmit={handleMagicLinkLogin} className="space-y-6 border border-border p-8">
                 <div className="space-y-2">
                   <Label htmlFor="login-email">
                     {language === "ja" ? "メールアドレス" : "Email"}
@@ -171,26 +212,19 @@ const Login = () => {
                     disabled={isLoading}
                   />
                 </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="login-password">
-                    {language === "ja" ? "パスワード" : "Password"}
-                  </Label>
-                  <Input
-                    id="login-password"
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••"
-                    required
-                    disabled={isLoading}
-                  />
+
+                <div className="space-y-2 text-sm text-muted-foreground">
+                  <p>
+                    {language === "ja" 
+                      ? "決済済みのメールアドレスを入力してください。ログインリンクをメールで送信します。" 
+                      : "Enter your email address with completed payment. We'll send you a login link."}
+                  </p>
                 </div>
 
                 <Button type="submit" className="w-full" disabled={isLoading}>
                   {isLoading 
                     ? (language === "ja" ? "処理中..." : "Loading...") 
-                    : (language === "ja" ? "ログイン" : "Login")}
+                    : (language === "ja" ? "ログインリンクを送信" : "Send Login Link")}
                 </Button>
 
                 <div className="text-center text-sm text-muted-foreground">
