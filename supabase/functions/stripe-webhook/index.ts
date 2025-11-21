@@ -6,140 +6,166 @@ const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
   apiVersion: "2025-08-27.basil",
 });
 
-const supabaseAdmin = createClient(
-  Deno.env.get("SUPABASE_URL") ?? "",
-  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-);
+const cryptoProvider = Stripe.createSubtleCryptoProvider();
 
 serve(async (req) => {
-  const signature = req.headers.get("stripe-signature");
-  const webhookSecret = Deno.env.get("STRIPE_WEBHOOK_SECRET");
-
-  if (!signature || !webhookSecret) {
-    return new Response("Missing signature or secret", { status: 400 });
+  const signature = req.headers.get("Stripe-Signature");
+  const body = await req.text();
+  
+  if (!signature) {
+    return new Response("No signature", { status: 400 });
   }
 
+  let event: Stripe.Event;
   try {
-    const body = await req.text();
-    const event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
+    event = await stripe.webhooks.constructEventAsync(
+      body,
+      signature,
+      Deno.env.get("STRIPE_WEBHOOK_SECRET")!,
+      undefined,
+      cryptoProvider
+    );
+  } catch (err) {
+    console.error("Webhook signature verification failed:", err);
+    return new Response(`Webhook Error: ${err instanceof Error ? err.message : "Unknown error"}`, { 
+      status: 400 
+    });
+  }
 
-    console.log(`[WEBHOOK] Event type: ${event.type}`);
+  console.log("Received event:", event.type);
 
-    if (event.type === "checkout.session.completed") {
-      const session = event.data.object as Stripe.Checkout.Session;
-      const customerId = session.customer as string;
-      
-      let email = session.customer_details?.email;
-      
-      if (!email && customerId) {
-        const customer = await stripe.customers.retrieve(customerId) as Stripe.Customer;
-        email = customer.email;
-      }
+  const supabase = createClient(
+    Deno.env.get("SUPABASE_URL") ?? "",
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+  );
 
-      if (!email) {
-        console.error("[WEBHOOK] No email found");
-        return new Response("No email found", { status: 400 });
-      }
-
-      console.log(`[WEBHOOK] Processing for email: ${email}`);
-
-      // Check if user already exists
-      const { data: existingUser } = await supabaseAdmin.auth.admin.listUsers();
-      const userExists = existingUser.users.find(u => u.email === email);
-
-      if (!userExists) {
-        // Create user account
-        const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
-          email,
-          email_confirm: true,
-        });
-
-        if (createError) {
-          console.error("[WEBHOOK] Error creating user:", createError);
-          return new Response(JSON.stringify({ error: createError.message }), { status: 500 });
-        }
-
-        console.log(`[WEBHOOK] User created: ${newUser.user.id}`);
-
-        // Update profile with Stripe customer ID
-        const { error: profileError } = await supabaseAdmin
-          .from("profiles")
-          .update({ stripe_customer_id: customerId })
-          .eq("id", newUser.user.id);
-
-        if (profileError) {
-          console.error("[WEBHOOK] Error updating profile:", profileError);
-        }
-      } else {
-        console.log(`[WEBHOOK] User already exists: ${userExists.id}`);
+  try {
+    switch (event.type) {
+      case "checkout.session.completed": {
+        const session = event.data.object as Stripe.Checkout.Session;
+        console.log("Checkout session completed:", session.id);
         
-        // Update existing profile with Stripe customer ID
-        const { error: profileError } = await supabaseAdmin
-          .from("profiles")
-          .update({ stripe_customer_id: customerId })
-          .eq("id", userExists.id);
-
-        if (profileError) {
-          console.error("[WEBHOOK] Error updating profile:", profileError);
+        // Get customer email from session
+        const customerEmail = session.customer_email || session.customer_details?.email;
+        if (!customerEmail) {
+          console.error("No customer email found in session");
+          break;
         }
-      }
 
-      // Send magic link
-      const { error: magicLinkError } = await supabaseAdmin.auth.signInWithOtp({
-        email,
-        options: {
-          emailRedirectTo: `${req.headers.get("origin") || "http://localhost:8080"}/`,
-        },
-      });
+        console.log("Customer email:", customerEmail);
 
-      if (magicLinkError) {
-        console.error("[WEBHOOK] Error sending magic link:", magicLinkError);
-        return new Response(JSON.stringify({ error: magicLinkError.message }), { status: 500 });
-      }
+        // Check if user already exists
+        const { data: existingUser } = await supabase.auth.admin.listUsers();
+        const userExists = existingUser?.users.some(u => u.email === customerEmail);
 
-      console.log(`[WEBHOOK] Magic link sent to: ${email}`);
-    }
-
-    // Handle subscription updates/deletions
-    if (event.type === "customer.subscription.updated" || event.type === "customer.subscription.deleted") {
-      const subscription = event.data.object as Stripe.Subscription;
-      const customerId = subscription.customer as string;
-
-      // Find user by Stripe customer ID
-      const { data: profile } = await supabaseAdmin
-        .from("profiles")
-        .select("id")
-        .eq("stripe_customer_id", customerId)
-        .single();
-
-      if (profile) {
-        // Update subscription record
-        const { error: subError } = await supabaseAdmin
-          .from("subscriptions")
-          .upsert({
-            user_id: profile.id,
-            stripe_subscription_id: subscription.id,
-            stripe_price_id: subscription.items.data[0]?.price.id,
-            status: subscription.status,
-            current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+        if (!userExists) {
+          console.log("Creating new user account for:", customerEmail);
+          
+          // Generate a random password
+          const randomPassword = crypto.randomUUID();
+          
+          // Create user account
+          const { data: newUser, error: createError } = await supabase.auth.admin.createUser({
+            email: customerEmail,
+            password: randomPassword,
+            email_confirm: true, // Auto-confirm email
           });
 
-        if (subError) {
-          console.error("[WEBHOOK] Error updating subscription:", subError);
+          if (createError) {
+            console.error("Error creating user:", createError);
+          } else {
+            console.log("User created successfully:", newUser.user?.id);
+            
+            // Send password reset email so user can set their own password
+            const { error: resetError } = await supabase.auth.resetPasswordForEmail(
+              customerEmail,
+              {
+                redirectTo: `${Deno.env.get("SUPABASE_URL")}/auth/v1/verify`,
+              }
+            );
+
+            if (resetError) {
+              console.error("Error sending password reset email:", resetError);
+            } else {
+              console.log("Password reset email sent to:", customerEmail);
+            }
+          }
+        } else {
+          console.log("User already exists:", customerEmail);
         }
+
+        // Get or create customer ID
+        let customerId = session.customer as string;
+        
+        // Create or update subscription record
+        if (session.mode === "subscription" && session.subscription) {
+          const subscription = await stripe.subscriptions.retrieve(session.subscription as string);
+          
+          // Get user ID
+          const { data: userData } = await supabase.auth.admin.listUsers();
+          const user = userData?.users.find(u => u.email === customerEmail);
+          
+          if (user) {
+            const { error: subError } = await supabase
+              .from("subscriptions")
+              .upsert({
+                user_id: user.id,
+                stripe_subscription_id: subscription.id,
+                stripe_price_id: subscription.items.data[0].price.id,
+                status: subscription.status,
+                current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+                plan_type: "founder",
+              });
+
+            if (subError) {
+              console.error("Error creating subscription record:", subError);
+            } else {
+              console.log("Subscription record created for user:", user.id);
+            }
+          }
+        }
+        break;
       }
+
+      case "customer.subscription.updated":
+      case "customer.subscription.deleted": {
+        const subscription = event.data.object as Stripe.Subscription;
+        console.log("Subscription event:", event.type, subscription.id);
+        
+        const { error: updateError } = await supabase
+          .from("subscriptions")
+          .update({
+            status: subscription.status,
+            current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+          })
+          .eq("stripe_subscription_id", subscription.id);
+
+        if (updateError) {
+          console.error("Error updating subscription:", updateError);
+        } else {
+          console.log("Subscription updated:", subscription.id);
+        }
+        break;
+      }
+
+      default:
+        console.log(`Unhandled event type: ${event.type}`);
     }
 
     return new Response(JSON.stringify({ received: true }), {
       headers: { "Content-Type": "application/json" },
       status: 200,
     });
-  } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : String(error);
-    console.error("[WEBHOOK] Error:", message);
-    return new Response(JSON.stringify({ error: message }), {
-      headers: { "Content-Type": "application/json" },
-      status: 400,
-    });
+  } catch (error) {
+    console.error("Error processing webhook:", error);
+    return new Response(
+      JSON.stringify({ 
+        error: error instanceof Error ? error.message : "Unknown error" 
+      }), 
+      { 
+        status: 500,
+        headers: { "Content-Type": "application/json" }
+      }
+    );
   }
 });
