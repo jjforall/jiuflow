@@ -16,10 +16,11 @@ serve(async (req) => {
   );
 
   try {
-    const { priceId, couponCode } = await req.json();
+    const { priceId, couponCode, email } = await req.json();
     if (!priceId) throw new Error("Price ID is required");
 
     console.log("Creating payment session for price:", priceId);
+    console.log("Email provided:", email || "none");
     if (couponCode) {
       console.log("Coupon code provided:", couponCode);
     }
@@ -41,6 +42,11 @@ serve(async (req) => {
       cancel_url: `${req.headers.get("origin")}/join?canceled=true`,
     };
 
+    // Add email if provided
+    if (email) {
+      sessionConfig.customer_email = email;
+    }
+
     // Validate and add coupon code if provided
     if (couponCode) {
       try {
@@ -57,9 +63,9 @@ serve(async (req) => {
       }
     }
 
-    console.log("Creating Stripe payment session...");
+    console.log("Creating Stripe payment session with config:", JSON.stringify(sessionConfig, null, 2));
     const session = await stripe.checkout.sessions.create(sessionConfig);
-    console.log("Payment session created:", session.id);
+    console.log("Payment session created successfully:", session.id);
 
     return new Response(JSON.stringify({ url: session.url }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -67,6 +73,8 @@ serve(async (req) => {
     });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
+    console.error("Error creating payment session:", message);
+    console.error("Full error:", error);
     return new Response(JSON.stringify({ error: message }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,
