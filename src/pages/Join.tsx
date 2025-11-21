@@ -110,11 +110,68 @@ const Join = () => {
   const handleCheckout = async (priceId: string, isSubscription: boolean) => {
     setIsLoading(true);
     try {
+      // Get current session
+      const { data: { session } } = await supabase.auth.getSession();
+      let userEmail = session?.user?.email;
+
+      // If no session, prompt for email and create account
+      if (!session) {
+        const email = prompt(
+          language === "ja" 
+            ? "メールアドレスを入力してください（アカウント作成用）:" 
+            : "Enter your email (for account creation):"
+        );
+        
+        if (!email) {
+          toast.error(
+            language === "ja" 
+              ? "メールアドレスが必要です" 
+              : "Email is required"
+          );
+          return;
+        }
+
+        // Generate random password for the user
+        const tempPassword = Math.random().toString(36).slice(-12) + Math.random().toString(36).slice(-12);
+        
+        // Sign up the user
+        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+          email,
+          password: tempPassword,
+          options: {
+            emailRedirectTo: `${window.location.origin}/`,
+          },
+        });
+
+        if (signUpError) {
+          console.error("Sign up error:", signUpError);
+          toast.error(
+            language === "ja" 
+              ? "アカウント作成に失敗しました" 
+              : "Failed to create account",
+            {
+              description: signUpError.message,
+            }
+          );
+          return;
+        }
+
+        userEmail = email;
+        
+        // User is now signed in automatically after signUp
+        toast.success(
+          language === "ja" 
+            ? "アカウントを作成しました" 
+            : "Account created"
+        );
+      }
+
       const functionName = isSubscription ? "create-checkout" : "create-payment";
       const { data, error } = await supabase.functions.invoke(functionName, {
         body: { 
           priceId, 
-          couponCode: couponCode.trim() || undefined 
+          couponCode: couponCode.trim() || undefined,
+          email: userEmail,
         },
       });
 
