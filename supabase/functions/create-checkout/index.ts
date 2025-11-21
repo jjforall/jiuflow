@@ -32,6 +32,9 @@ serve(async (req) => {
         },
       ],
       mode: "subscription",
+      subscription_data: {
+        trial_period_days: 7, // 7日間の無料トライアル
+      },
       success_url: `${req.headers.get("origin")}/join?success=true`,
       cancel_url: `${req.headers.get("origin")}/join?canceled=true`,
     };

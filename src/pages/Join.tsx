@@ -250,13 +250,13 @@ const Join = () => {
                 {/* Founder Access - Only show if coupon is MURATABJJ */}
                 {couponCode === "MURATABJJ" && (
                   <div className="border border-border p-8">
-                    <h3 className="text-2xl font-light mb-4">
-                      {language === "ja" ? "創設者アクセス" : language === "pt" ? "Acesso Fundador" : "Founder Access"}
-                    </h3>
-                    <div className="mb-6">
-                      <div className="text-4xl font-light mb-2">¥980</div>
-                      <div className="text-sm text-muted-foreground font-light">
-                        {language === "ja" ? "月額（期間限定・永久価格）" : language === "pt" ? "Por mês (preço limitado e permanente)" : "per month (limited time forever)"}
+                  <h3 className="text-2xl font-light mb-4">
+                    {language === "ja" ? "創設者アクセス" : language === "pt" ? "Acesso Fundador" : "Founder Access"}
+                  </h3>
+                  <div className="mb-6">
+                    <div className="text-4xl font-light mb-2">¥980</div>
+                    <div className="text-sm text-muted-foreground font-light">
+                      {language === "ja" ? "月額（7日間無料・期間限定・永久価格）" : language === "pt" ? "Por mês (7 dias grátis・preço limitado e permanente)" : "per month (7 days free・limited time forever)"}
                       </div>
                       <div className="text-xs text-muted-foreground mt-2">
                         {language === "ja" ? "残り" : language === "pt" ? "Restam" : "Remaining"} {countdown.days}
@@ -299,7 +299,7 @@ const Join = () => {
                   <div className="mb-6">
                     <div className="text-4xl font-light mb-2">¥2,900</div>
                     <div className="text-sm text-muted-foreground font-light">
-                      {language === "ja" ? "月額（いつでもキャンセル可能）" : language === "pt" ? "Por mês (cancele a qualquer momento)" : "per month (cancel anytime)"}
+                      {language === "ja" ? "月額（7日間無料・いつでもキャンセル可能）" : language === "pt" ? "Por mês (7 dias grátis・cancele a qualquer momento)" : "per month (7 days free・cancel anytime)"}
                     </div>
                   </div>
                   <ul className="space-y-3 mb-6 text-sm font-light">
@@ -333,7 +333,7 @@ const Join = () => {
                   <div className="mb-6">
                     <div className="text-4xl font-light mb-2">¥29,000</div>
                     <div className="text-sm text-muted-foreground font-light">
-                      {language === "ja" ? "年額（約2ヶ月分お得）" : language === "pt" ? "Por ano (economize cerca de 2 meses)" : "per year (save ~2 months)"}
+                      {language === "ja" ? "年額（7日間無料・約2ヶ月分お得）" : language === "pt" ? "Por ano (7 dias grátis・economize cerca de 2 meses)" : "per year (7 days free・save ~2 months)"}
                     </div>
                   </div>
                   <ul className="space-y-3 mb-6 text-sm font-light">

@@ -1,247 +1,64 @@
-import { useState, useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { toast } from "sonner";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { translations } from "@/lib/translations";
 import Footer from "@/components/Footer";
 import Navigation from "@/components/Navigation";
 import { Skeleton } from "@/components/ui/skeleton";
-import { z } from "zod";
-import { loginFormSchema, signupFormSchema, getPasswordStrength } from "@/lib/validators";
-import { Progress } from "@/components/ui/progress";
+import { Button } from "@/components/ui/button";
 
 const Login = () => {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [isSignUp, setIsSignUp] = useState(false);
-  const [passwordStrength, setPasswordStrength] = useState({ score: 0, feedback: [] as string[] });
-  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const navigate = useNavigate();
-  const location = useLocation();
   const { language } = useLanguage();
-  const t = translations[language] || translations.ja; // Fallback to Japanese
+  const t = translations[language] || translations.ja;
 
   useEffect(() => {
     // Check if user is already logged in
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        const from = (location.state as any)?.from?.pathname || "/map";
-        navigate(from, { replace: true });
+        navigate("/map", { replace: true });
       }
-      setIsCheckingAuth(false);
     };
     checkAuth();
-  }, [navigate, location]);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-
-    try {
-      // Validate input
-      if (isSignUp) {
-        signupFormSchema.parse({ email, password, confirmPassword });
-      } else {
-        loginFormSchema.parse({ email, password });
-      }
-
-      if (isSignUp) {
-        // Sign up flow
-        const { data, error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            emailRedirectTo: `${window.location.origin}/`,
-          },
-        });
-
-        if (error) {
-          toast.error(language === "ja" ? "登録失敗" : language === "pt" ? "Falha no registro" : "Sign up failed", {
-            description: (error instanceof Error ? error.message : String(error)),
-          });
-          setIsLoading(false);
-          return;
-        }
-
-        if (data.user && !data.session) {
-          // Email confirmation required
-          toast.success(language === "ja" ? "確認メールを送信しました" : language === "pt" ? "E-mail de confirmação enviado" : "Confirmation email sent", {
-            description: language === "ja" 
-              ? "メールアドレスに送信された確認リンクをクリックしてください" 
-              : language === "pt" 
-              ? "Clique no link de confirmação enviado para seu e-mail" 
-              : "Please click the confirmation link sent to your email",
-          });
-          setIsLoading(false);
-          return;
-        }
-
-        if (data.user) {
-          toast.success(language === "ja" ? "登録成功" : language === "pt" ? "Registro bem-sucedido" : "Sign up successful", {
-            description: language === "ja" ? "アカウントが作成されました" : language === "pt" ? "Conta criada" : "Account created",
-          });
-
-          // Redirect to map after successful signup
-          navigate("/map", { replace: true });
-        }
-      } else {
-        // Login flow
-        const { data, error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-
-        if (error) {
-          toast.error(language === "ja" ? "ログイン失敗" : language === "pt" ? "Falha no login" : "Login failed", {
-            description: (error instanceof Error ? error.message : String(error)),
-          });
-          setIsLoading(false);
-          return;
-        }
-
-        if (data.session) {
-          toast.success(language === "ja" ? "ログイン成功" : language === "pt" ? "Login bem-sucedido" : "Login successful", {
-            description: language === "ja" ? "ようこそ" : language === "pt" ? "Bem-vindo" : "Welcome",
-          });
-
-          // Redirect to the page they tried to access, or to map
-          const from = (location.state as any)?.from?.pathname || "/map";
-          navigate(from, { replace: true });
-        }
-      }
-    } catch (validationError) {
-      if (validationError instanceof z.ZodError) {
-        toast.error(language === "ja" ? "入力エラー" : language === "pt" ? "Erro de entrada" : "Input error", {
-          description: validationError.errors[0].message,
-        });
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  if (isCheckingAuth) {
-    return (
-      <div className="min-h-screen bg-background">
-        <Navigation />
-        <div className="pt-32 pb-20 px-6 animate-fade-in">
-          <div className="max-w-md mx-auto space-y-8">
-            <div className="text-center space-y-4">
-              <div className="h-12 w-2/3 bg-muted/50 animate-pulse rounded mx-auto" />
-              <div className="h-6 w-3/4 bg-muted/50 animate-pulse rounded mx-auto" />
-            </div>
-            <div className="space-y-6">
-              <div className="h-12 w-full bg-muted/50 animate-pulse rounded" />
-              <div className="h-12 w-full bg-muted/50 animate-pulse rounded" />
-              <div className="h-12 w-full bg-muted/50 animate-pulse rounded" />
-            </div>
-          </div>
-        </div>
-        <Footer />
-      </div>
-    );
-  }
+  }, [navigate]);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen">
       <Navigation />
-      
-      <div className="pt-32 pb-20 px-6">
-        <div className="max-w-md mx-auto">
-          <div className="text-center mb-12">
-            <h1 className="text-4xl font-light mb-4">
-              {isSignUp 
-                ? (language === "ja" ? "新規登録" : language === "pt" ? "Registrar" : "Sign Up")
-                : (language === "ja" ? "ログイン" : language === "pt" ? "Login" : "Login")}
+      <main className="pt-32 pb-20 px-6">
+        <div className="max-w-md mx-auto text-center space-y-8">
+          <div className="animate-fade-up">
+            <h1 className="text-4xl md:text-5xl font-light mb-6">
+              {language === "ja" ? "ログインが必要です" : language === "pt" ? "Login Necessário" : "Login Required"}
             </h1>
-            <p className="text-muted-foreground font-light">
-              {isSignUp
-                ? (language === "ja" 
-                  ? "アカウントを作成して始めましょう" 
-                  : language === "pt" 
-                  ? "Crie sua conta para começar" 
-                  : "Create your account to get started")
-                : (language === "ja" 
-                  ? "動画コンテンツにアクセスするにはログインしてください" 
-                  : language === "pt" 
-                  ? "Faça login para acessar o conteúdo de vídeo" 
-                  : "Login to access video content")}
+            <p className="text-lg text-muted-foreground mb-8">
+              {language === "ja" 
+                ? "アカウントをお持ちでない方は、まず料金プランから決済を完了してください。決済後、自動的にアカウントが作成されます。" 
+                : language === "pt" 
+                ? "Se você não tem uma conta, complete o pagamento na página de preços primeiro. Sua conta será criada automaticamente após o pagamento."
+                : "If you don't have an account, please complete payment on the pricing page first. Your account will be created automatically after payment."}
             </p>
-          </div>
-
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <Input
-                type="email"
-                placeholder={language === "ja" ? "メールアドレス" : language === "pt" ? "Email" : "Email"}
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+            <div className="space-y-4">
+              <Button 
+                onClick={() => navigate("/join")} 
                 className="w-full"
-                required
-                disabled={isLoading}
-              />
-            </div>
-
-            <div>
-              <Input
-                type="password"
-                placeholder={language === "ja" ? "パスワード" : language === "pt" ? "Senha" : "Password"}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full"
-                required
-                disabled={isLoading}
-              />
-            </div>
-
-            <Button 
-              type="submit" 
-              className="w-full" 
-              size="lg"
-              disabled={isLoading}
-            >
-              {isLoading 
-                ? (isSignUp
-                  ? (language === "ja" ? "登録中..." : language === "pt" ? "Registrando..." : "Signing up...")
-                  : (language === "ja" ? "ログイン中..." : language === "pt" ? "Entrando..." : "Logging in..."))
-                : (isSignUp
-                  ? (language === "ja" ? "登録" : language === "pt" ? "Registrar" : "Sign Up")
-                  : (language === "ja" ? "ログイン" : language === "pt" ? "Entrar" : "Login"))}
-            </Button>
-          </form>
-
-          <div className="mt-6 text-center">
-            <button
-              type="button"
-              onClick={() => {
-                setIsSignUp(!isSignUp);
-                setPassword("");
-                setConfirmPassword("");
-                setPasswordStrength({ score: 0, feedback: [] });
-              }}
-              className="text-sm text-muted-foreground hover:text-foreground transition-colors font-light"
-            >
-              {isSignUp
-                ? (language === "ja" 
-                  ? "既にアカウントをお持ちですか？ログイン" 
+                size="lg"
+              >
+                {language === "ja" ? "料金プランを見る" : language === "pt" ? "Ver Planos" : "View Pricing Plans"}
+              </Button>
+              <p className="text-sm text-muted-foreground">
+                {language === "ja" 
+                  ? "決済完了後、メールでパスワード設定のリンクが届きます" 
                   : language === "pt" 
-                  ? "Já tem uma conta? Entrar" 
-                  : "Already have an account? Login")
-                : (language === "ja" 
-                  ? "アカウントをお持ちでないですか？新規登録" 
-                  : language === "pt" 
-                  ? "Não tem uma conta? Registrar" 
-                  : "Don't have an account? Sign up")}
-            </button>
+                  ? "Após o pagamento, você receberá um link por e-mail para definir sua senha"
+                  : "After payment, you'll receive an email link to set your password"}
+              </p>
+            </div>
           </div>
         </div>
-      </div>
+      </main>
       <Footer />
     </div>
   );
