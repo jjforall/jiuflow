@@ -369,46 +369,6 @@ const Map = () => {
                 </div>
               )}
 
-              {!hasMore && techniques.length > 0 && (
-                <div className="space-y-8 mt-12">
-                  <div className="p-8 border-2 border-dashed border-border rounded-lg text-center space-y-4 bg-card">
-                    <div className="max-w-2xl mx-auto space-y-3">
-                      <h3 className="text-2xl font-bold text-foreground">
-                        {language === "ja" ? "あなたの動画を投稿してみよう！" : language === "pt" ? "Publique seus vídeos!" : "Share Your Videos!"}
-                      </h3>
-                      <p className="text-muted-foreground">
-                        {language === "ja" 
-                          ? "試合動画、テクニック動画など、どんな動画でもお気軽に投稿してください。" 
-                          : language === "pt" 
-                          ? "Compartilhe vídeos de lutas, técnicas e muito mais!" 
-                          : "Share match videos, technique videos, and more!"}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        {language === "ja" 
-                          ? "※ テクニック動画の場合、一部使わせていただく可能性があります。" 
-                          : language === "pt" 
-                          ? "* Vídeos de técnicas podem ser parcialmente utilizados." 
-                          : "* Technique videos may be partially used."}
-                      </p>
-                      <p className="text-sm font-medium text-primary">
-                        {language === "ja" 
-                          ? "再生数に応じた収益をお返しします。" 
-                          : language === "pt" 
-                          ? "Ganhe com base nas visualizações!" 
-                          : "Earn revenue based on views!"}
-                      </p>
-                      <Button 
-                        onClick={() => setShowUploadDialog(true)}
-                        size="lg"
-                        className="mt-4"
-                      >
-                        <Upload className="mr-2 h-5 w-5" />
-                        {language === "ja" ? "動画を投稿する" : language === "pt" ? "Publicar vídeo" : "Upload Video"}
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              )}
             </div>
           )}
         </div>
