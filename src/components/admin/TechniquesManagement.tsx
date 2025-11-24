@@ -29,6 +29,7 @@ interface Technique {
   video_url: string | null;
   thumbnail_url: string | null;
   display_order: number;
+  hashtags: string[];
 }
 
 interface UploadProgress {
@@ -59,7 +60,9 @@ export const TechniquesManagement = () => {
     description_ja: "",
     description_pt: "",
     category: "pull" as "pull" | "control" | "submission" | "guard-pass",
+    hashtags: [] as string[],
   });
+  const [hashtagInput, setHashtagInput] = useState("");
 
   const { data, isLoading, error } = usePaginatedTechniques(page, pageSize, {
     search: searchQuery,
@@ -260,6 +263,7 @@ export const TechniquesManagement = () => {
         video_url: videoUrl,
         thumbnail_url: thumbnailUrl,
         display_order: editingTechnique?.display_order || 0,
+        hashtags: formData.hashtags,
       };
 
       if (editingTechnique) {
@@ -330,7 +334,9 @@ export const TechniquesManagement = () => {
       description_ja: "",
       description_pt: "",
       category: "pull",
+      hashtags: [],
     });
+    setHashtagInput("");
     setVideoFile(null);
     setEditingTechnique(null);
   };
@@ -345,6 +351,7 @@ export const TechniquesManagement = () => {
       description_ja: technique.description_ja || "",
       description_pt: technique.description_pt || "",
       category: technique.category as "pull" | "control" | "submission" | "guard-pass",
+      hashtags: technique.hashtags || [],
     });
     setShowEditDialog(true);
   };
@@ -425,6 +432,7 @@ export const TechniquesManagement = () => {
             <tr>
               <th className="px-4 py-3 text-left">技術名</th>
               <th className="px-4 py-3 text-left">カテゴリー</th>
+              <th className="px-4 py-3 text-left">ハッシュタグ</th>
               <th className="px-4 py-3 text-left">表示順</th>
               <th className="px-4 py-3 text-left">動画</th>
               <th className="px-4 py-3 text-right">アクション</th>
@@ -442,6 +450,9 @@ export const TechniquesManagement = () => {
                     <Skeleton className="h-4 w-24" />
                   </td>
                   <td className="px-4 py-3">
+                    <Skeleton className="h-4 w-32" />
+                  </td>
+                  <td className="px-4 py-3">
                     <Skeleton className="h-4 w-12" />
                   </td>
                   <td className="px-4 py-3">
@@ -454,7 +465,7 @@ export const TechniquesManagement = () => {
               ))
             ) : data?.data.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">
+                <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
                   技術が見つかりませんでした
                 </td>
               </tr>
@@ -471,6 +482,19 @@ export const TechniquesManagement = () => {
                     <span className="px-2 py-1 text-xs rounded-full bg-primary/10 text-primary">
                       {technique.category}
                     </span>
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex flex-wrap gap-1 max-w-[200px]">
+                      {technique.hashtags && technique.hashtags.length > 0 ? (
+                        technique.hashtags.map((tag) => (
+                          <span key={tag} className="text-xs text-muted-foreground">
+                            #{tag}
+                          </span>
+                        ))
+                      ) : (
+                        <span className="text-xs text-muted-foreground">-</span>
+                      )}
+                    </div>
                   </td>
                   <td className="px-4 py-3">{technique.display_order}</td>
                   <td className="px-4 py-3">
@@ -625,6 +649,64 @@ export const TechniquesManagement = () => {
                   onChange={(e) => setFormData({...formData, description_pt: e.target.value})}
                   rows={3}
                 />
+              </div>
+            </div>
+
+            <div>
+              <label className="text-sm font-medium">ハッシュタグ</label>
+              <div className="space-y-2">
+                <div className="flex gap-2">
+                  <Input
+                    value={hashtagInput}
+                    onChange={(e) => setHashtagInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        const tag = hashtagInput.trim().replace(/^#/, '');
+                        if (tag && !formData.hashtags.includes(tag)) {
+                          setFormData({ ...formData, hashtags: [...formData.hashtags, tag] });
+                          setHashtagInput("");
+                        }
+                      }
+                    }}
+                    placeholder="ハッシュタグを入力してEnter"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      const tag = hashtagInput.trim().replace(/^#/, '');
+                      if (tag && !formData.hashtags.includes(tag)) {
+                        setFormData({ ...formData, hashtags: [...formData.hashtags, tag] });
+                        setHashtagInput("");
+                      }
+                    }}
+                  >
+                    追加
+                  </Button>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {formData.hashtags.map((tag) => (
+                    <div
+                      key={tag}
+                      className="flex items-center gap-1 px-2 py-1 bg-primary/10 text-primary rounded-md text-sm"
+                    >
+                      <span>#{tag}</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setFormData({
+                            ...formData,
+                            hashtags: formData.hashtags.filter((t) => t !== tag),
+                          });
+                        }}
+                        className="text-primary hover:text-primary/80"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
 

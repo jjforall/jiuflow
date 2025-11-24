@@ -100,6 +100,7 @@ export type Database = {
           description_ja: string | null
           description_pt: string | null
           display_order: number | null
+          hashtags: string[] | null
           id: string
           name: string
           name_ja: string
@@ -115,6 +116,7 @@ export type Database = {
           description_ja?: string | null
           description_pt?: string | null
           display_order?: number | null
+          hashtags?: string[] | null
           id?: string
           name: string
           name_ja: string
@@ -130,6 +132,7 @@ export type Database = {
           description_ja?: string | null
           description_pt?: string | null
           display_order?: number | null
+          hashtags?: string[] | null
           id?: string
           name?: string
           name_ja?: string

@@ -14,6 +14,7 @@ interface Technique {
   video_url: string | null;
   thumbnail_url: string | null;
   display_order: number;
+  hashtags: string[];
 }
 
 interface PaginatedResponse {
