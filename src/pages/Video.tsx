@@ -24,6 +24,7 @@ interface Technique {
   category: "pull" | "control" | "submission";
   video_url: string | null;
   display_order: number;
+  hashtags: string[];
 }
 
 const Video = () => {
@@ -225,10 +226,24 @@ const Video = () => {
           </div>
 
           {getTechniqueDescription(technique) && (
-            <div className="mb-12 animate-fade-up">
+            <div className="mb-8 animate-fade-up">
               <p className="text-lg font-light text-muted-foreground leading-relaxed">
                 {getTechniqueDescription(technique)}
               </p>
+            </div>
+          )}
+
+          {technique.hashtags && technique.hashtags.length > 0 && (
+            <div className="mb-12 animate-fade-up flex flex-wrap gap-2">
+              {technique.hashtags.map((tag) => (
+                <Link
+                  key={tag}
+                  to={`/map?hashtag=${encodeURIComponent(tag)}`}
+                  className="text-primary hover:text-primary/80 transition-colors text-sm font-medium"
+                >
+                  #{tag}
+                </Link>
+              ))}
             </div>
           )}
 
