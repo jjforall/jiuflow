@@ -547,7 +547,7 @@ export const TechniquesManagement = () => {
                             value={editValue}
                             onChange={(e) => setEditValue(e.target.value)}
                             onKeyDown={(e) => {
-                              if (e.key === 'Enter') saveEdit(technique);
+                              if (e.key === 'Enter' && !e.nativeEvent.isComposing) saveEdit(technique);
                               if (e.key === 'Escape') cancelEditing();
                             }}
                             className="h-8 text-sm"
@@ -576,7 +576,7 @@ export const TechniquesManagement = () => {
                             value={editValue}
                             onChange={(e) => setEditValue(e.target.value)}
                             onKeyDown={(e) => {
-                              if (e.key === 'Enter') saveEdit(technique);
+                              if (e.key === 'Enter' && !e.nativeEvent.isComposing) saveEdit(technique);
                               if (e.key === 'Escape') cancelEditing();
                             }}
                             className="h-8 text-sm"
@@ -629,7 +629,7 @@ export const TechniquesManagement = () => {
                           value={hashtagEditValue}
                           onChange={(e) => setHashtagEditValue(e.target.value)}
                           onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
+                            if (e.key === 'Enter' && !e.nativeEvent.isComposing) {
                               e.preventDefault();
                               addHashtag(technique);
                             }
