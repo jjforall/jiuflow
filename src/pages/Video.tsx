@@ -12,6 +12,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Lock } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { VideoPlayer } from "@/components/VideoPlayer";
+import { VideoThumbnail } from "@/components/ui/video-thumbnail";
 
 interface Technique {
   id: string;
@@ -25,6 +26,9 @@ interface Technique {
   video_url: string | null;
   display_order: number;
   hashtags: string[];
+  series_name: string | null;
+  series_order: number | null;
+  thumbnail_url: string | null;
 }
 
 const Video = () => {
@@ -35,6 +39,7 @@ const Video = () => {
   const { subscribed, loading: subscriptionLoading } = useSubscription();
   const { isAdmin } = useAuth();
   const [technique, setTechnique] = useState<Technique | null>(null);
+  const [seriesVideos, setSeriesVideos] = useState<Technique[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
 
@@ -80,7 +85,23 @@ const Video = () => {
       return;
     }
 
-    setTechnique(data as Technique);
+    const techniqueData = data as Technique;
+    setTechnique(techniqueData);
+
+    // Load other videos in the same series
+    if (techniqueData?.series_name) {
+      const { data: seriesData } = await supabase
+        .from("techniques")
+        .select("*")
+        .eq("series_name", techniqueData.series_name)
+        .neq("id", id)
+        .order("series_order", { ascending: true });
+
+      if (seriesData) {
+        setSeriesVideos(seriesData as Technique[]);
+      }
+    }
+
     setIsLoading(false);
   }, [id]);
 
@@ -198,61 +219,111 @@ const Video = () => {
       <Navigation />
       
       <main className="pt-24 pb-20">
-        {/* Video Player */}
-        <div className="w-full bg-muted">
-          <div className="max-w-6xl mx-auto">
-            {technique.video_url ? (
-              <VideoPlayer videoUrl={technique.video_url} autoPlay />
-            ) : (
-              <div className="aspect-video flex items-center justify-center">
-                <div className="text-center text-muted-foreground">
-                  <div className="text-6xl mb-4">▶</div>
-                  <div className="text-sm">
-                    {language === "ja" ? "動画なし" : language === "pt" ? "Sem vídeo" : "No video"}
+        <div className="max-w-7xl mx-auto px-4 md:px-6">
+          <div className="flex flex-col lg:flex-row gap-6">
+            {/* Main Video Section */}
+            <div className="flex-1">
+              {/* Video Player */}
+              <div className="w-full bg-muted rounded-lg overflow-hidden">
+                {technique.video_url ? (
+                  <VideoPlayer videoUrl={technique.video_url} autoPlay />
+                ) : (
+                  <div className="aspect-video flex items-center justify-center">
+                    <div className="text-center text-muted-foreground">
+                      <div className="text-6xl mb-4">▶</div>
+                      <div className="text-sm">
+                        {language === "ja" ? "動画なし" : language === "pt" ? "Sem vídeo" : "No video"}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Technique Info */}
+              <div className="mt-6 animate-fade-up">
+                <h1 className="text-3xl md:text-4xl font-light mb-2">{getTechniqueName(technique)}</h1>
+                <span className="inline-block px-3 py-1 text-xs border border-border">
+                  {technique.category}
+                </span>
+              </div>
+
+              {getTechniqueDescription(technique) && (
+                <div className="mt-6 animate-fade-up">
+                  <p className="text-base font-light text-muted-foreground leading-relaxed">
+                    {getTechniqueDescription(technique)}
+                  </p>
+                </div>
+              )}
+
+              {technique.hashtags && technique.hashtags.length > 0 && (
+                <div className="mt-6 animate-fade-up flex flex-wrap gap-2">
+                  {technique.hashtags.map((tag) => (
+                    <Link
+                      key={tag}
+                      to={`/map?hashtag=${encodeURIComponent(tag)}`}
+                      className="text-primary hover:text-primary/80 transition-colors text-sm font-medium"
+                    >
+                      #{tag}
+                    </Link>
+                  ))}
+                </div>
+              )}
+
+              <div className="mt-8">
+                <Link to="/map">
+                  <Button variant="outline" size="lg">
+                    {t.video.backToMap}
+                  </Button>
+                </Link>
+              </div>
+            </div>
+
+            {/* Series Videos Sidebar */}
+            {seriesVideos.length > 0 && (
+              <div className="lg:w-[400px] xl:w-[420px]">
+                <div className="sticky top-24">
+                  <h2 className="text-lg font-medium mb-4 px-2">
+                    {language === "ja" 
+                      ? `${technique.series_name}シリーズ` 
+                      : language === "pt" 
+                      ? `Série ${technique.series_name}` 
+                      : `${technique.series_name} Series`}
+                  </h2>
+                  <div className="space-y-3 max-h-[calc(100vh-200px)] overflow-y-auto pr-2 scrollbar-thin">
+                    {seriesVideos.map((video) => (
+                      <Link
+                        key={video.id}
+                        to={`/video/${video.id}`}
+                        className="block group"
+                      >
+                        <div className="flex gap-3 hover:bg-muted/50 p-2 rounded-lg transition-colors">
+                          <div className="flex-shrink-0 w-40 h-24 relative">
+                            <VideoThumbnail
+                              videoUrl={video.video_url || ""}
+                              className="w-full h-full object-cover rounded"
+                              showPlayButton
+                            />
+                            {video.series_order && (
+                              <div className="absolute top-1 left-1 bg-background/90 text-foreground text-xs px-2 py-0.5 rounded">
+                                {video.series_order}
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h3 className="text-sm font-medium line-clamp-2 group-hover:text-primary transition-colors">
+                              {getTechniqueName(video)}
+                            </h3>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {video.category}
+                            </p>
+                          </div>
+                        </div>
+                      </Link>
+                    ))}
                   </div>
                 </div>
               </div>
             )}
-          </div>
-        </div>
-
-        {/* Technique Info */}
-        <div className="max-w-4xl mx-auto px-6 mt-12">
-          <div className="mb-8 animate-fade-up">
-            <h1 className="text-4xl md:text-5xl font-light mb-2">{getTechniqueName(technique)}</h1>
-            <span className="inline-block px-3 py-1 text-xs border border-border">
-              {technique.category}
-            </span>
-          </div>
-
-          {getTechniqueDescription(technique) && (
-            <div className="mb-8 animate-fade-up">
-              <p className="text-lg font-light text-muted-foreground leading-relaxed">
-                {getTechniqueDescription(technique)}
-              </p>
-            </div>
-          )}
-
-          {technique.hashtags && technique.hashtags.length > 0 && (
-            <div className="mb-12 animate-fade-up flex flex-wrap gap-2">
-              {technique.hashtags.map((tag) => (
-                <Link
-                  key={tag}
-                  to={`/map?hashtag=${encodeURIComponent(tag)}`}
-                  className="text-primary hover:text-primary/80 transition-colors text-sm font-medium"
-                >
-                  #{tag}
-                </Link>
-              ))}
-            </div>
-          )}
-
-          <div className="mt-12 text-center">
-            <Link to="/map">
-              <Button variant="outline" size="lg">
-                {t.video.backToMap}
-              </Button>
-            </Link>
           </div>
         </div>
       </main>
