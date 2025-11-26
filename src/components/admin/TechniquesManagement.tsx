@@ -96,9 +96,16 @@ export const TechniquesManagement = () => {
     if (!editingCell) return;
 
     try {
+      let value: string | number | null = editValue;
+      
+      // Convert series_order to number or null
+      if (editingCell.field === 'series_order') {
+        value = editValue ? parseInt(editValue) : null;
+      }
+      
       const updates = {
         ...technique,
-        [editingCell.field]: editValue
+        [editingCell.field]: value
       };
       
       await updateTechnique.mutateAsync(updates as Technique);
@@ -506,6 +513,7 @@ export const TechniquesManagement = () => {
             <tr>
               <th className="px-4 py-3 text-left">技術名</th>
               <th className="px-4 py-3 text-left">カテゴリー</th>
+              <th className="px-4 py-3 text-left">シリーズ</th>
               <th className="px-4 py-3 text-left">ハッシュタグ</th>
               <th className="px-4 py-3 text-left">表示順</th>
               <th className="px-4 py-3 text-left">動画</th>
@@ -527,6 +535,9 @@ export const TechniquesManagement = () => {
                     <Skeleton className="h-4 w-32" />
                   </td>
                   <td className="px-4 py-3">
+                    <Skeleton className="h-4 w-32" />
+                  </td>
+                  <td className="px-4 py-3">
                     <Skeleton className="h-4 w-12" />
                   </td>
                   <td className="px-4 py-3">
@@ -539,7 +550,7 @@ export const TechniquesManagement = () => {
               ))
             ) : data?.data.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
+                <td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">
                   技術が見つかりませんでした
                 </td>
               </tr>
@@ -611,6 +622,70 @@ export const TechniquesManagement = () => {
                     <span className="px-2 py-1 text-xs rounded-full bg-primary/10 text-primary">
                       {technique.category}
                     </span>
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="space-y-2">
+                      {/* Series Name */}
+                      {editingCell?.id === technique.id && editingCell?.field === 'series_name' ? (
+                        <div className="flex gap-2 items-center">
+                          <Input
+                            value={editValue}
+                            onChange={(e) => setEditValue(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' && !e.nativeEvent.isComposing) saveEdit(technique as Technique);
+                              if (e.key === 'Escape') cancelEditing();
+                            }}
+                            className="h-8 text-sm"
+                            autoFocus
+                            placeholder="シリーズ名"
+                          />
+                          <Button size="sm" variant="ghost" onClick={() => saveEdit(technique as Technique)}>
+                            <Check className="h-4 w-4" />
+                          </Button>
+                          <Button size="sm" variant="ghost" onClick={cancelEditing}>
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <p 
+                          className="text-sm cursor-pointer hover:bg-accent hover:text-accent-foreground px-2 py-1 rounded"
+                          onClick={() => startEditing(technique.id, 'series_name', (technique as Technique).series_name || '')}
+                        >
+                          {(technique as Technique).series_name || <span className="text-muted-foreground">シリーズなし</span>}
+                        </p>
+                      )}
+                      
+                      {/* Series Order */}
+                      {editingCell?.id === technique.id && editingCell?.field === 'series_order' ? (
+                        <div className="flex gap-2 items-center">
+                          <Input
+                            type="number"
+                            value={editValue}
+                            onChange={(e) => setEditValue(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' && !e.nativeEvent.isComposing) saveEdit(technique as Technique);
+                              if (e.key === 'Escape') cancelEditing();
+                            }}
+                            className="h-8 text-sm"
+                            autoFocus
+                            placeholder="順序"
+                          />
+                          <Button size="sm" variant="ghost" onClick={() => saveEdit(technique as Technique)}>
+                            <Check className="h-4 w-4" />
+                          </Button>
+                          <Button size="sm" variant="ghost" onClick={cancelEditing}>
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <p 
+                          className="text-xs text-muted-foreground cursor-pointer hover:bg-accent hover:text-accent-foreground px-2 py-1 rounded"
+                          onClick={() => startEditing(technique.id, 'series_order', (technique as Technique).series_order?.toString() || '')}
+                        >
+                          順序: {(technique as Technique).series_order || <span className="text-muted-foreground">-</span>}
+                        </p>
+                      )}
+                    </div>
                   </td>
                   <td className="px-4 py-3">
                     <div className="space-y-2">
