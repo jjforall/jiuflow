@@ -105,6 +105,8 @@ export type Database = {
           name: string
           name_ja: string
           name_pt: string
+          series_name: string | null
+          series_order: number | null
           thumbnail_url: string | null
           updated_at: string | null
           video_url: string | null
@@ -121,6 +123,8 @@ export type Database = {
           name: string
           name_ja: string
           name_pt: string
+          series_name?: string | null
+          series_order?: number | null
           thumbnail_url?: string | null
           updated_at?: string | null
           video_url?: string | null
@@ -137,6 +141,8 @@ export type Database = {
           name?: string
           name_ja?: string
           name_pt?: string
+          series_name?: string | null
+          series_order?: number | null
           thumbnail_url?: string | null
           updated_at?: string | null
           video_url?: string | null

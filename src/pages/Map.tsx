@@ -9,9 +9,15 @@ import { toast } from "sonner";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { Lock, Loader2, Upload, X } from "lucide-react";
+import { Lock, Loader2, Upload, X, ChevronDown } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { VideoUploadDialog } from "@/components/VideoUploadDialog";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 
 interface Technique {
   id: string;
@@ -26,6 +32,12 @@ interface Technique {
   thumbnail_url: string | null;
   display_order: number;
   hashtags: string[];
+  series_name: string | null;
+  series_order: number | null;
+}
+
+interface GroupedTechniques {
+  [seriesName: string]: Technique[];
 }
 
 const Map = () => {
@@ -43,6 +55,7 @@ const Map = () => {
   const [hasMore, setHasMore] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [showUploadDialog, setShowUploadDialog] = useState(false);
+  const [groupedTechniques, setGroupedTechniques] = useState<GroupedTechniques>({});
   const observerTarget = useRef<HTMLDivElement>(null);
   const PAGE_SIZE = 50;
 
@@ -110,9 +123,8 @@ const Map = () => {
     checkAuth();
   }, [navigate, isAdmin]);
 
-  // Fetch techniques
+  // Fetch and group techniques
   const fetchTechniques = useCallback(async (pageNum: number) => {
-    // 現状の件数規模ではページングせず全件取得して表示する
     if (pageNum === 0) {
       setIsLoading(true);
     } else {
@@ -123,6 +135,8 @@ const Map = () => {
       const { data, error } = await supabase
         .from("techniques")
         .select("*")
+        .order("series_name", { ascending: true, nullsFirst: false })
+        .order("series_order", { ascending: true, nullsFirst: false })
         .order("display_order", { ascending: true });
 
       if (error) throw error;
@@ -137,8 +151,18 @@ const Map = () => {
           );
         }
         
+        // Group techniques by series_name
+        const grouped: GroupedTechniques = {};
+        filteredData.forEach(tech => {
+          const seriesName = tech.series_name || "その他の技";
+          if (!grouped[seriesName]) {
+            grouped[seriesName] = [];
+          }
+          grouped[seriesName].push(tech);
+        });
+        
         setTechniques(filteredData);
-        // すべて一度に取得するので追加ロードは行わない
+        setGroupedTechniques(grouped);
         setHasMore(false);
       }
     } catch (error) {
@@ -344,70 +368,92 @@ const Map = () => {
               <p className="text-lg text-muted-foreground">{language === "ja" ? "テクニックがまだ追加されていません" : language === "pt" ? "Nenhuma técnica adicionada ainda" : "No techniques added yet"}</p>
             </div>
           ) : (
-            <div className="animate-fade-up space-y-8">
-              {/* Video Wall Grid */}
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-4">
-                {techniques.map((tech, index) => (
-                  <Link
-                    key={tech.id}
-                    to={`/video/${tech.id}`}
-                    className="group block relative overflow-hidden rounded-lg transition-all duration-300 hover:scale-105 hover:z-10"
-                    style={{ animationDelay: `${index * 50}ms` }}
+            <div className="animate-fade-up space-y-4 max-w-5xl mx-auto">
+              {/* Accordion Series View */}
+              <Accordion type="multiple" className="w-full space-y-3">
+                {Object.entries(groupedTechniques).map(([seriesName, seriesTechs]) => (
+                  <AccordionItem 
+                    key={seriesName} 
+                    value={seriesName}
+                    className="border rounded-xl bg-card shadow-sm overflow-hidden"
                   >
-                    {/* Thumbnail Container */}
-                    <div className="aspect-video w-full overflow-hidden bg-muted relative rounded-lg shadow-md group-hover:shadow-2xl transition-shadow duration-300">
-                      {tech.thumbnail_url ? (
-                        <img 
-                          src={tech.thumbnail_url} 
-                          alt={getTechniqueName(tech)}
-                          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
-                          loading="lazy"
-                          onError={(e) => {
-                            e.currentTarget.style.display = 'none';
-                            const parent = e.currentTarget.parentElement;
-                            if (parent) {
-                              parent.innerHTML = '<div class="absolute inset-0 flex items-center justify-center bg-muted"><div class="text-muted-foreground text-3xl">▶</div></div>';
-                            }
-                          }}
-                        />
-                      ) : (
-                        <div className="absolute inset-0 flex items-center justify-center bg-muted">
-                          <div className="text-muted-foreground text-3xl">▶</div>
+                    <AccordionTrigger className="px-4 md:px-6 py-4 hover:no-underline hover:bg-muted/50 transition-colors">
+                      <div className="flex items-center justify-between w-full pr-4">
+                        <div className="flex items-center gap-3 text-left">
+                          <div className="flex items-center justify-center w-8 h-8 md:w-10 md:h-10 rounded-full bg-primary/10 text-primary font-semibold text-sm md:text-base flex-shrink-0">
+                            {seriesTechs.length}
+                          </div>
+                          <div>
+                            <h3 className="text-base md:text-lg font-semibold text-foreground">
+                              {seriesName}
+                            </h3>
+                            <p className="text-xs md:text-sm text-muted-foreground">
+                              {language === "ja" 
+                                ? `${seriesTechs.length}本の動画` 
+                                : language === "pt" 
+                                ? `${seriesTechs.length} vídeos` 
+                                : `${seriesTechs.length} videos`}
+                            </p>
+                          </div>
                         </div>
-                      )}
-                      
-                      {/* Gradient Overlay on Hover */}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                      
-                      {/* Category Badge */}
-                      <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                        <span className="text-[10px] md:text-xs px-2 py-1 rounded-full bg-background/90 backdrop-blur-sm font-medium">
-                          {getCategoryLabel(tech.category)}
-                        </span>
                       </div>
+                    </AccordionTrigger>
+                    <AccordionContent className="px-0 pb-0">
+                      <div className="divide-y divide-border">
+                        {seriesTechs.map((tech, index) => (
+                          <Link
+                            key={tech.id}
+                            to={`/video/${tech.id}`}
+                            className="flex items-center gap-3 md:gap-4 p-3 md:p-4 hover:bg-muted/50 transition-colors group"
+                          >
+                            {/* Number Badge */}
+                            <div className="flex items-center justify-center w-8 h-8 md:w-10 md:h-10 rounded-lg bg-muted text-muted-foreground font-semibold text-sm flex-shrink-0 group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                              {tech.series_order || index + 1}
+                            </div>
+                            
+                            {/* Thumbnail */}
+                            <div className="w-24 md:w-32 aspect-video rounded-lg overflow-hidden bg-muted flex-shrink-0 shadow-sm group-hover:shadow-md transition-shadow">
+                              {tech.thumbnail_url ? (
+                                <img 
+                                  src={tech.thumbnail_url} 
+                                  alt={getTechniqueName(tech)}
+                                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                  loading="lazy"
+                                />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center">
+                                  <div className="text-muted-foreground text-2xl">▶</div>
+                                </div>
+                              )}
+                            </div>
 
-                      {/* Title on Hover */}
-                      <div className="absolute bottom-0 left-0 right-0 p-3 md:p-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300 transform translate-y-2 group-hover:translate-y-0">
-                        <h3 className="text-white font-medium text-sm md:text-base line-clamp-2 drop-shadow-lg">
-                          {getTechniqueName(tech)}
-                        </h3>
-                        {getTechniqueDescription(tech) && (
-                          <p className="text-white/80 text-xs mt-1 line-clamp-1 drop-shadow-md">
-                            {getTechniqueDescription(tech)}
-                          </p>
-                        )}
+                            {/* Title and Description */}
+                            <div className="flex-1 min-w-0">
+                              <h4 className="font-medium text-sm md:text-base text-foreground line-clamp-2 group-hover:text-primary transition-colors">
+                                {getTechniqueName(tech)}
+                              </h4>
+                              {getTechniqueDescription(tech) && (
+                                <p className="text-xs md:text-sm text-muted-foreground line-clamp-1 mt-1">
+                                  {getTechniqueDescription(tech)}
+                                </p>
+                              )}
+                              {/* Category Badge */}
+                              <div className="mt-2">
+                                <span className="inline-block text-[10px] md:text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
+                                  {getCategoryLabel(tech.category)}
+                                </span>
+                              </div>
+                            </div>
+
+                            {/* Arrow Icon */}
+                            <ChevronDown className="w-5 h-5 text-muted-foreground -rotate-90 flex-shrink-0 group-hover:text-primary transition-colors" />
+                          </Link>
+                        ))}
                       </div>
-                    </div>
-
-                    {/* Title Below (Always Visible on Mobile) */}
-                    <div className="mt-2 md:hidden">
-                      <h3 className="font-medium text-xs line-clamp-2">
-                        {getTechniqueName(tech)}
-                      </h3>
-                    </div>
-                  </Link>
+                    </AccordionContent>
+                  </AccordionItem>
                 ))}
-              </div>
+              </Accordion>
 
               {/* Infinite Scroll Observer */}
               {hasMore && (
