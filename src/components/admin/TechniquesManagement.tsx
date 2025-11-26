@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Upload, Trash2, Edit, Search } from "lucide-react";
+import { Upload, Trash2, Search, Check, X } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { PaginationControls } from "@/components/ui/pagination-controls";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -50,6 +50,9 @@ export const TechniquesManagement = () => {
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [isTranslating, setIsTranslating] = useState(false);
   const [isGeneratingThumbnails, setIsGeneratingThumbnails] = useState(false);
+  const [editingCell, setEditingCell] = useState<{ id: string; field: string } | null>(null);
+  const [editValue, setEditValue] = useState<string>("");
+  const [hashtagEditValue, setHashtagEditValue] = useState<string>("");
 
   // Form state
   const [formData, setFormData] = useState({
@@ -73,6 +76,69 @@ export const TechniquesManagement = () => {
   const updateTechnique = useUpdateTechnique();
   const deleteTechnique = useDeleteTechnique();
   const createTechnique = useCreateTechnique();
+
+  const startEditing = (id: string, field: string, currentValue: string) => {
+    setEditingCell({ id, field });
+    setEditValue(currentValue);
+  };
+
+  const cancelEditing = () => {
+    setEditingCell(null);
+    setEditValue("");
+    setHashtagEditValue("");
+  };
+
+  const saveEdit = async (technique: Technique) => {
+    if (!editingCell) return;
+
+    try {
+      const updates: Technique = {
+        ...technique,
+        [editingCell.field]: editValue
+      };
+      
+      await updateTechnique.mutateAsync(updates);
+      toast.success("更新しました");
+      cancelEditing();
+    } catch (error) {
+      console.error('Error updating technique:', error);
+      toast.error("更新に失敗しました");
+    }
+  };
+
+  const addHashtag = async (technique: Technique) => {
+    const tag = hashtagEditValue.trim().replace(/^#/, '');
+    if (!tag) return;
+    
+    const newHashtags = [...(technique.hashtags || []), tag];
+    
+    try {
+      await updateTechnique.mutateAsync({
+        ...technique,
+        hashtags: newHashtags,
+      });
+      setHashtagEditValue("");
+      toast.success("ハッシュタグを追加しました");
+    } catch (error) {
+      console.error('Error adding hashtag:', error);
+      toast.error("追加に失敗しました");
+    }
+  };
+
+  const removeHashtag = async (technique: Technique, tagToRemove: string) => {
+    const newHashtags = (technique.hashtags || []).filter(t => t !== tagToRemove);
+    
+    try {
+      await updateTechnique.mutateAsync({
+        ...technique,
+        hashtags: newHashtags,
+      });
+      toast.success("ハッシュタグを削除しました");
+    } catch (error) {
+      console.error('Error removing hashtag:', error);
+      toast.error("削除に失敗しました");
+    }
+  };
 
   const generateThumbnail = async (videoUrl: string): Promise<Blob> => {
     return new Promise((resolve, reject) => {
@@ -473,9 +539,64 @@ export const TechniquesManagement = () => {
               data?.data.map((technique) => (
                 <tr key={technique.id} className="border-t hover:bg-muted/50">
                   <td className="px-4 py-3">
-                    <div>
-                      <p className="font-medium">{technique.name}</p>
-                      <p className="text-sm text-muted-foreground">{technique.name_ja}</p>
+                    <div className="space-y-2">
+                      {/* English Name */}
+                      {editingCell?.id === technique.id && editingCell?.field === 'name' ? (
+                        <div className="flex gap-2 items-center">
+                          <Input
+                            value={editValue}
+                            onChange={(e) => setEditValue(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') saveEdit(technique);
+                              if (e.key === 'Escape') cancelEditing();
+                            }}
+                            className="h-8 text-sm"
+                            autoFocus
+                          />
+                          <Button size="sm" variant="ghost" onClick={() => saveEdit(technique)}>
+                            <Check className="h-4 w-4" />
+                          </Button>
+                          <Button size="sm" variant="ghost" onClick={cancelEditing}>
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <p 
+                          className="font-medium cursor-pointer hover:bg-accent hover:text-accent-foreground px-2 py-1 rounded"
+                          onClick={() => startEditing(technique.id, 'name', technique.name)}
+                        >
+                          {technique.name}
+                        </p>
+                      )}
+                      
+                      {/* Japanese Name */}
+                      {editingCell?.id === technique.id && editingCell?.field === 'name_ja' ? (
+                        <div className="flex gap-2 items-center">
+                          <Input
+                            value={editValue}
+                            onChange={(e) => setEditValue(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') saveEdit(technique);
+                              if (e.key === 'Escape') cancelEditing();
+                            }}
+                            className="h-8 text-sm"
+                            autoFocus
+                          />
+                          <Button size="sm" variant="ghost" onClick={() => saveEdit(technique)}>
+                            <Check className="h-4 w-4" />
+                          </Button>
+                          <Button size="sm" variant="ghost" onClick={cancelEditing}>
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <p 
+                          className="text-sm text-muted-foreground cursor-pointer hover:bg-accent hover:text-accent-foreground px-2 py-1 rounded"
+                          onClick={() => startEditing(technique.id, 'name_ja', technique.name_ja)}
+                        >
+                          {technique.name_ja}
+                        </p>
+                      )}
                     </div>
                   </td>
                   <td className="px-4 py-3">
@@ -484,16 +605,47 @@ export const TechniquesManagement = () => {
                     </span>
                   </td>
                   <td className="px-4 py-3">
-                    <div className="flex flex-wrap gap-1 max-w-[200px]">
-                      {technique.hashtags && technique.hashtags.length > 0 ? (
-                        technique.hashtags.map((tag) => (
-                          <span key={tag} className="text-xs text-muted-foreground">
-                            #{tag}
-                          </span>
-                        ))
-                      ) : (
-                        <span className="text-xs text-muted-foreground">-</span>
-                      )}
+                    <div className="space-y-2">
+                      <div className="flex flex-wrap gap-1 max-w-[300px]">
+                        {technique.hashtags && technique.hashtags.length > 0 ? (
+                          technique.hashtags.map((tag) => (
+                            <div 
+                              key={tag}
+                              className="group flex items-center gap-1 px-2 py-1 bg-primary/10 text-primary rounded text-xs cursor-pointer hover:bg-primary/20"
+                            >
+                              <span>#{tag}</span>
+                              <button
+                                onClick={() => removeHashtag(technique, tag)}
+                                className="opacity-0 group-hover:opacity-100 transition-opacity"
+                              >
+                                <X className="h-3 w-3" />
+                              </button>
+                            </div>
+                          ))
+                        ) : null}
+                      </div>
+                      <div className="flex gap-1">
+                        <Input
+                          value={hashtagEditValue}
+                          onChange={(e) => setHashtagEditValue(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              addHashtag(technique);
+                            }
+                          }}
+                          placeholder="追加..."
+                          className="h-7 text-xs"
+                        />
+                        <Button 
+                          size="sm" 
+                          variant="ghost" 
+                          onClick={() => addHashtag(technique)}
+                          className="h-7 px-2"
+                        >
+                          <Check className="h-3 w-3" />
+                        </Button>
+                      </div>
                     </div>
                   </td>
                   <td className="px-4 py-3">{technique.display_order}</td>
@@ -505,22 +657,13 @@ export const TechniquesManagement = () => {
                     />
                   </td>
                   <td className="px-4 py-3 text-right">
-                    <div className="flex gap-2 justify-end">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => openEditDialog(technique)}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="destructive"
-                        onClick={() => handleDelete(technique.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      onClick={() => handleDelete(technique.id)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
                   </td>
                 </tr>
               ))
