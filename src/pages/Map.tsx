@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { Lock, Loader2, Upload } from "lucide-react";
+import { Lock, Loader2, Upload, X } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { VideoUploadDialog } from "@/components/VideoUploadDialog";
 
@@ -32,6 +32,8 @@ const Map = () => {
   const { language } = useLanguage();
   const t = translations[language] || translations.ja; // Fallback to Japanese
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const hashtagFilter = searchParams.get('hashtag');
   const { subscribed, loading: subscriptionLoading } = useSubscription();
   const { isAdmin, user } = useAuth();
   const [techniques, setTechniques] = useState<Technique[]>([]);
@@ -126,7 +128,16 @@ const Map = () => {
       if (error) throw error;
 
       if (data) {
-        setTechniques(data as Technique[]);
+        let filteredData = data as Technique[];
+        
+        // Filter by hashtag if specified
+        if (hashtagFilter) {
+          filteredData = filteredData.filter(tech => 
+            tech.hashtags && tech.hashtags.includes(hashtagFilter)
+          );
+        }
+        
+        setTechniques(filteredData);
         // すべて一度に取得するので追加ロードは行わない
         setHasMore(false);
       }
@@ -141,7 +152,7 @@ const Map = () => {
       setIsLoading(false);
       setIsLoadingMore(false);
     }
-  }, [language]);
+  }, [language, hashtagFilter]);
 
   // Initial load
   useEffect(() => {
@@ -184,10 +195,42 @@ const Map = () => {
       <main className="pt-24 md:pt-32 pb-12 md:pb-20 px-4 md:px-6">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-12 md:mb-20 animate-fade-up">
-            <h1 className="text-3xl md:text-5xl lg:text-6xl font-light mb-4 md:mb-6">{t.map.title}</h1>
-            <p className="text-base md:text-xl text-muted-foreground font-light">
-              {t.map.subtitle}
-            </p>
+            {hashtagFilter ? (
+              <div className="space-y-4">
+                <h1 className="text-3xl md:text-5xl lg:text-6xl font-light mb-4 md:mb-6">
+                  #{hashtagFilter}
+                </h1>
+                <p className="text-base md:text-xl text-muted-foreground font-light">
+                  {language === "ja" 
+                    ? `${techniques.length}本の動画` 
+                    : language === "pt" 
+                    ? `${techniques.length} vídeos` 
+                    : `${techniques.length} videos`}
+                </p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setSearchParams({});
+                  }}
+                  className="gap-2"
+                >
+                  <X className="h-4 w-4" />
+                  {language === "ja" 
+                    ? "フィルタをクリア" 
+                    : language === "pt" 
+                    ? "Limpar filtro" 
+                    : "Clear filter"}
+                </Button>
+              </div>
+            ) : (
+              <>
+                <h1 className="text-3xl md:text-5xl lg:text-6xl font-light mb-4 md:mb-6">{t.map.title}</h1>
+                <p className="text-base md:text-xl text-muted-foreground font-light">
+                  {t.map.subtitle}
+                </p>
+              </>
+            )}
           </div>
 
           {isCheckingAuth || isLoading || subscriptionLoading ? (
