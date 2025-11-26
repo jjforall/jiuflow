@@ -189,44 +189,44 @@ const Map = () => {
   }, [hasMore, isLoadingMore, fetchTechniques]);
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-background">
       <Navigation />
       
-      <main className="pt-24 md:pt-32 pb-12 md:pb-20 px-4 md:px-6">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-12 md:mb-20 animate-fade-up">
+      <main className="pt-20 md:pt-24 pb-16 px-4 md:px-8 lg:px-12">
+        <div className="max-w-[1800px] mx-auto">
+          <div className="mb-8 md:mb-12 animate-fade-up">
             {hashtagFilter ? (
               <div className="space-y-4">
-                <h1 className="text-3xl md:text-5xl lg:text-6xl font-light mb-4 md:mb-6">
+                <h1 className="text-4xl md:text-6xl font-light tracking-tight">
                   #{hashtagFilter}
                 </h1>
-                <p className="text-base md:text-xl text-muted-foreground font-light">
-                  {language === "ja" 
-                    ? `${techniques.length}本の動画` 
-                    : language === "pt" 
-                    ? `${techniques.length} vídeos` 
-                    : `${techniques.length} videos`}
-                </p>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    setSearchParams({});
-                  }}
-                  className="gap-2"
-                >
-                  <X className="h-4 w-4" />
-                  {language === "ja" 
-                    ? "フィルタをクリア" 
-                    : language === "pt" 
-                    ? "Limpar filtro" 
-                    : "Clear filter"}
-                </Button>
+                <div className="flex items-center gap-4">
+                  <p className="text-lg md:text-xl text-muted-foreground">
+                    {language === "ja" 
+                      ? `${techniques.length}本の動画` 
+                      : language === "pt" 
+                      ? `${techniques.length} vídeos` 
+                      : `${techniques.length} videos`}
+                  </p>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setSearchParams({})}
+                    className="gap-2 hover:bg-muted"
+                  >
+                    <X className="h-4 w-4" />
+                    {language === "ja" 
+                      ? "フィルタをクリア" 
+                      : language === "pt" 
+                      ? "Limpar filtro" 
+                      : "Clear filter"}
+                  </Button>
+                </div>
               </div>
             ) : (
               <>
-                <h1 className="text-3xl md:text-5xl lg:text-6xl font-light mb-4 md:mb-6">{t.map.title}</h1>
-                <p className="text-base md:text-xl text-muted-foreground font-light">
+                <h1 className="text-4xl md:text-6xl font-light tracking-tight mb-3">{t.map.title}</h1>
+                <p className="text-lg md:text-xl text-muted-foreground">
                   {t.map.subtitle}
                 </p>
               </>
@@ -234,17 +234,13 @@ const Map = () => {
           </div>
 
           {isCheckingAuth || isLoading || subscriptionLoading ? (
-            <div className="animate-fade-in space-y-8">
-              <div className="space-y-4">
-                <div className="h-12 w-1/3 bg-muted/50 animate-pulse rounded" />
-                <div className="h-6 w-1/2 bg-muted/50 animate-pulse rounded" />
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {[1, 2, 3, 4, 5, 6].map((i) => (
-                  <div key={i} className="space-y-3">
-                    <div className="h-48 w-full bg-muted/50 animate-pulse rounded" />
-                    <div className="h-4 w-3/4 bg-muted/50 animate-pulse rounded" />
-                    <div className="h-4 w-1/2 bg-muted/50 animate-pulse rounded" />
+            <div className="animate-fade-in">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-4">
+                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((i) => (
+                  <div key={i} className="space-y-2">
+                    <div className="aspect-video w-full bg-muted rounded-lg animate-pulse" />
+                    <div className="h-4 w-3/4 bg-muted rounded animate-pulse" />
+                    <div className="h-3 w-1/2 bg-muted rounded animate-pulse" />
                   </div>
                 ))}
               </div>
@@ -344,56 +340,70 @@ const Map = () => {
               </div>
             </div>
           ) : techniques.length === 0 ? (
-            <div className="text-center py-12">
-              <p className="text-muted-foreground">{language === "ja" ? "テクニックがまだ追加されていません" : language === "pt" ? "Nenhuma técnica adicionada ainda" : "No techniques added yet"}</p>
+            <div className="text-center py-16">
+              <p className="text-lg text-muted-foreground">{language === "ja" ? "テクニックがまだ追加されていません" : language === "pt" ? "Nenhuma técnica adicionada ainda" : "No techniques added yet"}</p>
             </div>
           ) : (
-            <div className="animate-fade-up">
-              {/* Techniques Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
-                {techniques.map((tech) => (
+            <div className="animate-fade-up space-y-8">
+              {/* Video Wall Grid */}
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-4">
+                {techniques.map((tech, index) => (
                   <Link
                     key={tech.id}
                     to={`/video/${tech.id}`}
-                    className={`group block border rounded-lg overflow-hidden transition-all ${
-                      categoryColors[tech.category]
-                    }`}
+                    className="group block relative overflow-hidden rounded-lg transition-all duration-300 hover:scale-105 hover:z-10"
+                    style={{ animationDelay: `${index * 50}ms` }}
                   >
-                    <div className="aspect-video w-full overflow-hidden bg-muted/50 relative">
+                    {/* Thumbnail Container */}
+                    <div className="aspect-video w-full overflow-hidden bg-muted relative rounded-lg shadow-md group-hover:shadow-2xl transition-shadow duration-300">
                       {tech.thumbnail_url ? (
                         <img 
                           src={tech.thumbnail_url} 
                           alt={getTechniqueName(tech)}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
                           loading="lazy"
                           onError={(e) => {
                             e.currentTarget.style.display = 'none';
                             const parent = e.currentTarget.parentElement;
                             if (parent) {
-                              parent.innerHTML = '<div class="absolute inset-0 flex items-center justify-center"><div class="text-muted-foreground text-4xl">▶</div></div>';
+                              parent.innerHTML = '<div class="absolute inset-0 flex items-center justify-center bg-muted"><div class="text-muted-foreground text-3xl">▶</div></div>';
                             }
                           }}
                         />
                       ) : (
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <div className="text-muted-foreground text-4xl">▶</div>
+                        <div className="absolute inset-0 flex items-center justify-center bg-muted">
+                          <div className="text-muted-foreground text-3xl">▶</div>
                         </div>
                       )}
-                      <div className="absolute top-2 right-2">
-                        <span className="text-xs px-2 py-1 rounded bg-background/80 backdrop-blur-sm">
+                      
+                      {/* Gradient Overlay on Hover */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                      
+                      {/* Category Badge */}
+                      <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                        <span className="text-[10px] md:text-xs px-2 py-1 rounded-full bg-background/90 backdrop-blur-sm font-medium">
                           {getCategoryLabel(tech.category)}
                         </span>
                       </div>
+
+                      {/* Title on Hover */}
+                      <div className="absolute bottom-0 left-0 right-0 p-3 md:p-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300 transform translate-y-2 group-hover:translate-y-0">
+                        <h3 className="text-white font-medium text-sm md:text-base line-clamp-2 drop-shadow-lg">
+                          {getTechniqueName(tech)}
+                        </h3>
+                        {getTechniqueDescription(tech) && (
+                          <p className="text-white/80 text-xs mt-1 line-clamp-1 drop-shadow-md">
+                            {getTechniqueDescription(tech)}
+                          </p>
+                        )}
+                      </div>
                     </div>
-                    <div className="p-3 md:p-4">
-                      <h3 className="font-medium text-sm md:text-base mb-1 line-clamp-2">
+
+                    {/* Title Below (Always Visible on Mobile) */}
+                    <div className="mt-2 md:hidden">
+                      <h3 className="font-medium text-xs line-clamp-2">
                         {getTechniqueName(tech)}
                       </h3>
-                      {getTechniqueDescription(tech) && (
-                        <p className="text-xs md:text-sm text-muted-foreground line-clamp-2">
-                          {getTechniqueDescription(tech)}
-                        </p>
-                      )}
                     </div>
                   </Link>
                 ))}
@@ -412,7 +422,6 @@ const Map = () => {
                   )}
                 </div>
               )}
-
             </div>
           )}
         </div>
