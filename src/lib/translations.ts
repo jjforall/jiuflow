@@ -18,7 +18,7 @@ export const translations = {
         subtitle: "静かに、深く学ぶ柔術。\n安全で、長くできて、強くなる。",
         viewMap: "技マップを見る",
         freeTrial: "今すぐ無料で始める",
-        valueProposition: "白帯〜黒帯までの技を\n4K俯瞰映像で体系的に学べる",
+        valueProposition: "黒帯まで使える技を\n4K俯瞰映像で体系的に学べる",
       },
       clarity: {
         title: "Learn Jiu-Jitsu with Clarity.",
