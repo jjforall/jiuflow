@@ -626,12 +626,21 @@ export const TechniquesManagement = () => {
                       </div>
                       <div className="flex gap-1">
                         <Input
-                          value={hashtagEditValue}
-                          onChange={(e) => setHashtagEditValue(e.target.value)}
+                          value={editingCell?.id === technique.id && editingCell?.field === 'hashtags' ? hashtagEditValue : ''}
+                          onChange={(e) => {
+                            setHashtagEditValue(e.target.value);
+                            setEditingCell({ id: technique.id, field: 'hashtags' });
+                          }}
                           onKeyDown={(e) => {
                             if (e.key === 'Enter' && !e.nativeEvent.isComposing) {
                               e.preventDefault();
                               addHashtag(technique);
+                            }
+                          }}
+                          onBlur={() => {
+                            if (editingCell?.id === technique.id && editingCell?.field === 'hashtags') {
+                              setHashtagEditValue('');
+                              setEditingCell(null);
                             }
                           }}
                           placeholder="追加..."
