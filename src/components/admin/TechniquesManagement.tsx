@@ -30,6 +30,8 @@ interface Technique {
   thumbnail_url: string | null;
   display_order: number;
   hashtags: string[];
+  series_name: string | null;
+  series_order: number | null;
 }
 
 interface UploadProgress {
@@ -64,6 +66,8 @@ export const TechniquesManagement = () => {
     description_pt: "",
     category: "pull" as "pull" | "control" | "submission" | "guard-pass",
     hashtags: [] as string[],
+    series_name: "" as string,
+    series_order: null as number | null,
   });
   const [hashtagInput, setHashtagInput] = useState("");
 
@@ -92,12 +96,12 @@ export const TechniquesManagement = () => {
     if (!editingCell) return;
 
     try {
-      const updates: Technique = {
+      const updates = {
         ...technique,
         [editingCell.field]: editValue
       };
       
-      await updateTechnique.mutateAsync(updates);
+      await updateTechnique.mutateAsync(updates as Technique);
       toast.success("更新しました");
       cancelEditing();
     } catch (error) {
@@ -116,7 +120,7 @@ export const TechniquesManagement = () => {
       await updateTechnique.mutateAsync({
         ...technique,
         hashtags: newHashtags,
-      });
+      } as Technique);
       setHashtagEditValue("");
       toast.success("ハッシュタグを追加しました");
     } catch (error) {
@@ -132,7 +136,7 @@ export const TechniquesManagement = () => {
       await updateTechnique.mutateAsync({
         ...technique,
         hashtags: newHashtags,
-      });
+      } as Technique);
       toast.success("ハッシュタグを削除しました");
     } catch (error) {
       console.error('Error removing hashtag:', error);
@@ -401,6 +405,8 @@ export const TechniquesManagement = () => {
       description_pt: "",
       category: "pull",
       hashtags: [],
+      series_name: "",
+      series_order: null,
     });
     setHashtagInput("");
     setVideoFile(null);
@@ -418,6 +424,8 @@ export const TechniquesManagement = () => {
       description_pt: technique.description_pt || "",
       category: technique.category as "pull" | "control" | "submission" | "guard-pass",
       hashtags: technique.hashtags || [],
+      series_name: technique.series_name || "",
+      series_order: technique.series_order,
     });
     setShowEditDialog(true);
   };
@@ -547,13 +555,13 @@ export const TechniquesManagement = () => {
                             value={editValue}
                             onChange={(e) => setEditValue(e.target.value)}
                             onKeyDown={(e) => {
-                              if (e.key === 'Enter' && !e.nativeEvent.isComposing) saveEdit(technique);
+                              if (e.key === 'Enter' && !e.nativeEvent.isComposing) saveEdit(technique as Technique);
                               if (e.key === 'Escape') cancelEditing();
                             }}
                             className="h-8 text-sm"
                             autoFocus
                           />
-                          <Button size="sm" variant="ghost" onClick={() => saveEdit(technique)}>
+                          <Button size="sm" variant="ghost" onClick={() => saveEdit(technique as Technique)}>
                             <Check className="h-4 w-4" />
                           </Button>
                           <Button size="sm" variant="ghost" onClick={cancelEditing}>
@@ -576,13 +584,13 @@ export const TechniquesManagement = () => {
                             value={editValue}
                             onChange={(e) => setEditValue(e.target.value)}
                             onKeyDown={(e) => {
-                              if (e.key === 'Enter' && !e.nativeEvent.isComposing) saveEdit(technique);
+                              if (e.key === 'Enter' && !e.nativeEvent.isComposing) saveEdit(technique as Technique);
                               if (e.key === 'Escape') cancelEditing();
                             }}
                             className="h-8 text-sm"
                             autoFocus
                           />
-                          <Button size="sm" variant="ghost" onClick={() => saveEdit(technique)}>
+                          <Button size="sm" variant="ghost" onClick={() => saveEdit(technique as Technique)}>
                             <Check className="h-4 w-4" />
                           </Button>
                           <Button size="sm" variant="ghost" onClick={cancelEditing}>
@@ -615,7 +623,7 @@ export const TechniquesManagement = () => {
                             >
                               <span>#{tag}</span>
                               <button
-                                onClick={() => removeHashtag(technique, tag)}
+                                onClick={() => removeHashtag(technique as Technique, tag)}
                                 className="opacity-0 group-hover:opacity-100 transition-opacity"
                               >
                                 <X className="h-3 w-3" />
@@ -634,7 +642,7 @@ export const TechniquesManagement = () => {
                           onKeyDown={(e) => {
                             if (e.key === 'Enter' && !e.nativeEvent.isComposing) {
                               e.preventDefault();
-                              addHashtag(technique);
+                              addHashtag(technique as Technique);
                             }
                           }}
                           onBlur={() => {
@@ -649,7 +657,7 @@ export const TechniquesManagement = () => {
                         <Button 
                           size="sm" 
                           variant="ghost" 
-                          onClick={() => addHashtag(technique)}
+                          onClick={() => addHashtag(technique as Technique)}
                           className="h-7 px-2"
                         >
                           <Check className="h-3 w-3" />
@@ -670,7 +678,7 @@ export const TechniquesManagement = () => {
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => openEditDialog(technique)}
+                        onClick={() => openEditDialog(technique as Technique)}
                       >
                         編集
                       </Button>
@@ -784,6 +792,32 @@ export const TechniquesManagement = () => {
                   <SelectItem value="submission">極め技 (Submission)</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium">シリーズ名 (Series Name)</label>
+                <Input
+                  value={formData.series_name}
+                  onChange={(e) => setFormData({...formData, series_name: e.target.value})}
+                  placeholder="例: Closed Guard Series"
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  空欄の場合は「その他の技」として表示されます
+                </p>
+              </div>
+              <div>
+                <label className="text-sm font-medium">シリーズ内順序 (Order)</label>
+                <Input
+                  type="number"
+                  value={formData.series_order || ""}
+                  onChange={(e) => setFormData({...formData, series_order: e.target.value ? parseInt(e.target.value) : null})}
+                  placeholder="1, 2, 3..."
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  シリーズ内での表示順序（1から始まる連番）
+                </p>
+              </div>
             </div>
 
             <div className="space-y-4">
