@@ -666,13 +666,22 @@ export const TechniquesManagement = () => {
                     />
                   </td>
                   <td className="px-4 py-3 text-right">
-                    <Button
-                      size="sm"
-                      variant="destructive"
-                      onClick={() => handleDelete(technique.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    <div className="flex gap-2 justify-end">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => openEditDialog(technique)}
+                      >
+                        編集
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={() => handleDelete(technique.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </td>
                 </tr>
               ))
