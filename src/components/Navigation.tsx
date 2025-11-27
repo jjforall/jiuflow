@@ -23,7 +23,7 @@ const Navigation = () => {
   const t = translations[language] || translations.ja; // Fallback to Japanese
   const [isOpen, setIsOpen] = useState(false);
   const [user, setUser] = useState<SupabaseUser | null>(null);
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [canAccessAdmin, setCanAccessAdmin] = useState(false);
 
   useEffect(() => {
     // Set up auth state listener
@@ -33,7 +33,7 @@ const Navigation = () => {
         if (session?.user) {
           checkAdminStatus(session.user.id);
         } else {
-          setIsAdmin(false);
+          setCanAccessAdmin(false);
         }
       }
     );
@@ -50,14 +50,18 @@ const Navigation = () => {
   }, []);
 
   const checkAdminStatus = async (userId: string) => {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("user_roles")
       .select("role")
       .eq("user_id", userId)
-      .eq("role", "admin")
-      .maybeSingle();
-    
-    setIsAdmin(!!data);
+      .in("role", ["admin", "staff"]);
+
+    if (error) {
+      console.error("Error checking admin/staff status:", error);
+      setCanAccessAdmin(false);
+      return;
+    }
+    setCanAccessAdmin(!!data && data.length > 0);
   };
 
   const handleLogout = async () => {
@@ -138,7 +142,7 @@ const Navigation = () => {
                     <User className="h-4 w-4" />
                     {t.nav.myPage || (language === "ja" ? "マイページ" : language === "pt" ? "Minha Página" : "My Page")}
                   </DropdownMenuItem>
-                  {isAdmin && (
+                  {canAccessAdmin && (
                     <DropdownMenuItem onClick={() => navigate("/admin/dashboard")} className="gap-2 cursor-pointer">
                       <ShieldCheck className="h-4 w-4" />
                       {t.nav.adminDashboard || (language === "ja" ? "管理画面" : language === "pt" ? "Painel de Administração" : "Admin Dashboard")}
@@ -237,7 +241,7 @@ const Navigation = () => {
                           {t.nav.myPage || (language === "ja" ? "マイページ" : language === "pt" ? "Minha Página" : "My Page")}
                         </Button>
                       </Link>
-                      {isAdmin && (
+                      {canAccessAdmin && (
                         <Link to="/admin/dashboard" onClick={() => setIsOpen(false)}>
                           <Button variant="outline" className="w-full gap-2">
                             <ShieldCheck className="h-4 w-4" />
