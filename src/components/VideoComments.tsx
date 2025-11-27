@@ -108,46 +108,157 @@ export const VideoComments = ({ videoId, userId }: VideoCommentsProps) => {
 
     setIsSubmitting(true);
     try {
-      // 0円の時の特別な演出
-      if (selectedTipAmount === 0) {
-        // ランダムな面白いメッセージ
-        const funnyMessages = {
-          ja: [
-            "お、ただコメ勢！勇気あるねぇ〜😎",
-            "無料は最高のプライス！🎉",
-            "気持ちだけいただきました！💪",
-            "タダより高いものはない...ってか！😂",
-            "投げ銭0円！潔い！👏"
-          ],
-          en: [
-            "Free comment warrior! Respect! 😎",
-            "Free is the best price! 🎉",
-            "We got your spirit! 💪",
-            "Bold move! 😂",
-            "Zero tip! Brave! 👏"
-          ],
-          pt: [
-            "Guerreiro dos comentários grátis! 😎",
-            "Grátis é o melhor preço! 🎉",
-            "Recebemos seu espírito! 💪",
-            "Movimento ousado! 😂",
-            "Gorjeta zero! Corajoso! 👏"
-          ]
-        };
-        
-        const messages = funnyMessages[language as keyof typeof funnyMessages];
-        const randomMessage = messages[Math.floor(Math.random() * messages.length)];
-        
-        // 紙吹雪エフェクト（少なめ）
-        confetti({
-          particleCount: 30,
-          spread: 60,
-          origin: { y: 0.8 },
-          colors: ['#94a3b8', '#cbd5e1', '#e2e8f0']
-        });
-        
-        toast.success(randomMessage, { duration: 3000 });
-      }
+      // 金額に応じたエフェクト
+      const triggerTipEffect = (amount: number) => {
+        if (amount === 0) {
+          // 金メダル: 少なめの紙吹雪
+          const funnyMessages = {
+            ja: [
+              "お、ただコメ勢！勇気あるねぇ〜😎",
+              "無料は最高のプライス！🎉",
+              "気持ちだけいただきました！💪",
+              "タダより高いものはない...ってか！😂",
+              "投げ銭0円！潔い！👏"
+            ],
+            en: [
+              "Free comment warrior! Respect! 😎",
+              "Free is the best price! 🎉",
+              "We got your spirit! 💪",
+              "Bold move! 😂",
+              "Zero tip! Brave! 👏"
+            ],
+            pt: [
+              "Guerreiro dos comentários grátis! 😎",
+              "Grátis é o melhor preço! 🎉",
+              "Recebemos seu espírito! 💪",
+              "Movimento ousado! 😂",
+              "Gorjeta zero! Corajoso! 👏"
+            ]
+          };
+          
+          const messages = funnyMessages[language as keyof typeof funnyMessages];
+          const randomMessage = messages[Math.floor(Math.random() * messages.length)];
+          
+          confetti({
+            particleCount: 30,
+            spread: 60,
+            origin: { y: 0.8 },
+            colors: ['#94a3b8', '#cbd5e1', '#e2e8f0']
+          });
+          
+          toast.success(randomMessage, { duration: 3000 });
+        } else if (amount <= 500) {
+          // コーヒー・コーラ: 小規模な紙吹雪
+          confetti({
+            particleCount: 50,
+            spread: 70,
+            origin: { y: 0.7 },
+            colors: ['#fbbf24', '#f59e0b', '#d97706']
+          });
+        } else if (amount <= 30000) {
+          // シャンパン: 中規模の紙吹雪（金色）
+          confetti({
+            particleCount: 100,
+            spread: 90,
+            origin: { y: 0.6 },
+            colors: ['#fbbf24', '#f59e0b', '#fde047']
+          });
+          setTimeout(() => {
+            confetti({
+              particleCount: 50,
+              spread: 60,
+              origin: { y: 0.6 }
+            });
+          }, 200);
+        } else if (amount <= 40000) {
+          // 焼肉: 中規模の紙吹雪（赤系）
+          confetti({
+            particleCount: 120,
+            spread: 100,
+            origin: { y: 0.6 },
+            colors: ['#dc2626', '#ef4444', '#f87171', '#fca5a5']
+          });
+          setTimeout(() => {
+            confetti({
+              particleCount: 60,
+              angle: 60,
+              spread: 55,
+              origin: { x: 0 }
+            });
+          }, 150);
+          setTimeout(() => {
+            confetti({
+              particleCount: 60,
+              angle: 120,
+              spread: 55,
+              origin: { x: 1 }
+            });
+          }, 150);
+        } else if (amount <= 60000) {
+          // 寿司: 大規模な紙吹雪（赤白）
+          const count = 150;
+          const defaults = {
+            origin: { y: 0.7 }
+          };
+          
+          function fire(particleRatio: number, opts: any) {
+            confetti({
+              ...defaults,
+              ...opts,
+              particleCount: Math.floor(count * particleRatio),
+              colors: ['#dc2626', '#ffffff', '#ef4444', '#fecaca']
+            });
+          }
+          
+          fire(0.25, { spread: 26, startVelocity: 55 });
+          fire(0.2, { spread: 60 });
+          fire(0.35, { spread: 100, decay: 0.91, scalar: 0.8 });
+          fire(0.1, { spread: 120, startVelocity: 25, decay: 0.92, scalar: 1.2 });
+          fire(0.1, { spread: 120, startVelocity: 45 });
+        } else if (amount >= 1000000) {
+          // ダイヤモンド: 超派手な紙吹雪（虹色、複数回発射）
+          const duration = 3000;
+          const animationEnd = Date.now() + duration;
+          const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
+          
+          function randomInRange(min: number, max: number) {
+            return Math.random() * (max - min) + min;
+          }
+          
+          const interval: any = setInterval(function() {
+            const timeLeft = animationEnd - Date.now();
+            
+            if (timeLeft <= 0) {
+              return clearInterval(interval);
+            }
+            
+            const particleCount = 50 * (timeLeft / duration);
+            
+            confetti({
+              ...defaults,
+              particleCount,
+              origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 },
+              colors: ['#ff0000', '#ff7f00', '#ffff00', '#00ff00', '#0000ff', '#4b0082', '#9400d3']
+            });
+            confetti({
+              ...defaults,
+              particleCount,
+              origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 },
+              colors: ['#ff0000', '#ff7f00', '#ffff00', '#00ff00', '#0000ff', '#4b0082', '#9400d3']
+            });
+          }, 250);
+          
+          // 追加の大爆発エフェクト
+          setTimeout(() => {
+            confetti({
+              particleCount: 200,
+              spread: 160,
+              origin: { y: 0.5 },
+              colors: ['#ffd700', '#ffed4e', '#fff59d', '#ffffff']
+            });
+          }, 500);
+        }
+      };
 
       // コメント投稿
       const { error: commentError } = await supabase
@@ -159,6 +270,9 @@ export const VideoComments = ({ videoId, userId }: VideoCommentsProps) => {
         });
 
       if (commentError) throw commentError;
+
+      // エフェクト発動
+      triggerTipEffect(selectedTipAmount);
 
       // 投げ銭処理（0円以外の場合）
       if (selectedTipAmount > 0) {
