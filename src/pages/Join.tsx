@@ -14,7 +14,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
 import confetti from "canvas-confetti";
-import { Check } from "lucide-react";
+import { Check, Eye } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 const useCountdown = () => {
   const [timeLeft, setTimeLeft] = useState({
@@ -126,13 +127,14 @@ const Join = () => {
   const [couponCode, setCouponCode] = useState("");
   const [couponVerified, setCouponVerified] = useState(false);
   const [showCouponSuccess, setShowCouponSuccess] = useState(false);
+  const [viewCount, setViewCount] = useState(0);
   
   const { isLoading: authLoading, user } = useAuth();
   const { subscribed, loading: subscriptionLoading } = useSubscription();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
-  // Fetch sample video URL
+  // Fetch sample video URL and view count
   useEffect(() => {
     const fetchSampleVideo = async () => {
       const { data } = await supabase
@@ -144,10 +146,24 @@ const Join = () => {
       if (data?.video_url) {
         setSampleVideoUrl(data.video_url);
       }
-      
     };
+    
+    const loadViewCount = async () => {
+      if (!user) return;
+      
+      const { data } = await supabase
+        .from("video_views")
+        .select("view_count")
+        .eq("user_id", user.id)
+        .eq("video_id", SAMPLE_VIDEO_ID)
+        .maybeSingle();
+      
+      setViewCount(data?.view_count || 0);
+    };
+    
     fetchSampleVideo();
-  }, []);
+    loadViewCount();
+  }, [user]);
 
   // Check for payment status in URL
   useEffect(() => {
@@ -352,10 +368,60 @@ const Join = () => {
               </div>
 
               {/* Video Modal */}
-              <Dialog open={showVideoModal} onOpenChange={setShowVideoModal}>
+              <Dialog open={showVideoModal} onOpenChange={async (open) => {
+                setShowVideoModal(open);
+                
+                // Record view when modal is opened
+                if (open && user) {
+                  const { data: existingView } = await supabase
+                    .from("video_views")
+                    .select("*")
+                    .eq("user_id", user.id)
+                    .eq("video_id", SAMPLE_VIDEO_ID)
+                    .maybeSingle();
+
+                  if (existingView) {
+                    const { data } = await supabase
+                      .from("video_views")
+                      .update({
+                        view_count: existingView.view_count + 1,
+                        last_viewed_at: new Date().toISOString(),
+                      })
+                      .eq("id", existingView.id)
+                      .select("view_count")
+                      .single();
+                    
+                    if (data) {
+                      setViewCount(data.view_count);
+                    }
+                  } else {
+                    const { data } = await supabase
+                      .from("video_views")
+                      .insert({
+                        user_id: user.id,
+                        video_id: SAMPLE_VIDEO_ID,
+                        view_count: 1,
+                      })
+                      .select("view_count")
+                      .single();
+                    
+                    if (data) {
+                      setViewCount(data.view_count);
+                    }
+                  }
+                }
+              }}>
                 <DialogContent className="max-w-4xl">
                   <DialogHeader>
-                    <DialogTitle>{t.join.sampleVideo.title}</DialogTitle>
+                    <div className="flex items-center justify-between">
+                      <DialogTitle>{t.join.sampleVideo.title}</DialogTitle>
+                      {user && viewCount > 0 && (
+                        <Badge variant="secondary" className="flex items-center gap-1.5">
+                          <Eye className="w-3.5 h-3.5" />
+                          <span>{language === "ja" ? "視聴" : "Watched"} {viewCount}{language === "ja" ? "回" : "x"}</span>
+                        </Badge>
+                      )}
+                    </div>
                   </DialogHeader>
                   <div className="aspect-video">
                     {sampleVideoUrl ? (
