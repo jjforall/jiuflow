@@ -234,45 +234,107 @@ const Video = () => {
 
   if (!subscribed && !isAdmin && !isStaff) {
     return (
-      <div className="min-h-screen">
+      <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/20">
         <Navigation />
-        <main className="pt-32 pb-20 px-6">
-          <div className="max-w-md mx-auto text-center animate-fade-up">
-            <div className="bg-muted/50 border border-border p-8 rounded-lg">
-              <Lock className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
-              <h1 className="text-2xl font-light mb-4">
-                {language === "ja" 
-                  ? "プレミアムコンテンツ" 
-                  : language === "pt" 
-                  ? "Conteúdo Premium" 
-                  : "Premium Content"}
-              </h1>
-              <p className="text-muted-foreground mb-6">
-                {language === "ja" 
-                  ? "この動画を視聴するには、サブスクリプションへの登録が必要です。" 
-                  : language === "pt" 
-                  ? "Para assistir este vídeo, você precisa de uma assinatura ativa." 
-                  : "To watch this video, you need an active subscription."}
-              </p>
-              <div className="space-y-3">
-                <Button 
-                  onClick={() => navigate("/join")}
-                  size="lg"
-                  className="w-full"
-                >
+        <main className="pt-24 pb-20 px-4 md:px-6">
+          <div className="max-w-2xl mx-auto animate-fade-up">
+            <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-lg">
+              {/* Hero Section */}
+              <div className="bg-gradient-to-br from-primary/10 via-primary/5 to-transparent p-8 md:p-12 text-center border-b border-border">
+                <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-primary/10 mb-6">
+                  <Lock className="w-10 h-10 text-primary" />
+                </div>
+                <h1 className="text-3xl md:text-4xl font-light mb-4">
                   {language === "ja" 
-                    ? "プランを見る" 
+                    ? "100回見て、100回スパーリング" 
                     : language === "pt" 
-                    ? "Ver Planos" 
-                    : "View Plans"}
-                </Button>
-                <Button 
-                  variant="outline"
-                  onClick={() => navigate("/map")}
-                  className="w-full"
-                >
-                  {t.video.backToMap}
-                </Button>
+                    ? "Veja 100 vezes, treine 100 vezes" 
+                    : "Watch 100 times, train 100 times"}
+                </h1>
+                <p className="text-lg text-muted-foreground leading-relaxed mb-8">
+                  {language === "ja" 
+                    ? "このプレミアムコンテンツで技術を徹底的にマスターしましょう。何度も見返すことで、試合で自然に技が出るようになります。" 
+                    : language === "pt" 
+                    ? "Domine técnicas com conteúdo premium. Repetição leva à perfeição nas competições." 
+                    : "Master techniques with premium content. Repetition leads to perfection in competition."}
+                </p>
+              </div>
+
+              {/* Benefits Section */}
+              <div className="p-8 md:p-12 space-y-8">
+                <div className="space-y-4">
+                  <h2 className="text-xl font-medium mb-6 text-center">
+                    {language === "ja" 
+                      ? "メンバーシップ特典" 
+                      : language === "pt" 
+                      ? "Benefícios da Assinatura" 
+                      : "Membership Benefits"}
+                  </h2>
+                  <div className="space-y-4">
+                    {[
+                      { 
+                        ja: "全ての技術動画が見放題", 
+                        pt: "Acesso ilimitado a todos os vídeos", 
+                        en: "Unlimited access to all technique videos" 
+                      },
+                      { 
+                        ja: "視聴回数を記録して進捗管理", 
+                        pt: "Rastreie seu progresso com contadores", 
+                        en: "Track your progress with view counters" 
+                      },
+                      { 
+                        ja: "いつでもキャンセル可能", 
+                        pt: "Cancele a qualquer momento", 
+                        en: "Cancel anytime" 
+                      },
+                      { 
+                        ja: "定期的な新コンテンツ追加", 
+                        pt: "Novos conteúdos regularmente", 
+                        en: "Regular new content updates" 
+                      }
+                    ].map((benefit, index) => (
+                      <div key={index} className="flex items-start gap-3">
+                        <div className="flex-shrink-0 w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center mt-0.5">
+                          <div className="w-2 h-2 rounded-full bg-primary" />
+                        </div>
+                        <p className="text-muted-foreground">
+                          {language === "ja" ? benefit.ja : language === "pt" ? benefit.pt : benefit.en}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* CTA Buttons */}
+                <div className="space-y-3 pt-4">
+                  <Button 
+                    onClick={() => navigate("/join")}
+                    size="lg"
+                    className="w-full text-lg h-14 shadow-lg hover:shadow-xl transition-all"
+                  >
+                    {language === "ja" 
+                      ? "今すぐ始める" 
+                      : language === "pt" 
+                      ? "Começar Agora" 
+                      : "Start Now"}
+                  </Button>
+                  <Button 
+                    variant="ghost"
+                    onClick={() => navigate("/map")}
+                    className="w-full"
+                  >
+                    {t.video.backToMap}
+                  </Button>
+                </div>
+
+                {/* Trust Badge */}
+                <p className="text-center text-sm text-muted-foreground pt-4">
+                  {language === "ja" 
+                    ? "✓ 7日間の無料トライアル付き" 
+                    : language === "pt" 
+                    ? "✓ Teste grátis de 7 dias incluído" 
+                    : "✓ 7-day free trial included"}
+                </p>
               </div>
             </div>
           </div>
