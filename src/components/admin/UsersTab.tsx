@@ -7,7 +7,9 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Profile, NewUserData } from "@/types/admin";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
 import { useAuth } from "@/hooks/useAuth";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { 
   CreateUserDialog, 
   EditProfileDialog, 
@@ -16,6 +18,7 @@ import {
 
 export const UsersTab = () => {
   const { isAdmin } = useAuth();
+  const isMobile = useIsMobile();
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loadingProfiles, setLoadingProfiles] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -287,99 +290,186 @@ export const UsersTab = () => {
         </Select>
       </div>
 
-      {/* Users Table */}
-      <div className="border rounded-lg overflow-hidden">
-        <table className="w-full">
-          <thead className="bg-muted">
-            <tr>
-              <th className="px-4 py-3 text-left">メールアドレス</th>
-              <th className="px-4 py-3 text-left">Stripe ID</th>
-              <th className="px-4 py-3 text-left">サブスク</th>
-              <th className="px-4 py-3 text-left">権限</th>
-              <th className="px-4 py-3 text-left">作成日</th>
-              <th className="px-4 py-3 text-right">アクション</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loadingProfiles ? (
+      {/* Users Table - Desktop */}
+      {!isMobile ? (
+        <div className="border rounded-lg overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-muted">
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center">
-                  読み込み中...
-                </td>
+                <th className="px-4 py-3 text-left">メールアドレス</th>
+                <th className="px-4 py-3 text-left">Stripe ID</th>
+                <th className="px-4 py-3 text-left">サブスク</th>
+                <th className="px-4 py-3 text-left">権限</th>
+                <th className="px-4 py-3 text-left">作成日</th>
+                <th className="px-4 py-3 text-right">アクション</th>
               </tr>
-            ) : filteredProfiles.length === 0 ? (
-              <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
-                  ユーザーが見つかりませんでした
-                </td>
-              </tr>
-            ) : (
-              filteredProfiles.map((profile) => {
-                const isAdmin = profile.user_roles?.some(r => r.role === 'admin');
-                const isStaff = profile.user_roles?.some(r => r.role === 'staff');
-                const hasSub = profile.subscription;
-                return (
-                  <tr key={profile.id} className="border-t hover:bg-muted/50">
-                    <td className="px-4 py-3">
-                      {profile.email || 'N/A'}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-muted-foreground">
-                      {profile.stripe_customer_id || 'N/A'}
-                    </td>
-                    <td className="px-4 py-3">
-                      {hasSub ? (
-                        <Badge variant="default" className="bg-green-600">
-                          {profile.subscription.plan_type || 'アクティブ'}
-                        </Badge>
-                      ) : (
-                        <Badge variant="outline">未加入</Badge>
-                      )}
-                    </td>
-                    <td className="px-4 py-3">
-                      <Badge variant={isAdmin ? "default" : isStaff ? "secondary" : "outline"}>
-                        {isAdmin ? '管理者' : isStaff ? 'スタッフ' : 'ユーザー'}
-                      </Badge>
-                    </td>
-                    <td className="px-4 py-3 text-sm text-muted-foreground">
-                      {new Date(profile.created_at).toLocaleString('ja-JP')}
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex gap-2 justify-end">
-                        {isAdmin && (
-                          <>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleEditProfile(profile)}
-                            >
-                              編集
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => openPasswordDialog(profile.id)}
-                            >
-                              パスワード変更
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant={isAdmin ? "destructive" : "default"}
-                              onClick={() => handleToggleAdmin(profile.id, isAdmin)}
-                              disabled={isLoading}
-                            >
-                              {isAdmin ? '管理者解除' : '管理者にする'}
-                            </Button>
-                          </>
+            </thead>
+            <tbody>
+              {loadingProfiles ? (
+                <tr>
+                  <td colSpan={6} className="px-4 py-8 text-center">
+                    読み込み中...
+                  </td>
+                </tr>
+              ) : filteredProfiles.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
+                    ユーザーが見つかりませんでした
+                  </td>
+                </tr>
+              ) : (
+                filteredProfiles.map((profile) => {
+                  const isAdminUser = profile.user_roles?.some(r => r.role === 'admin');
+                  const isStaff = profile.user_roles?.some(r => r.role === 'staff');
+                  const hasSub = profile.subscription;
+                  return (
+                    <tr key={profile.id} className="border-t hover:bg-muted/50">
+                      <td className="px-4 py-3">
+                        {profile.email || 'N/A'}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-muted-foreground">
+                        {profile.stripe_customer_id || 'N/A'}
+                      </td>
+                      <td className="px-4 py-3">
+                        {hasSub ? (
+                          <Badge variant="default" className="bg-green-600">
+                            {profile.subscription.plan_type || 'アクティブ'}
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline">未加入</Badge>
                         )}
+                      </td>
+                      <td className="px-4 py-3">
+                        <Badge variant={isAdminUser ? "default" : isStaff ? "secondary" : "outline"}>
+                          {isAdminUser ? '管理者' : isStaff ? 'スタッフ' : 'ユーザー'}
+                        </Badge>
+                      </td>
+                      <td className="px-4 py-3 text-sm text-muted-foreground">
+                        {new Date(profile.created_at).toLocaleString('ja-JP')}
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex gap-2 justify-end">
+                          {isAdmin && (
+                            <>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleEditProfile(profile)}
+                              >
+                                編集
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => openPasswordDialog(profile.id)}
+                              >
+                                パスワード変更
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant={isAdminUser ? "destructive" : "default"}
+                                onClick={() => handleToggleAdmin(profile.id, isAdminUser)}
+                                disabled={isLoading}
+                              >
+                                {isAdminUser ? '管理者解除' : '管理者にする'}
+                              </Button>
+                            </>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        /* Users Cards - Mobile */
+        <div className="space-y-4">
+          {loadingProfiles ? (
+            <Card>
+              <CardContent className="py-8 text-center">
+                読み込み中...
+              </CardContent>
+            </Card>
+          ) : filteredProfiles.length === 0 ? (
+            <Card>
+              <CardContent className="py-8 text-center text-muted-foreground">
+                ユーザーが見つかりませんでした
+              </CardContent>
+            </Card>
+          ) : (
+            filteredProfiles.map((profile) => {
+              const isAdminUser = profile.user_roles?.some(r => r.role === 'admin');
+              const isStaff = profile.user_roles?.some(r => r.role === 'staff');
+              const hasSub = profile.subscription;
+              return (
+                <Card key={profile.id}>
+                  <CardContent className="pt-6">
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-start">
+                        <div className="space-y-1">
+                          <p className="font-medium">{profile.email || 'N/A'}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {profile.stripe_customer_id || 'Stripe ID なし'}
+                          </p>
+                        </div>
+                        <Badge variant={isAdminUser ? "default" : isStaff ? "secondary" : "outline"}>
+                          {isAdminUser ? '管理者' : isStaff ? 'スタッフ' : 'ユーザー'}
+                        </Badge>
                       </div>
-                    </td>
-                  </tr>
-                );
-              })
-            )}
-          </tbody>
-        </table>
-      </div>
+
+                      <div className="flex gap-2">
+                        {hasSub ? (
+                          <Badge variant="default" className="bg-green-600">
+                            {profile.subscription.plan_type || 'アクティブ'}
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline">未加入</Badge>
+                        )}
+                        <span className="text-xs text-muted-foreground">
+                          {new Date(profile.created_at).toLocaleDateString('ja-JP')}
+                        </span>
+                      </div>
+
+                      {isAdmin && (
+                        <div className="flex flex-col gap-2 pt-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleEditProfile(profile)}
+                            className="w-full"
+                          >
+                            編集
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => openPasswordDialog(profile.id)}
+                            className="w-full"
+                          >
+                            パスワード変更
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant={isAdminUser ? "destructive" : "default"}
+                            onClick={() => handleToggleAdmin(profile.id, isAdminUser)}
+                            disabled={isLoading}
+                            className="w-full"
+                          >
+                            {isAdminUser ? '管理者解除' : '管理者にする'}
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })
+          )}
+        </div>
+      )}
 
       {/* Dialogs */}
       <CreateUserDialog
