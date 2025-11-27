@@ -155,7 +155,7 @@ const Join = () => {
       }, 250);
 
       const message = trimmedCode === "MURATABROS" 
-        ? (language === "ja" ? "MURATABROS Proプランが適用されました！🎉" : "MURATABROS Pro Plan applied! 🎉")
+        ? (language === "ja" ? "Proプランが適用されました！🎉" : "Pro Plan applied! 🎉")
         : (language === "ja" ? "クーポンコードが適用されました！🎉" : "Coupon code applied! 🎉");
 
       toast.success(message, {
@@ -398,12 +398,15 @@ const Join = () => {
                       {language === "ja" ? "🏆 Pro プラン" : "🏆 Pro Plan"}
                     </div>
                     <h3 className="text-3xl font-light mb-4 mt-2 text-center">
-                      {language === "ja" ? "MURATABROS Pro" : "MURATABROS Pro"}
+                      {language === "ja" ? "Pro" : "Pro"}
                     </h3>
                     <div className="mb-6 text-center">
                       <div className="text-5xl font-light mb-2">¥50,000</div>
                       <div className="text-sm text-muted-foreground font-light">
                         {language === "ja" ? "年額（審査制・毎年更新）" : "Annual (Application required・Yearly renewal)"}
+                      </div>
+                      <div className="mt-2 text-xs text-primary font-medium">
+                        {language === "ja" ? "🔥 12月31日まで申請受付中" : "🔥 Applications accepted until December 31st"}
                       </div>
                     </div>
                     
@@ -415,19 +418,15 @@ const Join = () => {
                       <ul className="space-y-2 text-sm font-light">
                         <li className="flex items-start">
                           <span className="mr-2">🏠</span>
-                          <span>{language === "ja" ? "専用合宿施設への招待・利用権" : "Exclusive training facility access & invitations"}</span>
-                        </li>
-                        <li className="flex items-start">
-                          <span className="mr-2">✈️</span>
-                          <span>{language === "ja" ? "飛行機・ヘリコプター等の移動サポート" : "Flight & helicopter transportation support"}</span>
+                          <span>{language === "ja" ? "関連施設への特別価格での招待" : "Special pricing for partner facilities & invitations"}</span>
                         </li>
                         <li className="flex items-start">
                           <span className="mr-2">🏝️</span>
-                          <span>{language === "ja" ? "特別イベント・合宿への優先参加権" : "Priority access to special events & camps"}</span>
+                          <span>{language === "ja" ? "優先イベント・合宿への参加権" : "Priority access to exclusive events & training camps"}</span>
                         </li>
                         <li className="flex items-start">
-                          <span className="mr-2">🏨</span>
-                          <span>{language === "ja" ? "プレミアム宿泊施設利用権" : "Premium accommodation access"}</span>
+                          <span className="mr-2">💎</span>
+                          <span>{language === "ja" ? "プレミアムサポート＆特別サービス" : "Premium support & special services"}</span>
                         </li>
                       </ul>
                     </div>
