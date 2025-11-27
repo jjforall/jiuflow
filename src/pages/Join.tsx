@@ -289,10 +289,13 @@ const Join = () => {
               </div>
 
               {/* Pricing */}
-              <div className={`grid ${couponCode === "MURATABJJ" ? "md:grid-cols-3" : "md:grid-cols-2"} gap-8 mb-16 animate-fade-up`}>
+              <div className={`grid ${couponCode === "MURATABJJ" ? "md:grid-cols-1" : "md:grid-cols-2"} gap-8 mb-16 animate-fade-up ${couponCode === "MURATABJJ" ? "max-w-md mx-auto" : ""}`}>
                 {/* Founder Access - Only show if coupon is MURATABJJ */}
                 {couponCode === "MURATABJJ" && (
-                  <div className="border border-border p-8">
+                  <div className="border border-primary p-8 shadow-lg">
+                  <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-primary text-primary-foreground px-4 py-1 text-xs font-light">
+                    {language === "ja" ? "特別オファー" : language === "pt" ? "Oferta Especial" : "Special Offer"}
+                  </div>
                   <h3 className="text-2xl font-light mb-4">
                     {language === "ja" ? "創設者アクセス" : language === "pt" ? "Acesso Fundador" : "Founder Access"}
                   </h3>
@@ -331,45 +334,48 @@ const Join = () => {
                   </div>
                 )}
 
-                {/* Monthly */}
-                <div className="border border-foreground p-8 relative">
-                  <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-foreground text-background px-4 py-1 text-xs font-light">
-                    {language === "ja" ? "人気" : language === "pt" ? "Popular" : "Most Popular"}
-                  </div>
-                  <h3 className="text-2xl font-light mb-4">
-                    {language === "ja" ? "月額プラン" : language === "pt" ? "Plano Mensal" : "Monthly Plan"}
-                  </h3>
-                  <div className="mb-6">
-                    <div className="text-4xl font-light mb-2">¥2,900</div>
-                    <div className="text-sm text-muted-foreground font-light">
-                      {language === "ja" ? "月額（3ヶ月無料・いつでもキャンセル可能）" : language === "pt" ? "Por mês (3 meses grátis・cancele a qualquer momento)" : "per month (3 months free・cancel anytime)"}
+                {/* Monthly - Only show if no coupon */}
+                {!couponCode && (
+                  <div className="border border-foreground p-8 relative">
+                    <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-foreground text-background px-4 py-1 text-xs font-light">
+                      {language === "ja" ? "人気" : language === "pt" ? "Popular" : "Most Popular"}
                     </div>
+                    <h3 className="text-2xl font-light mb-4">
+                      {language === "ja" ? "月額プラン" : language === "pt" ? "Plano Mensal" : "Monthly Plan"}
+                    </h3>
+                    <div className="mb-6">
+                      <div className="text-4xl font-light mb-2">¥2,900</div>
+                      <div className="text-sm text-muted-foreground font-light">
+                        {language === "ja" ? "月額（3ヶ月無料・いつでもキャンセル可能）" : language === "pt" ? "Por mês (3 meses grátis・cancele a qualquer momento)" : "per month (3 months free・cancel anytime)"}
+                      </div>
+                    </div>
+                    <ul className="space-y-3 mb-6 text-sm font-light">
+                      <li className="flex items-start">
+                        <span className="mr-2">✓</span>
+                        <span>{language === "ja" ? "全技術動画へのアクセス" : language === "pt" ? "Acesso a todos os vídeos técnicos" : "Access to all technique videos"}</span>
+                      </li>
+                      <li className="flex items-start">
+                        <span className="mr-2">✓</span>
+                        <span>{language === "ja" ? "新規コンテンツの追加" : language === "pt" ? "Novos conteúdos adicionados" : "New content additions"}</span>
+                      </li>
+                      <li className="flex items-start">
+                        <span className="mr-2">✓</span>
+                        <span>{language === "ja" ? "柔軟な支払い" : language === "pt" ? "Pagamento flexível" : "Flexible payment"}</span>
+                      </li>
+                    </ul>
+                    <Button
+                      className="w-full"
+                      onClick={() => handleCheckout(PRICE_IDS.monthly, true)}
+                      disabled={isLoading}
+                    >
+                      {language === "ja" ? "月額で始める" : language === "pt" ? "Começar mensalmente" : "Start Monthly"}
+                    </Button>
                   </div>
-                  <ul className="space-y-3 mb-6 text-sm font-light">
-                    <li className="flex items-start">
-                      <span className="mr-2">✓</span>
-                      <span>{language === "ja" ? "全技術動画へのアクセス" : language === "pt" ? "Acesso a todos os vídeos técnicos" : "Access to all technique videos"}</span>
-                    </li>
-                    <li className="flex items-start">
-                      <span className="mr-2">✓</span>
-                      <span>{language === "ja" ? "新規コンテンツの追加" : language === "pt" ? "Novos conteúdos adicionados" : "New content additions"}</span>
-                    </li>
-                    <li className="flex items-start">
-                      <span className="mr-2">✓</span>
-                      <span>{language === "ja" ? "柔軟な支払い" : language === "pt" ? "Pagamento flexível" : "Flexible payment"}</span>
-                    </li>
-                  </ul>
-                  <Button
-                    className="w-full"
-                    onClick={() => handleCheckout(PRICE_IDS.monthly, true)}
-                    disabled={isLoading}
-                  >
-                    {language === "ja" ? "月額で始める" : language === "pt" ? "Começar mensalmente" : "Start Monthly"}
-                  </Button>
-                </div>
+                )}
 
-                {/* Annual */}
-                <div className="border border-border p-8">
+                {/* Annual - Only show if no coupon */}
+                {!couponCode && (
+                  <div className="border border-border p-8">
                   <h3 className="text-2xl font-light mb-4">
                     {language === "ja" ? "年額プラン" : language === "pt" ? "Plano Anual" : "Annual Plan"}
                   </h3>
@@ -400,7 +406,8 @@ const Join = () => {
                   >
                     {language === "ja" ? "年額で始める" : language === "pt" ? "Começar anualmente" : "Start Annually"}
                   </Button>
-                </div>
+                  </div>
+                )}
               </div>
 
               {/* FAQ */}
