@@ -140,8 +140,11 @@ export const VideoPlayer = ({ videoUrl, autoPlay = true }: VideoPlayerProps) => 
       <video
         ref={videoRef}
         controls
+        controlsList="nodownload"
+        disablePictureInPicture
         className="w-full"
         playsInline
+        onContextMenu={(e) => e.preventDefault()}
       >
         Your browser does not support the video tag.
       </video>
