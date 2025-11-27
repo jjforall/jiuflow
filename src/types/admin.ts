@@ -63,5 +63,5 @@ export interface TechniqueFormData {
 export interface NewUserData {
   email: string;
   password: string;
-  role: "admin" | "user";
+  role: "admin" | "user" | "staff";
 }

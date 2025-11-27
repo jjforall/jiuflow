@@ -16,6 +16,7 @@ import {
 } from "@/hooks/usePaginatedTechniques";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useAuth } from "@/hooks/useAuth";
 
 interface Technique {
   id: string;
@@ -41,6 +42,7 @@ interface UploadProgress {
 }
 
 export const TechniquesManagement = () => {
+  const { isAdmin } = useAuth();
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(50);
   const [searchQuery, setSearchQuery] = useState("");
@@ -82,6 +84,7 @@ export const TechniquesManagement = () => {
   const createTechnique = useCreateTechnique();
 
   const startEditing = (id: string, field: string, currentValue: string) => {
+    if (!isAdmin) return; // Staff cannot edit
     setEditingCell({ id, field });
     setEditValue(currentValue);
   };
@@ -457,10 +460,12 @@ export const TechniquesManagement = () => {
           >
             {isGeneratingThumbnails ? 'サムネイル生成中...' : 'サムネイル一括生成'}
           </Button>
-          <Button onClick={() => setShowEditDialog(true)}>
-            <Upload className="h-4 w-4 mr-2" />
-            新規技術追加
-          </Button>
+          {isAdmin && (
+            <Button onClick={() => setShowEditDialog(true)}>
+              <Upload className="h-4 w-4 mr-2" />
+              新規技術追加
+            </Button>
+          )}
         </div>
       </div>
 
@@ -610,8 +615,8 @@ export const TechniquesManagement = () => {
                         </div>
                       ) : (
                         <p 
-                          className="text-sm text-muted-foreground cursor-pointer hover:bg-accent hover:text-accent-foreground px-2 py-1 rounded"
-                          onClick={() => startEditing(technique.id, 'name_ja', technique.name_ja)}
+                          className={`text-sm text-muted-foreground px-2 py-1 rounded ${isAdmin ? 'cursor-pointer hover:bg-accent hover:text-accent-foreground' : ''}`}
+                          onClick={() => isAdmin && startEditing(technique.id, 'name_ja', technique.name_ja)}
                         >
                           {technique.name_ja}
                         </p>
@@ -648,8 +653,8 @@ export const TechniquesManagement = () => {
                         </div>
                       ) : (
                         <p 
-                          className="text-sm cursor-pointer hover:bg-accent hover:text-accent-foreground px-2 py-1 rounded"
-                          onClick={() => startEditing(technique.id, 'series_name', (technique as Technique).series_name || '')}
+                          className={`text-sm px-2 py-1 rounded ${isAdmin ? 'cursor-pointer hover:bg-accent hover:text-accent-foreground' : ''}`}
+                          onClick={() => isAdmin && startEditing(technique.id, 'series_name', (technique as Technique).series_name || '')}
                         >
                           {(technique as Technique).series_name || <span className="text-muted-foreground">シリーズなし</span>}
                         </p>
@@ -679,8 +684,8 @@ export const TechniquesManagement = () => {
                         </div>
                       ) : (
                         <p 
-                          className="text-xs text-muted-foreground cursor-pointer hover:bg-accent hover:text-accent-foreground px-2 py-1 rounded"
-                          onClick={() => startEditing(technique.id, 'series_order', (technique as Technique).series_order?.toString() || '')}
+                          className={`text-xs text-muted-foreground px-2 py-1 rounded ${isAdmin ? 'cursor-pointer hover:bg-accent hover:text-accent-foreground' : ''}`}
+                          onClick={() => isAdmin && startEditing(technique.id, 'series_order', (technique as Technique).series_order?.toString() || '')}
                         >
                           順序: {(technique as Technique).series_order || <span className="text-muted-foreground">-</span>}
                         </p>
@@ -694,50 +699,54 @@ export const TechniquesManagement = () => {
                           technique.hashtags.map((tag) => (
                             <div 
                               key={tag}
-                              className="group flex items-center gap-1 px-2 py-1 bg-primary/10 text-primary rounded text-xs cursor-pointer hover:bg-primary/20"
+                              className={`flex items-center gap-1 px-2 py-1 bg-primary/10 text-primary rounded text-xs ${isAdmin ? 'group cursor-pointer hover:bg-primary/20' : ''}`}
                             >
                               <span>#{tag}</span>
-                              <button
-                                onClick={() => removeHashtag(technique as Technique, tag)}
-                                className="opacity-0 group-hover:opacity-100 transition-opacity"
-                              >
-                                <X className="h-3 w-3" />
-                              </button>
+                              {isAdmin && (
+                                <button
+                                  onClick={() => removeHashtag(technique as Technique, tag)}
+                                  className="opacity-0 group-hover:opacity-100 transition-opacity"
+                                >
+                                  <X className="h-3 w-3" />
+                                </button>
+                              )}
                             </div>
                           ))
                         ) : null}
                       </div>
-                      <div className="flex gap-1">
-                        <Input
-                          value={editingCell?.id === technique.id && editingCell?.field === 'hashtags' ? hashtagEditValue : ''}
-                          onChange={(e) => {
-                            setHashtagEditValue(e.target.value);
-                            setEditingCell({ id: technique.id, field: 'hashtags' });
-                          }}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter' && !e.nativeEvent.isComposing) {
-                              e.preventDefault();
-                              addHashtag(technique as Technique);
-                            }
-                          }}
-                          onBlur={() => {
-                            if (editingCell?.id === technique.id && editingCell?.field === 'hashtags') {
-                              setHashtagEditValue('');
-                              setEditingCell(null);
-                            }
-                          }}
-                          placeholder="追加..."
-                          className="h-7 text-xs"
-                        />
-                        <Button 
-                          size="sm" 
-                          variant="ghost" 
-                          onClick={() => addHashtag(technique as Technique)}
-                          className="h-7 px-2"
-                        >
-                          <Check className="h-3 w-3" />
-                        </Button>
-                      </div>
+                      {isAdmin && (
+                        <div className="flex gap-1">
+                          <Input
+                            value={editingCell?.id === technique.id && editingCell?.field === 'hashtags' ? hashtagEditValue : ''}
+                            onChange={(e) => {
+                              setHashtagEditValue(e.target.value);
+                              setEditingCell({ id: technique.id, field: 'hashtags' });
+                            }}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' && !e.nativeEvent.isComposing) {
+                                e.preventDefault();
+                                addHashtag(technique as Technique);
+                              }
+                            }}
+                            onBlur={() => {
+                              if (editingCell?.id === technique.id && editingCell?.field === 'hashtags') {
+                                setHashtagEditValue('');
+                                setEditingCell(null);
+                              }
+                            }}
+                            placeholder="追加..."
+                            className="h-7 text-xs"
+                          />
+                          <Button 
+                            size="sm" 
+                            variant="ghost" 
+                            onClick={() => addHashtag(technique as Technique)}
+                            className="h-7 px-2"
+                          >
+                            <Check className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   </td>
                   <td className="px-4 py-3">{technique.display_order}</td>
@@ -750,20 +759,32 @@ export const TechniquesManagement = () => {
                   </td>
                   <td className="px-4 py-3 text-right">
                     <div className="flex gap-2 justify-end">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => openEditDialog(technique as Technique)}
-                      >
-                        編集
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="destructive"
-                        onClick={() => handleDelete(technique.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      {isAdmin ? (
+                        <>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => openEditDialog(technique as Technique)}
+                          >
+                            編集
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => handleDelete(technique.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </>
+                      ) : (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => openEditDialog(technique as Technique)}
+                        >
+                          詳細
+                        </Button>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -819,7 +840,7 @@ export const TechniquesManagement = () => {
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
-              {editingTechnique ? '技術編集' : '新規技術追加'}
+              {editingTechnique ? (isAdmin ? '技術編集' : '技術詳細') : '新規技術追加'}
             </DialogTitle>
           </DialogHeader>
           
@@ -831,6 +852,7 @@ export const TechniquesManagement = () => {
                   value={formData.name}
                   onChange={(e) => setFormData({...formData, name: e.target.value})}
                   required
+                  disabled={!isAdmin}
                 />
               </div>
               <div>
@@ -839,6 +861,7 @@ export const TechniquesManagement = () => {
                   value={formData.name_ja}
                   onChange={(e) => setFormData({...formData, name_ja: e.target.value})}
                   required
+                  disabled={!isAdmin}
                 />
               </div>
               <div>
@@ -847,6 +870,7 @@ export const TechniquesManagement = () => {
                   value={formData.name_pt}
                   onChange={(e) => setFormData({...formData, name_pt: e.target.value})}
                   required
+                  disabled={!isAdmin}
                 />
               </div>
             </div>
@@ -856,6 +880,7 @@ export const TechniquesManagement = () => {
               <Select 
                 value={formData.category} 
                 onValueChange={(value: any) => setFormData({...formData, category: value})}
+                disabled={!isAdmin}
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -876,6 +901,7 @@ export const TechniquesManagement = () => {
                   value={formData.series_name}
                   onChange={(e) => setFormData({...formData, series_name: e.target.value})}
                   placeholder="例: Closed Guard Series"
+                  disabled={!isAdmin}
                 />
                 <p className="text-xs text-muted-foreground mt-1">
                   空欄の場合は「その他の技」として表示されます
@@ -888,6 +914,7 @@ export const TechniquesManagement = () => {
                   value={formData.series_order || ""}
                   onChange={(e) => setFormData({...formData, series_order: e.target.value ? parseInt(e.target.value) : null})}
                   placeholder="1, 2, 3..."
+                  disabled={!isAdmin}
                 />
                 <p className="text-xs text-muted-foreground mt-1">
                   シリーズ内での表示順序（1から始まる連番）
@@ -902,6 +929,7 @@ export const TechniquesManagement = () => {
                   value={formData.description}
                   onChange={(e) => setFormData({...formData, description: e.target.value})}
                   rows={3}
+                  disabled={!isAdmin}
                 />
               </div>
               <div>
@@ -910,6 +938,7 @@ export const TechniquesManagement = () => {
                   value={formData.description_ja}
                   onChange={(e) => setFormData({...formData, description_ja: e.target.value})}
                   rows={3}
+                  disabled={!isAdmin}
                 />
               </div>
               <div>
@@ -918,6 +947,7 @@ export const TechniquesManagement = () => {
                   value={formData.description_pt}
                   onChange={(e) => setFormData({...formData, description_pt: e.target.value})}
                   rows={3}
+                  disabled={!isAdmin}
                 />
               </div>
             </div>
@@ -925,36 +955,38 @@ export const TechniquesManagement = () => {
             <div>
               <label className="text-sm font-medium">ハッシュタグ</label>
               <div className="space-y-2">
-                <div className="flex gap-2">
-                  <Input
-                    value={hashtagInput}
-                    onChange={(e) => setHashtagInput(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault();
+                {isAdmin && (
+                  <div className="flex gap-2">
+                    <Input
+                      value={hashtagInput}
+                      onChange={(e) => setHashtagInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          const tag = hashtagInput.trim().replace(/^#/, '');
+                          if (tag && !formData.hashtags.includes(tag)) {
+                            setFormData({ ...formData, hashtags: [...formData.hashtags, tag] });
+                            setHashtagInput("");
+                          }
+                        }
+                      }}
+                      placeholder="ハッシュタグを入力してEnter"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
                         const tag = hashtagInput.trim().replace(/^#/, '');
                         if (tag && !formData.hashtags.includes(tag)) {
                           setFormData({ ...formData, hashtags: [...formData.hashtags, tag] });
                           setHashtagInput("");
                         }
-                      }
-                    }}
-                    placeholder="ハッシュタグを入力してEnter"
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => {
-                      const tag = hashtagInput.trim().replace(/^#/, '');
-                      if (tag && !formData.hashtags.includes(tag)) {
-                        setFormData({ ...formData, hashtags: [...formData.hashtags, tag] });
-                        setHashtagInput("");
-                      }
-                    }}
-                  >
-                    追加
-                  </Button>
-                </div>
+                      }}
+                    >
+                      追加
+                    </Button>
+                  </div>
+                )}
                 <div className="flex flex-wrap gap-2">
                   {formData.hashtags.map((tag) => (
                     <div
@@ -962,59 +994,67 @@ export const TechniquesManagement = () => {
                       className="flex items-center gap-1 px-2 py-1 bg-primary/10 text-primary rounded-md text-sm"
                     >
                       <span>#{tag}</span>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setFormData({
-                            ...formData,
-                            hashtags: formData.hashtags.filter((t) => t !== tag),
-                          });
-                        }}
-                        className="text-primary hover:text-primary/80"
-                      >
-                        ×
-                      </button>
+                      {isAdmin && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setFormData({
+                              ...formData,
+                              hashtags: formData.hashtags.filter((t) => t !== tag),
+                            });
+                          }}
+                          className="text-primary hover:text-primary/80"
+                        >
+                          ×
+                        </button>
+                      )}
                     </div>
                   ))}
                 </div>
               </div>
             </div>
 
-            <div>
-              <label className="text-sm font-medium">動画ファイル</label>
-              <Input
-                type="file"
-                accept="video/*"
-                onChange={(e) => setVideoFile(e.target.files?.[0] || null)}
-              />
-              {editingTechnique?.video_url && !videoFile && (
-                <p className="text-sm text-muted-foreground mt-1">
-                  現在の動画はアップロード済みです
-                </p>
-              )}
-            </div>
+            {isAdmin && (
+              <>
+                <div>
+                  <label className="text-sm font-medium">動画ファイル</label>
+                  <Input
+                    type="file"
+                    accept="video/*"
+                    onChange={(e) => setVideoFile(e.target.files?.[0] || null)}
+                  />
+                  {editingTechnique?.video_url && !videoFile && (
+                    <p className="text-sm text-muted-foreground mt-1">
+                      現在の動画はアップロード済みです
+                    </p>
+                  )}
+                </div>
 
-            <div className="flex gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleTranslate}
-                disabled={isTranslating || !formData.name}
-              >
-                {isTranslating ? "翻訳中..." : "自動翻訳"}
-              </Button>
-            </div>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleTranslate}
+                    disabled={isTranslating || !formData.name}
+                  >
+                    {isTranslating ? "翻訳中..." : "自動翻訳"}
+                  </Button>
+                </div>
+              </>
+            )}
 
             <div className="flex justify-end gap-2">
               <Button type="button" variant="outline" onClick={() => {
                 resetForm();
                 setShowEditDialog(false);
               }}>
-                キャンセル
+                {isAdmin ? 'キャンセル' : '閉じる'}
               </Button>
-              <Button type="submit">
-                {editingTechnique ? '更新' : '作成'}
-              </Button>
+              {isAdmin && (
+                <Button type="submit">
+                  {editingTechnique ? '更新' : '作成'}
+                </Button>
+              )}
             </div>
           </form>
         </DialogContent>
