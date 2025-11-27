@@ -15,6 +15,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
+import { useSubscription } from "@/hooks/useSubscription";
 
 const Navigation = () => {
   const location = useLocation();
@@ -24,6 +25,7 @@ const Navigation = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [user, setUser] = useState<SupabaseUser | null>(null);
   const [canAccessAdmin, setCanAccessAdmin] = useState(false);
+  const { subscribed } = useSubscription();
 
   useEffect(() => {
     // Set up auth state listener
@@ -83,7 +85,7 @@ const Navigation = () => {
     { to: "/", label: t.nav.home },
     { to: "/map", label: t.nav.map },
     { to: "/about", label: t.nav.about },
-    { to: "/join", label: t.nav.join },
+    ...(subscribed ? [] : [{ to: "/join", label: t.nav.join }]),
   ];
 
   const languages: Array<{ code: "ja" | "en" | "pt" | "es" | "fr" | "de" | "zh" | "ko" | "it" | "ru" | "ar" | "hi"; label: string; name: string }> = [
