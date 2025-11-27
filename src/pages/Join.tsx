@@ -155,7 +155,7 @@ const Join = () => {
       }, 250);
 
       const message = trimmedCode === "MURATABROS" 
-        ? (language === "ja" ? "Proプランが適用されました！🎉" : "Pro Plan applied! 🎉")
+        ? (language === "ja" ? "創始者アクセスProプランが適用されました！🎉" : "Founder Access Pro Plan applied! 🎉")
         : (language === "ja" ? "クーポンコードが適用されました！🎉" : "Coupon code applied! 🎉");
 
       toast.success(message, {
@@ -395,10 +395,10 @@ const Join = () => {
                 {couponVerified && couponCode === "MURATABROS" && (
                   <div className="border-2 border-primary p-8 shadow-2xl relative bg-gradient-to-br from-primary/5 to-secondary/5">
                     <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-primary to-secondary text-primary-foreground px-6 py-1 text-sm font-medium rounded-full shadow-lg">
-                      {language === "ja" ? "🏆 Pro プラン" : "🏆 Pro Plan"}
+                      {language === "ja" ? "🏆 創始者アクセスPro" : "🏆 Founder Access Pro"}
                     </div>
                     <h3 className="text-3xl font-light mb-4 mt-2 text-center">
-                      {language === "ja" ? "Pro" : "Pro"}
+                      {language === "ja" ? "創始者アクセスPro" : "Founder Access Pro"}
                     </h3>
                     <div className="mb-6 text-center">
                       <div className="text-5xl font-light mb-2">¥50,000</div>
