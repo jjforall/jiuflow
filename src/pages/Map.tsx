@@ -82,6 +82,13 @@ const Map = () => {
     }
   };
 
+  // Generate series letter (A, B, C, ...) based on series position
+  const getSeriesLetter = (seriesNames: string[], seriesName: string) => {
+    const index = seriesNames.indexOf(seriesName);
+    if (index === -1) return "";
+    return String.fromCharCode(65 + index); // 65 is 'A' in ASCII
+  };
+
   const categoryLabels: Record<string, { en: string; ja: string; pt: string }> = {
     pull: { en: "Pull", ja: "引き込み", pt: "Puxada" },
     "guard-pass": { en: "Guard Pass", ja: "ガードパス", pt: "Passagem de Guarda" },
@@ -371,7 +378,9 @@ const Map = () => {
             <div className="animate-fade-up space-y-4 max-w-5xl mx-auto">
               {/* Accordion Series View */}
               <Accordion type="multiple" className="w-full space-y-3">
-                {Object.entries(groupedTechniques).map(([seriesName, seriesTechs]) => (
+                {Object.entries(groupedTechniques).map(([seriesName, seriesTechs], seriesIndex) => {
+                  const seriesLetter = String.fromCharCode(65 + seriesIndex); // A, B, C, ...
+                  return (
                   <AccordionItem 
                     key={seriesName} 
                     value={seriesName}
@@ -385,7 +394,7 @@ const Map = () => {
                           </div>
                           <div>
                             <h3 className="text-base md:text-lg font-semibold text-foreground">
-                              {seriesName}
+                              {seriesLetter}. {seriesName}
                             </h3>
                             <p className="text-xs md:text-sm text-muted-foreground">
                               {language === "ja" 
@@ -407,8 +416,8 @@ const Map = () => {
                             className="flex items-center gap-3 md:gap-4 p-3 md:p-4 hover:bg-muted/50 transition-colors group"
                           >
                             {/* Number Badge */}
-                            <div className="flex items-center justify-center w-8 h-8 md:w-10 md:h-10 rounded-lg bg-muted text-muted-foreground font-semibold text-sm flex-shrink-0 group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
-                              {tech.series_order || index + 1}
+                            <div className="flex items-center justify-center min-w-[2.5rem] h-8 md:h-10 px-2 rounded-lg bg-muted text-muted-foreground font-semibold text-xs md:text-sm flex-shrink-0 group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                              {seriesLetter}-{tech.series_order || index + 1}
                             </div>
                             
                             {/* Thumbnail */}
@@ -452,7 +461,8 @@ const Map = () => {
                       </div>
                     </AccordionContent>
                   </AccordionItem>
-                ))}
+                );
+                })}
               </Accordion>
 
               {/* Infinite Scroll Observer */}

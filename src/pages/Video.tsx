@@ -42,6 +42,7 @@ const Video = () => {
   const [seriesVideos, setSeriesVideos] = useState<Technique[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+  const [seriesLetter, setSeriesLetter] = useState<string>("");
 
   useEffect(() => {
     const checkAuthAndLoadTechnique = async () => {
@@ -88,8 +89,23 @@ const Video = () => {
     const techniqueData = data as Technique;
     setTechnique(techniqueData);
 
-    // Load other videos in the same series
+    // Get all series to calculate letter index
     if (techniqueData?.series_name) {
+      const { data: allSeries } = await supabase
+        .from("techniques")
+        .select("series_name")
+        .not("series_name", "is", null)
+        .order("series_name", { ascending: true });
+
+      if (allSeries) {
+        const uniqueSeries = [...new Set(allSeries.map(s => s.series_name))].filter(Boolean) as string[];
+        const seriesIndex = uniqueSeries.indexOf(techniqueData.series_name);
+        if (seriesIndex !== -1) {
+          setSeriesLetter(String.fromCharCode(65 + seriesIndex)); // A, B, C, ...
+        }
+      }
+
+      // Load other videos in the same series
       const { data: seriesData } = await supabase
         .from("techniques")
         .select("*")
@@ -284,10 +300,10 @@ const Video = () => {
                 <div className="sticky top-24">
                   <h2 className="text-lg font-medium mb-4 px-2">
                     {language === "ja" 
-                      ? `${technique.series_name}シリーズ` 
+                      ? `${seriesLetter}. ${technique.series_name}シリーズ` 
                       : language === "pt" 
-                      ? `Série ${technique.series_name}` 
-                      : `${technique.series_name} Series`}
+                      ? `${seriesLetter}. Série ${technique.series_name}` 
+                      : `${seriesLetter}. ${technique.series_name} Series`}
                   </h2>
                   <div className="space-y-3 max-h-[calc(100vh-200px)] overflow-y-auto pr-2 scrollbar-thin">
                     {seriesVideos.map((video) => (
@@ -303,9 +319,9 @@ const Video = () => {
                               className="w-full h-full object-cover rounded"
                               showPlayButton
                             />
-                            {video.series_order && (
-                              <div className="absolute top-1 left-1 bg-background/90 text-foreground text-xs px-2 py-0.5 rounded">
-                                {video.series_order}
+                            {video.series_order && seriesLetter && (
+                              <div className="absolute top-1 left-1 bg-background/90 text-foreground text-xs font-semibold px-2 py-0.5 rounded">
+                                {seriesLetter}-{video.series_order}
                               </div>
                             )}
                           </div>
