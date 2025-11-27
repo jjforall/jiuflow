@@ -390,7 +390,7 @@ const Join = () => {
               </div>
 
               {/* Pricing */}
-              <div className={`grid ${couponVerified ? "md:grid-cols-1" : "md:grid-cols-2"} gap-8 mb-16 animate-fade-up ${couponVerified ? "max-w-lg mx-auto" : ""}`}>
+              <div className={`grid ${couponVerified && couponCode === "MURATABROS" ? "md:grid-cols-2" : couponVerified ? "md:grid-cols-1" : "md:grid-cols-2"} gap-8 mb-16 animate-fade-up ${couponVerified && couponCode === "MURATABJJ" ? "max-w-lg mx-auto" : ""}`}>
                 {/* MURATABROS Brothers Pro - Only show if coupon is MURATABROS */}
                 {couponVerified && couponCode === "MURATABROS" && (
                   <div className="border-2 border-primary p-8 shadow-2xl relative bg-gradient-to-br from-primary/5 to-secondary/5">
@@ -486,6 +486,55 @@ const Join = () => {
                         ? "※ 決済後に審査が行われます" 
                         : "※ Review process starts after payment"}
                     </p>
+                  </div>
+                )}
+
+                {/* Founder Access - Show with MURATABROS for comparison */}
+                {couponVerified && couponCode === "MURATABROS" && (
+                  <div className="border border-border p-8 shadow-sm relative opacity-80 hover:opacity-100 transition-opacity">
+                  <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-muted text-muted-foreground px-4 py-1 text-xs font-light">
+                    {language === "ja" ? "スタンダード" : "Standard"}
+                  </div>
+                  <h3 className="text-xl font-light mb-4 mt-2">
+                    {language === "ja" ? "創設者アクセス" : language === "pt" ? "Acesso Fundador" : "Founder Access"}
+                  </h3>
+                  <div className="mb-6">
+                    <div className="text-3xl font-light mb-2">¥980</div>
+                    <div className="text-sm text-muted-foreground font-light">
+                      {language === "ja" ? "月額（3ヶ月無料・永久価格）" : "per month (3 months free・forever)"}
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-2">
+                        {language === "ja" ? "残り" : "Remaining"} {countdown.days}
+                        {language === "ja" ? "日" : " days "}
+                        {countdown.hours}:{countdown.minutes}:{countdown.seconds}
+                      </div>
+                    </div>
+                    <ul className="space-y-2 mb-6 text-sm font-light">
+                      <li className="flex items-start">
+                        <span className="mr-2 text-muted-foreground">✓</span>
+                        <span className="text-muted-foreground">{language === "ja" ? "全技術動画へのアクセス" : "Access to all technique videos"}</span>
+                      </li>
+                      <li className="flex items-start">
+                        <span className="mr-2 text-muted-foreground">✓</span>
+                        <span className="text-muted-foreground">{language === "ja" ? "新規コンテンツの追加" : "New content additions"}</span>
+                      </li>
+                      <li className="flex items-start">
+                        <span className="mr-2 text-muted-foreground">🎨</span>
+                        <span className="text-muted-foreground">{language === "ja" ? "創設者NFTバッジ" : "Founder NFT badge"}</span>
+                      </li>
+                      <li className="flex items-start">
+                        <span className="mr-2 text-muted-foreground">🎯</span>
+                        <span className="text-muted-foreground">{language === "ja" ? "毎月500ポイント" : "500 points monthly"}</span>
+                      </li>
+                    </ul>
+                    <Button
+                      variant="outline"
+                      className="w-full"
+                      onClick={() => handleCheckout(PRICE_IDS.founder, true)}
+                      disabled={isLoading}
+                    >
+                      {language === "ja" ? "このプランを選択" : "Select Plan"}
+                    </Button>
                   </div>
                 )}
 
