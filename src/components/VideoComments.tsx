@@ -5,7 +5,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
-import { MessageSquare, Trash2, Coffee, Wine, Droplet, Pizza, Medal, Gem, Heart, Loader2, X } from "lucide-react";
+import { MessageSquare, Trash2, Coffee, Wine, Droplet, Pizza, Medal, Gem, Heart, Loader2 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { ja, ptBR } from "date-fns/locale";
 import confetti from "canvas-confetti";
@@ -34,8 +34,8 @@ interface TipItem {
 const tipItems: TipItem[] = [
   { 
     amount: 0, 
-    icon: <X className="w-4 h-4" />, 
-    label: { ja: "なし（勇気）", en: "None (Brave)", pt: "Nenhum (Coragem)" } 
+    icon: <Medal className="w-4 h-4" />, 
+    label: { ja: "金メダル", en: "Gold Medal", pt: "Medalha de Ouro" } 
   },
   { 
     amount: 300, 
@@ -48,12 +48,12 @@ const tipItems: TipItem[] = [
     label: { ja: "コーラ", en: "Cola", pt: "Cola" } 
   },
   { 
-    amount: 3000, 
+    amount: 60000, 
     icon: <Pizza className="w-4 h-4" />, 
     label: { ja: "寿司", en: "Sushi", pt: "Sushi" } 
   },
   { 
-    amount: 10000, 
+    amount: 40000, 
     icon: <Pizza className="w-4 h-4" />, 
     label: { ja: "焼肉", en: "BBQ", pt: "Churrasco" } 
   },
@@ -61,11 +61,6 @@ const tipItems: TipItem[] = [
     amount: 30000, 
     icon: <Wine className="w-4 h-4" />, 
     label: { ja: "シャンパン", en: "Champagne", pt: "Champanhe" } 
-  },
-  { 
-    amount: 100000, 
-    icon: <Medal className="w-4 h-4" />, 
-    label: { ja: "金メダル", en: "Gold Medal", pt: "Medalha de Ouro" } 
   },
   { 
     amount: 1000000, 
@@ -79,7 +74,7 @@ export const VideoComments = ({ videoId, userId }: VideoCommentsProps) => {
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [selectedTipAmount, setSelectedTipAmount] = useState<number>(500);
+  const [selectedTipAmount, setSelectedTipAmount] = useState<number>(0);
 
   useEffect(() => {
     loadComments();
@@ -199,7 +194,7 @@ export const VideoComments = ({ videoId, userId }: VideoCommentsProps) => {
       }
 
       setNewComment("");
-      setSelectedTipAmount(500); // リセットしてデフォルトに戻す
+      setSelectedTipAmount(0); // リセットしてデフォルトに戻す
       loadComments();
     } catch (error) {
       console.error("Error posting comment:", error);

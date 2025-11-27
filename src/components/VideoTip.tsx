@@ -45,12 +45,12 @@ export const VideoTip = ({ videoId }: VideoTipProps) => {
       label: { ja: "コーラ", en: "Cola", pt: "Cola" } 
     },
     { 
-      amount: 3000, 
+      amount: 60000, 
       icon: <Pizza className="w-4 h-4" />, 
       label: { ja: "寿司", en: "Sushi", pt: "Sushi" } 
     },
     { 
-      amount: 10000, 
+      amount: 40000, 
       icon: <Pizza className="w-4 h-4" />, 
       label: { ja: "焼肉", en: "BBQ", pt: "Churrasco" } 
     },
@@ -58,11 +58,6 @@ export const VideoTip = ({ videoId }: VideoTipProps) => {
       amount: 30000, 
       icon: <Wine className="w-4 h-4" />, 
       label: { ja: "シャンパン", en: "Champagne", pt: "Champanhe" } 
-    },
-    { 
-      amount: 100000, 
-      icon: <Medal className="w-4 h-4" />, 
-      label: { ja: "金メダル", en: "Gold Medal", pt: "Medalha de Ouro" } 
     },
     { 
       amount: 1000000, 
