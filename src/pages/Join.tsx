@@ -55,6 +55,7 @@ const PRICE_IDS = {
   founder: "price_1SR3ZmDqLakc8NxkNdqL5BtO", // ¥980/month
   monthly: "price_1SNQoeDqLakc8NxkEUVTTs3k", // ¥2,900/month
   annual: "price_1SNQoqDqLakc8NxkOaQIL8wX",  // ¥29,000/year
+  muratabros: "price_1SY2D0DqLakc8NxkMKonyIi8", // ¥50,000 one-time
 };
 
 // Sample video ID
@@ -114,7 +115,7 @@ const Join = () => {
   }, [searchParams, t.join.payment, language]);
 
   const handleVerifyCoupon = () => {
-    const validCoupons = ["MURATABJJ"];
+    const validCoupons = ["MURATABJJ", "MURATABROS"];
     const trimmedCode = couponCode.trim().toUpperCase();
     
     if (validCoupons.includes(trimmedCode)) {
@@ -153,16 +154,15 @@ const Join = () => {
         });
       }, 250);
 
-      toast.success(
-        language === "ja" 
-          ? "クーポンコードが適用されました！🎉" 
-          : "Coupon code applied! 🎉",
-        {
-          description: language === "ja"
-            ? "特別価格でご利用いただけます"
-            : "You can now access special pricing",
-        }
-      );
+      const message = trimmedCode === "MURATABROS" 
+        ? (language === "ja" ? "MURATABROS VIPアクセスが適用されました！🎉" : "MURATABROS VIP Access applied! 🎉")
+        : (language === "ja" ? "クーポンコードが適用されました！🎉" : "Coupon code applied! 🎉");
+
+      toast.success(message, {
+        description: language === "ja"
+          ? "特別価格でご利用いただけます"
+          : "You can now access special pricing",
+      });
     } else {
       toast.error(
         language === "ja" 
@@ -390,14 +390,86 @@ const Join = () => {
               </div>
 
               {/* Pricing */}
-              <div className={`grid ${couponVerified ? "md:grid-cols-1" : "md:grid-cols-2"} gap-8 mb-16 animate-fade-up ${couponVerified ? "max-w-md mx-auto" : ""}`}>
-                {/* Founder Access - Only show if coupon is verified */}
-                {couponVerified && (
-                  <div className="border border-primary p-8 shadow-lg">
+              <div className={`grid ${couponVerified ? "md:grid-cols-1" : "md:grid-cols-2"} gap-8 mb-16 animate-fade-up ${couponVerified ? "max-w-lg mx-auto" : ""}`}>
+                {/* MURATABROS VIP Access - Only show if coupon is MURATABROS */}
+                {couponVerified && couponCode === "MURATABROS" && (
+                  <div className="border-2 border-primary p-8 shadow-2xl relative bg-gradient-to-br from-primary/5 to-secondary/5">
+                    <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-primary to-secondary text-primary-foreground px-6 py-1 text-sm font-medium rounded-full shadow-lg">
+                      {language === "ja" ? "🌟 VIPアクセス" : "🌟 VIP Access"}
+                    </div>
+                    <h3 className="text-3xl font-light mb-4 mt-2 text-center">
+                      {language === "ja" ? "MURATABROS VIP" : "MURATABROS VIP"}
+                    </h3>
+                    <div className="mb-6 text-center">
+                      <div className="text-5xl font-light mb-2">¥50,000</div>
+                      <div className="text-sm text-muted-foreground font-light">
+                        {language === "ja" ? "一回払い（永久アクセス + NFT）" : "One-time payment (Lifetime + NFT)"}
+                      </div>
+                    </div>
+                    
+                    <div className="mb-6 p-4 bg-accent/10 border border-accent/30 rounded-lg">
+                      <h4 className="font-medium mb-3 text-center">
+                        {language === "ja" ? "🎁 VIP特典" : "🎁 VIP Benefits"}
+                      </h4>
+                      <ul className="space-y-2 text-sm font-light">
+                        <li className="flex items-start">
+                          <span className="mr-2">🏝️</span>
+                          <span>{language === "ja" ? "ハワイ合宿参加権" : "Hawaii Training Camp Access"}</span>
+                        </li>
+                        <li className="flex items-start">
+                          <span className="mr-2">♨️</span>
+                          <span>{language === "ja" ? "熱海リトリート" : "Atami Retreat"}</span>
+                        </li>
+                        <li className="flex items-start">
+                          <span className="mr-2">🏨</span>
+                          <span>{language === "ja" ? "Not A Hotel利用権" : "Not A Hotel Access"}</span>
+                        </li>
+                        <li className="flex items-start">
+                          <span className="mr-2">🚀</span>
+                          <span>{language === "ja" ? "Enabler利用権" : "Enabler Access"}</span>
+                        </li>
+                        <li className="flex items-start">
+                          <span className="mr-2">✈️</span>
+                          <span>{language === "ja" ? "Honda Jet利用権" : "Honda Jet Usage Rights"}</span>
+                        </li>
+                      </ul>
+                    </div>
+
+                    <ul className="space-y-3 mb-6 text-sm font-light">
+                      <li className="flex items-start">
+                        <span className="mr-2">✓</span>
+                        <span>{language === "ja" ? "全技術動画への永久アクセス" : "Lifetime access to all technique videos"}</span>
+                      </li>
+                      <li className="flex items-start">
+                        <span className="mr-2">🎨</span>
+                        <span>{language === "ja" ? "限定NFTバッジ付与" : "Exclusive NFT badge included"}</span>
+                      </li>
+                      <li className="flex items-start">
+                        <span className="mr-2">🎯</span>
+                        <span>{language === "ja" ? "10,000ポイント即時付与" : "10,000 points instantly awarded"}</span>
+                      </li>
+                      <li className="flex items-start">
+                        <span className="mr-2">👥</span>
+                        <span>{language === "ja" ? "専用紹介コード発行（1人紹介で1,000pt）" : "Dedicated referral code (1,000pts per referral)"}</span>
+                      </li>
+                    </ul>
+                    <Button
+                      className="w-full h-14 text-lg bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90 shadow-lg"
+                      onClick={() => handleCheckout(PRICE_IDS.muratabros, false)}
+                      disabled={isLoading}
+                    >
+                      {language === "ja" ? "VIPアクセスを取得" : "Get VIP Access"}
+                    </Button>
+                  </div>
+                )}
+
+                {/* Founder Access - Only show if coupon is MURATABJJ */}
+                {couponVerified && couponCode === "MURATABJJ" && (
+                  <div className="border border-primary p-8 shadow-lg relative">
                   <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-primary text-primary-foreground px-4 py-1 text-xs font-light">
                     {language === "ja" ? "特別オファー" : language === "pt" ? "Oferta Especial" : "Special Offer"}
                   </div>
-                  <h3 className="text-2xl font-light mb-4">
+                  <h3 className="text-2xl font-light mb-4 mt-2">
                     {language === "ja" ? "創設者アクセス" : language === "pt" ? "Acesso Fundador" : "Founder Access"}
                   </h3>
                   <div className="mb-6">
@@ -423,6 +495,14 @@ const Join = () => {
                       <li className="flex items-start">
                         <span className="mr-2">✓</span>
                         <span>{language === "ja" ? "¥980/月を永久に維持" : language === "pt" ? "Manter ¥980/mês para sempre" : "Keep ¥980/month forever"}</span>
+                      </li>
+                      <li className="flex items-start">
+                        <span className="mr-2">🎨</span>
+                        <span>{language === "ja" ? "創設者NFTバッジ" : language === "pt" ? "Badge NFT de Fundador" : "Founder NFT badge"}</span>
+                      </li>
+                      <li className="flex items-start">
+                        <span className="mr-2">🎯</span>
+                        <span>{language === "ja" ? "毎月500ポイント付与" : language === "pt" ? "500 pontos por mês" : "500 points monthly"}</span>
                       </li>
                     </ul>
                     <Button
@@ -463,6 +543,18 @@ const Join = () => {
                         <span className="mr-2">✓</span>
                         <span>{language === "ja" ? "柔軟な支払い" : language === "pt" ? "Pagamento flexível" : "Flexible payment"}</span>
                       </li>
+                      <li className="flex items-start">
+                        <span className="mr-2">🎨</span>
+                        <span>{language === "ja" ? "月額会員NFTバッジ" : language === "pt" ? "Badge NFT mensal" : "Monthly member NFT badge"}</span>
+                      </li>
+                      <li className="flex items-start">
+                        <span className="mr-2">🎯</span>
+                        <span>{language === "ja" ? "毎月100ポイント付与" : language === "pt" ? "100 pontos por mês" : "100 points monthly"}</span>
+                      </li>
+                      <li className="flex items-start">
+                        <span className="mr-2">👥</span>
+                        <span>{language === "ja" ? "紹介コード発行（1人紹介で500pt）" : language === "pt" ? "Código de referência (500pts por indicação)" : "Referral code (500pts per referral)"}</span>
+                      </li>
                     </ul>
                     <Button
                       className="w-full"
@@ -499,6 +591,18 @@ const Join = () => {
                       <span className="mr-2">✓</span>
                       <span>{language === "ja" ? "最大の節約" : language === "pt" ? "Melhor economia" : "Best value"}</span>
                     </li>
+                    <li className="flex items-start">
+                      <span className="mr-2">🎨</span>
+                      <span>{language === "ja" ? "年間会員NFTバッジ" : language === "pt" ? "Badge NFT anual" : "Annual member NFT badge"}</span>
+                    </li>
+                    <li className="flex items-start">
+                      <span className="mr-2">🎯</span>
+                      <span>{language === "ja" ? "一括で1,500ポイント付与" : language === "pt" ? "1.500 pontos de uma vez" : "1,500 points upfront"}</span>
+                    </li>
+                    <li className="flex items-start">
+                      <span className="mr-2">👥</span>
+                      <span>{language === "ja" ? "紹介コード発行（1人紹介で500pt）" : language === "pt" ? "Código de referência (500pts por indicação)" : "Referral code (500pts per referral)"}</span>
+                    </li>
                   </ul>
                   <Button
                     className="w-full"
@@ -509,6 +613,48 @@ const Join = () => {
                   </Button>
                   </div>
                 )}
+              </div>
+
+              {/* Rewards System Explanation */}
+              <div className="mt-16 p-8 border border-border rounded-lg bg-muted/30 animate-fade-up">
+                <h3 className="text-2xl font-light mb-6 text-center">
+                  {language === "ja" ? "🎁 リワードシステム" : "🎁 Rewards System"}
+                </h3>
+                <div className="grid md:grid-cols-3 gap-6">
+                  <div className="text-center p-4">
+                    <div className="text-4xl mb-3">🎨</div>
+                    <h4 className="font-medium mb-2">
+                      {language === "ja" ? "NFTバッジ" : "NFT Badges"}
+                    </h4>
+                    <p className="text-sm text-muted-foreground">
+                      {language === "ja" 
+                        ? "プラン購入時に限定NFTを自動付与。コレクションとして保有可能"
+                        : "Exclusive NFTs automatically awarded with plan purchase"}
+                    </p>
+                  </div>
+                  <div className="text-center p-4">
+                    <div className="text-4xl mb-3">🎯</div>
+                    <h4 className="font-medium mb-2">
+                      {language === "ja" ? "ポイント" : "Points"}
+                    </h4>
+                    <p className="text-sm text-muted-foreground">
+                      {language === "ja" 
+                        ? "毎月・毎年ポイント獲得。限定コンテンツやグッズ交換に使用可能"
+                        : "Earn points monthly/yearly. Use for exclusive content and merchandise"}
+                    </p>
+                  </div>
+                  <div className="text-center p-4">
+                    <div className="text-4xl mb-3">👥</div>
+                    <h4 className="font-medium mb-2">
+                      {language === "ja" ? "紹介制度" : "Referral Program"}
+                    </h4>
+                    <p className="text-sm text-muted-foreground">
+                      {language === "ja" 
+                        ? "専用紹介コードで友達を招待。1人紹介ごとにポイント獲得"
+                        : "Invite friends with your unique code and earn points per referral"}
+                    </p>
+                  </div>
+                </div>
               </div>
 
               {/* FAQ */}
