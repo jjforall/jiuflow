@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { ArrowRight, Lock, PlayCircle } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 
 interface TechniqueStats {
   category: string;
@@ -89,11 +90,12 @@ const About = () => {
             ) : (
               <div className="space-y-12">
                 {/* Flow visualization */}
-                <div className="flex flex-col md:flex-row items-center justify-center gap-8 md:gap-4">
-                  {techniqueStats.map((stat, index) => (
-                    <div key={stat.category} className="flex items-center gap-4">
+                <ScrollArea className="w-full">
+                  <div className="flex items-center gap-4 pb-4" style={{ minWidth: 'max-content' }}>
+                    {techniqueStats.map((stat, index) => (
+                    <div key={stat.category} className="flex items-center gap-4 flex-shrink-0">
                       {/* Category Card */}
-                       <div className="bg-card border border-border rounded-xl p-6 w-64 shadow-lg hover:shadow-xl transition-all">
+                       <div className="bg-card border border-border rounded-xl p-6 w-64 shadow-lg hover:shadow-xl transition-all flex-shrink-0">
                         <div className="text-center mb-4">
                           <h3 className="text-2xl font-light mb-2">
                             {stat.category === "pull" 
@@ -148,11 +150,13 @@ const About = () => {
                       
                       {/* Arrow */}
                       {index < techniqueStats.length - 1 && (
-                        <ArrowRight className="hidden md:block w-8 h-8 text-muted-foreground flex-shrink-0" />
+                        <ArrowRight className="w-8 h-8 text-muted-foreground flex-shrink-0" />
                       )}
                     </div>
                   ))}
-                </div>
+                  </div>
+                  <ScrollBar orientation="horizontal" />
+                </ScrollArea>
 
                 {/* CTA for more */}
                 <div className="text-center mt-12 p-8 bg-gradient-to-br from-primary/5 to-transparent border border-border rounded-xl">
