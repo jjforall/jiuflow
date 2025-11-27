@@ -14,6 +14,66 @@ export type Database = {
   }
   public: {
     Tables: {
+      brothers_applications: {
+        Row: {
+          application_year: number
+          created_at: string
+          id: string
+          metadata: Json | null
+          next_eligible_date: string | null
+          rejection_reason: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: Database["public"]["Enums"]["application_status"]
+          submitted_at: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          application_year: number
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          next_eligible_date?: string | null
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: Database["public"]["Enums"]["application_status"]
+          submitted_at?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          application_year?: number
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          next_eligible_date?: string | null
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: Database["public"]["Enums"]["application_status"]
+          submitted_at?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "brothers_applications_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "brothers_applications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lifetime_plan_count: {
         Row: {
           count: number
@@ -390,6 +450,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_apply_for_brothers: { Args: { user_uuid: string }; Returns: boolean }
       generate_referral_code: { Args: never; Returns: string }
       has_role: {
         Args: {
@@ -398,9 +459,20 @@ export type Database = {
         }
         Returns: boolean
       }
+      reject_brothers_application: {
+        Args: { application_id: string; reason: string }
+        Returns: undefined
+      }
     }
     Enums: {
       app_role: "admin" | "user" | "staff"
+      application_status:
+        | "pending"
+        | "approved"
+        | "rejected"
+        | "renewal_pending"
+        | "renewal_approved"
+        | "renewal_rejected"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -529,6 +601,14 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "user", "staff"],
+      application_status: [
+        "pending",
+        "approved",
+        "rejected",
+        "renewal_pending",
+        "renewal_approved",
+        "renewal_rejected",
+      ],
     },
   },
 } as const
