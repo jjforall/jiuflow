@@ -1,16 +1,27 @@
-import { Link } from "react-router-dom";
+import { useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import Navigation from "@/components/Navigation";
 import { useTranslation } from "@/hooks/useTranslation";
 import { translations } from "@/lib/translations";
 import { useHeroImages } from "@/hooks/useHeroImages";
+import { useAuth } from "@/hooks/useAuth";
 import Footer from "@/components/Footer";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const Home = () => {
+  const navigate = useNavigate();
+  const { user, isLoading: authLoading } = useAuth();
   const { language } = useTranslation();
   const t = translations[language] || translations.ja; // Fallback to Japanese
   const { images, isLoading, currentIndex, totalImages } = useHeroImages();
+
+  // Redirect logged-in users immediately to the map page
+  useEffect(() => {
+    if (!authLoading && user) {
+      navigate("/map", { replace: true });
+    }
+  }, [user, authLoading, navigate]);
 
 
   return (
