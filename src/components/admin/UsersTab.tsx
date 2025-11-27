@@ -13,7 +13,8 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { 
   CreateUserDialog, 
   EditProfileDialog, 
-  PasswordChangeDialog 
+  PasswordChangeDialog,
+  DeleteUserDialog
 } from "./dialogs";
 
 export const UsersTab = () => {
@@ -31,10 +32,12 @@ export const UsersTab = () => {
   const [showCreateUserDialog, setShowCreateUserDialog] = useState(false);
   const [showEditProfileDialog, setShowEditProfileDialog] = useState(false);
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   
   // Form states
   const [editingProfile, setEditingProfile] = useState<Profile | null>(null);
   const [passwordChangeUserId, setPasswordChangeUserId] = useState<string | null>(null);
+  const [deletingUser, setDeletingUser] = useState<{ id: string; email: string } | null>(null);
   const [newPassword, setNewPassword] = useState("");
   const [newUserData, setNewUserData] = useState<NewUserData>({
     email: "",
@@ -227,6 +230,40 @@ export const UsersTab = () => {
     setShowPasswordDialog(true);
   };
 
+  const openDeleteDialog = (userId: string, userEmail: string) => {
+    setDeletingUser({ id: userId, email: userEmail });
+    setShowDeleteDialog(true);
+  };
+
+  const handleDeleteUser = async () => {
+    if (!deletingUser) return;
+
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("delete-user", {
+        body: { userId: deletingUser.id },
+      });
+
+      if (error) throw error;
+      if (data.error) throw new Error(data.error);
+
+      toast.success("削除完了", {
+        description: `${deletingUser.email} を削除しました`,
+      });
+
+      setShowDeleteDialog(false);
+      setDeletingUser(null);
+      loadProfiles();
+    } catch (error: unknown) {
+      console.error("Delete user error:", error);
+      toast.error("エラー", {
+        description: (error instanceof Error ? error.message : String(error)) || "ユーザーの削除に失敗しました",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // Filter and sort profiles
   const filteredProfiles = profiles.filter(profile => {
     const query = searchQuery.toLowerCase();
@@ -348,7 +385,7 @@ export const UsersTab = () => {
                         {new Date(profile.created_at).toLocaleString('ja-JP')}
                       </td>
                       <td className="px-4 py-3">
-                        <div className="flex gap-2 justify-end">
+                        <div className="flex gap-2 justify-end flex-wrap">
                           {isAdmin && (
                             <>
                               <Button
@@ -372,6 +409,14 @@ export const UsersTab = () => {
                                 disabled={isLoading}
                               >
                                 {isAdminUser ? '管理者解除' : '管理者にする'}
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={() => openDeleteDialog(profile.id, profile.email || 'N/A')}
+                                disabled={isLoading}
+                              >
+                                削除
                               </Button>
                             </>
                           )}
@@ -460,6 +505,15 @@ export const UsersTab = () => {
                           >
                             {isAdminUser ? '管理者解除' : '管理者にする'}
                           </Button>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => openDeleteDialog(profile.id, profile.email || 'N/A')}
+                            disabled={isLoading}
+                            className="w-full"
+                          >
+                            削除
+                          </Button>
                         </div>
                       )}
                     </div>
@@ -496,6 +550,14 @@ export const UsersTab = () => {
         newPassword={newPassword}
         setNewPassword={setNewPassword}
         onSubmit={handlePasswordChange}
+        isLoading={isLoading}
+      />
+
+      <DeleteUserDialog
+        open={showDeleteDialog}
+        onOpenChange={setShowDeleteDialog}
+        userEmail={deletingUser?.email || null}
+        onConfirm={handleDeleteUser}
         isLoading={isLoading}
       />
     </div>
