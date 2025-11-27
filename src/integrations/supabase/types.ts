@@ -275,8 +275,12 @@ export type Database = {
           series_name: string | null
           series_order: number | null
           thumbnail_url: string | null
+          thumbnail_url_ja: string | null
+          thumbnail_url_pt: string | null
           updated_at: string | null
           video_url: string | null
+          video_url_ja: string | null
+          video_url_pt: string | null
         }
         Insert: {
           category: string
@@ -293,8 +297,12 @@ export type Database = {
           series_name?: string | null
           series_order?: number | null
           thumbnail_url?: string | null
+          thumbnail_url_ja?: string | null
+          thumbnail_url_pt?: string | null
           updated_at?: string | null
           video_url?: string | null
+          video_url_ja?: string | null
+          video_url_pt?: string | null
         }
         Update: {
           category?: string
@@ -311,8 +319,12 @@ export type Database = {
           series_name?: string | null
           series_order?: number | null
           thumbnail_url?: string | null
+          thumbnail_url_ja?: string | null
+          thumbnail_url_pt?: string | null
           updated_at?: string | null
           video_url?: string | null
+          video_url_ja?: string | null
+          video_url_pt?: string | null
         }
         Relationships: []
       }
