@@ -37,7 +37,7 @@ const Video = () => {
   const t = translations[language] || translations.ja; // Fallback to Japanese
   const navigate = useNavigate();
   const { subscribed, loading: subscriptionLoading } = useSubscription();
-  const { isAdmin } = useAuth();
+  const { isAdmin, isStaff } = useAuth();
   const [technique, setTechnique] = useState<Technique | null>(null);
   const [seriesVideos, setSeriesVideos] = useState<Technique[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -150,7 +150,7 @@ const Video = () => {
     );
   }
 
-  if (!subscribed && !isAdmin) {
+  if (!subscribed && !isAdmin && !isStaff) {
     return (
       <div className="min-h-screen">
         <Navigation />
