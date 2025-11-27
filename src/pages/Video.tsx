@@ -31,11 +31,15 @@ interface Technique {
   description_pt: string | null;
   category: "pull" | "control" | "submission";
   video_url: string | null;
+  video_url_ja: string | null;
+  video_url_pt: string | null;
   display_order: number;
   hashtags: string[];
   series_name: string | null;
   series_order: number | null;
   thumbnail_url: string | null;
+  thumbnail_url_ja: string | null;
+  thumbnail_url_pt: string | null;
 }
 
 const Video = () => {
@@ -231,6 +235,28 @@ const Video = () => {
     }
   };
 
+  const getTechniqueVideoUrl = (tech: Technique) => {
+    switch (language) {
+      case "ja":
+        return tech.video_url_ja || tech.video_url;
+      case "pt":
+        return tech.video_url_pt || tech.video_url;
+      default:
+        return tech.video_url;
+    }
+  };
+
+  const getTechniqueThumbnailUrl = (tech: Technique) => {
+    switch (language) {
+      case "ja":
+        return tech.thumbnail_url_ja || tech.thumbnail_url;
+      case "pt":
+        return tech.thumbnail_url_pt || tech.thumbnail_url;
+      default:
+        return tech.thumbnail_url;
+    }
+  };
+
   if (isCheckingAuth || isLoading || subscriptionLoading) {
     return (
       <div className="min-h-screen">
@@ -391,8 +417,8 @@ const Video = () => {
             <div className="flex-1">
               {/* Video Player */}
               <div className="w-full bg-muted rounded-lg overflow-hidden">
-                {technique.video_url ? (
-                  <VideoPlayer videoUrl={technique.video_url} autoPlay />
+                {getTechniqueVideoUrl(technique) ? (
+                  <VideoPlayer videoUrl={getTechniqueVideoUrl(technique)!} autoPlay />
                 ) : (
                   <div className="aspect-video flex items-center justify-center">
                     <div className="text-center text-muted-foreground">
@@ -584,10 +610,10 @@ const Video = () => {
                         to={`/video/${video.id}`}
                         className="block group"
                       >
-                        <div className="flex gap-3 hover:bg-muted/50 p-2 rounded-lg transition-colors">
+                         <div className="flex gap-3 hover:bg-muted/50 p-2 rounded-lg transition-colors">
                           <div className="flex-shrink-0 w-40 h-24 relative">
                             <VideoThumbnail
-                              videoUrl={video.video_url || ""}
+                              videoUrl={getTechniqueVideoUrl(video)}
                               className="w-full h-full object-cover rounded"
                               showPlayButton
                             />

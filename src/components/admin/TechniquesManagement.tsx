@@ -28,7 +28,11 @@ interface Technique {
   description_pt: string | null;
   category: string;
   video_url: string | null;
+  video_url_ja: string | null;
+  video_url_pt: string | null;
   thumbnail_url: string | null;
+  thumbnail_url_ja: string | null;
+  thumbnail_url_pt: string | null;
   display_order: number;
   hashtags: string[];
   series_name: string | null;
