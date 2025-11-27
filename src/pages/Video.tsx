@@ -9,11 +9,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useAuth } from "@/hooks/useAuth";
-import { Lock, Eye } from "lucide-react";
+import { Lock, Eye, Target, Trophy, Flame } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { VideoPlayer } from "@/components/VideoPlayer";
 import { VideoThumbnail } from "@/components/ui/video-thumbnail";
 import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { Card } from "@/components/ui/card";
 
 interface Technique {
   id: string;
@@ -384,25 +386,112 @@ const Video = () => {
               </div>
 
               {/* Technique Info */}
-              <div className="mt-6 animate-fade-up">
-                <div className="flex items-center gap-3 mb-2">
+              <div className="mt-6 animate-fade-up space-y-4">
+                <div className="flex flex-col gap-3">
                   <h1 className="text-3xl md:text-4xl font-light">{getTechniqueName(technique)}</h1>
-                  {viewCount > 0 && (
-                    <Badge variant="secondary" className="flex items-center gap-1">
-                      <Eye className="w-3 h-3" />
-                      <span className="text-xs">
-                        {language === "ja" 
-                          ? `${viewCount}回視聴` 
-                          : language === "pt" 
-                          ? `${viewCount}x visto` 
-                          : `Viewed ${viewCount}x`}
-                      </span>
-                    </Badge>
-                  )}
+                  <span className="inline-block px-3 py-1 text-xs border border-border w-fit">
+                    {technique.category}
+                  </span>
                 </div>
-                <span className="inline-block px-3 py-1 text-xs border border-border">
-                  {technique.category}
-                </span>
+
+                {/* View Counter Card */}
+                <Card className="p-6 bg-gradient-to-br from-primary/5 to-transparent border-primary/20">
+                  <div className="space-y-4">
+                    {/* Main Counter Display */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center justify-center w-12 h-12 rounded-full bg-primary/10">
+                          {viewCount >= 100 ? (
+                            <Trophy className="w-6 h-6 text-primary animate-pulse" />
+                          ) : viewCount >= 10 ? (
+                            <Flame className="w-6 h-6 text-primary" />
+                          ) : (
+                            <Target className="w-6 h-6 text-primary" />
+                          )}
+                        </div>
+                        <div>
+                          <div className="text-3xl font-light text-primary">
+                            {viewCount}
+                            <span className="text-lg text-muted-foreground ml-2">
+                              {language === "ja" ? "回" : language === "pt" ? "x" : "times"}
+                            </span>
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            {language === "ja" 
+                              ? "繰り返し見て習得" 
+                              : language === "pt" 
+                              ? "Repetir para dominar" 
+                              : "Repeat to master"}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-sm font-medium text-muted-foreground">
+                          {language === "ja" ? "目標" : language === "pt" ? "Meta" : "Goal"}
+                        </div>
+                        <div className="text-2xl font-light">
+                          100<span className="text-sm text-muted-foreground ml-1">
+                            {language === "ja" ? "回" : language === "pt" ? "x" : "times"}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Progress Bar */}
+                    <div className="space-y-2">
+                      <Progress value={Math.min((viewCount / 100) * 100, 100)} className="h-2" />
+                      <div className="flex justify-between text-xs text-muted-foreground">
+                        <span>
+                          {language === "ja" 
+                            ? `あと${Math.max(0, 100 - viewCount)}回` 
+                            : language === "pt" 
+                            ? `Faltam ${Math.max(0, 100 - viewCount)}` 
+                            : `${Math.max(0, 100 - viewCount)} more`}
+                        </span>
+                        <span>{Math.min(Math.round((viewCount / 100) * 100), 100)}%</span>
+                      </div>
+                    </div>
+
+                    {/* Milestones */}
+                    <div className="flex gap-2 flex-wrap">
+                      {[10, 50, 100].map((milestone) => (
+                        <Badge
+                          key={milestone}
+                          variant={viewCount >= milestone ? "default" : "outline"}
+                          className={viewCount >= milestone ? "animate-scale-in" : ""}
+                        >
+                          {viewCount >= milestone && "✓ "}
+                          {milestone}
+                          {language === "ja" ? "回" : language === "pt" ? "x" : "x"}
+                        </Badge>
+                      ))}
+                    </div>
+
+                    {/* Motivational Message */}
+                    {viewCount >= 100 && (
+                      <div className="text-center p-3 bg-primary/10 rounded-lg animate-fade-in">
+                        <p className="text-sm font-medium text-primary">
+                          {language === "ja" 
+                            ? "🎉 100回達成！マスターレベル！" 
+                            : language === "pt" 
+                            ? "🎉 100x alcançado! Nível Master!" 
+                            : "🎉 100 views! Master level!"}
+                        </p>
+                      </div>
+                    )}
+                    {viewCount >= 10 && viewCount < 100 && (
+                      <div className="text-center p-3 bg-accent/10 rounded-lg animate-fade-in">
+                        <p className="text-sm text-muted-foreground">
+                          {language === "ja" 
+                            ? "🔥 いい調子！継続は力なり" 
+                            : language === "pt" 
+                            ? "🔥 Ótimo ritmo! Continue assim" 
+                            : "🔥 Great pace! Keep it up"}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </Card>
               </div>
 
               {getTechniqueDescription(technique) && (
