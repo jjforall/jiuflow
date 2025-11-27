@@ -113,7 +113,8 @@ const AdminLogin = () => {
         toast.success("Login successful", {
           description: "Welcome to admin panel",
         });
-        navigate("/admin/dashboard");
+        // Use window.location to ensure auth state is fully loaded
+        window.location.href = "/admin/dashboard";
       }
     } catch (error: unknown) {
       toast.error("Login failed", {
