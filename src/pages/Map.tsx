@@ -27,7 +27,7 @@ interface Technique {
   description: string | null;
   description_ja: string | null;
   description_pt: string | null;
-  category: "pull" | "control" | "submission" | "guard-pass";
+  category: "pull" | "control" | "submission" | "combat-base";
   video_url: string | null;
   thumbnail_url: string | null;
   display_order: number;
@@ -36,8 +36,10 @@ interface Technique {
   series_order: number | null;
 }
 
-interface GroupedTechniques {
-  [seriesName: string]: Technique[];
+interface CategoryTechniques {
+  [category: string]: {
+    [seriesName: string]: Technique[];
+  };
 }
 
 const Map = () => {
@@ -55,7 +57,7 @@ const Map = () => {
   const [hasMore, setHasMore] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [showUploadDialog, setShowUploadDialog] = useState(false);
-  const [groupedTechniques, setGroupedTechniques] = useState<GroupedTechniques>({});
+  const [categoryTechniques, setCategoryTechniques] = useState<CategoryTechniques>({});
   const observerTarget = useRef<HTMLDivElement>(null);
   const PAGE_SIZE = 50;
 
@@ -91,7 +93,7 @@ const Map = () => {
 
   const categoryLabels: Record<string, { en: string; ja: string; pt: string }> = {
     pull: { en: "Pull", ja: "引き込み", pt: "Puxada" },
-    "guard-pass": { en: "Guard Pass", ja: "ガードパス", pt: "Passagem de Guarda" },
+    "combat-base": { en: "Combat Base", ja: "コンバットベース", pt: "Base de Combate" },
     control: { en: "Control", ja: "コントロール", pt: "Controle" },
     submission: { en: "Submission", ja: "極め技", pt: "Finalização" },
   };
@@ -111,10 +113,10 @@ const Map = () => {
   };
 
   const categoryColors: Record<string, string> = {
-    pull: "bg-secondary/10 border-secondary hover:bg-secondary/20",
-    "guard-pass": "bg-primary/10 border-primary hover:bg-primary/20",
-    control: "bg-accent/10 border-accent hover:bg-accent/20",
-    submission: "bg-destructive/10 border-destructive hover:bg-destructive/20",
+    pull: "bg-blue-500/10 border-blue-500",
+    "combat-base": "bg-orange-500/10 border-orange-500",
+    control: "bg-green-500/10 border-green-500",
+    submission: "bg-red-500/10 border-red-500",
   };
 
   // Check authentication
@@ -158,18 +160,23 @@ const Map = () => {
           );
         }
         
-        // Group techniques by series_name
-        const grouped: GroupedTechniques = {};
+        // Group techniques by category first, then by series
+        const categoryGroups: CategoryTechniques = {};
         filteredData.forEach(tech => {
+          const category = tech.category || "other";
           const seriesName = tech.series_name || "その他の技";
-          if (!grouped[seriesName]) {
-            grouped[seriesName] = [];
+          
+          if (!categoryGroups[category]) {
+            categoryGroups[category] = {};
           }
-          grouped[seriesName].push(tech);
+          if (!categoryGroups[category][seriesName]) {
+            categoryGroups[category][seriesName] = [];
+          }
+          categoryGroups[category][seriesName].push(tech);
         });
         
         setTechniques(filteredData);
-        setGroupedTechniques(grouped);
+        setCategoryTechniques(categoryGroups);
         setHasMore(false);
       }
     } catch (error) {
@@ -375,107 +382,95 @@ const Map = () => {
               <p className="text-lg text-muted-foreground">{language === "ja" ? "テクニックがまだ追加されていません" : language === "pt" ? "Nenhuma técnica adicionada ainda" : "No techniques added yet"}</p>
             </div>
           ) : (
-            <div className="animate-fade-up space-y-4 max-w-5xl mx-auto">
-              {/* Accordion Series View */}
-              <Accordion type="multiple" className="w-full space-y-3">
-                {Object.entries(groupedTechniques).map(([seriesName, seriesTechs], seriesIndex) => {
-                  const seriesLetter = String.fromCharCode(65 + seriesIndex); // A, B, C, ...
-                  return (
-                  <AccordionItem 
-                    key={seriesName} 
-                    value={seriesName}
-                    className="border rounded-xl bg-card shadow-sm overflow-hidden"
-                  >
-                    <AccordionTrigger className="px-4 md:px-6 py-4 hover:no-underline hover:bg-muted/50 transition-colors">
-                      <div className="flex items-center justify-between w-full pr-4">
-                        <div className="flex items-center gap-3 text-left">
-                          <div className="flex items-center justify-center w-8 h-8 md:w-10 md:h-10 rounded-full bg-primary/10 text-primary font-semibold text-sm md:text-base flex-shrink-0">
-                            {seriesTechs.length}
-                          </div>
-                          <div>
-                            <h3 className="text-base md:text-lg font-semibold text-foreground">
-                              {seriesLetter}. {seriesName}
-                            </h3>
-                            <p className="text-xs md:text-sm text-muted-foreground">
-                              {language === "ja" 
-                                ? `${seriesTechs.length}本の動画` 
-                                : language === "pt" 
-                                ? `${seriesTechs.length} vídeos` 
-                                : `${seriesTechs.length} videos`}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    </AccordionTrigger>
-                    <AccordionContent className="px-0 pb-0">
-                      <div className="divide-y divide-border">
-                        {seriesTechs.map((tech, index) => (
-                          <Link
-                            key={tech.id}
-                            to={`/video/${tech.id}`}
-                            className="flex items-center gap-3 md:gap-4 p-3 md:p-4 hover:bg-muted/50 transition-colors group"
-                          >
-                            {/* Number Badge */}
-                            <div className="flex items-center justify-center min-w-[2.5rem] h-8 md:h-10 px-2 rounded-lg bg-muted text-muted-foreground font-semibold text-xs md:text-sm flex-shrink-0 group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
-                              {seriesLetter}-{tech.series_order || index + 1}
-                            </div>
-                            
-                            {/* Thumbnail */}
-                            <div className="w-24 md:w-32 aspect-video rounded-lg overflow-hidden bg-muted flex-shrink-0 shadow-sm group-hover:shadow-md transition-shadow">
-                              {tech.thumbnail_url ? (
-                                <img 
-                                  src={tech.thumbnail_url} 
-                                  alt={getTechniqueName(tech)}
-                                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                                  loading="lazy"
-                                />
-                              ) : (
-                                <div className="w-full h-full flex items-center justify-center">
-                                  <div className="text-muted-foreground text-2xl">▶</div>
-                                </div>
-                              )}
-                            </div>
+            <div className="animate-fade-up space-y-6 max-w-6xl mx-auto">
+              {/* Category-based Accordion */}
+              {Object.entries(categoryTechniques).map(([category, seriesGroups]) => (
+                <div key={category} className="space-y-3">
+                  {/* Category Header */}
+                  <div className={`border-l-4 pl-4 py-2 ${categoryColors[category] || "border-muted"}`}>
+                    <h2 className="text-2xl md:text-3xl font-light">
+                      {getCategoryLabel(category)}
+                    </h2>
+                    <p className="text-sm text-muted-foreground">
+                      {Object.values(seriesGroups).reduce((acc, series) => acc + series.length, 0)} {language === "ja" ? "本の動画" : "videos"}
+                    </p>
+                  </div>
 
-                            {/* Title and Description */}
-                            <div className="flex-1 min-w-0">
-                              <h4 className="font-medium text-sm md:text-base text-foreground line-clamp-2 group-hover:text-primary transition-colors">
-                                {getTechniqueName(tech)}
-                              </h4>
-                              {getTechniqueDescription(tech) && (
-                                <p className="text-xs md:text-sm text-muted-foreground line-clamp-1 mt-1">
-                                  {getTechniqueDescription(tech)}
-                                </p>
-                              )}
-                              {/* Category Badge */}
-                              <div className="mt-2">
-                                <span className="inline-block text-[10px] md:text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
-                                  {getCategoryLabel(tech.category)}
-                                </span>
+                  {/* Series Accordion within Category */}
+                  <Accordion type="multiple" className="w-full space-y-2">
+                    {Object.entries(seriesGroups).map(([seriesName, seriesTechs], seriesIndex) => {
+                      const seriesLetter = String.fromCharCode(65 + seriesIndex);
+                      return (
+                        <AccordionItem 
+                          key={seriesName} 
+                          value={`${category}-${seriesName}`}
+                          className="border rounded-xl bg-card shadow-sm overflow-hidden"
+                        >
+                          <AccordionTrigger className="px-4 md:px-6 py-3 hover:no-underline hover:bg-muted/50 transition-colors [&[data-state=open]>svg]:rotate-180">
+                            <div className="flex items-center justify-between w-full pr-4">
+                              <div className="flex items-center gap-3 text-left">
+                                <div className={`flex items-center justify-center w-8 h-8 md:w-10 md:h-10 rounded-full font-semibold text-sm md:text-base flex-shrink-0 ${categoryColors[category]}`}>
+                                  {seriesTechs.length}
+                                </div>
+                                <div>
+                                  <h3 className="text-base md:text-lg font-medium text-foreground">
+                                    {seriesLetter}. {seriesName}
+                                  </h3>
+                                  <p className="text-xs md:text-sm text-muted-foreground">
+                                    {language === "ja" 
+                                      ? `${seriesTechs.length}本の動画` 
+                                      : language === "pt" 
+                                      ? `${seriesTechs.length} vídeos` 
+                                      : `${seriesTechs.length} videos`}
+                                  </p>
+                                </div>
                               </div>
                             </div>
+                          </AccordionTrigger>
+                          <AccordionContent className="px-0 pb-0">
+                            <div className="divide-y divide-border">
+                              {seriesTechs.map((tech, index) => (
+                                <Link
+                                  key={tech.id}
+                                  to={`/video/${tech.id}`}
+                                  className="flex items-center gap-3 md:gap-4 p-3 md:p-4 hover:bg-muted/50 transition-colors group"
+                                >
+                                  <div className="flex items-center justify-center min-w-[2.5rem] h-8 md:h-10 px-2 rounded-lg bg-muted text-muted-foreground font-semibold text-xs md:text-sm flex-shrink-0 group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                                    {seriesLetter}-{tech.series_order || index + 1}
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <h4 className="text-sm md:text-base font-medium text-foreground group-hover:text-primary transition-colors truncate">
+                                      {getTechniqueName(tech)}
+                                    </h4>
+                                    {getTechniqueDescription(tech) && (
+                                      <p className="text-xs md:text-sm text-muted-foreground line-clamp-1">
+                                        {getTechniqueDescription(tech)}
+                                      </p>
+                                    )}
+                                  </div>
+                                  <ChevronDown className="w-4 h-4 text-muted-foreground -rotate-90 flex-shrink-0" />
+                                </Link>
+                              ))}
+                            </div>
+                          </AccordionContent>
+                        </AccordionItem>
+                      );
+                    })}
+                  </Accordion>
+                </div>
+              ))}
+            </div>
+          )}
 
-                            {/* Arrow Icon */}
-                            <ChevronDown className="w-5 h-5 text-muted-foreground -rotate-90 flex-shrink-0 group-hover:text-primary transition-colors" />
-                          </Link>
-                        ))}
-                      </div>
-                    </AccordionContent>
-                  </AccordionItem>
-                );
-                })}
-              </Accordion>
-
-              {/* Infinite Scroll Observer */}
-              {hasMore && (
-                <div ref={observerTarget} className="flex justify-center py-8">
-                  {isLoadingMore && (
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                      <span className="text-sm">
-                        {language === "ja" ? "読み込み中..." : language === "pt" ? "Carregando..." : "Loading..."}
-                      </span>
-                    </div>
-                  )}
+          {/* Infinite Scroll Observer */}
+          {hasMore && (
+            <div ref={observerTarget} className="flex justify-center py-8">
+              {isLoadingMore && (
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  <span className="text-sm">
+                    {language === "ja" ? "読み込み中..." : language === "pt" ? "Carregando..." : "Loading..."}
+                  </span>
                 </div>
               )}
             </div>
