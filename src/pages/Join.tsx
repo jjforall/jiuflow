@@ -12,6 +12,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
+import confetti from "canvas-confetti";
+import { Check } from "lucide-react";
 
 const useCountdown = () => {
   const [timeLeft, setTimeLeft] = useState({
@@ -66,6 +68,8 @@ const Join = () => {
   const [showVideoModal, setShowVideoModal] = useState(false);
   const [sampleVideoUrl, setSampleVideoUrl] = useState<string | null>(null);
   const [couponCode, setCouponCode] = useState("");
+  const [couponVerified, setCouponVerified] = useState(false);
+  const [showCouponSuccess, setShowCouponSuccess] = useState(false);
   
   const { isLoading: authLoading, user } = useAuth();
   const { subscribed, loading: subscriptionLoading } = useSubscription();
@@ -108,6 +112,66 @@ const Join = () => {
       });
     }
   }, [searchParams, t.join.payment, language]);
+
+  const handleVerifyCoupon = () => {
+    const validCoupons = ["MURATABJJ"];
+    const trimmedCode = couponCode.trim().toUpperCase();
+    
+    if (validCoupons.includes(trimmedCode)) {
+      setCouponVerified(true);
+      setShowCouponSuccess(true);
+      
+      // Confetti effect
+      const duration = 3000;
+      const animationEnd = Date.now() + duration;
+      const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 9999 };
+
+      const randomInRange = (min: number, max: number) => {
+        return Math.random() * (max - min) + min;
+      };
+
+      const interval = setInterval(() => {
+        const timeLeft = animationEnd - Date.now();
+
+        if (timeLeft <= 0) {
+          clearInterval(interval);
+          setTimeout(() => setShowCouponSuccess(false), 500);
+          return;
+        }
+
+        const particleCount = 50 * (timeLeft / duration);
+        
+        confetti({
+          ...defaults,
+          particleCount,
+          origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 }
+        });
+        confetti({
+          ...defaults,
+          particleCount,
+          origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 }
+        });
+      }, 250);
+
+      toast.success(
+        language === "ja" 
+          ? "クーポンコードが適用されました！🎉" 
+          : "Coupon code applied! 🎉",
+        {
+          description: language === "ja"
+            ? "特別価格でご利用いただけます"
+            : "You can now access special pricing",
+        }
+      );
+    } else {
+      toast.error(
+        language === "ja" 
+          ? "無効なクーポンコードです" 
+          : "Invalid coupon code"
+      );
+      setCouponVerified(false);
+    }
+  };
 
   const handleCheckout = async (priceId: string, isSubscription: boolean) => {
     // Check if user is logged in
@@ -257,7 +321,10 @@ const Join = () => {
 
 
               {/* Coupon Code Section */}
-              <div className="border border-border p-6 mb-8 animate-fade-up">
+              <div className="border border-border p-6 mb-8 animate-fade-up relative overflow-hidden">
+                {showCouponSuccess && (
+                  <div className="absolute inset-0 bg-gradient-to-r from-success/20 via-accent/20 to-success/20 animate-pulse pointer-events-none" />
+                )}
                 <h3 className="text-lg font-light mb-3 text-center">
                   {language === "ja" ? "クーポンコードをお持ちの方" : "Have a coupon code?"}
                 </h3>
@@ -266,32 +333,66 @@ const Join = () => {
                     type="text"
                     placeholder={language === "ja" ? "クーポンコードを入力" : "Enter coupon code"}
                     value={couponCode}
-                    onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                    onChange={(e) => {
+                      setCouponCode(e.target.value.toUpperCase());
+                      setCouponVerified(false);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && couponCode.trim()) {
+                        handleVerifyCoupon();
+                      }
+                    }}
                     className="flex-1"
+                    disabled={couponVerified}
                   />
-                  {couponCode && (
+                  {couponVerified ? (
                     <Button
-                      variant="ghost"
+                      variant="default"
                       size="sm"
-                      onClick={() => setCouponCode("")}
+                      className="bg-success hover:bg-success/90"
+                      disabled
                     >
-                      {language === "ja" ? "クリア" : "Clear"}
+                      <Check className="w-4 h-4 mr-1" />
+                      {language === "ja" ? "適用済み" : "Applied"}
                     </Button>
-                  )}
+                  ) : couponCode ? (
+                    <>
+                      <Button
+                        variant="default"
+                        size="sm"
+                        onClick={handleVerifyCoupon}
+                      >
+                        {language === "ja" ? "適用" : "Apply"}
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setCouponCode("");
+                          setCouponVerified(false);
+                        }}
+                      >
+                        {language === "ja" ? "クリア" : "Clear"}
+                      </Button>
+                    </>
+                  ) : null}
                 </div>
-                {couponCode && (
-                  <p className="text-xs text-muted-foreground text-center mt-2">
-                    {language === "ja" 
-                      ? "決済時にクーポンコードが適用されます" 
-                      : "Coupon will be applied at checkout"}
-                  </p>
+                {couponVerified && (
+                  <div className="mt-3 p-3 bg-success/10 border border-success/30 rounded-lg animate-fade-in">
+                    <p className="text-sm text-center font-medium text-success flex items-center justify-center gap-2">
+                      <Check className="w-4 h-4" />
+                      {language === "ja" 
+                        ? "クーポンが適用されました！下記の特別プランをご利用いただけます" 
+                        : "Coupon applied! You can now access the special plan below"}
+                    </p>
+                  </div>
                 )}
               </div>
 
               {/* Pricing */}
-              <div className={`grid ${couponCode === "MURATABJJ" ? "md:grid-cols-1" : "md:grid-cols-2"} gap-8 mb-16 animate-fade-up ${couponCode === "MURATABJJ" ? "max-w-md mx-auto" : ""}`}>
-                {/* Founder Access - Only show if coupon is MURATABJJ */}
-                {couponCode === "MURATABJJ" && (
+              <div className={`grid ${couponVerified ? "md:grid-cols-1" : "md:grid-cols-2"} gap-8 mb-16 animate-fade-up ${couponVerified ? "max-w-md mx-auto" : ""}`}>
+                {/* Founder Access - Only show if coupon is verified */}
+                {couponVerified && (
                   <div className="border border-primary p-8 shadow-lg">
                   <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-primary text-primary-foreground px-4 py-1 text-xs font-light">
                     {language === "ja" ? "特別オファー" : language === "pt" ? "Oferta Especial" : "Special Offer"}
@@ -334,8 +435,8 @@ const Join = () => {
                   </div>
                 )}
 
-                {/* Monthly - Only show if no coupon */}
-                {!couponCode && (
+                {/* Monthly - Only show if no verified coupon */}
+                {!couponVerified && (
                   <div className="border border-foreground p-8 relative">
                     <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-foreground text-background px-4 py-1 text-xs font-light">
                       {language === "ja" ? "人気" : language === "pt" ? "Popular" : "Most Popular"}
@@ -373,8 +474,8 @@ const Join = () => {
                   </div>
                 )}
 
-                {/* Annual - Only show if no coupon */}
-                {!couponCode && (
+                {/* Annual - Only show if no verified coupon */}
+                {!couponVerified && (
                   <div className="border border-border p-8">
                   <h3 className="text-2xl font-light mb-4">
                     {language === "ja" ? "年額プラン" : language === "pt" ? "Plano Anual" : "Annual Plan"}
