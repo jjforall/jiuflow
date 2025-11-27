@@ -94,17 +94,16 @@ const AdminLogin = () => {
       }
 
       if (data.session) {
-        // Check if user is admin
+        // Check if user has admin or staff role
         const { data: userRoles, error: rolesError } = await supabase
           .from("user_roles")
           .select("role")
           .eq("user_id", data.user.id)
-          .eq("role", "admin")
-          .maybeSingle();
+          .in("role", ["admin", "staff"]);
 
-        if (rolesError || !userRoles) {
+        if (rolesError || !userRoles || userRoles.length === 0) {
           toast.error("Access denied", {
-            description: "Admin access required",
+            description: "Admin or staff access required",
           });
           await supabase.auth.signOut();
           setIsLoading(false);
