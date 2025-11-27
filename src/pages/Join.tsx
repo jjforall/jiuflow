@@ -155,7 +155,7 @@ const Join = () => {
       }, 250);
 
       const message = trimmedCode === "MURATABROS" 
-        ? (language === "ja" ? "MURATABROS VIPアクセスが適用されました！🎉" : "MURATABROS VIP Access applied! 🎉")
+        ? (language === "ja" ? "MURATABROS Brothersプランが適用されました！🎉" : "MURATABROS Brothers Plan applied! 🎉")
         : (language === "ja" ? "クーポンコードが適用されました！🎉" : "Coupon code applied! 🎉");
 
       toast.success(message, {
@@ -391,25 +391,26 @@ const Join = () => {
 
               {/* Pricing */}
               <div className={`grid ${couponVerified ? "md:grid-cols-1" : "md:grid-cols-2"} gap-8 mb-16 animate-fade-up ${couponVerified ? "max-w-lg mx-auto" : ""}`}>
-                {/* MURATABROS VIP Access - Only show if coupon is MURATABROS */}
+                {/* MURATABROS Brothers Pro - Only show if coupon is MURATABROS */}
                 {couponVerified && couponCode === "MURATABROS" && (
                   <div className="border-2 border-primary p-8 shadow-2xl relative bg-gradient-to-br from-primary/5 to-secondary/5">
                     <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-primary to-secondary text-primary-foreground px-6 py-1 text-sm font-medium rounded-full shadow-lg">
-                      {language === "ja" ? "🌟 VIPアクセス" : "🌟 VIP Access"}
+                      {language === "ja" ? "🏆 Brothers Pro" : "🏆 Brothers Pro"}
                     </div>
                     <h3 className="text-3xl font-light mb-4 mt-2 text-center">
-                      {language === "ja" ? "MURATABROS VIP" : "MURATABROS VIP"}
+                      {language === "ja" ? "MURATABROS Brothers" : "MURATABROS Brothers"}
                     </h3>
                     <div className="mb-6 text-center">
                       <div className="text-5xl font-light mb-2">¥50,000</div>
                       <div className="text-sm text-muted-foreground font-light">
-                        {language === "ja" ? "一回払い（永久アクセス + NFT）" : "One-time payment (Lifetime + NFT)"}
+                        {language === "ja" ? "年額（審査制・毎年更新）" : "Annual (Application required・Yearly renewal)"}
                       </div>
                     </div>
                     
                     <div className="mb-6 p-4 bg-accent/10 border border-accent/30 rounded-lg">
-                      <h4 className="font-medium mb-3 text-center">
-                        {language === "ja" ? "🎁 VIP特典" : "🎁 VIP Benefits"}
+                      <h4 className="font-medium mb-3 text-center flex items-center justify-center gap-2">
+                        <span className="text-2xl">🏆</span>
+                        {language === "ja" ? "限定特典" : "Exclusive Benefits"}
                       </h4>
                       <ul className="space-y-2 text-sm font-light">
                         <li className="flex items-start">
@@ -435,14 +436,34 @@ const Join = () => {
                       </ul>
                     </div>
 
+                    <div className="mb-6 p-4 bg-primary/5 border border-primary/20 rounded-lg">
+                      <h4 className="font-medium mb-3 text-center text-sm text-primary">
+                        {language === "ja" ? "⚠️ 審査制プラン" : "⚠️ Application Required"}
+                      </h4>
+                      <ul className="space-y-2 text-xs text-muted-foreground">
+                        <li className="flex items-start">
+                          <span className="mr-2">•</span>
+                          <span>{language === "ja" ? "申請後、運営による審査があります" : "Subject to review after application"}</span>
+                        </li>
+                        <li className="flex items-start">
+                          <span className="mr-2">•</span>
+                          <span>{language === "ja" ? "毎年更新時に再審査が行われます" : "Annual renewal review required"}</span>
+                        </li>
+                        <li className="flex items-start">
+                          <span className="mr-2">•</span>
+                          <span>{language === "ja" ? "審査で承認されなかった場合、1年間は再申請できません" : "If not approved, cannot reapply for 1 year"}</span>
+                        </li>
+                      </ul>
+                    </div>
+
                     <ul className="space-y-3 mb-6 text-sm font-light">
                       <li className="flex items-start">
                         <span className="mr-2">✓</span>
-                        <span>{language === "ja" ? "全技術動画への永久アクセス" : "Lifetime access to all technique videos"}</span>
+                        <span>{language === "ja" ? "全技術動画への年間アクセス" : "Annual access to all technique videos"}</span>
                       </li>
                       <li className="flex items-start">
                         <span className="mr-2">🎨</span>
-                        <span>{language === "ja" ? "限定NFTバッジ付与" : "Exclusive NFT badge included"}</span>
+                        <span>{language === "ja" ? "Brothers限定NFTバッジ付与" : "Exclusive Brothers NFT badge"}</span>
                       </li>
                       <li className="flex items-start">
                         <span className="mr-2">🎯</span>
@@ -458,8 +479,13 @@ const Join = () => {
                       onClick={() => handleCheckout(PRICE_IDS.muratabros, false)}
                       disabled={isLoading}
                     >
-                      {language === "ja" ? "VIPアクセスを取得" : "Get VIP Access"}
+                      {language === "ja" ? "申請する" : "Apply Now"}
                     </Button>
+                    <p className="text-xs text-center text-muted-foreground mt-3">
+                      {language === "ja" 
+                        ? "※ 決済後に審査が行われます" 
+                        : "※ Review process starts after payment"}
+                    </p>
                   </div>
                 )}
 
