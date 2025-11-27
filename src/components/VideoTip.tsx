@@ -14,10 +14,16 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Card } from "@/components/ui/card";
-import { Heart, Loader2 } from "lucide-react";
+import { Heart, Loader2, Coffee, Wine, Droplet, Pizza, Medal, Gem } from "lucide-react";
 
 interface VideoTipProps {
   videoId: string;
+}
+
+interface TipItem {
+  amount: number;
+  icon: React.ReactNode;
+  label: { ja: string; en: string; pt: string };
 }
 
 export const VideoTip = ({ videoId }: VideoTipProps) => {
@@ -27,7 +33,43 @@ export const VideoTip = ({ videoId }: VideoTipProps) => {
   const [message, setMessage] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
 
-  const predefinedAmounts = [100, 500, 1000, 3000, 5000];
+  const tipItems: TipItem[] = [
+    { 
+      amount: 300, 
+      icon: <Coffee className="w-4 h-4" />, 
+      label: { ja: "コーヒー", en: "Coffee", pt: "Café" } 
+    },
+    { 
+      amount: 500, 
+      icon: <Droplet className="w-4 h-4" />, 
+      label: { ja: "コーラ", en: "Cola", pt: "Cola" } 
+    },
+    { 
+      amount: 3000, 
+      icon: <Pizza className="w-4 h-4" />, 
+      label: { ja: "寿司", en: "Sushi", pt: "Sushi" } 
+    },
+    { 
+      amount: 10000, 
+      icon: <Pizza className="w-4 h-4" />, 
+      label: { ja: "焼肉", en: "BBQ", pt: "Churrasco" } 
+    },
+    { 
+      amount: 30000, 
+      icon: <Wine className="w-4 h-4" />, 
+      label: { ja: "シャンパン", en: "Champagne", pt: "Champanhe" } 
+    },
+    { 
+      amount: 100000, 
+      icon: <Medal className="w-4 h-4" />, 
+      label: { ja: "金メダル", en: "Gold Medal", pt: "Medalha de Ouro" } 
+    },
+    { 
+      amount: 1000000, 
+      icon: <Gem className="w-4 h-4" />, 
+      label: { ja: "ダイヤモンド", en: "Diamond", pt: "Diamante" } 
+    },
+  ];
 
   const handleTip = async () => {
     const tipAmount = parseInt(amount);
@@ -83,7 +125,7 @@ export const VideoTip = ({ videoId }: VideoTipProps) => {
           {language === "ja" ? "投げ銭" : language === "pt" ? "Gorjeta" : "Tip"}
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>
             {language === "ja" 
@@ -106,16 +148,24 @@ export const VideoTip = ({ videoId }: VideoTipProps) => {
             <label className="text-sm font-medium">
               {language === "ja" ? "金額を選択" : language === "pt" ? "Selecione o valor" : "Select amount"}
             </label>
-            <div className="grid grid-cols-3 gap-2">
-              {predefinedAmounts.map((amt) => (
+            <div className="grid grid-cols-2 gap-2">
+              {tipItems.map((item) => (
                 <Button
-                  key={amt}
+                  key={item.amount}
                   type="button"
-                  variant={amount === amt.toString() ? "default" : "outline"}
-                  onClick={() => setAmount(amt.toString())}
-                  className="text-sm"
+                  variant={amount === item.amount.toString() ? "default" : "outline"}
+                  onClick={() => setAmount(item.amount.toString())}
+                  className="flex items-center gap-2 h-auto py-3"
                 >
-                  ¥{amt.toLocaleString()}
+                  {item.icon}
+                  <div className="flex flex-col items-start">
+                    <span className="text-xs font-normal">
+                      {item.label[language as keyof typeof item.label]}
+                    </span>
+                    <span className="font-semibold">
+                      ¥{item.amount.toLocaleString()}
+                    </span>
+                  </div>
                 </Button>
               ))}
             </div>
