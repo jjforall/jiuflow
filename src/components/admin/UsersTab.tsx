@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Profile, NewUserData } from "@/types/admin";
 import { Badge } from "@/components/ui/badge";
+import { useAuth } from "@/hooks/useAuth";
 import { 
   CreateUserDialog, 
   EditProfileDialog, 
@@ -14,6 +15,7 @@ import {
 } from "./dialogs";
 
 export const UsersTab = () => {
+  const { isAdmin } = useAuth();
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loadingProfiles, setLoadingProfiles] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -34,7 +36,7 @@ export const UsersTab = () => {
   const [newUserData, setNewUserData] = useState<NewUserData>({
     email: "",
     password: "",
-    role: "user",
+    role: "staff",
   });
 
   useEffect(() => {
@@ -69,15 +71,19 @@ export const UsersTab = () => {
       }));
 
       const sorted = profilesWithSubs.sort((a, b) => {
-        const aAdmin = a.user_roles?.some(r => r.role === 'admin') ? 1 : 0;
-        const bAdmin = b.user_roles?.some(r => r.role === 'admin') ? 1 : 0;
-        return bAdmin - aAdmin || new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        const aAdmin = a.user_roles?.some(r => r.role === 'admin') ? 2 : 0;
+        const aStaff = a.user_roles?.some(r => r.role === 'staff') ? 1 : 0;
+        const bAdmin = b.user_roles?.some(r => r.role === 'admin') ? 2 : 0;
+        const bStaff = b.user_roles?.some(r => r.role === 'staff') ? 1 : 0;
+        return (bAdmin + bStaff) - (aAdmin + aStaff) || new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
       });
 
       setProfiles(sorted);
       const subscribedCount = sorted.filter(p => p.subscription).length;
+      const adminCount = sorted.filter(p => p.user_roles?.some(r => r.role === 'admin')).length;
+      const staffCount = sorted.filter(p => p.user_roles?.some(r => r.role === 'staff')).length;
       toast.success("読み込み完了", {
-        description: `${sorted.length}件の会員を読み込みました（管理者${sorted.filter(p => p.user_roles?.some(r => r.role === 'admin')).length}名、サブスク${subscribedCount}名）`,
+        description: `${sorted.length}件の会員を読み込みました（管理者${adminCount}名、スタッフ${staffCount}名、サブスク${subscribedCount}名）`,
       });
     } catch (error: unknown) {
       toast.error("エラー", {
@@ -141,7 +147,7 @@ export const UsersTab = () => {
       setNewUserData({
         email: "",
         password: "",
-        role: "user",
+        role: "staff",
       });
       
       loadProfiles();
@@ -227,9 +233,11 @@ export const UsersTab = () => {
     );
   }).sort((a, b) => {
     if (sortBy === "role") {
-      const aAdmin = a.user_roles?.some(r => r.role === 'admin') ? 1 : 0;
-      const bAdmin = b.user_roles?.some(r => r.role === 'admin') ? 1 : 0;
-      return bAdmin - aAdmin;
+      const aAdmin = a.user_roles?.some(r => r.role === 'admin') ? 2 : 0;
+      const aStaff = a.user_roles?.some(r => r.role === 'staff') ? 1 : 0;
+      const bAdmin = b.user_roles?.some(r => r.role === 'admin') ? 2 : 0;
+      const bStaff = b.user_roles?.some(r => r.role === 'staff') ? 1 : 0;
+      return (bAdmin + bStaff) - (aAdmin + aStaff);
     } else if (sortBy === "email") {
       return (a.email || '').localeCompare(b.email || '');
     } else {
@@ -246,10 +254,12 @@ export const UsersTab = () => {
           <Button onClick={loadProfiles} variant="outline" disabled={loadingProfiles}>
             {loadingProfiles ? "読み込み中..." : "リロード"}
           </Button>
-          <Button onClick={() => setShowCreateUserDialog(true)}>
-            <UserPlus className="h-4 w-4 mr-2" />
-            新規ユーザー作成
-          </Button>
+          {isAdmin && (
+            <Button onClick={() => setShowCreateUserDialog(true)}>
+              <UserPlus className="h-4 w-4 mr-2" />
+              新規ユーザー作成
+            </Button>
+          )}
         </div>
       </div>
 
@@ -306,6 +316,7 @@ export const UsersTab = () => {
             ) : (
               filteredProfiles.map((profile) => {
                 const isAdmin = profile.user_roles?.some(r => r.role === 'admin');
+                const isStaff = profile.user_roles?.some(r => r.role === 'staff');
                 const hasSub = profile.subscription;
                 return (
                   <tr key={profile.id} className="border-t hover:bg-muted/50">
@@ -325,8 +336,8 @@ export const UsersTab = () => {
                       )}
                     </td>
                     <td className="px-4 py-3">
-                      <Badge variant={isAdmin ? "default" : "secondary"}>
-                        {isAdmin ? '管理者' : 'ユーザー'}
+                      <Badge variant={isAdmin ? "default" : isStaff ? "secondary" : "outline"}>
+                        {isAdmin ? '管理者' : isStaff ? 'スタッフ' : 'ユーザー'}
                       </Badge>
                     </td>
                     <td className="px-4 py-3 text-sm text-muted-foreground">
@@ -334,28 +345,32 @@ export const UsersTab = () => {
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex gap-2 justify-end">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleEditProfile(profile)}
-                        >
-                          編集
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => openPasswordDialog(profile.id)}
-                        >
-                          パスワード変更
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant={isAdmin ? "destructive" : "default"}
-                          onClick={() => handleToggleAdmin(profile.id, isAdmin)}
-                          disabled={isLoading}
-                        >
-                          {isAdmin ? '管理者解除' : '管理者にする'}
-                        </Button>
+                        {isAdmin && (
+                          <>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleEditProfile(profile)}
+                            >
+                              編集
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => openPasswordDialog(profile.id)}
+                            >
+                              パスワード変更
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant={isAdmin ? "destructive" : "default"}
+                              onClick={() => handleToggleAdmin(profile.id, isAdmin)}
+                              disabled={isLoading}
+                            >
+                              {isAdmin ? '管理者解除' : '管理者にする'}
+                            </Button>
+                          </>
+                        )}
                       </div>
                     </td>
                   </tr>

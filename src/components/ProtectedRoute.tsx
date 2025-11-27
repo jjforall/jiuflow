@@ -15,7 +15,7 @@ export const ProtectedRoute = ({
   requireAdmin = false,
   redirectTo = '/login'
 }: ProtectedRouteProps) => {
-  const { user, isLoading, isAdmin } = useAuth();
+  const { user, isLoading, isAdmin, isStaff } = useAuth();
   const location = useLocation();
 
   // Show loading state while checking authentication
@@ -36,8 +36,8 @@ export const ProtectedRoute = ({
     return <Navigate to={redirectTo} state={{ from: location }} replace />;
   }
 
-  // Requires admin but user is not admin
-  if (requireAdmin && !isAdmin) {
+  // Requires admin but user is not admin or staff
+  if (requireAdmin && !isAdmin && !isStaff) {
     return <Navigate to="/" replace />;
   }
 

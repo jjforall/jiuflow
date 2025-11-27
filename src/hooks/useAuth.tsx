@@ -9,6 +9,7 @@ interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   isAdmin: boolean;
+  isStaff: boolean;
   signOut: () => Promise<void>;
 }
 
@@ -18,6 +19,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isStaff, setIsStaff] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -25,7 +27,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
       if (session?.user) {
-        checkAdminStatus(session.user.id);
+        checkUserRoles(session.user.id);
       }
       setIsLoading(false);
     });
@@ -38,35 +40,38 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       // Defer async operations to prevent deadlock
       if (session?.user) {
         setTimeout(() => {
-          checkAdminStatus(session.user.id);
+          checkUserRoles(session.user.id);
         }, 0);
       } else {
         setIsAdmin(false);
+        setIsStaff(false);
       }
     });
 
     return () => subscription.unsubscribe();
   }, []);
 
-  const checkAdminStatus = async (userId: string) => {
+  const checkUserRoles = async (userId: string) => {
     try {
       const { data, error } = await supabase
         .from('user_roles')
         .select('role')
-        .eq('user_id', userId)
-        .eq('role', 'admin')
-        .maybeSingle();
+        .eq('user_id', userId);
 
       if (error) {
-        console.error('Error checking admin status:', error);
+        console.error('Error checking user roles:', error);
         setIsAdmin(false);
+        setIsStaff(false);
         return;
       }
 
-      setIsAdmin(!!data);
+      const roles = data?.map(r => r.role) || [];
+      setIsAdmin(roles.includes('admin'));
+      setIsStaff(roles.includes('staff'));
     } catch (error) {
-      console.error('Error in checkAdminStatus:', error);
+      console.error('Error in checkUserRoles:', error);
       setIsAdmin(false);
+      setIsStaff(false);
     }
   };
 
@@ -87,6 +92,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       // 状態をクリア
       setUser(null);
       setIsAdmin(false);
+      setIsStaff(false);
       
       // ログインページへリダイレクト
       navigate('/login');
@@ -96,6 +102,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       // エラーが発生してもローカル状態はクリアして、ログインページへ遷移
       setUser(null);
       setIsAdmin(false);
+      setIsStaff(false);
       navigate('/login');
       toast.success('ログアウトしました');
     }
@@ -105,6 +112,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     user,
     isLoading,
     isAdmin,
+    isStaff,
     signOut,
   };
 

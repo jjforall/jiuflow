@@ -59,7 +59,7 @@ export const CreateUserDialog = ({
           <div>
             <Select 
               value={newUserData.role} 
-              onValueChange={(value: "admin" | "user") => setNewUserData({ ...newUserData, role: value })}
+              onValueChange={(value: "admin" | "user" | "staff") => setNewUserData({ ...newUserData, role: value })}
               disabled={isLoading}
             >
               <SelectTrigger>
@@ -67,6 +67,7 @@ export const CreateUserDialog = ({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="user">一般ユーザー</SelectItem>
+                <SelectItem value="staff">スタッフ（閲覧専用管理者）</SelectItem>
                 <SelectItem value="admin">管理者</SelectItem>
               </SelectContent>
             </Select>
