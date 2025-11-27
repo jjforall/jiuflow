@@ -9,10 +9,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useAuth } from "@/hooks/useAuth";
-import { Lock } from "lucide-react";
+import { Lock, Eye } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { VideoPlayer } from "@/components/VideoPlayer";
 import { VideoThumbnail } from "@/components/ui/video-thumbnail";
+import { Badge } from "@/components/ui/badge";
 
 interface Technique {
   id: string;
@@ -34,42 +35,81 @@ interface Technique {
 const Video = () => {
   const { id } = useParams<{ id: string }>();
   const { language } = useLanguage();
-  const t = translations[language] || translations.ja; // Fallback to Japanese
+  const t = translations[language] || translations.ja;
   const navigate = useNavigate();
   const { subscribed, loading: subscriptionLoading } = useSubscription();
-  const { isAdmin, isStaff } = useAuth();
+  const { isAdmin, isStaff, user } = useAuth();
   const [technique, setTechnique] = useState<Technique | null>(null);
   const [seriesVideos, setSeriesVideos] = useState<Technique[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const [seriesLetter, setSeriesLetter] = useState<string>("");
+  const [viewCount, setViewCount] = useState<number>(0);
 
-  useEffect(() => {
-    const checkAuthAndLoadTechnique = async () => {
-      // Check if user is authenticated
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session) {
-        // Redirect to login page if not authenticated
-        navigate("/login", { 
-          state: { from: { pathname: `/video/${id}` } },
-          replace: true 
-        });
-        return;
+  // Record video view
+  const recordVideoView = async (videoId: string, userId: string) => {
+    try {
+      // Check if view record exists
+      const { data: existingView } = await supabase
+        .from('video_views')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('video_id', videoId)
+        .maybeSingle();
+
+      if (existingView) {
+        // Update existing view
+        const { error } = await supabase
+          .from('video_views')
+          .update({
+            view_count: existingView.view_count + 1,
+            last_viewed_at: new Date().toISOString()
+          })
+          .eq('id', existingView.id);
+
+        if (!error) {
+          setViewCount(existingView.view_count + 1);
+        }
+      } else {
+        // Insert new view record
+        const { error } = await supabase
+          .from('video_views')
+          .insert({
+            user_id: userId,
+            video_id: videoId,
+            view_count: 1,
+            last_viewed_at: new Date().toISOString()
+          });
+
+        if (!error) {
+          setViewCount(1);
+        }
       }
+    } catch (error) {
+      console.error('Error recording video view:', error);
+    }
+  };
 
-      setIsCheckingAuth(false);
-      
-      if (id) {
-        loadTechnique();
+  // Load view count for current video
+  const loadViewCount = async (videoId: string, userId: string) => {
+    try {
+      const { data } = await supabase
+        .from('video_views')
+        .select('view_count')
+        .eq('user_id', userId)
+        .eq('video_id', videoId)
+        .maybeSingle();
+
+      if (data) {
+        setViewCount(data.view_count);
       }
-    };
-
-    checkAuthAndLoadTechnique();
-  }, [id, navigate]);
+    } catch (error) {
+      console.error('Error loading view count:', error);
+    }
+  };
 
   const loadTechnique = useCallback(async () => {
-    if (!id) return;
+    if (!id || !user) return;
     
     setIsLoading(true);
     const { data, error } = await supabase
@@ -89,6 +129,10 @@ const Video = () => {
     const techniqueData = data as Technique;
     setTechnique(techniqueData);
 
+    // Load view count first, then record new view
+    await loadViewCount(id, user.id);
+    await recordVideoView(id, user.id);
+
     // Get all series to calculate letter index
     if (techniqueData?.series_name) {
       const { data: allSeries } = await supabase
@@ -101,7 +145,7 @@ const Video = () => {
         const uniqueSeries = [...new Set(allSeries.map(s => s.series_name))].filter(Boolean) as string[];
         const seriesIndex = uniqueSeries.indexOf(techniqueData.series_name);
         if (seriesIndex !== -1) {
-          setSeriesLetter(String.fromCharCode(65 + seriesIndex)); // A, B, C, ...
+          setSeriesLetter(String.fromCharCode(65 + seriesIndex));
         }
       }
 
@@ -119,7 +163,29 @@ const Video = () => {
     }
 
     setIsLoading(false);
-  }, [id]);
+  }, [id, user]);
+
+  useEffect(() => {
+    const checkAuthAndLoadTechnique = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        navigate("/login", { 
+          state: { from: { pathname: `/video/${id}` } },
+          replace: true 
+        });
+        return;
+      }
+
+      setIsCheckingAuth(false);
+      
+      if (id) {
+        loadTechnique();
+      }
+    };
+
+    checkAuthAndLoadTechnique();
+  }, [id, navigate, loadTechnique]);
 
   const getTechniqueName = (tech: Technique) => {
     switch (language) {
@@ -257,7 +323,21 @@ const Video = () => {
 
               {/* Technique Info */}
               <div className="mt-6 animate-fade-up">
-                <h1 className="text-3xl md:text-4xl font-light mb-2">{getTechniqueName(technique)}</h1>
+                <div className="flex items-center gap-3 mb-2">
+                  <h1 className="text-3xl md:text-4xl font-light">{getTechniqueName(technique)}</h1>
+                  {viewCount > 0 && (
+                    <Badge variant="secondary" className="flex items-center gap-1">
+                      <Eye className="w-3 h-3" />
+                      <span className="text-xs">
+                        {language === "ja" 
+                          ? `${viewCount}回視聴` 
+                          : language === "pt" 
+                          ? `${viewCount}x visto` 
+                          : `Viewed ${viewCount}x`}
+                      </span>
+                    </Badge>
+                  )}
+                </div>
                 <span className="inline-block px-3 py-1 text-xs border border-border">
                   {technique.category}
                 </span>
