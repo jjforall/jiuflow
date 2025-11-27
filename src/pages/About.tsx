@@ -227,27 +227,41 @@ const About = () => {
             </div>
           </section>
 
-          {/* Connect Section */}
+          {/* Team Section */}
           <section className="py-16 bg-muted/30">
             <div className="max-w-4xl mx-auto px-6">
-              <h2 className="text-4xl font-light mb-8">Connect</h2>
-              <div className="space-y-4 text-lg">
-                <p className="mb-6">💬 ご意見・提案・最新情報などは以下からどうぞ：</p>
-                <p>
-                  <a href="https://www.instagram.com/ryozomurata/" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
-                    Instagram → @ryozomurata
-                  </a>
-                </p>
-                <p>
-                  <a href="https://www.facebook.com/profile.php?id=100006313396750" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
-                    Facebook
-                  </a>
-                </p>
-                <p>
-                  <a href="https://www.ryozo-murata.com" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
-                    Website → www.ryozo-murata.com
-                  </a>
-                </p>
+              <h2 className="text-4xl font-light mb-8">Team</h2>
+              <div className="space-y-8">
+                {/* 村田 良蔵 */}
+                <div className="border-l-2 border-primary pl-6">
+                  <h3 className="text-2xl font-light mb-2">村田 良蔵（Ryozo Murata）</h3>
+                  <p className="text-muted-foreground mb-3">創設者・インストラクター</p>
+                  <div className="flex gap-4 text-sm">
+                    <a href="https://www.ryozo-murata.com" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                      Website
+                    </a>
+                  </div>
+                </div>
+
+                {/* 濱田 */}
+                <div className="border-l-2 border-primary pl-6">
+                  <h3 className="text-2xl font-light mb-2">濱田</h3>
+                  <p className="text-muted-foreground mb-3">メンバー</p>
+                  <div className="flex gap-4 text-sm">
+                    <a href="https://www.instagram.com/yukihamada/" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                      Instagram → @yukihamada
+                    </a>
+                    <a href="https://x.com/yukihamada" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                      X (Twitter) → @yukihamada
+                    </a>
+                  </div>
+                </div>
+
+                {/* 野島 */}
+                <div className="border-l-2 border-primary pl-6">
+                  <h3 className="text-2xl font-light mb-2">野島</h3>
+                  <p className="text-muted-foreground">メンバー</p>
+                </div>
               </div>
             </div>
           </section>
