@@ -1,4 +1,4 @@
-import { useParams, Link, useNavigate } from "react-router-dom";
+import { useParams, Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useState, useEffect, useCallback } from "react";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
@@ -16,6 +16,10 @@ import { VideoThumbnail } from "@/components/ui/video-thumbnail";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Card } from "@/components/ui/card";
+import { VideoRating } from "@/components/VideoRating";
+import { VideoComments } from "@/components/VideoComments";
+import { VideoTip } from "@/components/VideoTip";
+import { Separator } from "@/components/ui/separator";
 
 interface Technique {
   id: string;
@@ -36,6 +40,7 @@ interface Technique {
 
 const Video = () => {
   const { id } = useParams<{ id: string }>();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { language } = useLanguage();
   const t = translations[language] || translations.ja;
   const navigate = useNavigate();
@@ -47,6 +52,21 @@ const Video = () => {
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const [seriesLetter, setSeriesLetter] = useState<string>("");
   const [viewCount, setViewCount] = useState<number>(0);
+
+  // Check for tip success
+  useEffect(() => {
+    if (searchParams.get("tip") === "success") {
+      toast.success(
+        language === "ja" 
+          ? "投げ銭ありがとうございます！" 
+          : language === "pt" 
+          ? "Obrigado pela gorjeta!" 
+          : "Thank you for your tip!"
+      );
+      // Remove query param
+      setSearchParams({});
+    }
+  }, [searchParams, setSearchParams, language]);
 
   // Record video view
   const recordVideoView = async (videoId: string, userId: string) => {
@@ -515,6 +535,27 @@ const Video = () => {
                   ))}
                 </div>
               )}
+
+              {/* Rating, Comments, and Tip Section */}
+              <div className="mt-12 space-y-8">
+                <Separator />
+                
+                {/* Rating and Tip */}
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                  <div>
+                    <h3 className="text-lg font-medium mb-3">
+                      {language === "ja" ? "この動画を評価" : language === "pt" ? "Avaliar vídeo" : "Rate this video"}
+                    </h3>
+                    {user && <VideoRating videoId={id!} userId={user.id} />}
+                  </div>
+                  {user && <VideoTip videoId={id!} />}
+                </div>
+
+                <Separator />
+
+                {/* Comments */}
+                {user && <VideoComments videoId={id!} userId={user.id} />}
+              </div>
 
               <div className="mt-8">
                 <Link to="/map">
