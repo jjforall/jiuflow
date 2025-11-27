@@ -2,6 +2,7 @@ import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Progress } from "@/components/ui/progress";
 import { useState, useEffect } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { translations } from "@/lib/translations";
@@ -22,6 +23,10 @@ const useCountdown = () => {
     minutes: 0,
     seconds: 0,
   });
+  const [founderCount, setFounderCount] = useState(0);
+  const [founderMaxCount, setFounderMaxCount] = useState(10);
+  const [founderCurrentPrice, setFounderCurrentPrice] = useState(50000);
+  const [founderNextPrice, setFounderNextPrice] = useState(80000);
 
   useEffect(() => {
     const endDateStr = import.meta.env.VITE_FOUNDER_PLAN_END_DATE || "2025-11-30T23:59:59+09:00";
@@ -47,7 +52,57 @@ const useCountdown = () => {
     return () => clearInterval(interval);
   }, []);
 
-  return timeLeft;
+  // Fetch founder plan count
+  useEffect(() => {
+    const fetchFounderCount = async () => {
+      const { data, error } = await supabase
+        .from('founder_plan_count')
+        .select('*')
+        .single();
+
+      if (data && !error) {
+        setFounderCount(data.count);
+        setFounderMaxCount(data.max_count);
+        setFounderCurrentPrice(data.current_price);
+        setFounderNextPrice(data.next_price);
+      }
+    };
+
+    fetchFounderCount();
+
+    // Subscribe to real-time updates
+    const channel = supabase
+      .channel('founder-plan-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'founder_plan_count'
+        },
+        (payload) => {
+          if (payload.new && typeof payload.new === 'object' && 'count' in payload.new) {
+            setFounderCount(payload.new.count as number);
+            setFounderMaxCount(payload.new.max_count as number);
+            setFounderCurrentPrice(payload.new.current_price as number);
+            setFounderNextPrice(payload.new.next_price as number);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
+  return { 
+    timeLeft, 
+    founderCount, 
+    founderMaxCount, 
+    founderCurrentPrice, 
+    founderNextPrice 
+  };
 };
 
 // Stripe price IDs
@@ -64,7 +119,7 @@ const SAMPLE_VIDEO_ID = "6a70670c-e9f8-4a8b-adce-8e703ac56bee";
 const Join = () => {
   const { language } = useLanguage();
   const t = translations[language] || translations.ja; // Fallback to Japanese
-  const countdown = useCountdown();
+  const { timeLeft, founderCount, founderMaxCount, founderCurrentPrice, founderNextPrice } = useCountdown();
   const [isLoading, setIsLoading] = useState(false);
   const [showVideoModal, setShowVideoModal] = useState(false);
   const [sampleVideoUrl, setSampleVideoUrl] = useState<string | null>(null);
@@ -401,12 +456,30 @@ const Join = () => {
                       {language === "ja" ? "創始者アクセスPro" : "Founder Access Pro"}
                     </h3>
                     <div className="mb-6 text-center">
-                      <div className="text-5xl font-light mb-2">¥50,000</div>
+                      <div className="text-5xl font-light mb-2">¥{founderCurrentPrice.toLocaleString()}</div>
                       <div className="text-sm text-muted-foreground font-light">
                         {language === "ja" ? "年額（審査制・毎年更新）" : "Annual (Application required・Yearly renewal)"}
                       </div>
                       <div className="mt-2 text-xs text-primary font-medium">
                         {language === "ja" ? "🔥 12月31日まで申請受付中" : "🔥 Applications accepted until December 31st"}
+                      </div>
+                      
+                      {/* Remaining spots counter */}
+                      <div className="mt-4 p-3 bg-primary/10 border border-primary/30 rounded-lg">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-sm font-medium">
+                            {language === "ja" ? "残り枠数" : "Remaining Spots"}
+                          </span>
+                          <span className="text-lg font-bold text-primary">
+                            {founderMaxCount - founderCount}{language === "ja" ? "名" : " spots"}
+                          </span>
+                        </div>
+                        <Progress value={(founderCount / founderMaxCount) * 100} className="h-2 mb-2" />
+                        <p className="text-xs text-muted-foreground text-center">
+                          {language === "ja" 
+                            ? `${founderCount}名加入済み / ${founderMaxCount}名で値上げ（¥${founderNextPrice.toLocaleString()}）` 
+                            : `${founderCount} joined / Price increase at ${founderMaxCount} (¥${founderNextPrice.toLocaleString()})`}
+                        </p>
                       </div>
                     </div>
                     
@@ -499,9 +572,9 @@ const Join = () => {
                       {language === "ja" ? "月額（3ヶ月無料・永久価格）" : "per month (3 months free・forever)"}
                       </div>
                       <div className="text-xs text-muted-foreground mt-2">
-                        {language === "ja" ? "残り" : "Remaining"} {countdown.days}
+                        {language === "ja" ? "残り" : "Remaining"} {timeLeft.days}
                         {language === "ja" ? "日" : " days "}
-                        {countdown.hours}:{countdown.minutes}:{countdown.seconds}
+                        {timeLeft.hours}:{timeLeft.minutes}:{timeLeft.seconds}
                       </div>
                     </div>
                     <ul className="space-y-2 mb-6 text-sm font-light">
@@ -548,9 +621,9 @@ const Join = () => {
                       {language === "ja" ? "月額（3ヶ月無料・期間限定・永久価格）" : language === "pt" ? "Por mês (3 meses grátis・preço limitado e permanente)" : "per month (3 months free・limited time forever)"}
                       </div>
                       <div className="text-xs text-muted-foreground mt-2">
-                        {language === "ja" ? "残り" : language === "pt" ? "Restam" : "Remaining"} {countdown.days}
+                        {language === "ja" ? "残り" : language === "pt" ? "Restam" : "Remaining"} {timeLeft.days}
                         {language === "ja" ? "日" : language === "pt" ? " dias " : " days "}
-                        {countdown.hours}:{countdown.minutes}:{countdown.seconds}
+                        {timeLeft.hours}:{timeLeft.minutes}:{timeLeft.seconds}
                       </div>
                     </div>
                     <ul className="space-y-3 mb-6 text-sm font-light">

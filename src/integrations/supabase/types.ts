@@ -74,6 +74,33 @@ export type Database = {
           },
         ]
       }
+      founder_plan_count: {
+        Row: {
+          count: number
+          current_price: number
+          id: string
+          max_count: number
+          next_price: number
+          updated_at: string | null
+        }
+        Insert: {
+          count?: number
+          current_price?: number
+          id?: string
+          max_count?: number
+          next_price?: number
+          updated_at?: string | null
+        }
+        Update: {
+          count?: number
+          current_price?: number
+          id?: string
+          max_count?: number
+          next_price?: number
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       lifetime_plan_count: {
         Row: {
           count: number
