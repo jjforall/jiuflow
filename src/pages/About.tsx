@@ -8,7 +8,7 @@ import { useState, useEffect } from "react";
 import { ContactForm } from "@/components/ContactForm";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
-import { ArrowRight, Lock, PlayCircle } from "lucide-react";
+import { ArrowRight, Lock, PlayCircle, UserX } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 
@@ -115,7 +115,7 @@ const About = () => {
                         <div className="space-y-2 mt-4">
                           {stat.count === 0 ? (
                             <div className="text-center py-4">
-                              <Lock className="w-6 h-6 mx-auto mb-2 text-muted-foreground" />
+                              <UserX className="w-6 h-6 mx-auto mb-2 text-muted-foreground" />
                               <p className="text-xs text-muted-foreground">
                                 {language === "ja" ? "準備中" : "Coming soon"}
                               </p>
