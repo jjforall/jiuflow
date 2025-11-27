@@ -46,7 +46,7 @@ const Footer = () => {
           <div>
             <h4 className="font-light mb-4 text-sm">Social</h4>
             <ul className="space-y-2 text-sm text-muted-foreground">
-              <li>Instagram: @brotherhoodbjj</li>
+              <li>Instagram: @jiuFlowArt</li>
             </ul>
           </div>
         </div>
