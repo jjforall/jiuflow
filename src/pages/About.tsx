@@ -38,6 +38,11 @@ const About = () => {
             techniques: data.filter(t => t.category === "pull").slice(0, 5)
           },
           {
+            category: "combat-base",
+            count: data.filter(t => t.category === "combat-base").length,
+            techniques: data.filter(t => t.category === "combat-base").slice(0, 5)
+          },
+          {
             category: "control",
             count: data.filter(t => t.category === "control").length,
             techniques: data.filter(t => t.category === "control").slice(0, 5)
@@ -88,11 +93,13 @@ const About = () => {
                   {techniqueStats.map((stat, index) => (
                     <div key={stat.category} className="flex items-center gap-4">
                       {/* Category Card */}
-                      <div className="bg-card border border-border rounded-xl p-6 w-64 shadow-lg hover:shadow-xl transition-all">
+                       <div className="bg-card border border-border rounded-xl p-6 w-64 shadow-lg hover:shadow-xl transition-all">
                         <div className="text-center mb-4">
                           <h3 className="text-2xl font-light mb-2">
                             {stat.category === "pull" 
                               ? (language === "ja" ? "引き込み" : "Pull") 
+                              : stat.category === "combat-base"
+                              ? (language === "ja" ? "コンバットベース" : "Combat Base")
                               : stat.category === "control"
                               ? (language === "ja" ? "コントロール" : "Control")
                               : (language === "ja" ? "極め技" : "Submission")}
@@ -104,26 +111,37 @@ const About = () => {
                         
                         {/* Technique samples */}
                         <div className="space-y-2 mt-4">
-                          {stat.techniques.slice(0, 3).map((tech) => (
-                            <Link
-                              key={tech.id}
-                              to={`/video/${tech.id}`}
-                              className="flex items-center gap-2 text-sm hover:text-primary transition-colors group"
-                            >
-                              <PlayCircle className="w-3.5 h-3.5 flex-shrink-0 group-hover:text-primary" />
-                              <span className="truncate">
-                                {language === "ja" ? tech.name_ja : language === "pt" ? tech.name_pt : tech.name}
-                              </span>
-                            </Link>
-                          ))}
-                          {stat.count > 3 && (
-                            <Link
-                              to="/map"
-                              className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors mt-3"
-                            >
-                              <span>{language === "ja" ? `他 ${stat.count - 3}本` : `+${stat.count - 3} more`}</span>
-                              <ArrowRight className="w-3.5 h-3.5" />
-                            </Link>
+                          {stat.count === 0 ? (
+                            <div className="text-center py-4">
+                              <Lock className="w-6 h-6 mx-auto mb-2 text-muted-foreground" />
+                              <p className="text-xs text-muted-foreground">
+                                {language === "ja" ? "準備中" : "Coming soon"}
+                              </p>
+                            </div>
+                          ) : (
+                            <>
+                              {stat.techniques.slice(0, 3).map((tech) => (
+                                <Link
+                                  key={tech.id}
+                                  to={`/video/${tech.id}`}
+                                  className="flex items-center gap-2 text-sm hover:text-primary transition-colors group"
+                                >
+                                  <PlayCircle className="w-3.5 h-3.5 flex-shrink-0 group-hover:text-primary" />
+                                  <span className="truncate">
+                                    {language === "ja" ? tech.name_ja : language === "pt" ? tech.name_pt : tech.name}
+                                  </span>
+                                </Link>
+                              ))}
+                              {stat.count > 3 && (
+                                <Link
+                                  to="/map"
+                                  className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors mt-3"
+                                >
+                                  <span>{language === "ja" ? `他 ${stat.count - 3}本` : `+${stat.count - 3} more`}</span>
+                                  <ArrowRight className="w-3.5 h-3.5" />
+                                </Link>
+                              )}
+                            </>
                           )}
                         </div>
                       </div>
@@ -146,12 +164,19 @@ const About = () => {
                       ? "Ver todas as técnicas" 
                       : "See all techniques"}
                   </h3>
-                  <p className="text-muted-foreground mb-6 max-w-2xl mx-auto">
+                  <p className="text-muted-foreground mb-3 max-w-2xl mx-auto">
                     {language === "ja" 
                       ? "引き込みからサブミッションまで、体系化された技術を全て視聴できます。" 
                       : language === "pt" 
                       ? "De puxadas a finalizações, acesse todas as técnicas sistematizadas." 
                       : "From pulls to submissions, access all systematized techniques."}
+                  </p>
+                  <p className="text-sm text-primary font-medium mb-6">
+                    {language === "ja" 
+                      ? "✨ 毎週金曜日に新しい動画を1本アップデート" 
+                      : language === "pt" 
+                      ? "✨ Novo vídeo toda sexta-feira" 
+                      : "✨ New video every Friday"}
                   </p>
                   <div className="flex flex-col sm:flex-row gap-4 justify-center">
                     <Button onClick={() => navigate("/join")} size="lg">
