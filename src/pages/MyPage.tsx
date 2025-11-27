@@ -246,10 +246,15 @@ const MyPage = () => {
               <h2 className="text-3xl font-light">
                 {language === "ja" ? "あなたの動画" : language === "pt" ? "Seus vídeos" : "Your Videos"}
               </h2>
-              <Button onClick={() => setUploadDialogOpen(true)} className="gap-2">
-                <Upload className="w-4 h-4" />
-                {language === "ja" ? "動画をアップロード" : language === "pt" ? "Enviar vídeo" : "Upload Video"}
-              </Button>
+              <div className="flex gap-3">
+                <Button variant="outline" onClick={() => navigate("/video-upload-info")}>
+                  {language === "ja" ? "詳細を見る" : language === "pt" ? "Ver detalhes" : "Learn More"}
+                </Button>
+                <Button onClick={() => setUploadDialogOpen(true)} className="gap-2">
+                  <Upload className="w-4 h-4" />
+                  {language === "ja" ? "動画をアップロード" : language === "pt" ? "Enviar vídeo" : "Upload Video"}
+                </Button>
+              </div>
             </div>
 
             {videosLoading ? (

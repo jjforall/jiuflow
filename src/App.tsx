@@ -22,6 +22,7 @@ const About = lazy(() => import("./pages/About"));
 const Join = lazy(() => import("./pages/Join"));
 const PaymentSuccess = lazy(() => import("./pages/PaymentSuccess"));
 const MyPage = lazy(() => import("./pages/MyPage"));
+const VideoUploadInfo = lazy(() => import("./pages/VideoUploadInfo"));
 const AdminLogin = lazy(() => import("./pages/AdminLogin"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 const NotFound = lazy(() => import("./pages/NotFound"));
@@ -67,6 +68,11 @@ const App = () => (
                 <Route path="/mypage" element={
                   <ProtectedRoute>
                     <MyPage />
+                  </ProtectedRoute>
+                } />
+                <Route path="/video-upload-info" element={
+                  <ProtectedRoute>
+                    <VideoUploadInfo />
                   </ProtectedRoute>
                 } />
                 <Route path="/admin" element={<AdminLogin />} />
