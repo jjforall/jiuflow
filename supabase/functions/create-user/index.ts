@@ -32,25 +32,9 @@ serve(async (req) => {
       );
     }
 
-    // Create regular Supabase client to verify the caller
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      {
-        auth: {
-          autoRefreshToken: false,
-          persistSession: false
-        },
-        global: {
-          headers: {
-            Authorization: authHeader,
-          },
-        },
-      }
-    );
-
-    // Get the current user
-    const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
+    // Verify JWT token and get user
+    const jwt = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: userError } = await supabaseAdmin.auth.getUser(jwt);
     
     if (userError || !user) {
       console.error('User verification error:', userError);
@@ -60,8 +44,10 @@ serve(async (req) => {
       );
     }
 
-    // Check if the user is an admin
-    const { data: userRoles, error: rolesError } = await supabaseClient
+    console.log('User authenticated:', user.id);
+
+    // Check if the user is an admin using admin client
+    const { data: userRoles, error: rolesError } = await supabaseAdmin
       .from('user_roles')
       .select('role')
       .eq('user_id', user.id)
@@ -75,6 +61,8 @@ serve(async (req) => {
         { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+
+    console.log('Admin verified');
 
     // Parse the request body
     const { email, password, role = 'user' } = await req.json();
