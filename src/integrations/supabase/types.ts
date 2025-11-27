@@ -472,6 +472,90 @@ export type Database = {
         }
         Relationships: []
       }
+      video_comments: {
+        Row: {
+          comment: string
+          created_at: string
+          id: string
+          updated_at: string
+          user_id: string
+          video_id: string
+        }
+        Insert: {
+          comment: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id: string
+          video_id: string
+        }
+        Update: {
+          comment?: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+          video_id?: string
+        }
+        Relationships: []
+      }
+      video_ratings: {
+        Row: {
+          created_at: string
+          id: string
+          rating: number
+          updated_at: string
+          user_id: string
+          video_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          rating: number
+          updated_at?: string
+          user_id: string
+          video_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          rating?: number
+          updated_at?: string
+          user_id?: string
+          video_id?: string
+        }
+        Relationships: []
+      }
+      video_tips: {
+        Row: {
+          amount: number
+          created_at: string
+          from_user_id: string
+          id: string
+          message: string | null
+          stripe_payment_id: string | null
+          video_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          from_user_id: string
+          id?: string
+          message?: string | null
+          stripe_payment_id?: string | null
+          video_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          from_user_id?: string
+          id?: string
+          message?: string | null
+          stripe_payment_id?: string | null
+          video_id?: string
+        }
+        Relationships: []
+      }
       video_views: {
         Row: {
           created_at: string
