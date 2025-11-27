@@ -5,9 +5,10 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
-import { MessageSquare, Trash2 } from "lucide-react";
+import { MessageSquare, Trash2, Coffee, Wine, Droplet, Pizza, Medal, Gem, Heart, Loader2, X } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { ja, ptBR } from "date-fns/locale";
+import confetti from "canvas-confetti";
 
 interface Comment {
   id: string;
@@ -24,11 +25,61 @@ interface VideoCommentsProps {
   userId: string;
 }
 
+interface TipItem {
+  amount: number;
+  icon: React.ReactNode;
+  label: { ja: string; en: string; pt: string };
+}
+
+const tipItems: TipItem[] = [
+  { 
+    amount: 0, 
+    icon: <X className="w-4 h-4" />, 
+    label: { ja: "なし（勇気）", en: "None (Brave)", pt: "Nenhum (Coragem)" } 
+  },
+  { 
+    amount: 300, 
+    icon: <Coffee className="w-4 h-4" />, 
+    label: { ja: "コーヒー", en: "Coffee", pt: "Café" } 
+  },
+  { 
+    amount: 500, 
+    icon: <Droplet className="w-4 h-4" />, 
+    label: { ja: "コーラ", en: "Cola", pt: "Cola" } 
+  },
+  { 
+    amount: 3000, 
+    icon: <Pizza className="w-4 h-4" />, 
+    label: { ja: "寿司", en: "Sushi", pt: "Sushi" } 
+  },
+  { 
+    amount: 10000, 
+    icon: <Pizza className="w-4 h-4" />, 
+    label: { ja: "焼肉", en: "BBQ", pt: "Churrasco" } 
+  },
+  { 
+    amount: 30000, 
+    icon: <Wine className="w-4 h-4" />, 
+    label: { ja: "シャンパン", en: "Champagne", pt: "Champanhe" } 
+  },
+  { 
+    amount: 100000, 
+    icon: <Medal className="w-4 h-4" />, 
+    label: { ja: "金メダル", en: "Gold Medal", pt: "Medalha de Ouro" } 
+  },
+  { 
+    amount: 1000000, 
+    icon: <Gem className="w-4 h-4" />, 
+    label: { ja: "ダイヤモンド", en: "Diamond", pt: "Diamante" } 
+  },
+];
+
 export const VideoComments = ({ videoId, userId }: VideoCommentsProps) => {
   const { language } = useLanguage();
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedTipAmount, setSelectedTipAmount] = useState<number>(500);
 
   useEffect(() => {
     loadComments();
@@ -62,7 +113,49 @@ export const VideoComments = ({ videoId, userId }: VideoCommentsProps) => {
 
     setIsSubmitting(true);
     try {
-      const { error } = await supabase
+      // 0円の時の特別な演出
+      if (selectedTipAmount === 0) {
+        // ランダムな面白いメッセージ
+        const funnyMessages = {
+          ja: [
+            "お、ただコメ勢！勇気あるねぇ〜😎",
+            "無料は最高のプライス！🎉",
+            "気持ちだけいただきました！💪",
+            "タダより高いものはない...ってか！😂",
+            "投げ銭0円！潔い！👏"
+          ],
+          en: [
+            "Free comment warrior! Respect! 😎",
+            "Free is the best price! 🎉",
+            "We got your spirit! 💪",
+            "Bold move! 😂",
+            "Zero tip! Brave! 👏"
+          ],
+          pt: [
+            "Guerreiro dos comentários grátis! 😎",
+            "Grátis é o melhor preço! 🎉",
+            "Recebemos seu espírito! 💪",
+            "Movimento ousado! 😂",
+            "Gorjeta zero! Corajoso! 👏"
+          ]
+        };
+        
+        const messages = funnyMessages[language as keyof typeof funnyMessages];
+        const randomMessage = messages[Math.floor(Math.random() * messages.length)];
+        
+        // 紙吹雪エフェクト（少なめ）
+        confetti({
+          particleCount: 30,
+          spread: 60,
+          origin: { y: 0.8 },
+          colors: ['#94a3b8', '#cbd5e1', '#e2e8f0']
+        });
+        
+        toast.success(randomMessage, { duration: 3000 });
+      }
+
+      // コメント投稿
+      const { error: commentError } = await supabase
         .from("video_comments")
         .insert({
           user_id: userId,
@@ -70,17 +163,44 @@ export const VideoComments = ({ videoId, userId }: VideoCommentsProps) => {
           comment: newComment.trim(),
         });
 
-      if (error) throw error;
+      if (commentError) throw commentError;
+
+      // 投げ銭処理（0円以外の場合）
+      if (selectedTipAmount > 0) {
+        const { data, error: tipError } = await supabase.functions.invoke("create-video-tip", {
+          body: {
+            amount: selectedTipAmount,
+            videoId,
+            message: newComment.trim(),
+          },
+        });
+
+        if (tipError) throw tipError;
+
+        if (data?.url) {
+          window.open(data.url, "_blank");
+          toast.success(
+            language === "ja" 
+              ? `コメントを投稿し、¥${selectedTipAmount.toLocaleString()}の投げ銭を送信しました！` 
+              : language === "pt" 
+              ? `Comentário postado e ¥${selectedTipAmount.toLocaleString()} enviado!` 
+              : `Comment posted and ¥${selectedTipAmount.toLocaleString()} tip sent!`
+          );
+        }
+      } else {
+        // 0円の場合はコメント投稿のみ
+        toast.success(
+          language === "ja" 
+            ? "コメントを投稿しました" 
+            : language === "pt" 
+            ? "Comentário postado" 
+            : "Comment posted"
+        );
+      }
 
       setNewComment("");
+      setSelectedTipAmount(500); // リセットしてデフォルトに戻す
       loadComments();
-      toast.success(
-        language === "ja" 
-          ? "コメントを投稿しました" 
-          : language === "pt" 
-          ? "Comentário postado" 
-          : "Comment posted"
-      );
     } catch (error) {
       console.error("Error posting comment:", error);
       toast.error(
@@ -140,7 +260,7 @@ export const VideoComments = ({ videoId, userId }: VideoCommentsProps) => {
       </div>
 
       {/* Comment Form */}
-      <div className="space-y-3">
+      <Card className="p-4 space-y-4">
         <Textarea
           value={newComment}
           onChange={(e) => setNewComment(e.target.value)}
@@ -153,13 +273,86 @@ export const VideoComments = ({ videoId, userId }: VideoCommentsProps) => {
           }
           className="min-h-[100px]"
         />
+        
+        {/* Tip Selection */}
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <Heart className="w-4 h-4 text-primary" />
+            <label className="text-sm font-medium">
+              {language === "ja" ? "投げ銭を選択" : language === "pt" ? "Selecione gorjeta" : "Select tip"}
+            </label>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            {tipItems.map((item) => (
+              <Button
+                key={item.amount}
+                type="button"
+                variant={selectedTipAmount === item.amount ? "default" : "outline"}
+                onClick={() => setSelectedTipAmount(item.amount)}
+                className="flex items-center gap-2 h-auto py-2 text-xs"
+              >
+                {item.icon}
+                <div className="flex flex-col items-start">
+                  <span className="text-[10px] font-normal leading-tight">
+                    {item.label[language as keyof typeof item.label]}
+                  </span>
+                  <span className="font-semibold text-xs">
+                    {item.amount === 0 ? "¥0" : `¥${item.amount.toLocaleString()}`}
+                  </span>
+                </div>
+              </Button>
+            ))}
+          </div>
+          {selectedTipAmount === 0 && (
+            <p className="text-xs text-muted-foreground animate-fade-in">
+              {language === "ja" 
+                ? "💪 お金より気持ち派！" 
+                : language === "pt" 
+                ? "💪 Sentimento é mais importante que dinheiro!" 
+                : "💪 Feeling over money!"}
+            </p>
+          )}
+        </div>
+
         <Button 
           onClick={handleSubmitComment} 
           disabled={isSubmitting || !newComment.trim()}
+          className="w-full"
+          size="lg"
         >
-          {language === "ja" ? "投稿" : language === "pt" ? "Postar" : "Post"}
+          {isSubmitting ? (
+            <>
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              {language === "ja" ? "投稿中..." : language === "pt" ? "Postando..." : "Posting..."}
+            </>
+          ) : (
+            <>
+              <MessageSquare className="w-4 h-4 mr-2" />
+              {language === "ja" 
+                ? selectedTipAmount === 0 
+                  ? "コメント投稿" 
+                  : `¥${selectedTipAmount.toLocaleString()}で投稿`
+                : language === "pt" 
+                ? selectedTipAmount === 0 
+                  ? "Postar comentário" 
+                  : `Postar com ¥${selectedTipAmount.toLocaleString()}`
+                : selectedTipAmount === 0 
+                ? "Post comment" 
+                : `Post with ¥${selectedTipAmount.toLocaleString()}`}
+            </>
+          )}
         </Button>
-      </div>
+        
+        {selectedTipAmount > 0 && (
+          <p className="text-xs text-muted-foreground text-center">
+            {language === "ja" 
+              ? "※ 投稿後、Stripeの決済画面が開きます" 
+              : language === "pt" 
+              ? "※ Após postar, a tela de pagamento do Stripe será aberta" 
+              : "※ Stripe payment screen will open after posting"}
+          </p>
+        )}
+      </Card>
 
       {/* Comments List */}
       <div className="space-y-4">
