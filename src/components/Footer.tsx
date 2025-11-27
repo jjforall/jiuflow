@@ -45,8 +45,17 @@ const Footer = () => {
           
           <div>
             <h4 className="font-light mb-4 text-sm">Social</h4>
-            <ul className="space-y-2 text-sm text-muted-foreground">
-              <li>Instagram: @jiuFlowArt</li>
+            <ul className="space-y-2 text-sm">
+              <li>
+                <a 
+                  href="https://instagram.com/jiuFlowArt" 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="text-muted-foreground hover:text-foreground transition-smooth"
+                >
+                  Instagram: @jiuFlowArt
+                </a>
+              </li>
             </ul>
           </div>
         </div>
