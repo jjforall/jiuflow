@@ -6,8 +6,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { User, CreditCard, Calendar, Mail } from "lucide-react";
+import { User, CreditCard, Calendar, Mail, Upload, Video, Eye } from "lucide-react";
 import { toast } from "sonner";
+import { VideoUploadDialog } from "@/components/VideoUploadDialog";
+import { Badge } from "@/components/ui/badge";
 
 interface SubscriptionStatus {
   subscribed: boolean;
@@ -16,12 +18,46 @@ interface SubscriptionStatus {
   price_id?: string;
 }
 
+interface UserVideo {
+  id: string;
+  title: string;
+  description: string | null;
+  video_type: string;
+  video_url: string;
+  thumbnail_url: string | null;
+  view_count: number;
+  created_at: string;
+}
+
 const MyPage = () => {
   const { language } = useLanguage();
   const navigate = useNavigate();
   const [user, setUser] = useState<{ id: string; email?: string } | null>(null);
   const [subscription, setSubscription] = useState<SubscriptionStatus | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+  const [userVideos, setUserVideos] = useState<UserVideo[]>([]);
+  const [videosLoading, setVideosLoading] = useState(true);
+
+  const loadUserVideos = async () => {
+    if (!user) return;
+    
+    setVideosLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('user_videos')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setUserVideos(data || []);
+    } catch (error) {
+      console.error('Error loading videos:', error);
+    } finally {
+      setVideosLoading(false);
+    }
+  };
 
   const checkAuth = useCallback(async () => {
     const { data: { session } } = await supabase.auth.getSession();
@@ -36,6 +72,12 @@ const MyPage = () => {
   useEffect(() => {
     checkAuth();
   }, [checkAuth]);
+
+  useEffect(() => {
+    if (user) {
+      loadUserVideos();
+    }
+  }, [user]);
 
   const checkSubscription = async () => {
     setIsLoading(true);
@@ -198,6 +240,81 @@ const MyPage = () => {
             </Card>
           </div>
 
+          {/* Video Upload Section */}
+          <div className="mt-12 animate-fade-up">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-3xl font-light">
+                {language === "ja" ? "あなたの動画" : language === "pt" ? "Seus vídeos" : "Your Videos"}
+              </h2>
+              <Button onClick={() => setUploadDialogOpen(true)} className="gap-2">
+                <Upload className="w-4 h-4" />
+                {language === "ja" ? "動画をアップロード" : language === "pt" ? "Enviar vídeo" : "Upload Video"}
+              </Button>
+            </div>
+
+            {videosLoading ? (
+              <div className="grid md:grid-cols-2 gap-4">
+                {[1, 2].map((i) => (
+                  <div key={i} className="border border-border rounded-lg p-4 space-y-3">
+                    <div className="h-32 bg-muted/50 animate-pulse rounded" />
+                    <div className="h-4 w-2/3 bg-muted/50 animate-pulse rounded" />
+                    <div className="h-3 w-1/2 bg-muted/50 animate-pulse rounded" />
+                  </div>
+                ))}
+              </div>
+            ) : userVideos.length === 0 ? (
+              <div className="text-center py-12 border border-dashed border-border rounded-lg">
+                <Video className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+                <p className="text-muted-foreground mb-4">
+                  {language === "ja" 
+                    ? "まだ動画をアップロードしていません" 
+                    : language === "pt" 
+                    ? "Você ainda não enviou nenhum vídeo" 
+                    : "You haven't uploaded any videos yet"}
+                </p>
+                <Button onClick={() => setUploadDialogOpen(true)} variant="outline" className="gap-2">
+                  <Upload className="w-4 h-4" />
+                  {language === "ja" ? "最初の動画をアップロード" : language === "pt" ? "Enviar primeiro vídeo" : "Upload First Video"}
+                </Button>
+              </div>
+            ) : (
+              <div className="grid md:grid-cols-2 gap-4">
+                {userVideos.map((video) => (
+                  <Card key={video.id} className="overflow-hidden hover:shadow-lg transition-shadow">
+                    <div className="aspect-video bg-muted relative">
+                      {video.thumbnail_url ? (
+                        <img src={video.thumbnail_url} alt={video.title} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <Video className="w-12 h-12 text-muted-foreground" />
+                        </div>
+                      )}
+                    </div>
+                    <CardContent className="pt-4">
+                      <h3 className="font-medium mb-2 line-clamp-2">{video.title}</h3>
+                      {video.description && (
+                        <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{video.description}</p>
+                      )}
+                      <div className="flex items-center justify-between">
+                        <Badge variant="secondary" className="text-xs">
+                          {video.video_type === "match" 
+                            ? (language === "ja" ? "試合動画" : "Match") 
+                            : video.video_type === "technique"
+                            ? (language === "ja" ? "テクニック" : "Technique")
+                            : (language === "ja" ? "その他" : "Other")}
+                        </Badge>
+                        <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                          <Eye className="w-3.5 h-3.5" />
+                          <span>{video.view_count}</span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </div>
+
           {/* Refresh Button */}
           <div className="mt-8 text-center animate-fade-up">
             <Button
@@ -214,6 +331,16 @@ const MyPage = () => {
           )}
         </div>
       </main>
+
+      <VideoUploadDialog 
+        open={uploadDialogOpen} 
+        onOpenChange={(open) => {
+          setUploadDialogOpen(open);
+          if (!open) {
+            loadUserVideos();
+          }
+        }} 
+      />
 
       <Footer />
     </div>

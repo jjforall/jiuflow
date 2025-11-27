@@ -22,7 +22,7 @@ export function VideoUploadDialog({ open, onOpenChange }: VideoUploadDialogProps
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
 
-  const handleVideoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleVideoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       // Check file size (max 500MB)
@@ -30,7 +30,30 @@ export function VideoUploadDialog({ open, onOpenChange }: VideoUploadDialogProps
         toast.error("動画ファイルは500MB以下にしてください");
         return;
       }
-      setVideoFile(file);
+
+      // Check video duration (max 10 minutes = 600 seconds)
+      const video = document.createElement('video');
+      video.preload = 'metadata';
+      
+      video.onloadedmetadata = function() {
+        window.URL.revokeObjectURL(video.src);
+        const duration = video.duration;
+        
+        if (duration > 600) {
+          toast.error("動画は10分以内にしてください");
+          e.target.value = '';
+          return;
+        }
+        
+        setVideoFile(file);
+      };
+
+      video.onerror = function() {
+        toast.error("動画ファイルの読み込みに失敗しました");
+        e.target.value = '';
+      };
+
+      video.src = URL.createObjectURL(file);
     }
   };
 
@@ -171,7 +194,7 @@ export function VideoUploadDialog({ open, onOpenChange }: VideoUploadDialogProps
                 </span>
               )}
             </div>
-            <p className="text-xs text-muted-foreground">最大500MBまで対応</p>
+            <p className="text-xs text-muted-foreground">最大500MB、10分以内の動画まで対応</p>
           </div>
 
           {uploading && (
