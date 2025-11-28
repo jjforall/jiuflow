@@ -300,17 +300,37 @@ const MyPage = () => {
       } else if (field === 'bio') {
         updateData.bio = editValues.bio?.trim() || null;
       } else if (field === 'education') {
-        updateData.education = editValues.education || [];
+        // Filter out empty entries
+        const validEducation = (editValues.education || []).filter((edu: any) => 
+          edu.school && edu.school.trim()
+        );
+        updateData.education = validEducation;
       } else if (field === 'work_experience') {
-        updateData.work_experience = editValues.work_experience || [];
+        // Filter out empty entries
+        const validWork = (editValues.work_experience || []).filter((work: any) => 
+          work.company && work.company.trim() && work.position && work.position.trim()
+        );
+        updateData.work_experience = validWork;
       } else if (field === 'belt_history') {
-        updateData.belt_history = editValues.belt_history || [];
+        // Filter out empty entries
+        const validBelts = (editValues.belt_history || []).filter((belt: any) => 
+          belt.belt && belt.belt.trim()
+        );
+        updateData.belt_history = validBelts;
       } else if (field === 'home_dojo') {
         updateData.home_dojo = editValues.home_dojo?.trim() || null;
       } else if (field === 'training_locations') {
-        updateData.training_locations = editValues.training_locations || [];
+        // Filter out empty entries
+        const validLocations = (editValues.training_locations || []).filter((loc: string) => 
+          loc && loc.trim()
+        );
+        updateData.training_locations = validLocations;
       } else if (field === 'titles') {
-        updateData.titles = editValues.titles || [];
+        // Filter out empty entries
+        const validTitles = (editValues.titles || []).filter((title: any) => 
+          title.title && title.title.trim()
+        );
+        updateData.titles = validTitles;
       }
 
       const { error } = await supabase
@@ -850,35 +870,43 @@ const MyPage = () => {
                         )}
                       </div>
 
-                      {/* Belt History Section */}
-                      <div className="mb-4">
-                        <div className="flex items-center gap-2 mb-2">
-                          <h3 className="text-sm font-semibold">{language === "ja" ? "帯の履歴" : "Belt History"}</h3>
-                          {editingField === 'belt_history' && (
-                            <Button size="sm" variant="ghost" onClick={addBeltHistory}>
-                              <Plus className="w-4 h-4" />
-                            </Button>
-                          )}
-                          {editingField !== 'belt_history' && (
-                            <Button 
-                              size="sm" 
-                              variant="ghost"
-                              onClick={() => startEditing('belt_history', profile?.belt_history || [])}
-                            >
-                              <Edit2 className="w-4 h-4" />
-                            </Button>
-                          )}
-                        </div>
+                    {/* Belt History Section */}
+                    <div className="mb-6 p-4 bg-muted/30 rounded-lg border border-border/50">
+                      <div className="flex items-center justify-between mb-3">
+                        <h3 className="text-base font-semibold flex items-center gap-2">
+                          🥋 {language === "ja" ? "帯の履歴" : "Belt History"}
+                        </h3>
                         {editingField === 'belt_history' ? (
-                          <div className="space-y-2">
-                            {(editValues.belt_history || []).map((belt: any, index: number) => (
-                              <div key={index} className="flex items-start gap-2 p-2 border rounded">
-                                <div className="flex-1 space-y-2">
-                                  <Input
-                                    value={belt.belt || ''}
-                                    onChange={(e) => updateBeltHistory(index, 'belt', e.target.value)}
-                                    placeholder={language === "ja" ? "帯（例：青帯）" : "Belt (e.g., Blue Belt)"}
-                                  />
+                          <div className="flex gap-2">
+                            <Button size="sm" onClick={() => saveField('belt_history')} className="gap-1">
+                              <Check className="w-4 h-4" /> {language === "ja" ? "保存" : "Save"}
+                            </Button>
+                            <Button size="sm" variant="outline" onClick={cancelEditing} className="gap-1">
+                              <X className="w-4 h-4" /> {language === "ja" ? "キャンセル" : "Cancel"}
+                            </Button>
+                          </div>
+                        ) : (
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => startEditing('belt_history', profile?.belt_history || [])}
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </Button>
+                        )}
+                      </div>
+                      {editingField === 'belt_history' ? (
+                        <div className="space-y-3">
+                          {(editValues.belt_history || []).map((belt: any, index: number) => (
+                            <div key={index} className="flex items-start gap-2 p-3 bg-background rounded border">
+                              <div className="flex-1 space-y-2">
+                                <Input
+                                  value={belt.belt || ''}
+                                  onChange={(e) => updateBeltHistory(index, 'belt', e.target.value)}
+                                  placeholder={language === "ja" ? "帯（例：青帯、紫帯）" : "Belt (e.g., Blue Belt)"}
+                                  className="font-medium"
+                                />
+                                <div className="grid grid-cols-2 gap-2">
                                   <Input
                                     value={belt.date || ''}
                                     onChange={(e) => updateBeltHistory(index, 'date', e.target.value)}
@@ -890,186 +918,231 @@ const MyPage = () => {
                                     placeholder={language === "ja" ? "授与者" : "Instructor"}
                                   />
                                 </div>
-                                <Button size="sm" variant="ghost" onClick={() => removeBeltHistory(index)}>
-                                  <X className="w-4 h-4" />
-                                </Button>
                               </div>
-                            ))}
-                            <div className="flex gap-2">
-                              <Button size="sm" onClick={() => saveField('belt_history')}><Check className="w-4 h-4 mr-1" /> {language === "ja" ? "保存" : "Save"}</Button>
-                              <Button size="sm" variant="outline" onClick={cancelEditing}><X className="w-4 h-4 mr-1" /> {language === "ja" ? "キャンセル" : "Cancel"}</Button>
+                              <Button size="sm" variant="ghost" onClick={() => removeBeltHistory(index)}>
+                                <X className="w-4 h-4" />
+                              </Button>
                             </div>
-                          </div>
-                        ) : (
-                          profile?.belt_history && profile.belt_history.length > 0 ? (
-                            <ul className="space-y-1">
-                              {profile.belt_history.map((belt, index) => (
-                                <li key={index} className="text-sm text-muted-foreground">
-                                  {belt.belt}
-                                  {belt.instructor && ` - ${belt.instructor}`}
-                                  {belt.date && ` (${belt.date})`}
-                                </li>
-                              ))}
-                            </ul>
-                          ) : (
-                            <p className="text-sm text-muted-foreground">{language === "ja" ? "帯の履歴を追加" : "Add belt history"}</p>
-                          )
-                        )}
-                      </div>
-
-                      {/* Home Dojo */}
-                      <div className="mb-4">
-                        <div className="flex items-center gap-2 mb-2">
-                          <h3 className="text-sm font-semibold">{language === "ja" ? "所属道場" : "Home Dojo"}</h3>
+                          ))}
+                          <Button 
+                            size="sm" 
+                            variant="outline" 
+                            onClick={addBeltHistory}
+                            className="w-full gap-2"
+                          >
+                            <Plus className="w-4 h-4" />
+                            {language === "ja" ? "帯を追加" : "Add Belt"}
+                          </Button>
                         </div>
+                      ) : (
+                        profile?.belt_history && profile.belt_history.length > 0 ? (
+                          <ul className="space-y-2">
+                            {profile.belt_history.map((belt, index) => (
+                              <li key={index} className="flex items-center gap-2 text-sm p-2 bg-background rounded">
+                                <span className="font-semibold text-primary">{belt.belt}</span>
+                                {belt.instructor && <span className="text-muted-foreground">- {belt.instructor}</span>}
+                                {belt.date && <span className="text-muted-foreground text-xs">({belt.date})</span>}
+                              </li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <p className="text-sm text-muted-foreground italic">{language === "ja" ? "帯の履歴を追加してください" : "Add belt history"}</p>
+                        )
+                      )}
+                    </div>
+
+                    {/* Home Dojo */}
+                    <div className="mb-6 p-4 bg-muted/30 rounded-lg border border-border/50">
+                      <div className="flex items-center justify-between mb-3">
+                        <h3 className="text-base font-semibold flex items-center gap-2">
+                          🏛️ {language === "ja" ? "所属道場" : "Home Dojo"}
+                        </h3>
                         {editingField === 'home_dojo' ? (
-                          <div className="flex items-center gap-2">
-                            <Input
-                              value={editValues.home_dojo || ''}
-                              onChange={(e) => setEditValues({ ...editValues, home_dojo: e.target.value })}
-                              placeholder={language === "ja" ? "所属道場名" : "Dojo name"}
-                            />
-                            <Button size="sm" onClick={() => saveField('home_dojo')}><Check className="w-4 h-4" /></Button>
-                            <Button size="sm" variant="outline" onClick={cancelEditing}><X className="w-4 h-4" /></Button>
+                          <div className="flex gap-2">
+                            <Button size="sm" onClick={() => saveField('home_dojo')} className="gap-1">
+                              <Check className="w-4 h-4" /> {language === "ja" ? "保存" : "Save"}
+                            </Button>
+                            <Button size="sm" variant="outline" onClick={cancelEditing} className="gap-1">
+                              <X className="w-4 h-4" /> {language === "ja" ? "キャンセル" : "Cancel"}
+                            </Button>
                           </div>
                         ) : (
-                          <div className="flex items-center gap-2 group">
-                            <p className="text-sm text-muted-foreground">
-                              {profile?.home_dojo || (language === "ja" ? "所属道場を追加" : "Add home dojo")}
-                            </p>
-                            <Button 
-                              size="sm" 
-                              variant="ghost"
-                              className="opacity-0 group-hover:opacity-100 transition-opacity"
-                              onClick={() => startEditing('home_dojo', profile?.home_dojo)}
-                            >
-                              <Edit2 className="w-4 h-4" />
-                            </Button>
-                          </div>
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => startEditing('home_dojo', profile?.home_dojo)}
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </Button>
                         )}
                       </div>
+                      {editingField === 'home_dojo' ? (
+                        <Input
+                          value={editValues.home_dojo || ''}
+                          onChange={(e) => setEditValues({ ...editValues, home_dojo: e.target.value })}
+                          placeholder={language === "ja" ? "所属道場名" : "Dojo name"}
+                          className="font-medium"
+                        />
+                      ) : (
+                        <p className="text-sm p-2 bg-background rounded">
+                          {profile?.home_dojo || <span className="text-muted-foreground italic">{language === "ja" ? "所属道場を追加してください" : "Add home dojo"}</span>}
+                        </p>
+                      )}
+                    </div>
 
-                      {/* Training Locations */}
-                      <div className="mb-4">
-                        <div className="flex items-center gap-2 mb-2">
-                          <h3 className="text-sm font-semibold">{language === "ja" ? "よくいく出稽古先" : "Training Locations"}</h3>
-                          {editingField === 'training_locations' && (
-                            <Button size="sm" variant="ghost" onClick={addTrainingLocation}>
-                              <Plus className="w-4 h-4" />
-                            </Button>
-                          )}
-                          {editingField !== 'training_locations' && (
-                            <Button 
-                              size="sm" 
-                              variant="ghost"
-                              onClick={() => startEditing('training_locations', profile?.training_locations || [])}
-                            >
-                              <Edit2 className="w-4 h-4" />
-                            </Button>
-                          )}
-                        </div>
+                    {/* Training Locations */}
+                    <div className="mb-6 p-4 bg-muted/30 rounded-lg border border-border/50">
+                      <div className="flex items-center justify-between mb-3">
+                        <h3 className="text-base font-semibold flex items-center gap-2">
+                          🗺️ {language === "ja" ? "よくいく出稽古先" : "Training Locations"}
+                        </h3>
                         {editingField === 'training_locations' ? (
-                          <div className="space-y-2">
-                            {(editValues.training_locations || []).map((location: string, index: number) => (
-                              <div key={index} className="flex items-center gap-2">
-                                <Input
-                                  value={location}
-                                  onChange={(e) => updateTrainingLocation(index, e.target.value)}
-                                  placeholder={language === "ja" ? "道場名" : "Location"}
-                                />
-                                <Button size="sm" variant="ghost" onClick={() => removeTrainingLocation(index)}>
-                                  <X className="w-4 h-4" />
-                                </Button>
-                              </div>
-                            ))}
-                            <div className="flex gap-2">
-                              <Button size="sm" onClick={() => saveField('training_locations')}><Check className="w-4 h-4 mr-1" /> {language === "ja" ? "保存" : "Save"}</Button>
-                              <Button size="sm" variant="outline" onClick={cancelEditing}><X className="w-4 h-4 mr-1" /> {language === "ja" ? "キャンセル" : "Cancel"}</Button>
-                            </div>
+                          <div className="flex gap-2">
+                            <Button size="sm" onClick={() => saveField('training_locations')} className="gap-1">
+                              <Check className="w-4 h-4" /> {language === "ja" ? "保存" : "Save"}
+                            </Button>
+                            <Button size="sm" variant="outline" onClick={cancelEditing} className="gap-1">
+                              <X className="w-4 h-4" /> {language === "ja" ? "キャンセル" : "Cancel"}
+                            </Button>
                           </div>
                         ) : (
-                          profile?.training_locations && profile.training_locations.length > 0 ? (
-                            <ul className="space-y-1">
-                              {profile.training_locations.map((location, index) => (
-                                <li key={index} className="text-sm text-muted-foreground">• {location}</li>
-                              ))}
-                            </ul>
-                          ) : (
-                            <p className="text-sm text-muted-foreground">{language === "ja" ? "出稽古先を追加" : "Add training locations"}</p>
-                          )
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => startEditing('training_locations', profile?.training_locations || [])}
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </Button>
                         )}
                       </div>
-
-                      {/* Titles */}
-                      <div className="mb-4">
-                        <div className="flex items-center gap-2 mb-2">
-                          <h3 className="text-sm font-semibold">{language === "ja" ? "獲得タイトル" : "Titles & Achievements"}</h3>
-                          {editingField === 'titles' && (
-                            <Button size="sm" variant="ghost" onClick={addTitle}>
-                              <Plus className="w-4 h-4" />
-                            </Button>
-                          )}
-                          {editingField !== 'titles' && (
-                            <Button 
-                              size="sm" 
-                              variant="ghost"
-                              onClick={() => startEditing('titles', profile?.titles || [])}
-                            >
-                              <Edit2 className="w-4 h-4" />
-                            </Button>
-                          )}
+                      {editingField === 'training_locations' ? (
+                        <div className="space-y-2">
+                          {(editValues.training_locations || []).map((location: string, index: number) => (
+                            <div key={index} className="flex items-center gap-2">
+                              <Input
+                                value={location}
+                                onChange={(e) => updateTrainingLocation(index, e.target.value)}
+                                placeholder={language === "ja" ? "道場名" : "Location"}
+                              />
+                              <Button size="sm" variant="ghost" onClick={() => removeTrainingLocation(index)}>
+                                <X className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          ))}
+                          <Button 
+                            size="sm" 
+                            variant="outline" 
+                            onClick={addTrainingLocation}
+                            className="w-full gap-2"
+                          >
+                            <Plus className="w-4 h-4" />
+                            {language === "ja" ? "道場を追加" : "Add Location"}
+                          </Button>
                         </div>
+                      ) : (
+                        profile?.training_locations && profile.training_locations.length > 0 ? (
+                          <ul className="space-y-1">
+                            {profile.training_locations.map((location, index) => (
+                              <li key={index} className="text-sm p-2 bg-background rounded flex items-center gap-2">
+                                <span className="text-primary">•</span> {location}
+                              </li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <p className="text-sm text-muted-foreground italic">{language === "ja" ? "出稽古先を追加してください" : "Add training locations"}</p>
+                        )
+                      )}
+                    </div>
+
+                    {/* Titles */}
+                    <div className="mb-6 p-4 bg-muted/30 rounded-lg border border-border/50">
+                      <div className="flex items-center justify-between mb-3">
+                        <h3 className="text-base font-semibold flex items-center gap-2">
+                          🏆 {language === "ja" ? "獲得タイトル" : "Titles & Achievements"}
+                        </h3>
                         {editingField === 'titles' ? (
-                          <div className="space-y-2">
-                            {(editValues.titles || []).map((title: any, index: number) => (
-                              <div key={index} className="flex items-start gap-2 p-2 border rounded">
-                                <div className="flex-1 space-y-2">
+                          <div className="flex gap-2">
+                            <Button size="sm" onClick={() => saveField('titles')} className="gap-1">
+                              <Check className="w-4 h-4" /> {language === "ja" ? "保存" : "Save"}
+                            </Button>
+                            <Button size="sm" variant="outline" onClick={cancelEditing} className="gap-1">
+                              <X className="w-4 h-4" /> {language === "ja" ? "キャンセル" : "Cancel"}
+                            </Button>
+                          </div>
+                        ) : (
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => startEditing('titles', profile?.titles || [])}
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </Button>
+                        )}
+                      </div>
+                      {editingField === 'titles' ? (
+                        <div className="space-y-3">
+                          {(editValues.titles || []).map((title: any, index: number) => (
+                            <div key={index} className="flex items-start gap-2 p-3 bg-background rounded border">
+                              <div className="flex-1 space-y-2">
+                                <Input
+                                  value={title.title || ''}
+                                  onChange={(e) => updateTitle(index, 'title', e.target.value)}
+                                  placeholder={language === "ja" ? "タイトル名" : "Title"}
+                                  className="font-medium"
+                                />
+                                <div className="grid grid-cols-2 gap-2">
                                   <Input
-                                    value={title.title || ''}
-                                    onChange={(e) => updateTitle(index, 'title', e.target.value)}
-                                    placeholder={language === "ja" ? "タイトル名" : "Title"}
+                                    value={title.organization || ''}
+                                    onChange={(e) => updateTitle(index, 'organization', e.target.value)}
+                                    placeholder={language === "ja" ? "団体名" : "Organization"}
                                   />
                                   <Input
                                     value={title.date || ''}
                                     onChange={(e) => updateTitle(index, 'date', e.target.value)}
                                     placeholder={language === "ja" ? "取得日" : "Date"}
                                   />
-                                  <Input
-                                    value={title.organization || ''}
-                                    onChange={(e) => updateTitle(index, 'organization', e.target.value)}
-                                    placeholder={language === "ja" ? "団体名" : "Organization"}
-                                  />
                                 </div>
-                                <Button size="sm" variant="ghost" onClick={() => removeTitle(index)}>
-                                  <X className="w-4 h-4" />
-                                </Button>
+                              </div>
+                              <Button size="sm" variant="ghost" onClick={() => removeTitle(index)}>
+                                <X className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          ))}
+                          <Button 
+                            size="sm" 
+                            variant="outline" 
+                            onClick={addTitle}
+                            className="w-full gap-2"
+                          >
+                            <Plus className="w-4 h-4" />
+                            {language === "ja" ? "タイトルを追加" : "Add Title"}
+                          </Button>
+                        </div>
+                      ) : (
+                        profile?.titles && profile.titles.length > 0 ? (
+                          <div className="grid gap-3">
+                            {profile.titles.map((title, index) => (
+                              <div key={index} className="p-3 bg-background rounded border border-primary/20">
+                                <div className="flex items-start gap-2">
+                                  <span className="text-2xl">🏆</span>
+                                  <div className="flex-1">
+                                    <div className="font-semibold text-primary">{title.title}</div>
+                                    {title.organization && (
+                                      <div className="text-sm text-muted-foreground">{title.organization}</div>
+                                    )}
+                                    {title.date && (
+                                      <div className="text-xs text-muted-foreground mt-1">{title.date}</div>
+                                    )}
+                                  </div>
+                                </div>
                               </div>
                             ))}
-                            <div className="flex gap-2">
-                              <Button size="sm" onClick={() => saveField('titles')}><Check className="w-4 h-4 mr-1" /> {language === "ja" ? "保存" : "Save"}</Button>
-                              <Button size="sm" variant="outline" onClick={cancelEditing}><X className="w-4 h-4 mr-1" /> {language === "ja" ? "キャンセル" : "Cancel"}</Button>
-                            </div>
                           </div>
                         ) : (
-                          profile?.titles && profile.titles.length > 0 ? (
-                            <ul className="space-y-2">
-                              {profile.titles.map((title, index) => (
-                                <li key={index} className="text-sm">
-                                  <div className="font-medium">🏆 {title.title}</div>
-                                  {title.organization && (
-                                    <div className="text-muted-foreground text-xs">{title.organization}</div>
-                                  )}
-                                  {title.date && (
-                                    <div className="text-muted-foreground text-xs">{title.date}</div>
-                                  )}
-                                </li>
-                              ))}
-                            </ul>
-                          ) : (
-                            <p className="text-sm text-muted-foreground">{language === "ja" ? "タイトルを追加" : "Add titles"}</p>
-                          )
-                        )}
-                      </div>
+                          <p className="text-sm text-muted-foreground italic">{language === "ja" ? "獲得タイトルを追加してください" : "Add titles"}</p>
+                        )
+                      )}
+                    </div>
 
                       <p className="text-sm text-muted-foreground mt-4">
                         <Video className="inline h-4 w-4 mr-1" />
