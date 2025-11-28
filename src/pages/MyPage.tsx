@@ -115,6 +115,8 @@ const MyPage = () => {
   const [followingCount, setFollowingCount] = useState(0);
   const [showFollowList, setShowFollowList] = useState<'followers' | 'following' | null>(null);
   const [followList, setFollowList] = useState<Array<{ id: string; display_name: string; username: string; avatar_url: string }>>([]);
+  const [schoolSuggestions, setSchoolSuggestions] = useState<string[]>([]);
+  const [companySuggestions, setCompanySuggestions] = useState<string[]>([]);
 
   const loadUserVideos = async () => {
     if (!user) return;
@@ -159,6 +161,8 @@ const MyPage = () => {
       loadInstructorSuggestions();
       loadOrganizations();
       loadFollowStats();
+      loadSchoolSuggestions();
+      loadCompanySuggestions();
     }
   }, [user]);
 
@@ -311,6 +315,113 @@ const MyPage = () => {
       setInstructorSuggestions(Array.from(instructors).sort());
     } catch (error) {
       console.error('Error loading instructor suggestions:', error);
+    }
+  };
+
+  const loadSchoolSuggestions = async () => {
+    try {
+      // Default suggestions for common schools
+      const defaultSuggestions = [
+        '東京大学',
+        '京都大学',
+        '大阪大学',
+        '東北大学',
+        '名古屋大学',
+        '九州大学',
+        '北海道大学',
+        '早稲田大学',
+        '慶應義塾大学',
+        '上智大学',
+        '明治大学',
+        '青山学院大学',
+        '立教大学',
+        '中央大学',
+        '法政大学',
+        '日本大学',
+        '東海大学',
+        '専修大学',
+        '駒澤大学',
+        '関西大学',
+        '関西学院大学',
+        '同志社大学',
+        '立命館大学',
+        '近畿大学',
+        'その他'
+      ];
+
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('education');
+
+      if (error) throw error;
+
+      const schools = new Set<string>(defaultSuggestions);
+      
+      data?.forEach((profile) => {
+        if (profile.education) {
+          (profile.education as any[]).forEach((edu: any) => {
+            if (edu.school) schools.add(edu.school);
+          });
+        }
+      });
+
+      setSchoolSuggestions(Array.from(schools).sort());
+    } catch (error) {
+      console.error('Error loading school suggestions:', error);
+    }
+  };
+
+  const loadCompanySuggestions = async () => {
+    try {
+      // Default suggestions for common companies
+      const defaultSuggestions = [
+        'トヨタ自動車',
+        'ソニー',
+        'パナソニック',
+        '日立製作所',
+        '東芝',
+        '富士通',
+        'NEC',
+        '三菱電機',
+        'キヤノン',
+        'ニコン',
+        'ソフトバンク',
+        'NTTドコモ',
+        'KDDI',
+        '楽天',
+        'サイバーエージェント',
+        'ヤフー',
+        'LINE',
+        'メルカリ',
+        'リクルート',
+        'サントリー',
+        'アサヒビール',
+        'キリン',
+        '任天堂',
+        'バンダイナムコ',
+        'カプコン',
+        'その他'
+      ];
+
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('work_experience');
+
+      if (error) throw error;
+
+      const companies = new Set<string>(defaultSuggestions);
+      
+      data?.forEach((profile) => {
+        if (profile.work_experience) {
+          (profile.work_experience as any[]).forEach((work: any) => {
+            if (work.company) companies.add(work.company);
+          });
+        }
+      });
+
+      setCompanySuggestions(Array.from(companies).sort());
+    } catch (error) {
+      console.error('Error loading company suggestions:', error);
     }
   };
 
@@ -1116,9 +1227,11 @@ const MyPage = () => {
                             {(editValues.education || []).map((edu: any, index: number) => (
                               <div key={index} className="flex items-start gap-2 p-2 border rounded">
                                 <div className="flex-1 space-y-2">
-                                  <Input
+                                  <InputWithSuggestions
                                     value={edu.school || ''}
                                     onChange={(e) => updateEducation(index, 'school', e.target.value)}
+                                    onSelectSuggestion={(value) => updateEducation(index, 'school', value)}
+                                    suggestions={schoolSuggestions}
                                     placeholder={language === "ja" ? "学校名" : "School"}
                                   />
                                   <Input
@@ -1183,9 +1296,11 @@ const MyPage = () => {
                             {(editValues.work_experience || []).map((work: any, index: number) => (
                               <div key={index} className="flex items-start gap-2 p-2 border rounded">
                                 <div className="flex-1 space-y-2">
-                                  <Input
+                                  <InputWithSuggestions
                                     value={work.company || ''}
                                     onChange={(e) => updateWorkExperience(index, 'company', e.target.value)}
+                                    onSelectSuggestion={(value) => updateWorkExperience(index, 'company', value)}
+                                    suggestions={companySuggestions}
                                     placeholder={language === "ja" ? "会社名" : "Company"}
                                   />
                                   <Input
