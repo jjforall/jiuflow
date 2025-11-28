@@ -13,6 +13,8 @@ import { VideoUploadDialog } from "@/components/VideoUploadDialog";
 import { VideoEditDialog } from "@/components/VideoEditDialog";
 import { UserVideoCard } from "@/components/UserVideoCard";
 import { Badge } from "@/components/ui/badge";
+import { UserProfileEditDialog } from "@/components/UserProfileEditDialog";
+import { ExternalLink } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -63,6 +65,7 @@ const MyPage = () => {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deletingVideoId, setDeletingVideoId] = useState<string | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [profileDialogOpen, setProfileDialogOpen] = useState(false);
 
   const loadUserVideos = async () => {
     if (!user) return;
@@ -421,9 +424,29 @@ const MyPage = () => {
             {/* User Info Card */}
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2 font-light">
-                  <User className="h-5 w-5" />
-                  {language === "ja" ? "ユーザー情報" : language === "pt" ? "Informações do usuário" : "User Information"}
+                <CardTitle className="flex items-center justify-between font-light">
+                  <div className="flex items-center gap-2">
+                    <User className="h-5 w-5" />
+                    {language === "ja" ? "ユーザー情報" : language === "pt" ? "Informações do usuário" : "User Information"}
+                  </div>
+                  <div className="flex gap-2">
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      onClick={() => navigate(`/user/${user?.id}`)}
+                      className="gap-2"
+                    >
+                      <ExternalLink className="w-4 h-4" />
+                      {language === "ja" ? "公開ページ" : "Public Page"}
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      onClick={() => setProfileDialogOpen(true)}
+                    >
+                      <Edit2 className="w-4 h-4" />
+                    </Button>
+                  </div>
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -716,6 +739,17 @@ const MyPage = () => {
         video={editingVideo}
         onSuccess={loadUserVideos}
       />
+
+      {user && (
+        <UserProfileEditDialog
+          open={profileDialogOpen}
+          onOpenChange={setProfileDialogOpen}
+          userId={user.id}
+          onSuccess={() => {
+            toast.success(language === "ja" ? "プロフィールを更新しました" : "Profile updated");
+          }}
+        />
+      )}
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
