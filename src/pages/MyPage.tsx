@@ -729,12 +729,62 @@ const MyPage = () => {
               </div>
               
               <div className="mt-4">
-                <h1 className="text-3xl font-bold mb-1">
-                  {profile?.display_name || profile?.username || user?.email?.split('@')[0] || "ユーザー"}
-                </h1>
-                <p className="text-muted-foreground mb-3">
-                  {profile?.bio || (language === "ja" ? "自己紹介を追加してください" : "Add your bio")}
-                </p>
+                {editingField === 'display_name' ? (
+                  <div className="flex items-center gap-2 mb-1">
+                    <Input
+                      value={editValues.display_name || ''}
+                      onChange={(e) => setEditValues({ ...editValues, display_name: e.target.value })}
+                      placeholder={language === "ja" ? "表示名" : "Display name"}
+                      className="text-3xl font-bold h-12"
+                    />
+                    <Button size="sm" onClick={() => saveField('display_name')}><Check className="w-4 h-4" /></Button>
+                    <Button size="sm" variant="outline" onClick={cancelEditing}><X className="w-4 h-4" /></Button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 group mb-1">
+                    <h1 className="text-3xl font-bold">
+                      {profile?.display_name || profile?.username || user?.email?.split('@')[0] || "ユーザー"}
+                    </h1>
+                    <Button 
+                      size="sm" 
+                      variant="ghost" 
+                      className="opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={() => startEditing('display_name', profile?.display_name)}
+                    >
+                      <Edit2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                )}
+
+                {editingField === 'bio' ? (
+                  <div className="flex items-start gap-2 mb-3">
+                    <Textarea
+                      value={editValues.bio || ''}
+                      onChange={(e) => setEditValues({ ...editValues, bio: e.target.value })}
+                      placeholder={language === "ja" ? "自己紹介" : "Bio"}
+                      rows={2}
+                      className="text-muted-foreground"
+                    />
+                    <div className="flex flex-col gap-2">
+                      <Button size="sm" onClick={() => saveField('bio')}><Check className="w-4 h-4" /></Button>
+                      <Button size="sm" variant="outline" onClick={cancelEditing}><X className="w-4 h-4" /></Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-start gap-2 group mb-3">
+                    <p className="text-muted-foreground flex-1">
+                      {profile?.bio || (language === "ja" ? "自己紹介を追加してください" : "Add your bio")}
+                    </p>
+                    <Button 
+                      size="sm" 
+                      variant="ghost"
+                      className="opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={() => startEditing('bio', profile?.bio)}
+                    >
+                      <Edit2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                )}
                 
                 {/* Stats */}
                 <div className="flex gap-6 text-sm">
@@ -789,65 +839,6 @@ const MyPage = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-6">
-                    <div className="flex items-start gap-6">
-                      <div className="flex-1">
-                        {editingField === 'display_name' ? (
-                          <div className="flex items-center gap-2 mb-2">
-                            <Input
-                              value={editValues.display_name || ''}
-                              onChange={(e) => setEditValues({ ...editValues, display_name: e.target.value })}
-                              placeholder={language === "ja" ? "表示名" : "Display name"}
-                              className="text-2xl font-light h-12"
-                            />
-                            <Button size="sm" onClick={() => saveField('display_name')}><Check className="w-4 h-4" /></Button>
-                            <Button size="sm" variant="outline" onClick={cancelEditing}><X className="w-4 h-4" /></Button>
-                          </div>
-                        ) : (
-                          <div className="flex items-center gap-2 group mb-2">
-                            <h2 className="text-2xl font-light">
-                              {profile?.display_name || profile?.username || user?.email?.split('@')[0] || "ユーザー"}
-                            </h2>
-                            <Button 
-                              size="sm" 
-                              variant="ghost" 
-                              className="opacity-0 group-hover:opacity-100 transition-opacity"
-                              onClick={() => startEditing('display_name', profile?.display_name)}
-                            >
-                              <Edit2 className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        )}
-
-                        {editingField === 'bio' ? (
-                          <div className="flex items-start gap-2 mb-4">
-                            <Textarea
-                              value={editValues.bio || ''}
-                              onChange={(e) => setEditValues({ ...editValues, bio: e.target.value })}
-                              placeholder={language === "ja" ? "自己紹介" : "Bio"}
-                              rows={3}
-                            />
-                            <div className="flex flex-col gap-2">
-                              <Button size="sm" onClick={() => saveField('bio')}><Check className="w-4 h-4" /></Button>
-                              <Button size="sm" variant="outline" onClick={cancelEditing}><X className="w-4 h-4" /></Button>
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="flex items-start gap-2 group mb-4">
-                            <p className="text-muted-foreground flex-1">
-                              {profile?.bio || (language === "ja" ? "自己紹介を追加" : "Add bio")}
-                            </p>
-                            <Button 
-                              size="sm" 
-                              variant="ghost"
-                              className="opacity-0 group-hover:opacity-100 transition-opacity"
-                              onClick={() => startEditing('bio', profile?.bio)}
-                            >
-                              <Edit2 className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        )}
-                      </div>
-                    </div>
                     
                     {/* Organization Section */}
                     <div className="mb-4">
