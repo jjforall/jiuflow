@@ -60,6 +60,7 @@ interface Profile {
   bio: string | null;
   avatar_url: string | null;
   username: string | null;
+  organization_id: string | null;
   education: Array<{school: string; degree?: string; period?: string}> | null;
   work_experience: Array<{company: string; position: string; period?: string; description?: string}> | null;
   belt_history: Array<{belt: string; date?: string; instructor?: string}> | null;
@@ -93,6 +94,8 @@ const MyPage = () => {
   const [instructorSuggestions, setInstructorSuggestions] = useState<string[]>([]);
   const [avatarDialogOpen, setAvatarDialogOpen] = useState(false);
   const [createdAt, setCreatedAt] = useState<string | null>(null);
+  const [organizations, setOrganizations] = useState<Array<{ id: string; name: string; name_ja: string; name_pt: string }>>([]);
+  const [selectedOrganization, setSelectedOrganization] = useState<string | null>(null);
 
   const loadUserVideos = async () => {
     if (!user) return;
@@ -135,8 +138,23 @@ const MyPage = () => {
       loadProfile();
       loadDojoSuggestions();
       loadInstructorSuggestions();
+      loadOrganizations();
     }
   }, [user]);
+
+  const loadOrganizations = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('organizations')
+        .select('id, name, name_ja, name_pt')
+        .order('name');
+      
+      if (error) throw error;
+      setOrganizations(data || []);
+    } catch (error) {
+      console.error('Error loading organizations:', error);
+    }
+  };
 
   const loadDojoSuggestions = async () => {
     try {
@@ -195,7 +213,7 @@ const MyPage = () => {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('display_name, bio, avatar_url, username, education, work_experience, belt_history, home_dojo, training_locations, titles, created_at, cover_image_url')
+        .select('display_name, bio, avatar_url, username, education, work_experience, belt_history, home_dojo, training_locations, titles, created_at, cover_image_url, organization_id')
         .eq('id', user.id)
         .single();
 
@@ -210,6 +228,7 @@ const MyPage = () => {
         titles: (data.titles as any) || []
       });
       setCreatedAt(data.created_at);
+      setSelectedOrganization(data.organization_id);
     } catch (error) {
       console.error('Error loading profile:', error);
     }
@@ -805,6 +824,78 @@ const MyPage = () => {
                           </div>
                         )}
                       </div>
+                    </div>
+                    
+                    {/* Organization Section */}
+                    <div className="mb-4">
+                      <div className="flex items-center gap-2 mb-2 group">
+                        <h3 className="text-sm font-semibold">{language === "ja" ? "所属団体" : "Organization"}</h3>
+                        {editingField !== 'organization' && (
+                          <Button 
+                            size="sm" 
+                            variant="ghost"
+                            className="opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={() => {
+                              setEditingField('organization');
+                              setEditValues({ organization_id: selectedOrganization });
+                            }}
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </Button>
+                        )}
+                      </div>
+                      {editingField === 'organization' ? (
+                        <div className="flex items-center gap-2">
+                          <select
+                            value={editValues.organization_id || ''}
+                            onChange={(e) => setEditValues({ ...editValues, organization_id: e.target.value || null })}
+                            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            <option value="">{language === "ja" ? "選択してください" : "Select"}</option>
+                            {organizations.map((org) => (
+                              <option key={org.id} value={org.id}>
+                                {language === "ja" ? org.name_ja : language === "pt" ? org.name_pt : org.name}
+                              </option>
+                            ))}
+                          </select>
+                          <Button size="sm" onClick={async () => {
+                            try {
+                              const { error } = await supabase
+                                .from('profiles')
+                                .update({ organization_id: editValues.organization_id || null })
+                                .eq('id', user.id);
+
+                              if (error) throw error;
+
+                              setSelectedOrganization(editValues.organization_id);
+                              if (profile) {
+                                setProfile({ ...profile, organization_id: editValues.organization_id });
+                              }
+                              toast.success(language === "ja" ? "更新しました" : "Updated");
+                              setEditingField(null);
+                              setEditValues({});
+                            } catch (error) {
+                              console.error('Error updating organization:', error);
+                              toast.error(language === "ja" ? "更新に失敗しました" : "Update failed");
+                            }
+                          }}>
+                            <Check className="w-4 h-4" />
+                          </Button>
+                          <Button size="sm" variant="outline" onClick={cancelEditing}>
+                            <X className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <p className="text-muted-foreground">
+                          {selectedOrganization ? (
+                            organizations.find(org => org.id === selectedOrganization)?.[
+                              language === "ja" ? "name_ja" : language === "pt" ? "name_pt" : "name"
+                            ] || (language === "ja" ? "未設定" : "Not set")
+                          ) : (
+                            language === "ja" ? "未設定" : "Not set"
+                          )}
+                        </p>
+                      )}
                     </div>
                     
                     {/* Education Section */}
