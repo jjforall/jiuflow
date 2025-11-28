@@ -295,9 +295,9 @@ const MyPage = () => {
     
     const plans: Record<string, Record<string, string>> = {
       founder: {
-        ja: "創設者アクセス (¥980/月)",
-        en: "Founder Access (¥980/month)",
-        pt: "Acesso Fundador (¥980/mês)"
+        ja: "Founder Plan (¥980/月)",
+        en: "Founder Plan (¥980/month)",
+        pt: "Founder Plan (¥980/mês)"
       },
       monthly: {
         ja: "月額プラン (¥2,900/月)",
@@ -310,9 +310,9 @@ const MyPage = () => {
         pt: "Plano Anual (¥29,000/ano)"
       },
       muratabros: {
-        ja: "創設者アクセスPro (¥50,000)",
-        en: "Founder Access Pro (¥50,000)",
-        pt: "Acesso Fundador Pro (¥50,000)"
+        ja: "Founder Plan Pro (¥50,000)",
+        en: "Founder Plan Pro (¥50,000)",
+        pt: "Founder Plan Pro (¥50,000)"
       }
     };
 
