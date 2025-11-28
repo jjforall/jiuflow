@@ -36,18 +36,18 @@ serve(async (req) => {
     const user = userData.user;
     if (!user) throw new Error("User not authenticated");
 
-    // Check if user is admin
+    // Check if user has admin or staff role
     const { data: userRoles, error: rolesError } = await supabaseClient
       .from("user_roles")
       .select("role")
       .eq("user_id", user.id)
-      .eq("role", "admin")
-      .maybeSingle();
+      .in("role", ["admin", "staff"]);
 
-    if (rolesError || !userRoles) {
-      throw new Error("Admin access required");
+    if (rolesError || !userRoles || userRoles.length === 0) {
+      throw new Error("Admin or staff access required");
     }
 
+    const isAdmin = userRoles.some((r: any) => r.role === "admin");
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
     const { action, ...body } = await req.json();
 
@@ -86,6 +86,11 @@ serve(async (req) => {
     }
 
     if (action === "create") {
+      // Only admins can create products
+      if (!isAdmin) {
+        throw new Error("Admin access required for this action");
+      }
+
       // Create a new product and price
       const { name, description, priceAmount, currency, interval } = body;
 
@@ -116,6 +121,11 @@ serve(async (req) => {
     }
 
     if (action === "update") {
+      // Only admins can update products
+      if (!isAdmin) {
+        throw new Error("Admin access required for this action");
+      }
+
       // Update product (name, description only - prices are immutable)
       const { productId, name, description, active } = body;
 
@@ -139,6 +149,11 @@ serve(async (req) => {
     }
 
     if (action === "archive") {
+      // Only admins can archive products
+      if (!isAdmin) {
+        throw new Error("Admin access required for this action");
+      }
+
       // Archive a product (soft delete)
       const { productId } = body;
 
@@ -159,6 +174,11 @@ serve(async (req) => {
     }
 
     if (action === "create-price") {
+      // Only admins can create prices
+      if (!isAdmin) {
+        throw new Error("Admin access required for this action");
+      }
+
       // Create a new price for an existing product
       const { productId, priceAmount, currency, interval } = body;
 
@@ -182,6 +202,11 @@ serve(async (req) => {
     }
 
     if (action === "archive-price") {
+      // Only admins can archive prices
+      if (!isAdmin) {
+        throw new Error("Admin access required for this action");
+      }
+
       // Archive a price (soft delete)
       const { priceId } = body;
 

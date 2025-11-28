@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Plus, Edit, Trash2, Tag } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useAuth } from "@/hooks/useAuth";
 
 interface Price {
   id: string;
@@ -47,6 +48,7 @@ const JIUFLOW_PRICE_IDS = [
 ];
 
 export const PlansTab = () => {
+  const { isAdmin } = useAuth();
   const [products, setProducts] = useState<Product[]>([]);
   const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [loading, setLoading] = useState(false);
@@ -470,12 +472,14 @@ export const PlansTab = () => {
             });
           }
         }}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="w-4 h-4 mr-2" />
-              新規プラン作成
-            </Button>
-          </DialogTrigger>
+          {isAdmin && (
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="w-4 h-4 mr-2" />
+                新規プラン作成
+              </Button>
+            </DialogTrigger>
+          )}
           <DialogContent>
             <DialogHeader>
               <DialogTitle>{editingProduct ? "プラン編集" : "新規プラン作成"}</DialogTitle>
@@ -570,24 +574,26 @@ export const PlansTab = () => {
                       <CardDescription className="mt-2">{product.description}</CardDescription>
                     )}
                   </div>
-                  <div className="flex gap-1">
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => handleEditProduct(product)}
-                      disabled={loading}
-                    >
-                      <Edit className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => handleArchiveProduct(product.id)}
-                      disabled={loading || !product.active}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
+                  {isAdmin && (
+                    <div className="flex gap-1">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleEditProduct(product)}
+                        disabled={loading}
+                      >
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleArchiveProduct(product.id)}
+                        disabled={loading || !product.active}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  )}
                 </div>
               </CardHeader>
               <CardContent>
@@ -633,10 +639,12 @@ export const PlansTab = () => {
       <TabsContent value="coupons" className="space-y-6">
         <div className="flex justify-between items-center">
           <div></div>
-          <Button onClick={() => setShowCreateCouponDialog(true)}>
-            <Plus className="w-4 h-4 mr-2" />
-            新規クーポン作成
-          </Button>
+          {isAdmin && (
+            <Button onClick={() => setShowCreateCouponDialog(true)}>
+              <Plus className="w-4 h-4 mr-2" />
+              新規クーポン作成
+            </Button>
+          )}
         </div>
         
         {coupons.length === 0 ? (
@@ -656,24 +664,26 @@ export const PlansTab = () => {
                         コード: <code className="bg-muted px-2 py-1 rounded">{coupon.id}</code>
                       </CardDescription>
                     </div>
-                    <div className="flex gap-1">
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => handleEditCoupon(coupon)}
-                        disabled={loading}
-                      >
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => handleDeleteCoupon(coupon.id, coupon.name || "")}
-                        disabled={loading}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
+                    {isAdmin && (
+                      <div className="flex gap-1">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleEditCoupon(coupon)}
+                          disabled={loading}
+                        >
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleDeleteCoupon(coupon.id, coupon.name || "")}
+                          disabled={loading}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 </CardHeader>
                 <CardContent>
