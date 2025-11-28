@@ -68,6 +68,8 @@ interface Profile {
   home_dojo: string | null;
   training_locations: Array<string> | null;
   titles: Array<{title: string; date?: string; organization?: string; customTitle?: string}> | null;
+  favorite_fighters: Array<string> | null;
+  favorite_techniques: Array<string> | null;
 }
 
 const MyPage = () => {
@@ -236,7 +238,7 @@ const MyPage = () => {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('display_name, bio, avatar_url, username, education, work_experience, belt_history, home_dojo, training_locations, titles, created_at, cover_image_url, organization_id')
+        .select('display_name, bio, avatar_url, username, education, work_experience, belt_history, home_dojo, training_locations, titles, created_at, cover_image_url, organization_id, favorite_fighters, favorite_techniques')
         .eq('id', user.id)
         .single();
 
@@ -248,7 +250,9 @@ const MyPage = () => {
         work_experience: (data.work_experience as any) || [],
         belt_history: (data.belt_history as any) || [],
         training_locations: (data.training_locations as any) || [],
-        titles: (data.titles as any) || []
+        titles: (data.titles as any) || [],
+        favorite_fighters: (data.favorite_fighters as any) || [],
+        favorite_techniques: (data.favorite_techniques as any) || []
       });
       setCreatedAt(data.created_at);
       setSelectedOrganization(data.organization_id);
@@ -438,6 +442,18 @@ const MyPage = () => {
           title.title && title.title.trim()
         );
         updateData.titles = validTitles;
+      } else if (field === 'favorite_fighters') {
+        // Filter out empty entries
+        const validFighters = (editValues.favorite_fighters || []).filter((fighter: string) => 
+          fighter && fighter.trim()
+        );
+        updateData.favorite_fighters = validFighters;
+      } else if (field === 'favorite_techniques') {
+        // Filter out empty entries
+        const validTechniques = (editValues.favorite_techniques || []).filter((technique: string) => 
+          technique && technique.trim()
+        );
+        updateData.favorite_techniques = validTechniques;
       }
 
       const { error } = await supabase
@@ -1435,6 +1451,160 @@ const MyPage = () => {
                           </div>
                         ) : (
                           <p className="text-sm text-muted-foreground italic">{language === "ja" ? "獲得タイトルを追加してください" : "Add titles"}</p>
+                        )
+                      )}
+                    </div>
+
+                    {/* Favorite Fighters Section */}
+                    <div>
+                      <div className="flex items-center justify-between mb-3">
+                        <h3 className="text-sm font-semibold flex items-center gap-2">
+                          <span>👤</span>
+                          {language === "ja" ? "好きな選手" : "Favorite Fighters"}
+                        </h3>
+                        {editingField === 'favorite_fighters' ? (
+                          <div className="flex gap-2">
+                            <Button size="sm" onClick={() => saveField('favorite_fighters')} className="gap-1">
+                              <Check className="w-4 h-4" /> {language === "ja" ? "保存" : "Save"}
+                            </Button>
+                            <Button size="sm" variant="outline" onClick={cancelEditing} className="gap-1">
+                              <X className="w-4 h-4" /> {language === "ja" ? "キャンセル" : "Cancel"}
+                            </Button>
+                          </div>
+                        ) : (
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => startEditing('favorite_fighters', profile?.favorite_fighters || [])}
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </Button>
+                        )}
+                      </div>
+                      {editingField === 'favorite_fighters' ? (
+                        <div className="space-y-2">
+                          {(editValues.favorite_fighters || []).map((fighter: string, index: number) => (
+                            <div key={index} className="flex items-center gap-2">
+                              <Input
+                                value={fighter}
+                                onChange={(e) => {
+                                  const newFighters = [...editValues.favorite_fighters];
+                                  newFighters[index] = e.target.value;
+                                  setEditValues({ ...editValues, favorite_fighters: newFighters });
+                                }}
+                                placeholder={language === "ja" ? "選手名" : "Fighter name"}
+                              />
+                              <Button 
+                                size="sm" 
+                                variant="ghost" 
+                                onClick={() => {
+                                  const newFighters = editValues.favorite_fighters.filter((_: any, i: number) => i !== index);
+                                  setEditValues({ ...editValues, favorite_fighters: newFighters });
+                                }}
+                              >
+                                <X className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          ))}
+                          <Button 
+                            size="sm" 
+                            variant="outline" 
+                            onClick={() => setEditValues({ 
+                              ...editValues, 
+                              favorite_fighters: [...(editValues.favorite_fighters || []), '']
+                            })}
+                            className="w-full gap-2"
+                          >
+                            <Plus className="w-4 h-4" />
+                            {language === "ja" ? "選手を追加" : "Add Fighter"}
+                          </Button>
+                        </div>
+                      ) : (
+                        profile?.favorite_fighters && profile.favorite_fighters.length > 0 ? (
+                          <div className="flex flex-wrap gap-2">
+                            {profile.favorite_fighters.map((fighter, index) => (
+                              <Badge key={index} variant="secondary">{fighter}</Badge>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-sm text-muted-foreground italic">{language === "ja" ? "好きな選手を追加してください" : "Add favorite fighters"}</p>
+                        )
+                      )}
+                    </div>
+
+                    {/* Favorite Techniques Section */}
+                    <div>
+                      <div className="flex items-center justify-between mb-3">
+                        <h3 className="text-sm font-semibold flex items-center gap-2">
+                          <span>🥋</span>
+                          {language === "ja" ? "好きな技" : "Favorite Techniques"}
+                        </h3>
+                        {editingField === 'favorite_techniques' ? (
+                          <div className="flex gap-2">
+                            <Button size="sm" onClick={() => saveField('favorite_techniques')} className="gap-1">
+                              <Check className="w-4 h-4" /> {language === "ja" ? "保存" : "Save"}
+                            </Button>
+                            <Button size="sm" variant="outline" onClick={cancelEditing} className="gap-1">
+                              <X className="w-4 h-4" /> {language === "ja" ? "キャンセル" : "Cancel"}
+                            </Button>
+                          </div>
+                        ) : (
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => startEditing('favorite_techniques', profile?.favorite_techniques || [])}
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </Button>
+                        )}
+                      </div>
+                      {editingField === 'favorite_techniques' ? (
+                        <div className="space-y-2">
+                          {(editValues.favorite_techniques || []).map((technique: string, index: number) => (
+                            <div key={index} className="flex items-center gap-2">
+                              <Input
+                                value={technique}
+                                onChange={(e) => {
+                                  const newTechniques = [...editValues.favorite_techniques];
+                                  newTechniques[index] = e.target.value;
+                                  setEditValues({ ...editValues, favorite_techniques: newTechniques });
+                                }}
+                                placeholder={language === "ja" ? "技名" : "Technique name"}
+                              />
+                              <Button 
+                                size="sm" 
+                                variant="ghost" 
+                                onClick={() => {
+                                  const newTechniques = editValues.favorite_techniques.filter((_: any, i: number) => i !== index);
+                                  setEditValues({ ...editValues, favorite_techniques: newTechniques });
+                                }}
+                              >
+                                <X className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          ))}
+                          <Button 
+                            size="sm" 
+                            variant="outline" 
+                            onClick={() => setEditValues({ 
+                              ...editValues, 
+                              favorite_techniques: [...(editValues.favorite_techniques || []), '']
+                            })}
+                            className="w-full gap-2"
+                          >
+                            <Plus className="w-4 h-4" />
+                            {language === "ja" ? "技を追加" : "Add Technique"}
+                          </Button>
+                        </div>
+                      ) : (
+                        profile?.favorite_techniques && profile.favorite_techniques.length > 0 ? (
+                          <div className="flex flex-wrap gap-2">
+                            {profile.favorite_techniques.map((technique, index) => (
+                              <Badge key={index} variant="secondary">{technique}</Badge>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-sm text-muted-foreground italic">{language === "ja" ? "好きな技を追加してください" : "Add favorite techniques"}</p>
                         )
                       )}
                     </div>
