@@ -67,7 +67,7 @@ interface Profile {
   belt_history: Array<{belt: string; date?: string; instructor?: string}> | null;
   home_dojo: string | null;
   training_locations: Array<string> | null;
-  titles: Array<{title: string; date?: string; organization?: string}> | null;
+  titles: Array<{title: string; date?: string; organization?: string; customTitle?: string}> | null;
 }
 
 const MyPage = () => {
@@ -1317,33 +1317,90 @@ const MyPage = () => {
                       </div>
                       {editingField === 'titles' ? (
                         <div className="space-y-3">
-                          {(editValues.titles || []).map((title: any, index: number) => (
-                            <div key={index} className="flex items-start gap-2 p-3 bg-background rounded border">
-                              <div className="flex-1 space-y-2">
-                                <Input
-                                  value={title.title || ''}
-                                  onChange={(e) => updateTitle(index, 'title', e.target.value)}
-                                  placeholder={language === "ja" ? "タイトル名" : "Title"}
-                                  className="font-medium"
-                                />
-                                <div className="grid grid-cols-2 gap-2">
-                                  <Input
+                          {(editValues.titles || []).map((title: any, index: number) => {
+                            const organizationTitles: Record<string, string[]> = {
+                              "ADCC": ["World Champion", "Continental Champion", "Trials Winner"],
+                              "IBJJF": ["World Champion", "Pan Champion", "European Champion", "Asian Champion", "Brazilian Nationals Champion"],
+                              "Abu Dhabi Pro": ["Grand Slam Champion", "World Pro Champion", "Continental Pro Champion"],
+                              "Polaris": ["Champion", "Contender"],
+                              "ONE Championship": ["Champion", "Interim Champion"],
+                              "QUINTET": ["Team Champion"],
+                              "JJWL": ["Team Champion"],
+                              "Combat Jiu-Jitsu Worlds": ["Champion"],
+                              "その他": []
+                            };
+
+                            const selectedOrgTitles = title.organization ? organizationTitles[title.organization] || [] : [];
+
+                            return (
+                              <div key={index} className="flex items-start gap-2 p-3 bg-background rounded border">
+                                <div className="flex-1 space-y-2">
+                                  <Select
                                     value={title.organization || ''}
-                                    onChange={(e) => updateTitle(index, 'organization', e.target.value)}
-                                    placeholder={language === "ja" ? "団体名" : "Organization"}
-                                  />
-                                  <Input
-                                    value={title.date || ''}
-                                    onChange={(e) => updateTitle(index, 'date', e.target.value)}
-                                    placeholder={language === "ja" ? "取得日" : "Date"}
-                                  />
+                                    onValueChange={(value) => {
+                                      updateTitle(index, 'organization', value);
+                                      updateTitle(index, 'title', '');
+                                    }}
+                                  >
+                                    <SelectTrigger className="font-medium">
+                                      <SelectValue placeholder={language === "ja" ? "団体を選択" : "Select Organization"} />
+                                    </SelectTrigger>
+                                    <SelectContent className="bg-popover z-50">
+                                      {organizations.map((org) => (
+                                        <SelectItem key={org.id} value={language === "ja" ? org.name_ja : org.name}>
+                                          {language === "ja" ? org.name_ja : org.name}
+                                        </SelectItem>
+                                      ))}
+                                      <SelectItem value="その他">{language === "ja" ? "その他" : "Other"}</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                  
+                                  <div className="grid grid-cols-2 gap-2">
+                                    {title.organization && selectedOrgTitles.length > 0 ? (
+                                      <Select
+                                        value={title.title || ''}
+                                        onValueChange={(value) => updateTitle(index, 'title', value)}
+                                      >
+                                        <SelectTrigger>
+                                          <SelectValue placeholder={language === "ja" ? "タイトルを選択" : "Select Title"} />
+                                        </SelectTrigger>
+                                        <SelectContent className="bg-popover z-50">
+                                          {selectedOrgTitles.map((t) => (
+                                            <SelectItem key={t} value={t}>
+                                              {t}
+                                            </SelectItem>
+                                          ))}
+                                          <SelectItem value="custom">{language === "ja" ? "カスタム入力" : "Custom"}</SelectItem>
+                                        </SelectContent>
+                                      </Select>
+                                    ) : (
+                                      <Input
+                                        value={title.title || ''}
+                                        onChange={(e) => updateTitle(index, 'title', e.target.value)}
+                                        placeholder={language === "ja" ? "タイトル名" : "Title"}
+                                      />
+                                    )}
+                                    <Input
+                                      value={title.date || ''}
+                                      onChange={(e) => updateTitle(index, 'date', e.target.value)}
+                                      placeholder={language === "ja" ? "取得日" : "Date"}
+                                    />
+                                  </div>
+                                  
+                                  {title.title === "custom" && (
+                                    <Input
+                                      value={title.customTitle || ''}
+                                      onChange={(e) => updateTitle(index, 'customTitle', e.target.value)}
+                                      placeholder={language === "ja" ? "カスタムタイトル名" : "Custom Title"}
+                                    />
+                                  )}
                                 </div>
+                                <Button size="sm" variant="ghost" onClick={() => removeTitle(index)}>
+                                  <X className="w-4 h-4" />
+                                </Button>
                               </div>
-                              <Button size="sm" variant="ghost" onClick={() => removeTitle(index)}>
-                                <X className="w-4 h-4" />
-                              </Button>
-                            </div>
-                          ))}
+                            );
+                          })}
                           <Button 
                             size="sm" 
                             variant="outline" 
@@ -1362,7 +1419,9 @@ const MyPage = () => {
                                 <div className="flex items-start gap-2">
                                   <span className="text-2xl">🏆</span>
                                   <div className="flex-1">
-                                    <div className="font-semibold text-primary">{title.title}</div>
+                                    <div className="font-semibold text-primary">
+                                      {title.title === "custom" ? title.customTitle : title.title}
+                                    </div>
                                     {title.organization && (
                                       <div className="text-sm text-muted-foreground">{title.organization}</div>
                                     )}
