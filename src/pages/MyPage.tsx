@@ -74,6 +74,14 @@ interface Profile {
   hobbies: Array<string> | null;
   marital_status: string | null;
   date_of_birth: string | null;
+  social_links: {
+    instagram?: string;
+    twitter?: string;
+    youtube?: string;
+    facebook?: string;
+    tiktok?: string;
+    website?: string;
+  } | null;
 }
 
 const MyPage = () => {
@@ -312,7 +320,7 @@ const MyPage = () => {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('display_name, bio, avatar_url, username, education, work_experience, belt_history, home_dojo, training_locations, titles, created_at, cover_image_url, organization_id, favorite_fighters, favorite_techniques, hometown, hobbies, marital_status, date_of_birth')
+        .select('display_name, bio, avatar_url, username, education, work_experience, belt_history, home_dojo, training_locations, titles, created_at, cover_image_url, organization_id, favorite_fighters, favorite_techniques, hometown, hobbies, marital_status, date_of_birth, social_links')
         .eq('id', user.id)
         .single();
 
@@ -327,7 +335,8 @@ const MyPage = () => {
         titles: (data.titles as any) || [],
         favorite_fighters: (data.favorite_fighters as any) || [],
         favorite_techniques: (data.favorite_techniques as any) || [],
-        hobbies: (data.hobbies as any) || []
+        hobbies: (data.hobbies as any) || [],
+        social_links: (data.social_links as any) || {}
       });
       setCreatedAt(data.created_at);
       setSelectedOrganization(data.organization_id);
@@ -1965,6 +1974,188 @@ const MyPage = () => {
                               {calculateAge(profile.date_of_birth)}
                               {language === "ja" ? "歳" : " years old"}
                             </p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Social Links Section */}
+                    <div>
+                      <div className="flex items-center justify-between mb-3">
+                        <h3 className="text-sm font-semibold flex items-center gap-2">
+                          <span>🔗</span>
+                          {language === "ja" ? "SNSリンク" : "Social Links"}
+                          <Badge variant="outline" className="text-xs">{language === "ja" ? "オプション" : "Optional"}</Badge>
+                        </h3>
+                        {editingField === 'social_links' ? (
+                          <div className="flex gap-2">
+                            <Button size="sm" onClick={() => saveField('social_links')} className="gap-1">
+                              <Check className="w-4 h-4" /> {language === "ja" ? "保存" : "Save"}
+                            </Button>
+                            <Button size="sm" variant="outline" onClick={cancelEditing} className="gap-1">
+                              <X className="w-4 h-4" /> {language === "ja" ? "キャンセル" : "Cancel"}
+                            </Button>
+                          </div>
+                        ) : (
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => startEditing('social_links', profile?.social_links || {})}
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </Button>
+                        )}
+                      </div>
+                      {editingField === 'social_links' ? (
+                        <div className="space-y-3">
+                          <div className="space-y-2">
+                            <label className="text-xs text-muted-foreground flex items-center gap-2">
+                              <span>📷</span> Instagram
+                            </label>
+                            <Input
+                              value={editValues.social_links?.instagram || ''}
+                              onChange={(e) => setEditValues({ 
+                                ...editValues, 
+                                social_links: { ...editValues.social_links, instagram: e.target.value }
+                              })}
+                              placeholder="https://instagram.com/username"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <label className="text-xs text-muted-foreground flex items-center gap-2">
+                              <span>🐦</span> Twitter (X)
+                            </label>
+                            <Input
+                              value={editValues.social_links?.twitter || ''}
+                              onChange={(e) => setEditValues({ 
+                                ...editValues, 
+                                social_links: { ...editValues.social_links, twitter: e.target.value }
+                              })}
+                              placeholder="https://twitter.com/username"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <label className="text-xs text-muted-foreground flex items-center gap-2">
+                              <span>▶️</span> YouTube
+                            </label>
+                            <Input
+                              value={editValues.social_links?.youtube || ''}
+                              onChange={(e) => setEditValues({ 
+                                ...editValues, 
+                                social_links: { ...editValues.social_links, youtube: e.target.value }
+                              })}
+                              placeholder="https://youtube.com/@username"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <label className="text-xs text-muted-foreground flex items-center gap-2">
+                              <span>👍</span> Facebook
+                            </label>
+                            <Input
+                              value={editValues.social_links?.facebook || ''}
+                              onChange={(e) => setEditValues({ 
+                                ...editValues, 
+                                social_links: { ...editValues.social_links, facebook: e.target.value }
+                              })}
+                              placeholder="https://facebook.com/username"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <label className="text-xs text-muted-foreground flex items-center gap-2">
+                              <span>🎵</span> TikTok
+                            </label>
+                            <Input
+                              value={editValues.social_links?.tiktok || ''}
+                              onChange={(e) => setEditValues({ 
+                                ...editValues, 
+                                social_links: { ...editValues.social_links, tiktok: e.target.value }
+                              })}
+                              placeholder="https://tiktok.com/@username"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <label className="text-xs text-muted-foreground flex items-center gap-2">
+                              <span>🌐</span> {language === "ja" ? "ウェブサイト" : "Website"}
+                            </label>
+                            <Input
+                              value={editValues.social_links?.website || ''}
+                              onChange={(e) => setEditValues({ 
+                                ...editValues, 
+                                social_links: { ...editValues.social_links, website: e.target.value }
+                              })}
+                              placeholder="https://yourwebsite.com"
+                            />
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          {profile?.social_links?.instagram && (
+                            <a 
+                              href={profile.social_links.instagram} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-2 text-sm hover:text-primary transition-colors"
+                            >
+                              <span>📷</span> Instagram
+                            </a>
+                          )}
+                          {profile?.social_links?.twitter && (
+                            <a 
+                              href={profile.social_links.twitter} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-2 text-sm hover:text-primary transition-colors"
+                            >
+                              <span>🐦</span> Twitter
+                            </a>
+                          )}
+                          {profile?.social_links?.youtube && (
+                            <a 
+                              href={profile.social_links.youtube} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-2 text-sm hover:text-primary transition-colors"
+                            >
+                              <span>▶️</span> YouTube
+                            </a>
+                          )}
+                          {profile?.social_links?.facebook && (
+                            <a 
+                              href={profile.social_links.facebook} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-2 text-sm hover:text-primary transition-colors"
+                            >
+                              <span>👍</span> Facebook
+                            </a>
+                          )}
+                          {profile?.social_links?.tiktok && (
+                            <a 
+                              href={profile.social_links.tiktok} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-2 text-sm hover:text-primary transition-colors"
+                            >
+                              <span>🎵</span> TikTok
+                            </a>
+                          )}
+                          {profile?.social_links?.website && (
+                            <a 
+                              href={profile.social_links.website} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-2 text-sm hover:text-primary transition-colors"
+                            >
+                              <span>🌐</span> {language === "ja" ? "ウェブサイト" : "Website"}
+                            </a>
+                          )}
+                          {!profile?.social_links?.instagram && 
+                           !profile?.social_links?.twitter && 
+                           !profile?.social_links?.youtube && 
+                           !profile?.social_links?.facebook && 
+                           !profile?.social_links?.tiktok && 
+                           !profile?.social_links?.website && (
+                            <p className="text-sm text-muted-foreground italic">{language === "ja" ? "未設定" : "Not set"}</p>
                           )}
                         </div>
                       )}

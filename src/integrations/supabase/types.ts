@@ -299,6 +299,7 @@ export type Database = {
           id: string
           marital_status: string | null
           organization_id: string | null
+          social_links: Json | null
           stripe_customer_id: string | null
           titles: Json | null
           training_locations: Json | null
@@ -324,6 +325,7 @@ export type Database = {
           id: string
           marital_status?: string | null
           organization_id?: string | null
+          social_links?: Json | null
           stripe_customer_id?: string | null
           titles?: Json | null
           training_locations?: Json | null
@@ -349,6 +351,7 @@ export type Database = {
           id?: string
           marital_status?: string | null
           organization_id?: string | null
+          social_links?: Json | null
           stripe_customer_id?: string | null
           titles?: Json | null
           training_locations?: Json | null
