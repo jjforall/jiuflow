@@ -6,6 +6,7 @@ interface SubscriptionStatus {
   product_id: string | null;
   price_id: string | null;
   subscription_end: string | null;
+  is_trialing: boolean;
   loading: boolean;
 }
 
@@ -15,6 +16,7 @@ export const useSubscription = () => {
     product_id: null,
     price_id: null,
     subscription_end: null,
+    is_trialing: false,
     loading: true,
   });
 
@@ -28,6 +30,7 @@ export const useSubscription = () => {
           product_id: null,
           price_id: null,
           subscription_end: null,
+          is_trialing: false,
           loading: false,
         });
         return;
@@ -46,6 +49,7 @@ export const useSubscription = () => {
           product_id: null,
           price_id: null,
           subscription_end: null,
+          is_trialing: false,
           loading: false,
         });
         return;
@@ -56,6 +60,7 @@ export const useSubscription = () => {
         product_id: data.product_id || null,
         price_id: data.price_id || null,
         subscription_end: data.subscription_end || null,
+        is_trialing: data.is_trialing || false,
         loading: false,
       });
     } catch (error) {
@@ -65,6 +70,7 @@ export const useSubscription = () => {
         product_id: null,
         price_id: null,
         subscription_end: null,
+        is_trialing: false,
         loading: false,
       });
     }
