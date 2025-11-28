@@ -26,6 +26,9 @@ interface UserVideo {
 
 interface Profile {
   email: string | null;
+  display_name: string | null;
+  bio: string | null;
+  avatar_url: string | null;
 }
 
 export default function UserProfile() {
@@ -94,7 +97,7 @@ export default function UserProfile() {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('email')
+        .select('email, display_name, bio, avatar_url')
         .eq('id', userId)
         .single();
 
@@ -160,13 +163,26 @@ export default function UserProfile() {
           <Card className="mb-12 animate-fade-up">
             <CardContent className="p-8">
               <div className="flex items-center gap-6">
-                <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center">
-                  <User className="h-10 w-10 text-primary" />
-                </div>
-                <div>
+                {profile?.avatar_url ? (
+                  <img 
+                    src={profile.avatar_url} 
+                    alt="Profile" 
+                    className="w-20 h-20 rounded-full object-cover border-2 border-border"
+                  />
+                ) : (
+                  <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center">
+                    <User className="h-10 w-10 text-primary" />
+                  </div>
+                )}
+                <div className="flex-1">
                   <h1 className="text-3xl font-light mb-2">
-                    {profile?.email?.split('@')[0] || "ユーザー"}
+                    {profile?.display_name || profile?.email?.split('@')[0] || "ユーザー"}
                   </h1>
+                  {profile?.bio && (
+                    <p className="text-muted-foreground mb-2">
+                      {profile.bio}
+                    </p>
+                  )}
                   <p className="text-muted-foreground">
                     <Video className="inline h-4 w-4 mr-1" />
                     {videos.length}本の動画を公開中
