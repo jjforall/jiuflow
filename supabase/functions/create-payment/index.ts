@@ -16,13 +16,13 @@ serve(async (req) => {
   );
 
   try {
-    const { priceId, couponCode, email } = await req.json();
+    const { priceId, referralCode, email } = await req.json();
     if (!priceId) throw new Error("Price ID is required");
 
     console.log("Creating payment session for price:", priceId);
     console.log("Email provided:", email || "none");
-    if (couponCode) {
-      console.log("Coupon code provided:", couponCode);
+    if (referralCode) {
+      console.log("Referral code provided:", referralCode);
     }
 
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", { 
@@ -47,18 +47,18 @@ serve(async (req) => {
       sessionConfig.customer_email = email;
     }
 
-    // Validate and add coupon code if provided
-    if (couponCode) {
+    // Validate and add referral code as coupon if provided
+    if (referralCode) {
       try {
-        const coupon = await stripe.coupons.retrieve(couponCode);
-        console.log("Coupon found:", coupon.id, "Valid:", coupon.valid);
+        const coupon = await stripe.coupons.retrieve(referralCode);
+        console.log("Referral code coupon found:", coupon.id, "Valid:", coupon.valid);
         if (coupon.valid) {
-          sessionConfig.discounts = [{ coupon: couponCode }];
+          sessionConfig.discounts = [{ coupon: referralCode }];
         } else {
-          console.warn("Coupon is not valid:", couponCode);
+          console.warn("Referral code coupon is not valid:", referralCode);
         }
       } catch (couponError) {
-        console.error("Coupon not found or invalid:", couponCode, couponError);
+        console.error("Referral code coupon not found or invalid:", referralCode, couponError);
         // Continue without coupon if it's invalid
       }
     }
