@@ -119,17 +119,18 @@ serve(async (req) => {
           const { data: userData } = await supabase.auth.admin.listUsers();
           const user = userData?.users.find(u => u.email === customerEmail);
           
-          if (user) {
-            const { error: subError } = await supabase
-              .from("subscriptions")
-              .upsert({
-                user_id: user.id,
-                stripe_subscription_id: subscription.id,
-                stripe_price_id: subscription.items.data[0].price.id,
-                status: subscription.status,
-                current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
-                plan_type: "founder",
-              });
+            if (user) {
+             const { error: subError } = await supabase
+               .from("subscriptions")
+               .upsert({
+                 user_id: user.id,
+                 stripe_subscription_id: subscription.id,
+                 stripe_price_id: subscription.items.data[0].price.id,
+                 status: subscription.status,
+                 current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+                 plan_type: "founder",
+                 referral_code_id: (subscription.metadata as any)?.referral_code_id || null,
+               });
 
             if (subError) {
               console.error("Error creating subscription record:", subError);
