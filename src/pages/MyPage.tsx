@@ -1766,14 +1766,14 @@ const MyPage = () => {
                       </div>
                       {editingField === 'marital_status' ? (
                         <Select
-                          value={editValues.marital_status || ''}
-                          onValueChange={(value) => setEditValues({ ...editValues, marital_status: value })}
+                          value={editValues.marital_status || 'not_set'}
+                          onValueChange={(value) => setEditValues({ ...editValues, marital_status: value === 'not_set' ? null : value })}
                         >
                           <SelectTrigger>
                             <SelectValue placeholder={language === "ja" ? "選択してください" : "Select"} />
                           </SelectTrigger>
                           <SelectContent className="bg-popover z-50">
-                            <SelectItem value="">{language === "ja" ? "未設定" : "Not set"}</SelectItem>
+                            <SelectItem value="not_set">{language === "ja" ? "未設定" : "Not set"}</SelectItem>
                             <SelectItem value="single">{language === "ja" ? "独身" : "Single"}</SelectItem>
                             <SelectItem value="married">{language === "ja" ? "既婚" : "Married"}</SelectItem>
                             <SelectItem value="other">{language === "ja" ? "その他" : "Other"}</SelectItem>
