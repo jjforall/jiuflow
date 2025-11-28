@@ -19,13 +19,18 @@ serve(async (req) => {
     const { priceId, couponCode, referralCode, email } = await req.json();
     if (!priceId) throw new Error("Price ID is required");
 
+    const discountCode = couponCode || referralCode;
+
     console.log("Creating checkout session for price:", priceId);
     console.log("Email provided:", email || "none");
-    if (couponCode) {
-      console.log("Coupon code provided:", couponCode);
-    }
     if (referralCode) {
       console.log("Referral code provided:", referralCode);
+    }
+    if (couponCode) {
+      console.log("Manual coupon code provided:", couponCode);
+    }
+    if (discountCode && !couponCode && referralCode) {
+      console.log("Using referral code as discount coupon:", discountCode);
     }
 
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", { 
@@ -71,18 +76,18 @@ serve(async (req) => {
       sessionConfig.customer_email = email;
     }
 
-    // Validate and add coupon code if provided
-    if (couponCode) {
+    // Validate and add coupon/discount code if provided
+    if (discountCode) {
       try {
-        const coupon = await stripe.coupons.retrieve(couponCode);
+        const coupon = await stripe.coupons.retrieve(discountCode);
         console.log("Coupon found:", coupon.id, "Valid:", coupon.valid);
         if (coupon.valid) {
-          sessionConfig.discounts = [{ coupon: couponCode }];
+          sessionConfig.discounts = [{ coupon: discountCode }];
         } else {
-          console.warn("Coupon is not valid:", couponCode);
+          console.warn("Coupon is not valid:", discountCode);
         }
       } catch (couponError) {
-        console.error("Coupon not found or invalid:", couponCode, couponError);
+        console.error("Coupon not found or invalid:", discountCode, couponError);
         // Continue without coupon if it's invalid
       }
     }
