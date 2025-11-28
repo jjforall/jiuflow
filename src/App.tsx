@@ -77,7 +77,7 @@ const App = () => (
                     <VideoUploadInfo />
                   </ProtectedRoute>
                 } />
-                <Route path="/user/:userId" element={<UserProfile />} />
+                <Route path="/user/:identifier" element={<UserProfile />} />
                 <Route path="/admin" element={<AdminLogin />} />
                 <Route path="/admin-dashboard" element={
                   <ProtectedRoute requireAdmin>
