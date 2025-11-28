@@ -2352,13 +2352,12 @@ const MyPage = () => {
                 
                 {/* Username field */}
                 <div>
-                  <div className="flex items-center gap-2 mb-2 group">
+                  <div className="flex items-center justify-between mb-2">
                     <h3 className="text-sm font-semibold">{language === "ja" ? "公開用URL（ユーザー名）" : "Public URL (Username)"}</h3>
                     {editingField !== 'username' && (
                       <Button 
                         size="sm" 
-                        variant="ghost"
-                        className="opacity-0 group-hover:opacity-100 transition-opacity"
+                        variant="outline"
                         onClick={() => startEditing('username', profile?.username)}
                       >
                         <Edit2 className="w-4 h-4" />
