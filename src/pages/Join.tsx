@@ -752,18 +752,6 @@ const Join = () => {
                         <span className="mr-2">✓</span>
                         <span>{language === "ja" ? "柔軟な支払い" : language === "pt" ? "Pagamento flexível" : "Flexible payment"}</span>
                       </li>
-                      <li className="flex items-start">
-                        <span className="mr-2">🎨</span>
-                        <span>{language === "ja" ? "月額会員NFTバッジ" : language === "pt" ? "Badge NFT mensal" : "Monthly member NFT badge"}</span>
-                      </li>
-                      <li className="flex items-start">
-                        <span className="mr-2">🎯</span>
-                        <span>{language === "ja" ? "毎月100ポイント付与" : language === "pt" ? "100 pontos por mês" : "100 points monthly"}</span>
-                      </li>
-                      <li className="flex items-start">
-                        <span className="mr-2">👥</span>
-                        <span>{language === "ja" ? "紹介コード発行（1人紹介で500pt）" : language === "pt" ? "Código de referência (500pts por indicação)" : "Referral code (500pts per referral)"}</span>
-                      </li>
                     </ul>
                     <Button
                       className="w-full"
@@ -799,18 +787,6 @@ const Join = () => {
                     <li className="flex items-start">
                       <span className="mr-2">✓</span>
                       <span>{language === "ja" ? "最大の節約" : language === "pt" ? "Melhor economia" : "Best value"}</span>
-                    </li>
-                    <li className="flex items-start">
-                      <span className="mr-2">🎨</span>
-                      <span>{language === "ja" ? "年間会員NFTバッジ" : language === "pt" ? "Badge NFT anual" : "Annual member NFT badge"}</span>
-                    </li>
-                    <li className="flex items-start">
-                      <span className="mr-2">🎯</span>
-                      <span>{language === "ja" ? "一括で1,500ポイント付与" : language === "pt" ? "1.500 pontos de uma vez" : "1,500 points upfront"}</span>
-                    </li>
-                    <li className="flex items-start">
-                      <span className="mr-2">👥</span>
-                      <span>{language === "ja" ? "紹介コード発行（1人紹介で500pt）" : language === "pt" ? "Código de referência (500pts por indicação)" : "Referral code (500pts per referral)"}</span>
                     </li>
                   </ul>
                   <Button
