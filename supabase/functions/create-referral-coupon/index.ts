@@ -25,15 +25,52 @@ serve(async (req) => {
     const { data: { user }, error: userError } = await supabaseClient.auth.getUser(token);
     if (userError || !user) throw new Error("Unauthorized");
 
-    // Get user's referral code
-    const { data: referralCode, error: codeError } = await supabaseClient
+    // Get or create user's referral code
+    const { data: existingCode, error: codeError } = await supabaseClient
       .from("referral_codes")
       .select("code")
       .eq("user_id", user.id)
-      .single();
+      .maybeSingle();
 
-    if (codeError || !referralCode) {
-      throw new Error("Referral code not found");
+    if (codeError) {
+      console.error("Error fetching referral code:", codeError);
+      throw new Error("Failed to fetch referral code");
+    }
+
+    let referralCode = existingCode;
+
+    if (!referralCode) {
+      // Create a new referral code for this user if none exists
+      const generateCode = () =>
+        Math.random().toString(36).substring(2, 10).toUpperCase();
+
+      let lastInsertError: unknown = null;
+
+      for (let attempt = 0; attempt < 5; attempt++) {
+        const newCode = generateCode();
+        const { data: inserted, error: insertError } = await supabaseClient
+          .from("referral_codes")
+          .insert({ user_id: user.id, code: newCode })
+          .select("code")
+          .single();
+
+        if (!insertError && inserted) {
+          referralCode = inserted;
+          break;
+        }
+
+        lastInsertError = insertError;
+
+        // If the error isn't a duplicate-code type, don't retry endlessly
+        if (!insertError?.message?.includes("duplicate")) {
+          break;
+        }
+      }
+
+      if (!referralCode) {
+        console.error("Error creating referral code:", lastInsertError);
+        throw new Error("Failed to create referral code");
+      }
     }
 
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
