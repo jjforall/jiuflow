@@ -6,13 +6,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { UserVideoCard } from "@/components/UserVideoCard";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { User, Video, Edit2, Check, X, Plus, Trash2 } from "lucide-react";
+import { User, Video, Edit2, Check, X, Plus, Trash2, Calendar } from "lucide-react";
 import { toast } from "sonner";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { EventCard } from "@/components/EventCard";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { BeltBadge } from "@/components/ui/belt-badge";
+import { Badge } from "@/components/ui/badge";
 
 interface UserVideo {
   id: string;
@@ -34,8 +36,13 @@ interface Profile {
   bio: string | null;
   avatar_url: string | null;
   username: string | null;
+  created_at: string | null;
   education: Array<{school: string; degree?: string; period?: string}> | null;
   work_experience: Array<{company: string; position: string; period?: string; description?: string}> | null;
+  belt_history: Array<{belt: string; date?: string; instructor?: string}> | null;
+  home_dojo: string | null;
+  training_locations: Array<string> | null;
+  titles: Array<{title: string; date?: string; organization?: string}> | null;
 }
 
 export default function UserProfile() {
@@ -86,7 +93,7 @@ export default function UserProfile() {
       // Try to resolve as username first
       const { data: profileByUsername } = await supabase
         .from('profiles')
-        .select('id, email, display_name, bio, avatar_url, username, education, work_experience')
+        .select('id, email, display_name, bio, avatar_url, username, education, work_experience, belt_history, home_dojo, training_locations, titles, created_at')
         .eq('username', userIdOrUsername)
         .maybeSingle();
 
@@ -97,14 +104,17 @@ export default function UserProfile() {
         setProfile({
           ...profileByUsername,
           education: (profileByUsername.education as any) || [],
-          work_experience: (profileByUsername.work_experience as any) || []
+          work_experience: (profileByUsername.work_experience as any) || [],
+          belt_history: (profileByUsername.belt_history as any) || [],
+          training_locations: (profileByUsername.training_locations as any) || [],
+          titles: (profileByUsername.titles as any) || []
         });
       } else {
         // Fall back to UUID
         resolvedUserId = userIdOrUsername;
         const { data: profileById } = await supabase
           .from('profiles')
-          .select('id, email, display_name, bio, avatar_url, username, education, work_experience')
+          .select('id, email, display_name, bio, avatar_url, username, education, work_experience, belt_history, home_dojo, training_locations, titles, created_at')
           .eq('id', userIdOrUsername)
           .single();
         
@@ -112,7 +122,10 @@ export default function UserProfile() {
           setProfile({
             ...profileById,
             education: (profileById.education as any) || [],
-            work_experience: (profileById.work_experience as any) || []
+            work_experience: (profileById.work_experience as any) || [],
+            belt_history: (profileById.belt_history as any) || [],
+            training_locations: (profileById.training_locations as any) || [],
+            titles: (profileById.titles as any) || []
           });
         }
       }
@@ -363,107 +376,152 @@ export default function UserProfile() {
       
       <main className="pt-32 pb-20 px-6">
         <div className="max-w-7xl mx-auto">
-          {/* User Profile Header */}
-          <Card className="mb-12 animate-fade-up">
-            <CardContent className="p-8">
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-6 flex-1">
-                  <Avatar className="h-20 w-20">
+          {/* Beautiful Profile Header with Cover */}
+          <div className="relative mb-12 animate-fade-up">
+            {/* Cover Image */}
+            <div className="h-64 bg-gradient-to-r from-primary/30 via-accent/20 to-primary/30 rounded-t-3xl relative overflow-hidden">
+              <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1555597408-26bc8e548a46?w=1200')] bg-cover bg-center opacity-20" />
+            </div>
+            
+            {/* Profile Info Overlay */}
+            <Card className="mx-6 -mt-20 relative">
+              <CardContent className="p-8">
+                <div className="flex flex-col md:flex-row gap-6 items-start md:items-center">
+                  {/* Avatar */}
+                  <Avatar className="h-32 w-32 border-4 border-background shadow-2xl">
                     <AvatarImage src={profile?.avatar_url || undefined} />
-                    <AvatarFallback>
+                    <AvatarFallback className="text-4xl">
                       {profile?.display_name?.[0] || profile?.username?.[0] || "U"}
                     </AvatarFallback>
                   </Avatar>
+                  
+                  {/* User Info */}
                   <div className="flex-1">
-                    {editingField === 'display_name' ? (
-                      <div className="flex items-center gap-2 mb-2">
-                        <Input
-                          value={editValues.display_name || ''}
-                          onChange={(e) => setEditValues({ ...editValues, display_name: e.target.value })}
-                          placeholder="表示名"
-                          className="text-3xl font-light h-12"
-                        />
-                        <Button size="sm" onClick={() => saveField('display_name')}><Check className="w-4 h-4" /></Button>
-                        <Button size="sm" variant="outline" onClick={cancelEditing}><X className="w-4 h-4" /></Button>
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-2 group mb-2">
-                        <h1 className="text-3xl font-light">
-                          {profile?.display_name || profile?.email?.split('@')[0] || "ユーザー"}
-                        </h1>
-                        {currentUser === actualUserId && isEditMode && (
-                          <Button 
-                            size="sm" 
-                            variant="ghost" 
-                            className="opacity-0 group-hover:opacity-100 transition-opacity"
-                            onClick={() => startEditing('display_name', profile?.display_name)}
-                          >
-                            <Edit2 className="w-4 h-4" />
-                          </Button>
-                        )}
-                      </div>
-                    )}
-
-                    {editingField === 'bio' ? (
-                      <div className="flex items-start gap-2 mb-4">
-                        <Textarea
-                          value={editValues.bio || ''}
-                          onChange={(e) => setEditValues({ ...editValues, bio: e.target.value })}
-                          placeholder="自己紹介"
-                          rows={3}
-                        />
-                        <div className="flex flex-col gap-2">
-                          <Button size="sm" onClick={() => saveField('bio')}><Check className="w-4 h-4" /></Button>
-                          <Button size="sm" variant="outline" onClick={cancelEditing}><X className="w-4 h-4" /></Button>
-                        </div>
-                      </div>
-                    ) : (
-                      profile?.bio && (
-                        <div className="flex items-start gap-2 group mb-4">
-                          <p className="text-muted-foreground">{profile.bio}</p>
-                          {currentUser === actualUserId && isEditMode && (
-                            <Button 
-                              size="sm" 
-                              variant="ghost"
-                              className="opacity-0 group-hover:opacity-100 transition-opacity"
-                              onClick={() => startEditing('bio', profile?.bio)}
-                            >
-                              <Edit2 className="w-4 h-4" />
-                            </Button>
-                          )}
-                        </div>
-                      )
+                    <div className="flex items-center gap-3 mb-2">
+                      <h1 className="text-4xl font-bold">
+                        {profile?.display_name || profile?.email?.split('@')[0] || "ユーザー"}
+                      </h1>
+                      {profile?.belt_history && profile.belt_history.length > 0 && (
+                        <BeltBadge belt={profile.belt_history[profile.belt_history.length - 1].belt} />
+                      )}
+                    </div>
+                    
+                    {profile?.bio && (
+                      <p className="text-muted-foreground mb-4 text-lg">{profile.bio}</p>
                     )}
                     
-                    {/* Education Section */}
-                    <div className="mb-4">
-                      <div className="flex items-center gap-2 mb-2">
-                        <h3 className="text-sm font-semibold">学歴</h3>
-                        {currentUser === actualUserId && isEditMode && editingField === 'education' && (
-                          <Button size="sm" variant="ghost" onClick={addEducation}>
-                            <Plus className="w-4 h-4" />
-                          </Button>
-                        )}
-                        {currentUser === actualUserId && isEditMode && editingField !== 'education' && (
-                          <Button 
-                            size="sm" 
-                            variant="ghost"
-                            onClick={() => startEditing('education', profile?.education || [])}
-                          >
-                            <Edit2 className="w-4 h-4" />
-                          </Button>
-                        )}
-                        {editingField === 'education' && (
-                          <div className="flex gap-2">
-                            <Button size="sm" onClick={() => saveField('education')}><Check className="w-4 h-4" /></Button>
-                            <Button size="sm" variant="outline" onClick={cancelEditing}><X className="w-4 h-4" /></Button>
-                          </div>
-                        )}
+                    {/* Stats Row */}
+                    <div className="flex flex-wrap gap-6 text-sm">
+                      <div className="flex items-center gap-2">
+                        <Video className="w-4 h-4 text-muted-foreground" />
+                        <span className="font-semibold">{videos.length}</span>
+                        <span className="text-muted-foreground">{language === "ja" ? "動画" : "Videos"}</span>
                       </div>
-                      {editingField === 'education' ? (
-                        <div className="space-y-2">
-                          {(editValues.education || []).map((edu: any, index: number) => (
-                            <div key={index} className="flex items-start gap-2 p-2 border border-border rounded">
+                      {profile?.titles && profile.titles.length > 0 && (
+                        <div className="flex items-center gap-2">
+                          <Badge variant="secondary" className="gap-1">
+                            🏆 {profile.titles.length} {language === "ja" ? "タイトル" : "Titles"}
+                          </Badge>
+                        </div>
+                      )}
+                      {profile?.created_at && (
+                        <div className="flex items-center gap-2">
+                          <Calendar className="w-4 h-4 text-muted-foreground" />
+                          <span className="text-muted-foreground">
+                            {language === "ja" ? "登録: " : "Joined: "}
+                            {new Date(profile.created_at).toLocaleDateString(language === "ja" ? "ja-JP" : "en-US", { 
+                              year: 'numeric', 
+                              month: 'short' 
+                            })}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* BJJ Profile Section */}
+          {(profile?.belt_history && profile.belt_history.length > 0) || 
+           profile?.home_dojo || 
+           (profile?.training_locations && profile.training_locations.length > 0) ||
+           (profile?.titles && profile.titles.length > 0) ? (
+            <Card className="mb-8 animate-fade-up">
+              <CardContent className="p-8">
+                <h2 className="text-2xl font-bold mb-6">🥋 {language === "ja" ? "柔術プロフィール" : "BJJ Profile"}</h2>
+                
+                <div className="grid md:grid-cols-2 gap-8">
+                  {/* Belt History */}
+                  {profile?.belt_history && profile.belt_history.length > 0 && (
+                    <div>
+                      <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                        🥋 {language === "ja" ? "帯の履歴" : "Belt History"}
+                      </h3>
+                      <div className="space-y-2">
+                        {profile.belt_history.map((belt, index) => (
+                          <div key={index} className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
+                            <BeltBadge belt={belt.belt} />
+                            <div className="flex-1">
+                              {belt.instructor && <p className="text-sm font-medium">{belt.instructor}</p>}
+                              {belt.date && <p className="text-xs text-muted-foreground">{belt.date}</p>}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Titles */}
+                  {profile?.titles && profile.titles.length > 0 && (
+                    <div>
+                      <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                        🏆 {language === "ja" ? "獲得タイトル" : "Titles & Achievements"}
+                      </h3>
+                      <div className="space-y-2">
+                        {profile.titles.map((title, index) => (
+                          <div key={index} className="p-3 bg-accent/10 rounded-lg border border-accent/20">
+                            <p className="font-semibold text-accent-foreground">{title.title}</p>
+                            {title.organization && <p className="text-sm text-muted-foreground">{title.organization}</p>}
+                            {title.date && <p className="text-xs text-muted-foreground">{title.date}</p>}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Home Dojo */}
+                  {profile?.home_dojo && (
+                    <div>
+                      <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                        🏛️ {language === "ja" ? "所属道場" : "Home Dojo"}
+                      </h3>
+                      <div className="p-4 bg-primary/5 rounded-lg border border-primary/20">
+                        <p className="font-medium text-lg">{profile.home_dojo}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Training Locations */}
+                  {profile?.training_locations && profile.training_locations.length > 0 && (
+                    <div>
+                      <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                        🗺️ {language === "ja" ? "よくいく出稽古先" : "Training Locations"}
+                      </h3>
+                      <div className="flex flex-wrap gap-2">
+                        {profile.training_locations.map((location, index) => (
+                          <Badge key={index} variant="outline" className="text-sm">
+                            {location}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          ) : null}
                               <div className="flex-1 space-y-1">
                                 <Input
                                   value={edu.school || ''}
