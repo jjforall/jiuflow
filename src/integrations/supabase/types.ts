@@ -247,39 +247,51 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          belt_history: Json | null
           bio: string | null
           created_at: string
           display_name: string | null
           education: Json | null
           email: string | null
+          home_dojo: string | null
           id: string
           stripe_customer_id: string | null
+          titles: Json | null
+          training_locations: Json | null
           updated_at: string
           username: string | null
           work_experience: Json | null
         }
         Insert: {
           avatar_url?: string | null
+          belt_history?: Json | null
           bio?: string | null
           created_at?: string
           display_name?: string | null
           education?: Json | null
           email?: string | null
+          home_dojo?: string | null
           id: string
           stripe_customer_id?: string | null
+          titles?: Json | null
+          training_locations?: Json | null
           updated_at?: string
           username?: string | null
           work_experience?: Json | null
         }
         Update: {
           avatar_url?: string | null
+          belt_history?: Json | null
           bio?: string | null
           created_at?: string
           display_name?: string | null
           education?: Json | null
           email?: string | null
+          home_dojo?: string | null
           id?: string
           stripe_customer_id?: string | null
+          titles?: Json | null
+          training_locations?: Json | null
           updated_at?: string
           username?: string | null
           work_experience?: Json | null
