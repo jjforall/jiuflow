@@ -7,13 +7,13 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { User, CreditCard, Calendar, Mail, Upload, Video, Eye, Edit2, Check, X, Trash2, Lock, Globe } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { User, CreditCard, Calendar, Mail, Upload, Video, Eye, Edit2, Check, X, Trash2, Lock, Globe, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { VideoUploadDialog } from "@/components/VideoUploadDialog";
 import { VideoEditDialog } from "@/components/VideoEditDialog";
 import { UserVideoCard } from "@/components/UserVideoCard";
 import { Badge } from "@/components/ui/badge";
-import { UserProfileEditDialog } from "@/components/UserProfileEditDialog";
 import { ExternalLink } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -75,8 +75,9 @@ const MyPage = () => {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deletingVideoId, setDeletingVideoId] = useState<string | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [profileDialogOpen, setProfileDialogOpen] = useState(false);
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [editingField, setEditingField] = useState<string | null>(null);
+  const [editValues, setEditValues] = useState<any>({});
 
   const loadUserVideos = async () => {
     if (!user) return;
@@ -269,6 +270,81 @@ const MyPage = () => {
     const url = `${window.location.origin}/user/${user?.id}`;
     navigator.clipboard.writeText(url);
     toast.success(language === "ja" ? "プロフィールURLをコピーしました" : "Profile URL copied");
+  };
+
+  const startEditing = (field: string, currentValue: any) => {
+    setEditingField(field);
+    setEditValues({ ...editValues, [field]: currentValue });
+  };
+
+  const cancelEditing = () => {
+    setEditingField(null);
+    setEditValues({});
+  };
+
+  const saveField = async (field: string) => {
+    if (!user || !profile) return;
+
+    try {
+      const updateData: any = {};
+      
+      if (field === 'display_name') {
+        updateData.display_name = editValues.display_name?.trim() || null;
+      } else if (field === 'bio') {
+        updateData.bio = editValues.bio?.trim() || null;
+      } else if (field === 'education') {
+        updateData.education = editValues.education || [];
+      } else if (field === 'work_experience') {
+        updateData.work_experience = editValues.work_experience || [];
+      }
+
+      const { error } = await supabase
+        .from('profiles')
+        .update(updateData)
+        .eq('id', user.id);
+
+      if (error) throw error;
+
+      setProfile({ ...profile, ...updateData });
+      toast.success(language === "ja" ? "更新しました" : "Updated");
+      setEditingField(null);
+      setEditValues({});
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      toast.error(language === "ja" ? "更新に失敗しました" : "Update failed");
+    }
+  };
+
+  const addEducation = () => {
+    const newEducation = [...(editValues.education || profile?.education || []), { school: "" }];
+    setEditValues({ ...editValues, education: newEducation });
+  };
+
+  const updateEducation = (index: number, field: string, value: string) => {
+    const newEducation = [...(editValues.education || [])];
+    newEducation[index] = { ...newEducation[index], [field]: value };
+    setEditValues({ ...editValues, education: newEducation });
+  };
+
+  const removeEducation = (index: number) => {
+    const newEducation = (editValues.education || []).filter((_: any, i: number) => i !== index);
+    setEditValues({ ...editValues, education: newEducation });
+  };
+
+  const addWorkExperience = () => {
+    const newWork = [...(editValues.work_experience || profile?.work_experience || []), { company: "", position: "" }];
+    setEditValues({ ...editValues, work_experience: newWork });
+  };
+
+  const updateWorkExperience = (index: number, field: string, value: string) => {
+    const newWork = [...(editValues.work_experience || [])];
+    newWork[index] = { ...newWork[index], [field]: value };
+    setEditValues({ ...editValues, work_experience: newWork });
+  };
+
+  const removeWorkExperience = (index: number) => {
+    const newWork = (editValues.work_experience || []).filter((_: any, i: number) => i !== index);
+    setEditValues({ ...editValues, work_experience: newWork });
   };
 
   const updateReferralCode = async (newCode: string) => {
@@ -476,13 +552,6 @@ const MyPage = () => {
                         <ExternalLink className="w-4 h-4" />
                         {language === "ja" ? "公開ページを見る" : "View Public Page"}
                       </Button>
-                      <Button 
-                        size="sm" 
-                        variant="outline"
-                        onClick={() => setProfileDialogOpen(true)}
-                      >
-                        <Edit2 className="w-4 h-4" />
-                      </Button>
                     </div>
                   </div>
                 </CardHeader>
@@ -495,48 +564,205 @@ const MyPage = () => {
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex-1">
-                      <h2 className="text-2xl font-light mb-2">
-                        {profile?.display_name || profile?.username || user?.email?.split('@')[0] || "ユーザー"}
-                      </h2>
-                      {profile?.bio && (
-                        <p className="text-muted-foreground mb-4">{profile.bio}</p>
-                      )}
-                      
-                      {/* Education Section */}
-                      {profile?.education && profile.education.length > 0 && (
-                        <div className="mb-4">
-                          <h3 className="text-sm font-semibold mb-2">学歴</h3>
-                          <ul className="space-y-1">
-                            {profile.education.map((edu, index) => (
-                              <li key={index} className="text-sm text-muted-foreground">
-                                {edu.school}
-                                {edu.degree && ` - ${edu.degree}`}
-                                {edu.period && ` (${edu.period})`}
-                              </li>
-                            ))}
-                          </ul>
+                      {editingField === 'display_name' ? (
+                        <div className="flex items-center gap-2 mb-2">
+                          <Input
+                            value={editValues.display_name || ''}
+                            onChange={(e) => setEditValues({ ...editValues, display_name: e.target.value })}
+                            placeholder={language === "ja" ? "表示名" : "Display name"}
+                            className="text-2xl font-light h-12"
+                          />
+                          <Button size="sm" onClick={() => saveField('display_name')}><Check className="w-4 h-4" /></Button>
+                          <Button size="sm" variant="outline" onClick={cancelEditing}><X className="w-4 h-4" /></Button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2 group mb-2">
+                          <h2 className="text-2xl font-light">
+                            {profile?.display_name || profile?.username || user?.email?.split('@')[0] || "ユーザー"}
+                          </h2>
+                          <Button 
+                            size="sm" 
+                            variant="ghost" 
+                            className="opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={() => startEditing('display_name', profile?.display_name)}
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </Button>
                         </div>
                       )}
 
-                      {/* Work Experience Section */}
-                      {profile?.work_experience && profile.work_experience.length > 0 && (
-                        <div className="mb-4">
-                          <h3 className="text-sm font-semibold mb-2">職歴</h3>
-                          <ul className="space-y-2">
-                            {profile.work_experience.map((work, index) => (
-                              <li key={index} className="text-sm">
-                                <div className="font-medium">{work.company} - {work.position}</div>
-                                {work.period && (
-                                  <div className="text-muted-foreground text-xs">{work.period}</div>
-                                )}
-                                {work.description && (
-                                  <div className="text-muted-foreground mt-1">{work.description}</div>
-                                )}
-                              </li>
-                            ))}
-                          </ul>
+                      {editingField === 'bio' ? (
+                        <div className="flex items-start gap-2 mb-4">
+                          <Textarea
+                            value={editValues.bio || ''}
+                            onChange={(e) => setEditValues({ ...editValues, bio: e.target.value })}
+                            placeholder={language === "ja" ? "自己紹介" : "Bio"}
+                            rows={3}
+                          />
+                          <div className="flex flex-col gap-2">
+                            <Button size="sm" onClick={() => saveField('bio')}><Check className="w-4 h-4" /></Button>
+                            <Button size="sm" variant="outline" onClick={cancelEditing}><X className="w-4 h-4" /></Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex items-start gap-2 group mb-4">
+                          <p className="text-muted-foreground flex-1">
+                            {profile?.bio || (language === "ja" ? "自己紹介を追加" : "Add bio")}
+                          </p>
+                          <Button 
+                            size="sm" 
+                            variant="ghost"
+                            className="opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={() => startEditing('bio', profile?.bio)}
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </Button>
                         </div>
                       )}
+                      
+                      {/* Education Section */}
+                      <div className="mb-4">
+                        <div className="flex items-center gap-2 mb-2">
+                          <h3 className="text-sm font-semibold">{language === "ja" ? "学歴" : "Education"}</h3>
+                          {editingField === 'education' && (
+                            <Button size="sm" variant="ghost" onClick={addEducation}>
+                              <Plus className="w-4 h-4" />
+                            </Button>
+                          )}
+                          {editingField !== 'education' && (
+                            <Button 
+                              size="sm" 
+                              variant="ghost"
+                              onClick={() => startEditing('education', profile?.education || [])}
+                            >
+                              <Edit2 className="w-4 h-4" />
+                            </Button>
+                          )}
+                        </div>
+                        {editingField === 'education' ? (
+                          <div className="space-y-2">
+                            {(editValues.education || []).map((edu: any, index: number) => (
+                              <div key={index} className="flex items-start gap-2 p-2 border rounded">
+                                <div className="flex-1 space-y-2">
+                                  <Input
+                                    value={edu.school || ''}
+                                    onChange={(e) => updateEducation(index, 'school', e.target.value)}
+                                    placeholder={language === "ja" ? "学校名" : "School"}
+                                  />
+                                  <Input
+                                    value={edu.degree || ''}
+                                    onChange={(e) => updateEducation(index, 'degree', e.target.value)}
+                                    placeholder={language === "ja" ? "学位/専攻" : "Degree"}
+                                  />
+                                  <Input
+                                    value={edu.period || ''}
+                                    onChange={(e) => updateEducation(index, 'period', e.target.value)}
+                                    placeholder={language === "ja" ? "期間" : "Period"}
+                                  />
+                                </div>
+                                <Button size="sm" variant="ghost" onClick={() => removeEducation(index)}>
+                                  <X className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            ))}
+                            <div className="flex gap-2">
+                              <Button size="sm" onClick={() => saveField('education')}><Check className="w-4 h-4 mr-1" /> {language === "ja" ? "保存" : "Save"}</Button>
+                              <Button size="sm" variant="outline" onClick={cancelEditing}><X className="w-4 h-4 mr-1" /> {language === "ja" ? "キャンセル" : "Cancel"}</Button>
+                            </div>
+                          </div>
+                        ) : (
+                          profile?.education && profile.education.length > 0 ? (
+                            <ul className="space-y-1">
+                              {profile.education.map((edu, index) => (
+                                <li key={index} className="text-sm text-muted-foreground">
+                                  {edu.school}
+                                  {edu.degree && ` - ${edu.degree}`}
+                                  {edu.period && ` (${edu.period})`}
+                                </li>
+                              ))}
+                            </ul>
+                          ) : (
+                            <p className="text-sm text-muted-foreground">{language === "ja" ? "学歴を追加" : "Add education"}</p>
+                          )
+                        )}
+                      </div>
+
+                      {/* Work Experience Section */}
+                      <div className="mb-4">
+                        <div className="flex items-center gap-2 mb-2">
+                          <h3 className="text-sm font-semibold">{language === "ja" ? "職歴" : "Work Experience"}</h3>
+                          {editingField === 'work_experience' && (
+                            <Button size="sm" variant="ghost" onClick={addWorkExperience}>
+                              <Plus className="w-4 h-4" />
+                            </Button>
+                          )}
+                          {editingField !== 'work_experience' && (
+                            <Button 
+                              size="sm" 
+                              variant="ghost"
+                              onClick={() => startEditing('work_experience', profile?.work_experience || [])}
+                            >
+                              <Edit2 className="w-4 h-4" />
+                            </Button>
+                          )}
+                        </div>
+                        {editingField === 'work_experience' ? (
+                          <div className="space-y-2">
+                            {(editValues.work_experience || []).map((work: any, index: number) => (
+                              <div key={index} className="flex items-start gap-2 p-2 border rounded">
+                                <div className="flex-1 space-y-2">
+                                  <Input
+                                    value={work.company || ''}
+                                    onChange={(e) => updateWorkExperience(index, 'company', e.target.value)}
+                                    placeholder={language === "ja" ? "会社名" : "Company"}
+                                  />
+                                  <Input
+                                    value={work.position || ''}
+                                    onChange={(e) => updateWorkExperience(index, 'position', e.target.value)}
+                                    placeholder={language === "ja" ? "役職" : "Position"}
+                                  />
+                                  <Input
+                                    value={work.period || ''}
+                                    onChange={(e) => updateWorkExperience(index, 'period', e.target.value)}
+                                    placeholder={language === "ja" ? "期間" : "Period"}
+                                  />
+                                  <Textarea
+                                    value={work.description || ''}
+                                    onChange={(e) => updateWorkExperience(index, 'description', e.target.value)}
+                                    placeholder={language === "ja" ? "説明" : "Description"}
+                                    rows={2}
+                                  />
+                                </div>
+                                <Button size="sm" variant="ghost" onClick={() => removeWorkExperience(index)}>
+                                  <X className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            ))}
+                            <div className="flex gap-2">
+                              <Button size="sm" onClick={() => saveField('work_experience')}><Check className="w-4 h-4 mr-1" /> {language === "ja" ? "保存" : "Save"}</Button>
+                              <Button size="sm" variant="outline" onClick={cancelEditing}><X className="w-4 h-4 mr-1" /> {language === "ja" ? "キャンセル" : "Cancel"}</Button>
+                            </div>
+                          </div>
+                        ) : (
+                          profile?.work_experience && profile.work_experience.length > 0 ? (
+                            <ul className="space-y-2">
+                              {profile.work_experience.map((work, index) => (
+                                <li key={index} className="text-sm">
+                                  <div className="font-medium">{work.company} - {work.position}</div>
+                                  {work.period && (
+                                    <div className="text-muted-foreground text-xs">{work.period}</div>
+                                  )}
+                                  {work.description && (
+                                    <div className="text-muted-foreground mt-1">{work.description}</div>
+                                  )}
+                                </li>
+                              ))}
+                            </ul>
+                          ) : (
+                            <p className="text-sm text-muted-foreground">{language === "ja" ? "職歴を追加" : "Add work experience"}</p>
+                          )
+                        )}
+                      </div>
 
                       <p className="text-sm text-muted-foreground">
                         <Video className="inline h-4 w-4 mr-1" />
@@ -871,17 +1097,6 @@ const MyPage = () => {
         onSuccess={loadUserVideos}
       />
 
-      {user && (
-        <UserProfileEditDialog
-          open={profileDialogOpen}
-          onOpenChange={setProfileDialogOpen}
-          userId={user.id}
-          onSuccess={() => {
-            loadProfile();
-            toast.success(language === "ja" ? "プロフィールを更新しました" : "Profile updated");
-          }}
-        />
-      )}
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
