@@ -13,8 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
-import confetti from "canvas-confetti";
-import { Check, Eye } from "lucide-react";
+import { Eye } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 const useCountdown = () => {
@@ -119,15 +118,12 @@ const SAMPLE_VIDEO_ID = "6a70670c-e9f8-4a8b-adce-8e703ac56bee";
 
 const Join = () => {
   const { language } = useLanguage();
-  const t = translations[language] || translations.ja; // Fallback to Japanese
+  const t = translations[language] || translations.ja;
   const { timeLeft, founderCount, founderMaxCount, founderCurrentPrice, founderNextPrice } = useCountdown();
   const [isLoading, setIsLoading] = useState(false);
   const [showVideoModal, setShowVideoModal] = useState(false);
   const [sampleVideoUrl, setSampleVideoUrl] = useState<string | null>(null);
-  const [couponCode, setCouponCode] = useState("");
   const [referralCode, setReferralCode] = useState("");
-  const [couponVerified, setCouponVerified] = useState(false);
-  const [showCouponSuccess, setShowCouponSuccess] = useState(false);
   const [viewCount, setViewCount] = useState(0);
   
   const { isLoading: authLoading, user } = useAuth();
@@ -186,67 +182,7 @@ const Join = () => {
     }
   }, [searchParams, t.join.payment, language]);
 
-  const handleVerifyCoupon = () => {
-    const validCoupons = ["MURATABJJ", "MURATABROS"];
-    const trimmedCode = couponCode.trim().toUpperCase();
-    
-    if (validCoupons.includes(trimmedCode)) {
-      setCouponVerified(true);
-      setShowCouponSuccess(true);
-      
-      // Confetti effect
-      const duration = 3000;
-      const animationEnd = Date.now() + duration;
-      const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 9999 };
-
-      const randomInRange = (min: number, max: number) => {
-        return Math.random() * (max - min) + min;
-      };
-
-      const interval = setInterval(() => {
-        const timeLeft = animationEnd - Date.now();
-
-        if (timeLeft <= 0) {
-          clearInterval(interval);
-          setTimeout(() => setShowCouponSuccess(false), 500);
-          return;
-        }
-
-        const particleCount = 50 * (timeLeft / duration);
-        
-        confetti({
-          ...defaults,
-          particleCount,
-          origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 }
-        });
-        confetti({
-          ...defaults,
-          particleCount,
-          origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 }
-        });
-      }, 250);
-
-      const message = trimmedCode === "MURATABROS" 
-        ? (language === "ja" ? "創始者アクセスProプランが適用されました！🎉" : "Founder Access Pro Plan applied! 🎉")
-        : (language === "ja" ? "クーポンコードが適用されました！🎉" : "Coupon code applied! 🎉");
-
-      toast.success(message, {
-        description: language === "ja"
-          ? "特別価格でご利用いただけます"
-          : "You can now access special pricing",
-      });
-    } else {
-      toast.error(
-        language === "ja" 
-          ? "無効なクーポンコードです" 
-          : "Invalid coupon code"
-      );
-      setCouponVerified(false);
-    }
-  };
-
   const handleCheckout = async (priceId: string, isSubscription: boolean) => {
-    // Check if user is logged in
     const { data: { session } } = await supabase.auth.getSession();
     
     if (!session) {
@@ -270,7 +206,6 @@ const Join = () => {
       const { data, error } = await supabase.functions.invoke(functionName, {
         body: { 
           priceId, 
-          couponCode: couponCode.trim() || undefined,
           referralCode: referralCode.trim() || undefined,
           email: session.user.email,
         },
@@ -352,547 +287,259 @@ const Join = () => {
             </div>
           )}
 
-          {(
-            <>
-              <div className="text-center mb-16 animate-fade-up">
-                <h1 className="text-5xl md:text-6xl font-light mb-6">{t.join.title}</h1>
-                <p className="text-xl text-muted-foreground font-light">
-                  {t.join.subtitle}
-                </p>
-              </div>
+          <>
+            <div className="text-center mb-16 animate-fade-up">
+              <h1 className="text-5xl md:text-6xl font-light mb-6">{t.join.title}</h1>
+              <p className="text-xl text-muted-foreground font-light">
+                {t.join.subtitle}
+              </p>
+            </div>
 
-              {/* Sample Video Section */}
-              <div className="border border-border p-8 mb-16 animate-fade-up text-center">
-                <h2 className="text-2xl font-light mb-4">{t.join.sampleVideo.title}</h2>
-                <Button variant="outline" size="lg" onClick={() => setShowVideoModal(true)}>
-                  {t.join.sampleVideo.cta}
+            {/* Sample Video Section */}
+            <div className="border border-border p-8 mb-16 animate-fade-up text-center">
+              <h2 className="text-2xl font-light mb-4">{t.join.sampleVideo.title}</h2>
+              <Button variant="outline" size="lg" onClick={() => setShowVideoModal(true)}>
+                {t.join.sampleVideo.cta}
+              </Button>
+            </div>
+
+            {/* Video Modal */}
+            <Dialog open={showVideoModal} onOpenChange={async (open) => {
+              setShowVideoModal(open);
+              
+              // Record view when modal is opened
+              if (open && user) {
+                const { data: existingView } = await supabase
+                  .from("video_views")
+                  .select("*")
+                  .eq("user_id", user.id)
+                  .eq("video_id", SAMPLE_VIDEO_ID)
+                  .maybeSingle();
+
+                if (existingView) {
+                  const { data } = await supabase
+                    .from("video_views")
+                    .update({
+                      view_count: existingView.view_count + 1,
+                      last_viewed_at: new Date().toISOString(),
+                    })
+                    .eq("id", existingView.id)
+                    .select("view_count")
+                    .single();
+                  
+                  if (data) {
+                    setViewCount(data.view_count);
+                  }
+                } else {
+                  const { data } = await supabase
+                    .from("video_views")
+                    .insert({
+                      user_id: user.id,
+                      video_id: SAMPLE_VIDEO_ID,
+                      view_count: 1,
+                    })
+                    .select("view_count")
+                    .single();
+                  
+                  if (data) {
+                    setViewCount(data.view_count);
+                  }
+                }
+              }
+            }}>
+              <DialogContent className="max-w-4xl">
+                <DialogHeader>
+                  <div className="flex items-center justify-between">
+                    <DialogTitle>{t.join.sampleVideo.title}</DialogTitle>
+                    {user && viewCount > 0 && (
+                      <Badge variant="secondary" className="flex items-center gap-1.5">
+                        <Eye className="w-3.5 h-3.5" />
+                        <span>{language === "ja" ? "視聴" : "Watched"} {viewCount}{language === "ja" ? "回" : "x"}</span>
+                      </Badge>
+                    )}
+                  </div>
+                </DialogHeader>
+                <div className="aspect-video">
+                  {sampleVideoUrl ? (
+                    <video
+                      src={sampleVideoUrl}
+                      className="w-full h-full"
+                      controls
+                      autoPlay
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-muted">
+                      <p className="text-muted-foreground">Loading video...</p>
+                    </div>
+                  )}
+                </div>
+              </DialogContent>
+            </Dialog>
+
+            {/* Referral Code Section */}
+            <div className="border border-border p-6 mb-8 animate-fade-up">
+              <h3 className="text-lg font-light mb-3 text-center">
+                {language === "ja" ? "紹介コードをお持ちの方" : "Have a referral code?"}
+              </h3>
+              <div className="flex gap-3 max-w-md mx-auto">
+                <Input
+                  type="text"
+                  placeholder={language === "ja" ? "紹介コードを入力" : "Enter referral code"}
+                  value={referralCode}
+                  onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
+                  className="flex-1"
+                />
+              </div>
+              <p className="text-sm text-muted-foreground text-center mt-3">
+                {language === "ja" 
+                  ? "紹介コードで加入すると初月無料 + 紹介者に毎月500ポイント付与されます" 
+                  : "Join with a referral code: first month free + 500 points monthly for referrer"}
+              </p>
+            </div>
+
+            {/* Pricing */}
+            <div className="grid md:grid-cols-2 gap-8 mb-16 animate-fade-up">
+              {/* Monthly Plan */}
+              <div className="border border-foreground p-8 relative">
+                <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-foreground text-background px-4 py-1 text-xs font-light">
+                  {language === "ja" ? "人気" : language === "pt" ? "Popular" : "Most Popular"}
+                </div>
+                <h3 className="text-2xl font-light mb-4">
+                  {language === "ja" ? "月額プラン" : language === "pt" ? "Plano Mensal" : "Monthly Plan"}
+                </h3>
+                <div className="mb-6">
+                  <div className="text-4xl font-light mb-2">¥2,900</div>
+                  <div className="text-sm text-muted-foreground font-light">
+                    {language === "ja" ? "月額（3ヶ月無料・いつでもキャンセル可能）" : language === "pt" ? "Por mês (3 meses grátis・cancele a qualquer momento)" : "per month (3 months free・cancel anytime)"}
+                  </div>
+                </div>
+                <ul className="space-y-3 mb-6 text-sm font-light">
+                  <li className="flex items-start">
+                    <span className="mr-2">✓</span>
+                    <span>{language === "ja" ? "全技術動画へのアクセス" : language === "pt" ? "Acesso a todos os vídeos técnicos" : "Access to all technique videos"}</span>
+                  </li>
+                  <li className="flex items-start">
+                    <span className="mr-2">✓</span>
+                    <span>{language === "ja" ? "新規コンテンツの追加" : language === "pt" ? "Novos conteúdos adicionados" : "New content additions"}</span>
+                  </li>
+                  <li className="flex items-start">
+                    <span className="mr-2">✓</span>
+                    <span>{language === "ja" ? "柔軟な支払い" : language === "pt" ? "Pagamento flexível" : "Flexible payment"}</span>
+                  </li>
+                </ul>
+                <Button
+                  className="w-full"
+                  onClick={() => handleCheckout(PRICE_IDS.monthly, true)}
+                  disabled={isLoading}
+                >
+                  {language === "ja" ? "月額で始める" : language === "pt" ? "Começar mensalmente" : "Start Monthly"}
                 </Button>
               </div>
 
-              {/* Video Modal */}
-              <Dialog open={showVideoModal} onOpenChange={async (open) => {
-                setShowVideoModal(open);
-                
-                // Record view when modal is opened
-                if (open && user) {
-                  const { data: existingView } = await supabase
-                    .from("video_views")
-                    .select("*")
-                    .eq("user_id", user.id)
-                    .eq("video_id", SAMPLE_VIDEO_ID)
-                    .maybeSingle();
-
-                  if (existingView) {
-                    const { data } = await supabase
-                      .from("video_views")
-                      .update({
-                        view_count: existingView.view_count + 1,
-                        last_viewed_at: new Date().toISOString(),
-                      })
-                      .eq("id", existingView.id)
-                      .select("view_count")
-                      .single();
-                    
-                    if (data) {
-                      setViewCount(data.view_count);
-                    }
-                  } else {
-                    const { data } = await supabase
-                      .from("video_views")
-                      .insert({
-                        user_id: user.id,
-                        video_id: SAMPLE_VIDEO_ID,
-                        view_count: 1,
-                      })
-                      .select("view_count")
-                      .single();
-                    
-                    if (data) {
-                      setViewCount(data.view_count);
-                    }
-                  }
-                }
-              }}>
-                <DialogContent className="max-w-4xl">
-                  <DialogHeader>
-                    <div className="flex items-center justify-between">
-                      <DialogTitle>{t.join.sampleVideo.title}</DialogTitle>
-                      {user && viewCount > 0 && (
-                        <Badge variant="secondary" className="flex items-center gap-1.5">
-                          <Eye className="w-3.5 h-3.5" />
-                          <span>{language === "ja" ? "視聴" : "Watched"} {viewCount}{language === "ja" ? "回" : "x"}</span>
-                        </Badge>
-                      )}
-                    </div>
-                  </DialogHeader>
-                  <div className="aspect-video">
-                    {sampleVideoUrl ? (
-                      <video
-                        src={sampleVideoUrl}
-                        className="w-full h-full"
-                        controls
-                        autoPlay
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-muted">
-                        <p className="text-muted-foreground">Loading video...</p>
-                      </div>
-                    )}
-                  </div>
-                </DialogContent>
-              </Dialog>
-
-
-              {/* Referral Code Section */}
-              <div className="border border-border p-6 mb-4 animate-fade-up">
-                <h3 className="text-lg font-light mb-3 text-center">
-                  {language === "ja" ? "紹介コードをお持ちの方" : "Have a referral code?"}
+              {/* Annual Plan */}
+              <div className="border border-border p-8">
+                <h3 className="text-2xl font-light mb-4">
+                  {language === "ja" ? "年額プラン" : language === "pt" ? "Plano Anual" : "Annual Plan"}
                 </h3>
-                <div className="flex gap-3 max-w-md mx-auto">
-                  <Input
-                    type="text"
-                    placeholder={language === "ja" ? "紹介コードを入力" : "Enter referral code"}
-                    value={referralCode}
-                    onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
-                    className="flex-1"
-                  />
-                </div>
-                <p className="text-sm text-muted-foreground text-center mt-3">
-                  {language === "ja" 
-                    ? "紹介コードで加入すると初月無料になります" 
-                    : "Join with a referral code and get your first month free"}
-                </p>
-              </div>
-
-              {/* Coupon Code Section */}
-              <div className="border border-border p-6 mb-8 animate-fade-up relative overflow-hidden">
-                {showCouponSuccess && (
-                  <div className="absolute inset-0 bg-gradient-to-r from-success/20 via-accent/20 to-success/20 animate-pulse pointer-events-none" />
-                )}
-                <h3 className="text-lg font-light mb-3 text-center">
-                  {language === "ja" ? "クーポンコードをお持ちの方" : "Have a coupon code?"}
-                </h3>
-                <div className="flex gap-3 max-w-md mx-auto">
-                  <Input
-                    type="text"
-                    placeholder={language === "ja" ? "クーポンコードを入力" : "Enter coupon code"}
-                    value={couponCode}
-                    onChange={(e) => {
-                      setCouponCode(e.target.value.toUpperCase());
-                      setCouponVerified(false);
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" && couponCode.trim()) {
-                        handleVerifyCoupon();
-                      }
-                    }}
-                    className="flex-1"
-                    disabled={couponVerified}
-                  />
-                  {couponVerified ? (
-                    <Button
-                      variant="default"
-                      size="sm"
-                      className="bg-success hover:bg-success/90"
-                      disabled
-                    >
-                      <Check className="w-4 h-4 mr-1" />
-                      {language === "ja" ? "適用済み" : "Applied"}
-                    </Button>
-                  ) : couponCode ? (
-                    <>
-                      <Button
-                        variant="default"
-                        size="sm"
-                        onClick={handleVerifyCoupon}
-                      >
-                        {language === "ja" ? "適用" : "Apply"}
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          setCouponCode("");
-                          setCouponVerified(false);
-                        }}
-                      >
-                        {language === "ja" ? "クリア" : "Clear"}
-                      </Button>
-                    </>
-                  ) : null}
-                </div>
-                {couponVerified && (
-                  <div className="mt-3 p-3 bg-success/10 border border-success/30 rounded-lg animate-fade-in">
-                    <p className="text-sm text-center font-medium text-success flex items-center justify-center gap-2">
-                      <Check className="w-4 h-4" />
-                      {language === "ja" 
-                        ? "クーポンが適用されました！下記の特別プランをご利用いただけます" 
-                        : "Coupon applied! You can now access the special plan below"}
-                    </p>
-                  </div>
-                )}
-              </div>
-
-              {/* Pricing */}
-              <div className={`grid ${couponVerified && couponCode === "MURATABROS" ? "md:grid-cols-2" : couponVerified ? "md:grid-cols-1" : "md:grid-cols-2"} gap-8 mb-16 animate-fade-up ${couponVerified && couponCode === "MURATABJJ" ? "max-w-lg mx-auto" : ""}`}>
-                {/* MURATABROS Pro - Only show if coupon is MURATABROS */}
-                {couponVerified && couponCode === "MURATABROS" && (
-                  <div className="border-2 border-primary p-8 shadow-2xl relative bg-gradient-to-br from-primary/5 to-secondary/5">
-                    <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-primary to-secondary text-primary-foreground px-6 py-1 text-sm font-medium rounded-full shadow-lg">
-                      {language === "ja" ? "🏆 創始者アクセスPro" : "🏆 Founder Access Pro"}
-                    </div>
-                    <h3 className="text-3xl font-light mb-4 mt-2 text-center">
-                      {language === "ja" ? "創始者アクセスPro" : "Founder Access Pro"}
-                    </h3>
-                    <div className="mb-6 text-center">
-                      <div className="text-5xl font-light mb-2">¥{founderCurrentPrice.toLocaleString()}</div>
-                      <div className="text-sm text-muted-foreground font-light">
-                        {language === "ja" ? "年額（審査制・毎年更新）" : "Annual (Application required・Yearly renewal)"}
-                      </div>
-                      <div className="mt-2 text-xs text-primary font-medium">
-                        {language === "ja" ? "🔥 12月31日まで申請受付中" : "🔥 Applications accepted until December 31st"}
-                      </div>
-                      
-                      {/* Remaining spots counter */}
-                      <div className="mt-4 p-3 bg-primary/10 border border-primary/30 rounded-lg">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-sm font-medium">
-                            {language === "ja" ? "残り枠数" : "Remaining Spots"}
-                          </span>
-                          <span className="text-lg font-bold text-primary">
-                            {founderMaxCount - founderCount}{language === "ja" ? "名" : " spots"}
-                          </span>
-                        </div>
-                        <Progress value={(founderCount / founderMaxCount) * 100} className="h-2 mb-2" />
-                        <p className="text-xs text-muted-foreground text-center">
-                          {language === "ja" 
-                            ? `${founderCount}名加入済み / ${founderMaxCount}名で値上げ（¥${founderNextPrice.toLocaleString()}）` 
-                            : `${founderCount} joined / Price increase at ${founderMaxCount} (¥${founderNextPrice.toLocaleString()})`}
-                        </p>
-                      </div>
-                    </div>
-                    
-                    <div className="mb-6 p-4 bg-accent/10 border border-accent/30 rounded-lg">
-                      <h4 className="font-medium mb-3 text-center flex items-center justify-center gap-2">
-                        <span className="text-2xl">🏆</span>
-                        {language === "ja" ? "プレミアム特典" : "Premium Benefits"}
-                      </h4>
-                      <ul className="space-y-2 text-sm font-light">
-                        <li className="flex items-start">
-                          <span className="mr-2">🏠</span>
-                          <span>{language === "ja" ? "関連施設への特別価格での招待" : "Special pricing for partner facilities & invitations"}</span>
-                        </li>
-                        <li className="flex items-start">
-                          <span className="mr-2">🏝️</span>
-                          <span>{language === "ja" ? "優先イベント・合宿への参加権" : "Priority access to exclusive events & training camps"}</span>
-                        </li>
-                        <li className="flex items-start">
-                          <span className="mr-2">💎</span>
-                          <span>{language === "ja" ? "プレミアムサポート＆特別サービス" : "Premium support & special services"}</span>
-                        </li>
-                      </ul>
-                    </div>
-
-                    <div className="mb-6 p-4 bg-primary/5 border border-primary/20 rounded-lg">
-                      <h4 className="font-medium mb-3 text-center text-sm text-primary">
-                        {language === "ja" ? "⚠️ 審査制プラン" : "⚠️ Application Required"}
-                      </h4>
-                      <ul className="space-y-2 text-xs text-muted-foreground">
-                        <li className="flex items-start">
-                          <span className="mr-2">•</span>
-                          <span>{language === "ja" ? "申請後、運営による審査があります" : "Subject to review after application"}</span>
-                        </li>
-                        <li className="flex items-start">
-                          <span className="mr-2">•</span>
-                          <span>{language === "ja" ? "毎年更新時に再審査が行われます" : "Annual renewal review required"}</span>
-                        </li>
-                        <li className="flex items-start">
-                          <span className="mr-2">•</span>
-                          <span>{language === "ja" ? "審査で承認されなかった場合、1年間は再申請できません" : "If not approved, cannot reapply for 1 year"}</span>
-                        </li>
-                      </ul>
-                    </div>
-
-                    <ul className="space-y-3 mb-6 text-sm font-light">
-                      <li className="flex items-start">
-                        <span className="mr-2">✓</span>
-                        <span>{language === "ja" ? "全技術動画への年間アクセス" : "Annual access to all technique videos"}</span>
-                      </li>
-                      <li className="flex items-start">
-                        <span className="mr-2">🎨</span>
-                        <span>{language === "ja" ? "Pro会員限定NFTバッジ付与" : "Exclusive Pro member NFT badge"}</span>
-                      </li>
-                      <li className="flex items-start">
-                        <span className="mr-2">🎯</span>
-                        <span>{language === "ja" ? "10,000ポイント即時付与" : "10,000 points instantly awarded"}</span>
-                      </li>
-                      <li className="flex items-start">
-                        <span className="mr-2">👥</span>
-                        <span>{language === "ja" ? "専用紹介コード発行（1人紹介で1,000pt）" : "Dedicated referral code (1,000pts per referral)"}</span>
-                      </li>
-                    </ul>
-                    <Button
-                      className="w-full h-14 text-lg bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90 shadow-lg"
-                      onClick={() => handleCheckout(PRICE_IDS.muratabros, false)}
-                      disabled={isLoading}
-                    >
-                      {language === "ja" ? "Proプランに申請" : "Apply for Pro"}
-                    </Button>
-                    <p className="text-xs text-center text-muted-foreground mt-3">
-                      {language === "ja" 
-                        ? "※ 決済後に審査が行われます" 
-                        : "※ Review process starts after payment"}
-                    </p>
-                  </div>
-                )}
-
-                {/* Founder Access - Show with MURATABROS for comparison */}
-                {couponVerified && couponCode === "MURATABROS" && (
-                  <div className="border border-border p-8 shadow-sm relative opacity-80 hover:opacity-100 transition-opacity">
-                  <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-muted text-muted-foreground px-4 py-1 text-xs font-light">
-                    {language === "ja" ? "スタンダード" : "Standard"}
-                  </div>
-                  <h3 className="text-xl font-light mb-4 mt-2">
-                    {language === "ja" ? "創設者アクセス" : language === "pt" ? "Acesso Fundador" : "Founder Access"}
-                  </h3>
-                  <div className="mb-6">
-                    <div className="text-3xl font-light mb-2">¥980</div>
-                    <div className="text-sm text-muted-foreground font-light">
-                      {language === "ja" ? "月額（3ヶ月無料・永久価格）" : "per month (3 months free・forever)"}
-                      </div>
-                      <div className="text-xs text-muted-foreground mt-2">
-                        {language === "ja" ? "残り" : "Remaining"} {timeLeft.days}
-                        {language === "ja" ? "日" : " days "}
-                        {timeLeft.hours}:{timeLeft.minutes}:{timeLeft.seconds}
-                      </div>
-                    </div>
-                    <ul className="space-y-2 mb-6 text-sm font-light">
-                      <li className="flex items-start">
-                        <span className="mr-2 text-muted-foreground">✓</span>
-                        <span className="text-muted-foreground">{language === "ja" ? "全技術動画へのアクセス" : "Access to all technique videos"}</span>
-                      </li>
-                      <li className="flex items-start">
-                        <span className="mr-2 text-muted-foreground">✓</span>
-                        <span className="text-muted-foreground">{language === "ja" ? "新規コンテンツの追加" : "New content additions"}</span>
-                      </li>
-                      <li className="flex items-start">
-                        <span className="mr-2 text-muted-foreground">🎨</span>
-                        <span className="text-muted-foreground">{language === "ja" ? "創設者NFTバッジ" : "Founder NFT badge"}</span>
-                      </li>
-                      <li className="flex items-start">
-                        <span className="mr-2 text-muted-foreground">🎯</span>
-                        <span className="text-muted-foreground">{language === "ja" ? "毎月500ポイント" : "500 points monthly"}</span>
-                      </li>
-                    </ul>
-                    <Button
-                      variant="outline"
-                      className="w-full"
-                      onClick={() => handleCheckout(PRICE_IDS.founder, true)}
-                      disabled={isLoading}
-                    >
-                      {language === "ja" ? "このプランを選択" : "Select Plan"}
-                    </Button>
-                  </div>
-                )}
-
-                {/* Founder Access - Only show if coupon is MURATABJJ */}
-                {couponVerified && couponCode === "MURATABJJ" && (
-                  <div className="border border-primary p-8 shadow-lg relative">
-                  <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-primary text-primary-foreground px-4 py-1 text-xs font-light">
-                    {language === "ja" ? "特別オファー" : language === "pt" ? "Oferta Especial" : "Special Offer"}
-                  </div>
-                  <h3 className="text-2xl font-light mb-4 mt-2">
-                    {language === "ja" ? "創設者アクセス" : language === "pt" ? "Acesso Fundador" : "Founder Access"}
-                  </h3>
-                  <div className="mb-6">
-                    <div className="text-4xl font-light mb-2">¥980</div>
-                    <div className="text-sm text-muted-foreground font-light">
-                      {language === "ja" ? "月額（3ヶ月無料・期間限定・永久価格）" : language === "pt" ? "Por mês (3 meses grátis・preço limitado e permanente)" : "per month (3 months free・limited time forever)"}
-                      </div>
-                      <div className="text-xs text-muted-foreground mt-2">
-                        {language === "ja" ? "残り" : language === "pt" ? "Restam" : "Remaining"} {timeLeft.days}
-                        {language === "ja" ? "日" : language === "pt" ? " dias " : " days "}
-                        {timeLeft.hours}:{timeLeft.minutes}:{timeLeft.seconds}
-                      </div>
-                    </div>
-                    <ul className="space-y-3 mb-6 text-sm font-light">
-                      <li className="flex items-start">
-                        <span className="mr-2">✓</span>
-                        <span>{language === "ja" ? "全技術動画へのアクセス" : language === "pt" ? "Acesso a todos os vídeos técnicos" : "Access to all technique videos"}</span>
-                      </li>
-                      <li className="flex items-start">
-                        <span className="mr-2">✓</span>
-                        <span>{language === "ja" ? "新規コンテンツの追加" : language === "pt" ? "Novos conteúdos adicionados" : "New content additions"}</span>
-                      </li>
-                      <li className="flex items-start">
-                        <span className="mr-2">✓</span>
-                        <span>{language === "ja" ? "¥980/月を永久に維持" : language === "pt" ? "Manter ¥980/mês para sempre" : "Keep ¥980/month forever"}</span>
-                      </li>
-                      <li className="flex items-start">
-                        <span className="mr-2">🎨</span>
-                        <span>{language === "ja" ? "創設者NFTバッジ" : language === "pt" ? "Badge NFT de Fundador" : "Founder NFT badge"}</span>
-                      </li>
-                      <li className="flex items-start">
-                        <span className="mr-2">🎯</span>
-                        <span>{language === "ja" ? "毎月500ポイント付与" : language === "pt" ? "500 pontos por mês" : "500 points monthly"}</span>
-                      </li>
-                    </ul>
-                    <Button
-                      className="w-full"
-                      onClick={() => handleCheckout(PRICE_IDS.founder, true)}
-                      disabled={isLoading}
-                    >
-                      {language === "ja" ? "今すぐ参加" : language === "pt" ? "Participar agora" : "Join Now"}
-                    </Button>
-                  </div>
-                )}
-
-                {/* Monthly - Only show if no verified coupon */}
-                {!couponVerified && (
-                  <div className="border border-foreground p-8 relative">
-                    <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-foreground text-background px-4 py-1 text-xs font-light">
-                      {language === "ja" ? "人気" : language === "pt" ? "Popular" : "Most Popular"}
-                    </div>
-                    <h3 className="text-2xl font-light mb-4">
-                      {language === "ja" ? "月額プラン" : language === "pt" ? "Plano Mensal" : "Monthly Plan"}
-                    </h3>
-                    <div className="mb-6">
-                      <div className="text-4xl font-light mb-2">¥2,900</div>
-                      <div className="text-sm text-muted-foreground font-light">
-                        {language === "ja" ? "月額（3ヶ月無料・いつでもキャンセル可能）" : language === "pt" ? "Por mês (3 meses grátis・cancele a qualquer momento)" : "per month (3 months free・cancel anytime)"}
-                      </div>
-                    </div>
-                    <ul className="space-y-3 mb-6 text-sm font-light">
-                      <li className="flex items-start">
-                        <span className="mr-2">✓</span>
-                        <span>{language === "ja" ? "全技術動画へのアクセス" : language === "pt" ? "Acesso a todos os vídeos técnicos" : "Access to all technique videos"}</span>
-                      </li>
-                      <li className="flex items-start">
-                        <span className="mr-2">✓</span>
-                        <span>{language === "ja" ? "新規コンテンツの追加" : language === "pt" ? "Novos conteúdos adicionados" : "New content additions"}</span>
-                      </li>
-                      <li className="flex items-start">
-                        <span className="mr-2">✓</span>
-                        <span>{language === "ja" ? "柔軟な支払い" : language === "pt" ? "Pagamento flexível" : "Flexible payment"}</span>
-                      </li>
-                    </ul>
-                    <Button
-                      className="w-full"
-                      onClick={() => handleCheckout(PRICE_IDS.monthly, true)}
-                      disabled={isLoading}
-                    >
-                      {language === "ja" ? "月額で始める" : language === "pt" ? "Começar mensalmente" : "Start Monthly"}
-                    </Button>
-                  </div>
-                )}
-
-                {/* Annual - Only show if no verified coupon */}
-                {!couponVerified && (
-                  <div className="border border-border p-8">
-                  <h3 className="text-2xl font-light mb-4">
-                    {language === "ja" ? "年額プラン" : language === "pt" ? "Plano Anual" : "Annual Plan"}
-                  </h3>
-                  <div className="mb-6">
-                    <div className="text-4xl font-light mb-2">¥29,000</div>
-                    <div className="text-sm text-muted-foreground font-light">
-                      {language === "ja" ? "年額（3ヶ月無料・約2ヶ月分お得）" : language === "pt" ? "Por ano (3 meses grátis・economize cerca de 2 meses)" : "per year (3 months free・save ~2 months)"}
-                    </div>
-                  </div>
-                  <ul className="space-y-3 mb-6 text-sm font-light">
-                    <li className="flex items-start">
-                      <span className="mr-2">✓</span>
-                      <span>{language === "ja" ? "全技術動画へのアクセス" : language === "pt" ? "Acesso a todos os vídeos técnicos" : "Access to all technique videos"}</span>
-                    </li>
-                    <li className="flex items-start">
-                      <span className="mr-2">✓</span>
-                      <span>{language === "ja" ? "新規コンテンツの追加" : language === "pt" ? "Novos conteúdos adicionados" : "New content additions"}</span>
-                    </li>
-                    <li className="flex items-start">
-                      <span className="mr-2">✓</span>
-                      <span>{language === "ja" ? "最大の節約" : language === "pt" ? "Melhor economia" : "Best value"}</span>
-                    </li>
-                  </ul>
-                  <Button
-                    className="w-full"
-                    onClick={() => handleCheckout(PRICE_IDS.annual, true)}
-                    disabled={isLoading}
-                  >
-                    {language === "ja" ? "年額で始める" : language === "pt" ? "Começar anualmente" : "Start Annually"}
-                  </Button>
-                  </div>
-                )}
-              </div>
-
-              {/* Rewards System Explanation */}
-              <div className="mt-16 p-8 border border-border rounded-lg bg-muted/30 animate-fade-up">
-                <h3 className="text-2xl font-light mb-6 text-center">
-                  {language === "ja" ? "🎁 リワードシステム" : "🎁 Rewards System"}
-                </h3>
-                <div className="grid md:grid-cols-3 gap-6">
-                  <div className="text-center p-4">
-                    <div className="text-4xl mb-3">🎨</div>
-                    <h4 className="font-medium mb-2">
-                      {language === "ja" ? "NFTバッジ" : "NFT Badges"}
-                    </h4>
-                    <p className="text-sm text-muted-foreground">
-                      {language === "ja" 
-                        ? "プラン購入時に限定NFTを自動付与。コレクションとして保有可能"
-                        : "Exclusive NFTs automatically awarded with plan purchase"}
-                    </p>
-                  </div>
-                  <div className="text-center p-4">
-                    <div className="text-4xl mb-3">🎯</div>
-                    <h4 className="font-medium mb-2">
-                      {language === "ja" ? "ポイント" : "Points"}
-                    </h4>
-                    <p className="text-sm text-muted-foreground">
-                      {language === "ja" 
-                        ? "毎月・毎年ポイント獲得。限定コンテンツやグッズ交換に使用可能"
-                        : "Earn points monthly/yearly. Use for exclusive content and merchandise"}
-                    </p>
-                  </div>
-                  <div className="text-center p-4">
-                    <div className="text-4xl mb-3">👥</div>
-                    <h4 className="font-medium mb-2">
-                      {language === "ja" ? "紹介制度" : "Referral Program"}
-                    </h4>
-                    <p className="text-sm text-muted-foreground">
-                      {language === "ja" 
-                        ? "専用紹介コードで友達を招待。1人紹介ごとにポイント獲得"
-                        : "Invite friends with your unique code and earn points per referral"}
-                    </p>
+                <div className="mb-6">
+                  <div className="text-4xl font-light mb-2">¥29,000</div>
+                  <div className="text-sm text-muted-foreground font-light">
+                    {language === "ja" ? "年額（3ヶ月無料・約2ヶ月分お得）" : language === "pt" ? "Por ano (3 meses grátis・economize cerca de 2 meses)" : "per year (3 months free・save ~2 months)"}
                   </div>
                 </div>
+                <ul className="space-y-3 mb-6 text-sm font-light">
+                  <li className="flex items-start">
+                    <span className="mr-2">✓</span>
+                    <span>{language === "ja" ? "全技術動画へのアクセス" : language === "pt" ? "Acesso a todos os vídeos técnicos" : "Access to all technique videos"}</span>
+                  </li>
+                  <li className="flex items-start">
+                    <span className="mr-2">✓</span>
+                    <span>{language === "ja" ? "新規コンテンツの追加" : language === "pt" ? "Novos conteúdos adicionados" : "New content additions"}</span>
+                  </li>
+                  <li className="flex items-start">
+                    <span className="mr-2">✓</span>
+                    <span>{language === "ja" ? "最大の節約" : language === "pt" ? "Melhor economia" : "Best value"}</span>
+                  </li>
+                </ul>
+                <Button
+                  className="w-full"
+                  onClick={() => handleCheckout(PRICE_IDS.annual, true)}
+                  disabled={isLoading}
+                >
+                  {language === "ja" ? "年額で始める" : language === "pt" ? "Começar anualmente" : "Start Annually"}
+                </Button>
               </div>
+            </div>
 
-              {/* FAQ */}
-              <div className="mt-16 animate-fade-up">
-                <h3 className="text-2xl font-light mb-8 text-center border-b border-border pb-4">
-                  {t.join.faq.title}
-                </h3>
-                <div className="space-y-6">
-                  <div>
-                    <h4 className="font-light mb-2">{t.join.faq.q1.q}</h4>
-                    <p className="text-muted-foreground font-light text-sm">
-                      {t.join.faq.q1.a}
-                    </p>
-                  </div>
-                  <div>
-                    <h4 className="font-light mb-2">{t.join.faq.q2.q}</h4>
-                    <p className="text-muted-foreground font-light text-sm">
-                      {t.join.faq.q2.a}
-                    </p>
-                  </div>
-                  <div>
-                    <h4 className="font-light mb-2">{t.join.faq.q3.q}</h4>
-                    <p className="text-muted-foreground font-light text-sm">
-                      {t.join.faq.q3.a}
-                    </p>
-                  </div>
+            {/* Rewards System Explanation */}
+            <div className="mt-16 p-8 border border-border rounded-lg bg-muted/30 animate-fade-up">
+              <h3 className="text-2xl font-light mb-6 text-center">
+                {language === "ja" ? "🎁 リワードシステム" : "🎁 Rewards System"}
+              </h3>
+              <div className="grid md:grid-cols-3 gap-6">
+                <div className="text-center p-4">
+                  <div className="text-4xl mb-3">🎨</div>
+                  <h4 className="font-medium mb-2">
+                    {language === "ja" ? "NFTバッジ" : "NFT Badges"}
+                  </h4>
+                  <p className="text-sm text-muted-foreground">
+                    {language === "ja" 
+                      ? "プラン購入時に限定NFTを自動付与。コレクションとして保有可能"
+                      : "Exclusive NFTs automatically awarded with plan purchase"}
+                  </p>
+                </div>
+                <div className="text-center p-4">
+                  <div className="text-4xl mb-3">🎯</div>
+                  <h4 className="font-medium mb-2">
+                    {language === "ja" ? "ポイント" : "Points"}
+                  </h4>
+                  <p className="text-sm text-muted-foreground">
+                    {language === "ja" 
+                      ? "毎月・毎年ポイント獲得。限定コンテンツやグッズ交換に使用可能"
+                      : "Earn points monthly/yearly. Use for exclusive content and merchandise"}
+                  </p>
+                </div>
+                <div className="text-center p-4">
+                  <div className="text-4xl mb-3">👥</div>
+                  <h4 className="font-medium mb-2">
+                    {language === "ja" ? "紹介制度" : "Referral Program"}
+                  </h4>
+                  <p className="text-sm text-muted-foreground">
+                    {language === "ja" 
+                      ? "専用紹介コードで友達を招待。1人紹介ごとにポイント獲得"
+                      : "Invite friends with your unique code and earn points per referral"}
+                  </p>
                 </div>
               </div>
-            </>
-          )}
+            </div>
+
+            {/* FAQ */}
+            <div className="mt-16 animate-fade-up">
+              <h3 className="text-2xl font-light mb-8 text-center border-b border-border pb-4">
+                {t.join.faq.title}
+              </h3>
+              <div className="space-y-6">
+                <div>
+                  <h4 className="font-light mb-2">{t.join.faq.q1.q}</h4>
+                  <p className="text-muted-foreground font-light text-sm">
+                    {t.join.faq.q1.a}
+                  </p>
+                </div>
+                <div>
+                  <h4 className="font-light mb-2">{t.join.faq.q2.q}</h4>
+                  <p className="text-muted-foreground font-light text-sm">
+                    {t.join.faq.q2.a}
+                  </p>
+                </div>
+                <div>
+                  <h4 className="font-light mb-2">{t.join.faq.q3.q}</h4>
+                  <p className="text-muted-foreground font-light text-sm">
+                    {t.join.faq.q3.a}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </>
         </div>
       </main>
       <Footer />
