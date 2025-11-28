@@ -19,6 +19,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import mapBackground from "@/assets/map-background.jpg";
 
 interface Technique {
   id: string;
@@ -258,7 +259,16 @@ const Map = () => {
   }, [hasMore, isLoadingMore, fetchTechniques]);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen relative overflow-hidden">
+      {/* Background Image with Overlay */}
+      <div className="fixed inset-0 -z-10">
+        <div 
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-30"
+          style={{ backgroundImage: `url(${mapBackground})` }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-background/95 via-background/90 to-background/95" />
+      </div>
+
       <Navigation />
       
       <main className="pt-20 md:pt-24 pb-16 px-4 md:px-8 lg:px-12">
@@ -418,11 +428,11 @@ const Map = () => {
               {Object.entries(categoryTechniques).map(([category, seriesGroups]) => (
                 <div key={category} className="space-y-3">
                   {/* Category Header */}
-                  <div className={`border-l-4 pl-4 py-2 ${categoryColors[category] || "border-muted"}`}>
+                  <div className={`border-l-4 pl-6 py-4 rounded-r-xl bg-gradient-to-r from-card/80 to-transparent backdrop-blur-sm ${categoryColors[category] || "border-muted"}`}>
                     <h2 className="text-2xl md:text-3xl font-light">
                       {getCategoryLabel(category)}
                     </h2>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-sm text-muted-foreground mt-1">
                       {Object.values(seriesGroups).reduce((acc, series) => acc + series.length, 0)} {language === "ja" ? "本の動画" : "videos"}
                     </p>
                   </div>
@@ -435,19 +445,19 @@ const Map = () => {
                         <AccordionItem 
                           key={seriesName} 
                           value={`${category}-${seriesName}`}
-                          className="border rounded-xl bg-card shadow-sm overflow-hidden"
+                          className="border rounded-xl bg-card/90 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all overflow-hidden"
                         >
-                          <AccordionTrigger className="px-4 md:px-6 py-3 hover:no-underline hover:bg-muted/50 transition-colors [&[data-state=open]>svg]:rotate-180">
+                          <AccordionTrigger className="px-4 md:px-6 py-4 hover:no-underline hover:bg-gradient-to-r hover:from-muted/30 hover:to-transparent transition-all [&[data-state=open]>svg]:rotate-180">
                             <div className="flex items-center justify-between w-full pr-4">
-                              <div className="flex items-center gap-3 text-left">
-                                <div className={`flex items-center justify-center w-8 h-8 md:w-10 md:h-10 rounded-full font-semibold text-sm md:text-base flex-shrink-0 ${categoryColors[category]}`}>
+                              <div className="flex items-center gap-3 md:gap-4 text-left">
+                                <div className={`flex items-center justify-center w-10 h-10 md:w-12 md:h-12 rounded-xl font-bold text-base md:text-lg flex-shrink-0 shadow-sm ${categoryColors[category]}`}>
                                   {seriesTechs.length}
                                 </div>
                                 <div>
-                                  <h3 className="text-base md:text-lg font-medium text-foreground">
+                                  <h3 className="text-base md:text-lg font-semibold text-foreground">
                                     {seriesLetter}. {seriesName}
                                   </h3>
-                                  <p className="text-xs md:text-sm text-muted-foreground">
+                                  <p className="text-xs md:text-sm text-muted-foreground mt-0.5">
                                     {language === "ja" 
                                       ? `${seriesTechs.length}本の動画` 
                                       : language === "pt" 
@@ -468,12 +478,12 @@ const Map = () => {
                                   <Link
                                     key={tech.id}
                                     to={`/video/${tech.id}`}
-                                    className="flex items-center gap-3 md:gap-4 p-3 md:p-4 hover:bg-muted/50 transition-colors group"
+                                    className="flex items-center gap-3 md:gap-4 p-3 md:p-4 hover:bg-gradient-to-r hover:from-muted/50 hover:to-transparent transition-all group"
                                   >
-                                    <div className={`flex items-center justify-center min-w-[2.5rem] h-8 md:h-10 px-2 rounded-lg font-semibold text-xs md:text-sm flex-shrink-0 transition-colors ${
+                                    <div className={`flex items-center justify-center min-w-[2.5rem] h-8 md:h-10 px-2 rounded-lg font-semibold text-xs md:text-sm flex-shrink-0 transition-all shadow-sm ${
                                       isWatched 
-                                        ? "bg-primary text-primary-foreground" 
-                                        : "bg-muted text-muted-foreground group-hover:bg-primary group-hover:text-primary-foreground"
+                                        ? "bg-primary text-primary-foreground shadow-primary/20" 
+                                        : "bg-muted text-muted-foreground group-hover:bg-primary group-hover:text-primary-foreground group-hover:shadow-primary/20"
                                     }`}>
                                       {seriesLetter}-{tech.series_order || index + 1}
                                     </div>
@@ -483,23 +493,25 @@ const Map = () => {
                                           {getTechniqueName(tech)}
                                         </h4>
                                         {isWatched && (
-                                          <Check className="w-4 h-4 text-primary flex-shrink-0" />
+                                          <div className="flex items-center justify-center w-5 h-5 rounded-full bg-primary/10 flex-shrink-0">
+                                            <Check className="w-3 h-3 text-primary" />
+                                          </div>
                                         )}
                                       </div>
                                       {getTechniqueDescription(tech) && (
-                                        <p className="text-xs md:text-sm text-muted-foreground line-clamp-1">
+                                        <p className="text-xs md:text-sm text-muted-foreground line-clamp-1 mt-0.5">
                                           {getTechniqueDescription(tech)}
                                         </p>
                                       )}
                                     </div>
                                     <div className="flex items-center gap-2 flex-shrink-0">
                                       {isWatched && (
-                                        <Badge variant="secondary" className="flex items-center gap-1 text-xs">
+                                        <Badge variant="secondary" className="flex items-center gap-1 text-xs shadow-sm">
                                           <Eye className="w-3 h-3" />
                                           {viewCount}
                                         </Badge>
                                       )}
-                                      <ChevronDown className="w-4 h-4 text-muted-foreground -rotate-90" />
+                                      <ChevronDown className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors -rotate-90" />
                                     </div>
                                   </Link>
                                 );
