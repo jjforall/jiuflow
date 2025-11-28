@@ -7,6 +7,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { InputWithSuggestions } from "@/components/ui/input-with-suggestions";
 import { Textarea } from "@/components/ui/textarea";
 import { User, CreditCard, Calendar, Mail, Upload, Video, Eye, Edit2, Check, X, Trash2, Lock, Globe, Plus } from "lucide-react";
 import { toast } from "sonner";
@@ -82,6 +83,7 @@ const MyPage = () => {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [editingField, setEditingField] = useState<string | null>(null);
   const [editValues, setEditValues] = useState<any>({});
+  const [dojoSuggestions, setDojoSuggestions] = useState<string[]>([]);
 
   const loadUserVideos = async () => {
     if (!user) return;
@@ -122,8 +124,36 @@ const MyPage = () => {
       loadUserVideos();
       loadReferralCodeAndPoints();
       loadProfile();
+      loadDojoSuggestions();
     }
   }, [user]);
+
+  const loadDojoSuggestions = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('home_dojo, training_locations');
+
+      if (error) throw error;
+
+      const dojos = new Set<string>();
+      
+      data?.forEach((profile) => {
+        if (profile.home_dojo) {
+          dojos.add(profile.home_dojo);
+        }
+        if (profile.training_locations) {
+          (profile.training_locations as string[]).forEach((loc) => {
+            if (loc) dojos.add(loc);
+          });
+        }
+      });
+
+      setDojoSuggestions(Array.from(dojos).sort());
+    } catch (error) {
+      console.error('Error loading dojo suggestions:', error);
+    }
+  };
 
   const loadProfile = async () => {
     if (!user) return;
@@ -977,9 +1007,11 @@ const MyPage = () => {
                         )}
                       </div>
                       {editingField === 'home_dojo' ? (
-                        <Input
+                        <InputWithSuggestions
                           value={editValues.home_dojo || ''}
                           onChange={(e) => setEditValues({ ...editValues, home_dojo: e.target.value })}
+                          onSelectSuggestion={(value) => setEditValues({ ...editValues, home_dojo: value })}
+                          suggestions={dojoSuggestions}
                           placeholder={language === "ja" ? "所属道場名" : "Dojo name"}
                           className="font-medium"
                         />
@@ -1019,9 +1051,11 @@ const MyPage = () => {
                         <div className="space-y-2">
                           {(editValues.training_locations || []).map((location: string, index: number) => (
                             <div key={index} className="flex items-center gap-2">
-                              <Input
+                              <InputWithSuggestions
                                 value={location}
                                 onChange={(e) => updateTrainingLocation(index, e.target.value)}
+                                onSelectSuggestion={(value) => updateTrainingLocation(index, value)}
+                                suggestions={dojoSuggestions}
                                 placeholder={language === "ja" ? "道場名" : "Location"}
                               />
                               <Button size="sm" variant="ghost" onClick={() => removeTrainingLocation(index)}>
