@@ -63,7 +63,62 @@ const About = () => {
   }, []);
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen relative overflow-hidden">
+      {/* Animated Flow Background */}
+      <div className="fixed inset-0 -z-10 overflow-hidden">
+        {/* Base gradient */}
+        <div className="absolute inset-0 bg-gradient-to-br from-background via-muted/20 to-background" />
+        
+        {/* Flowing waves */}
+        <svg className="absolute inset-0 w-full h-full opacity-20" preserveAspectRatio="none">
+          <defs>
+            <linearGradient id="waveGradient1" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity="0.1" />
+              <stop offset="50%" stopColor="hsl(var(--secondary))" stopOpacity="0.05" />
+              <stop offset="100%" stopColor="hsl(var(--accent))" stopOpacity="0.1" />
+            </linearGradient>
+            <linearGradient id="waveGradient2" x1="100%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stopColor="hsl(var(--accent))" stopOpacity="0.1" />
+              <stop offset="50%" stopColor="hsl(var(--primary))" stopOpacity="0.05" />
+              <stop offset="100%" stopColor="hsl(var(--secondary))" stopOpacity="0.1" />
+            </linearGradient>
+          </defs>
+          
+          {/* Flowing curves representing jiu-jitsu flow */}
+          <path d="M0,150 Q400,50 800,150 T1600,150 L1600,300 L0,300 Z" 
+                fill="url(#waveGradient1)" 
+                className="animate-[wave_20s_ease-in-out_infinite]"
+                style={{ transformOrigin: 'center' }} />
+          <path d="M0,250 Q400,350 800,250 T1600,250 L1600,400 L0,400 Z" 
+                fill="url(#waveGradient2)" 
+                className="animate-[wave_25s_ease-in-out_infinite_reverse]"
+                style={{ transformOrigin: 'center' }} />
+          <path d="M0,350 Q400,450 800,350 T1600,350 L1600,500 L0,500 Z" 
+                fill="url(#waveGradient1)" 
+                className="animate-[wave_30s_ease-in-out_infinite]"
+                style={{ transformOrigin: 'center' }} />
+        </svg>
+        
+        {/* Flowing particles */}
+        <div className="absolute inset-0">
+          {[...Array(6)].map((_, i) => (
+            <div
+              key={i}
+              className="absolute rounded-full mix-blend-screen"
+              style={{
+                width: `${100 + i * 50}px`,
+                height: `${100 + i * 50}px`,
+                left: `${i * 15}%`,
+                top: `${20 + i * 10}%`,
+                background: `radial-gradient(circle, hsl(var(--primary) / 0.03) 0%, transparent 70%)`,
+                animation: `float ${15 + i * 5}s ease-in-out infinite`,
+                animationDelay: `${i * 2}s`,
+              }}
+            />
+          ))}
+        </div>
+      </div>
+
       <Navigation />
       
       <main className="pt-32 pb-20 px-6">

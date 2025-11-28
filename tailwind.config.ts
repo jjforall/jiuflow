@@ -81,6 +81,16 @@ export default {
           "90%": { opacity: "1" },
           "100%": { transform: "translateY(110vh) translateX(50px)", opacity: "0" },
         },
+        "wave": {
+          "0%, 100%": { transform: "translateY(0) scaleY(1)" },
+          "50%": { transform: "translateY(-30px) scaleY(1.1)" },
+        },
+        "float": {
+          "0%, 100%": { transform: "translate(0, 0) scale(1)", opacity: "0.3" },
+          "25%": { transform: "translate(20px, -20px) scale(1.05)", opacity: "0.5" },
+          "50%": { transform: "translate(0, -40px) scale(1)", opacity: "0.3" },
+          "75%": { transform: "translate(-20px, -20px) scale(0.95)", opacity: "0.5" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -88,6 +98,8 @@ export default {
         "fade-in": "fade-in 0.6s ease-out",
         "fade-up": "fade-up 0.8s ease-out",
         "snowfall": "snowfall linear infinite",
+        "wave": "wave 20s ease-in-out infinite",
+        "float": "float 15s ease-in-out infinite",
       },
     },
   },
