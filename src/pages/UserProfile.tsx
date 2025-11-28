@@ -64,6 +64,9 @@ export default function UserProfile() {
   const [editingField, setEditingField] = useState<string | null>(null);
   const [editValues, setEditValues] = useState<any>({});
   const [coverDialogOpen, setCoverDialogOpen] = useState(false);
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [followersCount, setFollowersCount] = useState(0);
+  const [followingCount, setFollowingCount] = useState(0);
 
   useEffect(() => {
     const checkCurrentUser = async () => {
@@ -90,6 +93,15 @@ export default function UserProfile() {
       resolveUserAndLoadData();
     }
   }, [userIdOrUsername]);
+
+  useEffect(() => {
+    if (actualUserId && currentUser) {
+      loadFollowStatus();
+    }
+    if (actualUserId) {
+      loadFollowCounts();
+    }
+  }, [actualUserId, currentUser]);
 
   const resolveUserAndLoadData = async () => {
     if (!userIdOrUsername) return;
@@ -375,6 +387,96 @@ export default function UserProfile() {
     setEditValues({ ...editValues, work_experience: newWork });
   };
 
+  const loadFollowStatus = async () => {
+    if (!actualUserId || !currentUser) return;
+
+    try {
+      const { data } = await supabase
+        .from('user_follows')
+        .select('id')
+        .eq('follower_id', currentUser)
+        .eq('following_id', actualUserId)
+        .maybeSingle();
+
+      setIsFollowing(!!data);
+    } catch (error) {
+      console.error('Error loading follow status:', error);
+    }
+  };
+
+  const loadFollowCounts = async () => {
+    if (!actualUserId) return;
+
+    try {
+      // Get followers count
+      const { count: followers } = await supabase
+        .from('user_follows')
+        .select('*', { count: 'exact', head: true })
+        .eq('following_id', actualUserId);
+
+      // Get following count
+      const { count: following } = await supabase
+        .from('user_follows')
+        .select('*', { count: 'exact', head: true })
+        .eq('follower_id', actualUserId);
+
+      setFollowersCount(followers || 0);
+      setFollowingCount(following || 0);
+    } catch (error) {
+      console.error('Error loading follow counts:', error);
+    }
+  };
+
+  const handleFollow = async () => {
+    if (!currentUser || !actualUserId) {
+      toast.error(language === "ja" ? "フォローするにはログインが必要です" : "Login required to follow");
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('user_follows')
+        .insert({
+          follower_id: currentUser,
+          following_id: actualUserId
+        });
+
+      if (error) throw error;
+
+      setIsFollowing(true);
+      setFollowersCount(prev => prev + 1);
+      toast.success(language === "ja" ? "フォローしました" : "Following");
+    } catch (error: any) {
+      console.error('Error following:', error);
+      if (error?.code === '23505') {
+        toast.error(language === "ja" ? "既にフォローしています" : "Already following");
+      } else {
+        toast.error(language === "ja" ? "フォローに失敗しました" : "Follow failed");
+      }
+    }
+  };
+
+  const handleUnfollow = async () => {
+    if (!currentUser || !actualUserId) return;
+
+    try {
+      const { error } = await supabase
+        .from('user_follows')
+        .delete()
+        .eq('follower_id', currentUser)
+        .eq('following_id', actualUserId);
+
+      if (error) throw error;
+
+      setIsFollowing(false);
+      setFollowersCount(prev => Math.max(0, prev - 1));
+      toast.success(language === "ja" ? "フォローを解除しました" : "Unfollowed");
+    } catch (error) {
+      console.error('Error unfollowing:', error);
+      toast.error(language === "ja" ? "フォロー解除に失敗しました" : "Unfollow failed");
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-background to-accent/5">
       <Navigation />
@@ -452,8 +554,8 @@ export default function UserProfile() {
                       </p>
                     )}
                     
-                    {/* Enhanced Stats Row */}
-                    <div className="flex flex-wrap gap-6">
+                    {/* Enhanced Stats Row with Follow Button */}
+                    <div className="flex flex-wrap items-center gap-6">
                       <div className="flex items-center gap-3 px-4 py-2 bg-gradient-to-r from-primary/10 to-primary/5 rounded-xl border border-primary/20 hover:border-primary/40 transition-all duration-300 hover:scale-105">
                         <div className="p-2 bg-primary/20 rounded-lg">
                           <Video className="w-5 h-5 text-primary" />
@@ -462,6 +564,27 @@ export default function UserProfile() {
                           <span className="font-bold text-2xl text-foreground">{videos.length}</span>
                           <span className="text-xs text-muted-foreground uppercase tracking-wide">
                             {language === "ja" ? "動画" : "Videos"}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-3 px-4 py-2 bg-gradient-to-r from-accent/10 to-accent/5 rounded-xl border border-accent/20 hover:border-accent/40 transition-all duration-300 hover:scale-105 cursor-pointer">
+                        <div className="p-2 bg-accent/20 rounded-lg">
+                          <User className="w-5 h-5 text-accent" />
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="font-bold text-2xl text-foreground">{followersCount}</span>
+                          <span className="text-xs text-muted-foreground uppercase tracking-wide">
+                            {language === "ja" ? "フォロワー" : "Followers"}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-3 px-4 py-2 bg-gradient-to-r from-muted/10 to-muted/5 rounded-xl border border-muted/20 hover:border-muted/40 transition-all duration-300 hover:scale-105 cursor-pointer">
+                        <div className="flex flex-col">
+                          <span className="font-bold text-2xl text-foreground">{followingCount}</span>
+                          <span className="text-xs text-muted-foreground uppercase tracking-wide">
+                            {language === "ja" ? "フォロー中" : "Following"}
                           </span>
                         </div>
                       </div>
@@ -493,6 +616,21 @@ export default function UserProfile() {
                             </span>
                           </div>
                         </div>
+                      )}
+
+                      {currentUser && currentUser !== actualUserId && (
+                        <Button
+                          onClick={isFollowing ? handleUnfollow : handleFollow}
+                          variant={isFollowing ? "outline" : "default"}
+                          size="lg"
+                          className="ml-auto shadow-lg hover:shadow-xl transition-all duration-300"
+                        >
+                          <User className="w-5 h-5 mr-2" />
+                          {isFollowing 
+                            ? (language === "ja" ? "フォロー中" : "Following")
+                            : (language === "ja" ? "フォロー" : "Follow")
+                          }
+                        </Button>
                       )}
                     </div>
                   </div>
