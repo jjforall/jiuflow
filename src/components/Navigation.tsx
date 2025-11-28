@@ -84,7 +84,6 @@ const Navigation = () => {
   const links = [
     { to: "/", label: t.nav.home },
     { to: "/map", label: t.nav.map },
-    { to: "/dojos", label: language === "ja" ? "道場" : language === "pt" ? "Dojos" : "Dojos" },
     { to: "/about", label: t.nav.about },
     ...(subscribed ? [] : [{ to: "/join", label: t.nav.join }]),
   ];
