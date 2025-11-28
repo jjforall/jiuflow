@@ -21,7 +21,9 @@ const AdminDashboard = () => {
   const [stats, setStats] = useState({
     totalMembers: 0,
     paidMembers: 0,
+    trialMembers: 0,
     monthlyRevenue: 0,
+    trialRevenue: 0,
     loading: true,
   });
 
@@ -45,9 +47,18 @@ const AdminDashboard = () => {
 
       const subscriptions = subscriptionsData?.subscriptions || [];
       const activeSubscriptions = subscriptions.filter((sub: any) => sub.status === 'active');
+      const trialSubscriptions = subscriptions.filter((sub: any) => sub.status === 'trialing');
       
-      // 月次収入を計算（月額プランのみ）
+      // アクティブな月次収入を計算（月額プランのみ）
       const monthlyRevenue = activeSubscriptions.reduce((total: number, sub: any) => {
+        if (sub.interval === 'month') {
+          return total + sub.amount;
+        }
+        return total;
+      }, 0);
+
+      // トライアル中の月次収入を計算（月額プランのみ）
+      const trialRevenue = trialSubscriptions.reduce((total: number, sub: any) => {
         if (sub.interval === 'month') {
           return total + sub.amount;
         }
@@ -57,7 +68,9 @@ const AdminDashboard = () => {
       setStats({
         totalMembers: totalMembers || 0,
         paidMembers: activeSubscriptions.length,
+        trialMembers: trialSubscriptions.length,
         monthlyRevenue,
+        trialRevenue,
         loading: false,
       });
     } catch (error) {
@@ -83,7 +96,7 @@ const AdminDashboard = () => {
             </Button>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">総会員数</CardTitle>
@@ -106,20 +119,40 @@ const AdminDashboard = () => {
                 <div className="text-2xl font-bold">
                   {stats.loading ? "..." : stats.paidMembers.toLocaleString()}
                 </div>
-                <p className="text-xs text-muted-foreground mt-1">アクティブなサブスク</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  アクティブなサブスク
+                  {!stats.loading && stats.trialMembers > 0 && (
+                    <span className="ml-2 text-secondary-foreground">
+                      (トライアル: {stats.trialMembers})
+                    </span>
+                  )}
+                </p>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">月次収入</CardTitle>
+                <CardTitle className="text-sm font-medium">月次収入（実際）</CardTitle>
                 <DollarSign className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
                   {stats.loading ? "..." : `¥${stats.monthlyRevenue.toLocaleString()}`}
                 </div>
-                <p className="text-xs text-muted-foreground mt-1">月額プランの合計</p>
+                <p className="text-xs text-muted-foreground mt-1">有料会員の月額合計</p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">月次収入（トライアル）</CardTitle>
+                <DollarSign className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {stats.loading ? "..." : `¥${stats.trialRevenue.toLocaleString()}`}
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">トライアル終了後の見込み</p>
               </CardContent>
             </Card>
           </div>
