@@ -1336,11 +1336,24 @@ const MyPage = () => {
                                   className="font-medium"
                                 />
                                 <div className="grid grid-cols-2 gap-2">
-                                  <Input
+                                  <Select
                                     value={title.organization || ''}
-                                    onChange={(e) => updateTitle(index, 'organization', e.target.value)}
-                                    placeholder={language === "ja" ? "団体名" : "Organization"}
-                                  />
+                                    onValueChange={(value) => updateTitle(index, 'organization', value)}
+                                  >
+                                    <SelectTrigger>
+                                      <SelectValue placeholder={language === "ja" ? "団体名を選択" : "Select Organization"} />
+                                    </SelectTrigger>
+                                    <SelectContent className="bg-popover z-50">
+                                      <SelectItem value="">
+                                        {language === "ja" ? "なし" : "None"}
+                                      </SelectItem>
+                                      {organizations.map((org) => (
+                                        <SelectItem key={org.id} value={language === "ja" ? org.name_ja : org.name}>
+                                          {language === "ja" ? org.name_ja : org.name}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
                                   <Input
                                     value={title.date || ''}
                                     onChange={(e) => updateTitle(index, 'date', e.target.value)}
