@@ -9,9 +9,10 @@ import { toast } from "sonner";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { Lock, Loader2, Upload, X, ChevronDown } from "lucide-react";
+import { Lock, Loader2, Upload, X, ChevronDown, Eye, Check } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { VideoUploadDialog } from "@/components/VideoUploadDialog";
+import { Badge } from "@/components/ui/badge";
 import {
   Accordion,
   AccordionContent,
@@ -62,6 +63,7 @@ const Map = () => {
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [showUploadDialog, setShowUploadDialog] = useState(false);
   const [categoryTechniques, setCategoryTechniques] = useState<CategoryTechniques>({});
+  const [videoViews, setVideoViews] = useState<Record<string, number>>({});
   const observerTarget = useRef<HTMLDivElement>(null);
   const PAGE_SIZE = 50;
 
@@ -196,12 +198,37 @@ const Map = () => {
     }
   }, [language, hashtagFilter]);
 
+  // Fetch video views for the logged-in user
+  const fetchVideoViews = useCallback(async () => {
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from("video_views")
+        .select("video_id, view_count")
+        .eq("user_id", user.id);
+      
+      if (error) throw error;
+      
+      if (data) {
+        const viewsMap: Record<string, number> = {};
+        data.forEach(view => {
+          viewsMap[view.video_id] = view.view_count;
+        });
+        setVideoViews(viewsMap);
+      }
+    } catch (error) {
+      console.error("Error fetching video views:", error);
+    }
+  }, [user]);
+
   // Initial load
   useEffect(() => {
     if (!isCheckingAuth && user) {
       fetchTechniques(0);
+      fetchVideoViews();
     }
-  }, [isCheckingAuth, user, fetchTechniques]);
+  }, [isCheckingAuth, user, fetchTechniques, fetchVideoViews]);
 
   // Infinite scroll
   useEffect(() => {
@@ -433,28 +460,50 @@ const Map = () => {
                           </AccordionTrigger>
                           <AccordionContent className="px-0 pb-0">
                             <div className="divide-y divide-border">
-                              {seriesTechs.map((tech, index) => (
-                                <Link
-                                  key={tech.id}
-                                  to={`/video/${tech.id}`}
-                                  className="flex items-center gap-3 md:gap-4 p-3 md:p-4 hover:bg-muted/50 transition-colors group"
-                                >
-                                  <div className="flex items-center justify-center min-w-[2.5rem] h-8 md:h-10 px-2 rounded-lg bg-muted text-muted-foreground font-semibold text-xs md:text-sm flex-shrink-0 group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
-                                    {seriesLetter}-{tech.series_order || index + 1}
-                                  </div>
-                                  <div className="flex-1 min-w-0">
-                                    <h4 className="text-sm md:text-base font-medium text-foreground group-hover:text-primary transition-colors truncate">
-                                      {getTechniqueName(tech)}
-                                    </h4>
-                                    {getTechniqueDescription(tech) && (
-                                      <p className="text-xs md:text-sm text-muted-foreground line-clamp-1">
-                                        {getTechniqueDescription(tech)}
-                                      </p>
-                                    )}
-                                  </div>
-                                  <ChevronDown className="w-4 h-4 text-muted-foreground -rotate-90 flex-shrink-0" />
-                                </Link>
-                              ))}
+                              {seriesTechs.map((tech, index) => {
+                                const viewCount = videoViews[tech.id];
+                                const isWatched = viewCount && viewCount > 0;
+                                
+                                return (
+                                  <Link
+                                    key={tech.id}
+                                    to={`/video/${tech.id}`}
+                                    className="flex items-center gap-3 md:gap-4 p-3 md:p-4 hover:bg-muted/50 transition-colors group"
+                                  >
+                                    <div className={`flex items-center justify-center min-w-[2.5rem] h-8 md:h-10 px-2 rounded-lg font-semibold text-xs md:text-sm flex-shrink-0 transition-colors ${
+                                      isWatched 
+                                        ? "bg-primary text-primary-foreground" 
+                                        : "bg-muted text-muted-foreground group-hover:bg-primary group-hover:text-primary-foreground"
+                                    }`}>
+                                      {seriesLetter}-{tech.series_order || index + 1}
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                      <div className="flex items-center gap-2">
+                                        <h4 className="text-sm md:text-base font-medium text-foreground group-hover:text-primary transition-colors truncate">
+                                          {getTechniqueName(tech)}
+                                        </h4>
+                                        {isWatched && (
+                                          <Check className="w-4 h-4 text-primary flex-shrink-0" />
+                                        )}
+                                      </div>
+                                      {getTechniqueDescription(tech) && (
+                                        <p className="text-xs md:text-sm text-muted-foreground line-clamp-1">
+                                          {getTechniqueDescription(tech)}
+                                        </p>
+                                      )}
+                                    </div>
+                                    <div className="flex items-center gap-2 flex-shrink-0">
+                                      {isWatched && (
+                                        <Badge variant="secondary" className="flex items-center gap-1 text-xs">
+                                          <Eye className="w-3 h-3" />
+                                          {viewCount}
+                                        </Badge>
+                                      )}
+                                      <ChevronDown className="w-4 h-4 text-muted-foreground -rotate-90" />
+                                    </div>
+                                  </Link>
+                                );
+                              })}
                             </div>
                           </AccordionContent>
                         </AccordionItem>
