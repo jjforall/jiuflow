@@ -17,6 +17,7 @@ import { BeltBadge } from "@/components/ui/belt-badge";
 import { Badge } from "@/components/ui/badge";
 import { CoverUploadDialog } from "@/components/CoverUploadDialog";
 import { CoverImageGalleryDialog } from "@/components/CoverImageGalleryDialog";
+import { ChristmasSnow } from "@/components/ChristmasSnow";
 import { Camera, Image } from "lucide-react";
 import hero1 from "@/assets/hero-1.jpg";
 import hero2 from "@/assets/hero-2.jpg";
@@ -552,6 +553,7 @@ export default function UserProfile() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-background to-accent/5">
+      <ChristmasSnow />
       <Navigation />
       
       <main className="pt-24 pb-20 px-4 md:px-6">
