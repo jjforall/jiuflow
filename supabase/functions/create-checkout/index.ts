@@ -19,7 +19,7 @@ serve(async (req) => {
     const { priceId: requestedPriceId, couponCode, referralCode, email } = await req.json();
     
     // If referral code is provided, use the special 1900 yen referral plan
-    const REFERRAL_PRICE_ID = "price_1SYK0YDqLakc8NxkOL9VEW5p"; // ¥1,900/month referral plan
+    const REFERRAL_PRICE_ID = "price_1SYK2lDqLakc8Nxkp6TBKYhT"; // ¥1,900/month referral plan
     const priceId = referralCode ? REFERRAL_PRICE_ID : requestedPriceId;
     
     if (!priceId) throw new Error("Price ID is required");

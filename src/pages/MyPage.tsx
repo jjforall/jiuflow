@@ -289,7 +289,7 @@ const MyPage = () => {
       "price_1SNQoeDqLakc8NxkEUVTTs3k": "monthly",
       "price_1SNQoqDqLakc8NxkOaQIL8wX": "annual",
       "price_1SY2D0DqLakc8NxkMKonyIi8": "muratabros",
-      "price_1SYK0YDqLakc8NxkOL9VEW5p": "referral"
+      "price_1SYK2lDqLakc8Nxkp6TBKYhT": "referral"
     };
 
     const planType = priceMapping[priceId] || "unknown";
