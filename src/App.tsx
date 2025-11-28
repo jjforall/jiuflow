@@ -26,6 +26,7 @@ const VideoUploadInfo = lazy(() => import("./pages/VideoUploadInfo"));
 const AdminLogin = lazy(() => import("./pages/AdminLogin"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 const UserProfile = lazy(() => import("./pages/UserProfile"));
+const GenerateImages = lazy(() => import("./pages/GenerateImages"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
@@ -86,6 +87,11 @@ const App = () => (
                 <Route path="/admin/dashboard" element={
                   <ProtectedRoute requireAdmin>
                     <AdminDashboard />
+                  </ProtectedRoute>
+                } />
+                <Route path="/generate-images" element={
+                  <ProtectedRoute requireAdmin>
+                    <GenerateImages />
                   </ProtectedRoute>
                 } />
                 <Route path="*" element={<NotFound />} />
