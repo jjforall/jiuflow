@@ -274,7 +274,14 @@ const MyPage = () => {
   };
 
   const getPlanName = (priceId?: string) => {
-    if (!priceId) return language === "ja" ? "未登録" : "No Plan";
+    // サブスク中だが price_id が取れていないケースでは「未登録」ではなく「有効なプラン」と表示
+    if (!priceId) {
+      return language === "ja"
+        ? "有効なプラン"
+        : language === "pt"
+          ? "Plano ativo"
+          : "Active Plan";
+    }
     
     // Map Stripe price IDs to plan names
     const priceMapping: Record<string, string> = {
@@ -311,7 +318,6 @@ const MyPage = () => {
 
     return plans[planType]?.[language] || priceId;
   };
-
   const formatDate = (dateString?: string) => {
     if (!dateString) return "-";
     const date = new Date(dateString);
