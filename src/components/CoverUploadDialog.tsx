@@ -41,8 +41,8 @@ export function CoverUploadDialog({
         return;
       }
       
-      if (file.size > 10 * 1024 * 1024) {
-        toast.error("ファイルサイズは10MB以下にしてください");
+      if (file.size > 50 * 1024 * 1024) {
+        toast.error("ファイルサイズは50MB以下にしてください");
         return;
       }
 
