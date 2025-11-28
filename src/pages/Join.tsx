@@ -322,16 +322,20 @@ const Join = () => {
         <div className="max-w-3xl mx-auto">
           {/* Banner for logged-in users without subscription */}
           {user && !subscribed && !subscriptionLoading && (
-            <div className="mb-8 p-6 bg-primary/10 border border-primary rounded-lg animate-fade-up">
-              <div className="text-center space-y-3">
-                <h2 className="text-2xl font-bold text-primary">
+            <div className="mb-12 relative overflow-hidden rounded-2xl animate-fade-up">
+              <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-secondary/20 to-accent/20 backdrop-blur-sm" />
+              <div className="relative p-10 text-center space-y-4">
+                <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-primary to-secondary mb-2 shadow-lg">
+                  <span className="text-3xl">🎉</span>
+                </div>
+                <h2 className="text-4xl font-light bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent">
                   {language === "ja" 
                     ? "ようこそ！" 
                     : language === "pt" 
                     ? "Bem-vindo!" 
                     : "Welcome!"}
                 </h2>
-                <p className="text-foreground">
+                <p className="text-lg text-foreground/80 max-w-2xl mx-auto font-light">
                   {language === "ja" 
                     ? "アカウント登録が完了しました。下記のプランから選んで、今すぐコンテンツへのアクセスを開始しましょう！" 
                     : language === "pt" 
@@ -351,11 +355,27 @@ const Join = () => {
             </div>
 
             {/* Sample Video Section */}
-            <div className="border border-border p-8 mb-16 animate-fade-up text-center">
-              <h2 className="text-2xl font-light mb-4">{t.join.sampleVideo.title}</h2>
-              <Button variant="outline" size="lg" onClick={() => setShowVideoModal(true)}>
-                {t.join.sampleVideo.cta}
-              </Button>
+            <div className="relative overflow-hidden rounded-2xl mb-16 animate-fade-up group">
+              <div className="absolute inset-0 bg-gradient-to-br from-background via-muted/50 to-background" />
+              <div className="relative p-12 text-center space-y-6 border border-border/50 rounded-2xl backdrop-blur-sm">
+                <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-br from-primary/20 to-secondary/20 mb-2 group-hover:scale-110 transition-transform">
+                  <Eye className="w-10 h-10 text-primary" />
+                </div>
+                <h2 className="text-3xl font-light">{t.join.sampleVideo.title}</h2>
+                <p className="text-muted-foreground max-w-md mx-auto">
+                  {language === "ja" 
+                    ? "まずは「見る」から始めよう。" 
+                    : "Start by watching."}
+                </p>
+                <Button 
+                  size="lg" 
+                  onClick={() => setShowVideoModal(true)}
+                  className="bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90 shadow-lg transition-all h-12 px-8"
+                >
+                  <Eye className="w-5 h-5 mr-2" />
+                  {t.join.sampleVideo.cta}
+                </Button>
+              </div>
             </div>
 
             {/* Video Modal */}
@@ -432,30 +452,33 @@ const Join = () => {
             </Dialog>
 
             {/* Referral Code Section */}
-            <div className="border border-border p-6 mb-8 animate-fade-up">
-              <h3 className="text-lg font-light mb-3 text-center">
-                {language === "ja" ? "紹介コードをお持ちの方" : "Have a referral code?"}
-              </h3>
-              <div className="flex flex-col gap-2 max-w-md mx-auto">
-                <Input
-                  type="text"
-                  placeholder={language === "ja" ? "紹介コードを入力" : "Enter referral code"}
-                  value={referralCode}
-                  onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
-                  className="flex-1"
-                />
-                {referralCode.trim() && !isCheckingCode && (
-                  <p className={`text-sm text-center ${isValidReferralCode ? 'text-green-600' : 'text-red-600'}`}>
-                    {isValidReferralCode 
-                      ? (language === "ja" ? "✓ 有効な紹介コード" : "✓ Valid referral code")
-                      : (language === "ja" ? "✗ 無効な紹介コード" : "✗ Invalid referral code")}
-                  </p>
-                )}
-                {isCheckingCode && (
-                  <p className="text-sm text-center text-muted-foreground">
-                    {language === "ja" ? "確認中..." : "Checking..."}
-                  </p>
-                )}
+            <div className="relative overflow-hidden rounded-xl mb-12 animate-fade-up">
+              <div className="absolute inset-0 bg-gradient-to-r from-muted/50 to-background" />
+              <div className="relative p-8 border border-border/50 rounded-xl backdrop-blur-sm">
+                <h3 className="text-xl font-light mb-4 text-center">
+                  {language === "ja" ? "紹介コードをお持ちの方" : "Have a referral code?"}
+                </h3>
+                <div className="flex flex-col gap-3 max-w-md mx-auto">
+                  <Input
+                    type="text"
+                    placeholder={language === "ja" ? "紹介コードを入力" : "Enter referral code"}
+                    value={referralCode}
+                    onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
+                    className="h-12 text-base bg-background/50 backdrop-blur-sm border-border/50 focus:border-primary transition-all"
+                  />
+                  {referralCode.trim() && !isCheckingCode && (
+                    <p className={`text-sm text-center font-medium ${isValidReferralCode ? 'text-green-600' : 'text-red-600'}`}>
+                      {isValidReferralCode 
+                        ? (language === "ja" ? "✓ 有効な紹介コード" : "✓ Valid referral code")
+                        : (language === "ja" ? "✗ 無効な紹介コード" : "✗ Invalid referral code")}
+                    </p>
+                  )}
+                  {isCheckingCode && (
+                    <p className="text-sm text-center text-muted-foreground">
+                      {language === "ja" ? "確認中..." : "Checking..."}
+                    </p>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -465,262 +488,280 @@ const Join = () => {
               
               {/* MURATABJJ - Founder Plan */}
               {isValidReferralCode && referralPlanType === 'founder' && (
-                <div className="border-2 border-primary bg-primary/5 p-8 relative">
-                  <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-primary text-primary-foreground px-4 py-1 text-xs font-light">
-                    {language === "ja" ? "🎁 特別プラン" : "🎁 Special Plan"}
-                  </div>
-                  <h3 className="text-2xl font-light mb-4">
-                    Founder Plan
-                  </h3>
-                  <div className="mb-6">
-                    <div className="text-4xl font-light text-primary mb-2">¥980</div>
-                    <div className="text-sm text-muted-foreground font-light">
-                      {language === "ja" ? "月額（3ヶ月無料・いつでもキャンセル可能）" : "per month (3 months free・cancel anytime)"}
+                <div className="relative overflow-hidden rounded-2xl group hover:shadow-2xl transition-all">
+                  <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-secondary/10 to-accent/10" />
+                  <div className="relative border-2 border-primary p-10 rounded-2xl backdrop-blur-sm">
+                    <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-primary to-secondary text-primary-foreground px-6 py-2 text-sm font-medium rounded-full shadow-lg">
+                      {language === "ja" ? "🎁 特別プラン" : "🎁 Special Plan"}
                     </div>
+                    <h3 className="text-3xl font-light mb-6 mt-2">
+                      Founder Plan
+                    </h3>
+                    <div className="mb-8">
+                      <div className="text-5xl font-light mb-3 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">¥980</div>
+                      <div className="text-base text-muted-foreground font-light">
+                        {language === "ja" ? "月額（3ヶ月無料・いつでもキャンセル可能）" : "per month (3 months free・cancel anytime)"}
+                      </div>
+                    </div>
+                    <ul className="space-y-4 mb-8 text-base font-light">
+                      <li className="flex items-start">
+                        <span className="mr-3 text-primary text-xl">✓</span>
+                        <span className="font-medium text-primary">{language === "ja" ? "永久に月額980円" : "¥980/month forever"}</span>
+                      </li>
+                      <li className="flex items-start">
+                        <span className="mr-3 text-primary text-xl">✓</span>
+                        <span className="font-medium text-primary">{language === "ja" ? "3ヶ月無料トライアル" : "3 months free trial"}</span>
+                      </li>
+                      <li className="flex items-start">
+                        <span className="mr-3 text-xl">✓</span>
+                        <span>{language === "ja" ? "全技術動画へのアクセス" : "Access to all technique videos"}</span>
+                      </li>
+                      <li className="flex items-start">
+                        <span className="mr-3 text-xl">✓</span>
+                        <span>{language === "ja" ? "新規コンテンツの追加" : "New content additions"}</span>
+                      </li>
+                    </ul>
+                    <Button
+                      className="w-full h-14 text-lg bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90 shadow-lg transition-all"
+                      onClick={() => handleCheckout(PRICE_IDS.founder, true)}
+                      disabled={isLoading}
+                    >
+                      {language === "ja" ? "Founder Planで始める" : "Start with Founder Plan"}
+                    </Button>
                   </div>
-                  <ul className="space-y-3 mb-6 text-sm font-light">
-                    <li className="flex items-start">
-                      <span className="mr-2 text-primary">✓</span>
-                      <span className="font-medium text-primary">{language === "ja" ? "永久に月額980円" : "¥980/month forever"}</span>
-                    </li>
-                    <li className="flex items-start">
-                      <span className="mr-2 text-primary">✓</span>
-                      <span className="font-medium text-primary">{language === "ja" ? "3ヶ月無料トライアル" : "3 months free trial"}</span>
-                    </li>
-                    <li className="flex items-start">
-                      <span className="mr-2">✓</span>
-                      <span>{language === "ja" ? "全技術動画へのアクセス" : "Access to all technique videos"}</span>
-                    </li>
-                    <li className="flex items-start">
-                      <span className="mr-2">✓</span>
-                      <span>{language === "ja" ? "新規コンテンツの追加" : "New content additions"}</span>
-                    </li>
-                  </ul>
-                  <Button
-                    className="w-full"
-                    onClick={() => handleCheckout(PRICE_IDS.founder, true)}
-                    disabled={isLoading}
-                  >
-                    {language === "ja" ? "Founder Planで始める" : "Start with Founder Plan"}
-                  </Button>
                 </div>
               )}
               
               {/* MURATABROS - Pro Plan */}
               {isValidReferralCode && referralPlanType === 'muratabros' && (
-                <div className="border-2 border-primary bg-primary/5 p-8 relative">
-                  <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-primary text-primary-foreground px-4 py-1 text-xs font-light">
-                    {language === "ja" ? "🎁 VIPプラン" : "🎁 VIP Plan"}
-                  </div>
-                  <h3 className="text-2xl font-light mb-4">
-                    Founder Plan Pro
-                  </h3>
-                  <div className="mb-6">
-                    <div className="text-4xl font-light text-primary mb-2">¥50,000</div>
-                    <div className="text-sm text-muted-foreground font-light">
-                      {language === "ja" ? "一回払い" : "One-time payment"}
+                <div className="relative overflow-hidden rounded-2xl group hover:shadow-2xl transition-all">
+                  <div className="absolute inset-0 bg-gradient-to-br from-accent/20 via-primary/10 to-secondary/10" />
+                  <div className="relative border-2 border-accent p-10 rounded-2xl backdrop-blur-sm">
+                    <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-accent to-primary text-primary-foreground px-6 py-2 text-sm font-medium rounded-full shadow-lg">
+                      {language === "ja" ? "🎁 VIPプラン" : "🎁 VIP Plan"}
                     </div>
+                    <h3 className="text-3xl font-light mb-6 mt-2">
+                      Founder Plan Pro
+                    </h3>
+                    <div className="mb-8">
+                      <div className="text-5xl font-light mb-3 bg-gradient-to-r from-accent to-primary bg-clip-text text-transparent">¥50,000</div>
+                      <div className="text-base text-muted-foreground font-light">
+                        {language === "ja" ? "一回払い" : "One-time payment"}
+                      </div>
+                    </div>
+                    <ul className="space-y-4 mb-8 text-base font-light">
+                      <li className="flex items-start">
+                        <span className="mr-3 text-accent text-xl">✓</span>
+                        <span className="font-medium text-accent">{language === "ja" ? "Hawaii合宿参加権" : "Hawaii camp access"}</span>
+                      </li>
+                      <li className="flex items-start">
+                        <span className="mr-3 text-accent text-xl">✓</span>
+                        <span className="font-medium text-accent">{language === "ja" ? "熱海合宿参加権" : "Atami retreat access"}</span>
+                      </li>
+                      <li className="flex items-start">
+                        <span className="mr-3 text-accent text-xl">✓</span>
+                        <span className="font-medium text-accent">{language === "ja" ? "Not A Hotel利用権" : "Not A Hotel access"}</span>
+                      </li>
+                      <li className="flex items-start">
+                        <span className="mr-3 text-accent text-xl">✓</span>
+                        <span className="font-medium text-accent">{language === "ja" ? "Enablerアクセス" : "Enabler access"}</span>
+                      </li>
+                      <li className="flex items-start">
+                        <span className="mr-3 text-accent text-xl">✓</span>
+                        <span className="font-medium text-accent">{language === "ja" ? "Honda Jet利用権" : "Honda Jet usage rights"}</span>
+                      </li>
+                      <li className="flex items-start">
+                        <span className="mr-3 text-xl">✓</span>
+                        <span>{language === "ja" ? "全技術動画への永久アクセス" : "Lifetime access to all videos"}</span>
+                      </li>
+                    </ul>
+                    <Button
+                      className="w-full h-14 text-lg bg-gradient-to-r from-accent to-primary hover:from-accent/90 hover:to-primary/90 shadow-lg transition-all"
+                      onClick={() => handleCheckout(PRICE_IDS.muratabros, false)}
+                      disabled={isLoading}
+                    >
+                      {language === "ja" ? "Founder Plan Proで始める" : "Start with Founder Plan Pro"}
+                    </Button>
                   </div>
-                  <ul className="space-y-3 mb-6 text-sm font-light">
-                    <li className="flex items-start">
-                      <span className="mr-2 text-primary">✓</span>
-                      <span className="font-medium text-primary">{language === "ja" ? "Hawaii合宿参加権" : "Hawaii camp access"}</span>
-                    </li>
-                    <li className="flex items-start">
-                      <span className="mr-2 text-primary">✓</span>
-                      <span className="font-medium text-primary">{language === "ja" ? "熱海合宿参加権" : "Atami retreat access"}</span>
-                    </li>
-                    <li className="flex items-start">
-                      <span className="mr-2 text-primary">✓</span>
-                      <span className="font-medium text-primary">{language === "ja" ? "Not A Hotel利用権" : "Not A Hotel access"}</span>
-                    </li>
-                    <li className="flex items-start">
-                      <span className="mr-2 text-primary">✓</span>
-                      <span className="font-medium text-primary">{language === "ja" ? "Enablerアクセス" : "Enabler access"}</span>
-                    </li>
-                    <li className="flex items-start">
-                      <span className="mr-2 text-primary">✓</span>
-                      <span className="font-medium text-primary">{language === "ja" ? "Honda Jet利用権" : "Honda Jet usage rights"}</span>
-                    </li>
-                    <li className="flex items-start">
-                      <span className="mr-2">✓</span>
-                      <span>{language === "ja" ? "全技術動画への永久アクセス" : "Lifetime access to all videos"}</span>
-                    </li>
-                  </ul>
-                  <Button
-                    className="w-full"
-                    onClick={() => handleCheckout(PRICE_IDS.muratabros, false)}
-                    disabled={isLoading}
-                  >
-                    {language === "ja" ? "Founder Plan Proで始める" : "Start with Founder Plan Pro"}
-                  </Button>
                 </div>
               )}
               
               {/* Regular Referral Plan - 1900 yen */}
               {isValidReferralCode && referralPlanType === 'referral' && (
-                <div className="border-2 border-primary bg-primary/5 p-8 relative">
-                  <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-primary text-primary-foreground px-4 py-1 text-xs font-light">
-                    {language === "ja" ? "🎁 紹介特典" : "🎁 Referral Special"}
-                  </div>
-                  <h3 className="text-2xl font-light mb-4">
-                    {language === "ja" ? "紹介プラン" : language === "pt" ? "Plano de Referência" : "Referral Plan"}
-                  </h3>
-                  <div className="mb-6">
-                    <div className="flex items-baseline gap-2 mb-2">
-                      <div className="text-4xl font-light text-primary">¥1,900</div>
-                      <div className="text-xl line-through text-muted-foreground">¥2,900</div>
+                <div className="relative overflow-hidden rounded-2xl group hover:shadow-2xl transition-all">
+                  <div className="absolute inset-0 bg-gradient-to-br from-secondary/20 via-primary/10 to-background" />
+                  <div className="relative border-2 border-secondary p-10 rounded-2xl backdrop-blur-sm">
+                    <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-secondary to-primary text-primary-foreground px-6 py-2 text-sm font-medium rounded-full shadow-lg">
+                      {language === "ja" ? "🎁 紹介特典" : "🎁 Referral Special"}
                     </div>
-                    <div className="text-sm text-muted-foreground font-light">
-                      {language === "ja" ? "月額（初月無料・いつでもキャンセル可能）" : "per month (first month free・cancel anytime)"}
+                    <h3 className="text-3xl font-light mb-6 mt-2">
+                      {language === "ja" ? "紹介プラン" : language === "pt" ? "Plano de Referência" : "Referral Plan"}
+                    </h3>
+                    <div className="mb-8">
+                      <div className="flex items-baseline gap-3 mb-3">
+                        <div className="text-5xl font-light bg-gradient-to-r from-secondary to-primary bg-clip-text text-transparent">¥1,900</div>
+                        <div className="text-2xl line-through text-muted-foreground">¥2,900</div>
+                      </div>
+                      <div className="text-base text-muted-foreground font-light">
+                        {language === "ja" ? "月額（初月無料・いつでもキャンセル可能）" : "per month (first month free・cancel anytime)"}
+                      </div>
                     </div>
+                    <ul className="space-y-4 mb-8 text-base font-light">
+                      <li className="flex items-start">
+                        <span className="mr-3 text-secondary text-xl">✓</span>
+                        <span className="font-medium text-secondary">{language === "ja" ? "初月完全無料（100%オフ）" : "First month completely free (100% off)"}</span>
+                      </li>
+                      <li className="flex items-start">
+                        <span className="mr-3 text-secondary text-xl">✓</span>
+                        <span className="font-medium text-secondary">{language === "ja" ? "2ヶ月目以降：月額1,900円" : "From month 2: ¥1,900/month"}</span>
+                      </li>
+                      <li className="flex items-start">
+                        <span className="mr-3 text-xl">✓</span>
+                        <span>{language === "ja" ? "全技術動画へのアクセス" : language === "pt" ? "Acesso a todos os vídeos técnicos" : "Access to all technique videos"}</span>
+                      </li>
+                      <li className="flex items-start">
+                        <span className="mr-3 text-xl">✓</span>
+                        <span>{language === "ja" ? "新規コンテンツの追加" : language === "pt" ? "Novos conteúdos adicionados" : "New content additions"}</span>
+                      </li>
+                      <li className="flex items-start">
+                        <span className="mr-3 text-xl">✓</span>
+                        <span>{language === "ja" ? "紹介者に毎月500ポイント付与" : "Referrer gets 500 points monthly"}</span>
+                      </li>
+                    </ul>
+                    <Button
+                      className="w-full h-14 text-lg bg-gradient-to-r from-secondary to-primary hover:from-secondary/90 hover:to-primary/90 shadow-lg transition-all"
+                      onClick={() => handleCheckout(PRICE_IDS.monthly, true)}
+                      disabled={isLoading}
+                    >
+                      {language === "ja" ? "紹介プランで始める" : language === "pt" ? "Começar com plano de referência" : "Start with Referral Plan"}
+                    </Button>
                   </div>
-                  <ul className="space-y-3 mb-6 text-sm font-light">
-                    <li className="flex items-start">
-                      <span className="mr-2 text-primary">✓</span>
-                      <span className="font-medium text-primary">{language === "ja" ? "初月完全無料（100%オフ）" : "First month completely free (100% off)"}</span>
-                    </li>
-                    <li className="flex items-start">
-                      <span className="mr-2 text-primary">✓</span>
-                      <span className="font-medium text-primary">{language === "ja" ? "2ヶ月目以降：月額1,900円" : "From month 2: ¥1,900/month"}</span>
-                    </li>
-                    <li className="flex items-start">
-                      <span className="mr-2">✓</span>
-                      <span>{language === "ja" ? "全技術動画へのアクセス" : language === "pt" ? "Acesso a todos os vídeos técnicos" : "Access to all technique videos"}</span>
-                    </li>
-                    <li className="flex items-start">
-                      <span className="mr-2">✓</span>
-                      <span>{language === "ja" ? "新規コンテンツの追加" : language === "pt" ? "Novos conteúdos adicionados" : "New content additions"}</span>
-                    </li>
-                    <li className="flex items-start">
-                      <span className="mr-2">✓</span>
-                      <span>{language === "ja" ? "紹介者に毎月500ポイント付与" : "Referrer gets 500 points monthly"}</span>
-                    </li>
-                  </ul>
-                  <Button
-                    className="w-full"
-                    onClick={() => handleCheckout(PRICE_IDS.monthly, true)}
-                    disabled={isLoading}
-                  >
-                    {language === "ja" ? "紹介プランで始める" : language === "pt" ? "Começar com plano de referência" : "Start with Referral Plan"}
-                  </Button>
                 </div>
               )}
               
               {/* Monthly Plan - Only shown when no valid referral code */}
               {!isValidReferralCode && (
-                <div className="border border-foreground p-8 relative">
-                  <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-foreground text-background px-4 py-1 text-xs font-light">
-                    {language === "ja" ? "人気" : language === "pt" ? "Popular" : "Most Popular"}
-                  </div>
-                  <h3 className="text-2xl font-light mb-4">
-                    {language === "ja" ? "月額プラン" : language === "pt" ? "Plano Mensal" : "Monthly Plan"}
-                  </h3>
-                  <div className="mb-6">
-                    <div className="text-4xl font-light mb-2">¥2,900</div>
-                    <div className="text-sm text-muted-foreground font-light">
-                      {language === "ja" ? "月額（3ヶ月無料・いつでもキャンセル可能）" : language === "pt" ? "Por mês (3 meses grátis・cancele a qualquer momento)" : "per month (3 months free・cancel anytime)"}
+                <div className="relative overflow-hidden rounded-2xl group hover:shadow-2xl transition-all">
+                  <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-secondary/5 to-background" />
+                  <div className="relative border-2 border-primary/50 p-10 rounded-2xl backdrop-blur-sm">
+                    <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-primary to-secondary text-primary-foreground px-6 py-2 text-sm font-medium rounded-full shadow-lg">
+                      {language === "ja" ? "人気" : language === "pt" ? "Popular" : "Most Popular"}
                     </div>
-                  </div>
-                 <ul className="space-y-3 mb-6 text-sm font-light">
-                  <li className="flex items-start">
-                    <span className="mr-2">✓</span>
-                    <span>{language === "ja" ? "全技術動画へのアクセス" : language === "pt" ? "Acesso a todos os vídeos técnicos" : "Access to all technique videos"}</span>
-                  </li>
-                  <li className="flex items-start">
-                    <span className="mr-2">✓</span>
-                    <span>{language === "ja" ? "新規コンテンツの追加" : language === "pt" ? "Novos conteúdos adicionados" : "New content additions"}</span>
-                  </li>
-                  <li className="flex items-start">
-                    <span className="mr-2">✓</span>
-                    <span>{language === "ja" ? "柔軟な支払い" : language === "pt" ? "Pagamento flexível" : "Flexible payment"}</span>
-                  </li>
-                </ul>
-                <Button
-                  className="w-full"
-                  onClick={() => handleCheckout(PRICE_IDS.monthly, true)}
-                  disabled={isLoading}
-                >
-                  {language === "ja" ? "月額で始める" : language === "pt" ? "Começar mensalmente" : "Start Monthly"}
-                </Button>
-              </div>
+                    <h3 className="text-3xl font-light mb-6 mt-2">
+                      {language === "ja" ? "月額プラン" : language === "pt" ? "Plano Mensal" : "Monthly Plan"}
+                    </h3>
+                    <div className="mb-8">
+                      <div className="text-5xl font-light mb-3 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">¥2,900</div>
+                      <div className="text-base text-muted-foreground font-light">
+                        {language === "ja" ? "月額（3ヶ月無料・いつでもキャンセル可能）" : language === "pt" ? "Por mês (3 meses grátis・cancele a qualquer momento)" : "per month (3 months free・cancel anytime)"}
+                      </div>
+                    </div>
+                   <ul className="space-y-4 mb-8 text-base font-light">
+                    <li className="flex items-start">
+                      <span className="mr-3 text-primary text-xl">✓</span>
+                      <span>{language === "ja" ? "全技術動画へのアクセス" : language === "pt" ? "Acesso a todos os vídeos técnicos" : "Access to all technique videos"}</span>
+                    </li>
+                    <li className="flex items-start">
+                      <span className="mr-3 text-primary text-xl">✓</span>
+                      <span>{language === "ja" ? "新規コンテンツの追加" : language === "pt" ? "Novos conteúdos adicionados" : "New content additions"}</span>
+                    </li>
+                    <li className="flex items-start">
+                      <span className="mr-3 text-primary text-xl">✓</span>
+                      <span>{language === "ja" ? "柔軟な支払い" : language === "pt" ? "Pagamento flexível" : "Flexible payment"}</span>
+                    </li>
+                  </ul>
+                  <Button
+                    className="w-full h-14 text-lg bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90 shadow-lg transition-all"
+                    onClick={() => handleCheckout(PRICE_IDS.monthly, true)}
+                    disabled={isLoading}
+                  >
+                    {language === "ja" ? "月額で始める" : language === "pt" ? "Começar mensalmente" : "Start Monthly"}
+                  </Button>
+                </div>
+                </div>
               )}
 
               {/* Annual Plan - Only shown when no valid referral code */}
               {!isValidReferralCode && (
-              <div className="border border-border p-8">
-                <h3 className="text-2xl font-light mb-4">
-                  {language === "ja" ? "年額プラン" : language === "pt" ? "Plano Anual" : "Annual Plan"}
-                </h3>
-                <div className="mb-6">
-                  <div className="text-4xl font-light mb-2">¥29,000</div>
-                  <div className="text-sm text-muted-foreground font-light">
-                    {language === "ja" ? "年額（3ヶ月無料・約2ヶ月分お得）" : language === "pt" ? "Por ano (3 meses grátis・economize cerca de 2 meses)" : "per year (3 months free・save ~2 months)"}
+              <div className="relative overflow-hidden rounded-2xl group hover:shadow-xl transition-all">
+                <div className="absolute inset-0 bg-gradient-to-br from-muted/30 to-background" />
+                <div className="relative border border-border/50 p-10 rounded-2xl backdrop-blur-sm">
+                  <h3 className="text-3xl font-light mb-6">
+                    {language === "ja" ? "年額プラン" : language === "pt" ? "Plano Anual" : "Annual Plan"}
+                  </h3>
+                  <div className="mb-8">
+                    <div className="text-5xl font-light mb-3">¥29,000</div>
+                    <div className="text-base text-muted-foreground font-light">
+                      {language === "ja" ? "年額（3ヶ月無料・約2ヶ月分お得）" : language === "pt" ? "Por ano (3 meses grátis・economize cerca de 2 meses)" : "per year (3 months free・save ~2 months)"}
+                    </div>
                   </div>
+                  <ul className="space-y-4 mb-8 text-base font-light">
+                    <li className="flex items-start">
+                      <span className="mr-3 text-xl">✓</span>
+                      <span>{language === "ja" ? "全技術動画へのアクセス" : language === "pt" ? "Acesso a todos os vídeos técnicos" : "Access to all technique videos"}</span>
+                    </li>
+                    <li className="flex items-start">
+                      <span className="mr-3 text-xl">✓</span>
+                      <span>{language === "ja" ? "新規コンテンツの追加" : language === "pt" ? "Novos conteúdos adicionados" : "New content additions"}</span>
+                    </li>
+                    <li className="flex items-start">
+                      <span className="mr-3 text-xl">✓</span>
+                      <span>{language === "ja" ? "最大の節約" : language === "pt" ? "Melhor economia" : "Best value"}</span>
+                    </li>
+                  </ul>
+                  <Button
+                    className="w-full h-14 text-lg hover:bg-primary/90 transition-all"
+                    onClick={() => handleCheckout(PRICE_IDS.annual, true)}
+                    disabled={isLoading}
+                  >
+                    {language === "ja" ? "年額で始める" : language === "pt" ? "Começar anualmente" : "Start Annually"}
+                  </Button>
                 </div>
-                <ul className="space-y-3 mb-6 text-sm font-light">
-                  <li className="flex items-start">
-                    <span className="mr-2">✓</span>
-                    <span>{language === "ja" ? "全技術動画へのアクセス" : language === "pt" ? "Acesso a todos os vídeos técnicos" : "Access to all technique videos"}</span>
-                  </li>
-                  <li className="flex items-start">
-                    <span className="mr-2">✓</span>
-                    <span>{language === "ja" ? "新規コンテンツの追加" : language === "pt" ? "Novos conteúdos adicionados" : "New content additions"}</span>
-                  </li>
-                  <li className="flex items-start">
-                    <span className="mr-2">✓</span>
-                    <span>{language === "ja" ? "最大の節約" : language === "pt" ? "Melhor economia" : "Best value"}</span>
-                  </li>
-                </ul>
-                <Button
-                  className="w-full"
-                  onClick={() => handleCheckout(PRICE_IDS.annual, true)}
-                  disabled={isLoading}
-                >
-                  {language === "ja" ? "年額で始める" : language === "pt" ? "Começar anualmente" : "Start Annually"}
-                </Button>
               </div>
               )}
             </div>
 
             {/* Rewards System Explanation */}
-            <div className="mt-16 p-8 border border-border rounded-lg bg-muted/30 animate-fade-up">
-              <h3 className="text-2xl font-light mb-6 text-center">
-                {language === "ja" ? "🎁 リワードシステム" : "🎁 Rewards System"}
-              </h3>
-              <div className="grid md:grid-cols-3 gap-6">
-                <div className="text-center p-4">
-                  <div className="text-4xl mb-3">🎨</div>
-                  <h4 className="font-medium mb-2">
-                    {language === "ja" ? "NFTバッジ" : "NFT Badges"}
-                  </h4>
-                  <p className="text-sm text-muted-foreground">
-                    {language === "ja" 
-                      ? "プラン購入時に限定NFTを自動付与。コレクションとして保有可能"
-                      : "Exclusive NFTs automatically awarded with plan purchase"}
-                  </p>
-                </div>
-                <div className="text-center p-4">
-                  <div className="text-4xl mb-3">🎯</div>
-                  <h4 className="font-medium mb-2">
-                    {language === "ja" ? "ポイント" : "Points"}
-                  </h4>
-                  <p className="text-sm text-muted-foreground">
-                    {language === "ja" 
-                      ? "毎月・毎年ポイント獲得。限定コンテンツやグッズ交換に使用可能"
-                      : "Earn points monthly/yearly. Use for exclusive content and merchandise"}
-                  </p>
-                </div>
-                <div className="text-center p-4">
-                  <div className="text-4xl mb-3">👥</div>
-                  <h4 className="font-medium mb-2">
-                    {language === "ja" ? "紹介制度" : "Referral Program"}
-                  </h4>
-                  <p className="text-sm text-muted-foreground">
-                    {language === "ja" 
-                      ? "専用紹介コードで友達を招待。1人紹介ごとにポイント獲得"
-                      : "Invite friends with your unique code and earn points per referral"}
-                  </p>
+            <div className="mt-20 relative overflow-hidden rounded-2xl animate-fade-up">
+              <div className="absolute inset-0 bg-gradient-to-br from-muted/50 via-background to-muted/30" />
+              <div className="relative p-12 border border-border/50 rounded-2xl backdrop-blur-sm">
+                <h3 className="text-3xl font-light mb-10 text-center">
+                  {language === "ja" ? "🎁 リワードシステム" : "🎁 Rewards System"}
+                </h3>
+                <div className="grid md:grid-cols-3 gap-8">
+                  <div className="text-center p-6 rounded-xl bg-background/50 hover:bg-background/80 transition-all group">
+                    <div className="text-5xl mb-4 group-hover:scale-110 transition-transform">🎨</div>
+                    <h4 className="font-medium mb-3 text-lg">
+                      {language === "ja" ? "NFTバッジ" : "NFT Badges"}
+                    </h4>
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                      {language === "ja" 
+                        ? "プラン購入時に限定NFTを自動付与。コレクションとして保有可能"
+                        : "Exclusive NFTs automatically awarded with plan purchase"}
+                    </p>
+                  </div>
+                  <div className="text-center p-6 rounded-xl bg-background/50 hover:bg-background/80 transition-all group">
+                    <div className="text-5xl mb-4 group-hover:scale-110 transition-transform">🎯</div>
+                    <h4 className="font-medium mb-3 text-lg">
+                      {language === "ja" ? "ポイント" : "Points"}
+                    </h4>
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                      {language === "ja" 
+                        ? "毎月・毎年ポイント獲得。限定コンテンツやグッズ交換に使用可能"
+                        : "Earn points monthly/yearly. Use for exclusive content and merchandise"}
+                    </p>
+                  </div>
+                  <div className="text-center p-6 rounded-xl bg-background/50 hover:bg-background/80 transition-all group">
+                    <div className="text-5xl mb-4 group-hover:scale-110 transition-transform">👥</div>
+                    <h4 className="font-medium mb-3 text-lg">
+                      {language === "ja" ? "紹介制度" : "Referral Program"}
+                    </h4>
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                      {language === "ja" 
+                        ? "専用紹介コードで友達を招待。1人紹介ごとにポイント獲得"
+                        : "Invite friends with your unique code and earn points per referral"}
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
