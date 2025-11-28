@@ -491,7 +491,7 @@ const Join = () => {
                 <div className="relative overflow-hidden rounded-2xl group hover:shadow-2xl transition-all">
                   <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-secondary/10 to-accent/10" />
                   <div className="relative border-2 border-primary p-10 rounded-2xl backdrop-blur-sm">
-                    <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-primary to-secondary text-primary-foreground px-6 py-2 text-sm font-medium rounded-full shadow-lg">
+                    <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-primary text-primary-foreground px-6 py-2 text-sm font-medium rounded-full shadow-lg z-10">
                       {language === "ja" ? "🎁 特別プラン" : "🎁 Special Plan"}
                     </div>
                     <h3 className="text-3xl font-light mb-6 mt-2">
@@ -537,7 +537,7 @@ const Join = () => {
                 <div className="relative overflow-hidden rounded-2xl group hover:shadow-2xl transition-all">
                   <div className="absolute inset-0 bg-gradient-to-br from-accent/20 via-primary/10 to-secondary/10" />
                   <div className="relative border-2 border-accent p-10 rounded-2xl backdrop-blur-sm">
-                    <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-accent to-primary text-primary-foreground px-6 py-2 text-sm font-medium rounded-full shadow-lg">
+                    <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-accent text-primary-foreground px-6 py-2 text-sm font-medium rounded-full shadow-lg z-10">
                       {language === "ja" ? "🎁 VIPプラン" : "🎁 VIP Plan"}
                     </div>
                     <h3 className="text-3xl font-light mb-6 mt-2">
@@ -591,7 +591,7 @@ const Join = () => {
                 <div className="relative overflow-hidden rounded-2xl group hover:shadow-2xl transition-all">
                   <div className="absolute inset-0 bg-gradient-to-br from-secondary/20 via-primary/10 to-background" />
                   <div className="relative border-2 border-secondary p-10 rounded-2xl backdrop-blur-sm">
-                    <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-secondary to-primary text-primary-foreground px-6 py-2 text-sm font-medium rounded-full shadow-lg">
+                    <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-secondary text-primary-foreground px-6 py-2 text-sm font-medium rounded-full shadow-lg z-10">
                       {language === "ja" ? "🎁 紹介特典" : "🎁 Referral Special"}
                     </div>
                     <h3 className="text-3xl font-light mb-6 mt-2">
@@ -644,7 +644,7 @@ const Join = () => {
                 <div className="relative overflow-hidden rounded-2xl group hover:shadow-2xl transition-all">
                   <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-secondary/5 to-background" />
                   <div className="relative border-2 border-primary/50 p-10 rounded-2xl backdrop-blur-sm">
-                    <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-primary to-secondary text-primary-foreground px-6 py-2 text-sm font-medium rounded-full shadow-lg">
+                    <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-primary text-primary-foreground px-6 py-2 text-sm font-medium rounded-full shadow-lg z-10">
                       {language === "ja" ? "人気" : language === "pt" ? "Popular" : "Most Popular"}
                     </div>
                     <h3 className="text-3xl font-light mb-6 mt-2">
