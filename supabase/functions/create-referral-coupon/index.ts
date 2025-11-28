@@ -83,7 +83,7 @@ serve(async (req) => {
     // Check if coupon already exists
     try {
       const existingCoupon = await stripe.coupons.retrieve(referralCode.code);
-      console.log("Coupon already exists:", existingCoupon.id);
+      console.log("Coupon already exists, returning existing:", existingCoupon.id);
       return new Response(
         JSON.stringify({ coupon: existingCoupon }),
         {
@@ -91,29 +91,51 @@ serve(async (req) => {
           status: 200,
         }
       );
-    } catch (error) {
-      // Coupon doesn't exist, create it
-      console.log("Creating new coupon for code:", referralCode.code);
+    } catch (error: any) {
+      // If coupon doesn't exist, we'll create it below
+      if (error?.code === 'resource_missing') {
+        console.log("Coupon doesn't exist, will create new one for code:", referralCode.code);
+      } else {
+        // Some other error occurred during retrieval
+        console.error("Error retrieving coupon:", error);
+        throw new Error(`Failed to check existing coupon: ${error.message}`);
+      }
     }
 
     // Create a coupon for 100% off first month (trial)
-    const coupon = await stripe.coupons.create({
-      id: referralCode.code,
-      name: `Referral: ${referralCode.code}`,
-      percent_off: 100,
-      duration: "once",
-      max_redemptions: 1000,
-    });
+    try {
+      const coupon = await stripe.coupons.create({
+        id: referralCode.code,
+        name: `Referral: ${referralCode.code}`,
+        percent_off: 100,
+        duration: "once",
+        max_redemptions: 1000,
+      });
 
-    console.log("Coupon created successfully:", coupon.id);
+      console.log("Coupon created successfully:", coupon.id);
 
-    return new Response(
-      JSON.stringify({ coupon }),
-      {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200,
+      return new Response(
+        JSON.stringify({ coupon }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 200,
+        }
+      );
+    } catch (createError: any) {
+      // If coupon already exists (race condition), try to retrieve it
+      if (createError?.code === 'resource_already_exists') {
+        console.log("Coupon was created by another request, retrieving it");
+        const existingCoupon = await stripe.coupons.retrieve(referralCode.code);
+        return new Response(
+          JSON.stringify({ coupon: existingCoupon }),
+          {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 200,
+          }
+        );
       }
-    );
+      throw createError;
+    }
   } catch (error) {
     console.error("Error creating referral coupon:", error);
     const message = error instanceof Error ? error.message : String(error);
