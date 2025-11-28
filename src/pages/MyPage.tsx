@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { InputWithSuggestions } from "@/components/ui/input-with-suggestions";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { BeltBadge } from "@/components/ui/belt-badge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
@@ -1094,12 +1095,37 @@ const MyPage = () => {
                           {(editValues.belt_history || []).map((belt: any, index: number) => (
                             <div key={index} className="flex items-start gap-2 p-3 bg-background rounded border">
                               <div className="flex-1 space-y-2">
-                                <Input
+                                <Select
                                   value={belt.belt || ''}
-                                  onChange={(e) => updateBeltHistory(index, 'belt', e.target.value)}
-                                  placeholder={language === "ja" ? "帯（例：青帯、紫帯）" : "Belt (e.g., Blue Belt)"}
-                                  className="font-medium"
-                                />
+                                  onValueChange={(value) => updateBeltHistory(index, 'belt', value)}
+                                >
+                                  <SelectTrigger className="font-medium">
+                                    <SelectValue placeholder={language === "ja" ? "帯を選択" : "Select Belt"} />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="白帯">
+                                      {language === "ja" ? "白帯" : language === "pt" ? "Faixa Branca" : "White Belt"}
+                                    </SelectItem>
+                                    <SelectItem value="青帯">
+                                      {language === "ja" ? "青帯" : language === "pt" ? "Faixa Azul" : "Blue Belt"}
+                                    </SelectItem>
+                                    <SelectItem value="紫帯">
+                                      {language === "ja" ? "紫帯" : language === "pt" ? "Faixa Roxa" : "Purple Belt"}
+                                    </SelectItem>
+                                    <SelectItem value="茶帯">
+                                      {language === "ja" ? "茶帯" : language === "pt" ? "Faixa Marrom" : "Brown Belt"}
+                                    </SelectItem>
+                                    <SelectItem value="黒帯">
+                                      {language === "ja" ? "黒帯" : language === "pt" ? "Faixa Preta" : "Black Belt"}
+                                    </SelectItem>
+                                    <SelectItem value="赤黒帯">
+                                      {language === "ja" ? "赤黒帯" : language === "pt" ? "Faixa Coral" : "Coral Belt"}
+                                    </SelectItem>
+                                    <SelectItem value="赤帯">
+                                      {language === "ja" ? "赤帯" : language === "pt" ? "Faixa Vermelha" : "Red Belt"}
+                                    </SelectItem>
+                                  </SelectContent>
+                                </Select>
                                 <div className="grid grid-cols-2 gap-2">
                                   <Popover>
                                     <PopoverTrigger asChild>
