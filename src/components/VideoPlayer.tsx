@@ -180,8 +180,7 @@ export const VideoPlayer = ({ videoUrl, autoPlay = true, thumbnailUrl, onPlay }:
         ref={videoRef}
         controls
         controlsList="nodownload"
-        disablePictureInPicture
-        className="w-full"
+        className="w-full h-full"
         playsInline
         preload="metadata"
         poster={thumbnailUrl || undefined}
