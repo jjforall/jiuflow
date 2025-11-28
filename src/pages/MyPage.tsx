@@ -6,7 +6,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { User, CreditCard, Calendar, Mail, Upload, Video, Eye } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { User, CreditCard, Calendar, Mail, Upload, Video, Eye, Edit2, Check, X } from "lucide-react";
 import { toast } from "sonner";
 import { VideoUploadDialog } from "@/components/VideoUploadDialog";
 import { Badge } from "@/components/ui/badge";
@@ -42,6 +43,8 @@ const MyPage = () => {
   const [referralCode, setReferralCode] = useState<string>("");
   const [userPoints, setUserPoints] = useState<number>(0);
   const [pointsLoading, setPointsLoading] = useState(true);
+  const [isEditingCode, setIsEditingCode] = useState(false);
+  const [editedCode, setEditedCode] = useState("");
 
   const loadUserVideos = async () => {
     if (!user) return;
@@ -94,9 +97,12 @@ const MyPage = () => {
         .from('referral_codes')
         .select('code')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
-      if (codeError) throw codeError;
+      if (codeError) {
+        console.error('Error loading referral code:', codeError);
+      }
+
       if (codeData) {
         setReferralCode(codeData.code);
         
@@ -109,6 +115,29 @@ const MyPage = () => {
             },
           });
         }
+      } else {
+        // Generate new referral code if none exists
+        const newCode = generateReferralCode();
+        const { error: insertError } = await supabase
+          .from('referral_codes')
+          .insert({
+            user_id: user.id,
+            code: newCode,
+          });
+
+        if (!insertError) {
+          setReferralCode(newCode);
+          
+          // Create Stripe coupon for the new code
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session) {
+            await supabase.functions.invoke('create-referral-coupon', {
+              headers: {
+                Authorization: `Bearer ${session.access_token}`,
+              },
+            });
+          }
+        }
       }
 
       // Load points
@@ -116,14 +145,90 @@ const MyPage = () => {
         .from('user_points')
         .select('points')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
-      if (pointsError && pointsError.code !== 'PGRST116') throw pointsError;
+      if (pointsError) {
+        console.error('Error loading points:', pointsError);
+      }
+      
       setUserPoints(pointsData?.points || 0);
+      
+      // Initialize points if not exists
+      if (!pointsData) {
+        await supabase
+          .from('user_points')
+          .insert({
+            user_id: user.id,
+            points: 0,
+          });
+      }
     } catch (error) {
       console.error('Error loading referral code and points:', error);
     } finally {
       setPointsLoading(false);
+    }
+  };
+
+  const generateReferralCode = () => {
+    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let code = '';
+    for (let i = 0; i < 8; i++) {
+      code += characters.charAt(Math.floor(Math.random() * characters.length));
+    }
+    return code;
+  };
+
+  const updateReferralCode = async (newCode: string) => {
+    if (!user) return;
+    
+    const trimmedCode = newCode.trim().toUpperCase();
+    if (trimmedCode.length < 4 || trimmedCode.length > 12) {
+      toast.error(language === "ja" ? "コードは4〜12文字で入力してください" : "Code must be 4-12 characters");
+      return;
+    }
+
+    if (!/^[A-Z0-9]+$/.test(trimmedCode)) {
+      toast.error(language === "ja" ? "英数字のみ使用できます" : "Only alphanumeric characters allowed");
+      return;
+    }
+
+    try {
+      // Check if code is already taken
+      const { data: existingCode } = await supabase
+        .from('referral_codes')
+        .select('code')
+        .eq('code', trimmedCode)
+        .neq('user_id', user.id)
+        .maybeSingle();
+
+      if (existingCode) {
+        toast.error(language === "ja" ? "このコードは既に使用されています" : "This code is already taken");
+        return;
+      }
+
+      // Update the code
+      const { error } = await supabase
+        .from('referral_codes')
+        .update({ code: trimmedCode })
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      setReferralCode(trimmedCode);
+      toast.success(language === "ja" ? "紹介コードを更新しました" : "Referral code updated");
+
+      // Create Stripe coupon for the new code
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        await supabase.functions.invoke('create-referral-coupon', {
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+          },
+        });
+      }
+    } catch (error) {
+      console.error('Error updating referral code:', error);
+      toast.error(language === "ja" ? "コードの更新に失敗しました" : "Failed to update code");
     }
   };
 
@@ -344,21 +449,65 @@ const MyPage = () => {
                       <p className="text-xs text-muted-foreground mb-2">
                         {language === "ja" ? "あなたの紹介コード" : "Your Referral Code"}
                       </p>
-                      <div className="flex items-center gap-2">
-                        <code className="flex-1 p-3 bg-muted rounded font-mono text-lg font-bold text-center">
-                          {referralCode || "loading..."}
-                        </code>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => {
-                            navigator.clipboard.writeText(referralCode);
-                            toast.success(language === "ja" ? "コピーしました" : "Copied!");
-                          }}
-                        >
-                          {language === "ja" ? "コピー" : "Copy"}
-                        </Button>
-                      </div>
+                      {isEditingCode ? (
+                        <div className="flex items-center gap-2">
+                          <Input
+                            value={editedCode}
+                            onChange={(e) => setEditedCode(e.target.value.toUpperCase())}
+                            placeholder={language === "ja" ? "新しいコード" : "New code"}
+                            maxLength={12}
+                            className="flex-1 font-mono text-lg font-bold text-center"
+                          />
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              updateReferralCode(editedCode);
+                              setIsEditingCode(false);
+                            }}
+                          >
+                            <Check className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              setIsEditingCode(false);
+                              setEditedCode(referralCode);
+                            }}
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <code className="flex-1 p-3 bg-muted rounded font-mono text-lg font-bold text-center">
+                            {referralCode || "loading..."}
+                          </code>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              setEditedCode(referralCode);
+                              setIsEditingCode(true);
+                            }}
+                            disabled={!referralCode}
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              navigator.clipboard.writeText(referralCode);
+                              toast.success(language === "ja" ? "コピーしました" : "Copied!");
+                            }}
+                            disabled={!referralCode}
+                          >
+                            {language === "ja" ? "コピー" : "Copy"}
+                          </Button>
+                        </div>
+                      )}
                     </div>
                     <div className="text-sm text-muted-foreground space-y-1">
                       <p>
