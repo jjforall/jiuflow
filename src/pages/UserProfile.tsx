@@ -100,7 +100,20 @@ interface Profile {
   belt_history: Array<{belt: string; date?: string; instructor?: string}> | null;
   home_dojo: string | null;
   training_locations: Array<string> | null;
-  titles: Array<{title: string; date?: string; organization?: string}> | null;
+  titles: Array<{title: string; date?: string; organization?: string; customTitle?: string}> | null;
+  favorite_fighters: Array<string> | null;
+  favorite_techniques: Array<string> | null;
+  hometown: string | null;
+  hobbies: Array<string> | null;
+  date_of_birth: string | null;
+  social_links: {
+    instagram?: string;
+    twitter?: string;
+    youtube?: string;
+    facebook?: string;
+    tiktok?: string;
+    website?: string;
+  } | null;
 }
 
 export default function UserProfile() {
@@ -165,7 +178,7 @@ export default function UserProfile() {
       // Try to resolve as username first
       const { data: profileByUsername } = await supabase
         .from('profiles')
-        .select('id, email, display_name, bio, avatar_url, username, education, work_experience, belt_history, home_dojo, training_locations, titles, created_at, cover_image_url, organization_id')
+        .select('id, email, display_name, bio, avatar_url, username, education, work_experience, belt_history, home_dojo, training_locations, titles, created_at, cover_image_url, organization_id, favorite_fighters, favorite_techniques, hometown, hobbies, date_of_birth, social_links')
         .eq('username', userIdOrUsername)
         .maybeSingle();
 
@@ -179,14 +192,18 @@ export default function UserProfile() {
           work_experience: (profileByUsername.work_experience as any) || [],
           belt_history: (profileByUsername.belt_history as any) || [],
           training_locations: (profileByUsername.training_locations as any) || [],
-          titles: (profileByUsername.titles as any) || []
+          titles: (profileByUsername.titles as any) || [],
+          favorite_fighters: (profileByUsername.favorite_fighters as any) || [],
+          favorite_techniques: (profileByUsername.favorite_techniques as any) || [],
+          hobbies: (profileByUsername.hobbies as any) || [],
+          social_links: (profileByUsername.social_links as any) || {}
         });
       } else {
         // Fall back to UUID
         resolvedUserId = userIdOrUsername;
         const { data: profileById } = await supabase
           .from('profiles')
-          .select('id, email, display_name, bio, avatar_url, username, education, work_experience, belt_history, home_dojo, training_locations, titles, created_at, cover_image_url, organization_id')
+          .select('id, email, display_name, bio, avatar_url, username, education, work_experience, belt_history, home_dojo, training_locations, titles, created_at, cover_image_url, organization_id, favorite_fighters, favorite_techniques, hometown, hobbies, date_of_birth, social_links')
           .eq('id', userIdOrUsername)
           .single();
         
@@ -197,7 +214,11 @@ export default function UserProfile() {
             work_experience: (profileById.work_experience as any) || [],
             belt_history: (profileById.belt_history as any) || [],
             training_locations: (profileById.training_locations as any) || [],
-            titles: (profileById.titles as any) || []
+            titles: (profileById.titles as any) || [],
+            favorite_fighters: (profileById.favorite_fighters as any) || [],
+            favorite_techniques: (profileById.favorite_techniques as any) || [],
+            hobbies: (profileById.hobbies as any) || [],
+            social_links: (profileById.social_links as any) || {}
           });
         }
       }
@@ -825,7 +846,9 @@ export default function UserProfile() {
                           >
                             <div className="relative">
                               <div className="absolute -top-2 -right-2 w-20 h-20 bg-gradient-to-br from-accent/20 to-transparent rounded-full blur-xl group-hover:scale-125 transition-transform" />
-                              <p className="font-bold text-lg text-accent-foreground relative z-10">{title.title}</p>
+                              <p className="font-bold text-lg text-accent-foreground relative z-10">
+                                {title.title === "custom" ? title.customTitle : title.title}
+                              </p>
                               {title.organization && (
                                 <p className="text-sm text-muted-foreground mt-1">{title.organization}</p>
                               )}
@@ -838,6 +861,200 @@ export default function UserProfile() {
                             </div>
                           </div>
                         ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Favorite Fighters */}
+                  {profile?.favorite_fighters && profile.favorite_fighters.length > 0 && (
+                    <div>
+                      <div className="flex items-center gap-3 mb-5">
+                        <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                          <span className="text-xl">👤</span>
+                        </div>
+                        <h3 className="text-xl font-bold">
+                          {language === "ja" ? "好きな選手" : "Favorite Fighters"}
+                        </h3>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {profile.favorite_fighters.map((fighter, index) => (
+                          <Badge 
+                            key={index} 
+                            variant="secondary" 
+                            className="text-sm px-4 py-2 hover:scale-105 transition-transform"
+                          >
+                            {fighter}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Favorite Techniques */}
+                  {profile?.favorite_techniques && profile.favorite_techniques.length > 0 && (
+                    <div>
+                      <div className="flex items-center gap-3 mb-5">
+                        <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center">
+                          <span className="text-xl">🥋</span>
+                        </div>
+                        <h3 className="text-xl font-bold">
+                          {language === "ja" ? "好きな技" : "Favorite Techniques"}
+                        </h3>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {profile.favorite_techniques.map((technique, index) => (
+                          <Badge 
+                            key={index} 
+                            variant="secondary" 
+                            className="text-sm px-4 py-2 hover:scale-105 transition-transform"
+                          >
+                            {technique}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Personal Info Section */}
+                  {(profile?.hometown || profile?.date_of_birth || (profile?.hobbies && profile.hobbies.length > 0)) && (
+                    <div>
+                      <div className="flex items-center gap-3 mb-5">
+                        <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                          <span className="text-xl">ℹ️</span>
+                        </div>
+                        <h3 className="text-xl font-bold">
+                          {language === "ja" ? "プロフィール" : "About"}
+                        </h3>
+                      </div>
+                      <div className="space-y-4">
+                        {profile?.hometown && (
+                          <div className="flex items-center gap-3">
+                            <span className="text-lg">🏠</span>
+                            <div>
+                              <p className="text-xs text-muted-foreground">{language === "ja" ? "出身地" : "Hometown"}</p>
+                              <p className="font-medium">{profile.hometown}</p>
+                            </div>
+                          </div>
+                        )}
+                        {profile?.date_of_birth && (() => {
+                          const today = new Date();
+                          const birthDate = new Date(profile.date_of_birth);
+                          let age = today.getFullYear() - birthDate.getFullYear();
+                          const monthDiff = today.getMonth() - birthDate.getMonth();
+                          if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+                            age--;
+                          }
+                          return (
+                            <div className="flex items-center gap-3">
+                              <span className="text-lg">🎂</span>
+                              <div>
+                                <p className="text-xs text-muted-foreground">{language === "ja" ? "年齢" : "Age"}</p>
+                                <p className="font-medium">{age} {language === "ja" ? "歳" : "years old"}</p>
+                              </div>
+                            </div>
+                          );
+                        })()}
+                        {profile?.hobbies && profile.hobbies.length > 0 && (
+                          <div>
+                            <div className="flex items-center gap-3 mb-2">
+                              <span className="text-lg">🎯</span>
+                              <p className="text-xs text-muted-foreground">{language === "ja" ? "趣味" : "Hobbies"}</p>
+                            </div>
+                            <div className="flex flex-wrap gap-2 ml-9">
+                              {profile.hobbies.map((hobby, index) => (
+                                <Badge 
+                                  key={index} 
+                                  variant="outline" 
+                                  className="text-sm"
+                                >
+                                  {hobby}
+                                </Badge>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Social Links */}
+                  {profile?.social_links && (profile.social_links.instagram || profile.social_links.twitter || profile.social_links.youtube || profile.social_links.facebook || profile.social_links.tiktok || profile.social_links.website) && (
+                    <div>
+                      <div className="flex items-center gap-3 mb-5">
+                        <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center">
+                          <span className="text-xl">🔗</span>
+                        </div>
+                        <h3 className="text-xl font-bold">
+                          {language === "ja" ? "SNSリンク" : "Social Links"}
+                        </h3>
+                      </div>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                        {profile.social_links.instagram && (
+                          <a 
+                            href={profile.social_links.instagram} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-2 p-3 rounded-xl bg-gradient-to-br from-purple-500/10 to-pink-500/10 hover:from-purple-500/20 hover:to-pink-500/20 border border-purple-500/20 hover:border-purple-500/40 transition-all hover:scale-105"
+                          >
+                            <span className="text-xl">📷</span>
+                            <span className="text-sm font-medium">Instagram</span>
+                          </a>
+                        )}
+                        {profile.social_links.twitter && (
+                          <a 
+                            href={profile.social_links.twitter} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-2 p-3 rounded-xl bg-gradient-to-br from-blue-500/10 to-sky-500/10 hover:from-blue-500/20 hover:to-sky-500/20 border border-blue-500/20 hover:border-blue-500/40 transition-all hover:scale-105"
+                          >
+                            <span className="text-xl">🐦</span>
+                            <span className="text-sm font-medium">Twitter</span>
+                          </a>
+                        )}
+                        {profile.social_links.youtube && (
+                          <a 
+                            href={profile.social_links.youtube} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-2 p-3 rounded-xl bg-gradient-to-br from-red-500/10 to-red-600/10 hover:from-red-500/20 hover:to-red-600/20 border border-red-500/20 hover:border-red-500/40 transition-all hover:scale-105"
+                          >
+                            <span className="text-xl">▶️</span>
+                            <span className="text-sm font-medium">YouTube</span>
+                          </a>
+                        )}
+                        {profile.social_links.facebook && (
+                          <a 
+                            href={profile.social_links.facebook} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-2 p-3 rounded-xl bg-gradient-to-br from-blue-600/10 to-blue-700/10 hover:from-blue-600/20 hover:to-blue-700/20 border border-blue-600/20 hover:border-blue-600/40 transition-all hover:scale-105"
+                          >
+                            <span className="text-xl">👍</span>
+                            <span className="text-sm font-medium">Facebook</span>
+                          </a>
+                        )}
+                        {profile.social_links.tiktok && (
+                          <a 
+                            href={profile.social_links.tiktok} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-2 p-3 rounded-xl bg-gradient-to-br from-black/10 to-pink-500/10 hover:from-black/20 hover:to-pink-500/20 border border-pink-500/20 hover:border-pink-500/40 transition-all hover:scale-105"
+                          >
+                            <span className="text-xl">🎵</span>
+                            <span className="text-sm font-medium">TikTok</span>
+                          </a>
+                        )}
+                        {profile.social_links.website && (
+                          <a 
+                            href={profile.social_links.website} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-2 p-3 rounded-xl bg-gradient-to-br from-primary/10 to-accent/10 hover:from-primary/20 hover:to-accent/20 border border-primary/20 hover:border-primary/40 transition-all hover:scale-105"
+                          >
+                            <span className="text-xl">🌐</span>
+                            <span className="text-sm font-medium">{language === "ja" ? "ウェブサイト" : "Website"}</span>
+                          </a>
+                        )}
                       </div>
                     </div>
                   )}
