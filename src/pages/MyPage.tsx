@@ -15,7 +15,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { CalendarIcon } from "lucide-react";
-import { User, CreditCard, Calendar, Mail, Upload, Video, Eye, Edit2, Check, X, Trash2, Lock, Globe, Plus, Copy } from "lucide-react";
+import { User, CreditCard, Calendar, Mail, Upload, Video, Eye, Edit2, Check, X, Trash2, Lock, Globe, Plus, Copy, MapPin, Building2 } from "lucide-react";
 import { toast } from "sonner";
 import { VideoUploadDialog } from "@/components/VideoUploadDialog";
 import { VideoEditDialog } from "@/components/VideoEditDialog";
@@ -24,6 +24,8 @@ import { Badge } from "@/components/ui/badge";
 import { ExternalLink } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { AvatarUploadDialog } from "@/components/AvatarUploadDialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -117,6 +119,12 @@ const MyPage = () => {
   const [followList, setFollowList] = useState<Array<{ id: string; display_name: string; username: string; avatar_url: string }>>([]);
   const [schoolSuggestions, setSchoolSuggestions] = useState<string[]>([]);
   const [companySuggestions, setCompanySuggestions] = useState<string[]>([]);
+  const [userDojos, setUserDojos] = useState<Array<{ id: string; dojo: any; relationship_type: string }>>([]);
+  const [dojosLoading, setDojosLoading] = useState(false);
+  const [dojoDialogOpen, setDojoDialogOpen] = useState(false);
+  const [availableDojos, setAvailableDojos] = useState<Array<{ id: string; name: string; name_ja: string; name_pt: string; location: string | null }>>([]);
+  const [selectedDojoId, setSelectedDojoId] = useState<string>("");
+  const [selectedRelationshipType, setSelectedRelationshipType] = useState<"home" | "training">("home");
 
   const loadUserVideos = async () => {
     if (!user) return;
@@ -163,6 +171,8 @@ const MyPage = () => {
       loadFollowStats();
       loadSchoolSuggestions();
       loadCompanySuggestions();
+      loadUserDojos();
+      loadAvailableDojos();
     }
   }, [user]);
 
@@ -456,6 +466,58 @@ const MyPage = () => {
     }
   };
 
+  const loadUserDojos = async () => {
+    if (!user) return;
+    
+    setDojosLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('user_dojos')
+        .select(`
+          id,
+          relationship_type,
+          dojos:dojo_id (
+            id,
+            name,
+            name_ja,
+            name_pt,
+            location,
+            is_verified
+          )
+        `)
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+      
+      const formattedDojos = (data || []).map((item: any) => ({
+        id: item.id,
+        dojo: item.dojos,
+        relationship_type: item.relationship_type
+      }));
+      
+      setUserDojos(formattedDojos);
+    } catch (error) {
+      console.error('Error loading user dojos:', error);
+      toast.error(language === "ja" ? "道場の読み込みに失敗しました" : "Failed to load dojos");
+    } finally {
+      setDojosLoading(false);
+    }
+  };
+
+  const loadAvailableDojos = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('dojos')
+        .select('id, name, name_ja, name_pt, location')
+        .order('name');
+
+      if (error) throw error;
+      setAvailableDojos(data || []);
+    } catch (error) {
+      console.error('Error loading available dojos:', error);
+    }
+  };
+
   const loadReferralCodeAndPoints = async () => {
     if (!user) return;
     
@@ -576,6 +638,55 @@ const MyPage = () => {
     } finally {
       setDeleteDialogOpen(false);
       setDeletingVideoId(null);
+    }
+  };
+
+  const handleAddDojo = async () => {
+    if (!selectedDojoId || !user) return;
+
+    try {
+      const { error } = await supabase
+        .from('user_dojos')
+        .insert({
+          user_id: user.id,
+          dojo_id: selectedDojoId,
+          relationship_type: selectedRelationshipType,
+          joined_at: new Date().toISOString()
+        });
+
+      if (error) throw error;
+
+      toast.success(language === "ja" ? "道場を追加しました" : "Dojo added");
+      setDojoDialogOpen(false);
+      setSelectedDojoId("");
+      setSelectedRelationshipType("home");
+      loadUserDojos();
+    } catch (error: any) {
+      console.error('Error adding dojo:', error);
+      if (error.code === '23505') {
+        toast.error(language === "ja" ? "この道場は既に登録されています" : "This dojo is already added");
+      } else {
+        toast.error(language === "ja" ? "追加に失敗しました" : "Failed to add");
+      }
+    }
+  };
+
+  const handleRemoveDojo = async (userDojoId: string) => {
+    if (!confirm(language === "ja" ? "この道場を削除しますか？" : "Remove this dojo?")) return;
+
+    try {
+      const { error } = await supabase
+        .from('user_dojos')
+        .delete()
+        .eq('id', userDojoId);
+
+      if (error) throw error;
+
+      toast.success(language === "ja" ? "道場を削除しました" : "Dojo removed");
+      loadUserDojos();
+    } catch (error) {
+      console.error('Error removing dojo:', error);
+      toast.error(language === "ja" ? "削除に失敗しました" : "Failed to remove");
     }
   };
 
@@ -2630,6 +2741,124 @@ const MyPage = () => {
             </Card>
           </div>
 
+          {/* Dojos Management Section */}
+          <div className="mt-12 animate-fade-up">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-2 font-light">
+                    <Building2 className="h-5 w-5" />
+                    {language === "ja" ? "道場" : "Dojos"}
+                  </CardTitle>
+                  <Button onClick={() => setDojoDialogOpen(true)} size="sm" className="gap-2">
+                    <Plus className="w-4 h-4" />
+                    {language === "ja" ? "道場を追加" : "Add Dojo"}
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {dojosLoading ? (
+                  <div className="space-y-3">
+                    {[1, 2].map((i) => (
+                      <div key={i} className="h-20 bg-muted/50 animate-pulse rounded" />
+                    ))}
+                  </div>
+                ) : userDojos.length === 0 ? (
+                  <div className="text-center py-8">
+                    <MapPin className="w-12 h-12 mx-auto mb-3 text-muted-foreground" />
+                    <p className="text-muted-foreground mb-4">
+                      {language === "ja" 
+                        ? "まだ道場を登録していません" 
+                        : "No dojos added yet"}
+                    </p>
+                    <Button onClick={() => setDojoDialogOpen(true)} variant="outline" size="sm" className="gap-2">
+                      <Plus className="w-4 h-4" />
+                      {language === "ja" ? "道場を追加" : "Add Dojo"}
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {/* Home Dojos */}
+                    {userDojos.filter(d => d.relationship_type === 'home').length > 0 && (
+                      <div>
+                        <h3 className="text-sm font-semibold mb-3 text-muted-foreground">
+                          {language === "ja" ? "所属道場" : "Home Dojo"}
+                        </h3>
+                        <div className="space-y-2">
+                          {userDojos
+                            .filter(d => d.relationship_type === 'home')
+                            .map((item) => (
+                              <div
+                                key={item.id}
+                                className="flex items-center justify-between p-3 bg-primary/5 rounded-lg border border-primary/20"
+                              >
+                                <div className="flex-1">
+                                  <p className="font-semibold">
+                                    {language === "ja" ? item.dojo.name_ja : language === "pt" ? item.dojo.name_pt : item.dojo.name}
+                                  </p>
+                                  {item.dojo.location && (
+                                    <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
+                                      <MapPin className="w-3 h-3" />
+                                      {item.dojo.location}
+                                    </p>
+                                  )}
+                                </div>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleRemoveDojo(item.id)}
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Training Dojos */}
+                    {userDojos.filter(d => d.relationship_type === 'training').length > 0 && (
+                      <div>
+                        <h3 className="text-sm font-semibold mb-3 text-muted-foreground">
+                          {language === "ja" ? "出稽古先" : "Training Spots"}
+                        </h3>
+                        <div className="space-y-2">
+                          {userDojos
+                            .filter(d => d.relationship_type === 'training')
+                            .map((item) => (
+                              <div
+                                key={item.id}
+                                className="flex items-center justify-between p-3 bg-muted/30 rounded-lg border"
+                              >
+                                <div className="flex-1">
+                                  <p className="font-medium">
+                                    {language === "ja" ? item.dojo.name_ja : language === "pt" ? item.dojo.name_pt : item.dojo.name}
+                                  </p>
+                                  {item.dojo.location && (
+                                    <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
+                                      <MapPin className="w-3 h-3" />
+                                      {item.dojo.location}
+                                    </p>
+                                  )}
+                                </div>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleRemoveDojo(item.id)}
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
           {/* Video Upload Section */}
           <div className="mt-12 animate-fade-up">
             <div className="flex items-center justify-between mb-6">
@@ -2803,6 +3032,72 @@ const MyPage = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Dojo Management Dialog */}
+      <Dialog open={dojoDialogOpen} onOpenChange={setDojoDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {language === "ja" ? "道場を追加" : "Add Dojo"}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="dojo">
+                {language === "ja" ? "道場を選択" : "Select Dojo"}
+              </Label>
+              <Select value={selectedDojoId} onValueChange={setSelectedDojoId}>
+                <SelectTrigger id="dojo">
+                  <SelectValue placeholder={language === "ja" ? "道場を選択してください" : "Select a dojo"} />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableDojos.map((dojo) => (
+                    <SelectItem key={dojo.id} value={dojo.id}>
+                      <div className="flex flex-col">
+                        <span>{language === "ja" ? dojo.name_ja : language === "pt" ? dojo.name_pt : dojo.name}</span>
+                        {dojo.location && (
+                          <span className="text-xs text-muted-foreground">{dojo.location}</span>
+                        )}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="relationship">
+                {language === "ja" ? "関係" : "Relationship"}
+              </Label>
+              <Select 
+                value={selectedRelationshipType} 
+                onValueChange={(value: "home" | "training") => setSelectedRelationshipType(value)}
+              >
+                <SelectTrigger id="relationship">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="home">
+                    {language === "ja" ? "所属道場" : "Home Dojo"}
+                  </SelectItem>
+                  <SelectItem value="training">
+                    {language === "ja" ? "出稽古先" : "Training Spot"}
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex justify-end gap-3 pt-4">
+              <Button variant="outline" onClick={() => setDojoDialogOpen(false)}>
+                {language === "ja" ? "キャンセル" : "Cancel"}
+              </Button>
+              <Button onClick={handleAddDojo} disabled={!selectedDojoId}>
+                {language === "ja" ? "追加" : "Add"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <Footer />
     </div>
