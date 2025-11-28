@@ -16,6 +16,7 @@ interface SubscriptionStatus {
   product_id?: string;
   price_id?: string;
   subscription_end?: string;
+  is_trialing?: boolean;
 }
 
 interface UserVideo {
@@ -225,9 +226,16 @@ const MyPage = () => {
                   <p className="text-xs text-muted-foreground mb-1">
                     {language === "ja" ? "現在のプラン" : language === "pt" ? "Plano atual" : "Current Plan"}
                   </p>
-                  <p className="font-light text-lg">
-                    {subscription?.subscribed ? getPlanName(subscription.price_id) : (language === "ja" ? "未登録" : "No Plan")}
-                  </p>
+                  <div className="flex items-center gap-2">
+                    <p className="font-light text-lg">
+                      {subscription?.subscribed ? getPlanName(subscription.price_id) : (language === "ja" ? "未登録" : "No Plan")}
+                    </p>
+                    {subscription?.is_trialing && (
+                      <Badge variant="secondary" className="text-xs">
+                        {language === "ja" ? "トライアル中" : "Trial"}
+                      </Badge>
+                    )}
+                  </div>
                 </div>
                 {subscription?.subscribed && subscription.subscription_end && (
                   <div>
