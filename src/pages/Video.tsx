@@ -1,5 +1,5 @@
 import { useParams, Link, useNavigate, useSearchParams } from "react-router-dom";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
@@ -56,6 +56,49 @@ const Video = () => {
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const [seriesLetter, setSeriesLetter] = useState<string>("");
   const [viewCount, setViewCount] = useState<number>(0);
+  const [isUIVisible, setIsUIVisible] = useState(true);
+  const [isVideoPlaying, setIsVideoPlaying] = useState(false);
+  const hideUITimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Handle video playback and UI hiding
+  const handleVideoPlay = useCallback(() => {
+    setIsVideoPlaying(true);
+    
+    // Clear any existing timer
+    if (hideUITimerRef.current) {
+      clearTimeout(hideUITimerRef.current);
+    }
+    
+    // Hide UI after 5 seconds
+    hideUITimerRef.current = setTimeout(() => {
+      setIsUIVisible(false);
+    }, 5000);
+  }, []);
+
+  const handleMouseMove = useCallback(() => {
+    if (isVideoPlaying) {
+      setIsUIVisible(true);
+      
+      // Clear existing timer
+      if (hideUITimerRef.current) {
+        clearTimeout(hideUITimerRef.current);
+      }
+      
+      // Hide again after 3 seconds of inactivity
+      hideUITimerRef.current = setTimeout(() => {
+        setIsUIVisible(false);
+      }, 3000);
+    }
+  }, [isVideoPlaying]);
+
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (hideUITimerRef.current) {
+        clearTimeout(hideUITimerRef.current);
+      }
+    };
+  }, []);
 
   // Check for tip success
   useEffect(() => {
@@ -407,10 +450,16 @@ const Video = () => {
   }
 
   return (
-    <div className="min-h-screen">
-      <Navigation />
+    <div className="min-h-screen" onMouseMove={handleMouseMove} onTouchStart={handleMouseMove}>
+      <div 
+        className={`transition-all duration-500 ${
+          isUIVisible ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0'
+        }`}
+      >
+        <Navigation />
+      </div>
       
-      <main className="pt-24 pb-20">
+      <main className={`transition-all duration-300 ${isUIVisible ? 'pt-24' : 'pt-0'} pb-20`}>
         <div className="max-w-7xl mx-auto px-4 md:px-6">
           <div className="flex flex-col lg:flex-row gap-6">
             {/* Main Video Section */}
@@ -418,7 +467,12 @@ const Video = () => {
               {/* Video Player */}
               <div className="w-full bg-muted rounded-lg overflow-hidden">
                 {getTechniqueVideoUrl(technique) ? (
-                  <VideoPlayer videoUrl={getTechniqueVideoUrl(technique)!} autoPlay />
+                  <VideoPlayer 
+                    videoUrl={getTechniqueVideoUrl(technique)!} 
+                    thumbnailUrl={getTechniqueThumbnailUrl(technique)}
+                    autoPlay 
+                    onPlay={handleVideoPlay}
+                  />
                 ) : (
                   <div className="aspect-video flex items-center justify-center">
                     <div className="text-center text-muted-foreground">
@@ -640,8 +694,15 @@ const Video = () => {
             )}
           </div>
         </div>
-      </main>
-      <Footer />
+       </main>
+      
+      <div 
+        className={`transition-all duration-500 ${
+          isUIVisible ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0'
+        }`}
+      >
+        <Footer />
+      </div>
     </div>
   );
 };

@@ -2,21 +2,39 @@ import { useEffect, useRef, useState } from "react";
 import Hls from "hls.js";
 import { toast } from "sonner";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { Loader2 } from "lucide-react";
 
 interface VideoPlayerProps {
   videoUrl: string;
   autoPlay?: boolean;
+  thumbnailUrl?: string | null;
+  onPlay?: () => void;
 }
 
-export const VideoPlayer = ({ videoUrl, autoPlay = true }: VideoPlayerProps) => {
+export const VideoPlayer = ({ videoUrl, autoPlay = true, thumbnailUrl, onPlay }: VideoPlayerProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const hlsRef = useRef<Hls | null>(null);
   const { language } = useLanguage();
   const [quality, setQuality] = useState<string>("auto");
+  const [isLoading, setIsLoading] = useState(true);
+  const [hasStarted, setHasStarted] = useState(false);
 
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
+
+    // Setup event listeners for loading states
+    const handleLoadStart = () => setIsLoading(true);
+    const handleCanPlay = () => setIsLoading(false);
+    const handlePlaying = () => {
+      setIsLoading(false);
+      setHasStarted(true);
+      onPlay?.();
+    };
+
+    video.addEventListener('loadstart', handleLoadStart);
+    video.addEventListener('canplay', handleCanPlay);
+    video.addEventListener('playing', handlePlaying);
 
     // Check if the video URL is an HLS stream (.m3u8)
     const isHLS = videoUrl.includes('.m3u8');
@@ -108,6 +126,9 @@ export const VideoPlayer = ({ videoUrl, autoPlay = true }: VideoPlayerProps) => 
       });
 
       return () => {
+        video.removeEventListener('loadstart', handleLoadStart);
+        video.removeEventListener('canplay', handleCanPlay);
+        video.removeEventListener('playing', handlePlaying);
         if (hlsRef.current) {
           hlsRef.current.destroy();
           hlsRef.current = null;
@@ -126,7 +147,13 @@ export const VideoPlayer = ({ videoUrl, autoPlay = true }: VideoPlayerProps) => 
         video.play().catch(e => console.log('Autoplay prevented:', e));
       }
     }
-  }, [videoUrl, autoPlay, language]);
+
+    return () => {
+      video.removeEventListener('loadstart', handleLoadStart);
+      video.removeEventListener('canplay', handleCanPlay);
+      video.removeEventListener('playing', handlePlaying);
+    };
+  }, [videoUrl, autoPlay, language, onPlay]);
 
   const changeQuality = (levelIndex: number) => {
     if (hlsRef.current) {
@@ -136,7 +163,19 @@ export const VideoPlayer = ({ videoUrl, autoPlay = true }: VideoPlayerProps) => 
   };
 
   return (
-    <div className="relative">
+    <div className="relative bg-black">
+      {/* Loading indicator */}
+      {isLoading && !hasStarted && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black/80 z-10">
+          <div className="flex flex-col items-center gap-3">
+            <Loader2 className="w-8 h-8 text-primary animate-spin" />
+            <p className="text-sm text-muted-foreground">
+              {language === "ja" ? "読み込み中..." : language === "pt" ? "Carregando..." : "Loading..."}
+            </p>
+          </div>
+        </div>
+      )}
+      
       <video
         ref={videoRef}
         controls
@@ -144,6 +183,8 @@ export const VideoPlayer = ({ videoUrl, autoPlay = true }: VideoPlayerProps) => 
         disablePictureInPicture
         className="w-full"
         playsInline
+        preload="metadata"
+        poster={thumbnailUrl || undefined}
         onContextMenu={(e) => e.preventDefault()}
       >
         Your browser does not support the video tag.
