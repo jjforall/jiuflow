@@ -70,8 +70,8 @@ export const AvatarUploadDialog = ({ open, onOpenChange, onUploadComplete, userI
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        toast.error('ファイルサイズは5MB以下にしてください');
+      if (file.size > 50 * 1024 * 1024) {
+        toast.error('ファイルサイズは50MB以下にしてください');
         return;
       }
       const reader = new FileReader();
@@ -141,7 +141,7 @@ export const AvatarUploadDialog = ({ open, onOpenChange, onUploadComplete, userI
             <div className="flex flex-col items-center justify-center p-8 border-2 border-dashed rounded-lg">
               <Upload className="w-12 h-12 text-muted-foreground mb-4" />
               <p className="text-sm text-muted-foreground mb-4">
-                写真をアップロード（最大5MB）
+                写真をアップロード（最大50MB）
               </p>
               <Button asChild>
                 <label className="cursor-pointer">
