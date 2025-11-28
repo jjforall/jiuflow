@@ -249,6 +249,7 @@ export type Database = {
           avatar_url: string | null
           belt_history: Json | null
           bio: string | null
+          cover_image_url: string | null
           created_at: string
           display_name: string | null
           education: Json | null
@@ -266,6 +267,7 @@ export type Database = {
           avatar_url?: string | null
           belt_history?: Json | null
           bio?: string | null
+          cover_image_url?: string | null
           created_at?: string
           display_name?: string | null
           education?: Json | null
@@ -283,6 +285,7 @@ export type Database = {
           avatar_url?: string | null
           belt_history?: Json | null
           bio?: string | null
+          cover_image_url?: string | null
           created_at?: string
           display_name?: string | null
           education?: Json | null
