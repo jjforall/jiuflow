@@ -111,7 +111,7 @@ export const translations = {
         cta: "サンプル動画を見る",
       },
       founder: {
-        title: "ファウンダープラン",
+        title: "Founder Plan",
         price: "¥980",
         period: "/月（生涯）",
         limited: "11月末まで限定",
