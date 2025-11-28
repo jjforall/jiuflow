@@ -70,6 +70,9 @@ interface Profile {
   titles: Array<{title: string; date?: string; organization?: string; customTitle?: string}> | null;
   favorite_fighters: Array<string> | null;
   favorite_techniques: Array<string> | null;
+  hometown: string | null;
+  hobbies: Array<string> | null;
+  marital_status: string | null;
 }
 
 const MyPage = () => {
@@ -238,7 +241,7 @@ const MyPage = () => {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('display_name, bio, avatar_url, username, education, work_experience, belt_history, home_dojo, training_locations, titles, created_at, cover_image_url, organization_id, favorite_fighters, favorite_techniques')
+        .select('display_name, bio, avatar_url, username, education, work_experience, belt_history, home_dojo, training_locations, titles, created_at, cover_image_url, organization_id, favorite_fighters, favorite_techniques, hometown, hobbies, marital_status')
         .eq('id', user.id)
         .single();
 
@@ -252,7 +255,8 @@ const MyPage = () => {
         training_locations: (data.training_locations as any) || [],
         titles: (data.titles as any) || [],
         favorite_fighters: (data.favorite_fighters as any) || [],
-        favorite_techniques: (data.favorite_techniques as any) || []
+        favorite_techniques: (data.favorite_techniques as any) || [],
+        hobbies: (data.hobbies as any) || []
       });
       setCreatedAt(data.created_at);
       setSelectedOrganization(data.organization_id);
@@ -454,6 +458,12 @@ const MyPage = () => {
           technique && technique.trim()
         );
         updateData.favorite_techniques = validTechniques;
+      } else if (field === 'hobbies') {
+        // Filter out empty entries
+        const validHobbies = (editValues.hobbies || []).filter((hobby: string) => 
+          hobby && hobby.trim()
+        );
+        updateData.hobbies = validHobbies;
       }
 
       const { error } = await supabase
@@ -1606,6 +1616,180 @@ const MyPage = () => {
                         ) : (
                           <p className="text-sm text-muted-foreground italic">{language === "ja" ? "好きな技を追加してください" : "Add favorite techniques"}</p>
                         )
+                      )}
+                     </div>
+
+                    {/* Hometown Section */}
+                    <div>
+                      <div className="flex items-center justify-between mb-3">
+                        <h3 className="text-sm font-semibold flex items-center gap-2">
+                          <span>🏠</span>
+                          {language === "ja" ? "出身地" : "Hometown"}
+                          <Badge variant="outline" className="text-xs">{language === "ja" ? "オプション" : "Optional"}</Badge>
+                        </h3>
+                        {editingField === 'hometown' ? (
+                          <div className="flex gap-2">
+                            <Button size="sm" onClick={() => saveField('hometown')} className="gap-1">
+                              <Check className="w-4 h-4" /> {language === "ja" ? "保存" : "Save"}
+                            </Button>
+                            <Button size="sm" variant="outline" onClick={cancelEditing} className="gap-1">
+                              <X className="w-4 h-4" /> {language === "ja" ? "キャンセル" : "Cancel"}
+                            </Button>
+                          </div>
+                        ) : (
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => startEditing('hometown', profile?.hometown || '')}
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </Button>
+                        )}
+                      </div>
+                      {editingField === 'hometown' ? (
+                        <Input
+                          value={editValues.hometown || ''}
+                          onChange={(e) => setEditValues({ ...editValues, hometown: e.target.value })}
+                          placeholder={language === "ja" ? "例: 東京都" : "e.g. Tokyo"}
+                        />
+                      ) : (
+                        <p className="text-sm text-muted-foreground">
+                          {profile?.hometown || (language === "ja" ? "未設定" : "Not set")}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Hobbies Section */}
+                    <div>
+                      <div className="flex items-center justify-between mb-3">
+                        <h3 className="text-sm font-semibold flex items-center gap-2">
+                          <span>🎯</span>
+                          {language === "ja" ? "趣味" : "Hobbies"}
+                          <Badge variant="outline" className="text-xs">{language === "ja" ? "オプション" : "Optional"}</Badge>
+                        </h3>
+                        {editingField === 'hobbies' ? (
+                          <div className="flex gap-2">
+                            <Button size="sm" onClick={() => saveField('hobbies')} className="gap-1">
+                              <Check className="w-4 h-4" /> {language === "ja" ? "保存" : "Save"}
+                            </Button>
+                            <Button size="sm" variant="outline" onClick={cancelEditing} className="gap-1">
+                              <X className="w-4 h-4" /> {language === "ja" ? "キャンセル" : "Cancel"}
+                            </Button>
+                          </div>
+                        ) : (
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => startEditing('hobbies', profile?.hobbies || [])}
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </Button>
+                        )}
+                      </div>
+                      {editingField === 'hobbies' ? (
+                        <div className="space-y-2">
+                          {(editValues.hobbies || []).map((hobby: string, index: number) => (
+                            <div key={index} className="flex items-center gap-2">
+                              <Input
+                                value={hobby}
+                                onChange={(e) => {
+                                  const newHobbies = [...editValues.hobbies];
+                                  newHobbies[index] = e.target.value;
+                                  setEditValues({ ...editValues, hobbies: newHobbies });
+                                }}
+                                placeholder={language === "ja" ? "趣味" : "Hobby"}
+                              />
+                              <Button 
+                                size="sm" 
+                                variant="ghost" 
+                                onClick={() => {
+                                  const newHobbies = editValues.hobbies.filter((_: any, i: number) => i !== index);
+                                  setEditValues({ ...editValues, hobbies: newHobbies });
+                                }}
+                              >
+                                <X className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          ))}
+                          <Button 
+                            size="sm" 
+                            variant="outline" 
+                            onClick={() => setEditValues({ 
+                              ...editValues, 
+                              hobbies: [...(editValues.hobbies || []), '']
+                            })}
+                            className="w-full gap-2"
+                          >
+                            <Plus className="w-4 h-4" />
+                            {language === "ja" ? "趣味を追加" : "Add Hobby"}
+                          </Button>
+                        </div>
+                      ) : (
+                        profile?.hobbies && profile.hobbies.length > 0 ? (
+                          <div className="flex flex-wrap gap-2">
+                            {profile.hobbies.map((hobby, index) => (
+                              <Badge key={index} variant="secondary">{hobby}</Badge>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-sm text-muted-foreground italic">{language === "ja" ? "未設定" : "Not set"}</p>
+                        )
+                      )}
+                    </div>
+
+                    {/* Marital Status Section */}
+                    <div>
+                      <div className="flex items-center justify-between mb-3">
+                        <h3 className="text-sm font-semibold flex items-center gap-2">
+                          <span>💍</span>
+                          {language === "ja" ? "結婚" : "Marital Status"}
+                          <Badge variant="outline" className="text-xs">{language === "ja" ? "オプション" : "Optional"}</Badge>
+                        </h3>
+                        {editingField === 'marital_status' ? (
+                          <div className="flex gap-2">
+                            <Button size="sm" onClick={() => saveField('marital_status')} className="gap-1">
+                              <Check className="w-4 h-4" /> {language === "ja" ? "保存" : "Save"}
+                            </Button>
+                            <Button size="sm" variant="outline" onClick={cancelEditing} className="gap-1">
+                              <X className="w-4 h-4" /> {language === "ja" ? "キャンセル" : "Cancel"}
+                            </Button>
+                          </div>
+                        ) : (
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => startEditing('marital_status', profile?.marital_status || '')}
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </Button>
+                        )}
+                      </div>
+                      {editingField === 'marital_status' ? (
+                        <Select
+                          value={editValues.marital_status || ''}
+                          onValueChange={(value) => setEditValues({ ...editValues, marital_status: value })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder={language === "ja" ? "選択してください" : "Select"} />
+                          </SelectTrigger>
+                          <SelectContent className="bg-popover z-50">
+                            <SelectItem value="">{language === "ja" ? "未設定" : "Not set"}</SelectItem>
+                            <SelectItem value="single">{language === "ja" ? "独身" : "Single"}</SelectItem>
+                            <SelectItem value="married">{language === "ja" ? "既婚" : "Married"}</SelectItem>
+                            <SelectItem value="other">{language === "ja" ? "その他" : "Other"}</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <p className="text-sm text-muted-foreground">
+                          {profile?.marital_status === 'single' 
+                            ? (language === "ja" ? "独身" : "Single")
+                            : profile?.marital_status === 'married'
+                            ? (language === "ja" ? "既婚" : "Married")
+                            : profile?.marital_status === 'other'
+                            ? (language === "ja" ? "その他" : "Other")
+                            : (language === "ja" ? "未設定" : "Not set")
+                          }
+                        </p>
                       )}
                     </div>
 
