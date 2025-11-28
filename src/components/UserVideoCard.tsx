@@ -18,10 +18,19 @@ interface UserVideoCardProps {
   };
   onEdit?: (video: any) => void;
   onDelete?: (videoId: string) => void;
+  onPurchase?: () => void;
   isOwner?: boolean;
+  isPurchased?: boolean;
 }
 
-export function UserVideoCard({ video, onEdit, onDelete, isOwner = false }: UserVideoCardProps) {
+export function UserVideoCard({ 
+  video, 
+  onEdit, 
+  onDelete, 
+  onPurchase,
+  isOwner = false,
+  isPurchased = false 
+}: UserVideoCardProps) {
   const videoTypeLabel = {
     match: "試合動画",
     technique: "テクニック動画",
@@ -52,9 +61,15 @@ export function UserVideoCard({ video, onEdit, onDelete, isOwner = false }: User
             </Badge>
           )}
           {video.price > 0 && (
-            <Badge variant="default" className="bg-primary/90">
-              ¥{video.price.toLocaleString()}
-            </Badge>
+            isPurchased ? (
+              <Badge variant="default" className="bg-green-500/90">
+                購入済み
+              </Badge>
+            ) : (
+              <Badge variant="default" className="bg-primary/90">
+                ¥{video.price.toLocaleString()}
+              </Badge>
+            )
           )}
         </div>
         <div className="absolute bottom-2 right-2">
@@ -71,7 +86,7 @@ export function UserVideoCard({ video, onEdit, onDelete, isOwner = false }: User
             {video.description}
           </p>
         )}
-        {isOwner && (
+        {isOwner ? (
           <div className="flex gap-2 pt-2">
             <Button
               variant="outline"
@@ -88,6 +103,15 @@ export function UserVideoCard({ video, onEdit, onDelete, isOwner = false }: User
               onClick={() => onDelete?.(video.id)}
             >
               <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
+        ) : video.price > 0 && !isPurchased && (
+          <div className="pt-2">
+            <Button
+              className="w-full"
+              onClick={onPurchase}
+            >
+              ¥{video.price.toLocaleString()} で購入
             </Button>
           </div>
         )}
