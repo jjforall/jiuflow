@@ -26,11 +26,13 @@ serve(async (req) => {
     const { data: { user }, error: userError } = await supabaseClient.auth.getUser(token);
     if (userError || !user) throw new Error("Unauthorized");
 
-    // Get or create user's referral code
+    // Get or create user's referral code (use latest one if multiple exist)
     const { data: existingCode, error: codeError } = await supabaseClient
       .from("referral_codes")
       .select("code")
       .eq("user_id", user.id)
+      .order("created_at", { ascending: false })
+      .limit(1)
       .maybeSingle();
 
     if (codeError) {
