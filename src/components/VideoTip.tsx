@@ -61,7 +61,7 @@ export const VideoTip = ({ videoId }: VideoTipProps) => {
       label: { ja: "シャンパン", en: "Champagne", pt: "Champanhe" } 
     },
     { 
-      amount: 1000000, 
+      amount: 100000, 
       icon: <Gem className="w-4 h-4" />, 
       label: { ja: "ダイヤモンド", en: "Diamond", pt: "Diamante" } 
     },
@@ -163,7 +163,7 @@ export const VideoTip = ({ videoId }: VideoTipProps) => {
           fire(0.35, { spread: 100, decay: 0.91, scalar: 0.8 });
           fire(0.1, { spread: 120, startVelocity: 25, decay: 0.92, scalar: 1.2 });
           fire(0.1, { spread: 120, startVelocity: 45 });
-        } else if (tipAmount >= 1000000) {
+        } else if (tipAmount >= 100000) {
           // ダイヤモンド: 超派手な紙吹雪（虹色、複数回発射）
           const duration = 3000;
           const animationEnd = Date.now() + duration;
