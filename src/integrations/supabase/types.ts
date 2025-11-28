@@ -287,6 +287,7 @@ export type Database = {
           bio: string | null
           cover_image_url: string | null
           created_at: string
+          date_of_birth: string | null
           display_name: string | null
           education: Json | null
           email: string | null
@@ -311,6 +312,7 @@ export type Database = {
           bio?: string | null
           cover_image_url?: string | null
           created_at?: string
+          date_of_birth?: string | null
           display_name?: string | null
           education?: Json | null
           email?: string | null
@@ -335,6 +337,7 @@ export type Database = {
           bio?: string | null
           cover_image_url?: string | null
           created_at?: string
+          date_of_birth?: string | null
           display_name?: string | null
           education?: Json | null
           email?: string | null

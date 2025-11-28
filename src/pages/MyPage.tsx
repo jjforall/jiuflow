@@ -73,6 +73,7 @@ interface Profile {
   hometown: string | null;
   hobbies: Array<string> | null;
   marital_status: string | null;
+  date_of_birth: string | null;
 }
 
 const MyPage = () => {
@@ -241,7 +242,7 @@ const MyPage = () => {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('display_name, bio, avatar_url, username, education, work_experience, belt_history, home_dojo, training_locations, titles, created_at, cover_image_url, organization_id, favorite_fighters, favorite_techniques, hometown, hobbies, marital_status')
+        .select('display_name, bio, avatar_url, username, education, work_experience, belt_history, home_dojo, training_locations, titles, created_at, cover_image_url, organization_id, favorite_fighters, favorite_techniques, hometown, hobbies, marital_status, date_of_birth')
         .eq('id', user.id)
         .single();
 
@@ -404,6 +405,18 @@ const MyPage = () => {
     setEditValues({});
   };
 
+  const calculateAge = (dateOfBirth: string | null): number | null => {
+    if (!dateOfBirth) return null;
+    const today = new Date();
+    const birthDate = new Date(dateOfBirth);
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    return age;
+  };
+
   const saveField = async (field: string) => {
     if (!user || !profile) return;
 
@@ -464,6 +477,8 @@ const MyPage = () => {
           hobby && hobby.trim()
         );
         updateData.hobbies = validHobbies;
+      } else {
+        updateData[field] = editValues[field];
       }
 
       const { error } = await supabase
@@ -1790,6 +1805,78 @@ const MyPage = () => {
                             : (language === "ja" ? "未設定" : "Not set")
                           }
                         </p>
+                      )}
+                    </div>
+
+                    {/* Date of Birth Section */}
+                    <div>
+                      <div className="flex items-center justify-between mb-3">
+                        <h3 className="text-sm font-semibold flex items-center gap-2">
+                          <span>🎂</span>
+                          {language === "ja" ? "生年月日" : "Date of Birth"}
+                          <Badge variant="outline" className="text-xs">{language === "ja" ? "オプション" : "Optional"}</Badge>
+                        </h3>
+                        {editingField === 'date_of_birth' ? (
+                          <div className="flex gap-2">
+                            <Button size="sm" onClick={() => saveField('date_of_birth')} className="gap-1">
+                              <Check className="w-4 h-4" /> {language === "ja" ? "保存" : "Save"}
+                            </Button>
+                            <Button size="sm" variant="outline" onClick={cancelEditing} className="gap-1">
+                              <X className="w-4 h-4" /> {language === "ja" ? "キャンセル" : "Cancel"}
+                            </Button>
+                          </div>
+                        ) : (
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => startEditing('date_of_birth', profile?.date_of_birth || '')}
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </Button>
+                        )}
+                      </div>
+                      {editingField === 'date_of_birth' ? (
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              className="w-full justify-start text-left font-normal"
+                            >
+                              <CalendarIcon className="mr-2 h-4 w-4" />
+                              {editValues.date_of_birth ? format(new Date(editValues.date_of_birth), "PPP", { locale: language === "ja" ? undefined : undefined }) : (language === "ja" ? "日付を選択" : "Pick a date")}
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0 bg-popover" align="start">
+                            <CalendarComponent
+                              mode="single"
+                              selected={editValues.date_of_birth ? new Date(editValues.date_of_birth) : undefined}
+                              onSelect={(date) => {
+                                if (date) {
+                                  setEditValues({ ...editValues, date_of_birth: format(date, 'yyyy-MM-dd') });
+                                }
+                              }}
+                              disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
+                              initialFocus
+                              className="pointer-events-auto"
+                            />
+                          </PopoverContent>
+                        </Popover>
+                      ) : (
+                        <div>
+                          <p className="text-sm text-muted-foreground">
+                            {profile?.date_of_birth 
+                              ? format(new Date(profile.date_of_birth), "PPP", { locale: language === "ja" ? undefined : undefined })
+                              : (language === "ja" ? "未設定" : "Not set")
+                            }
+                          </p>
+                          {profile?.date_of_birth && (
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {language === "ja" ? "年齢: " : "Age: "}
+                              {calculateAge(profile.date_of_birth)}
+                              {language === "ja" ? "歳" : " years old"}
+                            </p>
+                          )}
+                        </div>
                       )}
                     </div>
 
