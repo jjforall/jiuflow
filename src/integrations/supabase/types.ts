@@ -199,6 +199,42 @@ export type Database = {
         }
         Relationships: []
       }
+      organizations: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          logo_url: string | null
+          name: string
+          name_ja: string
+          name_pt: string
+          updated_at: string
+          website: string | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          logo_url?: string | null
+          name: string
+          name_ja: string
+          name_pt: string
+          updated_at?: string
+          website?: string | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          logo_url?: string | null
+          name?: string
+          name_ja?: string
+          name_pt?: string
+          updated_at?: string
+          website?: string | null
+        }
+        Relationships: []
+      }
       point_transactions: {
         Row: {
           amount: number
@@ -256,6 +292,7 @@ export type Database = {
           email: string | null
           home_dojo: string | null
           id: string
+          organization_id: string | null
           stripe_customer_id: string | null
           titles: Json | null
           training_locations: Json | null
@@ -274,6 +311,7 @@ export type Database = {
           email?: string | null
           home_dojo?: string | null
           id: string
+          organization_id?: string | null
           stripe_customer_id?: string | null
           titles?: Json | null
           training_locations?: Json | null
@@ -292,6 +330,7 @@ export type Database = {
           email?: string | null
           home_dojo?: string | null
           id?: string
+          organization_id?: string | null
           stripe_customer_id?: string | null
           titles?: Json | null
           training_locations?: Json | null
@@ -299,7 +338,15 @@ export type Database = {
           username?: string | null
           work_experience?: Json | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       referral_codes: {
         Row: {

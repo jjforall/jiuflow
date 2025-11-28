@@ -40,6 +40,7 @@ interface Profile {
   username: string | null;
   created_at: string | null;
   cover_image_url: string | null;
+  organization_id: string | null;
   education: Array<{school: string; degree?: string; period?: string}> | null;
   work_experience: Array<{company: string; position: string; period?: string; description?: string}> | null;
   belt_history: Array<{belt: string; date?: string; instructor?: string}> | null;
@@ -97,7 +98,7 @@ export default function UserProfile() {
       // Try to resolve as username first
       const { data: profileByUsername } = await supabase
         .from('profiles')
-        .select('id, email, display_name, bio, avatar_url, username, education, work_experience, belt_history, home_dojo, training_locations, titles, created_at, cover_image_url')
+        .select('id, email, display_name, bio, avatar_url, username, education, work_experience, belt_history, home_dojo, training_locations, titles, created_at, cover_image_url, organization_id')
         .eq('username', userIdOrUsername)
         .maybeSingle();
 
@@ -118,7 +119,7 @@ export default function UserProfile() {
         resolvedUserId = userIdOrUsername;
         const { data: profileById } = await supabase
           .from('profiles')
-          .select('id, email, display_name, bio, avatar_url, username, education, work_experience, belt_history, home_dojo, training_locations, titles, created_at, cover_image_url')
+          .select('id, email, display_name, bio, avatar_url, username, education, work_experience, belt_history, home_dojo, training_locations, titles, created_at, cover_image_url, organization_id')
           .eq('id', userIdOrUsername)
           .single();
         
