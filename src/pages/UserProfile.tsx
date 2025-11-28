@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { supabase } from "@/integrations/supabase/client";
@@ -135,6 +135,7 @@ export default function UserProfile() {
   const [isFollowing, setIsFollowing] = useState(false);
   const [followersCount, setFollowersCount] = useState(0);
   const [followingCount, setFollowingCount] = useState(0);
+  const [userDojos, setUserDojos] = useState<Array<{ dojo: any; relationship_type: string }>>([]);
 
   useEffect(() => {
     const checkCurrentUser = async () => {
@@ -229,11 +230,42 @@ export default function UserProfile() {
       setActualUserId(resolvedUserId);
       await Promise.all([
         loadUserVideos(resolvedUserId),
-        loadUserEvents(resolvedUserId)
+        loadUserEvents(resolvedUserId),
+        loadUserDojos(resolvedUserId)
       ]);
     } catch (error) {
       console.error('Error resolving user:', error);
       toast.error("プロフィールの読み込みに失敗しました");
+    }
+  };
+
+  const loadUserDojos = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('user_dojos')
+        .select(`
+          relationship_type,
+          dojos:dojo_id (
+            id,
+            name,
+            name_ja,
+            name_pt,
+            location,
+            is_verified
+          )
+        `)
+        .eq('user_id', userId);
+
+      if (error) throw error;
+      
+      const formattedDojos = (data || []).map((item: any) => ({
+        dojo: item.dojos,
+        relationship_type: item.relationship_type
+      }));
+      
+      setUserDojos(formattedDojos);
+    } catch (error) {
+      console.error('Error loading user dojos:', error);
     }
   };
 
@@ -1033,40 +1065,91 @@ export default function UserProfile() {
                     </div>
                   )}
 
-                  {/* Home Dojo */}
-                  {profile?.home_dojo && (
-                    <div>
-                      <div className="flex items-center gap-2 mb-4">
-                        <span className="text-lg">🏛️</span>
-                        <h3 className="text-xl font-bold">
-                          {language === "ja" ? "所属道場" : "Home Dojo"}
-                        </h3>
-                      </div>
-                      <div className="p-4 bg-primary/10 rounded-lg border border-primary/20">
-                        <p className="font-semibold text-lg">{profile.home_dojo}</p>
-                      </div>
-                    </div>
-                  )}
+                  {/* Dojos Section */}
+                  {userDojos.length > 0 && (
+                    <div className="md:col-span-2">
+                      <div className="space-y-6">
+                        {/* Home Dojos */}
+                        {userDojos.filter(d => d.relationship_type === 'home').length > 0 && (
+                          <div>
+                            <div className="flex items-center gap-2 mb-4">
+                              <span className="text-lg">🏛️</span>
+                              <h3 className="text-xl font-bold">
+                                {language === "ja" ? "所属道場" : "Home Dojo"}
+                              </h3>
+                            </div>
+                            <div className="space-y-3">
+                              {userDojos
+                                .filter(d => d.relationship_type === 'home')
+                                .map((item, index) => (
+                                  <Link
+                                    key={index}
+                                    to={`/dojo/${item.dojo.id}`}
+                                    className="block p-4 bg-primary/10 rounded-lg border border-primary/20 hover:border-primary/40 transition-colors"
+                                  >
+                                    <div className="flex items-center justify-between">
+                                      <div>
+                                        <p className="font-semibold text-lg">
+                                          {language === "ja" ? item.dojo.name_ja : language === "pt" ? item.dojo.name_pt : item.dojo.name}
+                                        </p>
+                                        {item.dojo.location && (
+                                          <p className="text-sm text-muted-foreground mt-1">
+                                            {item.dojo.location}
+                                          </p>
+                                        )}
+                                      </div>
+                                      {item.dojo.is_verified && (
+                                        <Badge variant="secondary" className="ml-2">
+                                          {language === "ja" ? "公認" : "Verified"}
+                                        </Badge>
+                                      )}
+                                    </div>
+                                  </Link>
+                                ))}
+                            </div>
+                          </div>
+                        )}
 
-                  {/* Training Locations */}
-                  {profile?.training_locations && profile.training_locations.length > 0 && (
-                    <div>
-                      <div className="flex items-center gap-2 mb-4">
-                        <span className="text-lg">🗺️</span>
-                        <h3 className="text-xl font-bold">
-                          {language === "ja" ? "出稽古先" : "Training Spots"}
-                        </h3>
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        {profile.training_locations.map((location, index) => (
-                          <Badge 
-                            key={index} 
-                            variant="outline" 
-                            className="px-3 py-1 text-sm"
-                          >
-                            {location}
-                          </Badge>
-                        ))}
+                        {/* Training Locations */}
+                        {userDojos.filter(d => d.relationship_type === 'training').length > 0 && (
+                          <div>
+                            <div className="flex items-center gap-2 mb-4">
+                              <span className="text-lg">🗺️</span>
+                              <h3 className="text-xl font-bold">
+                                {language === "ja" ? "出稽古先" : "Training Spots"}
+                              </h3>
+                            </div>
+                            <div className="space-y-3">
+                              {userDojos
+                                .filter(d => d.relationship_type === 'training')
+                                .map((item, index) => (
+                                  <Link
+                                    key={index}
+                                    to={`/dojo/${item.dojo.id}`}
+                                    className="block p-4 bg-muted/50 rounded-lg border border-border hover:border-primary/30 transition-colors"
+                                  >
+                                    <div className="flex items-center justify-between">
+                                      <div>
+                                        <p className="font-semibold text-base">
+                                          {language === "ja" ? item.dojo.name_ja : language === "pt" ? item.dojo.name_pt : item.dojo.name}
+                                        </p>
+                                        {item.dojo.location && (
+                                          <p className="text-sm text-muted-foreground mt-1">
+                                            {item.dojo.location}
+                                          </p>
+                                        )}
+                                      </div>
+                                      {item.dojo.is_verified && (
+                                        <Badge variant="outline" className="ml-2">
+                                          {language === "ja" ? "公認" : "Verified"}
+                                        </Badge>
+                                      )}
+                                    </div>
+                                  </Link>
+                                ))}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
                   )}

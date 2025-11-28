@@ -26,6 +26,8 @@ const VideoUploadInfo = lazy(() => import("./pages/VideoUploadInfo"));
 const AdminLogin = lazy(() => import("./pages/AdminLogin"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 const UserProfile = lazy(() => import("./pages/UserProfile"));
+const Dojos = lazy(() => import("./pages/Dojos"));
+const Dojo = lazy(() => import("./pages/Dojo"));
 const GenerateImages = lazy(() => import("./pages/GenerateImages"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
@@ -78,6 +80,8 @@ const App = () => (
                   </ProtectedRoute>
                 } />
                 <Route path="/user/:identifier" element={<UserProfile />} />
+                <Route path="/dojos" element={<Dojos />} />
+                <Route path="/dojo/:id" element={<Dojo />} />
                 <Route path="/admin" element={<AdminLogin />} />
                 <Route path="/admin-dashboard" element={
                   <ProtectedRoute requireAdmin>
