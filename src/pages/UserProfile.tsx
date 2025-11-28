@@ -30,6 +30,8 @@ interface Profile {
   display_name: string | null;
   bio: string | null;
   avatar_url: string | null;
+  education: Array<{school: string; degree?: string; period?: string}> | null;
+  work_experience: Array<{company: string; position: string; period?: string; description?: string}> | null;
 }
 
 export default function UserProfile() {
@@ -77,7 +79,7 @@ export default function UserProfile() {
       // Try to resolve as username first
       const { data: profileByUsername } = await supabase
         .from('profiles')
-        .select('id, email, display_name, bio, avatar_url, username')
+        .select('id, email, display_name, bio, avatar_url, username, education, work_experience')
         .eq('username', userIdOrUsername)
         .maybeSingle();
 
@@ -85,18 +87,26 @@ export default function UserProfile() {
       
       if (profileByUsername) {
         resolvedUserId = profileByUsername.id;
-        setProfile(profileByUsername);
+        setProfile({
+          ...profileByUsername,
+          education: (profileByUsername.education as any) || [],
+          work_experience: (profileByUsername.work_experience as any) || []
+        });
       } else {
         // Fall back to UUID
         resolvedUserId = userIdOrUsername;
         const { data: profileById } = await supabase
           .from('profiles')
-          .select('id, email, display_name, bio, avatar_url, username')
+          .select('id, email, display_name, bio, avatar_url, username, education, work_experience')
           .eq('id', userIdOrUsername)
           .single();
         
         if (profileById) {
-          setProfile(profileById);
+          setProfile({
+            ...profileById,
+            education: (profileById.education as any) || [],
+            work_experience: (profileById.work_experience as any) || []
+          });
         }
       }
       
@@ -290,10 +300,47 @@ export default function UserProfile() {
                     {profile?.display_name || profile?.email?.split('@')[0] || "ユーザー"}
                   </h1>
                   {profile?.bio && (
-                    <p className="text-muted-foreground mb-2">
+                    <p className="text-muted-foreground mb-4">
                       {profile.bio}
                     </p>
                   )}
+                  
+                  {/* Education Section */}
+                  {profile?.education && profile.education.length > 0 && (
+                    <div className="mb-4">
+                      <h3 className="text-sm font-semibold mb-2">学歴</h3>
+                      <ul className="space-y-1">
+                        {profile.education.map((edu, index) => (
+                          <li key={index} className="text-sm text-muted-foreground">
+                            {edu.school}
+                            {edu.degree && ` - ${edu.degree}`}
+                            {edu.period && ` (${edu.period})`}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* Work Experience Section */}
+                  {profile?.work_experience && profile.work_experience.length > 0 && (
+                    <div className="mb-4">
+                      <h3 className="text-sm font-semibold mb-2">職歴</h3>
+                      <ul className="space-y-2">
+                        {profile.work_experience.map((work, index) => (
+                          <li key={index} className="text-sm">
+                            <div className="font-medium">{work.company} - {work.position}</div>
+                            {work.period && (
+                              <div className="text-muted-foreground text-xs">{work.period}</div>
+                            )}
+                            {work.description && (
+                              <div className="text-muted-foreground mt-1">{work.description}</div>
+                            )}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
                   <p className="text-muted-foreground">
                     <Video className="inline h-4 w-4 mr-1" />
                     {videos.length}本の動画を公開中
