@@ -250,33 +250,39 @@ export type Database = {
           bio: string | null
           created_at: string
           display_name: string | null
+          education: Json | null
           email: string | null
           id: string
           stripe_customer_id: string | null
           updated_at: string
           username: string | null
+          work_experience: Json | null
         }
         Insert: {
           avatar_url?: string | null
           bio?: string | null
           created_at?: string
           display_name?: string | null
+          education?: Json | null
           email?: string | null
           id: string
           stripe_customer_id?: string | null
           updated_at?: string
           username?: string | null
+          work_experience?: Json | null
         }
         Update: {
           avatar_url?: string | null
           bio?: string | null
           created_at?: string
           display_name?: string | null
+          education?: Json | null
           email?: string | null
           id?: string
           stripe_customer_id?: string | null
           updated_at?: string
           username?: string | null
+          work_experience?: Json | null
         }
         Relationships: []
       }

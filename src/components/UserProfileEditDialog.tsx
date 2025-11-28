@@ -22,6 +22,8 @@ export const UserProfileEditDialog = ({ open, onOpenChange, userId, onSuccess }:
   const [bio, setBio] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
   const [username, setUsername] = useState("");
+  const [education, setEducation] = useState<Array<{school: string; degree?: string; period?: string}>>([]);
+  const [workExperience, setWorkExperience] = useState<Array<{company: string; position: string; period?: string; description?: string}>>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
 
@@ -35,7 +37,7 @@ export const UserProfileEditDialog = ({ open, onOpenChange, userId, onSuccess }:
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('display_name, bio, avatar_url, username')
+        .select('display_name, bio, avatar_url, username, education, work_experience')
         .eq('id', userId)
         .single();
 
@@ -45,6 +47,8 @@ export const UserProfileEditDialog = ({ open, onOpenChange, userId, onSuccess }:
       setBio(data?.bio || "");
       setAvatarUrl(data?.avatar_url || "");
       setUsername(data?.username || "");
+      setEducation((data?.education as any) || []);
+      setWorkExperience((data?.work_experience as any) || []);
     } catch (error) {
       console.error('Error loading profile:', error);
     }
@@ -120,6 +124,8 @@ export const UserProfileEditDialog = ({ open, onOpenChange, userId, onSuccess }:
           bio: bio.trim() || null,
           avatar_url: avatarUrl.trim() || null,
           username: username.trim() || null,
+          education: education.filter(e => e.school.trim()),
+          work_experience: workExperience.filter(w => w.company.trim() && w.position.trim()),
         })
         .eq('id', userId);
 
@@ -249,6 +255,128 @@ export const UserProfileEditDialog = ({ open, onOpenChange, userId, onSuccess }:
             <p className="text-xs text-muted-foreground text-right">
               {bio.length}/500
             </p>
+          </div>
+
+          {/* Education Section */}
+          <div className="space-y-2">
+            <Label>
+              {language === "ja" ? "学歴" : "Education"}
+            </Label>
+            {education.map((edu, index) => (
+              <div key={index} className="space-y-2 p-3 border border-border rounded-md">
+                <Input
+                  placeholder={language === "ja" ? "学校名（例：東京理科大学 理工学部）" : "School name"}
+                  value={edu.school}
+                  onChange={(e) => {
+                    const newEducation = [...education];
+                    newEducation[index].school = e.target.value;
+                    setEducation(newEducation);
+                  }}
+                />
+                <Input
+                  placeholder={language === "ja" ? "学位・専攻（任意）" : "Degree/Major (optional)"}
+                  value={edu.degree || ""}
+                  onChange={(e) => {
+                    const newEducation = [...education];
+                    newEducation[index].degree = e.target.value;
+                    setEducation(newEducation);
+                  }}
+                />
+                <Input
+                  placeholder={language === "ja" ? "期間（任意、例：2010年 - 2014年）" : "Period (optional)"}
+                  value={edu.period || ""}
+                  onChange={(e) => {
+                    const newEducation = [...education];
+                    newEducation[index].period = e.target.value;
+                    setEducation(newEducation);
+                  }}
+                />
+                <Button
+                  type="button"
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => {
+                    const newEducation = education.filter((_, i) => i !== index);
+                    setEducation(newEducation);
+                  }}
+                >
+                  {language === "ja" ? "削除" : "Remove"}
+                </Button>
+              </div>
+            ))}
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setEducation([...education, { school: "" }])}
+            >
+              {language === "ja" ? "学歴を追加" : "Add Education"}
+            </Button>
+          </div>
+
+          {/* Work Experience Section */}
+          <div className="space-y-2">
+            <Label>
+              {language === "ja" ? "職歴" : "Work Experience"}
+            </Label>
+            {workExperience.map((work, index) => (
+              <div key={index} className="space-y-2 p-3 border border-border rounded-md">
+                <Input
+                  placeholder={language === "ja" ? "会社名（例：株式会社メルカリ）" : "Company name"}
+                  value={work.company}
+                  onChange={(e) => {
+                    const newWork = [...workExperience];
+                    newWork[index].company = e.target.value;
+                    setWorkExperience(newWork);
+                  }}
+                />
+                <Input
+                  placeholder={language === "ja" ? "役職（例：取締役）" : "Position"}
+                  value={work.position}
+                  onChange={(e) => {
+                    const newWork = [...workExperience];
+                    newWork[index].position = e.target.value;
+                    setWorkExperience(newWork);
+                  }}
+                />
+                <Input
+                  placeholder={language === "ja" ? "期間（任意、例：2014年12月 - 2021年7月）" : "Period (optional)"}
+                  value={work.period || ""}
+                  onChange={(e) => {
+                    const newWork = [...workExperience];
+                    newWork[index].period = e.target.value;
+                    setWorkExperience(newWork);
+                  }}
+                />
+                <Textarea
+                  placeholder={language === "ja" ? "説明（任意）" : "Description (optional)"}
+                  value={work.description || ""}
+                  rows={2}
+                  onChange={(e) => {
+                    const newWork = [...workExperience];
+                    newWork[index].description = e.target.value;
+                    setWorkExperience(newWork);
+                  }}
+                />
+                <Button
+                  type="button"
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => {
+                    const newWork = workExperience.filter((_, i) => i !== index);
+                    setWorkExperience(newWork);
+                  }}
+                >
+                  {language === "ja" ? "削除" : "Remove"}
+                </Button>
+              </div>
+            ))}
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setWorkExperience([...workExperience, { company: "", position: "" }])}
+            >
+              {language === "ja" ? "職歴を追加" : "Add Work Experience"}
+            </Button>
           </div>
 
           <div className="flex gap-2 justify-end pt-4">
