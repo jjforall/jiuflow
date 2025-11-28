@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Upload, Loader2 } from "lucide-react";
@@ -17,10 +18,12 @@ interface VideoUploadDialogProps {
 export function VideoUploadDialog({ open, onOpenChange }: VideoUploadDialogProps) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [videoType, setVideoType] = useState<"match" | "technique" | "other">("other");
+  const [videoType, setVideoType] = useState<"match" | "sparring" | "technique" | "other">("other");
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [price, setPrice] = useState(0);
+  const [isPublic, setIsPublic] = useState(true);
 
   const handleVideoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -105,7 +108,9 @@ export function VideoUploadDialog({ open, onOpenChange }: VideoUploadDialogProps
           title,
           description: description || null,
           video_type: videoType,
-          video_url: publicUrl
+          video_url: publicUrl,
+          price,
+          is_public: isPublic
         });
 
       if (dbError) throw dbError;
@@ -118,6 +123,8 @@ export function VideoUploadDialog({ open, onOpenChange }: VideoUploadDialogProps
       setDescription("");
       setVideoType("other");
       setVideoFile(null);
+      setPrice(0);
+      setIsPublic(true);
       setUploadProgress(0);
       onOpenChange(false);
     } catch (error) {
@@ -171,6 +178,7 @@ export function VideoUploadDialog({ open, onOpenChange }: VideoUploadDialogProps
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="match">試合動画</SelectItem>
+                <SelectItem value="sparring">スパー動画</SelectItem>
                 <SelectItem value="technique">テクニック動画</SelectItem>
                 <SelectItem value="other">その他</SelectItem>
               </SelectContent>
@@ -195,6 +203,36 @@ export function VideoUploadDialog({ open, onOpenChange }: VideoUploadDialogProps
               )}
             </div>
             <p className="text-xs text-muted-foreground">最大500MB、10分以内の動画まで対応</p>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="price">価格（円）</Label>
+            <Input
+              id="price"
+              type="number"
+              min="0"
+              step="100"
+              value={price}
+              onChange={(e) => setPrice(Number(e.target.value))}
+              placeholder="0"
+            />
+            <p className="text-xs text-muted-foreground">
+              0円の場合は無料で視聴できます。有料にする場合は100円以上を設定してください。
+            </p>
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div className="space-y-1">
+              <Label htmlFor="public">公開設定</Label>
+              <p className="text-xs text-muted-foreground">
+                非公開にすると他のユーザーには表示されません
+              </p>
+            </div>
+            <Switch
+              id="public"
+              checked={isPublic}
+              onCheckedChange={setIsPublic}
+            />
           </div>
 
           {uploading && (

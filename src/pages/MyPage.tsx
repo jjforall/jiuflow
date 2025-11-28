@@ -7,10 +7,22 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { User, CreditCard, Calendar, Mail, Upload, Video, Eye, Edit2, Check, X } from "lucide-react";
+import { User, CreditCard, Calendar, Mail, Upload, Video, Eye, Edit2, Check, X, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { VideoUploadDialog } from "@/components/VideoUploadDialog";
+import { VideoEditDialog } from "@/components/VideoEditDialog";
+import { UserVideoCard } from "@/components/UserVideoCard";
 import { Badge } from "@/components/ui/badge";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface SubscriptionStatus {
   subscribed: boolean;
@@ -28,6 +40,8 @@ interface UserVideo {
   video_url: string;
   thumbnail_url: string | null;
   view_count: number;
+  price: number;
+  is_public: boolean;
   created_at: string;
 }
 
@@ -45,6 +59,10 @@ const MyPage = () => {
   const [pointsLoading, setPointsLoading] = useState(true);
   const [isEditingCode, setIsEditingCode] = useState(false);
   const [editedCode, setEditedCode] = useState("");
+  const [editingVideo, setEditingVideo] = useState<UserVideo | null>(null);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [deletingVideoId, setDeletingVideoId] = useState<string | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   const loadUserVideos = async () => {
     if (!user) return;
@@ -176,6 +194,44 @@ const MyPage = () => {
       code += characters.charAt(Math.floor(Math.random() * characters.length));
     }
     return code;
+  };
+
+  const handleEditVideo = (video: UserVideo) => {
+    setEditingVideo(video);
+    setEditDialogOpen(true);
+  };
+
+  const handleDeleteVideo = (videoId: string) => {
+    setDeletingVideoId(videoId);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDeleteVideo = async () => {
+    if (!deletingVideoId) return;
+
+    try {
+      const { error } = await supabase
+        .from('user_videos')
+        .delete()
+        .eq('id', deletingVideoId);
+
+      if (error) throw error;
+
+      toast.success(language === "ja" ? "動画を削除しました" : "Video deleted");
+      loadUserVideos();
+    } catch (error) {
+      console.error('Error deleting video:', error);
+      toast.error(language === "ja" ? "削除に失敗しました" : "Failed to delete");
+    } finally {
+      setDeleteDialogOpen(false);
+      setDeletingVideoId(null);
+    }
+  };
+
+  const copyProfileUrl = () => {
+    const url = `${window.location.origin}/user/${user?.id}`;
+    navigator.clipboard.writeText(url);
+    toast.success(language === "ja" ? "プロフィールURLをコピーしました" : "Profile URL copied");
   };
 
   const updateReferralCode = async (newCode: string) => {
@@ -580,9 +636,14 @@ const MyPage = () => {
           {/* Video Upload Section */}
           <div className="mt-12 animate-fade-up">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-3xl font-light">
-                {language === "ja" ? "あなたの動画" : language === "pt" ? "Seus vídeos" : "Your Videos"}
-              </h2>
+              <div>
+                <h2 className="text-3xl font-light mb-2">
+                  {language === "ja" ? "あなたの動画" : language === "pt" ? "Seus vídeos" : "Your Videos"}
+                </h2>
+                <Button variant="link" onClick={copyProfileUrl} className="px-0 h-auto">
+                  {language === "ja" ? "プロフィールページを共有" : "Share your profile"}
+                </Button>
+              </div>
               <div className="flex gap-3">
                 <Button variant="outline" onClick={() => navigate("/video-upload-info")}>
                   {language === "ja" ? "詳細を見る" : language === "pt" ? "Ver detalhes" : "Learn More"}
@@ -595,12 +656,12 @@ const MyPage = () => {
             </div>
 
             {videosLoading ? (
-              <div className="grid md:grid-cols-2 gap-4">
-                {[1, 2].map((i) => (
-                  <div key={i} className="border border-border rounded-lg p-4 space-y-3">
-                    <div className="h-32 bg-muted/50 animate-pulse rounded" />
-                    <div className="h-4 w-2/3 bg-muted/50 animate-pulse rounded" />
-                    <div className="h-3 w-1/2 bg-muted/50 animate-pulse rounded" />
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="space-y-4 border border-border rounded-lg p-6 animate-pulse">
+                    <div className="aspect-video bg-muted rounded" />
+                    <div className="h-6 bg-muted rounded" />
+                    <div className="h-4 bg-muted rounded w-3/4" />
                   </div>
                 ))}
               </div>
@@ -620,38 +681,15 @@ const MyPage = () => {
                 </Button>
               </div>
             ) : (
-              <div className="grid md:grid-cols-2 gap-4">
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {userVideos.map((video) => (
-                  <Card key={video.id} className="overflow-hidden hover:shadow-lg transition-shadow">
-                    <div className="aspect-video bg-muted relative">
-                      {video.thumbnail_url ? (
-                        <img src={video.thumbnail_url} alt={video.title} className="w-full h-full object-cover" />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <Video className="w-12 h-12 text-muted-foreground" />
-                        </div>
-                      )}
-                    </div>
-                    <CardContent className="pt-4">
-                      <h3 className="font-medium mb-2 line-clamp-2">{video.title}</h3>
-                      {video.description && (
-                        <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{video.description}</p>
-                      )}
-                      <div className="flex items-center justify-between">
-                        <Badge variant="secondary" className="text-xs">
-                          {video.video_type === "match" 
-                            ? (language === "ja" ? "試合動画" : "Match") 
-                            : video.video_type === "technique"
-                            ? (language === "ja" ? "テクニック" : "Technique")
-                            : (language === "ja" ? "その他" : "Other")}
-                        </Badge>
-                        <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                          <Eye className="w-3.5 h-3.5" />
-                          <span>{video.view_count}</span>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
+                  <UserVideoCard
+                    key={video.id}
+                    video={video}
+                    onEdit={handleEditVideo}
+                    onDelete={handleDeleteVideo}
+                    isOwner={true}
+                  />
                 ))}
               </div>
             )}
@@ -683,6 +721,36 @@ const MyPage = () => {
           }
         }} 
       />
+
+      <VideoEditDialog
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        video={editingVideo}
+        onSuccess={loadUserVideos}
+      />
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {language === "ja" ? "動画を削除しますか？" : "Delete video?"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {language === "ja" 
+                ? "この操作は取り消せません。本当に削除しますか？" 
+                : "This action cannot be undone. Are you sure?"}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>
+              {language === "ja" ? "キャンセル" : "Cancel"}
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDeleteVideo}>
+              {language === "ja" ? "削除" : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <Footer />
     </div>

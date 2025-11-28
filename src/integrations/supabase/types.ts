@@ -461,6 +461,8 @@ export type Database = {
           created_at: string
           description: string | null
           id: string
+          is_public: boolean | null
+          price: number | null
           thumbnail_url: string | null
           title: string
           updated_at: string
@@ -473,6 +475,8 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          is_public?: boolean | null
+          price?: number | null
           thumbnail_url?: string | null
           title: string
           updated_at?: string
@@ -485,6 +489,8 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          is_public?: boolean | null
+          price?: number | null
           thumbnail_url?: string | null
           title?: string
           updated_at?: string
@@ -521,6 +527,48 @@ export type Database = {
           video_id?: string
         }
         Relationships: []
+      }
+      video_purchases: {
+        Row: {
+          amount: number
+          buyer_id: string
+          id: string
+          purchased_at: string | null
+          stripe_payment_id: string | null
+          video_id: string
+        }
+        Insert: {
+          amount: number
+          buyer_id: string
+          id?: string
+          purchased_at?: string | null
+          stripe_payment_id?: string | null
+          video_id: string
+        }
+        Update: {
+          amount?: number
+          buyer_id?: string
+          id?: string
+          purchased_at?: string | null
+          stripe_payment_id?: string | null
+          video_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "video_purchases_buyer_id_fkey"
+            columns: ["buyer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "video_purchases_video_id_fkey"
+            columns: ["video_id"]
+            isOneToOne: false
+            referencedRelation: "user_videos"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       video_ratings: {
         Row: {
