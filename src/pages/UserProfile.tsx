@@ -15,6 +15,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { BeltBadge } from "@/components/ui/belt-badge";
 import { Badge } from "@/components/ui/badge";
+import { CoverUploadDialog } from "@/components/CoverUploadDialog";
+import { Camera } from "lucide-react";
 
 interface UserVideo {
   id: string;
@@ -37,6 +39,7 @@ interface Profile {
   avatar_url: string | null;
   username: string | null;
   created_at: string | null;
+  cover_image_url: string | null;
   education: Array<{school: string; degree?: string; period?: string}> | null;
   work_experience: Array<{company: string; position: string; period?: string; description?: string}> | null;
   belt_history: Array<{belt: string; date?: string; instructor?: string}> | null;
@@ -59,6 +62,7 @@ export default function UserProfile() {
   const [isEditMode, setIsEditMode] = useState(false);
   const [editingField, setEditingField] = useState<string | null>(null);
   const [editValues, setEditValues] = useState<any>({});
+  const [coverDialogOpen, setCoverDialogOpen] = useState(false);
 
   useEffect(() => {
     const checkCurrentUser = async () => {
@@ -93,7 +97,7 @@ export default function UserProfile() {
       // Try to resolve as username first
       const { data: profileByUsername } = await supabase
         .from('profiles')
-        .select('id, email, display_name, bio, avatar_url, username, education, work_experience, belt_history, home_dojo, training_locations, titles, created_at')
+        .select('id, email, display_name, bio, avatar_url, username, education, work_experience, belt_history, home_dojo, training_locations, titles, created_at, cover_image_url')
         .eq('username', userIdOrUsername)
         .maybeSingle();
 
@@ -114,7 +118,7 @@ export default function UserProfile() {
         resolvedUserId = userIdOrUsername;
         const { data: profileById } = await supabase
           .from('profiles')
-          .select('id, email, display_name, bio, avatar_url, username, education, work_experience, belt_history, home_dojo, training_locations, titles, created_at')
+          .select('id, email, display_name, bio, avatar_url, username, education, work_experience, belt_history, home_dojo, training_locations, titles, created_at, cover_image_url')
           .eq('id', userIdOrUsername)
           .single();
         
@@ -379,8 +383,28 @@ export default function UserProfile() {
           {/* Beautiful Profile Header with Cover */}
           <div className="relative mb-12 animate-fade-up">
             {/* Cover Image */}
-            <div className="h-64 bg-gradient-to-r from-primary/30 via-accent/20 to-primary/30 rounded-t-3xl relative overflow-hidden">
-              <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1555597408-26bc8e548a46?w=1200')] bg-cover bg-center opacity-20" />
+            <div className="h-64 bg-gradient-to-r from-primary/30 via-accent/20 to-primary/30 rounded-t-3xl relative overflow-hidden group">
+              {profile?.cover_image_url ? (
+                <img 
+                  src={profile.cover_image_url} 
+                  alt="Cover" 
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1555597408-26bc8e548a46?w=1200')] bg-cover bg-center opacity-20" />
+              )}
+              
+              {currentUser === actualUserId && (
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity"
+                  onClick={() => setCoverDialogOpen(true)}
+                >
+                  <Camera className="w-4 h-4 mr-2" />
+                  カバー画像を変更
+                </Button>
+              )}
             </div>
             
             {/* Profile Info Overlay */}
@@ -453,22 +477,49 @@ export default function UserProfile() {
                 <h2 className="text-2xl font-bold mb-6">🥋 {language === "ja" ? "柔術プロフィール" : "BJJ Profile"}</h2>
                 
                 <div className="grid md:grid-cols-2 gap-8">
-                  {/* Belt History */}
+                  {/* Belt History Timeline */}
                   {profile?.belt_history && profile.belt_history.length > 0 && (
-                    <div>
-                      <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                    <div className="md:col-span-2">
+                      <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
                         🥋 {language === "ja" ? "帯の履歴" : "Belt History"}
                       </h3>
-                      <div className="space-y-2">
-                        {profile.belt_history.map((belt, index) => (
-                          <div key={index} className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
-                            <BeltBadge belt={belt.belt} />
-                            <div className="flex-1">
-                              {belt.instructor && <p className="text-sm font-medium">{belt.instructor}</p>}
-                              {belt.date && <p className="text-xs text-muted-foreground">{belt.date}</p>}
+                      <div className="relative">
+                        {/* Timeline line */}
+                        <div className="absolute left-6 top-0 bottom-0 w-0.5 bg-gradient-to-b from-primary via-accent to-primary/20" />
+                        
+                        <div className="space-y-6">
+                          {[...profile.belt_history].reverse().map((belt, index) => (
+                            <div key={index} className="relative pl-16 animate-fade-up" style={{ animationDelay: `${index * 0.1}s` }}>
+                              {/* Timeline dot */}
+                              <div className="absolute left-3 top-1 w-6 h-6 rounded-full bg-background border-4 border-primary shadow-lg flex items-center justify-center">
+                                <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                              </div>
+                              
+                              {/* Content card */}
+                              <div className="bg-card border border-border/50 rounded-xl p-4 shadow-sm hover:shadow-md transition-all hover:scale-[1.02] group">
+                                <div className="flex items-start gap-4">
+                                  <BeltBadge belt={belt.belt} />
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2 mb-1">
+                                      <h4 className="font-bold text-lg">{belt.belt}</h4>
+                                    </div>
+                                    {belt.instructor && (
+                                      <p className="text-sm text-muted-foreground mb-1">
+                                        👨‍🏫 {belt.instructor}
+                                      </p>
+                                    )}
+                                    {belt.date && (
+                                      <p className="text-xs text-muted-foreground flex items-center gap-1">
+                                        <Calendar className="w-3 h-3" />
+                                        {belt.date}
+                                      </p>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
                             </div>
-                          </div>
-                        ))}
+                          ))}
+                        </div>
                       </div>
                     </div>
                   )}
@@ -587,6 +638,20 @@ export default function UserProfile() {
       </main>
 
       <Footer />
+      
+      {currentUser === actualUserId && actualUserId && (
+        <CoverUploadDialog
+          open={coverDialogOpen}
+          onOpenChange={setCoverDialogOpen}
+          currentCoverUrl={profile?.cover_image_url}
+          userId={actualUserId}
+          onUploadComplete={(url) => {
+            if (profile) {
+              setProfile({ ...profile, cover_image_url: url });
+            }
+          }}
+        />
+      )}
     </div>
   );
 }
