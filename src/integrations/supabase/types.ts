@@ -290,6 +290,8 @@ export type Database = {
           display_name: string | null
           education: Json | null
           email: string | null
+          favorite_fighters: Json | null
+          favorite_techniques: Json | null
           home_dojo: string | null
           id: string
           organization_id: string | null
@@ -309,6 +311,8 @@ export type Database = {
           display_name?: string | null
           education?: Json | null
           email?: string | null
+          favorite_fighters?: Json | null
+          favorite_techniques?: Json | null
           home_dojo?: string | null
           id: string
           organization_id?: string | null
@@ -328,6 +332,8 @@ export type Database = {
           display_name?: string | null
           education?: Json | null
           email?: string | null
+          favorite_fighters?: Json | null
+          favorite_techniques?: Json | null
           home_dojo?: string | null
           id?: string
           organization_id?: string | null
