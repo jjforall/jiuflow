@@ -375,89 +375,122 @@ export default function UserProfile() {
   };
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-gradient-to-b from-background via-background to-accent/5">
       <Navigation />
       
-      <main className="pt-32 pb-20 px-6">
+      <main className="pt-24 pb-20 px-4 md:px-6">
         <div className="max-w-7xl mx-auto">
-          {/* Beautiful Profile Header with Cover */}
-          <div className="relative mb-12 animate-fade-up">
-            {/* Cover Image */}
-            <div className="h-64 bg-gradient-to-r from-primary/30 via-accent/20 to-primary/30 rounded-t-3xl relative overflow-hidden group">
+          {/* Stunning Profile Header with Cover */}
+          <div className="relative mb-16 animate-fade-up">
+            {/* Cover Image with Overlay */}
+            <div className="h-72 md:h-96 bg-gradient-to-br from-primary/40 via-accent/30 to-primary/20 rounded-3xl relative overflow-hidden group shadow-2xl">
               {profile?.cover_image_url ? (
-                <img 
-                  src={profile.cover_image_url} 
-                  alt="Cover" 
-                  className="w-full h-full object-cover"
-                />
+                <>
+                  <img 
+                    src={profile.cover_image_url} 
+                    alt="Cover" 
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-background/20 to-transparent" />
+                </>
               ) : (
-                <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1555597408-26bc8e548a46?w=1200')] bg-cover bg-center opacity-20" />
+                <>
+                  <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1555597408-26bc8e548a46?w=1200')] bg-cover bg-center" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/40 to-transparent" />
+                </>
               )}
+              
+              {/* Decorative Elements */}
+              <div className="absolute top-0 right-0 w-72 h-72 bg-primary/10 rounded-full blur-3xl animate-pulse" />
+              <div className="absolute bottom-0 left-0 w-96 h-96 bg-accent/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
               
               {currentUser === actualUserId && (
                 <Button
                   size="sm"
                   variant="secondary"
-                  className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity"
+                  className="absolute top-6 right-6 opacity-0 group-hover:opacity-100 transition-all duration-300 backdrop-blur-md bg-background/80 hover:bg-background/90 border border-border/50 shadow-xl"
                   onClick={() => setCoverDialogOpen(true)}
                 >
                   <Camera className="w-4 h-4 mr-2" />
-                  カバー画像を変更
+                  {language === "ja" ? "カバーを変更" : "Change Cover"}
                 </Button>
               )}
             </div>
             
-            {/* Profile Info Overlay */}
-            <Card className="mx-6 -mt-20 relative">
-              <CardContent className="p-8">
-                <div className="flex flex-col md:flex-row gap-6 items-start md:items-center">
-                  {/* Avatar */}
-                  <Avatar className="h-32 w-32 border-4 border-background shadow-2xl">
-                    <AvatarImage src={profile?.avatar_url || undefined} />
-                    <AvatarFallback className="text-4xl">
-                      {profile?.display_name?.[0] || profile?.username?.[0] || "U"}
-                    </AvatarFallback>
-                  </Avatar>
+            {/* Profile Info Card with Glass Effect */}
+            <Card className="mx-4 md:mx-8 -mt-28 relative backdrop-blur-xl bg-card/95 border-2 border-border/50 shadow-2xl hover:shadow-primary/5 transition-all duration-500">
+              <CardContent className="p-6 md:p-10">
+                <div className="flex flex-col md:flex-row gap-8 items-start md:items-end">
+                  {/* Avatar with Ring */}
+                  <div className="relative group">
+                    <div className="absolute -inset-1 bg-gradient-to-r from-primary via-accent to-primary rounded-full blur-md opacity-75 group-hover:opacity-100 transition duration-500 animate-pulse" />
+                    <Avatar className="relative h-36 w-36 md:h-40 md:w-40 ring-4 ring-background shadow-2xl">
+                      <AvatarImage src={profile?.avatar_url || undefined} />
+                      <AvatarFallback className="text-5xl font-bold bg-gradient-to-br from-primary to-accent text-primary-foreground">
+                        {profile?.display_name?.[0] || profile?.username?.[0] || "U"}
+                      </AvatarFallback>
+                    </Avatar>
+                  </div>
                   
                   {/* User Info */}
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <h1 className="text-4xl font-bold">
-                        {profile?.display_name || profile?.email?.split('@')[0] || "ユーザー"}
+                  <div className="flex-1 space-y-4">
+                    <div className="flex flex-wrap items-center gap-3">
+                      <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
+                        {profile?.display_name || profile?.email?.split('@')[0] || (language === "ja" ? "ユーザー" : "User")}
                       </h1>
                       {profile?.belt_history && profile.belt_history.length > 0 && (
-                        <BeltBadge belt={profile.belt_history[profile.belt_history.length - 1].belt} />
+                        <div className="transform hover:scale-110 transition-transform duration-300">
+                          <BeltBadge belt={profile.belt_history[profile.belt_history.length - 1].belt} />
+                        </div>
                       )}
                     </div>
                     
                     {profile?.bio && (
-                      <p className="text-muted-foreground mb-4 text-lg">{profile.bio}</p>
+                      <p className="text-muted-foreground text-lg md:text-xl leading-relaxed max-w-2xl">
+                        {profile.bio}
+                      </p>
                     )}
                     
-                    {/* Stats Row */}
-                    <div className="flex flex-wrap gap-6 text-sm">
-                      <div className="flex items-center gap-2">
-                        <Video className="w-4 h-4 text-muted-foreground" />
-                        <span className="font-semibold">{videos.length}</span>
-                        <span className="text-muted-foreground">{language === "ja" ? "動画" : "Videos"}</span>
+                    {/* Enhanced Stats Row */}
+                    <div className="flex flex-wrap gap-6">
+                      <div className="flex items-center gap-3 px-4 py-2 bg-gradient-to-r from-primary/10 to-primary/5 rounded-xl border border-primary/20 hover:border-primary/40 transition-all duration-300 hover:scale-105">
+                        <div className="p-2 bg-primary/20 rounded-lg">
+                          <Video className="w-5 h-5 text-primary" />
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="font-bold text-2xl text-foreground">{videos.length}</span>
+                          <span className="text-xs text-muted-foreground uppercase tracking-wide">
+                            {language === "ja" ? "動画" : "Videos"}
+                          </span>
+                        </div>
                       </div>
+                      
                       {profile?.titles && profile.titles.length > 0 && (
-                        <div className="flex items-center gap-2">
-                          <Badge variant="secondary" className="gap-1">
-                            🏆 {profile.titles.length} {language === "ja" ? "タイトル" : "Titles"}
-                          </Badge>
+                        <div className="flex items-center gap-3 px-4 py-2 bg-gradient-to-r from-accent/10 to-accent/5 rounded-xl border border-accent/20 hover:border-accent/40 transition-all duration-300 hover:scale-105">
+                          <div className="text-2xl">🏆</div>
+                          <div className="flex flex-col">
+                            <span className="font-bold text-2xl text-foreground">{profile.titles.length}</span>
+                            <span className="text-xs text-muted-foreground uppercase tracking-wide">
+                              {language === "ja" ? "タイトル" : "Titles"}
+                            </span>
+                          </div>
                         </div>
                       )}
+                      
                       {profile?.created_at && (
-                        <div className="flex items-center gap-2">
-                          <Calendar className="w-4 h-4 text-muted-foreground" />
-                          <span className="text-muted-foreground">
-                            {language === "ja" ? "登録: " : "Joined: "}
-                            {new Date(profile.created_at).toLocaleDateString(language === "ja" ? "ja-JP" : "en-US", { 
-                              year: 'numeric', 
-                              month: 'short' 
-                            })}
-                          </span>
+                        <div className="flex items-center gap-3 px-4 py-2 bg-muted/50 rounded-xl border border-border hover:border-border/80 transition-all duration-300">
+                          <Calendar className="w-5 h-5 text-muted-foreground" />
+                          <div className="flex flex-col">
+                            <span className="text-sm font-medium text-foreground">
+                              {new Date(profile.created_at).toLocaleDateString(language === "ja" ? "ja-JP" : "en-US", { 
+                                year: 'numeric', 
+                                month: 'short' 
+                              })}
+                            </span>
+                            <span className="text-xs text-muted-foreground">
+                              {language === "ja" ? "登録日" : "Joined"}
+                            </span>
+                          </div>
                         </div>
                       )}
                     </div>
@@ -467,51 +500,71 @@ export default function UserProfile() {
             </Card>
           </div>
 
-          {/* BJJ Profile Section */}
+          {/* BJJ Profile Section with Elegant Design */}
           {(profile?.belt_history && profile.belt_history.length > 0) || 
            profile?.home_dojo || 
            (profile?.training_locations && profile.training_locations.length > 0) ||
            (profile?.titles && profile.titles.length > 0) ? (
-            <Card className="mb-8 animate-fade-up">
-              <CardContent className="p-8">
-                <h2 className="text-2xl font-bold mb-6">🥋 {language === "ja" ? "柔術プロフィール" : "BJJ Profile"}</h2>
+            <Card className="mb-12 animate-fade-up backdrop-blur-xl bg-card/95 border-2 border-border/50 shadow-xl hover:shadow-2xl transition-all duration-500">
+              <CardContent className="p-8 md:p-12">
+                <div className="flex items-center gap-3 mb-10">
+                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary to-accent flex items-center justify-center text-2xl shadow-lg">
+                    🥋
+                  </div>
+                  <h2 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
+                    {language === "ja" ? "柔術プロフィール" : "BJJ Profile"}
+                  </h2>
+                </div>
                 
-                <div className="grid md:grid-cols-2 gap-8">
-                  {/* Belt History Timeline */}
+                <div className="grid md:grid-cols-2 gap-10">
+                  {/* Belt History Timeline - Enhanced */}
                   {profile?.belt_history && profile.belt_history.length > 0 && (
                     <div className="md:col-span-2">
-                      <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
-                        🥋 {language === "ja" ? "帯の履歴" : "Belt History"}
-                      </h3>
+                      <div className="flex items-center gap-3 mb-8">
+                        <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                          <div className="text-xl">🥋</div>
+                        </div>
+                        <h3 className="text-2xl font-bold">
+                          {language === "ja" ? "帯の履歴" : "Belt Journey"}
+                        </h3>
+                      </div>
                       <div className="relative">
-                        {/* Timeline line */}
-                        <div className="absolute left-6 top-0 bottom-0 w-0.5 bg-gradient-to-b from-primary via-accent to-primary/20" />
+                        {/* Enhanced Timeline line with gradient */}
+                        <div className="absolute left-7 top-0 bottom-0 w-1 bg-gradient-to-b from-primary via-accent to-transparent rounded-full" />
                         
-                        <div className="space-y-6">
+                        <div className="space-y-8">
                           {[...profile.belt_history].reverse().map((belt, index) => (
-                            <div key={index} className="relative pl-16 animate-fade-up" style={{ animationDelay: `${index * 0.1}s` }}>
-                              {/* Timeline dot */}
-                              <div className="absolute left-3 top-1 w-6 h-6 rounded-full bg-background border-4 border-primary shadow-lg flex items-center justify-center">
-                                <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                            <div 
+                              key={index} 
+                              className="relative pl-20 animate-fade-up hover:translate-x-2 transition-transform duration-300" 
+                              style={{ animationDelay: `${index * 0.15}s` }}
+                            >
+                              {/* Enhanced Timeline dot with glow */}
+                              <div className="absolute left-4 top-2 w-8 h-8 rounded-full bg-gradient-to-br from-primary to-accent shadow-xl flex items-center justify-center z-10 group-hover:scale-125 transition-transform">
+                                <div className="w-3 h-3 rounded-full bg-white animate-pulse" />
                               </div>
                               
-                              {/* Content card */}
-                              <div className="bg-card border border-border/50 rounded-xl p-4 shadow-sm hover:shadow-md transition-all hover:scale-[1.02] group">
-                                <div className="flex items-start gap-4">
-                                  <BeltBadge belt={belt.belt} />
-                                  <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-2 mb-1">
-                                      <h4 className="font-bold text-lg">{belt.belt}</h4>
-                                    </div>
+                              {/* Content card with glass effect */}
+                              <div className="bg-gradient-to-br from-card to-card/50 backdrop-blur-sm border border-border/30 rounded-2xl p-6 shadow-lg hover:shadow-2xl hover:border-primary/30 transition-all duration-300 group relative overflow-hidden">
+                                {/* Decorative gradient overlay */}
+                                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-primary/5 to-transparent rounded-full blur-2xl" />
+                                
+                                <div className="flex items-start gap-5 relative z-10">
+                                  <div className="transform group-hover:scale-110 transition-transform duration-300">
+                                    <BeltBadge belt={belt.belt} />
+                                  </div>
+                                  <div className="flex-1 min-w-0 space-y-2">
+                                    <h4 className="font-bold text-xl md:text-2xl text-foreground">{belt.belt}</h4>
                                     {belt.instructor && (
-                                      <p className="text-sm text-muted-foreground mb-1">
-                                        👨‍🏫 {belt.instructor}
+                                      <p className="text-sm md:text-base text-muted-foreground flex items-center gap-2">
+                                        <span className="text-base">👨‍🏫</span>
+                                        <span className="font-medium">{belt.instructor}</span>
                                       </p>
                                     )}
                                     {belt.date && (
-                                      <p className="text-xs text-muted-foreground flex items-center gap-1">
-                                        <Calendar className="w-3 h-3" />
-                                        {belt.date}
+                                      <p className="text-xs md:text-sm text-muted-foreground flex items-center gap-2">
+                                        <Calendar className="w-4 h-4" />
+                                        <span>{belt.date}</span>
                                       </p>
                                     )}
                                   </div>
@@ -524,45 +577,79 @@ export default function UserProfile() {
                     </div>
                   )}
 
-                  {/* Titles */}
+                  {/* Titles with Trophy Design */}
                   {profile?.titles && profile.titles.length > 0 && (
                     <div>
-                      <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
-                        🏆 {language === "ja" ? "獲得タイトル" : "Titles & Achievements"}
-                      </h3>
-                      <div className="space-y-2">
+                      <div className="flex items-center gap-3 mb-5">
+                        <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center">
+                          <span className="text-xl">🏆</span>
+                        </div>
+                        <h3 className="text-xl font-bold">
+                          {language === "ja" ? "獲得タイトル" : "Achievements"}
+                        </h3>
+                      </div>
+                      <div className="space-y-3">
                         {profile.titles.map((title, index) => (
-                          <div key={index} className="p-3 bg-accent/10 rounded-lg border border-accent/20">
-                            <p className="font-semibold text-accent-foreground">{title.title}</p>
-                            {title.organization && <p className="text-sm text-muted-foreground">{title.organization}</p>}
-                            {title.date && <p className="text-xs text-muted-foreground">{title.date}</p>}
+                          <div 
+                            key={index} 
+                            className="p-5 bg-gradient-to-br from-accent/10 to-accent/5 rounded-2xl border border-accent/30 hover:border-accent/50 transition-all duration-300 hover:scale-[1.02] hover:shadow-lg group"
+                            style={{ animationDelay: `${index * 0.1}s` }}
+                          >
+                            <div className="relative">
+                              <div className="absolute -top-2 -right-2 w-20 h-20 bg-gradient-to-br from-accent/20 to-transparent rounded-full blur-xl group-hover:scale-125 transition-transform" />
+                              <p className="font-bold text-lg text-accent-foreground relative z-10">{title.title}</p>
+                              {title.organization && (
+                                <p className="text-sm text-muted-foreground mt-1">{title.organization}</p>
+                              )}
+                              {title.date && (
+                                <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
+                                  <Calendar className="w-3 h-3" />
+                                  {title.date}
+                                </p>
+                              )}
+                            </div>
                           </div>
                         ))}
                       </div>
                     </div>
                   )}
 
-                  {/* Home Dojo */}
+                  {/* Home Dojo with Elegant Design */}
                   {profile?.home_dojo && (
                     <div>
-                      <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
-                        🏛️ {language === "ja" ? "所属道場" : "Home Dojo"}
-                      </h3>
-                      <div className="p-4 bg-primary/5 rounded-lg border border-primary/20">
-                        <p className="font-medium text-lg">{profile.home_dojo}</p>
+                      <div className="flex items-center gap-3 mb-5">
+                        <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                          <span className="text-xl">🏛️</span>
+                        </div>
+                        <h3 className="text-xl font-bold">
+                          {language === "ja" ? "所属道場" : "Home Dojo"}
+                        </h3>
+                      </div>
+                      <div className="p-6 bg-gradient-to-br from-primary/10 to-primary/5 rounded-2xl border-2 border-primary/30 hover:border-primary/50 transition-all duration-300 hover:scale-[1.02] shadow-lg relative overflow-hidden group">
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-2xl group-hover:scale-150 transition-transform" />
+                        <p className="font-bold text-xl md:text-2xl relative z-10">{profile.home_dojo}</p>
                       </div>
                     </div>
                   )}
 
-                  {/* Training Locations */}
+                  {/* Training Locations with Badge Grid */}
                   {profile?.training_locations && profile.training_locations.length > 0 && (
                     <div>
-                      <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
-                        🗺️ {language === "ja" ? "よくいく出稽古先" : "Training Locations"}
-                      </h3>
-                      <div className="flex flex-wrap gap-2">
+                      <div className="flex items-center gap-3 mb-5">
+                        <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center">
+                          <span className="text-xl">🗺️</span>
+                        </div>
+                        <h3 className="text-xl font-bold">
+                          {language === "ja" ? "出稽古先" : "Training Spots"}
+                        </h3>
+                      </div>
+                      <div className="flex flex-wrap gap-3">
                         {profile.training_locations.map((location, index) => (
-                          <Badge key={index} variant="outline" className="text-sm">
+                          <Badge 
+                            key={index} 
+                            variant="outline" 
+                            className="px-4 py-2 text-sm font-medium bg-gradient-to-r from-background to-accent/5 border-border/50 hover:border-accent/50 hover:scale-105 transition-all duration-300 shadow-sm hover:shadow-md"
+                          >
                             {location}
                           </Badge>
                         ))}
@@ -574,63 +661,92 @@ export default function UserProfile() {
             </Card>
           ) : null}
 
-          {/* Events Section */}
+          {/* Events Section with Enhanced Design */}
           {events.length > 0 && (
-            <div className="mb-12 animate-fade-up">
-              <h2 className="text-3xl font-light mb-6">
-                {language === "ja" ? "開催予定のイベント" : "Upcoming Events"}
-              </h2>
+            <div className="mb-16 animate-fade-up">
+              <div className="flex items-center gap-4 mb-8">
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg">
+                  <Calendar className="w-6 h-6 text-primary-foreground" />
+                </div>
+                <h2 className="text-3xl md:text-4xl font-bold">
+                  {language === "ja" ? "開催予定のイベント" : "Upcoming Events"}
+                </h2>
+              </div>
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {events.map((event) => (
-                  <EventCard
-                    key={event.id}
-                    event={event}
-                    onRegister={handleRegisterEvent}
-                    isRegistered={registeredEvents.has(event.id)}
-                  />
+                {events.map((event, index) => (
+                  <div key={event.id} className="animate-fade-up" style={{ animationDelay: `${index * 0.1}s` }}>
+                    <EventCard
+                      event={event}
+                      onRegister={handleRegisterEvent}
+                      isRegistered={registeredEvents.has(event.id)}
+                    />
+                  </div>
                 ))}
               </div>
             </div>
           )}
 
-          {/* Videos Section */}
-          <div className="mb-6">
-            <h2 className="text-3xl font-light mb-6">
-              {language === "ja" ? "動画" : "Videos"}
-            </h2>
+          {/* Videos Section with Elegant Header */}
+          <div className="mb-10">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg">
+                <Video className="w-6 h-6 text-primary-foreground" />
+              </div>
+              <h2 className="text-3xl md:text-4xl font-bold">
+                {language === "ja" ? "動画コレクション" : "Video Collection"}
+              </h2>
+            </div>
           </div>
 
-          {/* Videos Grid */}
+          {/* Videos Grid with Enhanced Loading States */}
           {loading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {[1, 2, 3, 4, 5, 6].map((i) => (
-                <div key={i} className="space-y-4 border border-border rounded-lg p-6 animate-pulse">
-                  <div className="aspect-video bg-muted rounded" />
-                  <div className="h-6 bg-muted rounded" />
-                  <div className="h-4 bg-muted rounded w-3/4" />
+                <div 
+                  key={i} 
+                  className="space-y-4 border-2 border-border/50 rounded-2xl p-6 animate-pulse backdrop-blur-sm bg-card/50"
+                  style={{ animationDelay: `${i * 0.1}s` }}
+                >
+                  <div className="aspect-video bg-gradient-to-br from-muted to-muted/50 rounded-xl" />
+                  <div className="h-6 bg-gradient-to-r from-muted to-muted/50 rounded-lg" />
+                  <div className="h-4 bg-gradient-to-r from-muted to-muted/50 rounded-lg w-3/4" />
                 </div>
               ))}
             </div>
           ) : videos.length === 0 ? (
-            <Card>
-              <CardContent className="p-12 text-center">
-                <Video className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                <h3 className="text-xl font-light mb-2">まだ動画がありません</h3>
-                <p className="text-muted-foreground">
-                  このユーザーはまだ公開動画を投稿していません
+            <Card className="backdrop-blur-xl bg-card/95 border-2 border-border/50 shadow-xl">
+              <CardContent className="p-16 text-center">
+                <div className="relative inline-block mb-6">
+                  <div className="absolute inset-0 bg-primary/20 rounded-full blur-2xl animate-pulse" />
+                  <div className="relative w-24 h-24 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
+                    <Video className="h-12 w-12 text-primary" />
+                  </div>
+                </div>
+                <h3 className="text-2xl font-bold mb-3">
+                  {language === "ja" ? "まだ動画がありません" : "No Videos Yet"}
+                </h3>
+                <p className="text-muted-foreground text-lg">
+                  {language === "ja" 
+                    ? "このユーザーはまだ公開動画を投稿していません" 
+                    : "This user hasn't posted any public videos yet"}
                 </p>
               </CardContent>
             </Card>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-fade-up">
-              {videos.map((video) => (
-                <UserVideoCard
-                  key={video.id}
-                  video={video}
-                  isOwner={currentUser === actualUserId}
-                  isPurchased={purchasedVideos.has(video.id)}
-                  onPurchase={() => handlePurchase(video.id)}
-                />
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {videos.map((video, index) => (
+                <div 
+                  key={video.id} 
+                  className="animate-fade-up hover:scale-[1.02] transition-transform duration-300"
+                  style={{ animationDelay: `${index * 0.1}s` }}
+                >
+                  <UserVideoCard
+                    video={video}
+                    isOwner={currentUser === actualUserId}
+                    isPurchased={purchasedVideos.has(video.id)}
+                    onPurchase={() => handlePurchase(video.id)}
+                  />
+                </div>
               ))}
             </div>
           )}
