@@ -124,12 +124,45 @@ const Join = () => {
   const [showVideoModal, setShowVideoModal] = useState(false);
   const [sampleVideoUrl, setSampleVideoUrl] = useState<string | null>(null);
   const [referralCode, setReferralCode] = useState("");
+  const [isValidReferralCode, setIsValidReferralCode] = useState(false);
+  const [isCheckingCode, setIsCheckingCode] = useState(false);
   const [viewCount, setViewCount] = useState(0);
   
   const { isLoading: authLoading, user } = useAuth();
   const { subscribed, loading: subscriptionLoading } = useSubscription();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+
+  // Validate referral code
+  useEffect(() => {
+    const validateReferralCode = async () => {
+      const trimmedCode = referralCode.trim();
+      
+      if (!trimmedCode) {
+        setIsValidReferralCode(false);
+        return;
+      }
+      
+      setIsCheckingCode(true);
+      try {
+        const { data, error } = await supabase
+          .from("referral_codes")
+          .select("code")
+          .eq("code", trimmedCode.toUpperCase())
+          .maybeSingle();
+        
+        setIsValidReferralCode(!error && !!data);
+      } catch (error) {
+        console.error("Error validating referral code:", error);
+        setIsValidReferralCode(false);
+      } finally {
+        setIsCheckingCode(false);
+      }
+    };
+    
+    const debounceTimer = setTimeout(validateReferralCode, 500);
+    return () => clearTimeout(debounceTimer);
+  }, [referralCode]);
 
   // Fetch sample video URL and view count
   useEffect(() => {
@@ -377,11 +410,11 @@ const Join = () => {
             </Dialog>
 
             {/* Referral Code Section */}
-            <div className="border border-primary bg-primary/5 p-6 mb-8 animate-fade-up">
+            <div className="border border-border p-6 mb-8 animate-fade-up">
               <h3 className="text-lg font-light mb-3 text-center">
                 {language === "ja" ? "紹介コードをお持ちの方" : "Have a referral code?"}
               </h3>
-              <div className="flex gap-3 max-w-md mx-auto">
+              <div className="flex flex-col gap-2 max-w-md mx-auto">
                 <Input
                   type="text"
                   placeholder={language === "ja" ? "紹介コードを入力" : "Enter referral code"}
@@ -389,35 +422,25 @@ const Join = () => {
                   onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
                   className="flex-1"
                 />
-              </div>
-              <div className="mt-4 space-y-2 text-sm text-center">
-                <p className="font-medium text-primary">
-                  {language === "ja" 
-                    ? "🎁 紹介コード特典" 
-                    : "🎁 Referral Benefits"}
-                </p>
-                <p className="text-muted-foreground">
-                  {language === "ja" 
-                    ? "• 初月完全無料（100%オフ）" 
-                    : "• First month completely free (100% off)"}
-                </p>
-                <p className="text-muted-foreground">
-                  {language === "ja" 
-                    ? "• 2ヶ月目以降：月額1,900円" 
-                    : "• From month 2: ¥1,900/month"}
-                </p>
-                <p className="text-muted-foreground">
-                  {language === "ja" 
-                    ? "• 紹介者に毎月500ポイント付与" 
-                    : "• Referrer gets 500 points monthly"}
-                </p>
+                {referralCode.trim() && !isCheckingCode && (
+                  <p className={`text-sm text-center ${isValidReferralCode ? 'text-green-600' : 'text-red-600'}`}>
+                    {isValidReferralCode 
+                      ? (language === "ja" ? "✓ 有効な紹介コード" : "✓ Valid referral code")
+                      : (language === "ja" ? "✗ 無効な紹介コード" : "✗ Invalid referral code")}
+                  </p>
+                )}
+                {isCheckingCode && (
+                  <p className="text-sm text-center text-muted-foreground">
+                    {language === "ja" ? "確認中..." : "Checking..."}
+                  </p>
+                )}
               </div>
             </div>
 
             {/* Pricing */}
-            <div className={`grid ${referralCode.trim() ? 'md:grid-cols-1 max-w-xl mx-auto' : 'md:grid-cols-2'} gap-8 mb-16 animate-fade-up`}>
-              {/* Referral Plan - Only shown when referral code is entered */}
-              {referralCode.trim() && (
+            <div className={`grid ${isValidReferralCode ? 'md:grid-cols-1 max-w-xl mx-auto' : 'md:grid-cols-2'} gap-8 mb-16 animate-fade-up`}>
+              {/* Referral Plan - Only shown when valid referral code is entered */}
+              {isValidReferralCode && (
                 <div className="border-2 border-primary bg-primary/5 p-8 relative">
                   <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-primary text-primary-foreground px-4 py-1 text-xs font-light">
                     {language === "ja" ? "🎁 紹介特典" : "🎁 Referral Special"}
@@ -466,8 +489,8 @@ const Join = () => {
                 </div>
               )}
               
-              {/* Monthly Plan - Only shown when no referral code */}
-              {!referralCode.trim() && (
+              {/* Monthly Plan - Only shown when no valid referral code */}
+              {!isValidReferralCode && (
                 <div className="border border-foreground p-8 relative">
                   <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-foreground text-background px-4 py-1 text-xs font-light">
                     {language === "ja" ? "人気" : language === "pt" ? "Popular" : "Most Popular"}
@@ -505,8 +528,8 @@ const Join = () => {
               </div>
               )}
 
-              {/* Annual Plan - Only shown when no referral code */}
-              {!referralCode.trim() && (
+              {/* Annual Plan - Only shown when no valid referral code */}
+              {!isValidReferralCode && (
               <div className="border border-border p-8">
                 <h3 className="text-2xl font-light mb-4">
                   {language === "ja" ? "年額プラン" : language === "pt" ? "Plano Anual" : "Annual Plan"}
