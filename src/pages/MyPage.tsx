@@ -2599,7 +2599,9 @@ const MyPage = () => {
                   key={user.id} 
                   className="flex items-center gap-3 p-3 rounded-lg hover:bg-accent transition-colors cursor-pointer"
                   onClick={() => {
-                    window.open(`/user/${user.id}`, '_blank');
+                    const identifier = user.username || user.id;
+                    navigate(`/user/${identifier}`);
+                    setShowFollowList(null);
                   }}
                 >
                   <Avatar className="h-12 w-12">
