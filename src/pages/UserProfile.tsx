@@ -17,6 +17,37 @@ import { BeltBadge } from "@/components/ui/belt-badge";
 import { Badge } from "@/components/ui/badge";
 import { CoverUploadDialog } from "@/components/CoverUploadDialog";
 import { Camera } from "lucide-react";
+import hero1 from "@/assets/hero-1.jpg";
+import hero2 from "@/assets/hero-2.jpg";
+import hero3 from "@/assets/hero-3.jpg";
+import hero4 from "@/assets/hero-4.jpg";
+import hero5 from "@/assets/hero-5.jpg";
+import hero6 from "@/assets/hero-6.jpg";
+import hero7 from "@/assets/hero-7.jpg";
+import hero8 from "@/assets/hero-8.jpg";
+import hero9 from "@/assets/hero-9.jpg";
+import hero10 from "@/assets/hero-10.jpg";
+
+const DEFAULT_COVER_IMAGES = [
+  hero1, hero2, hero3, hero4, hero5, 
+  hero6, hero7, hero8, hero9, hero10
+];
+
+// ユーザーIDに基づいて一貫したランダム画像を選択
+const getDefaultCoverImage = (userId: string | null): string => {
+  if (!userId) return DEFAULT_COVER_IMAGES[0];
+  
+  // ユーザーIDの文字列をハッシュ化して数値に変換
+  let hash = 0;
+  for (let i = 0; i < userId.length; i++) {
+    hash = ((hash << 5) - hash) + userId.charCodeAt(i);
+    hash = hash & hash; // Convert to 32bit integer
+  }
+  
+  // 0-9の範囲のインデックスを取得
+  const index = Math.abs(hash) % DEFAULT_COVER_IMAGES.length;
+  return DEFAULT_COVER_IMAGES[index];
+};
 
 interface UserVideo {
   id: string;
@@ -498,7 +529,10 @@ export default function UserProfile() {
                 </>
               ) : (
                 <>
-                  <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1555597408-26bc8e548a46?w=1200')] bg-cover bg-center" />
+                  <div 
+                    className="absolute inset-0 bg-cover bg-center" 
+                    style={{ backgroundImage: `url(${getDefaultCoverImage(actualUserId)})` }}
+                  />
                   <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/40 to-transparent" />
                 </>
               )}
