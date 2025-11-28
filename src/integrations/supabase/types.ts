@@ -74,6 +74,86 @@ export type Database = {
           },
         ]
       }
+      event_registrations: {
+        Row: {
+          event_id: string
+          id: string
+          payment_status: string
+          registered_at: string
+          stripe_payment_id: string | null
+          user_id: string
+        }
+        Insert: {
+          event_id: string
+          id?: string
+          payment_status?: string
+          registered_at?: string
+          stripe_payment_id?: string | null
+          user_id: string
+        }
+        Update: {
+          event_id?: string
+          id?: string
+          payment_status?: string
+          registered_at?: string
+          stripe_payment_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_registrations_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      events: {
+        Row: {
+          created_at: string
+          description: string | null
+          event_date: string
+          event_type: string
+          id: string
+          is_public: boolean
+          location: string | null
+          max_participants: number | null
+          organizer_id: string
+          price: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          event_date: string
+          event_type: string
+          id?: string
+          is_public?: boolean
+          location?: string | null
+          max_participants?: number | null
+          organizer_id: string
+          price?: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          event_date?: string
+          event_type?: string
+          id?: string
+          is_public?: boolean
+          location?: string | null
+          max_participants?: number | null
+          organizer_id?: string
+          price?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       founder_plan_count: {
         Row: {
           count: number
@@ -174,6 +254,7 @@ export type Database = {
           id: string
           stripe_customer_id: string | null
           updated_at: string
+          username: string | null
         }
         Insert: {
           avatar_url?: string | null
@@ -184,6 +265,7 @@ export type Database = {
           id: string
           stripe_customer_id?: string | null
           updated_at?: string
+          username?: string | null
         }
         Update: {
           avatar_url?: string | null
@@ -194,6 +276,7 @@ export type Database = {
           id?: string
           stripe_customer_id?: string | null
           updated_at?: string
+          username?: string | null
         }
         Relationships: []
       }
