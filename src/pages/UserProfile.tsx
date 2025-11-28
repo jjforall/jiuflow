@@ -35,11 +35,24 @@ export default function UserProfile() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState<string | null>(null);
+  const [purchasedVideos, setPurchasedVideos] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     const checkCurrentUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       setCurrentUser(user?.id || null);
+      
+      if (user?.id) {
+        // Load purchased videos
+        const { data: purchases } = await supabase
+          .from('video_purchases')
+          .select('video_id')
+          .eq('buyer_id', user.id);
+        
+        if (purchases) {
+          setPurchasedVideos(new Set(purchases.map(p => p.video_id)));
+        }
+      }
     };
     checkCurrentUser();
   }, []);
@@ -50,6 +63,30 @@ export default function UserProfile() {
       loadUserVideos();
     }
   }, [userId]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("purchase") === "success") {
+      toast.success("動画を購入しました！");
+      window.history.replaceState({}, '', window.location.pathname);
+      
+      // Reload purchased videos
+      const checkCurrentUser = async () => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user?.id) {
+          const { data: purchases } = await supabase
+            .from('video_purchases')
+            .select('video_id')
+            .eq('buyer_id', user.id);
+          
+          if (purchases) {
+            setPurchasedVideos(new Set(purchases.map(p => p.video_id)));
+          }
+        }
+      };
+      checkCurrentUser();
+    }
+  }, []);
 
   const loadUserProfile = async () => {
     if (!userId) return;
@@ -90,15 +127,27 @@ export default function UserProfile() {
     }
   };
 
-  const handlePurchase = async (videoId: string, price: number) => {
+  const handlePurchase = async (videoId: string) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       toast.error("動画を購入するにはログインが必要です");
       return;
     }
 
-    // TODO: Implement Stripe payment integration
-    toast.info("決済機能は準備中です");
+    try {
+      const { data, error } = await supabase.functions.invoke('create-video-purchase', {
+        body: { videoId }
+      });
+
+      if (error) throw error;
+
+      if (data?.url) {
+        window.open(data.url, '_blank');
+      }
+    } catch (error) {
+      console.error('Purchase error:', error);
+      toast.error("購入処理に失敗しました");
+    }
   };
 
   return (
@@ -155,6 +204,8 @@ export default function UserProfile() {
                   key={video.id}
                   video={video}
                   isOwner={currentUser === userId}
+                  isPurchased={purchasedVideos.has(video.id)}
+                  onPurchase={() => handlePurchase(video.id)}
                 />
               ))}
             </div>
