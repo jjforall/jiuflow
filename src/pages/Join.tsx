@@ -126,6 +126,7 @@ const Join = () => {
   const [referralCode, setReferralCode] = useState("");
   const [isValidReferralCode, setIsValidReferralCode] = useState(false);
   const [isCheckingCode, setIsCheckingCode] = useState(false);
+  const [referralPlanType, setReferralPlanType] = useState<'founder' | 'muratabros' | 'referral'>('referral');
   const [viewCount, setViewCount] = useState(0);
   
   const { isLoading: authLoading, user } = useAuth();
@@ -136,10 +137,24 @@ const Join = () => {
   // Validate referral code
   useEffect(() => {
     const validateReferralCode = async () => {
-      const trimmedCode = referralCode.trim();
+      const trimmedCode = referralCode.trim().toUpperCase();
       
       if (!trimmedCode) {
         setIsValidReferralCode(false);
+        setReferralPlanType('referral');
+        return;
+      }
+      
+      // Check for special codes
+      if (trimmedCode === 'MURATABJJ') {
+        setIsValidReferralCode(true);
+        setReferralPlanType('founder');
+        return;
+      }
+      
+      if (trimmedCode === 'MURATABROS') {
+        setIsValidReferralCode(true);
+        setReferralPlanType('muratabros');
         return;
       }
       
@@ -148,13 +163,20 @@ const Join = () => {
         const { data, error } = await supabase
           .from("referral_codes")
           .select("code")
-          .eq("code", trimmedCode.toUpperCase())
+          .eq("code", trimmedCode)
           .maybeSingle();
         
-        setIsValidReferralCode(!error && !!data);
+        if (!error && data) {
+          setIsValidReferralCode(true);
+          setReferralPlanType('referral');
+        } else {
+          setIsValidReferralCode(false);
+          setReferralPlanType('referral');
+        }
       } catch (error) {
         console.error("Error validating referral code:", error);
         setIsValidReferralCode(false);
+        setReferralPlanType('referral');
       } finally {
         setIsCheckingCode(false);
       }
@@ -439,8 +461,104 @@ const Join = () => {
 
             {/* Pricing */}
             <div className={`grid ${isValidReferralCode ? 'md:grid-cols-1 max-w-xl mx-auto' : 'md:grid-cols-2'} gap-8 mb-16 animate-fade-up`}>
-              {/* Referral Plan - Only shown when valid referral code is entered */}
-              {isValidReferralCode && (
+              {/* Referral Plans - shown when valid referral code is entered */}
+              
+              {/* MURATABJJ - Founder Plan */}
+              {isValidReferralCode && referralPlanType === 'founder' && (
+                <div className="border-2 border-primary bg-primary/5 p-8 relative">
+                  <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-primary text-primary-foreground px-4 py-1 text-xs font-light">
+                    {language === "ja" ? "🎁 特別プラン" : "🎁 Special Plan"}
+                  </div>
+                  <h3 className="text-2xl font-light mb-4">
+                    Founder Plan
+                  </h3>
+                  <div className="mb-6">
+                    <div className="text-4xl font-light text-primary mb-2">¥980</div>
+                    <div className="text-sm text-muted-foreground font-light">
+                      {language === "ja" ? "月額（3ヶ月無料・いつでもキャンセル可能）" : "per month (3 months free・cancel anytime)"}
+                    </div>
+                  </div>
+                  <ul className="space-y-3 mb-6 text-sm font-light">
+                    <li className="flex items-start">
+                      <span className="mr-2 text-primary">✓</span>
+                      <span className="font-medium text-primary">{language === "ja" ? "永久に月額980円" : "¥980/month forever"}</span>
+                    </li>
+                    <li className="flex items-start">
+                      <span className="mr-2 text-primary">✓</span>
+                      <span className="font-medium text-primary">{language === "ja" ? "3ヶ月無料トライアル" : "3 months free trial"}</span>
+                    </li>
+                    <li className="flex items-start">
+                      <span className="mr-2">✓</span>
+                      <span>{language === "ja" ? "全技術動画へのアクセス" : "Access to all technique videos"}</span>
+                    </li>
+                    <li className="flex items-start">
+                      <span className="mr-2">✓</span>
+                      <span>{language === "ja" ? "新規コンテンツの追加" : "New content additions"}</span>
+                    </li>
+                  </ul>
+                  <Button
+                    className="w-full"
+                    onClick={() => handleCheckout(PRICE_IDS.founder, true)}
+                    disabled={isLoading}
+                  >
+                    {language === "ja" ? "Founder Planで始める" : "Start with Founder Plan"}
+                  </Button>
+                </div>
+              )}
+              
+              {/* MURATABROS - Pro Plan */}
+              {isValidReferralCode && referralPlanType === 'muratabros' && (
+                <div className="border-2 border-primary bg-primary/5 p-8 relative">
+                  <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-primary text-primary-foreground px-4 py-1 text-xs font-light">
+                    {language === "ja" ? "🎁 VIPプラン" : "🎁 VIP Plan"}
+                  </div>
+                  <h3 className="text-2xl font-light mb-4">
+                    Founder Plan Pro
+                  </h3>
+                  <div className="mb-6">
+                    <div className="text-4xl font-light text-primary mb-2">¥50,000</div>
+                    <div className="text-sm text-muted-foreground font-light">
+                      {language === "ja" ? "一回払い" : "One-time payment"}
+                    </div>
+                  </div>
+                  <ul className="space-y-3 mb-6 text-sm font-light">
+                    <li className="flex items-start">
+                      <span className="mr-2 text-primary">✓</span>
+                      <span className="font-medium text-primary">{language === "ja" ? "Hawaii合宿参加権" : "Hawaii camp access"}</span>
+                    </li>
+                    <li className="flex items-start">
+                      <span className="mr-2 text-primary">✓</span>
+                      <span className="font-medium text-primary">{language === "ja" ? "熱海合宿参加権" : "Atami retreat access"}</span>
+                    </li>
+                    <li className="flex items-start">
+                      <span className="mr-2 text-primary">✓</span>
+                      <span className="font-medium text-primary">{language === "ja" ? "Not A Hotel利用権" : "Not A Hotel access"}</span>
+                    </li>
+                    <li className="flex items-start">
+                      <span className="mr-2 text-primary">✓</span>
+                      <span className="font-medium text-primary">{language === "ja" ? "Enablerアクセス" : "Enabler access"}</span>
+                    </li>
+                    <li className="flex items-start">
+                      <span className="mr-2 text-primary">✓</span>
+                      <span className="font-medium text-primary">{language === "ja" ? "Honda Jet利用権" : "Honda Jet usage rights"}</span>
+                    </li>
+                    <li className="flex items-start">
+                      <span className="mr-2">✓</span>
+                      <span>{language === "ja" ? "全技術動画への永久アクセス" : "Lifetime access to all videos"}</span>
+                    </li>
+                  </ul>
+                  <Button
+                    className="w-full"
+                    onClick={() => handleCheckout(PRICE_IDS.muratabros, false)}
+                    disabled={isLoading}
+                  >
+                    {language === "ja" ? "Founder Plan Proで始める" : "Start with Founder Plan Pro"}
+                  </Button>
+                </div>
+              )}
+              
+              {/* Regular Referral Plan - 1900 yen */}
+              {isValidReferralCode && referralPlanType === 'referral' && (
                 <div className="border-2 border-primary bg-primary/5 p-8 relative">
                   <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-primary text-primary-foreground px-4 py-1 text-xs font-light">
                     {language === "ja" ? "🎁 紹介特典" : "🎁 Referral Special"}
