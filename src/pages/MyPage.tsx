@@ -15,7 +15,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { CalendarIcon } from "lucide-react";
-import { User, CreditCard, Calendar, Mail, Upload, Video, Eye, Edit2, Check, X, Trash2, Lock, Globe, Plus } from "lucide-react";
+import { User, CreditCard, Calendar, Mail, Upload, Video, Eye, Edit2, Check, X, Trash2, Lock, Globe, Plus, Copy } from "lucide-react";
 import { toast } from "sonner";
 import { VideoUploadDialog } from "@/components/VideoUploadDialog";
 import { VideoEditDialog } from "@/components/VideoEditDialog";
@@ -2543,6 +2543,30 @@ const MyPage = () => {
                           </Button>
                         </div>
                       )}
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-2">
+                        {language === "ja" ? "紹介リンク" : "Referral Link"}
+                      </p>
+                      <div className="flex items-center gap-2">
+                        <Input
+                          value={`${window.location.origin}/join?referral=${referralCode}`}
+                          readOnly
+                          className="flex-1 text-sm"
+                          disabled={!referralCode}
+                        />
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            navigator.clipboard.writeText(`${window.location.origin}/join?referral=${referralCode}`);
+                            toast.success(language === "ja" ? "リンクをコピーしました" : "Link copied!");
+                          }}
+                          disabled={!referralCode}
+                        >
+                          <Copy className="w-4 h-4" />
+                        </Button>
+                      </div>
                     </div>
                     <div className="text-sm text-muted-foreground space-y-1">
                       <p>
