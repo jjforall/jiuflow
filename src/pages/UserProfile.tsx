@@ -633,81 +633,74 @@ export default function UserProfile() {
               )}
             </div>
             
-            {/* Profile Info Card with Glass Effect */}
-            <Card className="mx-4 md:mx-8 -mt-28 relative backdrop-blur-xl bg-card/95 border-2 border-border/50 shadow-2xl hover:shadow-primary/5 transition-all duration-500">
-              <CardContent className="p-6 md:p-10">
-                <div className="flex flex-col md:flex-row gap-8 items-start md:items-end">
-                  {/* Avatar with Ring */}
-                  <div className="relative group">
-                    <div className="absolute -inset-1 bg-gradient-to-r from-primary via-accent to-primary rounded-full blur-md opacity-75 group-hover:opacity-100 transition duration-500 animate-pulse" />
-                    <Avatar className="relative h-36 w-36 md:h-40 md:w-40 ring-4 ring-background shadow-2xl">
-                      <AvatarImage src={profile?.avatar_url || undefined} />
-                      <AvatarFallback className="text-5xl font-bold bg-gradient-to-br from-primary to-accent text-primary-foreground">
-                        {profile?.display_name?.[0] || profile?.username?.[0] || "U"}
-                      </AvatarFallback>
-                    </Avatar>
-                  </div>
+            {/* Profile Info Card */}
+            <Card className="mx-4 md:mx-8 -mt-24 relative bg-card border shadow-xl">
+              <CardContent className="p-6 md:p-8">
+                <div className="flex flex-col md:flex-row gap-6 items-start md:items-end">
+                  {/* Avatar */}
+                  <Avatar className="h-32 w-32 md:h-36 md:w-36 ring-4 ring-background shadow-lg">
+                    <AvatarImage src={profile?.avatar_url || undefined} />
+                    <AvatarFallback className="text-4xl font-bold bg-gradient-to-br from-primary to-accent text-primary-foreground">
+                      {profile?.display_name?.[0] || profile?.username?.[0] || "U"}
+                    </AvatarFallback>
+                  </Avatar>
                   
                   {/* User Info */}
-                  <div className="flex-1 space-y-4">
+                  <div className="flex-1 space-y-3">
                     <div className="flex flex-wrap items-center gap-3">
-                      <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
+                      <h1 className="text-3xl md:text-4xl font-bold">
                         {profile?.display_name || profile?.email?.split('@')[0] || (language === "ja" ? "ユーザー" : "User")}
                       </h1>
                       {profile?.belt_history && profile.belt_history.length > 0 && (
-                        <div className="transform hover:scale-110 transition-transform duration-300">
-                          <BeltBadge belt={profile.belt_history[profile.belt_history.length - 1].belt} />
-                        </div>
+                        <BeltBadge belt={profile.belt_history[profile.belt_history.length - 1].belt} />
                       )}
                     </div>
                     
                     {profile?.bio && (
-                      <p className="text-muted-foreground text-lg md:text-xl leading-relaxed max-w-2xl">
+                      <p className="text-muted-foreground text-base md:text-lg leading-relaxed max-w-2xl">
                         {profile.bio}
                       </p>
                     )}
                     
-                    {/* Enhanced Stats Row with Follow Button */}
-                    <div className="flex flex-wrap items-center gap-6">
-                      <div className="flex items-center gap-3 px-4 py-2 bg-gradient-to-r from-primary/10 to-primary/5 rounded-xl border border-primary/20 hover:border-primary/40 transition-all duration-300 hover:scale-105">
-                        <div className="p-2 bg-primary/20 rounded-lg">
-                          <Video className="w-5 h-5 text-primary" />
+                    {/* Stats Row with Follow Button */}
+                    <div className="flex flex-wrap items-center gap-4 pt-2">
+                      {videos.length > 0 && (
+                        <div className="flex items-center gap-2 px-3 py-2 bg-primary/10 rounded-lg border border-primary/20">
+                          <Video className="w-4 h-4 text-primary" />
+                          <div className="flex flex-col">
+                            <span className="font-bold text-lg">{videos.length}</span>
+                            <span className="text-xs text-muted-foreground">
+                              {language === "ja" ? "動画" : "Videos"}
+                            </span>
+                          </div>
                         </div>
-                        <div className="flex flex-col">
-                          <span className="font-bold text-2xl text-foreground">{videos.length}</span>
-                          <span className="text-xs text-muted-foreground uppercase tracking-wide">
-                            {language === "ja" ? "動画" : "Videos"}
-                          </span>
-                        </div>
-                      </div>
+                      )}
 
-                      <div className="flex items-center gap-3 px-4 py-2 bg-gradient-to-r from-accent/10 to-accent/5 rounded-xl border border-accent/20 hover:border-accent/40 transition-all duration-300 hover:scale-105 cursor-pointer">
-                        <div className="p-2 bg-accent/20 rounded-lg">
-                          <User className="w-5 h-5 text-accent" />
-                        </div>
+                      <div className="flex items-center gap-2 px-3 py-2 bg-accent/10 rounded-lg border border-accent/20">
+                        <User className="w-4 h-4 text-accent" />
                         <div className="flex flex-col">
-                          <span className="font-bold text-2xl text-foreground">{followersCount}</span>
-                          <span className="text-xs text-muted-foreground uppercase tracking-wide">
+                          <span className="font-bold text-lg">{followersCount}</span>
+                          <span className="text-xs text-muted-foreground">
                             {language === "ja" ? "フォロワー" : "Followers"}
                           </span>
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-3 px-4 py-2 bg-gradient-to-r from-muted/10 to-muted/5 rounded-xl border border-muted/20 hover:border-muted/40 transition-all duration-300 hover:scale-105 cursor-pointer">
+                      <div className="flex items-center gap-2 px-3 py-2 bg-muted/50 rounded-lg border border-border">
                         <div className="flex flex-col">
-                          <span className="font-bold text-2xl text-foreground">{followingCount}</span>
-                          <span className="text-xs text-muted-foreground uppercase tracking-wide">
+                          <span className="font-bold text-lg">{followingCount}</span>
+                          <span className="text-xs text-muted-foreground">
                             {language === "ja" ? "フォロー中" : "Following"}
                           </span>
                         </div>
                       </div>
                       
                       {profile?.titles && profile.titles.length > 0 && (
-                        <div className="flex items-center gap-3 px-4 py-2 bg-gradient-to-r from-accent/10 to-accent/5 rounded-xl border border-accent/20 hover:border-accent/40 transition-all duration-300 hover:scale-105">
-                          <div className="text-2xl">🏆</div>
+                        <div className="flex items-center gap-2 px-3 py-2 bg-accent/10 rounded-lg border border-accent/20">
+                          <div className="text-lg">🏆</div>
                           <div className="flex flex-col">
-                            <span className="font-bold text-2xl text-foreground">{profile.titles.length}</span>
-                            <span className="text-xs text-muted-foreground uppercase tracking-wide">
+                            <span className="font-bold text-lg">{profile.titles.length}</span>
+                            <span className="text-xs text-muted-foreground">
                               {language === "ja" ? "タイトル" : "Titles"}
                             </span>
                           </div>
@@ -715,10 +708,10 @@ export default function UserProfile() {
                       )}
                       
                       {profile?.created_at && (
-                        <div className="flex items-center gap-3 px-4 py-2 bg-muted/50 rounded-xl border border-border hover:border-border/80 transition-all duration-300">
-                          <Calendar className="w-5 h-5 text-muted-foreground" />
+                        <div className="flex items-center gap-2 px-3 py-2 bg-muted/50 rounded-lg border border-border">
+                          <Calendar className="w-4 h-4 text-muted-foreground" />
                           <div className="flex flex-col">
-                            <span className="text-sm font-medium text-foreground">
+                            <span className="text-sm font-medium">
                               {new Date(profile.created_at).toLocaleDateString(language === "ja" ? "ja-JP" : "en-US", { 
                                 year: 'numeric', 
                                 month: 'short' 
@@ -736,9 +729,9 @@ export default function UserProfile() {
                           onClick={isFollowing ? handleUnfollow : handleFollow}
                           variant={isFollowing ? "outline" : "default"}
                           size="lg"
-                          className="ml-auto shadow-lg hover:shadow-xl transition-all duration-300"
+                          className="ml-auto"
                         >
-                          <User className="w-5 h-5 mr-2" />
+                          <User className="w-4 h-4 mr-2" />
                           {isFollowing 
                             ? (language === "ja" ? "フォロー中" : "Following")
                             : (language === "ja" ? "フォロー" : "Follow")
@@ -752,71 +745,63 @@ export default function UserProfile() {
             </Card>
           </div>
 
-          {/* BJJ Profile Section with Elegant Design */}
+          {/* BJJ Profile Section */}
           {(profile?.belt_history && profile.belt_history.length > 0) || 
            profile?.home_dojo || 
            (profile?.training_locations && profile.training_locations.length > 0) ||
-           (profile?.titles && profile.titles.length > 0) ? (
-            <Card className="mb-12 animate-fade-up backdrop-blur-xl bg-card/95 border-2 border-border/50 shadow-xl hover:shadow-2xl transition-all duration-500">
-              <CardContent className="p-8 md:p-12">
-                <div className="flex items-center gap-3 mb-10">
-                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary to-accent flex items-center justify-center text-2xl shadow-lg">
+           (profile?.titles && profile.titles.length > 0) ||
+           (profile?.favorite_fighters && profile.favorite_fighters.length > 0) ||
+           (profile?.favorite_techniques && profile.favorite_techniques.length > 0) ? (
+            <Card className="mb-8 animate-fade-up bg-card border shadow-lg">
+              <CardContent className="p-6 md:p-8">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-xl">
                     🥋
                   </div>
-                  <h2 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
+                  <h2 className="text-2xl md:text-3xl font-bold">
                     {language === "ja" ? "柔術プロフィール" : "BJJ Profile"}
                   </h2>
                 </div>
                 
-                <div className="grid md:grid-cols-2 gap-10">
-                  {/* Belt History Timeline - Enhanced */}
+                <div className="grid md:grid-cols-2 gap-8">
+                  {/* Belt History */}
                   {profile?.belt_history && profile.belt_history.length > 0 && (
                     <div className="md:col-span-2">
-                      <div className="flex items-center gap-3 mb-8">
-                        <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                          <div className="text-xl">🥋</div>
-                        </div>
-                        <h3 className="text-2xl font-bold">
+                      <div className="flex items-center gap-2 mb-6">
+                        <div className="text-lg">🥋</div>
+                        <h3 className="text-xl font-bold">
                           {language === "ja" ? "帯の履歴" : "Belt Journey"}
                         </h3>
                       </div>
                       <div className="relative">
-                        {/* Enhanced Timeline line with gradient */}
-                        <div className="absolute left-7 top-0 bottom-0 w-1 bg-gradient-to-b from-primary via-accent to-transparent rounded-full" />
+                        <div className="absolute left-6 top-0 bottom-0 w-0.5 bg-border" />
                         
-                        <div className="space-y-8">
+                        <div className="space-y-6">
                           {[...profile.belt_history].reverse().map((belt, index) => (
                             <div 
                               key={index} 
-                              className="relative pl-20 animate-fade-up hover:translate-x-2 transition-transform duration-300" 
-                              style={{ animationDelay: `${index * 0.15}s` }}
+                              className="relative pl-16 animate-fade-up" 
+                              style={{ animationDelay: `${index * 0.1}s` }}
                             >
-                              {/* Enhanced Timeline dot with glow */}
-                              <div className="absolute left-4 top-2 w-8 h-8 rounded-full bg-gradient-to-br from-primary to-accent shadow-xl flex items-center justify-center z-10 group-hover:scale-125 transition-transform">
-                                <div className="w-3 h-3 rounded-full bg-white animate-pulse" />
+                              <div className="absolute left-3 top-1 w-6 h-6 rounded-full bg-primary shadow-md flex items-center justify-center z-10">
+                                <div className="w-2 h-2 rounded-full bg-white" />
                               </div>
                               
-                              {/* Content card with glass effect */}
-                              <div className="bg-gradient-to-br from-card to-card/50 backdrop-blur-sm border border-border/30 rounded-2xl p-6 shadow-lg hover:shadow-2xl hover:border-primary/30 transition-all duration-300 group relative overflow-hidden">
-                                {/* Decorative gradient overlay */}
-                                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-primary/5 to-transparent rounded-full blur-2xl" />
-                                
-                                <div className="flex items-start gap-5 relative z-10">
-                                  <div className="transform group-hover:scale-110 transition-transform duration-300">
-                                    <BeltBadge belt={belt.belt} />
-                                  </div>
-                                  <div className="flex-1 min-w-0 space-y-2">
-                                    <h4 className="font-bold text-xl md:text-2xl text-foreground">{belt.belt}</h4>
+                              <div className="bg-card/50 border rounded-xl p-4 hover:shadow-md transition-shadow">
+                                <div className="flex items-start gap-4">
+                                  <BeltBadge belt={belt.belt} />
+                                  <div className="flex-1 space-y-1">
+                                    <h4 className="font-bold text-lg">{belt.belt}</h4>
                                     {belt.instructor && (
-                                      <p className="text-sm md:text-base text-muted-foreground flex items-center gap-2">
-                                        <span className="text-base">👨‍🏫</span>
-                                        <span className="font-medium">{belt.instructor}</span>
+                                      <p className="text-sm text-muted-foreground flex items-center gap-1">
+                                        <span>👨‍🏫</span>
+                                        {belt.instructor}
                                       </p>
                                     )}
                                     {belt.date && (
-                                      <p className="text-xs md:text-sm text-muted-foreground flex items-center gap-2">
-                                        <Calendar className="w-4 h-4" />
-                                        <span>{belt.date}</span>
+                                      <p className="text-xs text-muted-foreground flex items-center gap-1">
+                                        <Calendar className="w-3 h-3" />
+                                        {belt.date}
                                       </p>
                                     )}
                                   </div>
@@ -829,39 +814,33 @@ export default function UserProfile() {
                     </div>
                   )}
 
-                  {/* Titles with Trophy Design */}
+                  {/* Titles */}
                   {profile?.titles && profile.titles.length > 0 && (
                     <div>
-                      <div className="flex items-center gap-3 mb-5">
-                        <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center">
-                          <span className="text-xl">🏆</span>
-                        </div>
+                      <div className="flex items-center gap-2 mb-4">
+                        <span className="text-lg">🏆</span>
                         <h3 className="text-xl font-bold">
                           {language === "ja" ? "獲得タイトル" : "Achievements"}
                         </h3>
                       </div>
-                      <div className="space-y-3">
+                      <div className="space-y-2">
                         {profile.titles.map((title, index) => (
                           <div 
                             key={index} 
-                            className="p-5 bg-gradient-to-br from-accent/10 to-accent/5 rounded-2xl border border-accent/30 hover:border-accent/50 transition-all duration-300 hover:scale-[1.02] hover:shadow-lg group"
-                            style={{ animationDelay: `${index * 0.1}s` }}
+                            className="p-4 bg-accent/10 rounded-lg border border-accent/20 hover:border-accent/40 transition-colors"
                           >
-                            <div className="relative">
-                              <div className="absolute -top-2 -right-2 w-20 h-20 bg-gradient-to-br from-accent/20 to-transparent rounded-full blur-xl group-hover:scale-125 transition-transform" />
-                              <p className="font-bold text-lg text-accent-foreground relative z-10">
-                                {title.title === "custom" ? title.customTitle : title.title}
+                            <p className="font-semibold text-base">
+                              {title.title === "custom" ? title.customTitle : title.title}
+                            </p>
+                            {title.organization && (
+                              <p className="text-sm text-muted-foreground mt-1">{title.organization}</p>
+                            )}
+                            {title.date && (
+                              <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                                <Calendar className="w-3 h-3" />
+                                {title.date}
                               </p>
-                              {title.organization && (
-                                <p className="text-sm text-muted-foreground mt-1">{title.organization}</p>
-                              )}
-                              {title.date && (
-                                <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
-                                  <Calendar className="w-3 h-3" />
-                                  {title.date}
-                                </p>
-                              )}
-                            </div>
+                            )}
                           </div>
                         ))}
                       </div>
@@ -871,10 +850,8 @@ export default function UserProfile() {
                   {/* Favorite Fighters */}
                   {profile?.favorite_fighters && profile.favorite_fighters.length > 0 && (
                     <div>
-                      <div className="flex items-center gap-3 mb-5">
-                        <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                          <span className="text-xl">👤</span>
-                        </div>
+                      <div className="flex items-center gap-2 mb-4">
+                        <span className="text-lg">👤</span>
                         <h3 className="text-xl font-bold">
                           {language === "ja" ? "好きな選手" : "Favorite Fighters"}
                         </h3>
@@ -884,7 +861,7 @@ export default function UserProfile() {
                           <Badge 
                             key={index} 
                             variant="secondary" 
-                            className="text-sm px-4 py-2 hover:scale-105 transition-transform"
+                            className="text-sm px-3 py-1"
                           >
                             {fighter}
                           </Badge>
@@ -896,10 +873,8 @@ export default function UserProfile() {
                   {/* Favorite Techniques */}
                   {profile?.favorite_techniques && profile.favorite_techniques.length > 0 && (
                     <div>
-                      <div className="flex items-center gap-3 mb-5">
-                        <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center">
-                          <span className="text-xl">🥋</span>
-                        </div>
+                      <div className="flex items-center gap-2 mb-4">
+                        <span className="text-lg">🥋</span>
                         <h3 className="text-xl font-bold">
                           {language === "ja" ? "好きな技" : "Favorite Techniques"}
                         </h3>
@@ -909,7 +884,7 @@ export default function UserProfile() {
                           <Badge 
                             key={index} 
                             variant="secondary" 
-                            className="text-sm px-4 py-2 hover:scale-105 transition-transform"
+                            className="text-sm px-3 py-1"
                           >
                             {technique}
                           </Badge>
@@ -921,17 +896,15 @@ export default function UserProfile() {
                   {/* Personal Info Section */}
                   {(profile?.hometown || profile?.date_of_birth || (profile?.hobbies && profile.hobbies.length > 0)) && (
                     <div>
-                      <div className="flex items-center gap-3 mb-5">
-                        <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                          <span className="text-xl">ℹ️</span>
-                        </div>
+                      <div className="flex items-center gap-2 mb-4">
+                        <span className="text-lg">ℹ️</span>
                         <h3 className="text-xl font-bold">
                           {language === "ja" ? "プロフィール" : "About"}
                         </h3>
                       </div>
-                      <div className="space-y-4">
+                      <div className="space-y-3">
                         {profile?.hometown && (
-                          <div className="flex items-center gap-3">
+                          <div className="flex items-center gap-2">
                             <span className="text-lg">🏠</span>
                             <div>
                               <p className="text-xs text-muted-foreground">{language === "ja" ? "出身地" : "Hometown"}</p>
@@ -948,7 +921,7 @@ export default function UserProfile() {
                             age--;
                           }
                           return (
-                            <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-2">
                               <span className="text-lg">🎂</span>
                               <div>
                                 <p className="text-xs text-muted-foreground">{language === "ja" ? "年齢" : "Age"}</p>
@@ -959,11 +932,11 @@ export default function UserProfile() {
                         })()}
                         {profile?.hobbies && profile.hobbies.length > 0 && (
                           <div>
-                            <div className="flex items-center gap-3 mb-2">
+                            <div className="flex items-center gap-2 mb-2">
                               <span className="text-lg">🎯</span>
                               <p className="text-xs text-muted-foreground">{language === "ja" ? "趣味" : "Hobbies"}</p>
                             </div>
-                            <div className="flex flex-wrap gap-2 ml-9">
+                            <div className="flex flex-wrap gap-2 ml-7">
                               {profile.hobbies.map((hobby, index) => (
                                 <Badge 
                                   key={index} 
@@ -983,23 +956,21 @@ export default function UserProfile() {
                   {/* Social Links */}
                   {profile?.social_links && (profile.social_links.instagram || profile.social_links.twitter || profile.social_links.youtube || profile.social_links.facebook || profile.social_links.tiktok || profile.social_links.website) && (
                     <div>
-                      <div className="flex items-center gap-3 mb-5">
-                        <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center">
-                          <span className="text-xl">🔗</span>
-                        </div>
+                      <div className="flex items-center gap-2 mb-4">
+                        <span className="text-lg">🔗</span>
                         <h3 className="text-xl font-bold">
                           {language === "ja" ? "SNSリンク" : "Social Links"}
                         </h3>
                       </div>
-                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                         {profile.social_links.instagram && (
                           <a 
                             href={profile.social_links.instagram} 
                             target="_blank" 
                             rel="noopener noreferrer"
-                            className="flex items-center gap-2 p-3 rounded-xl bg-gradient-to-br from-purple-500/10 to-pink-500/10 hover:from-purple-500/20 hover:to-pink-500/20 border border-purple-500/20 hover:border-purple-500/40 transition-all hover:scale-105"
+                            className="flex items-center gap-2 p-3 rounded-lg bg-muted/50 hover:bg-muted border border-border hover:border-primary/30 transition-colors"
                           >
-                            <span className="text-xl">📷</span>
+                            <span>📷</span>
                             <span className="text-sm font-medium">Instagram</span>
                           </a>
                         )}
@@ -1008,9 +979,9 @@ export default function UserProfile() {
                             href={profile.social_links.twitter} 
                             target="_blank" 
                             rel="noopener noreferrer"
-                            className="flex items-center gap-2 p-3 rounded-xl bg-gradient-to-br from-blue-500/10 to-sky-500/10 hover:from-blue-500/20 hover:to-sky-500/20 border border-blue-500/20 hover:border-blue-500/40 transition-all hover:scale-105"
+                            className="flex items-center gap-2 p-3 rounded-lg bg-muted/50 hover:bg-muted border border-border hover:border-primary/30 transition-colors"
                           >
-                            <span className="text-xl">🐦</span>
+                            <span>🐦</span>
                             <span className="text-sm font-medium">Twitter</span>
                           </a>
                         )}
@@ -1019,9 +990,9 @@ export default function UserProfile() {
                             href={profile.social_links.youtube} 
                             target="_blank" 
                             rel="noopener noreferrer"
-                            className="flex items-center gap-2 p-3 rounded-xl bg-gradient-to-br from-red-500/10 to-red-600/10 hover:from-red-500/20 hover:to-red-600/20 border border-red-500/20 hover:border-red-500/40 transition-all hover:scale-105"
+                            className="flex items-center gap-2 p-3 rounded-lg bg-muted/50 hover:bg-muted border border-border hover:border-primary/30 transition-colors"
                           >
-                            <span className="text-xl">▶️</span>
+                            <span>▶️</span>
                             <span className="text-sm font-medium">YouTube</span>
                           </a>
                         )}
@@ -1030,9 +1001,9 @@ export default function UserProfile() {
                             href={profile.social_links.facebook} 
                             target="_blank" 
                             rel="noopener noreferrer"
-                            className="flex items-center gap-2 p-3 rounded-xl bg-gradient-to-br from-blue-600/10 to-blue-700/10 hover:from-blue-600/20 hover:to-blue-700/20 border border-blue-600/20 hover:border-blue-600/40 transition-all hover:scale-105"
+                            className="flex items-center gap-2 p-3 rounded-lg bg-muted/50 hover:bg-muted border border-border hover:border-primary/30 transition-colors"
                           >
-                            <span className="text-xl">👍</span>
+                            <span>👍</span>
                             <span className="text-sm font-medium">Facebook</span>
                           </a>
                         )}
@@ -1041,9 +1012,9 @@ export default function UserProfile() {
                             href={profile.social_links.tiktok} 
                             target="_blank" 
                             rel="noopener noreferrer"
-                            className="flex items-center gap-2 p-3 rounded-xl bg-gradient-to-br from-black/10 to-pink-500/10 hover:from-black/20 hover:to-pink-500/20 border border-pink-500/20 hover:border-pink-500/40 transition-all hover:scale-105"
+                            className="flex items-center gap-2 p-3 rounded-lg bg-muted/50 hover:bg-muted border border-border hover:border-primary/30 transition-colors"
                           >
-                            <span className="text-xl">🎵</span>
+                            <span>🎵</span>
                             <span className="text-sm font-medium">TikTok</span>
                           </a>
                         )}
@@ -1052,9 +1023,9 @@ export default function UserProfile() {
                             href={profile.social_links.website} 
                             target="_blank" 
                             rel="noopener noreferrer"
-                            className="flex items-center gap-2 p-3 rounded-xl bg-gradient-to-br from-primary/10 to-accent/10 hover:from-primary/20 hover:to-accent/20 border border-primary/20 hover:border-primary/40 transition-all hover:scale-105"
+                            className="flex items-center gap-2 p-3 rounded-lg bg-muted/50 hover:bg-muted border border-border hover:border-primary/30 transition-colors"
                           >
-                            <span className="text-xl">🌐</span>
+                            <span>🌐</span>
                             <span className="text-sm font-medium">{language === "ja" ? "ウェブサイト" : "Website"}</span>
                           </a>
                         )}
@@ -1062,41 +1033,36 @@ export default function UserProfile() {
                     </div>
                   )}
 
-                  {/* Home Dojo with Elegant Design */}
+                  {/* Home Dojo */}
                   {profile?.home_dojo && (
                     <div>
-                      <div className="flex items-center gap-3 mb-5">
-                        <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                          <span className="text-xl">🏛️</span>
-                        </div>
+                      <div className="flex items-center gap-2 mb-4">
+                        <span className="text-lg">🏛️</span>
                         <h3 className="text-xl font-bold">
                           {language === "ja" ? "所属道場" : "Home Dojo"}
                         </h3>
                       </div>
-                      <div className="p-6 bg-gradient-to-br from-primary/10 to-primary/5 rounded-2xl border-2 border-primary/30 hover:border-primary/50 transition-all duration-300 hover:scale-[1.02] shadow-lg relative overflow-hidden group">
-                        <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-2xl group-hover:scale-150 transition-transform" />
-                        <p className="font-bold text-xl md:text-2xl relative z-10">{profile.home_dojo}</p>
+                      <div className="p-4 bg-primary/10 rounded-lg border border-primary/20">
+                        <p className="font-semibold text-lg">{profile.home_dojo}</p>
                       </div>
                     </div>
                   )}
 
-                  {/* Training Locations with Badge Grid */}
+                  {/* Training Locations */}
                   {profile?.training_locations && profile.training_locations.length > 0 && (
                     <div>
-                      <div className="flex items-center gap-3 mb-5">
-                        <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center">
-                          <span className="text-xl">🗺️</span>
-                        </div>
+                      <div className="flex items-center gap-2 mb-4">
+                        <span className="text-lg">🗺️</span>
                         <h3 className="text-xl font-bold">
                           {language === "ja" ? "出稽古先" : "Training Spots"}
                         </h3>
                       </div>
-                      <div className="flex flex-wrap gap-3">
+                      <div className="flex flex-wrap gap-2">
                         {profile.training_locations.map((location, index) => (
                           <Badge 
                             key={index} 
                             variant="outline" 
-                            className="px-4 py-2 text-sm font-medium bg-gradient-to-r from-background to-accent/5 border-border/50 hover:border-accent/50 hover:scale-105 transition-all duration-300 shadow-sm hover:shadow-md"
+                            className="px-3 py-1 text-sm"
                           >
                             {location}
                           </Badge>
