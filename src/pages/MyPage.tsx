@@ -7,7 +7,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { User, CreditCard, Calendar, Mail, Upload, Video, Eye, Edit2, Check, X, Trash2 } from "lucide-react";
+import { User, CreditCard, Calendar, Mail, Upload, Video, Eye, Edit2, Check, X, Trash2, Lock, Globe } from "lucide-react";
 import { toast } from "sonner";
 import { VideoUploadDialog } from "@/components/VideoUploadDialog";
 import { VideoEditDialog } from "@/components/VideoEditDialog";
@@ -15,6 +15,7 @@ import { UserVideoCard } from "@/components/UserVideoCard";
 import { Badge } from "@/components/ui/badge";
 import { UserProfileEditDialog } from "@/components/UserProfileEditDialog";
 import { ExternalLink } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -47,6 +48,15 @@ interface UserVideo {
   created_at: string;
 }
 
+interface Profile {
+  display_name: string | null;
+  bio: string | null;
+  avatar_url: string | null;
+  username: string | null;
+  education: Array<{school: string; degree?: string; period?: string}> | null;
+  work_experience: Array<{company: string; position: string; period?: string; description?: string}> | null;
+}
+
 const MyPage = () => {
   const { language } = useLanguage();
   const navigate = useNavigate();
@@ -66,6 +76,7 @@ const MyPage = () => {
   const [deletingVideoId, setDeletingVideoId] = useState<string | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [profileDialogOpen, setProfileDialogOpen] = useState(false);
+  const [profile, setProfile] = useState<Profile | null>(null);
 
   const loadUserVideos = async () => {
     if (!user) return;
@@ -105,8 +116,31 @@ const MyPage = () => {
     if (user) {
       loadUserVideos();
       loadReferralCodeAndPoints();
+      loadProfile();
     }
   }, [user]);
+
+  const loadProfile = async () => {
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('display_name, bio, avatar_url, username, education, work_experience')
+        .eq('id', user.id)
+        .single();
+
+      if (error) throw error;
+      
+      setProfile({
+        ...data,
+        education: (data.education as any) || [],
+        work_experience: (data.work_experience as any) || []
+      });
+    } catch (error) {
+      console.error('Error loading profile:', error);
+    }
+  };
 
   const loadReferralCodeAndPoints = async () => {
     if (!user) return;
@@ -420,33 +454,112 @@ const MyPage = () => {
             </div>
           ) : (
             <>
+              {/* Profile Preview Card - Public */}
+              <Card className="mb-6 animate-fade-up">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="flex items-center gap-2 font-light">
+                      <Globe className="h-5 w-5 text-green-600" />
+                      {language === "ja" ? "公開プロフィール" : "Public Profile"}
+                    </CardTitle>
+                    <div className="flex gap-2">
+                      <Badge variant="secondary" className="gap-1">
+                        <Globe className="w-3 h-3" />
+                        {language === "ja" ? "公開" : "Public"}
+                      </Badge>
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => navigate(`/user/${user?.id}`)}
+                        className="gap-2"
+                      >
+                        <ExternalLink className="w-4 h-4" />
+                        {language === "ja" ? "公開ページを見る" : "View Public Page"}
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => setProfileDialogOpen(true)}
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-start gap-6">
+                    <Avatar className="h-20 w-20">
+                      <AvatarImage src={profile?.avatar_url || undefined} />
+                      <AvatarFallback>
+                        {profile?.display_name?.[0] || profile?.username?.[0] || user?.email?.[0]?.toUpperCase() || "U"}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1">
+                      <h2 className="text-2xl font-light mb-2">
+                        {profile?.display_name || profile?.username || user?.email?.split('@')[0] || "ユーザー"}
+                      </h2>
+                      {profile?.bio && (
+                        <p className="text-muted-foreground mb-4">{profile.bio}</p>
+                      )}
+                      
+                      {/* Education Section */}
+                      {profile?.education && profile.education.length > 0 && (
+                        <div className="mb-4">
+                          <h3 className="text-sm font-semibold mb-2">学歴</h3>
+                          <ul className="space-y-1">
+                            {profile.education.map((edu, index) => (
+                              <li key={index} className="text-sm text-muted-foreground">
+                                {edu.school}
+                                {edu.degree && ` - ${edu.degree}`}
+                                {edu.period && ` (${edu.period})`}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                      {/* Work Experience Section */}
+                      {profile?.work_experience && profile.work_experience.length > 0 && (
+                        <div className="mb-4">
+                          <h3 className="text-sm font-semibold mb-2">職歴</h3>
+                          <ul className="space-y-2">
+                            {profile.work_experience.map((work, index) => (
+                              <li key={index} className="text-sm">
+                                <div className="font-medium">{work.company} - {work.position}</div>
+                                {work.period && (
+                                  <div className="text-muted-foreground text-xs">{work.period}</div>
+                                )}
+                                {work.description && (
+                                  <div className="text-muted-foreground mt-1">{work.description}</div>
+                                )}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                      <p className="text-sm text-muted-foreground">
+                        <Video className="inline h-4 w-4 mr-1" />
+                        動画 {userVideos.length}件
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
               <div className="grid md:grid-cols-2 gap-6 mb-6 animate-fade-up">
-            {/* User Info Card */}
+            {/* Private Info Card */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center justify-between font-light">
                   <div className="flex items-center gap-2">
-                    <User className="h-5 w-5" />
-                    {language === "ja" ? "ユーザー情報" : language === "pt" ? "Informações do usuário" : "User Information"}
+                    <Lock className="h-5 w-5 text-orange-600" />
+                    {language === "ja" ? "非公開情報" : "Private Information"}
                   </div>
-                  <div className="flex gap-2">
-                    <Button 
-                      size="sm" 
-                      variant="outline"
-                      onClick={() => navigate(`/user/${user?.id}`)}
-                      className="gap-2"
-                    >
-                      <ExternalLink className="w-4 h-4" />
-                      {language === "ja" ? "公開ページ" : "Public Page"}
-                    </Button>
-                    <Button 
-                      size="sm" 
-                      variant="outline"
-                      onClick={() => setProfileDialogOpen(true)}
-                    >
-                      <Edit2 className="w-4 h-4" />
-                    </Button>
-                  </div>
+                  <Badge variant="outline" className="gap-1">
+                    <Lock className="w-3 h-3" />
+                    {language === "ja" ? "非公開" : "Private"}
+                  </Badge>
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -463,7 +576,7 @@ const MyPage = () => {
                   <Calendar className="h-4 w-4 text-muted-foreground" />
                   <div>
                     <p className="text-xs text-muted-foreground">
-                      {language === "ja" ? "ユーザーID" : language === "pt" ? "ID do usuário" : "User ID"}
+                      {language === "ja" ? "ユーザーID" : "User ID"}
                     </p>
                     <p className="font-light text-xs">{user?.id.slice(0, 8)}...</p>
                   </div>
@@ -526,9 +639,15 @@ const MyPage = () => {
             {/* Referral Code Card */}
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2 font-light">
-                  <User className="h-5 w-5" />
-                  {language === "ja" ? "紹介コード" : "Referral Code"}
+                <CardTitle className="flex items-center justify-between font-light">
+                  <div className="flex items-center gap-2">
+                    <User className="h-5 w-5" />
+                    {language === "ja" ? "紹介コード" : "Referral Code"}
+                  </div>
+                  <Badge variant="outline" className="gap-1">
+                    <Lock className="w-3 h-3" />
+                    {language === "ja" ? "非公開" : "Private"}
+                  </Badge>
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -620,9 +739,15 @@ const MyPage = () => {
             {/* Points Card */}
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2 font-light">
-                  <CreditCard className="h-5 w-5" />
-                  {language === "ja" ? "ポイント" : "Points"}
+                <CardTitle className="flex items-center justify-between font-light">
+                  <div className="flex items-center gap-2">
+                    <CreditCard className="h-5 w-5" />
+                    {language === "ja" ? "ポイント" : "Points"}
+                  </div>
+                  <Badge variant="outline" className="gap-1">
+                    <Lock className="w-3 h-3" />
+                    {language === "ja" ? "非公開" : "Private"}
+                  </Badge>
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -660,9 +785,15 @@ const MyPage = () => {
           <div className="mt-12 animate-fade-up">
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h2 className="text-3xl font-light mb-2">
-                  {language === "ja" ? "あなたの動画" : language === "pt" ? "Seus vídeos" : "Your Videos"}
-                </h2>
+                <div className="flex items-center gap-3 mb-2">
+                  <h2 className="text-3xl font-light">
+                    {language === "ja" ? "あなたの動画" : language === "pt" ? "Seus vídeos" : "Your Videos"}
+                  </h2>
+                  <Badge variant="secondary" className="gap-1">
+                    <Globe className="w-3 h-3" />
+                    {language === "ja" ? "公開/非公開設定可能" : "Public/Private"}
+                  </Badge>
+                </div>
                 <Button variant="link" onClick={copyProfileUrl} className="px-0 h-auto">
                   {language === "ja" ? "プロフィールページを共有" : "Share your profile"}
                 </Button>
@@ -746,6 +877,7 @@ const MyPage = () => {
           onOpenChange={setProfileDialogOpen}
           userId={user.id}
           onSuccess={() => {
+            loadProfile();
             toast.success(language === "ja" ? "プロフィールを更新しました" : "Profile updated");
           }}
         />
