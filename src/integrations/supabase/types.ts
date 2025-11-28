@@ -292,8 +292,11 @@ export type Database = {
           email: string | null
           favorite_fighters: Json | null
           favorite_techniques: Json | null
+          hobbies: Json | null
           home_dojo: string | null
+          hometown: string | null
           id: string
+          marital_status: string | null
           organization_id: string | null
           stripe_customer_id: string | null
           titles: Json | null
@@ -313,8 +316,11 @@ export type Database = {
           email?: string | null
           favorite_fighters?: Json | null
           favorite_techniques?: Json | null
+          hobbies?: Json | null
           home_dojo?: string | null
+          hometown?: string | null
           id: string
+          marital_status?: string | null
           organization_id?: string | null
           stripe_customer_id?: string | null
           titles?: Json | null
@@ -334,8 +340,11 @@ export type Database = {
           email?: string | null
           favorite_fighters?: Json | null
           favorite_techniques?: Json | null
+          hobbies?: Json | null
           home_dojo?: string | null
+          hometown?: string | null
           id?: string
+          marital_status?: string | null
           organization_id?: string | null
           stripe_customer_id?: string | null
           titles?: Json | null
