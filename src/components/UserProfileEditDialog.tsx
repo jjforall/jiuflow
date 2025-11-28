@@ -21,6 +21,7 @@ export const UserProfileEditDialog = ({ open, onOpenChange, userId, onSuccess }:
   const [displayName, setDisplayName] = useState("");
   const [bio, setBio] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
+  const [username, setUsername] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
 
@@ -34,7 +35,7 @@ export const UserProfileEditDialog = ({ open, onOpenChange, userId, onSuccess }:
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('display_name, bio, avatar_url')
+        .select('display_name, bio, avatar_url, username')
         .eq('id', userId)
         .single();
 
@@ -43,6 +44,7 @@ export const UserProfileEditDialog = ({ open, onOpenChange, userId, onSuccess }:
       setDisplayName(data?.display_name || "");
       setBio(data?.bio || "");
       setAvatarUrl(data?.avatar_url || "");
+      setUsername(data?.username || "");
     } catch (error) {
       console.error('Error loading profile:', error);
     }
@@ -95,12 +97,29 @@ export const UserProfileEditDialog = ({ open, onOpenChange, userId, onSuccess }:
     setIsLoading(true);
 
     try {
+      // Check if username is taken (if changed)
+      if (username.trim()) {
+        const { data: existingUser } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('username', username.trim())
+          .neq('id', userId)
+          .maybeSingle();
+
+        if (existingUser) {
+          toast.error(language === "ja" ? "このURLは既に使用されています" : "This URL is already taken");
+          setIsLoading(false);
+          return;
+        }
+      }
+
       const { error } = await supabase
         .from('profiles')
         .update({
           display_name: displayName.trim() || null,
           bio: bio.trim() || null,
           avatar_url: avatarUrl.trim() || null,
+          username: username.trim() || null,
         })
         .eq('id', userId);
 
@@ -185,6 +204,31 @@ export const UserProfileEditDialog = ({ open, onOpenChange, userId, onSuccess }:
               placeholder={language === "ja" ? "山田太郎" : "John Doe"}
               maxLength={50}
             />
+          </div>
+
+          {/* Username (Custom URL) */}
+          <div className="space-y-2">
+            <Label htmlFor="username">
+              {language === "ja" ? "カスタムURL" : "Custom URL"}
+            </Label>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">
+                {window.location.origin}/user/
+              </span>
+              <Input
+                id="username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, ''))}
+                placeholder={language === "ja" ? "your-username" : "your-username"}
+                maxLength={30}
+                className="flex-1"
+              />
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {language === "ja" 
+                ? "英数字、ハイフン、アンダースコアのみ使用可能" 
+                : "Only lowercase letters, numbers, hyphens and underscores"}
+            </p>
           </div>
 
           {/* Bio */}
