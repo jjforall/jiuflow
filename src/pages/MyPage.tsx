@@ -158,13 +158,35 @@ const MyPage = () => {
 
   const loadDojoSuggestions = async () => {
     try {
+      // Default suggestions for common dojos and locations
+      const defaultSuggestions = [
+        'トライフォース赤坂',
+        'トライフォース池袋',
+        'トライフォース青山',
+        'グレイシー・バッハ東京',
+        'パラエストラ東京',
+        'ブルテリア柔術アカデミー',
+        'アライアンス柔術アカデミー',
+        'ドゥマウ柔術アカデミー',
+        'カーペ・ディエム',
+        'コブリンハ柔術',
+        'レノンGT',
+        'グレイシーバッハ',
+        'グレイシー柔術アカデミー',
+        'ヒクソン・グレイシー',
+        'カールソン・グレイシー',
+        'アカデミア柔術',
+        'ルータ・リーブレ',
+        'その他道場',
+      ];
+
       const { data, error } = await supabase
         .from('profiles')
         .select('home_dojo, training_locations');
 
       if (error) throw error;
 
-      const dojos = new Set<string>();
+      const dojos = new Set<string>(defaultSuggestions);
       
       data?.forEach((profile) => {
         if (profile.home_dojo) {
