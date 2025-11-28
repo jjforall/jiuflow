@@ -16,7 +16,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { BeltBadge } from "@/components/ui/belt-badge";
 import { Badge } from "@/components/ui/badge";
 import { CoverUploadDialog } from "@/components/CoverUploadDialog";
-import { Camera } from "lucide-react";
+import { CoverImageGalleryDialog } from "@/components/CoverImageGalleryDialog";
+import { Camera, Image } from "lucide-react";
 import hero1 from "@/assets/hero-1.jpg";
 import hero2 from "@/assets/hero-2.jpg";
 import hero3 from "@/assets/hero-3.jpg";
@@ -33,20 +34,41 @@ const DEFAULT_COVER_IMAGES = [
   hero6, hero7, hero8, hero9, hero10
 ];
 
-// ユーザーIDに基づいて一貫したランダム画像を選択
-const getDefaultCoverImage = (userId: string | null): string => {
-  if (!userId) return DEFAULT_COVER_IMAGES[0];
+// カバー画像のURLまたはインデックスから画像を取得
+const getCoverImageUrl = (coverUrl: string | null, userId: string | null): string => {
+  // "default-X" 形式の場合
+  if (coverUrl && coverUrl.startsWith("default-")) {
+    const index = parseInt(coverUrl.replace("default-", ""));
+    if (!isNaN(index) && index >= 0 && index < DEFAULT_COVER_IMAGES.length) {
+      return DEFAULT_COVER_IMAGES[index];
+    }
+  }
   
-  // ユーザーIDの文字列をハッシュ化して数値に変換
+  // カスタムアップロード画像の場合
+  if (coverUrl && !coverUrl.startsWith("default-")) {
+    return coverUrl;
+  }
+  
+  // デフォルト: ユーザーIDに基づいてランダム選択
+  if (!userId) return DEFAULT_COVER_IMAGES[0];
   let hash = 0;
   for (let i = 0; i < userId.length; i++) {
     hash = ((hash << 5) - hash) + userId.charCodeAt(i);
-    hash = hash & hash; // Convert to 32bit integer
+    hash = hash & hash;
   }
-  
-  // 0-9の範囲のインデックスを取得
   const index = Math.abs(hash) % DEFAULT_COVER_IMAGES.length;
   return DEFAULT_COVER_IMAGES[index];
+};
+
+// "default-X" 形式からインデックスを取得
+const getCurrentCoverIndex = (coverUrl: string | null): number | undefined => {
+  if (coverUrl && coverUrl.startsWith("default-")) {
+    const index = parseInt(coverUrl.replace("default-", ""));
+    if (!isNaN(index) && index >= 0 && index < DEFAULT_COVER_IMAGES.length) {
+      return index;
+    }
+  }
+  return undefined;
 };
 
 interface UserVideo {
@@ -95,6 +117,7 @@ export default function UserProfile() {
   const [editingField, setEditingField] = useState<string | null>(null);
   const [editValues, setEditValues] = useState<any>({});
   const [coverDialogOpen, setCoverDialogOpen] = useState(false);
+  const [isCoverGalleryOpen, setIsCoverGalleryOpen] = useState(false);
   const [isFollowing, setIsFollowing] = useState(false);
   const [followersCount, setFollowersCount] = useState(0);
   const [followingCount, setFollowingCount] = useState(0);
@@ -508,6 +531,25 @@ export default function UserProfile() {
     }
   };
 
+  const handleSelectDefaultCover = async (index: number) => {
+    if (!profile || !actualUserId) return;
+
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .update({ cover_image_url: `default-${index}` })
+        .eq("id", actualUserId);
+
+      if (error) throw error;
+
+      setProfile(prev => prev ? { ...prev, cover_image_url: `default-${index}` } : prev);
+      toast.success(language === "ja" ? "カバー画像を更新しました" : "Cover image updated");
+    } catch (error) {
+      console.error("Error updating cover image:", error);
+      toast.error(language === "ja" ? "カバー画像の更新に失敗しました" : "Failed to update cover image");
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-background to-accent/5">
       <Navigation />
@@ -531,7 +573,7 @@ export default function UserProfile() {
                 <>
                   <div 
                     className="absolute inset-0 bg-cover bg-center" 
-                    style={{ backgroundImage: `url(${getDefaultCoverImage(actualUserId)})` }}
+                    style={{ backgroundImage: `url(${getCoverImageUrl(profile?.cover_image_url || null, actualUserId)})` }}
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/40 to-transparent" />
                 </>
@@ -542,15 +584,26 @@ export default function UserProfile() {
               <div className="absolute bottom-0 left-0 w-96 h-96 bg-accent/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
               
               {currentUser === actualUserId && (
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  className="absolute top-6 right-6 opacity-0 group-hover:opacity-100 transition-all duration-300 backdrop-blur-md bg-background/80 hover:bg-background/90 border border-border/50 shadow-xl"
-                  onClick={() => setCoverDialogOpen(true)}
-                >
-                  <Camera className="w-4 h-4 mr-2" />
-                  {language === "ja" ? "カバーを変更" : "Change Cover"}
-                </Button>
+                <div className="absolute top-6 right-6 flex gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300">
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    className="backdrop-blur-md bg-background/80 hover:bg-background/90 border border-border/50 shadow-xl"
+                    onClick={() => setIsCoverGalleryOpen(true)}
+                  >
+                    <Image className="w-4 h-4 mr-2" />
+                    {language === "ja" ? "ギャラリー" : "Gallery"}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    className="backdrop-blur-md bg-background/80 hover:bg-background/90 border border-border/50 shadow-xl"
+                    onClick={() => setCoverDialogOpen(true)}
+                  >
+                    <Camera className="w-4 h-4 mr-2" />
+                    {language === "ja" ? "アップロード" : "Upload"}
+                  </Button>
+                </div>
               )}
             </div>
             
@@ -929,17 +982,25 @@ export default function UserProfile() {
       <Footer />
       
       {currentUser === actualUserId && actualUserId && (
-        <CoverUploadDialog
-          open={coverDialogOpen}
-          onOpenChange={setCoverDialogOpen}
-          currentCoverUrl={profile?.cover_image_url}
-          userId={actualUserId}
-          onUploadComplete={(url) => {
-            if (profile) {
-              setProfile({ ...profile, cover_image_url: url });
-            }
-          }}
-        />
+        <>
+          <CoverUploadDialog
+            open={coverDialogOpen}
+            onOpenChange={setCoverDialogOpen}
+            currentCoverUrl={profile?.cover_image_url}
+            userId={actualUserId}
+            onUploadComplete={(url) => {
+              if (profile) {
+                setProfile({ ...profile, cover_image_url: url });
+              }
+            }}
+          />
+          <CoverImageGalleryDialog
+            open={isCoverGalleryOpen}
+            onOpenChange={setIsCoverGalleryOpen}
+            onSelectImage={handleSelectDefaultCover}
+            currentIndex={getCurrentCoverIndex(profile?.cover_image_url || null)}
+          />
+        </>
       )}
     </div>
   );
