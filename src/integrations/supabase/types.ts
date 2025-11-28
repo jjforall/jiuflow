@@ -74,6 +74,72 @@ export type Database = {
           },
         ]
       }
+      dojos: {
+        Row: {
+          cover_image_url: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          description_ja: string | null
+          description_pt: string | null
+          email: string | null
+          facebook: string | null
+          id: string
+          instagram: string | null
+          is_verified: boolean | null
+          location: string | null
+          logo_url: string | null
+          name: string
+          name_ja: string
+          name_pt: string
+          phone: string | null
+          updated_at: string
+          website: string | null
+        }
+        Insert: {
+          cover_image_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          description_ja?: string | null
+          description_pt?: string | null
+          email?: string | null
+          facebook?: string | null
+          id?: string
+          instagram?: string | null
+          is_verified?: boolean | null
+          location?: string | null
+          logo_url?: string | null
+          name: string
+          name_ja: string
+          name_pt: string
+          phone?: string | null
+          updated_at?: string
+          website?: string | null
+        }
+        Update: {
+          cover_image_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          description_ja?: string | null
+          description_pt?: string | null
+          email?: string | null
+          facebook?: string | null
+          id?: string
+          instagram?: string | null
+          is_verified?: boolean | null
+          location?: string | null
+          logo_url?: string | null
+          name?: string
+          name_ja?: string
+          name_pt?: string
+          phone?: string | null
+          updated_at?: string
+          website?: string | null
+        }
+        Relationships: []
+      }
       event_registrations: {
         Row: {
           event_id: string
@@ -546,6 +612,48 @@ export type Database = {
           translated_text?: string
         }
         Relationships: []
+      }
+      user_dojos: {
+        Row: {
+          created_at: string
+          dojo_id: string
+          id: string
+          joined_at: string | null
+          relationship_type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          dojo_id: string
+          id?: string
+          joined_at?: string | null
+          relationship_type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          dojo_id?: string
+          id?: string
+          joined_at?: string | null
+          relationship_type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_dojos_dojo_id_fkey"
+            columns: ["dojo_id"]
+            isOneToOne: false
+            referencedRelation: "dojos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_dojos_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_follows: {
         Row: {
