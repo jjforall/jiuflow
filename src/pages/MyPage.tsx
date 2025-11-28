@@ -22,6 +22,7 @@ import { UserVideoCard } from "@/components/UserVideoCard";
 import { Badge } from "@/components/ui/badge";
 import { ExternalLink } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { AvatarUploadDialog } from "@/components/AvatarUploadDialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -90,6 +91,8 @@ const MyPage = () => {
   const [editValues, setEditValues] = useState<any>({});
   const [dojoSuggestions, setDojoSuggestions] = useState<string[]>([]);
   const [instructorSuggestions, setInstructorSuggestions] = useState<string[]>([]);
+  const [avatarDialogOpen, setAvatarDialogOpen] = useState(false);
+  const [createdAt, setCreatedAt] = useState<string | null>(null);
 
   const loadUserVideos = async () => {
     if (!user) return;
@@ -192,7 +195,7 @@ const MyPage = () => {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('display_name, bio, avatar_url, username, education, work_experience, belt_history, home_dojo, training_locations, titles')
+        .select('display_name, bio, avatar_url, username, education, work_experience, belt_history, home_dojo, training_locations, titles, created_at')
         .eq('id', user.id)
         .single();
 
@@ -206,6 +209,7 @@ const MyPage = () => {
         training_locations: (data.training_locations as any) || [],
         titles: (data.titles as any) || []
       });
+      setCreatedAt(data.created_at);
     } catch (error) {
       console.error('Error loading profile:', error);
     }
@@ -656,15 +660,25 @@ const MyPage = () => {
             {/* Profile Header */}
             <div className="px-6 -mt-16">
               <div className="flex items-end justify-between">
-                <Avatar className="h-32 w-32 border-4 border-background shadow-xl">
-                  <AvatarImage src={profile?.avatar_url || undefined} />
-                  <AvatarFallback className="text-3xl">
-                    {profile?.display_name?.[0] || profile?.username?.[0] || user?.email?.[0]?.toUpperCase() || "U"}
-                  </AvatarFallback>
-                </Avatar>
+                <div className="relative group">
+                  <Avatar className="h-32 w-32 border-4 border-background shadow-xl">
+                    <AvatarImage src={profile?.avatar_url || undefined} />
+                    <AvatarFallback className="text-3xl">
+                      {profile?.display_name?.[0] || profile?.username?.[0] || user?.email?.[0]?.toUpperCase() || "U"}
+                    </AvatarFallback>
+                  </Avatar>
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    className="absolute bottom-0 right-0 rounded-full w-10 h-10 p-0 shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                    onClick={() => setAvatarDialogOpen(true)}
+                  >
+                    <Upload className="w-4 h-4" />
+                  </Button>
+                </div>
                 <Button 
                   variant="outline"
-                  onClick={() => navigate(`/user/${user?.id}`)}
+                  onClick={() => window.open(`/user/${user?.id}`, '_blank')}
                   className="gap-2 mb-4"
                 >
                   <ExternalLink className="w-4 h-4" />
@@ -694,6 +708,12 @@ const MyPage = () => {
                     <div>
                       <span className="font-bold">{profile.titles.length}</span>
                       <span className="text-muted-foreground ml-1">{language === "ja" ? "タイトル" : "Titles"}</span>
+                    </div>
+                  )}
+                  {createdAt && (
+                    <div>
+                      <span className="text-muted-foreground">{language === "ja" ? "登録日: " : "Joined: "}</span>
+                      <span className="font-medium">{new Date(createdAt).toLocaleDateString(language === "ja" ? "ja-JP" : "en-US", { year: 'numeric', month: 'short' })}</span>
                     </div>
                   )}
                 </div>
@@ -1562,6 +1582,14 @@ const MyPage = () => {
         onSuccess={loadUserVideos}
       />
 
+      <AvatarUploadDialog
+        open={avatarDialogOpen}
+        onOpenChange={setAvatarDialogOpen}
+        userId={user?.id || ''}
+        onUploadComplete={(url) => {
+          setProfile(prev => prev ? { ...prev, avatar_url: url } : null);
+        }}
+      />
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
