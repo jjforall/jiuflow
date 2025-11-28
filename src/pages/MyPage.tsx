@@ -469,7 +469,7 @@ const MyPage = () => {
   };
 
   const copyProfileUrl = () => {
-    const url = `${window.location.origin}/user/${user?.id}`;
+    const url = `${window.location.origin}/user/${profile?.username || user?.id}`;
     navigator.clipboard.writeText(url);
     toast.success(language === "ja" ? "プロフィールURLをコピーしました" : "Profile URL copied");
   };
@@ -840,7 +840,7 @@ const MyPage = () => {
                 </div>
                 <Button 
                   variant="outline"
-                  onClick={() => window.open(`/user/${user?.id}`, '_blank')}
+                  onClick={() => window.open(`/user/${profile?.username || user?.id}`, '_blank')}
                   className="gap-2 mb-4"
                 >
                   <ExternalLink className="w-4 h-4" />
@@ -2194,6 +2194,55 @@ const MyPage = () => {
                     <p className="font-light">{user?.email}</p>
                   </div>
                 </div>
+                
+                {/* Username field */}
+                <div>
+                  <div className="flex items-center gap-2 mb-2 group">
+                    <h3 className="text-sm font-semibold">{language === "ja" ? "公開用URL（ユーザー名）" : "Public URL (Username)"}</h3>
+                    {editingField !== 'username' && (
+                      <Button 
+                        size="sm" 
+                        variant="ghost"
+                        className="opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={() => startEditing('username', profile?.username)}
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </Button>
+                    )}
+                  </div>
+                  {editingField === 'username' ? (
+                    <div className="space-y-2">
+                      <Input
+                        value={editValues.username || ''}
+                        onChange={(e) => setEditValues({ ...editValues, username: e.target.value })}
+                        placeholder="your-username"
+                      />
+                      <div className="flex gap-2">
+                        <Button size="sm" onClick={() => saveField('username')}>
+                          <Check className="w-4 h-4 mr-1" />
+                          {language === "ja" ? "保存" : "Save"}
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={cancelEditing}>
+                          <X className="w-4 h-4 mr-1" />
+                          {language === "ja" ? "キャンセル" : "Cancel"}
+                        </Button>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        {language === "ja" ? "プロフィールURL: " : "Profile URL: "}
+                        {window.location.origin}/user/{editValues.username || profile?.username || user?.id}
+                      </p>
+                    </div>
+                  ) : (
+                    <div>
+                      <p className="text-sm font-light mb-1">{profile?.username || <span className="text-muted-foreground italic">{language === "ja" ? "未設定" : "Not set"}</span>}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {language === "ja" ? "プロフィールURL: " : "Profile URL: "}
+                        {window.location.origin}/user/{profile?.username || user?.id}
+                      </p>
+                    </div>
+                  )}
+                </div>
+
                 <div className="flex items-center gap-3">
                   <Calendar className="h-4 w-4 text-muted-foreground" />
                   <div>

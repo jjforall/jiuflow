@@ -117,7 +117,7 @@ interface Profile {
 }
 
 export default function UserProfile() {
-  const { userId: userIdOrUsername } = useParams();
+  const { identifier } = useParams();
   const { language } = useLanguage();
   const [videos, setVideos] = useState<UserVideo[]>([]);
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -157,10 +157,10 @@ export default function UserProfile() {
   }, []);
 
   useEffect(() => {
-    if (userIdOrUsername) {
+    if (identifier) {
       resolveUserAndLoadData();
     }
-  }, [userIdOrUsername]);
+  }, [identifier]);
 
   useEffect(() => {
     if (actualUserId && currentUser) {
@@ -172,14 +172,17 @@ export default function UserProfile() {
   }, [actualUserId, currentUser]);
 
   const resolveUserAndLoadData = async () => {
-    if (!userIdOrUsername) return;
+    if (!identifier) return;
 
     try {
-      // Try to resolve as username first
+      // Check if identifier looks like a UUID
+      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(identifier);
+      
+      // Try to resolve as username first if not UUID, otherwise use ID
       const { data: profileByUsername } = await supabase
         .from('profiles')
         .select('id, email, display_name, bio, avatar_url, username, education, work_experience, belt_history, home_dojo, training_locations, titles, created_at, cover_image_url, organization_id, favorite_fighters, favorite_techniques, hometown, hobbies, date_of_birth, social_links')
-        .eq('username', userIdOrUsername)
+        .eq(isUUID ? 'id' : 'username', identifier)
         .maybeSingle();
 
       let resolvedUserId: string;
@@ -199,12 +202,12 @@ export default function UserProfile() {
           social_links: (profileByUsername.social_links as any) || {}
         });
       } else {
-        // Fall back to UUID
-        resolvedUserId = userIdOrUsername;
+        // Fall back to UUID (shouldn't happen if logic above works)
+        resolvedUserId = identifier;
         const { data: profileById } = await supabase
           .from('profiles')
           .select('id, email, display_name, bio, avatar_url, username, education, work_experience, belt_history, home_dojo, training_locations, titles, created_at, cover_image_url, organization_id, favorite_fighters, favorite_techniques, hometown, hobbies, date_of_birth, social_links')
-          .eq('id', userIdOrUsername)
+          .eq('id', identifier)
           .single();
         
         if (profileById) {
