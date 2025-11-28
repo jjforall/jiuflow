@@ -13,9 +13,9 @@ import { Badge } from "@/components/ui/badge";
 
 interface SubscriptionStatus {
   subscribed: boolean;
-  plan_type?: string;
-  subscription_end?: string;
+  product_id?: string;
   price_id?: string;
+  subscription_end?: string;
 }
 
 interface UserVideo {
@@ -105,28 +105,43 @@ const MyPage = () => {
     }
   };
 
-  const getPlanName = (planType?: string) => {
-    if (!planType) return language === "ja" ? "未登録" : "No Plan";
+  const getPlanName = (priceId?: string) => {
+    if (!priceId) return language === "ja" ? "未登録" : "No Plan";
+    
+    // Map Stripe price IDs to plan names
+    const priceMapping: Record<string, string> = {
+      "price_1SR3ZmDqLakc8NxkNdqL5BtO": "founder",
+      "price_1SNQoeDqLakc8NxkEUVTTs3k": "monthly",
+      "price_1SNQoqDqLakc8NxkOaQIL8wX": "annual",
+      "price_1SY2D0DqLakc8NxkMKonyIi8": "muratabros"
+    };
+
+    const planType = priceMapping[priceId] || "unknown";
     
     const plans: Record<string, Record<string, string>> = {
       founder: {
-        ja: "ファウンダープラン",
-        en: "Founder Plan",
-        pt: "Plano Fundador"
+        ja: "創設者アクセス (¥980/月)",
+        en: "Founder Access (¥980/month)",
+        pt: "Acesso Fundador (¥980/mês)"
       },
       monthly: {
-        ja: "月額プラン",
-        en: "Monthly Plan",
-        pt: "Plano Mensal"
+        ja: "月額プラン (¥2,900/月)",
+        en: "Monthly Plan (¥2,900/month)",
+        pt: "Plano Mensal (¥2,900/mês)"
       },
       annual: {
-        ja: "年額プラン",
-        en: "Annual Plan",
-        pt: "Plano Anual"
+        ja: "年額プラン (¥29,000/年)",
+        en: "Annual Plan (¥29,000/year)",
+        pt: "Plano Anual (¥29,000/ano)"
+      },
+      muratabros: {
+        ja: "創設者アクセスPro (¥50,000)",
+        en: "Founder Access Pro (¥50,000)",
+        pt: "Acesso Fundador Pro (¥50,000)"
       }
     };
 
-    return plans[planType]?.[language] || planType;
+    return plans[planType]?.[language] || priceId;
   };
 
   const formatDate = (dateString?: string) => {
@@ -211,7 +226,7 @@ const MyPage = () => {
                     {language === "ja" ? "現在のプラン" : language === "pt" ? "Plano atual" : "Current Plan"}
                   </p>
                   <p className="font-light text-lg">
-                    {subscription?.subscribed ? getPlanName(subscription.plan_type) : (language === "ja" ? "未登録" : "No Plan")}
+                    {subscription?.subscribed ? getPlanName(subscription.price_id) : (language === "ja" ? "未登録" : "No Plan")}
                   </p>
                 </div>
                 {subscription?.subscribed && subscription.subscription_end && (
