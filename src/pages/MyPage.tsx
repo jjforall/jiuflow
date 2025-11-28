@@ -476,7 +476,27 @@ const MyPage = () => {
 
   const startEditing = (field: string, currentValue: any) => {
     setEditingField(field);
-    setEditValues({ ...editValues, [field]: currentValue });
+    
+    // For array fields, add an empty entry if the field is empty or null
+    if (field === 'education' && (!currentValue || currentValue.length === 0)) {
+      setEditValues({ ...editValues, [field]: [{ school: "" }] });
+    } else if (field === 'work_experience' && (!currentValue || currentValue.length === 0)) {
+      setEditValues({ ...editValues, [field]: [{ company: "", position: "" }] });
+    } else if (field === 'belt_history' && (!currentValue || currentValue.length === 0)) {
+      setEditValues({ ...editValues, [field]: [{ belt: "" }] });
+    } else if (field === 'training_locations' && (!currentValue || currentValue.length === 0)) {
+      setEditValues({ ...editValues, [field]: [""] });
+    } else if (field === 'titles' && (!currentValue || currentValue.length === 0)) {
+      setEditValues({ ...editValues, [field]: [{ title: "" }] });
+    } else if (field === 'favorite_fighters' && (!currentValue || currentValue.length === 0)) {
+      setEditValues({ ...editValues, [field]: [""] });
+    } else if (field === 'favorite_techniques' && (!currentValue || currentValue.length === 0)) {
+      setEditValues({ ...editValues, [field]: [""] });
+    } else if (field === 'hobbies' && (!currentValue || currentValue.length === 0)) {
+      setEditValues({ ...editValues, [field]: [""] });
+    } else {
+      setEditValues({ ...editValues, [field]: currentValue });
+    }
   };
 
   const cancelEditing = () => {
@@ -506,6 +526,26 @@ const MyPage = () => {
         updateData.display_name = editValues.display_name?.trim() || null;
       } else if (field === 'bio') {
         updateData.bio = editValues.bio?.trim() || null;
+      } else if (field === 'username') {
+        // Validate username
+        const newUsername = editValues.username?.trim() || null;
+        if (newUsername && newUsername !== profile.username) {
+          // Check if username is already taken by another user
+          const { data: existingUser, error: checkError } = await supabase
+            .from('profiles')
+            .select('id')
+            .eq('username', newUsername)
+            .neq('id', user.id)
+            .maybeSingle();
+
+          if (checkError) throw checkError;
+          
+          if (existingUser) {
+            toast.error(language === "ja" ? "このユーザー名は既に使用されています" : "This username is already taken");
+            return;
+          }
+        }
+        updateData.username = newUsername;
       } else if (field === 'education') {
         // Filter out empty entries
         const validEducation = (editValues.education || []).filter((edu: any) => 
