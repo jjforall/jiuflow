@@ -415,22 +415,73 @@ const Join = () => {
             </div>
 
             {/* Pricing */}
-            <div className="grid md:grid-cols-2 gap-8 mb-16 animate-fade-up">
-              {/* Monthly Plan */}
-              <div className="border border-foreground p-8 relative">
-                <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-foreground text-background px-4 py-1 text-xs font-light">
-                  {language === "ja" ? "人気" : language === "pt" ? "Popular" : "Most Popular"}
-                </div>
-                <h3 className="text-2xl font-light mb-4">
-                  {language === "ja" ? "月額プラン" : language === "pt" ? "Plano Mensal" : "Monthly Plan"}
-                </h3>
-                <div className="mb-6">
-                  <div className="text-4xl font-light mb-2">¥2,900</div>
-                  <div className="text-sm text-muted-foreground font-light">
-                    {language === "ja" ? "月額（3ヶ月無料・いつでもキャンセル可能）" : language === "pt" ? "Por mês (3 meses grátis・cancele a qualquer momento)" : "per month (3 months free・cancel anytime)"}
+            <div className={`grid ${referralCode.trim() ? 'md:grid-cols-1 max-w-xl mx-auto' : 'md:grid-cols-2'} gap-8 mb-16 animate-fade-up`}>
+              {/* Referral Plan - Only shown when referral code is entered */}
+              {referralCode.trim() && (
+                <div className="border-2 border-primary bg-primary/5 p-8 relative">
+                  <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-primary text-primary-foreground px-4 py-1 text-xs font-light">
+                    {language === "ja" ? "🎁 紹介特典" : "🎁 Referral Special"}
                   </div>
+                  <h3 className="text-2xl font-light mb-4">
+                    {language === "ja" ? "紹介プラン" : language === "pt" ? "Plano de Referência" : "Referral Plan"}
+                  </h3>
+                  <div className="mb-6">
+                    <div className="flex items-baseline gap-2 mb-2">
+                      <div className="text-4xl font-light text-primary">¥1,900</div>
+                      <div className="text-xl line-through text-muted-foreground">¥2,900</div>
+                    </div>
+                    <div className="text-sm text-muted-foreground font-light">
+                      {language === "ja" ? "月額（初月無料・いつでもキャンセル可能）" : "per month (first month free・cancel anytime)"}
+                    </div>
+                  </div>
+                  <ul className="space-y-3 mb-6 text-sm font-light">
+                    <li className="flex items-start">
+                      <span className="mr-2 text-primary">✓</span>
+                      <span className="font-medium text-primary">{language === "ja" ? "初月完全無料（100%オフ）" : "First month completely free (100% off)"}</span>
+                    </li>
+                    <li className="flex items-start">
+                      <span className="mr-2 text-primary">✓</span>
+                      <span className="font-medium text-primary">{language === "ja" ? "2ヶ月目以降：月額1,900円" : "From month 2: ¥1,900/month"}</span>
+                    </li>
+                    <li className="flex items-start">
+                      <span className="mr-2">✓</span>
+                      <span>{language === "ja" ? "全技術動画へのアクセス" : language === "pt" ? "Acesso a todos os vídeos técnicos" : "Access to all technique videos"}</span>
+                    </li>
+                    <li className="flex items-start">
+                      <span className="mr-2">✓</span>
+                      <span>{language === "ja" ? "新規コンテンツの追加" : language === "pt" ? "Novos conteúdos adicionados" : "New content additions"}</span>
+                    </li>
+                    <li className="flex items-start">
+                      <span className="mr-2">✓</span>
+                      <span>{language === "ja" ? "紹介者に毎月500ポイント付与" : "Referrer gets 500 points monthly"}</span>
+                    </li>
+                  </ul>
+                  <Button
+                    className="w-full"
+                    onClick={() => handleCheckout(PRICE_IDS.monthly, true)}
+                    disabled={isLoading}
+                  >
+                    {language === "ja" ? "紹介プランで始める" : language === "pt" ? "Começar com plano de referência" : "Start with Referral Plan"}
+                  </Button>
                 </div>
-                <ul className="space-y-3 mb-6 text-sm font-light">
+              )}
+              
+              {/* Monthly Plan - Only shown when no referral code */}
+              {!referralCode.trim() && (
+                <div className="border border-foreground p-8 relative">
+                  <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-foreground text-background px-4 py-1 text-xs font-light">
+                    {language === "ja" ? "人気" : language === "pt" ? "Popular" : "Most Popular"}
+                  </div>
+                  <h3 className="text-2xl font-light mb-4">
+                    {language === "ja" ? "月額プラン" : language === "pt" ? "Plano Mensal" : "Monthly Plan"}
+                  </h3>
+                  <div className="mb-6">
+                    <div className="text-4xl font-light mb-2">¥2,900</div>
+                    <div className="text-sm text-muted-foreground font-light">
+                      {language === "ja" ? "月額（3ヶ月無料・いつでもキャンセル可能）" : language === "pt" ? "Por mês (3 meses grátis・cancele a qualquer momento)" : "per month (3 months free・cancel anytime)"}
+                    </div>
+                  </div>
+                 <ul className="space-y-3 mb-6 text-sm font-light">
                   <li className="flex items-start">
                     <span className="mr-2">✓</span>
                     <span>{language === "ja" ? "全技術動画へのアクセス" : language === "pt" ? "Acesso a todos os vídeos técnicos" : "Access to all technique videos"}</span>
@@ -452,8 +503,10 @@ const Join = () => {
                   {language === "ja" ? "月額で始める" : language === "pt" ? "Começar mensalmente" : "Start Monthly"}
                 </Button>
               </div>
+              )}
 
-              {/* Annual Plan */}
+              {/* Annual Plan - Only shown when no referral code */}
+              {!referralCode.trim() && (
               <div className="border border-border p-8">
                 <h3 className="text-2xl font-light mb-4">
                   {language === "ja" ? "年額プラン" : language === "pt" ? "Plano Anual" : "Annual Plan"}
@@ -486,6 +539,7 @@ const Join = () => {
                   {language === "ja" ? "年額で始める" : language === "pt" ? "Começar anualmente" : "Start Annually"}
                 </Button>
               </div>
+              )}
             </div>
 
             {/* Rewards System Explanation */}
