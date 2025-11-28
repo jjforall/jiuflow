@@ -9,6 +9,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { InputWithSuggestions } from "@/components/ui/input-with-suggestions";
 import { Textarea } from "@/components/ui/textarea";
+import { BeltBadge } from "@/components/ui/belt-badge";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { format } from "date-fns";
+import { CalendarIcon } from "lucide-react";
 import { User, CreditCard, Calendar, Mail, Upload, Video, Eye, Edit2, Check, X, Trash2, Lock, Globe, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { VideoUploadDialog } from "@/components/VideoUploadDialog";
@@ -84,6 +89,7 @@ const MyPage = () => {
   const [editingField, setEditingField] = useState<string | null>(null);
   const [editValues, setEditValues] = useState<any>({});
   const [dojoSuggestions, setDojoSuggestions] = useState<string[]>([]);
+  const [instructorSuggestions, setInstructorSuggestions] = useState<string[]>([]);
 
   const loadUserVideos = async () => {
     if (!user) return;
@@ -125,6 +131,7 @@ const MyPage = () => {
       loadReferralCodeAndPoints();
       loadProfile();
       loadDojoSuggestions();
+      loadInstructorSuggestions();
     }
   }, [user]);
 
@@ -152,6 +159,30 @@ const MyPage = () => {
       setDojoSuggestions(Array.from(dojos).sort());
     } catch (error) {
       console.error('Error loading dojo suggestions:', error);
+    }
+  };
+
+  const loadInstructorSuggestions = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('belt_history');
+
+      if (error) throw error;
+
+      const instructors = new Set<string>();
+      
+      data?.forEach((profile) => {
+        if (profile.belt_history) {
+          (profile.belt_history as any[]).forEach((belt: any) => {
+            if (belt.instructor) instructors.add(belt.instructor);
+          });
+        }
+      });
+
+      setInstructorSuggestions(Array.from(instructors).sort());
+    } catch (error) {
+      console.error('Error loading instructor suggestions:', error);
     }
   };
 
@@ -937,14 +968,35 @@ const MyPage = () => {
                                   className="font-medium"
                                 />
                                 <div className="grid grid-cols-2 gap-2">
-                                  <Input
-                                    value={belt.date || ''}
-                                    onChange={(e) => updateBeltHistory(index, 'date', e.target.value)}
-                                    placeholder={language === "ja" ? "取得日" : "Date"}
-                                  />
-                                  <Input
+                                  <Popover>
+                                    <PopoverTrigger asChild>
+                                      <Button
+                                        variant="outline"
+                                        className="justify-start text-left font-normal"
+                                      >
+                                        <CalendarIcon className="mr-2 h-4 w-4" />
+                                        {belt.date ? format(new Date(belt.date), "yyyy/MM") : (language === "ja" ? "取得月" : "Month")}
+                                      </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-auto p-0" align="start">
+                                      <CalendarComponent
+                                        mode="single"
+                                        selected={belt.date ? new Date(belt.date) : undefined}
+                                        onSelect={(date) => {
+                                          if (date) {
+                                            updateBeltHistory(index, 'date', format(date, "yyyy-MM"));
+                                          }
+                                        }}
+                                        initialFocus
+                                        className="pointer-events-auto"
+                                      />
+                                    </PopoverContent>
+                                  </Popover>
+                                  <InputWithSuggestions
                                     value={belt.instructor || ''}
                                     onChange={(e) => updateBeltHistory(index, 'instructor', e.target.value)}
+                                    onSelectSuggestion={(value) => updateBeltHistory(index, 'instructor', value)}
+                                    suggestions={instructorSuggestions}
                                     placeholder={language === "ja" ? "授与者" : "Instructor"}
                                   />
                                 </div>
@@ -968,10 +1020,10 @@ const MyPage = () => {
                         profile?.belt_history && profile.belt_history.length > 0 ? (
                           <ul className="space-y-2">
                             {profile.belt_history.map((belt, index) => (
-                              <li key={index} className="flex items-center gap-2 text-sm p-2 bg-background rounded">
-                                <span className="font-semibold text-primary">{belt.belt}</span>
+                              <li key={index} className="flex items-center gap-2 text-sm p-3 bg-background rounded border">
+                                <BeltBadge belt={belt.belt} />
                                 {belt.instructor && <span className="text-muted-foreground">- {belt.instructor}</span>}
-                                {belt.date && <span className="text-muted-foreground text-xs">({belt.date})</span>}
+                                {belt.date && <span className="text-muted-foreground text-xs ml-auto">({belt.date})</span>}
                               </li>
                             ))}
                           </ul>
