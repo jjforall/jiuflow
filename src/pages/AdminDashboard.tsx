@@ -14,6 +14,7 @@ import { TechniquesManagement } from "@/components/admin/TechniquesManagement";
 import { UsersTab } from "@/components/admin/UsersTab";
 import { PlansTab } from "@/components/admin/PlansTab";
 import { SubscriptionsTab } from "@/components/admin/SubscriptionsTab";
+import { PointsManagement } from "@/components/admin/PointsManagement";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -158,7 +159,7 @@ const AdminDashboard = () => {
           </div>
 
           <Tabs defaultValue="techniques" className="w-full">
-            <TabsList className="grid w-full grid-cols-4 mb-8">
+            <TabsList className="grid w-full grid-cols-5 mb-8">
               <TabsTrigger value="techniques" className="flex items-center gap-2">
                 <Grid3X3 className="w-4 h-4" />
                 テクニック管理
@@ -173,6 +174,9 @@ const AdminDashboard = () => {
               <TabsTrigger value="plans" className="flex items-center gap-2">
                 <ShieldCheck className="w-4 h-4" />
                 プラン管理
+              </TabsTrigger>
+              <TabsTrigger value="points">
+                ポイント管理
               </TabsTrigger>
             </TabsList>
 
@@ -190,6 +194,10 @@ const AdminDashboard = () => {
 
             <TabsContent value="plans" className="space-y-6">
               <PlansTab />
+            </TabsContent>
+
+            <TabsContent value="points" className="space-y-6">
+              <PointsManagement />
             </TabsContent>
           </Tabs>
         </div>
