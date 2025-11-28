@@ -1,0 +1,88 @@
+import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import Stripe from "https://esm.sh/stripe@18.5.0";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
+
+serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  const supabaseClient = createClient(
+    Deno.env.get("SUPABASE_URL") ?? "",
+    Deno.env.get("SUPABASE_ANON_KEY") ?? ""
+  );
+
+  try {
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) throw new Error("No authorization header");
+
+    const token = authHeader.replace("Bearer ", "");
+    const { data: { user }, error: userError } = await supabaseClient.auth.getUser(token);
+    if (userError || !user) throw new Error("Unauthorized");
+
+    // Get user's referral code
+    const { data: referralCode, error: codeError } = await supabaseClient
+      .from("referral_codes")
+      .select("code")
+      .eq("user_id", user.id)
+      .single();
+
+    if (codeError || !referralCode) {
+      throw new Error("Referral code not found");
+    }
+
+    const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
+      apiVersion: "2025-08-27.basil",
+    });
+
+    // Check if coupon already exists
+    try {
+      const existingCoupon = await stripe.coupons.retrieve(referralCode.code);
+      console.log("Coupon already exists:", existingCoupon.id);
+      return new Response(
+        JSON.stringify({ coupon: existingCoupon }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 200,
+        }
+      );
+    } catch (error) {
+      // Coupon doesn't exist, create it
+      console.log("Creating new coupon for code:", referralCode.code);
+    }
+
+    // Create a coupon for 100% off first month (trial)
+    const coupon = await stripe.coupons.create({
+      id: referralCode.code,
+      name: `Referral: ${referralCode.code}`,
+      percent_off: 100,
+      duration: "once",
+      max_redemptions: 1000,
+    });
+
+    console.log("Coupon created successfully:", coupon.id);
+
+    return new Response(
+      JSON.stringify({ coupon }),
+      {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      }
+    );
+  } catch (error) {
+    console.error("Error creating referral coupon:", error);
+    const message = error instanceof Error ? error.message : String(error);
+    return new Response(
+      JSON.stringify({ error: message }),
+      {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 500,
+      }
+    );
+  }
+});

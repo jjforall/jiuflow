@@ -229,6 +229,7 @@ export type Database = {
           current_period_end: string | null
           id: string
           plan_type: string | null
+          referral_code_id: string | null
           status: string | null
           stripe_price_id: string | null
           stripe_subscription_id: string | null
@@ -240,6 +241,7 @@ export type Database = {
           current_period_end?: string | null
           id?: string
           plan_type?: string | null
+          referral_code_id?: string | null
           status?: string | null
           stripe_price_id?: string | null
           stripe_subscription_id?: string | null
@@ -251,13 +253,22 @@ export type Database = {
           current_period_end?: string | null
           id?: string
           plan_type?: string | null
+          referral_code_id?: string | null
           status?: string | null
           stripe_price_id?: string | null
           stripe_subscription_id?: string | null
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "subscriptions_referral_code_id_fkey"
+            columns: ["referral_code_id"]
+            isOneToOne: false
+            referencedRelation: "referral_codes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       techniques: {
         Row: {
@@ -600,6 +611,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      award_referral_points: {
+        Args: {
+          p_amount: number
+          p_description: string
+          p_referral_code_id: string
+          p_referred_user_id: string
+        }
+        Returns: undefined
+      }
       can_apply_for_brothers: { Args: { user_uuid: string }; Returns: boolean }
       generate_referral_code: { Args: never; Returns: string }
       has_role: {

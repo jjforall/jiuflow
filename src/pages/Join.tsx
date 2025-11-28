@@ -125,6 +125,7 @@ const Join = () => {
   const [showVideoModal, setShowVideoModal] = useState(false);
   const [sampleVideoUrl, setSampleVideoUrl] = useState<string | null>(null);
   const [couponCode, setCouponCode] = useState("");
+  const [referralCode, setReferralCode] = useState("");
   const [couponVerified, setCouponVerified] = useState(false);
   const [showCouponSuccess, setShowCouponSuccess] = useState(false);
   const [viewCount, setViewCount] = useState(0);
@@ -270,6 +271,7 @@ const Join = () => {
         body: { 
           priceId, 
           couponCode: couponCode.trim() || undefined,
+          referralCode: referralCode.trim() || undefined,
           email: session.user.email,
         },
       });
@@ -440,6 +442,27 @@ const Join = () => {
                 </DialogContent>
               </Dialog>
 
+
+              {/* Referral Code Section */}
+              <div className="border border-border p-6 mb-4 animate-fade-up">
+                <h3 className="text-lg font-light mb-3 text-center">
+                  {language === "ja" ? "紹介コードをお持ちの方" : "Have a referral code?"}
+                </h3>
+                <div className="flex gap-3 max-w-md mx-auto">
+                  <Input
+                    type="text"
+                    placeholder={language === "ja" ? "紹介コードを入力" : "Enter referral code"}
+                    value={referralCode}
+                    onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
+                    className="flex-1"
+                  />
+                </div>
+                <p className="text-sm text-muted-foreground text-center mt-3">
+                  {language === "ja" 
+                    ? "紹介コードで加入すると初月無料になります" 
+                    : "Join with a referral code and get your first month free"}
+                </p>
+              </div>
 
               {/* Coupon Code Section */}
               <div className="border border-border p-6 mb-8 animate-fade-up relative overflow-hidden">

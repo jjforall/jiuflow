@@ -39,6 +39,9 @@ const MyPage = () => {
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [userVideos, setUserVideos] = useState<UserVideo[]>([]);
   const [videosLoading, setVideosLoading] = useState(true);
+  const [referralCode, setReferralCode] = useState<string>("");
+  const [userPoints, setUserPoints] = useState<number>(0);
+  const [pointsLoading, setPointsLoading] = useState(true);
 
   const loadUserVideos = async () => {
     if (!user) return;
@@ -77,8 +80,52 @@ const MyPage = () => {
   useEffect(() => {
     if (user) {
       loadUserVideos();
+      loadReferralCodeAndPoints();
     }
   }, [user]);
+
+  const loadReferralCodeAndPoints = async () => {
+    if (!user) return;
+    
+    setPointsLoading(true);
+    try {
+      // Load referral code
+      const { data: codeData, error: codeError } = await supabase
+        .from('referral_codes')
+        .select('code')
+        .eq('user_id', user.id)
+        .single();
+
+      if (codeError) throw codeError;
+      if (codeData) {
+        setReferralCode(codeData.code);
+        
+        // Create Stripe coupon for this referral code
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          await supabase.functions.invoke('create-referral-coupon', {
+            headers: {
+              Authorization: `Bearer ${session.access_token}`,
+            },
+          });
+        }
+      }
+
+      // Load points
+      const { data: pointsData, error: pointsError } = await supabase
+        .from('user_points')
+        .select('points')
+        .eq('user_id', user.id)
+        .single();
+
+      if (pointsError && pointsError.code !== 'PGRST116') throw pointsError;
+      setUserPoints(pointsData?.points || 0);
+    } catch (error) {
+      console.error('Error loading referral code and points:', error);
+    } finally {
+      setPointsLoading(false);
+    }
+  };
 
   const checkSubscription = async () => {
     setIsLoading(true);
@@ -98,6 +145,21 @@ const MyPage = () => {
       
       if (error) throw error;
       setSubscription(data);
+
+      // Award monthly points if subscribed
+      if (data?.subscribed) {
+        try {
+          await supabase.functions.invoke("award-monthly-points", {
+            headers: {
+              Authorization: `Bearer ${session.access_token}`,
+            },
+          });
+          // Reload points after awarding
+          loadReferralCodeAndPoints();
+        } catch (pointsError) {
+          console.error("Error awarding points:", pointsError);
+        }
+      }
     } catch (error: unknown) {
       console.error("Subscription check error:", error);
       toast.error(language === "ja" ? "サブスクリプション情報の取得に失敗しました" : "Failed to fetch subscription");
@@ -182,7 +244,7 @@ const MyPage = () => {
             </div>
           ) : (
             <>
-              <div className="grid md:grid-cols-2 gap-6 animate-fade-up">
+              <div className="grid md:grid-cols-2 gap-6 mb-6 animate-fade-up">
             {/* User Info Card */}
             <Card>
               <CardHeader>
@@ -259,6 +321,97 @@ const MyPage = () => {
                     </Button>
                   )}
                 </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Referral Code and Points Section */}
+          <div className="grid md:grid-cols-2 gap-6 mb-12 animate-fade-up">
+            {/* Referral Code Card */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 font-light">
+                  <User className="h-5 w-5" />
+                  {language === "ja" ? "紹介コード" : "Referral Code"}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {pointsLoading ? (
+                  <div className="h-12 bg-muted/50 animate-pulse rounded" />
+                ) : (
+                  <>
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-2">
+                        {language === "ja" ? "あなたの紹介コード" : "Your Referral Code"}
+                      </p>
+                      <div className="flex items-center gap-2">
+                        <code className="flex-1 p-3 bg-muted rounded font-mono text-lg font-bold text-center">
+                          {referralCode || "loading..."}
+                        </code>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            navigator.clipboard.writeText(referralCode);
+                            toast.success(language === "ja" ? "コピーしました" : "Copied!");
+                          }}
+                        >
+                          {language === "ja" ? "コピー" : "Copy"}
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="text-sm text-muted-foreground space-y-1">
+                      <p>
+                        {language === "ja" 
+                          ? "友達がこのコードで加入すると、初月無料になります" 
+                          : "Friends get first month free with this code"}
+                      </p>
+                      <p className="text-primary font-medium">
+                        {language === "ja" 
+                          ? "あなたには毎月500円分のポイントが付与されます" 
+                          : "You earn ¥500 points every month"}
+                      </p>
+                    </div>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Points Card */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 font-light">
+                  <CreditCard className="h-5 w-5" />
+                  {language === "ja" ? "ポイント" : "Points"}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {pointsLoading ? (
+                  <div className="h-12 bg-muted/50 animate-pulse rounded" />
+                ) : (
+                  <>
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-2">
+                        {language === "ja" ? "現在のポイント" : "Current Points"}
+                      </p>
+                      <div className="flex items-baseline gap-2">
+                        <p className="text-4xl font-bold text-primary">
+                          {userPoints.toLocaleString()}
+                        </p>
+                        <p className="text-lg text-muted-foreground">
+                          {language === "ja" ? "円分" : "¥"}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="pt-2">
+                      <p className="text-sm text-muted-foreground">
+                        {language === "ja" 
+                          ? "ポイントは割引クーポンに交換できます（近日公開予定）" 
+                          : "Points can be exchanged for discount coupons (coming soon)"}
+                      </p>
+                    </div>
+                  </>
+                )}
               </CardContent>
             </Card>
           </div>
