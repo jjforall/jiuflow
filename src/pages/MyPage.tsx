@@ -1071,16 +1071,15 @@ const MyPage = () => {
                         )}
                       </div>
 
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-sm text-muted-foreground mt-4">
                         <Video className="inline h-4 w-4 mr-1" />
                         動画 {userVideos.length}件
                       </p>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
 
-              <div className="grid md:grid-cols-2 gap-6 mb-6 animate-fade-up">
+                <div className="grid md:grid-cols-2 gap-6 mb-6 animate-fade-up">
             {/* Private Info Card */}
             <Card>
               <CardHeader>
