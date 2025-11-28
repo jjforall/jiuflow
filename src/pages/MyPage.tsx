@@ -695,18 +695,6 @@ const MyPage = () => {
             )}
           </div>
 
-          {/* Refresh Button */}
-          <div className="mt-8 text-center animate-fade-up">
-            <Button
-              variant="outline"
-              onClick={checkSubscription}
-              disabled={isLoading}
-            >
-              {isLoading 
-                ? (language === "ja" ? "更新中..." : "Refreshing...") 
-                : (language === "ja" ? "サブスクリプション情報を更新" : language === "pt" ? "Atualizar informações" : "Refresh Subscription Info")}
-            </Button>
-          </div>
             </>
           )}
         </div>
