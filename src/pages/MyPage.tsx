@@ -288,7 +288,8 @@ const MyPage = () => {
       "price_1SR3ZmDqLakc8NxkNdqL5BtO": "founder",
       "price_1SNQoeDqLakc8NxkEUVTTs3k": "monthly",
       "price_1SNQoqDqLakc8NxkOaQIL8wX": "annual",
-      "price_1SY2D0DqLakc8NxkMKonyIi8": "muratabros"
+      "price_1SY2D0DqLakc8NxkMKonyIi8": "muratabros",
+      "price_1SYK0YDqLakc8NxkOL9VEW5p": "referral"
     };
 
     const planType = priceMapping[priceId] || "unknown";
@@ -313,6 +314,11 @@ const MyPage = () => {
         ja: "Founder Plan Pro (¥50,000)",
         en: "Founder Plan Pro (¥50,000)",
         pt: "Founder Plan Pro (¥50,000)"
+      },
+      referral: {
+        ja: "紹介プラン (¥1,900/月)",
+        en: "Referral Plan (¥1,900/month)",
+        pt: "Plano de Referência (¥1,900/mês)"
       }
     };
 

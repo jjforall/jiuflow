@@ -377,7 +377,7 @@ const Join = () => {
             </Dialog>
 
             {/* Referral Code Section */}
-            <div className="border border-border p-6 mb-8 animate-fade-up">
+            <div className="border border-primary bg-primary/5 p-6 mb-8 animate-fade-up">
               <h3 className="text-lg font-light mb-3 text-center">
                 {language === "ja" ? "紹介コードをお持ちの方" : "Have a referral code?"}
               </h3>
@@ -390,11 +390,28 @@ const Join = () => {
                   className="flex-1"
                 />
               </div>
-              <p className="text-sm text-muted-foreground text-center mt-3">
-                {language === "ja" 
-                  ? "紹介コードで加入すると初月無料 + 紹介者に毎月500ポイント付与されます" 
-                  : "Join with a referral code: first month free + 500 points monthly for referrer"}
-              </p>
+              <div className="mt-4 space-y-2 text-sm text-center">
+                <p className="font-medium text-primary">
+                  {language === "ja" 
+                    ? "🎁 紹介コード特典" 
+                    : "🎁 Referral Benefits"}
+                </p>
+                <p className="text-muted-foreground">
+                  {language === "ja" 
+                    ? "• 初月完全無料（100%オフ）" 
+                    : "• First month completely free (100% off)"}
+                </p>
+                <p className="text-muted-foreground">
+                  {language === "ja" 
+                    ? "• 2ヶ月目以降：月額1,900円" 
+                    : "• From month 2: ¥1,900/month"}
+                </p>
+                <p className="text-muted-foreground">
+                  {language === "ja" 
+                    ? "• 紹介者に毎月500ポイント付与" 
+                    : "• Referrer gets 500 points monthly"}
+                </p>
+              </div>
             </div>
 
             {/* Pricing */}

@@ -16,7 +16,12 @@ serve(async (req) => {
   );
 
   try {
-    const { priceId, couponCode, referralCode, email } = await req.json();
+    const { priceId: requestedPriceId, couponCode, referralCode, email } = await req.json();
+    
+    // If referral code is provided, use the special 1900 yen referral plan
+    const REFERRAL_PRICE_ID = "price_1SYK0YDqLakc8NxkOL9VEW5p"; // ¥1,900/month referral plan
+    const priceId = referralCode ? REFERRAL_PRICE_ID : requestedPriceId;
+    
     if (!priceId) throw new Error("Price ID is required");
 
     const discountCode = couponCode || referralCode;
@@ -46,7 +51,8 @@ serve(async (req) => {
       ],
       mode: "subscription",
       subscription_data: {
-        trial_period_days: 90,
+        // Use 90 days trial for regular plans, no trial for referral (coupon handles first month free)
+        trial_period_days: referralCode ? 0 : 90,
         metadata: {},
       },
       success_url: `${req.headers.get("origin")}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
