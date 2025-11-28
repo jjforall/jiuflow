@@ -103,6 +103,10 @@ const MyPage = () => {
   const [createdAt, setCreatedAt] = useState<string | null>(null);
   const [organizations, setOrganizations] = useState<Array<{ id: string; name: string; name_ja: string; name_pt: string }>>([]);
   const [selectedOrganization, setSelectedOrganization] = useState<string | null>(null);
+  const [followersCount, setFollowersCount] = useState(0);
+  const [followingCount, setFollowingCount] = useState(0);
+  const [showFollowList, setShowFollowList] = useState<'followers' | 'following' | null>(null);
+  const [followList, setFollowList] = useState<Array<{ id: string; display_name: string; username: string; avatar_url: string }>>([]);
 
   const loadUserVideos = async () => {
     if (!user) return;
@@ -146,6 +150,7 @@ const MyPage = () => {
       loadDojoSuggestions();
       loadInstructorSuggestions();
       loadOrganizations();
+      loadFollowStats();
     }
   }, [user]);
 
@@ -160,6 +165,71 @@ const MyPage = () => {
       setOrganizations(data || []);
     } catch (error) {
       console.error('Error loading organizations:', error);
+    }
+  };
+
+  const loadFollowStats = async () => {
+    if (!user) return;
+    
+    try {
+      // Load followers count
+      const { count: followersCount, error: followersError } = await supabase
+        .from('user_follows')
+        .select('*', { count: 'exact', head: true })
+        .eq('following_id', user.id);
+
+      if (followersError) throw followersError;
+      setFollowersCount(followersCount || 0);
+
+      // Load following count
+      const { count: followingCount, error: followingError } = await supabase
+        .from('user_follows')
+        .select('*', { count: 'exact', head: true })
+        .eq('follower_id', user.id);
+
+      if (followingError) throw followingError;
+      setFollowingCount(followingCount || 0);
+    } catch (error) {
+      console.error('Error loading follow stats:', error);
+    }
+  };
+
+  const loadFollowList = async (type: 'followers' | 'following') => {
+    if (!user) return;
+
+    try {
+      let query;
+      if (type === 'followers') {
+        query = supabase
+          .from('user_follows')
+          .select('follower_id')
+          .eq('following_id', user.id);
+      } else {
+        query = supabase
+          .from('user_follows')
+          .select('following_id')
+          .eq('follower_id', user.id);
+      }
+
+      const { data: follows, error: followsError } = await query;
+      if (followsError) throw followsError;
+
+      const userIds = follows?.map(f => type === 'followers' ? f.follower_id : f.following_id) || [];
+      
+      if (userIds.length === 0) {
+        setFollowList([]);
+        return;
+      }
+
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, display_name, username, avatar_url')
+        .in('id', userIds);
+
+      if (profilesError) throw profilesError;
+      setFollowList(profiles || []);
+    } catch (error) {
+      console.error('Error loading follow list:', error);
     }
   };
 
@@ -829,6 +899,26 @@ const MyPage = () => {
                 
                 {/* Stats */}
                 <div className="flex gap-6 text-sm">
+                  <button 
+                    onClick={() => {
+                      setShowFollowList('following');
+                      loadFollowList('following');
+                    }}
+                    className="hover:opacity-70 transition-opacity"
+                  >
+                    <span className="font-bold">{followingCount}</span>
+                    <span className="text-muted-foreground ml-1">{language === "ja" ? "フォロー中" : "Following"}</span>
+                  </button>
+                  <button 
+                    onClick={() => {
+                      setShowFollowList('followers');
+                      loadFollowList('followers');
+                    }}
+                    className="hover:opacity-70 transition-opacity"
+                  >
+                    <span className="font-bold">{followersCount}</span>
+                    <span className="text-muted-foreground ml-1">{language === "ja" ? "フォロワー" : "Followers"}</span>
+                  </button>
                   <div>
                     <span className="font-bold">{userVideos.length}</span>
                     <span className="text-muted-foreground ml-1">{language === "ja" ? "動画" : "Videos"}</span>
@@ -2240,6 +2330,56 @@ const MyPage = () => {
             <AlertDialogAction onClick={confirmDeleteVideo}>
               {language === "ja" ? "削除" : "Delete"}
             </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Follow List Dialog */}
+      <AlertDialog open={showFollowList !== null} onOpenChange={() => setShowFollowList(null)}>
+        <AlertDialogContent className="max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {showFollowList === 'followers' 
+                ? (language === "ja" ? "フォロワー" : "Followers")
+                : (language === "ja" ? "フォロー中" : "Following")
+              }
+            </AlertDialogTitle>
+          </AlertDialogHeader>
+          <div className="max-h-96 overflow-y-auto space-y-3">
+            {followList.length === 0 ? (
+              <p className="text-center text-muted-foreground py-8">
+                {showFollowList === 'followers'
+                  ? (language === "ja" ? "フォロワーはいません" : "No followers yet")
+                  : (language === "ja" ? "誰もフォローしていません" : "Not following anyone yet")
+                }
+              </p>
+            ) : (
+              followList.map((user) => (
+                <div 
+                  key={user.id} 
+                  className="flex items-center gap-3 p-3 rounded-lg hover:bg-accent transition-colors cursor-pointer"
+                  onClick={() => {
+                    window.open(`/user/${user.id}`, '_blank');
+                  }}
+                >
+                  <Avatar className="h-12 w-12">
+                    <AvatarImage src={user.avatar_url || undefined} />
+                    <AvatarFallback>
+                      {user.display_name?.[0] || user.username?.[0] || "U"}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1">
+                    <p className="font-medium">{user.display_name || user.username || "User"}</p>
+                    {user.username && <p className="text-sm text-muted-foreground">@{user.username}</p>}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel>
+              {language === "ja" ? "閉じる" : "Close"}
+            </AlertDialogCancel>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
