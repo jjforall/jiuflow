@@ -102,6 +102,7 @@ serve(async (req) => {
     });
     const hasActiveSub = subscriptions.data.length > 0;
     let productId = null;
+    let priceId = null;
     let subscriptionEnd = null;
 
     if (hasActiveSub) {
@@ -118,16 +119,20 @@ serve(async (req) => {
         subscriptionEnd = null;
       }
       
-      // Get product ID from the subscription
+      // Get product ID and price ID from the subscription
       const priceData = subscription.items.data[0]?.price;
-      if (priceData && typeof priceData.product === 'string') {
-        productId = priceData.product;
+      if (priceData) {
+        if (typeof priceData.product === 'string') {
+          productId = priceData.product;
+        }
+        priceId = priceData.id;
       }
       
       logStep("Active subscription found", { 
         subscriptionId: subscription.id, 
         endDate: subscriptionEnd, 
-        productId 
+        productId,
+        priceId 
       });
     } else {
       logStep("No active subscription found");
@@ -136,6 +141,7 @@ serve(async (req) => {
     return new Response(JSON.stringify({
       subscribed: hasActiveSub,
       product_id: productId,
+      price_id: priceId,
       subscription_end: subscriptionEnd
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

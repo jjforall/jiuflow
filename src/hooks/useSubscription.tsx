@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 interface SubscriptionStatus {
   subscribed: boolean;
   product_id: string | null;
+  price_id: string | null;
   subscription_end: string | null;
   loading: boolean;
 }
@@ -12,6 +13,7 @@ export const useSubscription = () => {
   const [status, setStatus] = useState<SubscriptionStatus>({
     subscribed: false,
     product_id: null,
+    price_id: null,
     subscription_end: null,
     loading: true,
   });
@@ -24,6 +26,7 @@ export const useSubscription = () => {
         setStatus({
           subscribed: false,
           product_id: null,
+          price_id: null,
           subscription_end: null,
           loading: false,
         });
@@ -41,6 +44,7 @@ export const useSubscription = () => {
         setStatus({
           subscribed: false,
           product_id: null,
+          price_id: null,
           subscription_end: null,
           loading: false,
         });
@@ -50,6 +54,7 @@ export const useSubscription = () => {
       setStatus({
         subscribed: data.subscribed || false,
         product_id: data.product_id || null,
+        price_id: data.price_id || null,
         subscription_end: data.subscription_end || null,
         loading: false,
       });
@@ -58,6 +63,7 @@ export const useSubscription = () => {
       setStatus({
         subscribed: false,
         product_id: null,
+        price_id: null,
         subscription_end: null,
         loading: false,
       });
