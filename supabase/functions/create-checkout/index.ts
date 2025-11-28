@@ -16,13 +16,16 @@ serve(async (req) => {
   );
 
   try {
-    const { priceId, couponCode, email } = await req.json();
+    const { priceId, couponCode, referralCode, email } = await req.json();
     if (!priceId) throw new Error("Price ID is required");
 
     console.log("Creating checkout session for price:", priceId);
     console.log("Email provided:", email || "none");
     if (couponCode) {
       console.log("Coupon code provided:", couponCode);
+    }
+    if (referralCode) {
+      console.log("Referral code provided:", referralCode);
     }
 
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", { 
@@ -39,10 +42,29 @@ serve(async (req) => {
       mode: "subscription",
       subscription_data: {
         trial_period_days: 90,
+        metadata: {},
       },
       success_url: `${req.headers.get("origin")}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${req.headers.get("origin")}/join?canceled=true`,
     };
+
+    // Add referral code to metadata if provided
+    if (referralCode) {
+      // Verify referral code exists
+      const { data: referralCodeData } = await supabaseClient
+        .from("referral_codes")
+        .select("id, user_id")
+        .eq("code", referralCode)
+        .maybeSingle();
+
+      if (referralCodeData) {
+        sessionConfig.subscription_data.metadata.referral_code_id = referralCodeData.id;
+        sessionConfig.subscription_data.metadata.referral_code = referralCode;
+        console.log("Referral code verified and added to metadata:", referralCodeData.id);
+      } else {
+        console.warn("Referral code not found in database:", referralCode);
+      }
+    }
 
     // Add email if provided
     if (email) {
