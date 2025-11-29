@@ -155,86 +155,120 @@ export default function Dojo() {
       <Navigation />
       <main className="flex-grow pt-20 pb-16">
         <div className="container mx-auto px-4 md:px-6 max-w-4xl">
-          {/* Cover Image */}
-          <div className="relative h-64 md:h-80 bg-gradient-to-br from-primary/20 to-primary/5 rounded-lg overflow-hidden mb-8">
-            {dojo.cover_image_url ? (
+          {/* Cover Image - Only show if exists */}
+          {dojo.cover_image_url && (
+            <div className="relative h-64 md:h-80 bg-gradient-to-br from-primary/20 to-primary/5 rounded-lg overflow-hidden mb-8">
               <img
                 src={dojo.cover_image_url}
                 alt={getDojoName(dojo)}
                 className="w-full h-full object-cover"
               />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center text-8xl">
-                🥋
-              </div>
-            )}
-            {dojo.is_verified && (
-              <div className="absolute top-4 right-4 bg-primary text-primary-foreground px-3 py-1 rounded-full text-sm font-medium">
-                {language === "ja" ? "公認道場" : "Verified"}
-              </div>
-            )}
-          </div>
+              {dojo.is_verified && (
+                <div className="absolute top-4 right-4 bg-primary text-primary-foreground px-3 py-1 rounded-full text-sm font-medium">
+                  {language === "ja" ? "公認道場" : "Verified"}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Header */}
           <div className="mb-8">
-            <h1 className="text-4xl font-bold mb-4">{getDojoName(dojo)}</h1>
+            <div className="flex items-start justify-between mb-4">
+              <h1 className="text-4xl font-bold">{getDojoName(dojo)}</h1>
+              {!dojo.cover_image_url && dojo.is_verified && (
+                <Badge className="text-sm">
+                  {language === "ja" ? "公認道場" : "Verified"}
+                </Badge>
+              )}
+            </div>
             
             {dojo.location && (
               <div className="flex items-center gap-2 text-muted-foreground mb-4">
                 <MapPin className="w-5 h-5" />
-                <span>{dojo.location}</span>
+                <span className="text-lg">{dojo.location}</span>
               </div>
             )}
 
             {getDojoDescription(dojo) && (
-              <p className="text-lg text-muted-foreground mb-6">
-                {getDojoDescription(dojo)}
-              </p>
+              <Card className="mb-6">
+                <CardContent className="p-6">
+                  <h2 className="text-xl font-semibold mb-3">
+                    {language === "ja" ? "道場について" : language === "pt" ? "Sobre o Dojo" : "About"}
+                  </h2>
+                  <p className="text-base leading-relaxed whitespace-pre-line">
+                    {getDojoDescription(dojo)}
+                  </p>
+                </CardContent>
+              </Card>
             )}
 
-            {/* Contact Links */}
-            <div className="flex flex-wrap gap-3">
-              {dojo.website && (
-                <a href={dojo.website} target="_blank" rel="noopener noreferrer">
-                  <Button variant="outline" className="gap-2">
-                    <Globe className="w-4 h-4" />
-                    {language === "ja" ? "ウェブサイト" : "Website"}
-                  </Button>
-                </a>
-              )}
-              {dojo.instagram && (
-                <a href={`https://instagram.com/${dojo.instagram}`} target="_blank" rel="noopener noreferrer">
-                  <Button variant="outline" className="gap-2">
-                    <Instagram className="w-4 h-4" />
-                    Instagram
-                  </Button>
-                </a>
-              )}
-              {dojo.facebook && (
-                <a href={dojo.facebook} target="_blank" rel="noopener noreferrer">
-                  <Button variant="outline" className="gap-2">
-                    <Facebook className="w-4 h-4" />
-                    Facebook
-                  </Button>
-                </a>
-              )}
-              {dojo.phone && (
-                <a href={`tel:${dojo.phone}`}>
-                  <Button variant="outline" className="gap-2">
-                    <Phone className="w-4 h-4" />
-                    {dojo.phone}
-                  </Button>
-                </a>
-              )}
-              {dojo.email && (
-                <a href={`mailto:${dojo.email}`}>
-                  <Button variant="outline" className="gap-2">
-                    <Mail className="w-4 h-4" />
-                    {language === "ja" ? "メール" : "Email"}
-                  </Button>
-                </a>
-              )}
-            </div>
+            {/* Contact Information Card */}
+            <Card className="mb-6">
+              <CardContent className="p-6">
+                <h2 className="text-xl font-semibold mb-4">
+                  {language === "ja" ? "お問い合わせ" : language === "pt" ? "Contato" : "Contact"}
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {dojo.website && (
+                    <a href={dojo.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-3 rounded-lg border hover:bg-accent transition-colors">
+                      <Globe className="w-5 h-5 text-primary" />
+                      <div>
+                        <div className="text-sm text-muted-foreground">
+                          {language === "ja" ? "ウェブサイト" : "Website"}
+                        </div>
+                        <div className="font-medium flex items-center gap-1">
+                          {language === "ja" ? "公式サイトを見る" : "Visit Website"}
+                          <ExternalLink className="w-3 h-3" />
+                        </div>
+                      </div>
+                    </a>
+                  )}
+                  {dojo.instagram && (
+                    <a href={`https://instagram.com/${dojo.instagram}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-3 rounded-lg border hover:bg-accent transition-colors">
+                      <Instagram className="w-5 h-5 text-primary" />
+                      <div>
+                        <div className="text-sm text-muted-foreground">Instagram</div>
+                        <div className="font-medium">@{dojo.instagram}</div>
+                      </div>
+                    </a>
+                  )}
+                  {dojo.facebook && (
+                    <a href={dojo.facebook} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-3 rounded-lg border hover:bg-accent transition-colors">
+                      <Facebook className="w-5 h-5 text-primary" />
+                      <div>
+                        <div className="text-sm text-muted-foreground">Facebook</div>
+                        <div className="font-medium flex items-center gap-1">
+                          {language === "ja" ? "Facebookを見る" : "View Facebook"}
+                          <ExternalLink className="w-3 h-3" />
+                        </div>
+                      </div>
+                    </a>
+                  )}
+                  {dojo.phone && (
+                    <a href={`tel:${dojo.phone}`} className="flex items-center gap-3 p-3 rounded-lg border hover:bg-accent transition-colors">
+                      <Phone className="w-5 h-5 text-primary" />
+                      <div>
+                        <div className="text-sm text-muted-foreground">
+                          {language === "ja" ? "電話" : "Phone"}
+                        </div>
+                        <div className="font-medium">{dojo.phone}</div>
+                      </div>
+                    </a>
+                  )}
+                  {dojo.email && (
+                    <a href={`mailto:${dojo.email}`} className="flex items-center gap-3 p-3 rounded-lg border hover:bg-accent transition-colors">
+                      <Mail className="w-5 h-5 text-primary" />
+                      <div>
+                        <div className="text-sm text-muted-foreground">
+                          {language === "ja" ? "メール" : "Email"}
+                        </div>
+                        <div className="font-medium">{dojo.email}</div>
+                      </div>
+                    </a>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
           </div>
 
           {/* Members Section */}
