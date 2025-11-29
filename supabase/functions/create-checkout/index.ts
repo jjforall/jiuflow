@@ -16,11 +16,7 @@ serve(async (req) => {
   );
 
   try {
-    const { priceId: requestedPriceId, couponCode, referralCode, email } = await req.json();
-    
-    // If referral code is provided, use the special 1900 yen referral plan
-    const REFERRAL_PRICE_ID = "price_1SYK2lDqLakc8Nxkp6TBKYhT"; // ¥1,900/month referral plan
-    const priceId = referralCode ? REFERRAL_PRICE_ID : requestedPriceId;
+    const { priceId, couponCode, referralCode, email } = await req.json();
     
     if (!priceId) throw new Error("Price ID is required");
 
@@ -57,23 +53,18 @@ serve(async (req) => {
       cancel_url: `${req.headers.get("origin")}/join?canceled=true`,
     };
 
-    // Add trial settings only for non-referral plans
+    // Add trial settings for all plans
     // Founder plan gets 90 days, regular plans get 30 days
-    if (!referralCode) {
-      const FOUNDER_PRICE_ID = "price_1SR3ZmDqLakc8NxkNdqL5BtO";
-      const isFounderPlan = priceId === FOUNDER_PRICE_ID;
-      
-      sessionConfig.subscription_data.trial_period_days = isFounderPlan ? 90 : 30;
-      sessionConfig.subscription_data.trial_settings = {
-        end_behavior: {
-          missing_payment_method: 'cancel',
-        },
-      };
-      sessionConfig.payment_method_collection = 'if_required';
-    } else {
-      // For referral plans, always require payment method (no trial, but coupon gives first month free)
-      sessionConfig.payment_method_collection = 'always';
-    }
+    const FOUNDER_PRICE_ID = "price_1SR3ZmDqLakc8NxkNdqL5BtO";
+    const isFounderPlan = priceId === FOUNDER_PRICE_ID;
+    
+    sessionConfig.subscription_data.trial_period_days = isFounderPlan ? 90 : 30;
+    sessionConfig.subscription_data.trial_settings = {
+      end_behavior: {
+        missing_payment_method: 'cancel',
+      },
+    };
+    sessionConfig.payment_method_collection = 'if_required';
 
     // Add referral code to metadata if provided
     if (referralCode) {
