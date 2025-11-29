@@ -127,7 +127,13 @@ serve(async (req) => {
     });
 
     if (!invoice.payment_intent) {
-      throw new Error("No payment intent found for this invoice");
+      logStep("No payment intent - likely free trial or unpaid invoice");
+      return new Response(JSON.stringify({ 
+        error: "返金できません。このサブスクリプションはまだ支払いが発生していません（無料トライアル期間中の可能性があります）" 
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400,
+      });
     }
 
     // Create refund
