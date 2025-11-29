@@ -86,15 +86,18 @@ serve(async (req) => {
 
     const projectData = await statusRes.json();
     console.log("Project status:", projectData.status);
+    console.log("Project progress:", projectData.progress);
 
     // statusフィールドを確認
     const isCompleted = projectData.status === "completed" || projectData.status === "done";
     const videoUrl = isCompleted ? projectData.translated_video : null;
+    const progress = projectData.progress || 0;
 
     return new Response(
       JSON.stringify({
         status: projectData.status,
         videoUrl,
+        progress,
         message: isCompleted 
           ? "Translation completed" 
           : `Translation in progress: ${projectData.status}`,

@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { PaginationControls } from "@/components/ui/pagination-controls";
 import { Skeleton } from "@/components/ui/skeleton";
 import { VideoThumbnail } from "@/components/ui/video-thumbnail";
+import { Progress } from "@/components/ui/progress";
 import { 
   usePaginatedTechniques, 
   useUpdateTechnique, 
@@ -72,7 +73,15 @@ export const TechniquesManagement = () => {
   const [translatingTechnique, setTranslatingTechnique] = useState<Technique | null>(null);
   const [targetLanguage, setTargetLanguage] = useState<"ja" | "en" | "pt" | "es" | "fr" | "de" | "zh" | "ko" | "it" | "ru" | "ar" | "hi">("ja");
   const [translationProjectId, setTranslationProjectId] = useState<string | null>(null);
-  const [translationStatus, setTranslationStatus] = useState<string | null>(null);
+  const [translationStatus, setTranslationStatus] = useState<{
+    status: string | null;
+    progress: number;
+    startTime: number | null;
+  }>({
+    status: null,
+    progress: 0,
+    startTime: null,
+  });
 
 
   const translationLanguages = [
@@ -480,7 +489,11 @@ export const TechniquesManagement = () => {
 
       if (data && data.projectId) {
         setTranslationProjectId(data.projectId);
-        setTranslationStatus('processing');
+        setTranslationStatus({
+          status: 'processing',
+          progress: 0,
+          startTime: Date.now(),
+        });
         
         toast.success("動画翻訳を開始しました", {
           description: "翻訳が完了するまでしばらくお待ちください。プロジェクトID: " + data.projectId,
@@ -510,7 +523,11 @@ export const TechniquesManagement = () => {
       if (error) throw error;
 
       if (data) {
-        setTranslationStatus(data.status);
+        setTranslationStatus(prev => ({
+          ...prev,
+          status: data.status,
+          progress: data.progress || prev.progress,
+        }));
         
         if (data.status === 'completed' && data.videoUrl) {
           // Update the technique with the translated video URL and metadata
@@ -551,7 +568,11 @@ export const TechniquesManagement = () => {
           
           setShowTranslateDialog(false);
           setTranslationProjectId(null);
-          setTranslationStatus(null);
+          setTranslationStatus({
+            status: null,
+            progress: 0,
+            startTime: null,
+          });
         } else if (data.status === 'processing') {
           // Poll again after 10 seconds
           setTimeout(() => checkTranslationStatus(projectId, targetLang), 10000);
@@ -559,7 +580,11 @@ export const TechniquesManagement = () => {
           toast.error("動画翻訳エラー", {
             description: "翻訳処理に失敗しました",
           });
-          setTranslationStatus('failed');
+          setTranslationStatus({
+            status: 'failed',
+            progress: 0,
+            startTime: null,
+          });
         }
       }
     } catch (error: unknown) {
@@ -1288,15 +1313,38 @@ export const TechniquesManagement = () => {
                 </div>
               </div>
 
-              {translationStatus && (
-                <div className="mt-4 p-3 bg-muted rounded-lg">
-                  <p className="text-sm">
-                    ステータス: {translationStatus === 'processing' ? '翻訳処理中...' : 
-                                translationStatus === 'completed' ? '翻訳完了' : 
-                                translationStatus === 'failed' ? '失敗' : translationStatus}
-                  </p>
+              {translationStatus.status && (
+                <div className="mt-4 p-4 bg-muted rounded-md space-y-3">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-medium">
+                      ステータス: {translationStatus.status === 'processing' ? '翻訳処理中...' : 
+                                  translationStatus.status === 'completed' ? '翻訳完了' : 
+                                  translationStatus.status === 'failed' ? '失敗' : translationStatus.status}
+                    </p>
+                    {translationStatus.progress > 0 && (
+                      <p className="text-sm text-muted-foreground">{translationStatus.progress}%</p>
+                    )}
+                  </div>
+                  {translationStatus.progress > 0 && translationStatus.status === 'processing' && (
+                    <>
+                      <Progress value={translationStatus.progress} className="h-2" />
+                      {translationStatus.startTime && (
+                        <p className="text-xs text-muted-foreground">
+                          推定残り時間: {(() => {
+                            const elapsed = Date.now() - translationStatus.startTime;
+                            const estimatedTotal = translationStatus.progress > 0 
+                              ? (elapsed / translationStatus.progress) * 100 
+                              : 0;
+                            const remaining = estimatedTotal - elapsed;
+                            const minutes = Math.ceil(remaining / 60000);
+                            return minutes > 0 ? `約${minutes}分` : "まもなく完了";
+                          })()}
+                        </p>
+                      )}
+                    </>
+                  )}
                   {translationProjectId && (
-                    <p className="text-xs text-muted-foreground mt-1">
+                    <p className="text-xs text-muted-foreground">
                       プロジェクトID: {translationProjectId}
                     </p>
                   )}
@@ -1311,16 +1359,20 @@ export const TechniquesManagement = () => {
                 onClick={() => {
                   setShowTranslateDialog(false);
                   setTranslationProjectId(null);
-                  setTranslationStatus(null);
+                  setTranslationStatus({
+                    status: null,
+                    progress: 0,
+                    startTime: null,
+                  });
                 }}
               >
                 キャンセル
               </Button>
               <Button 
                 onClick={handleVideoTranslate}
-                disabled={isTranslating || translationStatus === 'processing'}
+                disabled={isTranslating || translationStatus.status === 'processing'}
               >
-                {isTranslating ? '開始中...' : translationStatus === 'processing' ? '処理中' : '翻訳開始'}
+                {isTranslating ? '開始中...' : translationStatus.status === 'processing' ? '処理中' : '翻訳開始'}
               </Button>
             </div>
           </div>
