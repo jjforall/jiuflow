@@ -18,6 +18,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface Technique {
   id: string;
@@ -40,11 +41,11 @@ interface Technique {
   series_order: number | null;
   created_at?: string;
   updated_at?: string;
-  video_metadata?: {
-    en?: { created_at: string; updated_at: string };
-    ja?: { created_at: string; updated_at: string };
-    pt?: { created_at: string; updated_at: string };
-  };
+  video_metadata?: Record<string, {
+    created_at: string;
+    updated_at: string;
+    video_url?: string;
+  }>;
 }
 
 interface UploadProgress {
@@ -55,6 +56,7 @@ interface UploadProgress {
 
 export const TechniquesManagement = () => {
   const { isAdmin } = useAuth();
+  const { language } = useLanguage();
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(50);
   const [searchQuery, setSearchQuery] = useState("");
@@ -98,6 +100,46 @@ export const TechniquesManagement = () => {
     { code: "ar", name: "العربية", nativeName: "アラビア語" },
     { code: "hi", name: "हिन्दी", nativeName: "ヒンディー語" },
   ];
+
+  // 翻訳数を数える関数
+  const getTranslationCount = (technique: Technique): number => {
+    let count = 0;
+    
+    // video_metadataから翻訳をカウント
+    if (technique.video_metadata) {
+      translationLanguages.forEach(lang => {
+        if ((technique.video_metadata as any)?.[lang.code]?.video_url) {
+          count++;
+        }
+      });
+    }
+    
+    // 従来のフィールドもチェック（video_metadataにない場合）
+    if (technique.video_url && !technique.video_metadata?.en?.video_url) count++;
+    if (technique.video_url_ja && !technique.video_metadata?.ja?.video_url) count++;
+    if (technique.video_url_pt && !technique.video_metadata?.pt?.video_url) count++;
+    
+    return count;
+  };
+
+  // 言語に応じた動画URLを取得する関数
+  const getVideoUrlForLanguage = (technique: Technique, lang: string): string | null => {
+    // まずvideo_metadataをチェック
+    if (technique.video_metadata) {
+      const metadata = (technique.video_metadata as any)[lang];
+      if (metadata?.video_url) {
+        return metadata.video_url;
+      }
+    }
+    
+    // 従来のフィールドをチェック
+    if (lang === 'en' && technique.video_url) return technique.video_url;
+    if (lang === 'ja' && technique.video_url_ja) return technique.video_url_ja;
+    if (lang === 'pt' && technique.video_url_pt) return technique.video_url_pt;
+    
+    // 言語に対応する動画がない場合、デフォルトの動画を返す
+    return technique.video_url || technique.video_url_ja || technique.video_url_pt || null;
+  };
 
   // Form state
   const [formData, setFormData] = useState({
@@ -708,6 +750,7 @@ export const TechniquesManagement = () => {
               <th className="px-4 py-3 text-left">シリーズ</th>
               <th className="px-4 py-3 text-left">ハッシュタグ</th>
               <th className="px-4 py-3 text-left">表示順</th>
+              <th className="px-4 py-3 text-left">翻訳</th>
               <th className="px-4 py-3 text-left">動画</th>
               <th className="px-4 py-3 text-right">アクション</th>
             </tr>
@@ -733,6 +776,9 @@ export const TechniquesManagement = () => {
                     <Skeleton className="h-4 w-12" />
                   </td>
                   <td className="px-4 py-3">
+                    <Skeleton className="h-4 w-16" />
+                  </td>
+                  <td className="px-4 py-3">
                     <Skeleton className="h-20 w-32" />
                   </td>
                   <td className="px-4 py-3">
@@ -742,7 +788,7 @@ export const TechniquesManagement = () => {
               ))
             ) : data?.data.length === 0 ? (
               <tr>
-                <td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">
+                <td colSpan={8} className="px-4 py-8 text-center text-muted-foreground">
                   技術が見つかりませんでした
                 </td>
               </tr>
@@ -938,8 +984,14 @@ export const TechniquesManagement = () => {
                   </td>
                   <td className="px-4 py-3">{technique.display_order}</td>
                   <td className="px-4 py-3">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium">{getTranslationCount(technique as any)}</span>
+                      <span className="text-xs text-muted-foreground">言語</span>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3">
                     <VideoThumbnail
-                      videoUrl={technique.video_url}
+                      videoUrl={getVideoUrlForLanguage(technique as any, language)}
                       className="w-32 h-20"
                       showPlayButton
                     />
@@ -953,7 +1005,7 @@ export const TechniquesManagement = () => {
                               size="sm"
                               variant="outline"
                               onClick={() => {
-                                setTranslatingTechnique(technique as Technique);
+                                setTranslatingTechnique(technique as any);
                                 setShowTranslateDialog(true);
                               }}
                               title="動画を他言語に翻訳"
@@ -964,7 +1016,7 @@ export const TechniquesManagement = () => {
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => openEditDialog(technique as Technique)}
+                            onClick={() => openEditDialog(technique as any)}
                           >
                             編集
                           </Button>
