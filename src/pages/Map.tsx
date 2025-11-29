@@ -386,10 +386,10 @@ const Map = () => {
                       </Button>
                       <p className="text-sm text-muted-foreground">
                         {language === "ja" 
-                          ? "7日間の無料トライアル付き" 
+                          ? "1ヶ月の無料トライアル付き" 
                           : language === "pt" 
-                          ? "7 dias de teste grátis inclusos" 
-                          : "7-day free trial included"}
+                          ? "1 mês de teste grátis incluído" 
+                          : "1-month free trial included"}
                       </p>
                     </div>
                   </div>

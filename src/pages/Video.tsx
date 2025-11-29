@@ -431,10 +431,10 @@ const Video = () => {
                 {/* Trust Badge */}
                 <p className="text-center text-sm text-muted-foreground pt-4">
                   {language === "ja" 
-                    ? "✓ 3ヶ月の無料トライアル付き" 
+                    ? "✓ 1ヶ月の無料トライアル付き" 
                     : language === "pt" 
-                    ? "✓ Teste grátis de 3 meses incluído" 
-                    : "✓ 3-month free trial included"}
+                    ? "✓ Teste grátis de 1 mês incluído" 
+                    : "✓ 1-month free trial included"}
                 </p>
               </div>
             </div>
