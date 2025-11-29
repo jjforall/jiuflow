@@ -22,9 +22,18 @@ serve(async (req) => {
     }
 
     const RASK_AI_API_KEY = Deno.env.get("RASK_AI_API_KEY");
+    const RASK_AI_CLIENT_ID = Deno.env.get("RASK_AI_CLIENT_ID");
+    
     if (!RASK_AI_API_KEY) {
       return new Response(
         JSON.stringify({ error: "RASK_AI_API_KEY not configured" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    
+    if (!RASK_AI_CLIENT_ID) {
+      return new Response(
+        JSON.stringify({ error: "RASK_AI_CLIENT_ID not configured" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -38,6 +47,7 @@ serve(async (req) => {
       headers: {
         "Authorization": `Bearer ${RASK_AI_API_KEY}`,
         "Content-Type": "application/json",
+        "X-Client-Id": RASK_AI_CLIENT_ID,
       },
       body: JSON.stringify({
         link: videoUrl,
@@ -64,6 +74,7 @@ serve(async (req) => {
       headers: {
         "Authorization": `Bearer ${RASK_AI_API_KEY}`,
         "Content-Type": "application/json",
+        "X-Client-Id": RASK_AI_CLIENT_ID,
       },
       body: JSON.stringify({
         media_id: mediaId,
@@ -92,6 +103,7 @@ serve(async (req) => {
       headers: {
         "Authorization": `Bearer ${RASK_AI_API_KEY}`,
         "Content-Type": "application/json",
+        "X-Client-Id": RASK_AI_CLIENT_ID,
       },
       body: JSON.stringify({
         target_language: targetLanguage,
