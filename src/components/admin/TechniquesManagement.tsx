@@ -1357,64 +1357,85 @@ export const TechniquesManagement = () => {
               <div>
                 <label className="text-sm font-medium mb-3 block">翻訳先言語を選択</label>
                 <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2">
-                  {translationLanguages.map(lang => (
-                    <div
-                      key={lang.code}
-                      className={`flex items-center justify-between p-3 border rounded-lg cursor-pointer transition-colors ${
-                        targetLanguage === lang.code ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"
-                      }`}
-                      onClick={() => setTargetLanguage(lang.code as any)}
-                    >
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="radio"
-                          name="language"
-                          value={lang.code}
-                          checked={targetLanguage === lang.code}
-                          onChange={() => setTargetLanguage(lang.code as any)}
-                          className="cursor-pointer"
-                        />
-                        <span className="font-medium">{lang.name} ({lang.nativeName})</span>
-                      </div>
-                      <div className="flex flex-col items-end gap-1">
-                        {(() => {
-                          const metadata = (translatingTechnique as any)?.video_metadata?.[lang.code];
-                          const isProcessing = translationStatus.status === 'processing' && targetLanguage === lang.code && translationProjectId;
-                          
-                          if (isProcessing) {
-                            return (
-                              <div className="flex items-center gap-1 text-sm text-blue-600">
-                                <span className="animate-pulse">●</span>
-                                <span>作成中</span>
+                  {allLanguages.map(lang => {
+                    const metadata = (translatingTechnique as any)?.video_metadata?.[lang.code];
+                    const isProcessing = translationStatus.status === 'processing' && targetLanguage === lang.code && translationProjectId;
+                    const isJapanese = lang.code === 'ja';
+                    
+                    return (
+                      <div
+                        key={lang.code}
+                        className={`flex items-center justify-between p-3 border rounded-lg transition-colors ${
+                          isJapanese 
+                            ? "border-border bg-muted/50 cursor-not-allowed" 
+                            : targetLanguage === lang.code 
+                              ? "border-primary bg-primary/5 cursor-pointer" 
+                              : "border-border hover:border-primary/50 cursor-pointer"
+                        }`}
+                        onClick={() => !isJapanese && setTargetLanguage(lang.code as any)}
+                      >
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="radio"
+                            name="language"
+                            value={lang.code}
+                            checked={targetLanguage === lang.code}
+                            onChange={() => !isJapanese && setTargetLanguage(lang.code as any)}
+                            disabled={isJapanese}
+                            className="cursor-pointer disabled:cursor-not-allowed"
+                          />
+                          <div className="flex flex-col">
+                            <span className="font-medium">{lang.name} ({lang.nativeName})</span>
+                            {isJapanese && (
+                              <span className="text-xs text-muted-foreground">オリジナル言語</span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex flex-col items-end gap-1">
+                          {isProcessing ? (
+                            <div className="flex items-center gap-1 text-sm text-blue-600">
+                              <span className="animate-pulse">●</span>
+                              <span>作成中</span>
+                            </div>
+                          ) : metadata?.video_url ? (
+                            <>
+                              <div className="flex items-center gap-1 text-sm text-green-600">
+                                <Check className="w-4 h-4" />
+                                <span>翻訳済み</span>
                               </div>
-                            );
-                          } else if (metadata?.video_url) {
-                            return (
-                              <>
-                                <div className="flex items-center gap-1 text-sm text-green-600">
-                                  <Check className="w-4 h-4" />
-                                  <span>翻訳済み</span>
-                                </div>
-                                {metadata.created_at && (
-                                  <span className="text-xs text-muted-foreground">
-                                    {new Date(metadata.created_at).toLocaleDateString('ja-JP', { 
-                                      year: 'numeric', 
-                                      month: '2-digit', 
-                                      day: '2-digit' 
-                                    })}
-                                  </span>
-                                )}
-                              </>
-                            );
-                          } else {
-                            return (
-                              <span className="text-sm text-muted-foreground">未翻訳</span>
-                            );
-                          }
-                        })()}
+                              {metadata.created_at && (
+                                <span className="text-xs text-muted-foreground">
+                                  {new Date(metadata.created_at).toLocaleDateString('ja-JP', { 
+                                    year: 'numeric', 
+                                    month: '2-digit', 
+                                    day: '2-digit' 
+                                  })}
+                                </span>
+                              )}
+                            </>
+                          ) : isJapanese ? (
+                            <>
+                              <div className="flex items-center gap-1 text-sm text-green-600">
+                                <Check className="w-4 h-4" />
+                                <span>オリジナル</span>
+                              </div>
+                              {translatingTechnique?.created_at && (
+                                <span className="text-xs text-muted-foreground">
+                                  {new Date(translatingTechnique.created_at).toLocaleDateString('ja-JP', { 
+                                    year: 'numeric', 
+                                    month: '2-digit', 
+                                    day: '2-digit' 
+                                  })}
+                                </span>
+                              )}
+                            </>
+                          ) : (
+                            <span className="text-sm text-muted-foreground">未翻訳</span>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
 
