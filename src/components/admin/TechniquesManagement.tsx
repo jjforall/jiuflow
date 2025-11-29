@@ -102,38 +102,33 @@ export const TechniquesManagement = () => {
     { code: "hi", name: "हिन्दी", nativeName: "ヒンディー語" },
   ];
 
-  // 翻訳数を数える関数
+  // 翻訳数を数える関数（video_metadataに保存された翻訳のみカウント）
   const getTranslationCount = (technique: Technique): number => {
-    const availableLanguages = new Set<string>();
+    if (!technique.video_metadata) return 0;
     
-    // video_metadataから翻訳をカウント
-    if (technique.video_metadata) {
-      translationLanguages.forEach(lang => {
-        if ((technique.video_metadata as any)?.[lang.code]?.video_url) {
-          availableLanguages.add(lang.code);
-        }
-      });
-    }
+    let count = 0;
+    translationLanguages.forEach(lang => {
+      if ((technique.video_metadata as any)?.[lang.code]?.video_url) {
+        count++;
+      }
+    });
     
-    // 従来のフィールドもチェック（重複を避けるためSetを使用）
-    if (technique.video_url) availableLanguages.add('en');
-    if (technique.video_url_ja) availableLanguages.add('ja');
-    if (technique.video_url_pt) availableLanguages.add('pt');
-    
-    return availableLanguages.size;
+    return count;
   };
 
-  // 利用可能な翻訳言語のリストを取得
+  // 利用可能な翻訳言語のリストを取得（video_metadataに保存された翻訳のみ）
   const getAvailableTranslations = (technique: Technique): Array<{ code: string; name: string; url: string }> => {
     const translations: Array<{ code: string; name: string; url: string }> = [];
     
+    if (!technique.video_metadata) return translations;
+    
     translationLanguages.forEach(lang => {
-      const url = getVideoUrlForLanguage(technique, lang.code);
-      if (url) {
+      const metadata = (technique.video_metadata as any)?.[lang.code];
+      if (metadata?.video_url) {
         translations.push({
           code: lang.code,
           name: lang.nativeName,
-          url: url
+          url: metadata.video_url
         });
       }
     });
