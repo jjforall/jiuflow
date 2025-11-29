@@ -86,3 +86,6 @@ verify_jwt = true
 [functions.check-translation-status]
 verify_jwt = true
 
+[functions.create-founder-trial-link]
+verify_jwt = false
+
