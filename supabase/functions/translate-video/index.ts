@@ -75,7 +75,7 @@ serve(async (req) => {
 
     // Step 1: Upload media by link
     console.log("Step 1: Uploading media...");
-    const uploadResponse = await fetch("https://api.rask.ai/v2/media/upload/link", {
+    const uploadResponse = await fetch("https://api.rask.ai/v1/media/upload/link", {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${accessToken}`,
@@ -101,7 +101,7 @@ serve(async (req) => {
 
     // Step 2: Create project
     console.log("Step 2: Creating project...");
-    const createProjectResponse = await fetch("https://api.rask.ai/v2/project", {
+    const createProjectResponse = await fetch("https://api.rask.ai/v1/project", {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${accessToken}`,
@@ -129,7 +129,7 @@ serve(async (req) => {
 
     // Step 3: Generate translation
     console.log("Step 3: Generating translation...");
-    const generateResponse = await fetch(`https://api.rask.ai/v2/project/${projectId}/generate`, {
+    const generateResponse = await fetch(`https://api.rask.ai/v1/project/${projectId}/generate`, {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${accessToken}`,
