@@ -57,9 +57,13 @@ serve(async (req) => {
       cancel_url: `${req.headers.get("origin")}/join?canceled=true`,
     };
 
-    // Add trial settings only for non-referral plans (90 days free trial)
+    // Add trial settings only for non-referral plans
+    // Founder plan gets 90 days, regular plans get 30 days
     if (!referralCode) {
-      sessionConfig.subscription_data.trial_period_days = 90;
+      const FOUNDER_PRICE_ID = "price_1SR3ZmDqLakc8NxkNdqL5BtO";
+      const isFounderPlan = priceId === FOUNDER_PRICE_ID;
+      
+      sessionConfig.subscription_data.trial_period_days = isFounderPlan ? 90 : 30;
       sessionConfig.subscription_data.trial_settings = {
         end_behavior: {
           missing_payment_method: 'cancel',
