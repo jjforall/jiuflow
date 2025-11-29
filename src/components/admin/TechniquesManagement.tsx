@@ -474,28 +474,55 @@ export const TechniquesManagement = () => {
     
     setIsTranslating(true);
     try {
-      const { data, error } = await supabase.functions.invoke('translate-technique', {
+      // 日本語に翻訳
+      const { data: jaData, error: jaError } = await supabase.functions.invoke('translate-technique', {
         body: { 
-          name: formData.name,
-          description: formData.description || null 
+          text: `Name: ${formData.name}\nDescription: ${formData.description || ''}`,
+          targetLang: 'ja'
         }
       });
 
-      if (error) throw error;
+      if (jaError) throw jaError;
 
-      if (data) {
+      // ポルトガル語に翻訳
+      const { data: ptData, error: ptError } = await supabase.functions.invoke('translate-technique', {
+        body: { 
+          text: `Name: ${formData.name}\nDescription: ${formData.description || ''}`,
+          targetLang: 'pt'
+        }
+      });
+
+      if (ptError) throw ptError;
+
+      // 翻訳結果をパース
+      const parseTranslation = (text: string) => {
+        const lines = text.split('\n');
+        const name = lines.find(l => l.startsWith('Name:'))?.replace('Name:', '').trim() || '';
+        const description = lines.find(l => l.startsWith('Description:'))?.replace('Description:', '').trim() || '';
+        return { name, description };
+      };
+
+      if (jaData?.translatedText) {
+        const ja = parseTranslation(jaData.translatedText);
         setFormData(prev => ({
           ...prev,
-          name_ja: data.name_ja || prev.name_ja,
-          name_pt: data.name_pt || prev.name_pt,
-          description_ja: data.description_ja || prev.description_ja,
-          description_pt: data.description_pt || prev.description_pt,
+          name_ja: ja.name || prev.name_ja,
+          description_ja: ja.description || prev.description_ja,
         }));
-        
-        toast.success("翻訳完了", {
-          description: "自動翻訳が完了しました",
-        });
       }
+
+      if (ptData?.translatedText) {
+        const pt = parseTranslation(ptData.translatedText);
+        setFormData(prev => ({
+          ...prev,
+          name_pt: pt.name || prev.name_pt,
+          description_pt: pt.description || prev.description_pt,
+        }));
+      }
+      
+      toast.success("翻訳完了", {
+        description: "自動翻訳が完了しました",
+      });
     } catch (error: unknown) {
       console.error('Translation error:', error);
       toast.error("翻訳エラー", {
