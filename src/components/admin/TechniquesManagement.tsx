@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -85,6 +85,15 @@ export const TechniquesManagement = () => {
     progress: 0,
     startTime: null,
   });
+  
+  // 進行中の翻訳を追跡
+  const [activeTranslations, setActiveTranslations] = useState<Array<{
+    projectId: string;
+    techniqueId: string;
+    techniqueName: string;
+    targetLang: string;
+    startTime: number;
+  }>>([]);
 
 
   // すべての言語（カウント用）
@@ -102,6 +111,106 @@ export const TechniquesManagement = () => {
     { code: "ar", name: "العربية", nativeName: "アラビア語" },
     { code: "hi", name: "हिन्दी", nativeName: "ヒンディー語" },
   ];
+
+  // LocalStorageから進行中の翻訳を復元
+  useEffect(() => {
+    const stored = localStorage.getItem('activeTranslations');
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored);
+        setActiveTranslations(parsed);
+      } catch (e) {
+        console.error('Failed to parse stored translations:', e);
+      }
+    }
+  }, []);
+
+  // 進行中の翻訳をLocalStorageに保存
+  useEffect(() => {
+    if (activeTranslations.length > 0) {
+      localStorage.setItem('activeTranslations', JSON.stringify(activeTranslations));
+    } else {
+      localStorage.removeItem('activeTranslations');
+    }
+  }, [activeTranslations]);
+
+  // 定期的に翻訳ステータスをチェック
+  useEffect(() => {
+    if (activeTranslations.length === 0) return;
+
+    const checkAllTranslations = async () => {
+      for (const translation of activeTranslations) {
+        try {
+          const { data: statusData, error: statusError } = await supabase.functions.invoke('check-translation-status', {
+            body: { projectId: translation.projectId }
+          });
+
+          if (statusError) {
+            console.error('Translation status check error:', statusError);
+            continue;
+          }
+
+          if (statusData?.status === 'completed' && statusData?.videoUrl) {
+            // 翻訳完了 - DBから最新のtechniqueを取得
+            const { data: techniqueData, error: fetchError } = await supabase
+              .from('techniques')
+              .select('*')
+              .eq('id', translation.techniqueId)
+              .single();
+
+            if (fetchError || !techniqueData) {
+              console.error('Failed to fetch technique:', fetchError);
+              continue;
+            }
+
+            const currentMetadata = (techniqueData.video_metadata as Record<string, any>) || {};
+            const updatedMetadata = {
+              ...currentMetadata,
+              [translation.targetLang]: {
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+                video_url: statusData.videoUrl,
+              }
+            };
+
+            await supabase
+              .from('techniques')
+              .update({ video_metadata: updatedMetadata })
+              .eq('id', translation.techniqueId);
+
+            // 通知
+            toast.success("動画翻訳完了", {
+              description: `「${translation.techniqueName}」の${allLanguages.find(l => l.code === translation.targetLang)?.nativeName}版が完了しました`,
+            });
+
+            // activeTranslationsから削除
+            setActiveTranslations(prev => 
+              prev.filter(t => t.projectId !== translation.projectId)
+            );
+          } else if (statusData?.status === 'failed') {
+            toast.error("動画翻訳失敗", {
+              description: `「${translation.techniqueName}」の翻訳処理に失敗しました`,
+            });
+
+            setActiveTranslations(prev => 
+              prev.filter(t => t.projectId !== translation.projectId)
+            );
+          }
+        } catch (error) {
+          console.error('Error checking translation:', error);
+        }
+      }
+    };
+
+    // 初回チェック
+    checkAllTranslations();
+
+    // 30秒ごとにチェック
+    const interval = setInterval(checkAllTranslations, 30000);
+
+    return () => clearInterval(interval);
+  }, [activeTranslations, allLanguages]);
+
 
   // 翻訳対象の言語（日本語を除外）
   const translationLanguages = allLanguages.filter(lang => lang.code !== 'ja');
@@ -577,12 +686,20 @@ export const TechniquesManagement = () => {
           startTime: Date.now(),
         });
         
+        // activeTranslationsに追加
+        setActiveTranslations(prev => [...prev, {
+          projectId: data.projectId,
+          techniqueId: translatingTechnique.id,
+          techniqueName: translatingTechnique.name,
+          targetLang: targetLanguage,
+          startTime: Date.now(),
+        }]);
+        
         toast.success("動画翻訳を開始しました", {
-          description: "翻訳が完了するまでしばらくお待ちください。プロジェクトID: " + data.projectId,
+          description: `翻訳が完了すると自動的に通知されます。バックグラウンドで処理を続行します。`,
         });
         
-        // Poll for translation status
-        checkTranslationStatus(data.projectId, targetLanguage);
+        setShowTranslateDialog(false);
       }
     } catch (error: unknown) {
       console.error('Video translation error:', error);
