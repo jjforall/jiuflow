@@ -40,8 +40,8 @@ serve(async (req) => {
       subscription_data: {
         trial_period_days: 90,
       },
-      success_url: "https://jiuflow.lovable.app/payment-success?session_id={CHECKOUT_SESSION_ID}",
-      cancel_url: "https://jiuflow.lovable.app/join?canceled=true",
+      success_url: "https://jiuflow.art/payment-success?session_id={CHECKOUT_SESSION_ID}",
+      cancel_url: "https://jiuflow.art/join?canceled=true",
     });
 
     console.log("Checkout session created:", session.id);
