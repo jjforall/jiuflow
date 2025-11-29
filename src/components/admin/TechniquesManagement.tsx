@@ -791,6 +791,91 @@ export const TechniquesManagement = () => {
     }
   };
 
+  // 手動でステータスをチェックする関数
+  const manualCheckTranslation = async (translation: {
+    projectId: string;
+    techniqueId: string;
+    techniqueName: string;
+    targetLang: string;
+    startTime: number;
+  }) => {
+    try {
+      toast.info("ステータス確認中...", {
+        description: `「${translation.techniqueName}」の翻訳状況を確認しています`,
+      });
+
+      const { data: statusData, error: statusError } = await supabase.functions.invoke('check-translation-status', {
+        body: { projectId: translation.projectId }
+      });
+
+      if (statusError) {
+        toast.error("確認エラー", {
+          description: "ステータスの確認に失敗しました",
+        });
+        return;
+      }
+
+      if (statusData?.status === 'completed' && statusData?.videoUrl) {
+        const { data: techniqueData, error: fetchError } = await supabase
+          .from('techniques')
+          .select('*')
+          .eq('id', translation.techniqueId)
+          .single();
+
+        if (fetchError || !techniqueData) {
+          toast.error("エラー", {
+            description: "技術データの取得に失敗しました",
+          });
+          return;
+        }
+
+        const currentMetadata = (techniqueData.video_metadata as Record<string, any>) || {};
+        const updatedMetadata = {
+          ...currentMetadata,
+          [translation.targetLang]: {
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            video_url: statusData.videoUrl,
+          }
+        };
+
+        await supabase
+          .from('techniques')
+          .update({ video_metadata: updatedMetadata })
+          .eq('id', translation.techniqueId);
+
+        toast.success("動画翻訳完了", {
+          description: `「${translation.techniqueName}」の${allLanguages.find(l => l.code === translation.targetLang)?.nativeName}版が完了しました`,
+        });
+
+        setActiveTranslations(prev => 
+          prev.filter(t => t.projectId !== translation.projectId)
+        );
+      } else if (statusData?.status === 'failed') {
+        toast.error("動画翻訳失敗", {
+          description: `「${translation.techniqueName}」の翻訳処理に失敗しました`,
+        });
+
+        setActiveTranslations(prev => 
+          prev.filter(t => t.projectId !== translation.projectId)
+        );
+      } else if (statusData?.status === 'processing') {
+        toast.info("翻訳処理中", {
+          description: `進捗: ${statusData.progress || 0}%`,
+        });
+      } else {
+        toast.info("ステータス", {
+          description: `現在の状態: ${statusData?.status || '不明'}`,
+        });
+      }
+    } catch (error) {
+      console.error('Manual check error:', error);
+      toast.error("エラー", {
+        description: "ステータスの確認中にエラーが発生しました",
+      });
+    }
+  };
+
   const resetForm = () => {
     setFormData({
       name: "",
@@ -854,6 +939,47 @@ export const TechniquesManagement = () => {
           )}
         </div>
       </div>
+
+      {/* Active Translations Section */}
+      {activeTranslations.length > 0 && (
+        <div className="mb-6 border rounded-lg p-4 bg-muted/50">
+          <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+            <Languages className="h-5 w-5" />
+            進行中の翻訳 ({activeTranslations.length})
+          </h3>
+          <div className="space-y-3">
+            {activeTranslations.map((translation) => {
+              const elapsedTime = Math.floor((Date.now() - translation.startTime) / 1000);
+              const minutes = Math.floor(elapsedTime / 60);
+              const seconds = elapsedTime % 60;
+              const langName = allLanguages.find(l => l.code === translation.targetLang)?.nativeName || translation.targetLang;
+              
+              return (
+                <div key={translation.projectId} className="border rounded p-3 bg-background">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex-1">
+                      <p className="font-medium">{translation.techniqueName}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {langName}版 • 経過時間: {minutes}分{seconds}秒
+                      </p>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => manualCheckTranslation(translation)}
+                    >
+                      ステータス確認
+                    </Button>
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    プロジェクトID: {translation.projectId}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Search and Filter Controls */}
       <div className="flex gap-4 mb-6">
