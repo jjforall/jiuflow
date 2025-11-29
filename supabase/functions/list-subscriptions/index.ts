@@ -119,12 +119,16 @@ serve(async (req) => {
         productName = (price.product as Stripe.Product).name || 'N/A';
       }
 
+      const isTrialing = sub.status === 'trialing' || (sub.trial_end && sub.trial_end * 1000 > Date.now());
+      
       return {
         id: sub.id,
         customer_email: customer.email || 'N/A',
         customer_name: customer.name || 'N/A',
         customer_id: customer.id,
         status: sub.status,
+        is_trialing: isTrialing,
+        trial_end: sub.trial_end ? new Date(sub.trial_end * 1000).toISOString() : null,
         amount: price?.unit_amount || 0,
         currency: price?.currency || 'jpy',
         interval: price?.recurring?.interval || 'month',
