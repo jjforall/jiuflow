@@ -74,7 +74,7 @@ export const TechniquesManagement = () => {
   const [hashtagEditValue, setHashtagEditValue] = useState<string>("");
   const [showTranslateDialog, setShowTranslateDialog] = useState(false);
   const [translatingTechnique, setTranslatingTechnique] = useState<Technique | null>(null);
-  const [targetLanguage, setTargetLanguage] = useState<"ja" | "en" | "pt" | "es" | "fr" | "de" | "zh" | "ko" | "it" | "ru" | "ar" | "hi">("ja");
+  const [targetLanguage, setTargetLanguage] = useState<"en" | "pt" | "es" | "fr" | "de" | "zh" | "ko" | "it" | "ru" | "ar" | "hi">("en");
   const [translationProjectId, setTranslationProjectId] = useState<string | null>(null);
   const [translationStatus, setTranslationStatus] = useState<{
     status: string | null;
@@ -87,7 +87,8 @@ export const TechniquesManagement = () => {
   });
 
 
-  const translationLanguages = [
+  // すべての言語（カウント用）
+  const allLanguages = [
     { code: "ja", name: "日本語", nativeName: "Japanese" },
     { code: "en", name: "English", nativeName: "英語" },
     { code: "pt", name: "Português", nativeName: "ポルトガル語" },
@@ -102,12 +103,15 @@ export const TechniquesManagement = () => {
     { code: "hi", name: "हिन्दी", nativeName: "ヒンディー語" },
   ];
 
+  // 翻訳対象の言語（日本語を除外）
+  const translationLanguages = allLanguages.filter(lang => lang.code !== 'ja');
+
   // 翻訳数を数える関数（video_metadataに保存された翻訳のみカウント）
   const getTranslationCount = (technique: Technique): number => {
     if (!technique.video_metadata) return 0;
     
     let count = 0;
-    translationLanguages.forEach(lang => {
+    allLanguages.forEach(lang => {
       if ((technique.video_metadata as any)?.[lang.code]?.video_url) {
         count++;
       }
@@ -122,7 +126,7 @@ export const TechniquesManagement = () => {
     
     if (!technique.video_metadata) return translations;
     
-    translationLanguages.forEach(lang => {
+    allLanguages.forEach(lang => {
       const metadata = (technique.video_metadata as any)?.[lang.code];
       if (metadata?.video_url) {
         translations.push({
@@ -505,27 +509,13 @@ export const TechniquesManagement = () => {
   const handleVideoTranslate = async () => {
     if (!translatingTechnique) return;
     
-    // Determine source language and video URL based on target language
-    let sourceLanguage = 'ja';
-    let sourceVideoUrl = translatingTechnique.video_url_ja || translatingTechnique.video_url;
-    
-    if (targetLanguage === 'ja') {
-      // Translating to Japanese from English
-      sourceLanguage = 'en';
-      sourceVideoUrl = translatingTechnique.video_url;
-    } else if (targetLanguage === 'en') {
-      // Translating to English from Japanese
-      sourceLanguage = 'ja';
-      sourceVideoUrl = translatingTechnique.video_url_ja || translatingTechnique.video_url;
-    } else if (targetLanguage === 'pt') {
-      // Translating to Portuguese from Japanese
-      sourceLanguage = 'ja';
-      sourceVideoUrl = translatingTechnique.video_url_ja || translatingTechnique.video_url;
-    }
+    // 常に日本語動画をソースとして使用
+    const sourceLanguage = 'ja';
+    const sourceVideoUrl = translatingTechnique.video_url_ja || translatingTechnique.video_url;
     
     if (!sourceVideoUrl) {
       toast.error("エラー", {
-        description: "ソース動画が見つかりません",
+        description: "ソース動画（日本語）が見つかりません",
       });
       return;
     }
@@ -1387,17 +1377,41 @@ export const TechniquesManagement = () => {
                         <span className="font-medium">{lang.name} ({lang.nativeName})</span>
                       </div>
                       <div className="flex flex-col items-end gap-1">
-                        {(translatingTechnique as any)?.video_metadata?.[lang.code]?.video_url && (
-                          <div className="flex items-center gap-1 text-sm text-green-600">
-                            <Check className="w-4 h-4" />
-                            <span>動画あり</span>
-                          </div>
-                        )}
-                        {(translatingTechnique as any)?.video_metadata?.[lang.code]?.created_at && (
-                          <span className="text-xs text-muted-foreground">
-                            {new Date((translatingTechnique as any).video_metadata[lang.code].created_at).toLocaleDateString('ja-JP')}
-                          </span>
-                        )}
+                        {(() => {
+                          const metadata = (translatingTechnique as any)?.video_metadata?.[lang.code];
+                          const isProcessing = translationStatus.status === 'processing' && targetLanguage === lang.code && translationProjectId;
+                          
+                          if (isProcessing) {
+                            return (
+                              <div className="flex items-center gap-1 text-sm text-blue-600">
+                                <span className="animate-pulse">●</span>
+                                <span>作成中</span>
+                              </div>
+                            );
+                          } else if (metadata?.video_url) {
+                            return (
+                              <>
+                                <div className="flex items-center gap-1 text-sm text-green-600">
+                                  <Check className="w-4 h-4" />
+                                  <span>翻訳済み</span>
+                                </div>
+                                {metadata.created_at && (
+                                  <span className="text-xs text-muted-foreground">
+                                    {new Date(metadata.created_at).toLocaleDateString('ja-JP', { 
+                                      year: 'numeric', 
+                                      month: '2-digit', 
+                                      day: '2-digit' 
+                                    })}
+                                  </span>
+                                )}
+                              </>
+                            );
+                          } else {
+                            return (
+                              <span className="text-sm text-muted-foreground">未翻訳</span>
+                            );
+                          }
+                        })()}
                       </div>
                     </div>
                   ))}
