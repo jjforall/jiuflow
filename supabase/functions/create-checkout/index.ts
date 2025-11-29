@@ -51,22 +51,25 @@ serve(async (req) => {
       ],
       mode: "subscription",
       subscription_data: {
-        // Use 90 days trial for regular plans, no trial for referral (coupon handles first month free)
-        trial_period_days: referralCode ? 0 : 90,
-        ...(referralCode ? {} : {
-          trial_settings: {
-            end_behavior: {
-              missing_payment_method: 'cancel',
-            },
-          },
-        }),
         metadata: {},
       },
-      // For trial subscriptions, payment method is optional
-      payment_method_collection: referralCode ? 'always' : 'if_required',
       success_url: `${req.headers.get("origin")}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${req.headers.get("origin")}/join?canceled=true`,
     };
+
+    // Add trial settings only for non-referral plans (90 days free trial)
+    if (!referralCode) {
+      sessionConfig.subscription_data.trial_period_days = 90;
+      sessionConfig.subscription_data.trial_settings = {
+        end_behavior: {
+          missing_payment_method: 'cancel',
+        },
+      };
+      sessionConfig.payment_method_collection = 'if_required';
+    } else {
+      // For referral plans, always require payment method (no trial, but coupon gives first month free)
+      sessionConfig.payment_method_collection = 'always';
+    }
 
     // Add referral code to metadata if provided
     if (referralCode) {
