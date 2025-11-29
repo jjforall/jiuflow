@@ -49,8 +49,12 @@ const AdminDashboard = () => {
       if (subsError) throw subsError;
 
       const subscriptions = subscriptionsData?.subscriptions || [];
-      const activeSubscriptions = subscriptions.filter((sub: any) => sub.status === 'active');
-      const trialSubscriptions = subscriptions.filter((sub: any) => sub.status === 'trialing');
+      const activeSubscriptions = subscriptions.filter((sub: any) => 
+        sub.status === 'active' && !sub.is_trialing
+      );
+      const trialSubscriptions = subscriptions.filter((sub: any) => 
+        sub.is_trialing
+      );
       
       // アクティブな月次収入を計算（月額プランのみ）
       const monthlyRevenue = activeSubscriptions.reduce((total: number, sub: any) => {
