@@ -16,14 +16,6 @@ const Home = () => {
   const t = translations[language] || translations.ja; // Fallback to Japanese
   const { images, isLoading, currentIndex, totalImages } = useHeroImages();
 
-  // Redirect logged-in users immediately to the map page
-  useEffect(() => {
-    if (!authLoading && user) {
-      navigate("/map", { replace: true });
-    }
-  }, [user, authLoading, navigate]);
-
-
   return (
     <div className="min-h-screen">
       <Navigation />
