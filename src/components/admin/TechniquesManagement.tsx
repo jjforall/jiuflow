@@ -39,6 +39,11 @@ interface Technique {
   series_order: number | null;
   created_at?: string;
   updated_at?: string;
+  video_metadata?: {
+    en?: { created_at: string; updated_at: string };
+    ja?: { created_at: string; updated_at: string };
+    pt?: { created_at: string; updated_at: string };
+  };
 }
 
 interface UploadProgress {
@@ -65,7 +70,7 @@ export const TechniquesManagement = () => {
   const [hashtagEditValue, setHashtagEditValue] = useState<string>("");
   const [showTranslateDialog, setShowTranslateDialog] = useState(false);
   const [translatingTechnique, setTranslatingTechnique] = useState<Technique | null>(null);
-  const [targetLanguage, setTargetLanguage] = useState<"en" | "ja" | "pt">("en");
+  const [targetLanguage, setTargetLanguage] = useState<"en" | "ja" | "pt">("ja");
   const [translationProjectId, setTranslationProjectId] = useState<string | null>(null);
   const [translationStatus, setTranslationStatus] = useState<string | null>(null);
 
@@ -493,7 +498,7 @@ export const TechniquesManagement = () => {
         setTranslationStatus(data.status);
         
         if (data.status === 'completed' && data.videoUrl) {
-          // Update the technique with the translated video URL
+          // Update the technique with the translated video URL and metadata
           let updateField: string;
           let langName: string;
           
@@ -508,10 +513,21 @@ export const TechniquesManagement = () => {
             langName = 'ポルトガル語';
           }
           
+          // Update video metadata
+          const currentMetadata = (translatingTechnique as any)?.video_metadata || {};
+          const updatedMetadata = {
+            ...currentMetadata,
+            [targetLang]: {
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            }
+          };
+          
           await updateTechnique.mutateAsync({
             ...translatingTechnique!,
             [updateField]: data.videoUrl,
-          } as Technique);
+            video_metadata: updatedMetadata,
+          } as any);
           
           toast.success("動画翻訳完了", {
             description: `${langName}版の動画が利用可能になりました`,
@@ -1212,44 +1228,14 @@ export const TechniquesManagement = () => {
           
           <div className="space-y-4">
             <div>
-              <p className="text-sm text-muted-foreground mb-2">
+              <p className="text-sm text-muted-foreground mb-4">
                 {translatingTechnique?.name} の動画を他言語に翻訳します
               </p>
               
-              {translatingTechnique?.created_at && (
-                <p className="text-xs text-muted-foreground mb-4">
-                  作成日時: {new Date(translatingTechnique.created_at).toLocaleString('ja-JP')}
-                </p>
-              )}
-              
               <div>
-                <label className="text-sm font-medium mb-2 block">翻訳先言語</label>
+                <label className="text-sm font-medium mb-3 block">翻訳先言語を選択</label>
                 <div className="space-y-2">
-                  <div
-                    className={`flex items-center justify-between p-3 border rounded-lg cursor-pointer transition-colors ${
-                      targetLanguage === "en" ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"
-                    }`}
-                    onClick={() => setTargetLanguage("en")}
-                  >
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="radio"
-                        name="language"
-                        value="en"
-                        checked={targetLanguage === "en"}
-                        onChange={() => setTargetLanguage("en")}
-                        className="cursor-pointer"
-                      />
-                      <span className="font-medium">English</span>
-                    </div>
-                    {translatingTechnique?.video_url && (
-                      <div className="flex items-center gap-1 text-sm text-green-600">
-                        <Check className="w-4 h-4" />
-                        <span>あり</span>
-                      </div>
-                    )}
-                  </div>
-
+                  {/* Japanese */}
                   <div
                     className={`flex items-center justify-between p-3 border rounded-lg cursor-pointer transition-colors ${
                       targetLanguage === "ja" ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"
@@ -1265,16 +1251,57 @@ export const TechniquesManagement = () => {
                         onChange={() => setTargetLanguage("ja")}
                         className="cursor-pointer"
                       />
-                      <span className="font-medium">日本語</span>
+                      <span className="font-medium">日本語 (Japanese)</span>
                     </div>
-                    {translatingTechnique?.video_url_ja && (
-                      <div className="flex items-center gap-1 text-sm text-green-600">
-                        <Check className="w-4 h-4" />
-                        <span>あり</span>
-                      </div>
-                    )}
+                    <div className="flex flex-col items-end gap-1">
+                      {translatingTechnique?.video_url_ja && (
+                        <div className="flex items-center gap-1 text-sm text-green-600">
+                          <Check className="w-4 h-4" />
+                          <span>動画あり</span>
+                        </div>
+                      )}
+                      {translatingTechnique?.video_url_ja && (translatingTechnique as any).video_metadata?.ja?.created_at && (
+                        <span className="text-xs text-muted-foreground">
+                          {new Date((translatingTechnique as any).video_metadata.ja.created_at).toLocaleDateString('ja-JP')}
+                        </span>
+                      )}
+                    </div>
                   </div>
 
+                  {/* English */}
+                  <div
+                    className={`flex items-center justify-between p-3 border rounded-lg cursor-pointer transition-colors ${
+                      targetLanguage === "en" ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"
+                    }`}
+                    onClick={() => setTargetLanguage("en")}
+                  >
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="radio"
+                        name="language"
+                        value="en"
+                        checked={targetLanguage === "en"}
+                        onChange={() => setTargetLanguage("en")}
+                        className="cursor-pointer"
+                      />
+                      <span className="font-medium">English (英語)</span>
+                    </div>
+                    <div className="flex flex-col items-end gap-1">
+                      {translatingTechnique?.video_url && (
+                        <div className="flex items-center gap-1 text-sm text-green-600">
+                          <Check className="w-4 h-4" />
+                          <span>動画あり</span>
+                        </div>
+                      )}
+                      {translatingTechnique?.video_url && (translatingTechnique as any).video_metadata?.en?.created_at && (
+                        <span className="text-xs text-muted-foreground">
+                          {new Date((translatingTechnique as any).video_metadata.en.created_at).toLocaleDateString('ja-JP')}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Portuguese */}
                   <div
                     className={`flex items-center justify-between p-3 border rounded-lg cursor-pointer transition-colors ${
                       targetLanguage === "pt" ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"
@@ -1290,14 +1317,21 @@ export const TechniquesManagement = () => {
                         onChange={() => setTargetLanguage("pt")}
                         className="cursor-pointer"
                       />
-                      <span className="font-medium">Português</span>
+                      <span className="font-medium">Português (ポルトガル語)</span>
                     </div>
-                    {translatingTechnique?.video_url_pt && (
-                      <div className="flex items-center gap-1 text-sm text-green-600">
-                        <Check className="w-4 h-4" />
-                        <span>あり</span>
-                      </div>
-                    )}
+                    <div className="flex flex-col items-end gap-1">
+                      {translatingTechnique?.video_url_pt && (
+                        <div className="flex items-center gap-1 text-sm text-green-600">
+                          <Check className="w-4 h-4" />
+                          <span>動画あり</span>
+                        </div>
+                      )}
+                      {translatingTechnique?.video_url_pt && (translatingTechnique as any).video_metadata?.pt?.created_at && (
+                        <span className="text-xs text-muted-foreground">
+                          {new Date((translatingTechnique as any).video_metadata.pt.created_at).toLocaleDateString('ja-JP')}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>

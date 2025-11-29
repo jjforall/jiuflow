@@ -536,6 +536,7 @@ export type Database = {
           thumbnail_url_ja: string | null
           thumbnail_url_pt: string | null
           updated_at: string | null
+          video_metadata: Json | null
           video_url: string | null
           video_url_ja: string | null
           video_url_pt: string | null
@@ -558,6 +559,7 @@ export type Database = {
           thumbnail_url_ja?: string | null
           thumbnail_url_pt?: string | null
           updated_at?: string | null
+          video_metadata?: Json | null
           video_url?: string | null
           video_url_ja?: string | null
           video_url_pt?: string | null
@@ -580,6 +582,7 @@ export type Database = {
           thumbnail_url_ja?: string | null
           thumbnail_url_pt?: string | null
           updated_at?: string | null
+          video_metadata?: Json | null
           video_url?: string | null
           video_url_ja?: string | null
           video_url_pt?: string | null
