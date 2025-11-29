@@ -70,9 +70,25 @@ export const TechniquesManagement = () => {
   const [hashtagEditValue, setHashtagEditValue] = useState<string>("");
   const [showTranslateDialog, setShowTranslateDialog] = useState(false);
   const [translatingTechnique, setTranslatingTechnique] = useState<Technique | null>(null);
-  const [targetLanguage, setTargetLanguage] = useState<"en" | "ja" | "pt">("ja");
+  const [targetLanguage, setTargetLanguage] = useState<"ja" | "en" | "pt" | "es" | "fr" | "de" | "zh" | "ko" | "it" | "ru" | "ar" | "hi">("ja");
   const [translationProjectId, setTranslationProjectId] = useState<string | null>(null);
   const [translationStatus, setTranslationStatus] = useState<string | null>(null);
+
+
+  const translationLanguages = [
+    { code: "ja", name: "日本語", nativeName: "Japanese" },
+    { code: "en", name: "English", nativeName: "英語" },
+    { code: "pt", name: "Português", nativeName: "ポルトガル語" },
+    { code: "es", name: "Español", nativeName: "スペイン語" },
+    { code: "fr", name: "Français", nativeName: "フランス語" },
+    { code: "de", name: "Deutsch", nativeName: "ドイツ語" },
+    { code: "zh", name: "中文", nativeName: "中国語" },
+    { code: "ko", name: "한국어", nativeName: "韓国語" },
+    { code: "it", name: "Italiano", nativeName: "イタリア語" },
+    { code: "ru", name: "Русский", nativeName: "ロシア語" },
+    { code: "ar", name: "العربية", nativeName: "アラビア語" },
+    { code: "hi", name: "हिन्दी", nativeName: "ヒンディー語" },
+  ];
 
   // Form state
   const [formData, setFormData] = useState({
@@ -1234,105 +1250,41 @@ export const TechniquesManagement = () => {
               
               <div>
                 <label className="text-sm font-medium mb-3 block">翻訳先言語を選択</label>
-                <div className="space-y-2">
-                  {/* Japanese */}
-                  <div
-                    className={`flex items-center justify-between p-3 border rounded-lg cursor-pointer transition-colors ${
-                      targetLanguage === "ja" ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"
-                    }`}
-                    onClick={() => setTargetLanguage("ja")}
-                  >
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="radio"
-                        name="language"
-                        value="ja"
-                        checked={targetLanguage === "ja"}
-                        onChange={() => setTargetLanguage("ja")}
-                        className="cursor-pointer"
-                      />
-                      <span className="font-medium">日本語 (Japanese)</span>
+                <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2">
+                  {translationLanguages.map(lang => (
+                    <div
+                      key={lang.code}
+                      className={`flex items-center justify-between p-3 border rounded-lg cursor-pointer transition-colors ${
+                        targetLanguage === lang.code ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"
+                      }`}
+                      onClick={() => setTargetLanguage(lang.code as any)}
+                    >
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="radio"
+                          name="language"
+                          value={lang.code}
+                          checked={targetLanguage === lang.code}
+                          onChange={() => setTargetLanguage(lang.code as any)}
+                          className="cursor-pointer"
+                        />
+                        <span className="font-medium">{lang.name} ({lang.nativeName})</span>
+                      </div>
+                      <div className="flex flex-col items-end gap-1">
+                        {(translatingTechnique as any)?.video_metadata?.[lang.code]?.video_url && (
+                          <div className="flex items-center gap-1 text-sm text-green-600">
+                            <Check className="w-4 h-4" />
+                            <span>動画あり</span>
+                          </div>
+                        )}
+                        {(translatingTechnique as any)?.video_metadata?.[lang.code]?.created_at && (
+                          <span className="text-xs text-muted-foreground">
+                            {new Date((translatingTechnique as any).video_metadata[lang.code].created_at).toLocaleDateString('ja-JP')}
+                          </span>
+                        )}
+                      </div>
                     </div>
-                    <div className="flex flex-col items-end gap-1">
-                      {translatingTechnique?.video_url_ja && (
-                        <div className="flex items-center gap-1 text-sm text-green-600">
-                          <Check className="w-4 h-4" />
-                          <span>動画あり</span>
-                        </div>
-                      )}
-                      {translatingTechnique?.video_url_ja && (translatingTechnique as any).video_metadata?.ja?.created_at && (
-                        <span className="text-xs text-muted-foreground">
-                          {new Date((translatingTechnique as any).video_metadata.ja.created_at).toLocaleDateString('ja-JP')}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* English */}
-                  <div
-                    className={`flex items-center justify-between p-3 border rounded-lg cursor-pointer transition-colors ${
-                      targetLanguage === "en" ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"
-                    }`}
-                    onClick={() => setTargetLanguage("en")}
-                  >
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="radio"
-                        name="language"
-                        value="en"
-                        checked={targetLanguage === "en"}
-                        onChange={() => setTargetLanguage("en")}
-                        className="cursor-pointer"
-                      />
-                      <span className="font-medium">English (英語)</span>
-                    </div>
-                    <div className="flex flex-col items-end gap-1">
-                      {translatingTechnique?.video_url && (
-                        <div className="flex items-center gap-1 text-sm text-green-600">
-                          <Check className="w-4 h-4" />
-                          <span>動画あり</span>
-                        </div>
-                      )}
-                      {translatingTechnique?.video_url && (translatingTechnique as any).video_metadata?.en?.created_at && (
-                        <span className="text-xs text-muted-foreground">
-                          {new Date((translatingTechnique as any).video_metadata.en.created_at).toLocaleDateString('ja-JP')}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Portuguese */}
-                  <div
-                    className={`flex items-center justify-between p-3 border rounded-lg cursor-pointer transition-colors ${
-                      targetLanguage === "pt" ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"
-                    }`}
-                    onClick={() => setTargetLanguage("pt")}
-                  >
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="radio"
-                        name="language"
-                        value="pt"
-                        checked={targetLanguage === "pt"}
-                        onChange={() => setTargetLanguage("pt")}
-                        className="cursor-pointer"
-                      />
-                      <span className="font-medium">Português (ポルトガル語)</span>
-                    </div>
-                    <div className="flex flex-col items-end gap-1">
-                      {translatingTechnique?.video_url_pt && (
-                        <div className="flex items-center gap-1 text-sm text-green-600">
-                          <Check className="w-4 h-4" />
-                          <span>動画あり</span>
-                        </div>
-                      )}
-                      {translatingTechnique?.video_url_pt && (translatingTechnique as any).video_metadata?.pt?.created_at && (
-                        <span className="text-xs text-muted-foreground">
-                          {new Date((translatingTechnique as any).video_metadata.pt.created_at).toLocaleDateString('ja-JP')}
-                        </span>
-                      )}
-                    </div>
-                  </div>
+                  ))}
                 </div>
               </div>
 
