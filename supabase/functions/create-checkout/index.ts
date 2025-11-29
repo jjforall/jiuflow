@@ -64,7 +64,7 @@ serve(async (req) => {
         missing_payment_method: 'cancel',
       },
     };
-    sessionConfig.payment_method_collection = 'if_required';
+    sessionConfig.payment_method_collection = 'always';
 
     // Add referral code to metadata if provided
     if (referralCode) {
