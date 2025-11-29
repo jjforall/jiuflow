@@ -6,7 +6,35 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const RASK_API_BASE = "https://api.rask.ai/v1";
+async function getOAuthToken(clientId: string, clientSecret: string): Promise<string> {
+  const tokenEndpoint = "https://rask-prod.auth.us-east-2.amazoncognito.com/oauth2/token";
+  
+  const body = new URLSearchParams({
+    grant_type: "client_credentials",
+    client_id: clientId,
+    client_secret: clientSecret,
+    scope: "api/source api/input api/output api/limit",
+  });
+
+  console.log("Fetching OAuth2 token from Rask.ai...");
+  const response = await fetch(tokenEndpoint, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    body: body.toString(),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error("OAuth2 token error:", response.status, errorText);
+    throw new Error(`Failed to get OAuth2 token: ${errorText}`);
+  }
+
+  const data = await response.json();
+  console.log("OAuth2 token obtained successfully");
+  return data.access_token;
+}
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -23,21 +51,26 @@ serve(async (req) => {
       );
     }
 
-    const API_KEY = Deno.env.get("RASK_AI_API_KEY");
-    if (!API_KEY) {
+    const RASK_AI_CLIENT_ID = Deno.env.get("RASK_AI_CLIENT_ID");
+    const RASK_AI_CLIENT_SECRET = Deno.env.get("RASK_AI_CLIENT_SECRET");
+    
+    if (!RASK_AI_CLIENT_ID || !RASK_AI_CLIENT_SECRET) {
       return new Response(
-        JSON.stringify({ error: "RASK_AI_API_KEY not configured" }),
+        JSON.stringify({ error: "RASK_AI_CLIENT_ID and RASK_AI_CLIENT_SECRET not configured" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
     console.log("Checking status for project:", projectId);
 
-    // Step 4: Check status
-    const statusRes = await fetch(`${RASK_API_BASE}/projects/${projectId}/status`, {
+    // Get OAuth2 access token
+    const accessToken = await getOAuthToken(RASK_AI_CLIENT_ID, RASK_AI_CLIENT_SECRET);
+
+    // Get project status (正しいエンドポイント)
+    const statusRes = await fetch(`https://api.rask.ai/v2/projects/${projectId}`, {
       method: "GET",
       headers: {
-        "Authorization": `Bearer ${API_KEY}`,
+        "Authorization": `Bearer ${accessToken}`,
         "Content-Type": "application/json",
       },
     });
@@ -51,35 +84,20 @@ serve(async (req) => {
       );
     }
 
-    const statusData = await statusRes.json();
-    console.log("Status:", statusData.status);
+    const projectData = await statusRes.json();
+    console.log("Project status:", projectData.status);
 
-    // Step 5: Get result if completed
-    let videoUrl = null;
-    if (statusData.status === "completed") {
-      const resultRes = await fetch(`${RASK_API_BASE}/projects/${projectId}/result`, {
-        method: "GET",
-        headers: {
-          "Authorization": `Bearer ${API_KEY}`,
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (resultRes.ok) {
-        const resultData = await resultRes.json();
-        videoUrl = resultData.url;
-        console.log("Result URL:", videoUrl);
-      }
-    }
+    // statusフィールドを確認
+    const isCompleted = projectData.status === "completed" || projectData.status === "done";
+    const videoUrl = isCompleted ? projectData.translated_video : null;
 
     return new Response(
       JSON.stringify({
-        status: statusData.status,
+        status: projectData.status,
         videoUrl,
-        progress: statusData.progress || 0,
-        message: statusData.status === "completed" 
+        message: isCompleted 
           ? "Translation completed" 
-          : `In progress: ${statusData.progress || 0}%`,
+          : `Translation in progress: ${projectData.status}`,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );

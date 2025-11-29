@@ -6,7 +6,35 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const RASK_API_BASE = "https://api.rask.ai/v1";
+async function getOAuthToken(clientId: string, clientSecret: string): Promise<string> {
+  const tokenEndpoint = "https://rask-prod.auth.us-east-2.amazoncognito.com/oauth2/token";
+  
+  const body = new URLSearchParams({
+    grant_type: "client_credentials",
+    client_id: clientId,
+    client_secret: clientSecret,
+    scope: "api/source api/input api/output api/limit",
+  });
+
+  console.log("Fetching OAuth2 token from Rask.ai...");
+  const response = await fetch(tokenEndpoint, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    body: body.toString(),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error("OAuth2 token error:", response.status, errorText);
+    throw new Error(`Failed to get OAuth2 token: ${errorText}`);
+  }
+
+  const data = await response.json();
+  console.log("OAuth2 token obtained successfully");
+  return data.access_token;
+}
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -23,89 +51,77 @@ serve(async (req) => {
       );
     }
 
-    const API_KEY = Deno.env.get("RASK_AI_API_KEY");
-    if (!API_KEY) {
-      return new Response(
-        JSON.stringify({ error: "RASK_AI_API_KEY not configured" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    const headers = {
-      "Authorization": `Bearer ${API_KEY}`,
-      "Content-Type": "application/json",
-    };
-
-    console.log("Starting translation:", { targetLanguage, techniqueId });
-
-    // Step 1: Create project
-    console.log("Step 1: Creating project...");
-    const projectRes = await fetch(`${RASK_API_BASE}/projects`, {
-      method: "POST",
-      headers,
-      body: JSON.stringify({ name: `Technique ${techniqueId} - ${targetLanguage}` }),
-    });
-
-    if (!projectRes.ok) {
-      const error = await projectRes.text();
-      console.error("Project creation error:", error);
-      return new Response(
-        JSON.stringify({ error: "Failed to create project", details: error }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    const project = await projectRes.json();
-    const projectId = project.data.id;
-    console.log("Project created:", projectId);
-
-    // Step 2: Upload video file
-    console.log("Step 2: Uploading video...");
-    const videoRes = await fetch(videoUrl);
-    const videoBlob = await videoRes.blob();
+    const RASK_AI_CLIENT_ID = Deno.env.get("RASK_AI_CLIENT_ID");
+    const RASK_AI_CLIENT_SECRET = Deno.env.get("RASK_AI_CLIENT_SECRET");
     
-    const uploadRes = await fetch(`${RASK_API_BASE}/projects/${projectId}/files`, {
+    if (!RASK_AI_CLIENT_ID || !RASK_AI_CLIENT_SECRET) {
+      return new Response(
+        JSON.stringify({ error: "RASK_AI_CLIENT_ID and RASK_AI_CLIENT_SECRET not configured" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    console.log("Starting video translation:", { videoUrl, sourceLanguage, targetLanguage, techniqueId });
+
+    // Get OAuth2 access token
+    const accessToken = await getOAuthToken(RASK_AI_CLIENT_ID, RASK_AI_CLIENT_SECRET);
+
+    // Step 1: Upload media by link (正しいエンドポイント)
+    console.log("Step 1: Uploading media by link...");
+    const uploadResponse = await fetch("https://api.rask.ai/api/library/v1/media/link", {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${API_KEY}`,
-        "Content-Type": "video/mp4",
+        "Authorization": `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
       },
-      body: videoBlob,
-    });
-
-    if (!uploadRes.ok) {
-      const error = await uploadRes.text();
-      console.error("Upload error:", error);
-      return new Response(
-        JSON.stringify({ error: "Failed to upload video", details: error }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    console.log("Video uploaded successfully");
-
-    // Step 3: Start translation
-    console.log("Step 3: Starting translation...");
-    const processRes = await fetch(`${RASK_API_BASE}/projects/${projectId}/process`, {
-      method: "POST",
-      headers,
       body: JSON.stringify({
-        from: sourceLanguage || "ja",
-        to: targetLanguage,
-        type: "dubbing",
+        link: videoUrl,
+        kind: "video",
+        name: `Technique ${techniqueId}`,
       }),
     });
 
-    if (!processRes.ok) {
-      const error = await processRes.text();
-      console.error("Process error:", error);
+    if (!uploadResponse.ok) {
+      const errorText = await uploadResponse.text();
+      console.error("Rask.ai upload error:", uploadResponse.status, errorText);
       return new Response(
-        JSON.stringify({ error: "Failed to start translation", details: error }),
+        JSON.stringify({ error: "Failed to upload video to Rask.ai", details: errorText }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    console.log("Translation started successfully");
+    const uploadData = await uploadResponse.json();
+    const videoId = uploadData.id;
+    console.log("Media uploaded successfully:", videoId);
+
+    // Step 2: Create project (正しいエンドポイント)
+    console.log("Step 2: Creating project...");
+    const createProjectResponse = await fetch("https://api.rask.ai/v2/projects", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        video_id: videoId,
+        name: `Technique ${techniqueId} - ${targetLanguage}`,
+        src_lang: sourceLanguage || "ja",
+        dst_lang: targetLanguage,
+      }),
+    });
+
+    if (!createProjectResponse.ok) {
+      const errorText = await createProjectResponse.text();
+      console.error("Rask.ai project creation error:", createProjectResponse.status, errorText);
+      return new Response(
+        JSON.stringify({ error: "Failed to create project in Rask.ai", details: errorText }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const projectData = await createProjectResponse.json();
+    const projectId = projectData.id;
+    console.log("Project created successfully:", projectId);
 
     return new Response(
       JSON.stringify({
