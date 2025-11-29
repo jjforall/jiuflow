@@ -37,6 +37,8 @@ interface Technique {
   hashtags: string[];
   series_name: string | null;
   series_order: number | null;
+  created_at?: string;
+  updated_at?: string;
 }
 
 interface UploadProgress {
@@ -63,7 +65,7 @@ export const TechniquesManagement = () => {
   const [hashtagEditValue, setHashtagEditValue] = useState<string>("");
   const [showTranslateDialog, setShowTranslateDialog] = useState(false);
   const [translatingTechnique, setTranslatingTechnique] = useState<Technique | null>(null);
-  const [targetLanguage, setTargetLanguage] = useState<"en" | "pt">("en");
+  const [targetLanguage, setTargetLanguage] = useState<"en" | "ja" | "pt">("en");
   const [translationProjectId, setTranslationProjectId] = useState<string | null>(null);
   const [translationStatus, setTranslationStatus] = useState<string | null>(null);
 
@@ -415,18 +417,40 @@ export const TechniquesManagement = () => {
   };
 
   const handleVideoTranslate = async () => {
-    if (!translatingTechnique || !translatingTechnique.video_url) return;
+    if (!translatingTechnique) return;
+    
+    // Determine source language and video URL based on target language
+    let sourceLanguage = 'ja';
+    let sourceVideoUrl = translatingTechnique.video_url_ja || translatingTechnique.video_url;
+    
+    if (targetLanguage === 'ja') {
+      // Translating to Japanese from English
+      sourceLanguage = 'en';
+      sourceVideoUrl = translatingTechnique.video_url;
+    } else if (targetLanguage === 'en') {
+      // Translating to English from Japanese
+      sourceLanguage = 'ja';
+      sourceVideoUrl = translatingTechnique.video_url_ja || translatingTechnique.video_url;
+    } else if (targetLanguage === 'pt') {
+      // Translating to Portuguese from Japanese
+      sourceLanguage = 'ja';
+      sourceVideoUrl = translatingTechnique.video_url_ja || translatingTechnique.video_url;
+    }
+    
+    if (!sourceVideoUrl) {
+      toast.error("エラー", {
+        description: "ソース動画が見つかりません",
+      });
+      return;
+    }
     
     setIsTranslating(true);
     try {
-      const sourceVideoUrl = translatingTechnique.video_url;
-      const targetLang = targetLanguage;
-      
       const { data, error } = await supabase.functions.invoke('translate-video', {
         body: { 
           videoUrl: sourceVideoUrl,
-          sourceLanguage: 'ja', // Default to Japanese
-          targetLanguage: targetLang,
+          sourceLanguage,
+          targetLanguage,
           techniqueId: translatingTechnique.id,
         }
       });
@@ -442,7 +466,7 @@ export const TechniquesManagement = () => {
         });
         
         // Poll for translation status
-        checkTranslationStatus(data.projectId, targetLang);
+        checkTranslationStatus(data.projectId, targetLanguage);
       }
     } catch (error: unknown) {
       console.error('Video translation error:', error);
@@ -470,7 +494,19 @@ export const TechniquesManagement = () => {
         
         if (data.status === 'completed' && data.videoUrl) {
           // Update the technique with the translated video URL
-          const updateField = targetLang === 'en' ? 'video_url' : 'video_url_pt';
+          let updateField: string;
+          let langName: string;
+          
+          if (targetLang === 'en') {
+            updateField = 'video_url';
+            langName = '英語';
+          } else if (targetLang === 'ja') {
+            updateField = 'video_url_ja';
+            langName = '日本語';
+          } else {
+            updateField = 'video_url_pt';
+            langName = 'ポルトガル語';
+          }
           
           await updateTechnique.mutateAsync({
             ...translatingTechnique!,
@@ -478,7 +514,7 @@ export const TechniquesManagement = () => {
           } as Technique);
           
           toast.success("動画翻訳完了", {
-            description: `${targetLang === 'en' ? '英語' : 'ポルトガル語'}版の動画が利用可能になりました`,
+            description: `${langName}版の動画が利用可能になりました`,
           });
           
           setShowTranslateDialog(false);
@@ -1176,24 +1212,94 @@ export const TechniquesManagement = () => {
           
           <div className="space-y-4">
             <div>
-              <p className="text-sm text-muted-foreground mb-4">
+              <p className="text-sm text-muted-foreground mb-2">
                 {translatingTechnique?.name} の動画を他言語に翻訳します
               </p>
               
+              {translatingTechnique?.created_at && (
+                <p className="text-xs text-muted-foreground mb-4">
+                  作成日時: {new Date(translatingTechnique.created_at).toLocaleString('ja-JP')}
+                </p>
+              )}
+              
               <div>
-                <label className="text-sm font-medium">翻訳先言語</label>
-                <Select 
-                  value={targetLanguage} 
-                  onValueChange={(value: "en" | "pt") => setTargetLanguage(value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="en">English (英語)</SelectItem>
-                    <SelectItem value="pt">Portuguese (ポルトガル語)</SelectItem>
-                  </SelectContent>
-                </Select>
+                <label className="text-sm font-medium mb-2 block">翻訳先言語</label>
+                <div className="space-y-2">
+                  <div
+                    className={`flex items-center justify-between p-3 border rounded-lg cursor-pointer transition-colors ${
+                      targetLanguage === "en" ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"
+                    }`}
+                    onClick={() => setTargetLanguage("en")}
+                  >
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="radio"
+                        name="language"
+                        value="en"
+                        checked={targetLanguage === "en"}
+                        onChange={() => setTargetLanguage("en")}
+                        className="cursor-pointer"
+                      />
+                      <span className="font-medium">English</span>
+                    </div>
+                    {translatingTechnique?.video_url && (
+                      <div className="flex items-center gap-1 text-sm text-green-600">
+                        <Check className="w-4 h-4" />
+                        <span>あり</span>
+                      </div>
+                    )}
+                  </div>
+
+                  <div
+                    className={`flex items-center justify-between p-3 border rounded-lg cursor-pointer transition-colors ${
+                      targetLanguage === "ja" ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"
+                    }`}
+                    onClick={() => setTargetLanguage("ja")}
+                  >
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="radio"
+                        name="language"
+                        value="ja"
+                        checked={targetLanguage === "ja"}
+                        onChange={() => setTargetLanguage("ja")}
+                        className="cursor-pointer"
+                      />
+                      <span className="font-medium">日本語</span>
+                    </div>
+                    {translatingTechnique?.video_url_ja && (
+                      <div className="flex items-center gap-1 text-sm text-green-600">
+                        <Check className="w-4 h-4" />
+                        <span>あり</span>
+                      </div>
+                    )}
+                  </div>
+
+                  <div
+                    className={`flex items-center justify-between p-3 border rounded-lg cursor-pointer transition-colors ${
+                      targetLanguage === "pt" ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"
+                    }`}
+                    onClick={() => setTargetLanguage("pt")}
+                  >
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="radio"
+                        name="language"
+                        value="pt"
+                        checked={targetLanguage === "pt"}
+                        onChange={() => setTargetLanguage("pt")}
+                        className="cursor-pointer"
+                      />
+                      <span className="font-medium">Português</span>
+                    </div>
+                    {translatingTechnique?.video_url_pt && (
+                      <div className="flex items-center gap-1 text-sm text-green-600">
+                        <Check className="w-4 h-4" />
+                        <span>あり</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
 
               {translationStatus && (
