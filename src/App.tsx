@@ -29,6 +29,7 @@ const UserProfile = lazy(() => import("./pages/UserProfile"));
 const Dojos = lazy(() => import("./pages/Dojos"));
 const Dojo = lazy(() => import("./pages/Dojo"));
 const DojoNew = lazy(() => import("./pages/DojoNew"));
+const FounderTrial = lazy(() => import("./pages/FounderTrial"));
 const GenerateImages = lazy(() => import("./pages/GenerateImages"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
@@ -101,6 +102,7 @@ const App = () => (
                   </ProtectedRoute>
                 } />
                 <Route path="/dojo/:id" element={<Dojo />} />
+                <Route path="/founder-trial" element={<FounderTrial />} />
                 <Route path="/admin" element={<AdminLogin />} />
                 <Route path="/admin-dashboard" element={
                   <ProtectedRoute requireAdmin>
