@@ -6,6 +6,36 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+async function getOAuthToken(clientId: string, clientSecret: string): Promise<string> {
+  const tokenEndpoint = "https://rask-prod.auth.us-east-2.amazoncognito.com/oauth2/token";
+  
+  const body = new URLSearchParams({
+    grant_type: "client_credentials",
+    client_id: clientId,
+    client_secret: clientSecret,
+    scope: "api/source api/input api/output api/limit",
+  });
+
+  console.log("Fetching OAuth2 token from Rask.ai...");
+  const response = await fetch(tokenEndpoint, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    body: body.toString(),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error("OAuth2 token error:", response.status, errorText);
+    throw new Error(`Failed to get OAuth2 token: ${errorText}`);
+  }
+
+  const data = await response.json();
+  console.log("OAuth2 token obtained successfully");
+  return data.access_token;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -21,15 +51,8 @@ serve(async (req) => {
       );
     }
 
-    const RASK_AI_API_KEY = Deno.env.get("RASK_AI_API_KEY");
     const RASK_AI_CLIENT_ID = Deno.env.get("RASK_AI_CLIENT_ID");
-    
-    if (!RASK_AI_API_KEY) {
-      return new Response(
-        JSON.stringify({ error: "RASK_AI_API_KEY not configured" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
+    const RASK_AI_CLIENT_SECRET = Deno.env.get("RASK_AI_CLIENT_SECRET");
     
     if (!RASK_AI_CLIENT_ID) {
       return new Response(
@@ -37,16 +60,25 @@ serve(async (req) => {
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+    
+    if (!RASK_AI_CLIENT_SECRET) {
+      return new Response(
+        JSON.stringify({ error: "RASK_AI_CLIENT_SECRET not configured" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     console.log("Checking translation status:", { projectId, targetLanguage });
+
+    // Get OAuth2 access token
+    const accessToken = await getOAuthToken(RASK_AI_CLIENT_ID, RASK_AI_CLIENT_SECRET);
 
     // Get project status
     const statusResponse = await fetch(`https://api.rask.ai/v2/project/${projectId}`, {
       method: "GET",
       headers: {
-        "Authorization": `Bearer ${RASK_AI_API_KEY}`,
+        "Authorization": `Bearer ${accessToken}`,
         "Content-Type": "application/json",
-        "X-Client-Id": RASK_AI_CLIENT_ID,
       },
     });
 
