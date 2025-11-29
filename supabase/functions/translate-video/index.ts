@@ -61,7 +61,44 @@ serve(async (req) => {
       );
     }
 
-    console.log("Starting video translation:", { videoUrl, sourceLanguage, targetLanguage, techniqueId });
+    // サイトの言語コード(ja, en, es...) を Rask のコード(ja-jp, en-us...)にマッピング
+    const LANGUAGE_CODE_MAP: Record<string, string> = {
+      ja: "ja-jp",
+      en: "en-us",
+      pt: "pt-br",
+      es: "es-es",
+      fr: "fr-fr",
+      de: "de-de",
+      zh: "zh-cn",
+      ko: "ko-kr",
+      it: "it-it",
+      ru: "ru-ru",
+      ar: "ar-ae",
+      hi: "hi-in",
+    };
+
+    const normalizeLang = (code: string | undefined, fallback: string): string => {
+      const base = (code || fallback).toLowerCase();
+      if (base.includes("-")) return base; // すでに地域付きコードならそのまま
+      return LANGUAGE_CODE_MAP[base] || base;
+    };
+
+    const mappedSrcLang = normalizeLang(sourceLanguage, "ja");
+    const mappedDstLangBase = targetLanguage.toLowerCase();
+    const mappedDstLang = LANGUAGE_CODE_MAP[mappedDstLangBase];
+
+    if (!mappedDstLang) {
+      // Raskが対応していない言語はここで弾いて 400 を返す
+      return new Response(
+        JSON.stringify({
+          error: "Unsupported translation language",
+          details: `Rask API does not support language code: ${targetLanguage}`,
+        }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    console.log("Starting video translation:", { videoUrl, sourceLanguage, targetLanguage, mappedSrcLang, mappedDstLang, techniqueId });
 
     // Get OAuth2 access token
     const accessToken = await getOAuthToken(RASK_AI_CLIENT_ID, RASK_AI_CLIENT_SECRET);
@@ -105,8 +142,8 @@ serve(async (req) => {
       body: JSON.stringify({
         video_id: videoId,
         name: `Technique ${techniqueId} - ${targetLanguage}`,
-        src_lang: sourceLanguage || "ja",
-        dst_lang: targetLanguage,
+        src_lang: mappedSrcLang,
+        dst_lang: mappedDstLang,
       }),
     });
 
