@@ -74,7 +74,7 @@ serve(async (req) => {
     const accessToken = await getOAuthToken(RASK_AI_CLIENT_ID, RASK_AI_CLIENT_SECRET);
 
     // Get project status
-    const statusResponse = await fetch(`https://api.rask.ai/v2/project/${projectId}`, {
+    const statusResponse = await fetch(`https://api.rask.ai/v1/project/${projectId}`, {
       method: "GET",
       headers: {
         "Authorization": `Bearer ${accessToken}`,
