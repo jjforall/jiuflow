@@ -277,26 +277,26 @@ export const SubscriptionsTab = () => {
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex gap-2 justify-end">
+                      {(sub.status === 'active' || sub.status === 'canceled') && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleRefundClick(sub)}
+                        >
+                          <DollarSign className="h-4 w-4 mr-1" />
+                          返金
+                        </Button>
+                      )}
                       {sub.status === 'active' && (
-                        <>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleRefundClick(sub)}
-                          >
-                            <DollarSign className="h-4 w-4 mr-1" />
-                            返金
-                          </Button>
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => handleCancelClick(sub)}
-                            disabled={cancelingId === sub.id}
-                          >
-                            <X className="h-4 w-4 mr-1" />
-                            {cancelingId === sub.id ? 'キャンセル中...' : 'キャンセル'}
-                          </Button>
-                        </>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => handleCancelClick(sub)}
+                          disabled={cancelingId === sub.id}
+                        >
+                          <X className="h-4 w-4 mr-1" />
+                          {cancelingId === sub.id ? 'キャンセル中...' : 'キャンセル'}
+                        </Button>
                       )}
                     </div>
                   </TableCell>
