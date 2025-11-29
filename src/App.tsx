@@ -28,6 +28,7 @@ const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 const UserProfile = lazy(() => import("./pages/UserProfile"));
 const Dojos = lazy(() => import("./pages/Dojos"));
 const Dojo = lazy(() => import("./pages/Dojo"));
+const DojoNew = lazy(() => import("./pages/DojoNew"));
 const GenerateImages = lazy(() => import("./pages/GenerateImages"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
@@ -81,6 +82,11 @@ const App = () => (
                 } />
                 <Route path="/user/:identifier" element={<UserProfile />} />
                 <Route path="/dojos" element={<Dojos />} />
+                <Route path="/dojos/new" element={
+                  <ProtectedRoute>
+                    <DojoNew />
+                  </ProtectedRoute>
+                } />
                 <Route path="/dojo/:id" element={<Dojo />} />
                 <Route path="/admin" element={<AdminLogin />} />
                 <Route path="/admin-dashboard" element={
