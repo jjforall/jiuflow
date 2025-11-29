@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Upload, Trash2, Search, Check, X } from "lucide-react";
+import { Upload, Trash2, Search, Check, X, Languages } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { PaginationControls } from "@/components/ui/pagination-controls";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -61,6 +61,11 @@ export const TechniquesManagement = () => {
   const [editingCell, setEditingCell] = useState<{ id: string; field: string } | null>(null);
   const [editValue, setEditValue] = useState<string>("");
   const [hashtagEditValue, setHashtagEditValue] = useState<string>("");
+  const [showTranslateDialog, setShowTranslateDialog] = useState(false);
+  const [translatingTechnique, setTranslatingTechnique] = useState<Technique | null>(null);
+  const [targetLanguage, setTargetLanguage] = useState<"en" | "pt">("en");
+  const [translationProjectId, setTranslationProjectId] = useState<string | null>(null);
+  const [translationStatus, setTranslationStatus] = useState<string | null>(null);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -406,6 +411,91 @@ export const TechniquesManagement = () => {
       });
     } finally {
       setIsTranslating(false);
+    }
+  };
+
+  const handleVideoTranslate = async () => {
+    if (!translatingTechnique || !translatingTechnique.video_url) return;
+    
+    setIsTranslating(true);
+    try {
+      const sourceVideoUrl = translatingTechnique.video_url;
+      const targetLang = targetLanguage;
+      
+      const { data, error } = await supabase.functions.invoke('translate-video', {
+        body: { 
+          videoUrl: sourceVideoUrl,
+          sourceLanguage: 'ja', // Default to Japanese
+          targetLanguage: targetLang,
+          techniqueId: translatingTechnique.id,
+        }
+      });
+
+      if (error) throw error;
+
+      if (data && data.projectId) {
+        setTranslationProjectId(data.projectId);
+        setTranslationStatus('processing');
+        
+        toast.success("動画翻訳を開始しました", {
+          description: "翻訳が完了するまでしばらくお待ちください。プロジェクトID: " + data.projectId,
+        });
+        
+        // Poll for translation status
+        checkTranslationStatus(data.projectId, targetLang);
+      }
+    } catch (error: unknown) {
+      console.error('Video translation error:', error);
+      toast.error("動画翻訳エラー", {
+        description: error instanceof Error ? error.message : "動画翻訳中にエラーが発生しました",
+      });
+    } finally {
+      setIsTranslating(false);
+    }
+  };
+
+  const checkTranslationStatus = async (projectId: string, targetLang: string) => {
+    try {
+      const { data, error } = await supabase.functions.invoke('check-translation-status', {
+        body: { 
+          projectId,
+          targetLanguage: targetLang,
+        }
+      });
+
+      if (error) throw error;
+
+      if (data) {
+        setTranslationStatus(data.status);
+        
+        if (data.status === 'completed' && data.videoUrl) {
+          // Update the technique with the translated video URL
+          const updateField = targetLang === 'en' ? 'video_url' : 'video_url_pt';
+          
+          await updateTechnique.mutateAsync({
+            ...translatingTechnique!,
+            [updateField]: data.videoUrl,
+          } as Technique);
+          
+          toast.success("動画翻訳完了", {
+            description: `${targetLang === 'en' ? '英語' : 'ポルトガル語'}版の動画が利用可能になりました`,
+          });
+          
+          setShowTranslateDialog(false);
+          setTranslationProjectId(null);
+          setTranslationStatus(null);
+        } else if (data.status === 'processing') {
+          // Poll again after 10 seconds
+          setTimeout(() => checkTranslationStatus(projectId, targetLang), 10000);
+        } else if (data.status === 'failed') {
+          toast.error("動画翻訳エラー", {
+            description: "翻訳処理に失敗しました",
+          });
+          setTranslationStatus('failed');
+        }
+      }
+    } catch (error: unknown) {
+      console.error('Translation status check error:', error);
     }
   };
 
@@ -765,6 +855,19 @@ export const TechniquesManagement = () => {
                     <div className="flex gap-2 justify-end">
                       {isAdmin ? (
                         <>
+                          {technique.video_url && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                setTranslatingTechnique(technique as Technique);
+                                setShowTranslateDialog(true);
+                              }}
+                              title="動画を他言語に翻訳"
+                            >
+                              <Languages className="h-4 w-4" />
+                            </Button>
+                          )}
                           <Button
                             size="sm"
                             variant="outline"
@@ -1061,6 +1164,74 @@ export const TechniquesManagement = () => {
               )}
             </div>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Video Translation Dialog */}
+      <Dialog open={showTranslateDialog} onOpenChange={setShowTranslateDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>動画翻訳</DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div>
+              <p className="text-sm text-muted-foreground mb-4">
+                {translatingTechnique?.name} の動画を他言語に翻訳します
+              </p>
+              
+              <div>
+                <label className="text-sm font-medium">翻訳先言語</label>
+                <Select 
+                  value={targetLanguage} 
+                  onValueChange={(value: "en" | "pt") => setTargetLanguage(value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="en">English (英語)</SelectItem>
+                    <SelectItem value="pt">Portuguese (ポルトガル語)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {translationStatus && (
+                <div className="mt-4 p-3 bg-muted rounded-lg">
+                  <p className="text-sm">
+                    ステータス: {translationStatus === 'processing' ? '翻訳処理中...' : 
+                                translationStatus === 'completed' ? '翻訳完了' : 
+                                translationStatus === 'failed' ? '失敗' : translationStatus}
+                  </p>
+                  {translationProjectId && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      プロジェクトID: {translationProjectId}
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <div className="flex justify-end gap-2">
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => {
+                  setShowTranslateDialog(false);
+                  setTranslationProjectId(null);
+                  setTranslationStatus(null);
+                }}
+              >
+                キャンセル
+              </Button>
+              <Button 
+                onClick={handleVideoTranslate}
+                disabled={isTranslating || translationStatus === 'processing'}
+              >
+                {isTranslating ? '開始中...' : translationStatus === 'processing' ? '処理中' : '翻訳開始'}
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

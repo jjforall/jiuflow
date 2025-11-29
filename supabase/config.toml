@@ -79,3 +79,10 @@ verify_jwt = false
 
 [functions.stripe-webhook]
 verify_jwt = false
+
+[functions.translate-video]
+verify_jwt = true
+
+[functions.check-translation-status]
+verify_jwt = true
+
