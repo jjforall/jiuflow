@@ -261,8 +261,8 @@ const Login = () => {
                     <Sparkles className="w-4 h-4 text-primary" />
                     <span className="font-medium">
                       {language === "ja" 
-                        ? "3ヶ月無料トライアル付き！" 
-                        : "3 months free trial included!"}
+                        ? "1ヶ月無料トライアル付き！" 
+                        : "1 month free trial included!"}
                     </span>
                   </p>
                 </div>

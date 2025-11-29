@@ -653,7 +653,7 @@ const Join = () => {
                     <div className="mb-8">
                       <div className="text-5xl font-light mb-3 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">¥2,900</div>
                       <div className="text-base text-muted-foreground font-light">
-                        {language === "ja" ? "月額（3ヶ月無料・いつでもキャンセル可能）" : language === "pt" ? "Por mês (3 meses grátis・cancele a qualquer momento)" : "per month (3 months free・cancel anytime)"}
+                        {language === "ja" ? "月額（1ヶ月無料・いつでもキャンセル可能）" : language === "pt" ? "Por mês (1 mês grátis・cancele a qualquer momento)" : "per month (1 month free・cancel anytime)"}
                       </div>
                     </div>
                    <ul className="space-y-4 mb-8 text-base font-light">
@@ -692,7 +692,7 @@ const Join = () => {
                   <div className="mb-8">
                     <div className="text-5xl font-light mb-3">¥29,000</div>
                     <div className="text-base text-muted-foreground font-light">
-                      {language === "ja" ? "年額（3ヶ月無料・約2ヶ月分お得）" : language === "pt" ? "Por ano (3 meses grátis・economize cerca de 2 meses)" : "per year (3 months free・save ~2 months)"}
+                      {language === "ja" ? "年額（1ヶ月無料・約2ヶ月分お得）" : language === "pt" ? "Por ano (1 mês grátis・economize cerca de 2 meses)" : "per year (1 month free・save ~2 months)"}
                     </div>
                   </div>
                   <ul className="space-y-4 mb-8 text-base font-light">
