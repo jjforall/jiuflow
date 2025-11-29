@@ -488,7 +488,6 @@ export const TechniquesManagement = () => {
       const { data, error } = await supabase.functions.invoke('check-translation-status', {
         body: { 
           projectId,
-          targetLanguage: targetLang,
         }
       });
 
