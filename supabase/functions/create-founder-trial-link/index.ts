@@ -39,7 +39,13 @@ serve(async (req) => {
       mode: "subscription",
       subscription_data: {
         trial_period_days: 90,
+        trial_settings: {
+          end_behavior: {
+            missing_payment_method: 'cancel',
+          },
+        },
       },
+      payment_method_collection: 'if_required',
       success_url: "https://jiuflow.art/payment-success?session_id={CHECKOUT_SESSION_ID}",
       cancel_url: "https://jiuflow.art/join?canceled=true",
     });
