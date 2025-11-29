@@ -1,8 +1,8 @@
 import { Link } from "react-router-dom";
-import { useLanguage } from "@/contexts/LanguageContext";
+import { useTranslation } from "@/hooks/useTranslation";
 
 const Footer = () => {
-  const { language } = useLanguage();
+  const { t } = useTranslation();
 
   return (
     <footer className="border-t border-border bg-background">
@@ -11,9 +11,7 @@ const Footer = () => {
           <div>
             <h3 className="font-light mb-4">jiuflow</h3>
             <p className="text-sm text-muted-foreground font-light">
-              {language === "ja" && "柔術を、体系で学ぶ。"}
-              {language === "en" && "Learn Jiu-Jitsu Systematically."}
-              {language === "pt" && "Aprenda Jiu-Jitsu Sistematicamente."}
+              {t("home.hero.subtitle", "Learn Jiu-Jitsu Systematically.")}
             </p>
           </div>
           
@@ -22,27 +20,27 @@ const Footer = () => {
             <ul className="space-y-2 text-sm">
               <li>
                 <Link to="/" className="text-muted-foreground hover:text-foreground transition-smooth">
-                  Home
+                  {t("nav.home", "Home")}
                 </Link>
               </li>
               <li>
                 <Link to="/map" className="text-muted-foreground hover:text-foreground transition-smooth">
-                  Map
+                  {t("nav.map", "Map")}
                 </Link>
               </li>
               <li>
                 <Link to="/dojos" className="text-muted-foreground hover:text-foreground transition-smooth">
-                  {language === "ja" ? "道場" : language === "pt" ? "Dojos" : "Dojos"}
+                  {t("nav.dojos", "Dojos")}
                 </Link>
               </li>
               <li>
                 <Link to="/about" className="text-muted-foreground hover:text-foreground transition-smooth">
-                  About
+                  {t("nav.about", "About")}
                 </Link>
               </li>
               <li>
                 <Link to="/join" className="text-muted-foreground hover:text-foreground transition-smooth">
-                  Join
+                  {t("nav.join", "Join")}
                 </Link>
               </li>
             </ul>

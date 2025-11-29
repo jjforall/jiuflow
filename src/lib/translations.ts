@@ -3,6 +3,7 @@ export const translations = {
     nav: {
       home: "ホーム",
       map: "技マップ",
+      dojos: "道場",
       about: "私たちについて",
       join: "料金プラン",
       login: "ログイン",
@@ -171,6 +172,7 @@ export const translations = {
     nav: {
       home: "Home",
       map: "Techniques",
+      dojos: "Dojos",
       about: "About",
       join: "Pricing",
       login: "Login",
@@ -346,6 +348,7 @@ export const translations = {
     nav: {
       home: "Início",
       map: "Técnicas",
+      dojos: "Dojos",
       about: "Sobre",
       join: "Preços",
       login: "Entrar",
@@ -514,6 +517,7 @@ export const translations = {
     nav: {
       home: "Inicio",
       map: "Técnicas",
+      dojos: "Dojos",
       about: "Acerca de",
       join: "Precios",
       login: "Iniciar sesión",
@@ -682,6 +686,7 @@ export const translations = {
     nav: {
       home: "Accueil",
       map: "Techniques",
+      dojos: "Dojos",
       about: "À propos",
       join: "Tarifs",
       login: "Connexion",
@@ -850,6 +855,7 @@ export const translations = {
     nav: {
       home: "Startseite",
       map: "Techniken",
+      dojos: "Dojos",
       about: "Über uns",
       join: "Preise",
       login: "Anmelden",
@@ -1018,6 +1024,7 @@ export const translations = {
     nav: {
       home: "首页",
       map: "技术",
+      dojos: "道场",
       about: "关于",
       join: "定价",
       login: "登录",
@@ -1186,6 +1193,7 @@ export const translations = {
     nav: {
       home: "홈",
       map: "기술",
+      dojos: "도장",
       about: "소개",
       join: "가격",
       login: "로그인",
@@ -1354,6 +1362,7 @@ export const translations = {
     nav: {
       home: "Home",
       map: "Tecniche",
+      dojos: "Dojos",
       about: "Chi Siamo",
       join: "Prezzi",
       login: "Accedi",
@@ -1522,6 +1531,7 @@ export const translations = {
     nav: {
       home: "Главная",
       map: "Техники",
+      dojos: "Додзё",
       about: "О нас",
       join: "Цены",
       login: "Войти",
@@ -1690,6 +1700,7 @@ export const translations = {
     nav: {
       home: "الرئيسية",
       map: "التقنيات",
+      dojos: "دوجو",
       about: "حول",
       join: "الأسعار",
       login: "تسجيل الدخول",
@@ -1858,6 +1869,7 @@ export const translations = {
     nav: {
       home: "होम",
       map: "तकनीकें",
+      dojos: "डोजो",
       about: "के बारे में",
       join: "मूल्य निर्धारण",
       login: "लॉगिन",
