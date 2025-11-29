@@ -3,8 +3,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Upload, Trash2, Search, Check, X, Languages } from "lucide-react";
+import { Upload, Trash2, Search, Check, X, Languages, ExternalLink } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { PaginationControls } from "@/components/ui/pagination-controls";
 import { Skeleton } from "@/components/ui/skeleton";
 import { VideoThumbnail } from "@/components/ui/video-thumbnail";
@@ -103,23 +104,41 @@ export const TechniquesManagement = () => {
 
   // 翻訳数を数える関数
   const getTranslationCount = (technique: Technique): number => {
-    let count = 0;
+    const availableLanguages = new Set<string>();
     
     // video_metadataから翻訳をカウント
     if (technique.video_metadata) {
       translationLanguages.forEach(lang => {
         if ((technique.video_metadata as any)?.[lang.code]?.video_url) {
-          count++;
+          availableLanguages.add(lang.code);
         }
       });
     }
     
-    // 従来のフィールドもチェック（video_metadataにない場合）
-    if (technique.video_url && !technique.video_metadata?.en?.video_url) count++;
-    if (technique.video_url_ja && !technique.video_metadata?.ja?.video_url) count++;
-    if (technique.video_url_pt && !technique.video_metadata?.pt?.video_url) count++;
+    // 従来のフィールドもチェック（重複を避けるためSetを使用）
+    if (technique.video_url) availableLanguages.add('en');
+    if (technique.video_url_ja) availableLanguages.add('ja');
+    if (technique.video_url_pt) availableLanguages.add('pt');
     
-    return count;
+    return availableLanguages.size;
+  };
+
+  // 利用可能な翻訳言語のリストを取得
+  const getAvailableTranslations = (technique: Technique): Array<{ code: string; name: string; url: string }> => {
+    const translations: Array<{ code: string; name: string; url: string }> = [];
+    
+    translationLanguages.forEach(lang => {
+      const url = getVideoUrlForLanguage(technique, lang.code);
+      if (url) {
+        translations.push({
+          code: lang.code,
+          name: lang.nativeName,
+          url: url
+        });
+      }
+    });
+    
+    return translations;
   };
 
   // 言語に応じた動画URLを取得する関数
@@ -984,10 +1003,35 @@ export const TechniquesManagement = () => {
                   </td>
                   <td className="px-4 py-3">{technique.display_order}</td>
                   <td className="px-4 py-3">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium">{getTranslationCount(technique as any)}</span>
-                      <span className="text-xs text-muted-foreground">言語</span>
-                    </div>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button variant="ghost" size="sm" className="h-auto p-1">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-medium">{getTranslationCount(technique as any)}</span>
+                            <span className="text-xs text-muted-foreground">言語</span>
+                          </div>
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-80">
+                        <div className="space-y-2">
+                          <h4 className="font-medium text-sm">利用可能な翻訳</h4>
+                          <div className="space-y-1">
+                            {getAvailableTranslations(technique as any).map((trans) => (
+                              <a
+                                key={trans.code}
+                                href={trans.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center justify-between p-2 rounded hover:bg-accent text-sm"
+                              >
+                                <span>{trans.name} ({trans.code.toUpperCase()})</span>
+                                <ExternalLink className="h-3 w-3" />
+                              </a>
+                            ))}
+                          </div>
+                        </div>
+                      </PopoverContent>
+                    </Popover>
                   </td>
                   <td className="px-4 py-3">
                     <VideoThumbnail
