@@ -53,8 +53,17 @@ serve(async (req) => {
       subscription_data: {
         // Use 90 days trial for regular plans, no trial for referral (coupon handles first month free)
         trial_period_days: referralCode ? 0 : 90,
+        ...(referralCode ? {} : {
+          trial_settings: {
+            end_behavior: {
+              missing_payment_method: 'cancel',
+            },
+          },
+        }),
         metadata: {},
       },
+      // For trial subscriptions, payment method is optional
+      payment_method_collection: referralCode ? 'always' : 'if_required',
       success_url: `${req.headers.get("origin")}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${req.headers.get("origin")}/join?canceled=true`,
     };
