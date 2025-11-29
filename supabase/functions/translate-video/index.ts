@@ -61,8 +61,8 @@ serve(async (req) => {
       );
     }
 
-    // サイトの言語コード(ja, en, es...) を Rask のコード(ja-jp, en-us...)にマッピング
-    const LANGUAGE_CODE_MAP: Record<string, string> = {
+    // ターゲット言語のみRask正式コードにマッピング（destination languages）
+    const DST_LANGUAGE_MAP: Record<string, string> = {
       ja: "ja-jp",
       en: "en-us",
       pt: "pt-br",
@@ -77,18 +77,14 @@ serve(async (req) => {
       hi: "hi-in",
     };
 
-    const normalizeLang = (code: string | undefined, fallback: string): string => {
-      const base = (code || fallback).toLowerCase();
-      if (base.includes("-")) return base; // すでに地域付きコードならそのまま
-      return LANGUAGE_CODE_MAP[base] || base;
-    };
+    // ソース言語は2文字コード（Rask source languages）
+    const srcLang = (sourceLanguage || "ja").toLowerCase();
+    
+    // ターゲット言語はRaskの地域コード
+    const targetLangBase = targetLanguage.toLowerCase();
+    const dstLang = DST_LANGUAGE_MAP[targetLangBase];
 
-    const mappedSrcLang = normalizeLang(sourceLanguage, "ja");
-    const mappedDstLangBase = targetLanguage.toLowerCase();
-    const mappedDstLang = LANGUAGE_CODE_MAP[mappedDstLangBase];
-
-    if (!mappedDstLang) {
-      // Raskが対応していない言語はここで弾いて 400 を返す
+    if (!dstLang) {
       return new Response(
         JSON.stringify({
           error: "Unsupported translation language",
@@ -98,7 +94,7 @@ serve(async (req) => {
       );
     }
 
-    console.log("Starting video translation:", { videoUrl, sourceLanguage, targetLanguage, mappedSrcLang, mappedDstLang, techniqueId });
+    console.log("Starting video translation:", { videoUrl, srcLang, dstLang, techniqueId });
 
     // Get OAuth2 access token
     const accessToken = await getOAuthToken(RASK_AI_CLIENT_ID, RASK_AI_CLIENT_SECRET);
@@ -142,8 +138,8 @@ serve(async (req) => {
       body: JSON.stringify({
         video_id: videoId,
         name: `Technique ${techniqueId} - ${targetLanguage}`,
-        src_lang: mappedSrcLang,
-        dst_lang: mappedDstLang,
+        src_lang: srcLang,
+        dst_lang: dstLang,
       }),
     });
 
