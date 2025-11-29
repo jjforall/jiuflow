@@ -120,19 +120,28 @@ export const TechniquesManagement = () => {
     return count;
   };
 
-  // 利用可能な翻訳言語のリストを取得（video_metadataに保存された翻訳のみ）
-  const getAvailableTranslations = (technique: Technique): Array<{ code: string; name: string; url: string }> => {
-    const translations: Array<{ code: string; name: string; url: string }> = [];
-    
-    if (!technique.video_metadata) return translations;
+  // 利用可能な翻訳言語のリストを取得（全言語）
+  const getAvailableTranslations = (technique: Technique): Array<{ code: string; name: string; url: string; isOriginal: boolean }> => {
+    const translations: Array<{ code: string; name: string; url: string; isOriginal: boolean }> = [];
     
     allLanguages.forEach(lang => {
+      // video_metadataから取得
       const metadata = (technique.video_metadata as any)?.[lang.code];
       if (metadata?.video_url) {
         translations.push({
           code: lang.code,
           name: lang.nativeName,
-          url: metadata.video_url
+          url: metadata.video_url,
+          isOriginal: lang.code === 'ja'
+        });
+      }
+      // 日本語の場合、従来のフィールドもチェック
+      else if (lang.code === 'ja' && (technique.video_url_ja || technique.video_url)) {
+        translations.push({
+          code: lang.code,
+          name: lang.nativeName,
+          url: technique.video_url_ja || technique.video_url!,
+          isOriginal: true
         });
       }
     });
@@ -1026,20 +1035,29 @@ export const TechniquesManagement = () => {
                       </PopoverTrigger>
                       <PopoverContent className="w-80">
                         <div className="space-y-2">
-                          <h4 className="font-medium text-sm">利用可能な翻訳</h4>
+                          <h4 className="font-medium text-sm">利用可能な動画</h4>
                           <div className="space-y-1">
-                            {getAvailableTranslations(technique as any).map((trans) => (
-                              <a
-                                key={trans.code}
-                                href={trans.url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex items-center justify-between p-2 rounded hover:bg-accent text-sm"
-                              >
-                                <span>{trans.name} ({trans.code.toUpperCase()})</span>
-                                <ExternalLink className="h-3 w-3" />
-                              </a>
-                            ))}
+                            {getAvailableTranslations(technique as any).length > 0 ? (
+                              getAvailableTranslations(technique as any).map((trans) => (
+                                <a
+                                  key={trans.code}
+                                  href={trans.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="flex items-center justify-between p-2 rounded hover:bg-accent text-sm group"
+                                >
+                                  <div className="flex items-center gap-2">
+                                    <span>{trans.name} ({trans.code.toUpperCase()})</span>
+                                    {trans.isOriginal && (
+                                      <span className="text-xs text-muted-foreground">オリジナル</span>
+                                    )}
+                                  </div>
+                                  <ExternalLink className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                </a>
+                              ))
+                            ) : (
+                              <p className="text-sm text-muted-foreground p-2">動画がありません</p>
+                            )}
                           </div>
                         </div>
                       </PopoverContent>

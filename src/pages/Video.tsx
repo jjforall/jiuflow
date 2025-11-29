@@ -40,6 +40,7 @@ interface Technique {
   thumbnail_url: string | null;
   thumbnail_url_ja: string | null;
   thumbnail_url_pt: string | null;
+  video_metadata?: any;
 }
 
 const Video = () => {
@@ -279,6 +280,15 @@ const Video = () => {
   };
 
   const getTechniqueVideoUrl = (tech: Technique) => {
+    // まずvideo_metadataをチェック
+    if (tech.video_metadata) {
+      const metadata = tech.video_metadata[language];
+      if (metadata?.video_url) {
+        return metadata.video_url;
+      }
+    }
+    
+    // 従来のフィールドをチェック
     switch (language) {
       case "ja":
         return tech.video_url_ja || tech.video_url;

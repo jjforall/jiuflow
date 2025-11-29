@@ -40,6 +40,7 @@ interface Technique {
   hashtags: string[];
   series_name: string | null;
   series_order: number | null;
+  video_metadata?: any;
 }
 
 interface CategoryTechniques {
