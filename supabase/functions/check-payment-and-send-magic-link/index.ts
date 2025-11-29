@@ -3,6 +3,11 @@ import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 import { getCorsHeaders } from "../_shared/cors.ts";
 
+const logStep = (step: string, details?: any) => {
+  const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
+  console.log(`[CHECK-PAYMENT] ${step}${detailsStr}`);
+};
+
 serve(async (req) => {
   const corsHeaders = getCorsHeaders(req);
   
@@ -11,22 +16,44 @@ serve(async (req) => {
   }
 
   try {
+    logStep("Function started");
     const { email, sessionId } = await req.json();
+    logStep("Request received", { email, sessionId });
     
     let customerEmail = email;
 
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", { 
       apiVersion: "2025-08-27.basil" 
     });
+    logStep("Stripe initialized");
 
     // If sessionId is provided, get email from Stripe session
-    if (sessionId && !email) {
-      console.log("Getting email from session:", sessionId);
+    if (sessionId) {
+      logStep("Retrieving session", { sessionId });
       
       const session = await stripe.checkout.sessions.retrieve(sessionId);
-      customerEmail = session.customer_email || session.customer_details?.email;
+      logStep("Session retrieved", { 
+        customer_email: session.customer_email,
+        customer: session.customer,
+        status: session.status,
+        payment_status: session.payment_status
+      });
+      
+      // Try to get email from session
+      if (session.customer_email) {
+        customerEmail = session.customer_email;
+        logStep("Email from session.customer_email", { customerEmail });
+      } else if (session.customer) {
+        // Get customer details from Stripe
+        const customer = await stripe.customers.retrieve(session.customer as string);
+        if ('email' in customer && customer.email) {
+          customerEmail = customer.email;
+          logStep("Email from customer object", { customerEmail });
+        }
+      }
       
       if (!customerEmail) {
+        logStep("ERROR: No email found in session");
         return new Response(
           JSON.stringify({ 
             error: "no_email",
@@ -38,13 +65,14 @@ serve(async (req) => {
     }
 
     if (!customerEmail) {
+      logStep("ERROR: No email provided");
       return new Response(
         JSON.stringify({ error: "Email or sessionId is required" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    console.log("Checking payment for email:", customerEmail);
+    logStep("Checking payment for email", { email: customerEmail });
 
     // Check if customer exists in Stripe
     const customers = await stripe.customers.list({ 
@@ -53,7 +81,7 @@ serve(async (req) => {
     });
 
     if (customers.data.length === 0) {
-      console.log("No Stripe customer found for:", customerEmail);
+      logStep("No Stripe customer found", { email: customerEmail });
       return new Response(
         JSON.stringify({ 
           error: "payment_not_found",
@@ -64,27 +92,36 @@ serve(async (req) => {
     }
 
     const customerId = customers.data[0].id;
-    console.log("Found Stripe customer:", customerId);
+    logStep("Found Stripe customer", { customerId });
 
-    // Check for active subscription or successful payment
+    // Check for active subscription (including trialing status)
     const subscriptions = await stripe.subscriptions.list({
       customer: customerId,
-      status: "active",
-      limit: 1,
+      limit: 10,
     });
+
+    // Filter for active or trialing subscriptions
+    const activeSubscriptions = subscriptions.data.filter(
+      (sub: Stripe.Subscription) => sub.status === "active" || sub.status === "trialing"
+    );
 
     const charges = await stripe.charges.list({
       customer: customerId,
       limit: 10,
     });
 
-    const hasActiveSubscription = subscriptions.data.length > 0;
+    const hasActiveSubscription = activeSubscriptions.length > 0;
     const hasSuccessfulPayment = charges.data.some((charge: Stripe.Charge) => charge.status === "succeeded");
 
-    console.log("Has active subscription:", hasActiveSubscription);
-    console.log("Has successful payment:", hasSuccessfulPayment);
+    logStep("Payment check results", { 
+      hasActiveSubscription, 
+      hasSuccessfulPayment,
+      subscriptionStatuses: subscriptions.data.map((s: Stripe.Subscription) => s.status)
+    });
 
+    // Allow if either has active/trialing subscription OR successful payment
     if (!hasActiveSubscription && !hasSuccessfulPayment) {
+      logStep("ERROR: No valid payment or subscription found");
       return new Response(
         JSON.stringify({ 
           error: "payment_not_completed",
@@ -95,29 +132,33 @@ serve(async (req) => {
     }
 
     // Payment is valid, send magic link
-    console.log("Payment verified, sending magic link to:", customerEmail);
+    logStep("Payment verified, preparing to send magic link", { email: customerEmail });
 
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+      { auth: { persistSession: false } }
     );
 
+    const emailToUse = customerEmail.toLowerCase().trim();
+    logStep("Sending magic link", { email: emailToUse });
+
     const { error: magicLinkError } = await supabase.auth.signInWithOtp({
-      email: customerEmail.toLowerCase().trim(),
+      email: emailToUse,
       options: {
-        emailRedirectTo: `${req.headers.get("origin")}/map`,
+        emailRedirectTo: `https://jiuflow.art/map`,
       },
     });
 
     if (magicLinkError) {
-      console.error("Error sending magic link:", magicLinkError);
+      logStep("ERROR sending magic link", { error: magicLinkError.message });
       return new Response(
         JSON.stringify({ error: magicLinkError.message }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    console.log("Magic link sent successfully to:", customerEmail);
+    logStep("Magic link sent successfully", { email: emailToUse });
 
     return new Response(
       JSON.stringify({ 
@@ -130,7 +171,7 @@ serve(async (req) => {
 
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
-    console.error("Error in check-payment-and-send-magic-link:", message);
+    logStep("ERROR in function", { error: message });
     return new Response(
       JSON.stringify({ error: message }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
