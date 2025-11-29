@@ -4,6 +4,7 @@ import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { MapPin, Search, Plus, Globe, Instagram, Facebook, Phone, Mail } from "lucide-react";
@@ -164,28 +165,31 @@ export default function Dojos() {
                 <Link key={dojo.id} to={`/dojo/${dojo.id}`}>
                   <Card className="h-full hover:shadow-lg transition-shadow">
                     <CardContent className="p-0">
-                      {/* Cover Image */}
-                      <div className="h-48 bg-gradient-to-br from-primary/20 to-primary/5 relative overflow-hidden">
-                        {dojo.cover_image_url ? (
+                      {/* Cover Image - Only show if exists */}
+                      {dojo.cover_image_url && (
+                        <div className="h-48 bg-gradient-to-br from-primary/20 to-primary/5 relative overflow-hidden">
                           <img
                             src={dojo.cover_image_url}
                             alt={getDojoName(dojo)}
                             className="w-full h-full object-cover"
                           />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center text-6xl">
-                            🥋
-                          </div>
-                        )}
-                        {dojo.is_verified && (
-                          <div className="absolute top-2 right-2 bg-primary text-primary-foreground px-2 py-1 rounded text-xs font-medium">
-                            {language === "ja" ? "公認" : "Verified"}
-                          </div>
-                        )}
-                      </div>
+                          {dojo.is_verified && (
+                            <div className="absolute top-2 right-2 bg-primary text-primary-foreground px-2 py-1 rounded text-xs font-medium">
+                              {language === "ja" ? "公認" : "Verified"}
+                            </div>
+                          )}
+                        </div>
+                      )}
 
                       {/* Content */}
                       <div className="p-6">
+                        {!dojo.cover_image_url && dojo.is_verified && (
+                          <div className="mb-3">
+                            <Badge variant="default" className="text-xs">
+                              {language === "ja" ? "公認" : "Verified"}
+                            </Badge>
+                          </div>
+                        )}
                         <h3 className="text-xl font-bold mb-2">{getDojoName(dojo)}</h3>
                         
                         {dojo.location && (
