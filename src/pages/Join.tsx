@@ -441,6 +441,11 @@ const Join = () => {
                 <div className="flex flex-col gap-3 max-w-md mx-auto">
                   <Input
                     type="text"
+                    inputMode="url"
+                    autoComplete="off"
+                    autoCorrect="off"
+                    autoCapitalize="characters"
+                    spellCheck={false}
                     placeholder={language === "ja" ? "紹介コードを入力" : "Enter referral code"}
                     value={referralCode}
                     onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
