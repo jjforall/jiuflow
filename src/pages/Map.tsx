@@ -58,6 +58,7 @@ const Map = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const hashtagFilter = searchParams.get('hashtag');
+  const categoryFilter = searchParams.get('category');
   const { subscribed, loading: subscriptionLoading } = useSubscription();
   const { isAdmin, user } = useAuth();
   const [techniques, setTechniques] = useState<Technique[]>([]);
@@ -108,6 +109,9 @@ const Map = () => {
     "combat-base": { en: "Combat Base", ja: "コンバットベース", pt: "Base de Combate" },
     control: { en: "Control", ja: "コントロール", pt: "Controle" },
     submission: { en: "Submission", ja: "極め技", pt: "Finalização" },
+    sweep: { en: "Sweep", ja: "スイープ", pt: "Raspagem" },
+    escape: { en: "Escape", ja: "エスケープ", pt: "Escape" },
+    "guard-pass": { en: "Guard Pass", ja: "ガードパス", pt: "Passagem de Guarda" },
   };
 
   const getCategoryLabel = (category: string) => {
@@ -129,6 +133,9 @@ const Map = () => {
     "combat-base": "bg-orange-500/10 border-orange-500",
     control: "bg-green-500/10 border-green-500",
     submission: "bg-red-500/10 border-red-500",
+    sweep: "bg-purple-500/10 border-purple-500",
+    escape: "bg-yellow-500/10 border-yellow-500",
+    "guard-pass": "bg-pink-500/10 border-pink-500",
   };
 
   // Check authentication
@@ -169,6 +176,13 @@ const Map = () => {
         if (hashtagFilter) {
           filteredData = filteredData.filter(tech => 
             tech.hashtags && tech.hashtags.includes(hashtagFilter)
+          );
+        }
+        
+        // Filter by category if specified
+        if (categoryFilter) {
+          filteredData = filteredData.filter(tech => 
+            tech.category === categoryFilter
           );
         }
         
