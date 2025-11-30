@@ -15,7 +15,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { CalendarIcon } from "lucide-react";
-import { User, CreditCard, Calendar, Mail, Upload, Video, Eye, Edit2, Check, X, Trash2, Lock, Globe, Plus, Copy, MapPin, Building2 } from "lucide-react";
+import { User, CreditCard, Calendar, Mail, Upload, Video, Eye, Edit2, Check, X, Trash2, Lock, Globe, Plus, Copy, MapPin, Building2, Camera, Image } from "lucide-react";
 import { toast } from "sonner";
 import { VideoUploadDialog } from "@/components/VideoUploadDialog";
 import { VideoEditDialog } from "@/components/VideoEditDialog";
@@ -24,8 +24,62 @@ import { Badge } from "@/components/ui/badge";
 import { ExternalLink } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { AvatarUploadDialog } from "@/components/AvatarUploadDialog";
+import { CoverUploadDialog } from "@/components/CoverUploadDialog";
+import { CoverImageGalleryDialog } from "@/components/CoverImageGalleryDialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import hero1 from "@/assets/hero-1.jpg";
+import hero2 from "@/assets/hero-2.jpg";
+import hero3 from "@/assets/hero-3.jpg";
+import hero4 from "@/assets/hero-4.jpg";
+import hero5 from "@/assets/hero-5.jpg";
+import hero6 from "@/assets/hero-6.jpg";
+import hero7 from "@/assets/hero-7.jpg";
+import hero8 from "@/assets/hero-8.jpg";
+import hero9 from "@/assets/hero-9.jpg";
+import hero10 from "@/assets/hero-10.jpg";
+
+const DEFAULT_COVER_IMAGES = [
+  hero1, hero2, hero3, hero4, hero5,
+  hero6, hero7, hero8, hero9, hero10
+];
+
+// カバー画像のURLまたはインデックスから画像を取得
+const getCoverImageUrl = (coverUrl: string | null, userId: string | null): string => {
+  // "default-X" 形式の場合
+  if (coverUrl && coverUrl.startsWith("default-")) {
+    const index = parseInt(coverUrl.replace("default-", ""));
+    if (!isNaN(index) && index >= 0 && index < DEFAULT_COVER_IMAGES.length) {
+      return DEFAULT_COVER_IMAGES[index];
+    }
+  }
+  
+  // カスタムアップロード画像の場合
+  if (coverUrl && !coverUrl.startsWith("default-")) {
+    return coverUrl;
+  }
+  
+  // デフォルト: ユーザーIDに基づいてランダム選択
+  if (!userId) return DEFAULT_COVER_IMAGES[0];
+  let hash = 0;
+  for (let i = 0; i < userId.length; i++) {
+    hash = ((hash << 5) - hash) + userId.charCodeAt(i);
+    hash = hash & hash;
+  }
+  const index = Math.abs(hash) % DEFAULT_COVER_IMAGES.length;
+  return DEFAULT_COVER_IMAGES[index];
+};
+
+// "default-X" 形式からインデックスを取得
+const getCurrentCoverIndex = (coverUrl: string | null): number | undefined => {
+  if (coverUrl && coverUrl.startsWith("default-")) {
+    const index = parseInt(coverUrl.replace("default-", ""));
+    if (!isNaN(index) && index >= 0 && index < DEFAULT_COVER_IMAGES.length) {
+      return index;
+    }
+  }
+  return undefined;
+};
 import {
   AlertDialog,
   AlertDialogAction,
@@ -62,6 +116,7 @@ interface Profile {
   display_name: string | null;
   bio: string | null;
   avatar_url: string | null;
+  cover_image_url: string | null;
   username: string | null;
   organization_id: string | null;
   education: Array<{school: string; degree?: string; period?: string}> | null;
@@ -125,6 +180,8 @@ const MyPage = () => {
   const [availableDojos, setAvailableDojos] = useState<Array<{ id: string; name: string; name_ja: string; name_pt: string; location: string | null }>>([]);
   const [selectedDojoId, setSelectedDojoId] = useState<string>("");
   const [selectedRelationshipType, setSelectedRelationshipType] = useState<"home" | "training">("home");
+  const [coverGalleryOpen, setCoverGalleryOpen] = useState(false);
+  const [coverUploadOpen, setCoverUploadOpen] = useState(false);
 
   const loadUserVideos = async () => {
     if (!user) return;
@@ -696,6 +753,25 @@ const MyPage = () => {
     toast.success(language === "ja" ? "プロフィールURLをコピーしました" : "Profile URL copied");
   };
 
+  const handleSelectDefaultCover = async (index: number) => {
+    if (!user) return;
+
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .update({ cover_image_url: `default-${index}` })
+        .eq("id", user.id);
+
+      if (error) throw error;
+
+      setProfile(prev => prev ? { ...prev, cover_image_url: `default-${index}` } : prev);
+      toast.success(language === "ja" ? "カバー画像を更新しました" : "Cover image updated");
+    } catch (error) {
+      console.error("Error updating cover image:", error);
+      toast.error(language === "ja" ? "カバー画像の更新に失敗しました" : "Failed to update cover image");
+    }
+  };
+
   const startEditing = (field: string, currentValue: any) => {
     setEditingField(field);
     
@@ -1079,7 +1155,51 @@ const MyPage = () => {
         <div className="max-w-4xl mx-auto">
           <div className="relative mb-16 animate-fade-up">
             {/* Cover Image Area */}
-            <div className="h-48 bg-gradient-to-r from-primary/20 via-primary/10 to-accent/20 rounded-t-2xl" />
+            <div className="h-40 sm:h-48 md:h-56 bg-gradient-to-r from-primary/30 via-primary/20 to-accent/30 rounded-t-2xl shadow-lg relative overflow-hidden group">
+              {profile?.cover_image_url ? (
+                <>
+                  <img 
+                    src={profile.cover_image_url.startsWith("default-") 
+                      ? getCoverImageUrl(profile.cover_image_url, user?.id || null)
+                      : profile.cover_image_url
+                    } 
+                    alt="Cover" 
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-background/60 via-transparent to-transparent" />
+                </>
+              ) : (
+                <>
+                  <div 
+                    className="absolute inset-0 bg-cover bg-center" 
+                    style={{ backgroundImage: `url(${getCoverImageUrl(null, user?.id || null)})` }}
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-background/70 via-transparent to-transparent" />
+                </>
+              )}
+              
+              {/* Edit Buttons */}
+              <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300">
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  className="backdrop-blur-md bg-background/80 hover:bg-background/90 border border-border/50 shadow-lg gap-2"
+                  onClick={() => setCoverGalleryOpen(true)}
+                >
+                  <Image className="w-4 h-4" />
+                  {language === "ja" ? "ギャラリー" : "Gallery"}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  className="backdrop-blur-md bg-background/80 hover:bg-background/90 border border-border/50 shadow-lg gap-2"
+                  onClick={() => setCoverUploadOpen(true)}
+                >
+                  <Camera className="w-4 h-4" />
+                  {language === "ja" ? "アップロード" : "Upload"}
+                </Button>
+              </div>
+            </div>
             
             {/* Profile Header */}
             <div className="px-6 -mt-16">
@@ -2838,6 +2958,23 @@ const MyPage = () => {
         onUploadComplete={(url) => {
           setProfile(prev => prev ? { ...prev, avatar_url: url } : null);
         }}
+      />
+
+      <CoverUploadDialog
+        open={coverUploadOpen}
+        onOpenChange={setCoverUploadOpen}
+        currentCoverUrl={profile?.cover_image_url}
+        userId={user?.id || ''}
+        onUploadComplete={(url) => {
+          setProfile(prev => prev ? { ...prev, cover_image_url: url } : null);
+        }}
+      />
+
+      <CoverImageGalleryDialog
+        open={coverGalleryOpen}
+        onOpenChange={setCoverGalleryOpen}
+        onSelectImage={handleSelectDefaultCover}
+        currentIndex={getCurrentCoverIndex(profile?.cover_image_url || null)}
       />
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
