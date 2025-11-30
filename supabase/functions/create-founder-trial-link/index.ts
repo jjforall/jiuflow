@@ -52,7 +52,7 @@ serve(async (req) => {
         },
       },
       success_url: "https://jiuflow.art/payment-success?session_id={CHECKOUT_SESSION_ID}",
-      cancel_url: "https://jiuflow.art/join?canceled=true",
+      cancel_url: "https://jiuflow.art/payment-canceled",
     });
 
     console.log("Checkout session created:", session.id);
