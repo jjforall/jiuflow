@@ -217,15 +217,14 @@ export default function UserProfile() {
           hobbies: (profileByUsername.hobbies as any) || [],
           social_links: (profileByUsername.social_links as any) || {}
         });
-      } else {
-        console.log('Profile not found, trying fallback with UUID');
-        // Fall back to UUID (shouldn't happen if logic above works)
-        resolvedUserId = identifier;
+      } else if (!isUUID) {
+        console.log('Profile not found by username, trying with UUID fallback');
+        // If identifier was not a UUID and not found by username, try as ID
         const { data: profileById, error: fallbackError } = await supabase
           .from('profiles')
           .select('id, email, display_name, bio, avatar_url, username, education, work_experience, belt_history, home_dojo, training_locations, titles, created_at, cover_image_url, organization_id, favorite_fighters, favorite_techniques, hometown, hobbies, date_of_birth, social_links')
           .eq('id', identifier)
-          .single();
+          .maybeSingle();
         
         if (fallbackError) {
           console.error('Fallback query error:', fallbackError);
@@ -233,7 +232,8 @@ export default function UserProfile() {
         }
         
         if (profileById) {
-          console.log('Profile found by ID:', profileById);
+          console.log('Profile found by ID fallback:', profileById);
+          resolvedUserId = profileById.id;
           setProfile({
             ...profileById,
             education: (profileById.education as any) || [],
@@ -251,6 +251,10 @@ export default function UserProfile() {
           toast.error("ユーザーが見つかりませんでした");
           return;
         }
+      } else {
+        console.error('No profile found for UUID:', identifier);
+        toast.error("ユーザーが見つかりませんでした");
+        return;
       }
       
       console.log('Setting actualUserId:', resolvedUserId);
