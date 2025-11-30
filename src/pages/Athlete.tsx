@@ -110,16 +110,16 @@ const Athlete = () => {
   }, [slugOrUsername]);
 
   useEffect(() => {
-    if (celebrity?.user_id && user?.id) {
+    if (celebrity && user?.id) {
       loadFollowStatus();
     }
-    if (celebrity?.user_id) {
+    if (celebrity) {
       loadFollowCounts();
       if (celebrity.user_id) {
         loadUserVideos(celebrity.user_id);
       }
     }
-  }, [celebrity?.user_id, user?.id]);
+  }, [celebrity, user?.id]);
 
   useEffect(() => {
     const loadPurchases = async () => {
@@ -204,58 +204,97 @@ const Athlete = () => {
   };
 
   const loadFollowStatus = async () => {
-    if (!celebrity?.user_id || !user?.id) return;
+    if (!user?.id) return;
 
     try {
-      const { data } = await supabase
-        .from('user_follows')
-        .select('id')
-        .eq('follower_id', user.id)
-        .eq('following_id', celebrity.user_id)
-        .maybeSingle();
+      // Check if this is a celebrity (has celebrity.id)
+      if (celebrity?.id && !celebrity?.user_id) {
+        // Celebrity-specific follow check
+        const { data } = await supabase
+          .from('celebrity_follows')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('celebrity_id', celebrity.id)
+          .maybeSingle();
 
-      setIsFollowing(!!data);
+        setIsFollowing(!!data);
+      } else if (celebrity?.user_id) {
+        // Regular user follow check
+        const { data } = await supabase
+          .from('user_follows')
+          .select('id')
+          .eq('follower_id', user.id)
+          .eq('following_id', celebrity.user_id)
+          .maybeSingle();
+
+        setIsFollowing(!!data);
+      }
     } catch (error) {
       console.error('Error loading follow status:', error);
     }
   };
 
   const loadFollowCounts = async () => {
-    if (!celebrity?.user_id) return;
-
     try {
-      const { count: followers } = await supabase
-        .from('user_follows')
-        .select('*', { count: 'exact', head: true })
-        .eq('following_id', celebrity.user_id);
+      // Check if this is a celebrity
+      if (celebrity?.id && !celebrity?.user_id) {
+        // Celebrity followers count
+        const { count: followers } = await supabase
+          .from('celebrity_follows')
+          .select('*', { count: 'exact', head: true })
+          .eq('celebrity_id', celebrity.id);
 
-      const { count: following } = await supabase
-        .from('user_follows')
-        .select('*', { count: 'exact', head: true })
-        .eq('follower_id', celebrity.user_id);
+        setFollowersCount(followers || 0);
+        setFollowingCount(0); // Celebrities don't have "following" count
+      } else if (celebrity?.user_id) {
+        // Regular user follow counts
+        const { count: followers } = await supabase
+          .from('user_follows')
+          .select('*', { count: 'exact', head: true })
+          .eq('following_id', celebrity.user_id);
 
-      setFollowersCount(followers || 0);
-      setFollowingCount(following || 0);
+        const { count: following } = await supabase
+          .from('user_follows')
+          .select('*', { count: 'exact', head: true })
+          .eq('follower_id', celebrity.user_id);
+
+        setFollowersCount(followers || 0);
+        setFollowingCount(following || 0);
+      }
     } catch (error) {
       console.error('Error loading follow counts:', error);
     }
   };
 
   const handleFollow = async () => {
-    if (!user?.id || !celebrity?.user_id) {
+    if (!user?.id) {
       toast.error(language === "ja" ? "フォローするにはログインが必要です" : language === "pt" ? "Faça login para seguir" : "Login required to follow");
       return;
     }
 
     try {
-      const { error } = await supabase
-        .from('user_follows')
-        .insert({
-          follower_id: user.id,
-          following_id: celebrity.user_id
-        });
+      // Check if this is a celebrity
+      if (celebrity?.id && !celebrity?.user_id) {
+        // Follow celebrity
+        const { error } = await supabase
+          .from('celebrity_follows')
+          .insert({
+            user_id: user.id,
+            celebrity_id: celebrity.id
+          });
 
-      if (error) throw error;
+        if (error) throw error;
+      } else if (celebrity?.user_id) {
+        // Follow regular user
+        const { error } = await supabase
+          .from('user_follows')
+          .insert({
+            follower_id: user.id,
+            following_id: celebrity.user_id
+          });
+
+        if (error) throw error;
+      }
 
       setIsFollowing(true);
       setFollowersCount(prev => prev + 1);
@@ -271,16 +310,29 @@ const Athlete = () => {
   };
 
   const handleUnfollow = async () => {
-    if (!user?.id || !celebrity?.user_id) return;
+    if (!user?.id) return;
 
     try {
-      const { error } = await supabase
-        .from('user_follows')
-        .delete()
-        .eq('follower_id', user.id)
-        .eq('following_id', celebrity.user_id);
+      // Check if this is a celebrity
+      if (celebrity?.id && !celebrity?.user_id) {
+        // Unfollow celebrity
+        const { error } = await supabase
+          .from('celebrity_follows')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('celebrity_id', celebrity.id);
 
-      if (error) throw error;
+        if (error) throw error;
+      } else if (celebrity?.user_id) {
+        // Unfollow regular user
+        const { error } = await supabase
+          .from('user_follows')
+          .delete()
+          .eq('follower_id', user.id)
+          .eq('following_id', celebrity.user_id);
+
+        if (error) throw error;
+      }
 
       setIsFollowing(false);
       setFollowersCount(prev => Math.max(0, prev - 1));
