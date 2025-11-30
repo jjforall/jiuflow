@@ -9,7 +9,6 @@ import { translations } from "@/lib/translations";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
@@ -121,7 +120,6 @@ const Join = () => {
   const t = translations[language] || translations.ja;
   const { timeLeft, founderCount, founderMaxCount, founderCurrentPrice, founderNextPrice } = useCountdown();
   const [isLoading, setIsLoading] = useState(false);
-  const [showVideoModal, setShowVideoModal] = useState(false);
   const [sampleVideoUrl, setSampleVideoUrl] = useState<string | null>(null);
   const [referralCode, setReferralCode] = useState("");
   const [isValidReferralCode, setIsValidReferralCode] = useState(false);
@@ -355,101 +353,83 @@ const Join = () => {
             </div>
 
             {/* Sample Video Section */}
-            <div className="relative overflow-hidden rounded-2xl mb-16 animate-fade-up group">
+            <div className="relative overflow-hidden rounded-2xl mb-16 animate-fade-up">
               <div className="absolute inset-0 bg-gradient-to-br from-background via-muted/50 to-background" />
-              <div className="relative p-12 text-center space-y-6 border border-border/50 rounded-2xl backdrop-blur-sm">
-                <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-br from-primary/20 to-secondary/20 mb-2 group-hover:scale-110 transition-transform">
-                  <Eye className="w-10 h-10 text-primary" />
-                </div>
-                <h2 className="text-3xl font-light">{t.join.sampleVideo.title}</h2>
-                <p className="text-muted-foreground max-w-md mx-auto">
-                  {language === "ja" 
-                    ? "まずは「見る」から始めよう。" 
-                    : "Start by watching."}
-                </p>
-                <Button 
-                  size="lg" 
-                  onClick={() => setShowVideoModal(true)}
-                  className="bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90 shadow-lg transition-all h-12 px-8"
-                >
-                  <Eye className="w-5 h-5 mr-2" />
-                  {t.join.sampleVideo.cta}
-                </Button>
-              </div>
-            </div>
-
-            {/* Video Modal */}
-            <Dialog open={showVideoModal} onOpenChange={async (open) => {
-              setShowVideoModal(open);
-              
-              // Record view when modal is opened
-              if (open && user) {
-                const { data: existingView } = await supabase
-                  .from("video_views")
-                  .select("*")
-                  .eq("user_id", user.id)
-                  .eq("video_id", SAMPLE_VIDEO_ID)
-                  .maybeSingle();
-
-                if (existingView) {
-                  const { data } = await supabase
-                    .from("video_views")
-                    .update({
-                      view_count: existingView.view_count + 1,
-                      last_viewed_at: new Date().toISOString(),
-                    })
-                    .eq("id", existingView.id)
-                    .select("view_count")
-                    .single();
-                  
-                  if (data) {
-                    setViewCount(data.view_count);
-                  }
-                } else {
-                  const { data } = await supabase
-                    .from("video_views")
-                    .insert({
-                      user_id: user.id,
-                      video_id: SAMPLE_VIDEO_ID,
-                      view_count: 1,
-                    })
-                    .select("view_count")
-                    .single();
-                  
-                  if (data) {
-                    setViewCount(data.view_count);
-                  }
-                }
-              }
-            }}>
-              <DialogContent className="max-w-4xl">
-                <DialogHeader>
-                  <div className="flex items-center justify-between">
-                    <DialogTitle>{t.join.sampleVideo.title}</DialogTitle>
-                    {user && viewCount > 0 && (
-                      <Badge variant="secondary" className="flex items-center gap-1.5">
-                        <Eye className="w-3.5 h-3.5" />
-                        <span>{language === "ja" ? "視聴" : "Watched"} {viewCount}{language === "ja" ? "回" : "x"}</span>
-                      </Badge>
-                    )}
+              <div className="relative p-8 border border-border/50 rounded-2xl backdrop-blur-sm space-y-6">
+                <div className="text-center space-y-4">
+                  <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-primary/20 to-secondary/20 mb-2">
+                    <Eye className="w-8 h-8 text-primary" />
                   </div>
-                </DialogHeader>
-                <div className="aspect-video">
+                  <h2 className="text-3xl font-light">{t.join.sampleVideo.title}</h2>
+                  <p className="text-muted-foreground max-w-md mx-auto">
+                    {language === "ja" 
+                      ? "まずは「見る」から始めよう。" 
+                      : "Start by watching."}
+                  </p>
+                  {user && viewCount > 0 && (
+                    <Badge variant="secondary" className="flex items-center gap-1.5 mx-auto w-fit">
+                      <Eye className="w-3.5 h-3.5" />
+                      <span>{language === "ja" ? "視聴" : "Watched"} {viewCount}{language === "ja" ? "回" : "x"}</span>
+                    </Badge>
+                  )}
+                </div>
+                
+                <div className="aspect-video rounded-xl overflow-hidden shadow-2xl bg-muted">
                   {sampleVideoUrl ? (
                     <video
                       src={sampleVideoUrl}
                       className="w-full h-full"
                       controls
-                      autoPlay
+                      onPlay={async () => {
+                        // Record view when video starts playing
+                        if (user) {
+                          const { data: existingView } = await supabase
+                            .from("video_views")
+                            .select("*")
+                            .eq("user_id", user.id)
+                            .eq("video_id", SAMPLE_VIDEO_ID)
+                            .maybeSingle();
+
+                          if (existingView) {
+                            const { data } = await supabase
+                              .from("video_views")
+                              .update({
+                                view_count: existingView.view_count + 1,
+                                last_viewed_at: new Date().toISOString(),
+                              })
+                              .eq("id", existingView.id)
+                              .select("view_count")
+                              .single();
+                            
+                            if (data) {
+                              setViewCount(data.view_count);
+                            }
+                          } else {
+                            const { data } = await supabase
+                              .from("video_views")
+                              .insert({
+                                user_id: user.id,
+                                video_id: SAMPLE_VIDEO_ID,
+                                view_count: 1,
+                              })
+                              .select("view_count")
+                              .single();
+                            
+                            if (data) {
+                              setViewCount(data.view_count);
+                            }
+                          }
+                        }
+                      }}
                     />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-muted">
-                      <p className="text-muted-foreground">Loading video...</p>
+                    <div className="w-full h-full flex items-center justify-center">
+                      <p className="text-muted-foreground">{language === "ja" ? "動画を読み込み中..." : "Loading video..."}</p>
                     </div>
                   )}
                 </div>
-              </DialogContent>
-            </Dialog>
+              </div>
+            </div>
 
             {/* Referral Code Section */}
             <div className="relative overflow-hidden rounded-xl mb-12 animate-fade-up">
