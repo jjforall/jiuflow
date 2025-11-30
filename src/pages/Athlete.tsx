@@ -12,7 +12,46 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { BeltBadge } from "@/components/ui/belt-badge";
-import { Star, MapPin, Trophy, Edit, Instagram, Twitter, Youtube, Globe, Languages } from "lucide-react";
+import { Star, MapPin, Trophy, Edit, Instagram, Twitter, Youtube, Globe, Languages, User, UserMinus, UserPlus, Camera, Image as ImageIcon } from "lucide-react";
+import { toast } from "sonner";
+import { UserVideoCard } from "@/components/UserVideoCard";
+import hero1 from "@/assets/hero-1.jpg";
+import hero2 from "@/assets/hero-2.jpg";
+import hero3 from "@/assets/hero-3.jpg";
+import hero4 from "@/assets/hero-4.jpg";
+import hero5 from "@/assets/hero-5.jpg";
+import hero6 from "@/assets/hero-6.jpg";
+import hero7 from "@/assets/hero-7.jpg";
+import hero8 from "@/assets/hero-8.jpg";
+import hero9 from "@/assets/hero-9.jpg";
+import hero10 from "@/assets/hero-10.jpg";
+
+const DEFAULT_COVER_IMAGES = [
+  hero1, hero2, hero3, hero4, hero5, 
+  hero6, hero7, hero8, hero9, hero10
+];
+
+const getCoverImageUrl = (coverUrl: string | null, userId: string | null): string => {
+  if (coverUrl && coverUrl.startsWith("default-")) {
+    const index = parseInt(coverUrl.replace("default-", ""));
+    if (!isNaN(index) && index >= 0 && index < DEFAULT_COVER_IMAGES.length) {
+      return DEFAULT_COVER_IMAGES[index];
+    }
+  }
+  
+  if (coverUrl && !coverUrl.startsWith("default-")) {
+    return coverUrl;
+  }
+  
+  if (!userId) return DEFAULT_COVER_IMAGES[0];
+  let hash = 0;
+  for (let i = 0; i < userId.length; i++) {
+    hash = ((hash << 5) - hash) + userId.charCodeAt(i);
+    hash = hash & hash;
+  }
+  const index = Math.abs(hash) % DEFAULT_COVER_IMAGES.length;
+  return DEFAULT_COVER_IMAGES[index];
+};
 
 interface Celebrity {
   id: string;
@@ -25,6 +64,7 @@ interface Celebrity {
   home_dojo: string | null;
   featured: boolean;
   sort_order: number;
+  slug: string | null;
   organization: {
     name: string;
     name_ja: string;
@@ -32,6 +72,20 @@ interface Celebrity {
   } | null;
   social_links: any;
   stats: any;
+}
+
+interface UserVideo {
+  id: string;
+  title: string;
+  description: string | null;
+  video_type: string;
+  video_url: string;
+  thumbnail_url: string | null;
+  view_count: number;
+  price: number;
+  is_public: boolean;
+  created_at: string;
+  user_id: string;
 }
 
 const Athlete = () => {
@@ -45,24 +99,65 @@ const Athlete = () => {
   const [isOwner, setIsOwner] = useState(false);
   const [translatedBio, setTranslatedBio] = useState<string | null>(null);
   const [isTranslating, setIsTranslating] = useState(false);
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [followersCount, setFollowersCount] = useState(0);
+  const [followingCount, setFollowingCount] = useState(0);
+  const [videos, setVideos] = useState<UserVideo[]>([]);
+  const [purchasedVideos, setPurchasedVideos] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     loadCelebrity();
   }, [slugOrUsername]);
+
+  useEffect(() => {
+    if (celebrity?.user_id && user?.id) {
+      loadFollowStatus();
+    }
+    if (celebrity?.user_id) {
+      loadFollowCounts();
+      if (celebrity.user_id) {
+        loadUserVideos(celebrity.user_id);
+      }
+    }
+  }, [celebrity?.user_id, user?.id]);
+
+  useEffect(() => {
+    const loadPurchases = async () => {
+      if (user?.id) {
+        const { data: purchases } = await supabase
+          .from('video_purchases')
+          .select('video_id')
+          .eq('buyer_id', user.id);
+        
+        if (purchases) {
+          setPurchasedVideos(new Set(purchases.map(p => p.video_id)));
+        }
+      }
+    };
+    loadPurchases();
+  }, [user?.id]);
 
   const loadCelebrity = async () => {
     if (!slugOrUsername) return;
     
     setIsLoading(true);
     try {
-      // Try to find celebrity by user_id first
       let { data, error } = await supabase
         .from('celebrities')
         .select('*, organization:organizations(name, name_ja, name_pt)')
-        .eq('user_id', slugOrUsername)
+        .eq('slug', slugOrUsername)
         .maybeSingle();
 
-      // If not found by user_id, try by id
+      if (!data && !error) {
+        const result = await supabase
+          .from('celebrities')
+          .select('*, organization:organizations(name, name_ja, name_pt)')
+          .eq('user_id', slugOrUsername)
+          .maybeSingle();
+        data = result.data;
+        error = result.error;
+      }
+
       if (!data && !error) {
         const result = await supabase
           .from('celebrities')
@@ -86,18 +181,113 @@ const Athlete = () => {
     }
   };
 
-  const getBeltName = (beltHistory: any[]) => {
-    if (!beltHistory || beltHistory.length === 0) return null;
-    const latestBelt = beltHistory[beltHistory.length - 1];
-    return latestBelt?.belt;
+  const loadUserVideos = async (userId: string) => {
+    if (!userId) return;
+
+    try {
+      let query = supabase
+        .from('user_videos')
+        .select('*')
+        .eq('user_id', userId);
+
+      if (user?.id !== userId) {
+        query = query.eq('is_public', true);
+      }
+
+      const { data, error } = await query.order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setVideos(data || []);
+    } catch (error) {
+      console.error('Error loading videos:', error);
+    }
   };
 
-  const getOrganizationName = (org: Celebrity['organization']) => {
-    if (!org) return null;
-    switch (language) {
-      case 'ja': return org.name_ja;
-      case 'pt': return org.name_pt;
-      default: return org.name;
+  const loadFollowStatus = async () => {
+    if (!celebrity?.user_id || !user?.id) return;
+
+    try {
+      const { data } = await supabase
+        .from('user_follows')
+        .select('id')
+        .eq('follower_id', user.id)
+        .eq('following_id', celebrity.user_id)
+        .maybeSingle();
+
+      setIsFollowing(!!data);
+    } catch (error) {
+      console.error('Error loading follow status:', error);
+    }
+  };
+
+  const loadFollowCounts = async () => {
+    if (!celebrity?.user_id) return;
+
+    try {
+      const { count: followers } = await supabase
+        .from('user_follows')
+        .select('*', { count: 'exact', head: true })
+        .eq('following_id', celebrity.user_id);
+
+      const { count: following } = await supabase
+        .from('user_follows')
+        .select('*', { count: 'exact', head: true })
+        .eq('follower_id', celebrity.user_id);
+
+      setFollowersCount(followers || 0);
+      setFollowingCount(following || 0);
+    } catch (error) {
+      console.error('Error loading follow counts:', error);
+    }
+  };
+
+  const handleFollow = async () => {
+    if (!user?.id || !celebrity?.user_id) {
+      toast.error(language === "ja" ? "フォローするにはログインが必要です" : language === "pt" ? "Faça login para seguir" : "Login required to follow");
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('user_follows')
+        .insert({
+          follower_id: user.id,
+          following_id: celebrity.user_id
+        });
+
+      if (error) throw error;
+
+      setIsFollowing(true);
+      setFollowersCount(prev => prev + 1);
+      toast.success(language === "ja" ? "フォローしました" : language === "pt" ? "Seguindo" : "Following");
+    } catch (error: any) {
+      console.error('Follow error:', error);
+      if (error?.code === '23505') {
+        toast.error(language === "ja" ? "既にフォロー済みです" : language === "pt" ? "Já seguindo" : "Already following");
+      } else {
+        toast.error(language === "ja" ? "フォローに失敗しました" : language === "pt" ? "Falha ao seguir" : "Failed to follow");
+      }
+    }
+  };
+
+  const handleUnfollow = async () => {
+    if (!user?.id || !celebrity?.user_id) return;
+
+    try {
+      const { error } = await supabase
+        .from('user_follows')
+        .delete()
+        .eq('follower_id', user.id)
+        .eq('following_id', celebrity.user_id);
+
+      if (error) throw error;
+
+      setIsFollowing(false);
+      setFollowersCount(prev => Math.max(0, prev - 1));
+      toast.success(language === "ja" ? "フォロー解除しました" : language === "pt" ? "Deixou de seguir" : "Unfollowed");
+    } catch (error) {
+      console.error('Unfollow error:', error);
+      toast.error(language === "ja" ? "フォロー解除に失敗しました" : language === "pt" ? "Falha ao deixar de seguir" : "Failed to unfollow");
     }
   };
 
@@ -117,6 +307,43 @@ const Athlete = () => {
       console.error('Translation error:', error);
     } finally {
       setIsTranslating(false);
+    }
+  };
+
+  const handlePurchase = async (videoId: string) => {
+    if (!user) {
+      toast.error(language === "ja" ? "動画を購入するにはログインが必要です" : language === "pt" ? "Faça login para comprar" : "Login required to purchase");
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase.functions.invoke('create-video-purchase', {
+        body: { videoId }
+      });
+
+      if (error) throw error;
+
+      if (data?.url) {
+        window.open(data.url, '_blank');
+      }
+    } catch (error) {
+      console.error('Purchase error:', error);
+      toast.error(language === "ja" ? "購入処理に失敗しました" : language === "pt" ? "Falha na compra" : "Purchase failed");
+    }
+  };
+
+  const getBeltName = (beltHistory: any[]) => {
+    if (!beltHistory || beltHistory.length === 0) return null;
+    const latestBelt = beltHistory[beltHistory.length - 1];
+    return latestBelt?.belt;
+  };
+
+  const getOrganizationName = (org: Celebrity['organization']) => {
+    if (!org) return null;
+    switch (language) {
+      case 'ja': return org.name_ja;
+      case 'pt': return org.name_pt;
+      default: return org.name;
     }
   };
 
@@ -159,45 +386,100 @@ const Athlete = () => {
 
   const currentBelt = getBeltName(celebrity.belt_history);
   const orgName = getOrganizationName(celebrity.organization);
+  const coverImageUrl = getCoverImageUrl(null, celebrity.id);
 
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
       
-      <main className="pt-20 md:pt-24 pb-16 px-4 md:px-8 lg:px-12">
-        <div className="max-w-5xl mx-auto">
-          {/* Header Section */}
-          <div className="mb-8 animate-fade-in">
-            <div className="flex flex-col md:flex-row gap-8 items-start">
-              <Avatar className="h-32 w-32 border-4 border-border">
-                <AvatarImage src={celebrity.avatar_url || undefined} />
-                <AvatarFallback className="text-4xl">
-                  {celebrity.display_name[0]}
-                </AvatarFallback>
-              </Avatar>
-              
-              <div className="flex-1">
-                <div className="flex items-center gap-3 mb-2">
-                  <h1 className="text-4xl md:text-5xl font-light tracking-tight">
-                    {celebrity.display_name}
-                  </h1>
-                  {celebrity.featured && (
-                    <Star className="h-8 w-8 text-yellow-500 fill-yellow-500" />
-                  )}
-                </div>
-                
-                <div className="flex flex-wrap gap-3 mb-4">
-                  {currentBelt && <BeltBadge belt={currentBelt} />}
-                  {orgName && (
-                    <Badge variant="outline" className="text-base">
-                      {orgName}
-                    </Badge>
-                  )}
+      <main className="pt-16 md:pt-20 pb-16">
+        {/* Cover Image */}
+        <div className="relative h-48 md:h-64 lg:h-80 w-full overflow-hidden">
+          <img 
+            src={coverImageUrl}
+            alt="Cover" 
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent" />
+        </div>
+
+        <div className="max-w-5xl mx-auto px-4 md:px-8 lg:px-12 -mt-16 md:-mt-24 relative z-10">
+          {/* Profile Header */}
+          <div className="flex flex-col md:flex-row gap-6 mb-8">
+            <Avatar className="h-32 w-32 md:h-40 md:w-40 border-4 border-background shadow-xl">
+              <AvatarImage src={celebrity.avatar_url || undefined} />
+              <AvatarFallback className="text-4xl md:text-5xl bg-primary/10">
+                {celebrity.display_name[0]}
+              </AvatarFallback>
+            </Avatar>
+
+            <div className="flex-1 space-y-4">
+              <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+                <div>
+                  <div className="flex items-center gap-3 mb-2">
+                    <h1 className="text-3xl md:text-4xl font-light tracking-tight">
+                      {celebrity.display_name}
+                    </h1>
+                    {celebrity.featured && (
+                      <Star className="h-6 w-6 text-yellow-500 fill-yellow-500" />
+                    )}
+                  </div>
+                  
+                  <div className="flex flex-wrap gap-2 mb-3">
+                    {currentBelt && <BeltBadge belt={currentBelt} />}
+                    {orgName && (
+                      <Badge variant="outline" className="text-sm">
+                        {orgName}
+                      </Badge>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-6 text-sm text-muted-foreground">
+                    <div className="flex items-center gap-2">
+                      <User className="h-4 w-4" />
+                      <span>{followersCount} {language === "ja" ? "フォロワー" : language === "pt" ? "Seguidores" : "Followers"}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <User className="h-4 w-4" />
+                      <span>{followingCount} {language === "ja" ? "フォロー中" : language === "pt" ? "Seguindo" : "Following"}</span>
+                    </div>
+                  </div>
                 </div>
 
-                {celebrity.bio && (
-                  <div className="mb-4">
-                    <p className="text-lg text-muted-foreground mb-2">
+                <div className="flex gap-2">
+                  {isOwner ? (
+                    <Button onClick={() => navigate('/mypage')} className="gap-2">
+                      <Edit className="h-4 w-4" />
+                      {language === "ja" ? "編集" : language === "pt" ? "Editar" : "Edit"}
+                    </Button>
+                  ) : (
+                    celebrity.user_id && (
+                      <Button 
+                        onClick={isFollowing ? handleUnfollow : handleFollow}
+                        variant={isFollowing ? "outline" : "default"}
+                        className="gap-2"
+                      >
+                        {isFollowing ? (
+                          <>
+                            <UserMinus className="h-4 w-4" />
+                            {language === "ja" ? "フォロー解除" : language === "pt" ? "Deixar de seguir" : "Unfollow"}
+                          </>
+                        ) : (
+                          <>
+                            <UserPlus className="h-4 w-4" />
+                            {language === "ja" ? "フォロー" : language === "pt" ? "Seguir" : "Follow"}
+                          </>
+                        )}
+                      </Button>
+                    )
+                  )}
+                </div>
+              </div>
+
+              {celebrity.bio && (
+                <Card>
+                  <CardContent className="pt-6">
+                    <p className="text-base text-muted-foreground whitespace-pre-wrap">
                       {translatedBio || celebrity.bio}
                     </p>
                     {language !== 'en' && (
@@ -206,6 +488,7 @@ const Athlete = () => {
                         size="sm"
                         onClick={handleTranslateBio}
                         disabled={isTranslating}
+                        className="mt-3"
                       >
                         <Languages className="h-4 w-4 mr-2" />
                         {isTranslating 
@@ -215,133 +498,153 @@ const Athlete = () => {
                           : (language === 'ja' ? '英語に翻訳' : 'Traduzir para inglês')}
                       </Button>
                     )}
-                  </div>
-                )}
-
-                {isOwner && (
-                  <Button onClick={() => navigate('/mypage')} className="gap-2">
-                    <Edit className="h-4 w-4" />
-                    {language === "ja" ? "プロフィール編集" : language === "pt" ? "Editar Perfil" : "Edit Profile"}
-                  </Button>
-                )}
-              </div>
+                  </CardContent>
+                </Card>
+              )}
             </div>
           </div>
 
-          {/* Info Grid */}
-          <div className="grid md:grid-cols-2 gap-6 mb-8">
-            {celebrity.home_dojo && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <MapPin className="h-5 w-5" />
-                    {language === "ja" ? "所属道場" : language === "pt" ? "Academia" : "Home Gym"}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-lg">{celebrity.home_dojo}</p>
-                </CardContent>
-              </Card>
-            )}
+          {/* Content Grid */}
+          <div className="grid md:grid-cols-3 gap-6">
+            {/* Left Column - Info Cards */}
+            <div className="md:col-span-1 space-y-6">
+              {celebrity.home_dojo && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-lg">
+                      <MapPin className="h-5 w-5" />
+                      {language === "ja" ? "所属道場" : language === "pt" ? "Academia" : "Home Gym"}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-base">{celebrity.home_dojo}</p>
+                  </CardContent>
+                </Card>
+              )}
 
-            {celebrity.titles && celebrity.titles.length > 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Trophy className="h-5 w-5" />
-                    {language === "ja" ? "タイトル" : language === "pt" ? "Títulos" : "Titles"}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ul className="space-y-2">
-                    {celebrity.titles.map((title: any, index: number) => (
-                      <li key={index} className="flex items-start gap-2">
-                        <span className="text-primary">•</span>
-                        <span>{title.title || title}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </CardContent>
-              </Card>
-            )}
-          </div>
+              {celebrity.titles && celebrity.titles.length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-lg">
+                      <Trophy className="h-5 w-5" />
+                      {language === "ja" ? "タイトル" : language === "pt" ? "Títulos" : "Titles"}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ul className="space-y-2">
+                      {celebrity.titles.map((title: any, index: number) => (
+                        <li key={index} className="flex items-start gap-2">
+                          <span className="text-primary">•</span>
+                          <span className="text-sm">{title.title || title}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </CardContent>
+                </Card>
+              )}
 
-          {/* Belt History */}
-          {celebrity.belt_history && celebrity.belt_history.length > 0 && (
-            <Card className="mb-8">
-              <CardHeader>
-                <CardTitle>
-                  {language === "ja" ? "帯の履歴" : language === "pt" ? "Histórico de Faixas" : "Belt History"}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {celebrity.belt_history.map((item: any, index: number) => (
-                    <div key={index} className="flex items-center gap-4">
-                      <BeltBadge belt={item.belt} />
-                      {item.date && (
-                        <span className="text-sm text-muted-foreground">
-                          {new Date(item.date).getFullYear()}
-                        </span>
+              {celebrity.belt_history && celebrity.belt_history.length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">
+                      {language === "ja" ? "帯の履歴" : language === "pt" ? "Histórico de Faixas" : "Belt History"}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      {celebrity.belt_history.map((item: any, index: number) => (
+                        <div key={index} className="flex items-center gap-3">
+                          <BeltBadge belt={item.belt} />
+                          {item.date && (
+                            <span className="text-xs text-muted-foreground">
+                              {new Date(item.date).getFullYear()}
+                            </span>
+                          )}
+                          {item.instructor && (
+                            <span className="text-xs text-muted-foreground">
+                              {item.instructor}
+                            </span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {celebrity.social_links && Object.keys(celebrity.social_links).length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">
+                      {language === "ja" ? "ソーシャルメディア" : language === "pt" ? "Redes Sociais" : "Social Media"}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex flex-wrap gap-2">
+                      {celebrity.social_links.instagram && (
+                        <Button variant="outline" size="sm" asChild>
+                          <a href={celebrity.social_links.instagram} target="_blank" rel="noopener noreferrer" className="gap-2">
+                            <Instagram className="h-4 w-4" />
+                            Instagram
+                          </a>
+                        </Button>
                       )}
-                      {item.instructor && (
-                        <span className="text-sm text-muted-foreground">
-                          {language === "ja" ? "指導者:" : language === "pt" ? "Instrutor:" : "Instructor:"} {item.instructor}
-                        </span>
+                      {celebrity.social_links.twitter && (
+                        <Button variant="outline" size="sm" asChild>
+                          <a href={celebrity.social_links.twitter} target="_blank" rel="noopener noreferrer" className="gap-2">
+                            <Twitter className="h-4 w-4" />
+                            X
+                          </a>
+                        </Button>
+                      )}
+                      {celebrity.social_links.youtube && (
+                        <Button variant="outline" size="sm" asChild>
+                          <a href={celebrity.social_links.youtube} target="_blank" rel="noopener noreferrer" className="gap-2">
+                            <Youtube className="h-4 w-4" />
+                            YouTube
+                          </a>
+                        </Button>
+                      )}
+                      {celebrity.social_links.website && (
+                        <Button variant="outline" size="sm" asChild>
+                          <a href={celebrity.social_links.website} target="_blank" rel="noopener noreferrer" className="gap-2">
+                            <Globe className="h-4 w-4" />
+                            Website
+                          </a>
+                        </Button>
                       )}
                     </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
+                  </CardContent>
+                </Card>
+              )}
+            </div>
 
-          {/* Social Links */}
-          {celebrity.social_links && Object.keys(celebrity.social_links).length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle>
-                  {language === "ja" ? "ソーシャルメディア" : language === "pt" ? "Redes Sociais" : "Social Media"}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-wrap gap-3">
-                  {celebrity.social_links.instagram && (
-                    <Button variant="outline" asChild>
-                      <a href={celebrity.social_links.instagram} target="_blank" rel="noopener noreferrer" className="gap-2">
-                        <Instagram className="h-4 w-4" />
-                        Instagram
-                      </a>
-                    </Button>
-                  )}
-                  {celebrity.social_links.twitter && (
-                    <Button variant="outline" asChild>
-                      <a href={celebrity.social_links.twitter} target="_blank" rel="noopener noreferrer" className="gap-2">
-                        <Twitter className="h-4 w-4" />
-                        Twitter
-                      </a>
-                    </Button>
-                  )}
-                  {celebrity.social_links.youtube && (
-                    <Button variant="outline" asChild>
-                      <a href={celebrity.social_links.youtube} target="_blank" rel="noopener noreferrer" className="gap-2">
-                        <Youtube className="h-4 w-4" />
-                        YouTube
-                      </a>
-                    </Button>
-                  )}
-                  {celebrity.social_links.website && (
-                    <Button variant="outline" asChild>
-                      <a href={celebrity.social_links.website} target="_blank" rel="noopener noreferrer" className="gap-2">
-                        <Globe className="h-4 w-4" />
-                        Website
-                      </a>
-                    </Button>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          )}
+            {/* Right Column - Videos */}
+            <div className="md:col-span-2">
+              {videos.length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">
+                      {language === "ja" ? "投稿動画" : language === "pt" ? "Vídeos" : "Videos"}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid gap-6 md:grid-cols-2">
+                      {videos.map((video) => (
+                        <UserVideoCard
+                          key={video.id}
+                          video={video}
+                          onPurchase={handlePurchase}
+                          isPurchased={purchasedVideos.has(video.id)}
+                          isOwner={isOwner}
+                        />
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          </div>
         </div>
       </main>
 

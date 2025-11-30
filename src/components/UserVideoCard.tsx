@@ -18,7 +18,7 @@ interface UserVideoCardProps {
   };
   onEdit?: (video: any) => void;
   onDelete?: (videoId: string) => void;
-  onPurchase?: () => void;
+  onPurchase?: (videoId: string) => void;
   isOwner?: boolean;
   isPurchased?: boolean;
 }
@@ -111,7 +111,7 @@ export function UserVideoCard({
           <div className="pt-2">
             <Button
               className="w-full"
-              onClick={onPurchase}
+              onClick={() => onPurchase?.(video.id)}
             >
               ¥{video.price.toLocaleString()} で購入
             </Button>

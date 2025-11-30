@@ -117,6 +117,7 @@ const App = () => (
                   <Route path="/dojo/:id" element={<Dojo />} />
                   <Route path="/athletes" element={<Athletes />} />
                   <Route path="/athlete/:slugOrUsername" element={<Athlete />} />
+                  <Route path="/ryozo" element={<Athlete />} />
                   <Route path="/:slugOrUsername" element={<DojoOrProfile />} />
                   <Route path="/founder-trial" element={<FounderTrial />} />
                   <Route path="/admin" element={<AdminLogin />} />
