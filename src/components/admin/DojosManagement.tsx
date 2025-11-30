@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Edit2, Trash2, Plus, ArrowUpDown, Users } from "lucide-react";
 import { toast } from "sonner";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -71,6 +72,7 @@ interface Dojo {
 
 interface DojoMember {
   id: string;
+  user_dojo_id: string;
   display_name: string | null;
   email: string | null;
   avatar_url: string | null;
@@ -373,6 +375,7 @@ export default function DojosManagement() {
 
       const members: DojoMember[] = (data || []).map((item: any) => ({
         id: item.profiles?.id || '',
+        user_dojo_id: item.id,
         display_name: item.profiles?.display_name,
         email: item.profiles?.email,
         avatar_url: item.profiles?.avatar_url,
@@ -385,6 +388,51 @@ export default function DojosManagement() {
     } catch (error) {
       console.error('Error loading members:', error);
       toast.error(language === "ja" ? "会員リストの取得に失敗しました" : "Failed to load members");
+    }
+  };
+
+  const handleUpdateMemberRole = async (userDojoId: string, newRole: string) => {
+    try {
+      const { error } = await supabase
+        .from('user_dojos')
+        .update({ relationship_type: newRole })
+        .eq('id', userDojoId);
+
+      if (error) throw error;
+
+      toast.success(language === "ja" ? "役割を更新しました" : "Role updated");
+      
+      // Refresh member list
+      if (viewingMembers) {
+        await handleViewMembers(viewingMembers.dojo);
+      }
+    } catch (error) {
+      console.error('Error updating member role:', error);
+      toast.error(language === "ja" ? "役割の更新に失敗しました" : "Failed to update role");
+    }
+  };
+
+  const getRoleBadgeVariant = (role: string) => {
+    switch (role) {
+      case 'owner':
+        return 'default';
+      case 'instructor':
+        return 'secondary';
+      default:
+        return 'outline';
+    }
+  };
+
+  const getRoleLabel = (role: string) => {
+    switch (role) {
+      case 'owner':
+        return language === "ja" ? "道場長" : "Owner";
+      case 'instructor':
+        return language === "ja" ? "インストラクター" : "Instructor";
+      case 'member':
+        return language === "ja" ? "会員" : "Member";
+      default:
+        return role;
     }
   };
 
@@ -638,13 +686,13 @@ export default function DojosManagement() {
                     <TableRow>
                       <TableHead>名前</TableHead>
                       <TableHead>メールアドレス</TableHead>
-                      <TableHead>関係</TableHead>
+                      <TableHead>役割</TableHead>
                       <TableHead>参加日</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {viewingMembers.members.map((member) => (
-                      <TableRow key={member.id}>
+                      <TableRow key={member.user_dojo_id}>
                         <TableCell className="font-medium">
                           {member.display_name || member.email || '名前なし'}
                         </TableCell>
@@ -652,9 +700,35 @@ export default function DojosManagement() {
                           {member.email || '-'}
                         </TableCell>
                         <TableCell>
-                          <Badge variant="secondary">
-                            {member.relationship_type}
-                          </Badge>
+                          <Select
+                            value={member.relationship_type}
+                            onValueChange={(value) => handleUpdateMemberRole(member.user_dojo_id, value)}
+                          >
+                            <SelectTrigger className="w-[180px]">
+                              <SelectValue>
+                                <Badge variant={getRoleBadgeVariant(member.relationship_type)}>
+                                  {getRoleLabel(member.relationship_type)}
+                                </Badge>
+                              </SelectValue>
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="member">
+                                <div className="flex items-center gap-2">
+                                  <Badge variant="outline">会員</Badge>
+                                </div>
+                              </SelectItem>
+                              <SelectItem value="instructor">
+                                <div className="flex items-center gap-2">
+                                  <Badge variant="secondary">インストラクター</Badge>
+                                </div>
+                              </SelectItem>
+                              <SelectItem value="owner">
+                                <div className="flex items-center gap-2">
+                                  <Badge variant="default">道場長</Badge>
+                                </div>
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
                         </TableCell>
                         <TableCell className="text-sm">
                           {member.joined_at 
