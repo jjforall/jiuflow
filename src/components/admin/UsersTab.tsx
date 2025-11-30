@@ -67,7 +67,7 @@ export const UsersTab = () => {
       // Fetch subscription data for all users
       const { data: subsData } = await supabase
         .from("subscriptions")
-        .select("user_id, status, plan_type, current_period_end")
+        .select("user_id, status, plan_type, current_period_end, trial_start, trial_end")
         .in("status", ["active", "trialing"]);
 
       // Merge subscription data with profiles
@@ -369,9 +369,16 @@ export const UsersTab = () => {
                       </td>
                       <td className="px-4 py-3">
                         {hasSub ? (
-                          <Badge variant="default" className="bg-green-600">
-                            {profile.subscription.plan_type || 'アクティブ'}
-                          </Badge>
+                          <div className="flex flex-col gap-1">
+                            <Badge variant="default" className="bg-green-600">
+                              {profile.subscription.plan_type || 'アクティブ'}
+                            </Badge>
+                            {profile.subscription.trial_end && new Date(profile.subscription.trial_end) > new Date() && (
+                              <span className="text-xs text-muted-foreground">
+                                トライアル中 (終了: {new Date(profile.subscription.trial_end).toLocaleDateString('ja-JP')})
+                              </span>
+                            )}
+                          </div>
                         ) : (
                           <Badge variant="outline">未加入</Badge>
                         )}
@@ -465,17 +472,24 @@ export const UsersTab = () => {
                         </Badge>
                       </div>
 
-                      <div className="flex gap-2">
-                        {hasSub ? (
-                          <Badge variant="default" className="bg-green-600">
-                            {profile.subscription.plan_type || 'アクティブ'}
-                          </Badge>
-                        ) : (
-                          <Badge variant="outline">未加入</Badge>
+                      <div className="space-y-2">
+                        <div className="flex gap-2 items-center">
+                          {hasSub ? (
+                            <Badge variant="default" className="bg-green-600">
+                              {profile.subscription.plan_type || 'アクティブ'}
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline">未加入</Badge>
+                          )}
+                          <span className="text-xs text-muted-foreground">
+                            {new Date(profile.created_at).toLocaleDateString('ja-JP')}
+                          </span>
+                        </div>
+                        {hasSub && profile.subscription.trial_end && new Date(profile.subscription.trial_end) > new Date() && (
+                          <span className="text-xs text-muted-foreground">
+                            トライアル中 (終了: {new Date(profile.subscription.trial_end).toLocaleDateString('ja-JP')})
+                          </span>
                         )}
-                        <span className="text-xs text-muted-foreground">
-                          {new Date(profile.created_at).toLocaleDateString('ja-JP')}
-                        </span>
                       </div>
 
                       {isAdmin && (

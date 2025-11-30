@@ -32,6 +32,8 @@ export interface Profile {
     status: string;
     plan_type: string | null;
     current_period_end: string | null;
+    trial_start: string | null;
+    trial_end: string | null;
   };
 }
 

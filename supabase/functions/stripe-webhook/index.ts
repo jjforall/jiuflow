@@ -130,6 +130,8 @@ serve(async (req) => {
                  current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
                  plan_type: "founder",
                  referral_code_id: (subscription.metadata as any)?.referral_code_id || null,
+                 trial_start: subscription.trial_start ? new Date(subscription.trial_start * 1000).toISOString() : null,
+                 trial_end: subscription.trial_end ? new Date(subscription.trial_end * 1000).toISOString() : null,
                });
 
             if (subError) {
@@ -152,6 +154,8 @@ serve(async (req) => {
           .update({
             status: subscription.status,
             current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+            trial_start: subscription.trial_start ? new Date(subscription.trial_start * 1000).toISOString() : null,
+            trial_end: subscription.trial_end ? new Date(subscription.trial_end * 1000).toISOString() : null,
           })
           .eq("stripe_subscription_id", subscription.id);
 
