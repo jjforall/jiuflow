@@ -453,6 +453,26 @@ const About = () => {
                     >
                       Website
                     </a>
+                    <a 
+                      href="https://www.instagram.com/ryozomurata/" 
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      className="text-primary hover:underline flex items-center gap-1"
+                    >
+                      <Instagram className="w-4 h-4" />
+                      Instagram
+                    </a>
+                    <a 
+                      href="https://x.com/ryozomurata" 
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      className="text-primary hover:underline flex items-center gap-1"
+                    >
+                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                      </svg>
+                      X (Twitter)
+                    </a>
                   </div>
                 </div>
 
@@ -489,7 +509,29 @@ const About = () => {
                 <div className="border-l-2 border-primary pl-6 hover:bg-muted/20 p-4 -ml-4 transition-colors rounded-r-lg">
                   <h3 className="text-2xl font-light mb-1">野島 (Nojima)</h3>
                   <p className="text-primary font-medium mb-2">Engineering / Member</p>
-                  <p className="text-muted-foreground">システム開発・テクニカルサポート</p>
+                  <p className="text-muted-foreground mb-3">システム開発・テクニカルサポート</p>
+                  <div className="flex gap-4 text-sm">
+                    <a 
+                      href="https://www.instagram.com/nojisgk/" 
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      className="text-primary hover:underline flex items-center gap-1"
+                    >
+                      <Instagram className="w-4 h-4" />
+                      Instagram
+                    </a>
+                    <a 
+                      href="https://x.com/ShigeakiNojima" 
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      className="text-primary hover:underline flex items-center gap-1"
+                    >
+                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                      </svg>
+                      X (Twitter)
+                    </a>
+                  </div>
                 </div>
               </div>
             </div>
