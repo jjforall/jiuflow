@@ -78,7 +78,7 @@ serve(async (req) => {
 
     console.log(`Importing ${dojos.length} dojos...`);
 
-    // 道場名を解析する関数
+    // 道場名を解析する関数（旧形式のデータ用）
     function parseName(fullName: string): { ja: string; en: string } {
       const match = fullName.match(/^(.+?)\s*（(.+?)）\s*$/);
       if (match) {
@@ -90,6 +90,29 @@ serve(async (req) => {
 
     // データを整形
     const formattedDojos = dojos.map((dojo: any) => {
+      // 新形式のデータ（すでにフォーマット済み）かチェック
+      if (dojo.name_ja && dojo.name_pt) {
+        return {
+          name: dojo.name,
+          name_ja: dojo.name_ja,
+          name_pt: dojo.name_pt,
+          description: dojo.description || null,
+          description_ja: dojo.description_ja || null,
+          description_pt: dojo.description_pt || null,
+          location: dojo.location || null,
+          phone: dojo.phone || null,
+          email: dojo.email || null,
+          website: dojo.website || null,
+          instagram: dojo.instagram || null,
+          facebook: dojo.facebook || null,
+          twitter: dojo.twitter || null,
+          youtube: dojo.youtube || null,
+          features: dojo.features || null,
+          is_verified: dojo.is_verified !== undefined ? dojo.is_verified : true,
+        };
+      }
+      
+      // 旧形式のデータ（JBJJF形式）
       const names = parseName(dojo.name);
       
       return {
