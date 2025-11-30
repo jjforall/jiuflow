@@ -508,26 +508,6 @@ const About = () => {
               </div>
             </div>
           </section>
-
-          {/* Invitation Section */}
-          <section className="py-20 text-center">
-            <div className="max-w-3xl mx-auto space-y-6">
-              <h2 className="text-4xl font-light mb-8">Invitation</h2>
-              <p className="text-xl leading-relaxed">
-                静かに、深く学ぶ柔術。<br />
-                安全で、長くできて、強くなる。<br />
-                その一歩を、ここから始めてみませんか？
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center pt-8">
-                <Button onClick={() => navigate("/join")} size="lg" className="min-w-[200px]">
-                  プランを見る
-                </Button>
-                <Button onClick={() => navigate("/login")} variant="outline" size="lg" className="min-w-[200px]">
-                  ログイン
-                </Button>
-              </div>
-            </div>
-          </section>
         </div>
       </main>
       
