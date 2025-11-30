@@ -18,6 +18,7 @@ import { PointsManagement } from "@/components/admin/PointsManagement";
 import { BeltsManagement } from "@/components/admin/BeltsManagement";
 import DojosManagement from "@/components/admin/DojosManagement";
 import { LogsTab } from "@/components/admin/LogsTab";
+import { TipsManagement } from "@/components/admin/TipsManagement";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -172,7 +173,7 @@ const AdminDashboard = () => {
           </div>
 
           <Tabs defaultValue="techniques" className="w-full">
-            <TabsList className="grid w-full grid-cols-7 mb-8">
+            <TabsList className="grid w-full grid-cols-8 mb-8">
               <TabsTrigger value="techniques" className="flex items-center gap-2">
                 <Grid3X3 className="w-4 h-4" />
                 テクニック管理
@@ -199,6 +200,9 @@ const AdminDashboard = () => {
               </TabsTrigger>
               <TabsTrigger value="logs">
                 ログ
+              </TabsTrigger>
+              <TabsTrigger value="tips">
+                投げ銭
               </TabsTrigger>
             </TabsList>
 
@@ -232,6 +236,10 @@ const AdminDashboard = () => {
 
             <TabsContent value="logs" className="space-y-6">
               <LogsTab />
+            </TabsContent>
+
+            <TabsContent value="tips" className="space-y-6">
+              <TipsManagement />
             </TabsContent>
           </Tabs>
         </div>
