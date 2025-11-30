@@ -9,10 +9,11 @@ import { toast } from "sonner";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { Lock, Loader2, Upload, X, ChevronDown, Eye, Check } from "lucide-react";
+import { Lock, Loader2, Upload, X, ChevronDown, Eye, Check, Search } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { VideoUploadDialog } from "@/components/VideoUploadDialog";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import {
   Accordion,
   AccordionContent,
@@ -68,6 +69,7 @@ const Map = () => {
   const [showUploadDialog, setShowUploadDialog] = useState(false);
   const [seriesTechniques, setSeriesTechniques] = useState<SeriesTechniques>({});
   const [videoViews, setVideoViews] = useState<Record<string, number>>({});
+  const [searchQuery, setSearchQuery] = useState("");
   const observerTarget = useRef<HTMLDivElement>(null);
   const PAGE_SIZE = 50;
 
@@ -435,9 +437,45 @@ const Map = () => {
             </div>
           ) : (
             <div className="animate-fade-up space-y-3 max-w-6xl mx-auto">
+              {/* Search Input */}
+              <div className="mb-6">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                  <Input
+                    type="text"
+                    placeholder={language === "ja" ? "技名、説明、ハッシュタグで検索..." : language === "pt" ? "Pesquisar por nome, descrição, hashtag..." : "Search by name, description, hashtag..."}
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-10 h-12 text-base"
+                  />
+                </div>
+              </div>
+
               {/* Series-based Accordion (alphabetically ordered) */}
               <Accordion type="multiple" className="w-full space-y-2">
-                {Object.entries(seriesTechniques).map(([seriesPrefix, { seriesName, techniques: seriesTechs }]) => {
+                {Object.entries(seriesTechniques)
+                  .map(([seriesPrefix, { seriesName, techniques: seriesTechs }]) => {
+                    // Filter techniques based on search query
+                    const filteredTechs = seriesTechs.filter(tech => {
+                      if (!searchQuery.trim()) return true;
+                      
+                      const query = searchQuery.toLowerCase();
+                      const name = (language === "ja" ? tech.name_ja : language === "pt" ? tech.name_pt : tech.name).toLowerCase();
+                      const description = (language === "ja" ? tech.description_ja : language === "pt" ? tech.description_pt : tech.description)?.toLowerCase() || "";
+                      const hashtags = (tech.hashtags || []).join(" ").toLowerCase();
+                      
+                      return name.includes(query) || description.includes(query) || hashtags.includes(query);
+                    });
+
+                    // Don't show series if no techniques match the search
+                    if (filteredTechs.length === 0) return null;
+
+                    return { seriesPrefix, seriesName, techniques: filteredTechs };
+                  })
+                  .filter(Boolean)
+                  .map(item => {
+                    if (!item) return null;
+                    const { seriesPrefix, seriesName, techniques: seriesTechs } = item;
                   const maxSeriesOrder = Math.max(...seriesTechs.map(t => t.series_order || 1));
                   return (
                     <AccordionItem 
