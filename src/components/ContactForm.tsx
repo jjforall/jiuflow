@@ -29,11 +29,27 @@ export const ContactForm = () => {
       const validatedData = contactSchema.parse(formData);
       setIsSubmitting(true);
 
-      const { error } = await supabase.functions.invoke("send-contact-email", {
+      // Save to database
+      const { error: dbError } = await supabase
+        .from('contact_messages')
+        .insert([{
+          name: validatedData.name,
+          email: validatedData.email,
+          subject: validatedData.subject,
+          message: validatedData.message,
+        }]);
+
+      if (dbError) throw dbError;
+
+      // Send email notification
+      const { error: emailError } = await supabase.functions.invoke("send-contact-email", {
         body: validatedData,
       });
 
-      if (error) throw error;
+      if (emailError) {
+        console.error("Email sending error:", emailError);
+        // Don't throw - message is already saved in database
+      }
 
       toast.success("お問い合わせありがとうございます。できるだけ早くご返信いたします。");
 
