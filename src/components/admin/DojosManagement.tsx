@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Edit2, Trash2, Plus } from "lucide-react";
+import { Edit2, Trash2, Plus, ArrowUpDown, Users } from "lucide-react";
 import { toast } from "sonner";
 import { useLanguage } from "@/contexts/LanguageContext";
 
@@ -69,12 +69,24 @@ interface Dojo {
   member_count?: number;
 }
 
+interface DojoMember {
+  id: string;
+  display_name: string | null;
+  email: string | null;
+  avatar_url: string | null;
+  relationship_type: string;
+  joined_at: string | null;
+}
+
 export default function DojosManagement() {
   const { language } = useLanguage();
   const [dojos, setDojos] = useState<Dojo[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingDojo, setEditingDojo] = useState<Dojo | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [sortByMembers, setSortByMembers] = useState<'asc' | 'desc' | null>(null);
+  const [viewingMembers, setViewingMembers] = useState<{ dojo: Dojo; members: DojoMember[] } | null>(null);
+  const [isMembersDialogOpen, setIsMembersDialogOpen] = useState(false);
   const [formData, setFormData] = useState<any>({
     name: "",
     name_ja: "",
@@ -323,6 +335,59 @@ export default function DojosManagement() {
     });
   };
 
+  const handleSortByMembers = () => {
+    const sorted = [...dojos].sort((a, b) => {
+      const countA = a.member_count || 0;
+      const countB = b.member_count || 0;
+      
+      if (sortByMembers === 'asc') {
+        return countB - countA; // 降順
+      } else {
+        return countA - countB; // 昇順
+      }
+    });
+    
+    setDojos(sorted);
+    setSortByMembers(sortByMembers === 'asc' ? 'desc' : 'asc');
+  };
+
+  const handleViewMembers = async (dojo: Dojo) => {
+    try {
+      const { data, error } = await supabase
+        .from('user_dojos')
+        .select(`
+          id,
+          relationship_type,
+          joined_at,
+          user_id,
+          profiles:user_id (
+            id,
+            display_name,
+            email,
+            avatar_url
+          )
+        `)
+        .eq('dojo_id', dojo.id);
+
+      if (error) throw error;
+
+      const members: DojoMember[] = (data || []).map((item: any) => ({
+        id: item.profiles?.id || '',
+        display_name: item.profiles?.display_name,
+        email: item.profiles?.email,
+        avatar_url: item.profiles?.avatar_url,
+        relationship_type: item.relationship_type,
+        joined_at: item.joined_at
+      }));
+
+      setViewingMembers({ dojo, members });
+      setIsMembersDialogOpen(true);
+    } catch (error) {
+      console.error('Error loading members:', error);
+      toast.error(language === "ja" ? "会員リストの取得に失敗しました" : "Failed to load members");
+    }
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -485,7 +550,17 @@ export default function DojosManagement() {
               <TableRow>
                 <TableHead>{language === "ja" ? "名前" : "Name"}</TableHead>
                 <TableHead>{language === "ja" ? "場所" : "Location"}</TableHead>
-                <TableHead>{language === "ja" ? "会員数" : "Members"}</TableHead>
+                <TableHead>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleSortByMembers}
+                    className="flex items-center gap-1 -ml-3"
+                  >
+                    {language === "ja" ? "会員数" : "Members"}
+                    <ArrowUpDown className="w-3 h-3" />
+                  </Button>
+                </TableHead>
                 <TableHead>{language === "ja" ? "ステータス" : "Status"}</TableHead>
                 <TableHead className="text-right">{language === "ja" ? "操作" : "Actions"}</TableHead>
               </TableRow>
@@ -496,9 +571,17 @@ export default function DojosManagement() {
                   <TableCell className="font-medium">{dojo.name_ja || dojo.name}</TableCell>
                   <TableCell>{dojo.location}</TableCell>
                   <TableCell>
-                    <Badge variant="outline">
-                      {dojo.member_count || 0}人
-                    </Badge>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleViewMembers(dojo)}
+                      className="flex items-center gap-2"
+                    >
+                      <Users className="w-4 h-4" />
+                      <Badge variant="outline">
+                        {dojo.member_count || 0}人
+                      </Badge>
+                    </Button>
                   </TableCell>
                   <TableCell>
                     {dojo.is_verified && (
@@ -531,6 +614,63 @@ export default function DojosManagement() {
           </Table>
         )}
       </CardContent>
+
+      {/* Members List Dialog */}
+      <Dialog open={isMembersDialogOpen} onOpenChange={setIsMembersDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              {viewingMembers?.dojo.name_ja || viewingMembers?.dojo.name} - 会員リスト
+            </DialogTitle>
+          </DialogHeader>
+          {viewingMembers && (
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                総会員数: {viewingMembers.members.length}人
+              </p>
+              {viewingMembers.members.length === 0 ? (
+                <p className="text-center py-8 text-muted-foreground">
+                  この道場にはまだ会員がいません
+                </p>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>名前</TableHead>
+                      <TableHead>メールアドレス</TableHead>
+                      <TableHead>関係</TableHead>
+                      <TableHead>参加日</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {viewingMembers.members.map((member) => (
+                      <TableRow key={member.id}>
+                        <TableCell className="font-medium">
+                          {member.display_name || member.email || '名前なし'}
+                        </TableCell>
+                        <TableCell className="text-sm text-muted-foreground">
+                          {member.email || '-'}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="secondary">
+                            {member.relationship_type}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-sm">
+                          {member.joined_at 
+                            ? new Date(member.joined_at).toLocaleDateString('ja-JP')
+                            : '-'
+                          }
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }
