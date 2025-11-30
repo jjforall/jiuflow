@@ -3371,32 +3371,62 @@ const MyPage = () => {
                   </div>
                 </div>
 
-                {/* Incentive Message */}
+                {/* Referral System Benefits */}
                 <div className="relative overflow-hidden rounded-xl bg-gradient-to-r from-primary/20 via-purple-500/20 to-pink-500/20 p-6 border border-primary/30">
                   <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-3xl"></div>
                   <div className="absolute bottom-0 left-0 w-32 h-32 bg-purple-500/10 rounded-full blur-3xl"></div>
-                  <div className="relative space-y-3">
+                  <div className="relative space-y-4">
                     <div className="flex items-center gap-2">
-                      <span className="text-3xl">🎁</span>
+                      <span className="text-3xl">✨</span>
                       <h4 className="font-bold text-lg">
-                        {language === "ja" ? "特別報酬について" : "Special Rewards"}
+                        {language === "ja" ? "紹介システムの魅力" : "Referral System Benefits"}
                       </h4>
                     </div>
-                    <p className="text-sm leading-relaxed">
-                      {language === "ja" 
-                        ? "各コードで3人以上招待すると、限定の特別動画が視聴できます！合計6人招待すれば、2つの特別動画コレクションをアンロック🎬" 
-                        : "Invite 3+ friends with each code to unlock exclusive special videos! Invite 6 total to unlock both special video collections 🎬"}
-                    </p>
-                    <div className="flex flex-wrap gap-2 pt-2">
-                      <Badge variant="outline" className="text-xs">
-                        💎 {language === "ja" ? "限定コンテンツ" : "Exclusive Content"}
-                      </Badge>
-                      <Badge variant="outline" className="text-xs">
-                        🏆 {language === "ja" ? "永久アクセス" : "Lifetime Access"}
-                      </Badge>
-                      <Badge variant="outline" className="text-xs">
-                        🎯 {language === "ja" ? "高度なテクニック" : "Advanced Techniques"}
-                      </Badge>
+                    <div className="space-y-3">
+                      <div className="flex items-start gap-3">
+                        <span className="text-2xl flex-shrink-0">🥋</span>
+                        <div>
+                          <p className="font-medium text-sm">
+                            {language === "ja" ? "道場の仲間を特別価格で招待" : "Invite Dojo Friends at Special Price"}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {language === "ja" ? "道場の仲間なら月額980円の特別価格" : "Only ¥980/month for dojo members"}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        <span className="text-2xl flex-shrink-0">👥</span>
+                        <div>
+                          <p className="font-medium text-sm">
+                            {language === "ja" ? "友達も割引価格で招待可能" : "Invite Friends at Discounted Price"}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {language === "ja" ? "その他の友達も月額1900円で招待" : "¥1900/month for other friends"}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        <span className="text-2xl flex-shrink-0">🎬</span>
+                        <div>
+                          <p className="font-medium text-sm">
+                            {language === "ja" ? "限定テクニック動画を解放" : "Unlock Exclusive Technique Videos"}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {language === "ja" ? "各コードで3人招待すると特別動画が視聴可能" : "3 invites per code unlocks special videos"}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        <span className="text-2xl flex-shrink-0">💪</span>
+                        <div>
+                          <p className="font-medium text-sm">
+                            {language === "ja" ? "仲間と一緒に成長" : "Grow Together with Friends"}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {language === "ja" ? "友達を誘って、一緒に柔術の技術を磨きましょう" : "Invite friends and improve your BJJ skills together"}
+                          </p>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
