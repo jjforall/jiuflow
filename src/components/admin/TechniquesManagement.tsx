@@ -72,6 +72,7 @@ export const TechniquesManagement = () => {
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [isTranslating, setIsTranslating] = useState(false);
   const [isGeneratingThumbnails, setIsGeneratingThumbnails] = useState(false);
+  const [isBulkUpdating, setIsBulkUpdating] = useState(false);
   const [editingCell, setEditingCell] = useState<{ id: string; field: string } | null>(null);
   const [editValue, setEditValue] = useState<string>("");
   const [hashtagEditValue, setHashtagEditValue] = useState<string>("");
@@ -794,6 +795,110 @@ export const TechniquesManagement = () => {
     window.location.reload();
   };
 
+  const capitalizeWords = (text: string): string => {
+    return text
+      .split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ');
+  };
+
+  const generateHashtags = (name: string, category: string): string[] => {
+    // 除外する前置詞や接続詞
+    const excludeWords = ['from', 'to', 'the', 'a', 'an', 'of', 'in', 'on', 'at', 'with', 'and', 'or'];
+    
+    // 英語名から単語を抽出
+    const words = name
+      .toLowerCase()
+      .split(' ')
+      .filter(word => !excludeWords.includes(word) && word.length > 2);
+    
+    // ユニークな単語のみを取得
+    const uniqueWords = Array.from(new Set(words));
+    
+    // カテゴリーを追加
+    const hashtags = [...uniqueWords];
+    
+    // カテゴリーマッピング
+    const categoryMap: Record<string, string> = {
+      'submission': 'submission',
+      'control': 'control',
+      'guard-pass': 'pass',
+      'pull': 'sweep'
+    };
+    
+    const categoryTag = categoryMap[category] || category;
+    if (!hashtags.includes(categoryTag)) {
+      hashtags.push(categoryTag);
+    }
+    
+    return hashtags.map(tag => `#${tag}`);
+  };
+
+  const handleBulkUpdate = async () => {
+    try {
+      setIsBulkUpdating(true);
+      
+      // 全テクニックを取得
+      const { data: allTechniques, error } = await supabase
+        .from('techniques')
+        .select('*')
+        .order('display_order');
+      
+      if (error) throw error;
+      if (!allTechniques) {
+        toast.info('更新する技術がありません');
+        return;
+      }
+      
+      let updateCount = 0;
+      
+      for (const technique of allTechniques) {
+        const updates: Partial<Technique> = {};
+        let needsUpdate = false;
+        
+        // 英語名を capitalize
+        const capitalizedName = capitalizeWords(technique.name);
+        if (capitalizedName !== technique.name) {
+          updates.name = capitalizedName;
+          needsUpdate = true;
+        }
+        
+        // ハッシュタグがない場合は自動生成
+        if (!technique.hashtags || technique.hashtags.length === 0) {
+          updates.hashtags = generateHashtags(capitalizedName, technique.category);
+          needsUpdate = true;
+        }
+        
+        if (needsUpdate) {
+          const { error: updateError } = await supabase
+            .from('techniques')
+            .update(updates)
+            .eq('id', technique.id);
+          
+          if (updateError) {
+            console.error(`Failed to update ${technique.name}:`, updateError);
+          } else {
+            updateCount++;
+          }
+        }
+      }
+      
+      setIsBulkUpdating(false);
+      
+      toast.success('一括更新完了', {
+        description: `${updateCount}件の技術を更新しました`
+      });
+      
+      // リフレッシュ
+      window.location.reload();
+    } catch (error: unknown) {
+      setIsBulkUpdating(false);
+      toast.error('一括更新に失敗しました', {
+        description: error instanceof Error ? error.message : '不明なエラー'
+      });
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -1208,6 +1313,13 @@ export const TechniquesManagement = () => {
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-semibold">技術管理</h2>
         <div className="flex gap-2">
+          <Button 
+            onClick={handleBulkUpdate}
+            variant="outline"
+            disabled={isBulkUpdating}
+          >
+            {isBulkUpdating ? '一括更新中...' : '名前・タグ一括更新'}
+          </Button>
           <Button 
             onClick={handleGenerateMissingThumbnails}
             variant="outline"
