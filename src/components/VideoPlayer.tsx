@@ -24,6 +24,8 @@ export const VideoPlayer = ({ videoUrl, autoPlay = true, thumbnailUrl, onPlay }:
     const video = videoRef.current;
     if (!video) return;
 
+    const progressKey = `video-progress:${videoUrl}`;
+
     // Setup event listeners for loading states
     const handleLoadStart = () => setIsLoading(true);
     const handleCanPlay = () => setIsLoading(false);
@@ -33,9 +35,19 @@ export const VideoPlayer = ({ videoUrl, autoPlay = true, thumbnailUrl, onPlay }:
       onPlay?.();
     };
 
+    const handleTimeUpdate = () => {
+      try {
+        if (!video.duration || video.duration < 5) return;
+        sessionStorage.setItem(progressKey, video.currentTime.toString());
+      } catch (e) {
+        console.log('Unable to save video progress:', e);
+      }
+    };
+
     video.addEventListener('loadstart', handleLoadStart);
     video.addEventListener('canplay', handleCanPlay);
     video.addEventListener('playing', handlePlaying);
+    video.addEventListener('timeupdate', handleTimeUpdate);
 
     // Check if the video URL is an HLS stream (.m3u8)
     const isHLS = videoUrl.includes('.m3u8');
@@ -130,6 +142,7 @@ export const VideoPlayer = ({ videoUrl, autoPlay = true, thumbnailUrl, onPlay }:
         video.removeEventListener('loadstart', handleLoadStart);
         video.removeEventListener('canplay', handleCanPlay);
         video.removeEventListener('playing', handlePlaying);
+        video.removeEventListener('timeupdate', handleTimeUpdate);
         if (hlsRef.current) {
           hlsRef.current.destroy();
           hlsRef.current = null;
@@ -153,8 +166,39 @@ export const VideoPlayer = ({ videoUrl, autoPlay = true, thumbnailUrl, onPlay }:
       video.removeEventListener('loadstart', handleLoadStart);
       video.removeEventListener('canplay', handleCanPlay);
       video.removeEventListener('playing', handlePlaying);
+      video.removeEventListener('timeupdate', handleTimeUpdate);
     };
-  }, [videoUrl, autoPlay]);
+  }, [videoUrl, autoPlay, language, onPlay]);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    const progressKey = `video-progress:${videoUrl}`;
+
+    const restoreProgress = () => {
+      try {
+        const saved = sessionStorage.getItem(progressKey);
+        if (!saved) return;
+        const time = parseFloat(saved);
+        if (Number.isNaN(time) || time <= 0) return;
+        if (video.duration && time >= video.duration - 1) return;
+        video.currentTime = time;
+      } catch (e) {
+        console.log('Unable to restore video progress:', e);
+      }
+    };
+
+    if (video.readyState >= 1) {
+      restoreProgress();
+    } else {
+      video.addEventListener('loadedmetadata', restoreProgress);
+    }
+
+    return () => {
+      video.removeEventListener('loadedmetadata', restoreProgress);
+    };
+  }, [videoUrl]);
 
 
   const changeQuality = (levelIndex: number) => {
