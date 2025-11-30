@@ -1773,56 +1773,97 @@ const MyPage = () => {
                         )}
                       </div>
                       {editingField === 'favorite_fighters' ? (
-                        <div className="space-y-3">
-                          {(editValues.favorite_fighters || []).map((fighter: string, index: number) => (
-                            <div key={index} className="flex items-center gap-2 p-3 bg-background rounded border">
-                              <Input
-                                value={fighter}
-                                onChange={(e) => {
-                                  const newFighters = [...editValues.favorite_fighters];
-                                  newFighters[index] = e.target.value;
-                                  setEditValues({ ...editValues, favorite_fighters: newFighters });
-                                }}
-                                placeholder={language === "ja" ? "選手名" : "Fighter name"}
-                                className="flex-1 h-12"
-                              />
-                              <Button 
-                                size="sm" 
-                                variant="ghost" 
-                                onClick={() => {
-                                  const newFighters = editValues.favorite_fighters.filter((_: any, i: number) => i !== index);
-                                  setEditValues({ ...editValues, favorite_fighters: newFighters });
-                                }}
-                              >
-                                <X className="w-4 h-4" />
-                              </Button>
+                        <div className="space-y-4">
+                          <div className="p-3 bg-background rounded border">
+                            <h4 className="text-sm font-medium mb-3">{language === "ja" ? "よく選ばれる選手" : "Popular Fighters"}</h4>
+                            <div className="grid grid-cols-2 gap-2 max-h-[300px] overflow-y-auto">
+                              {[
+                                "ホジェー・グレイシー", "ヒクソン・グレイシー", "ヘンゾ・グレイシー", "ホイラー・グレイシー",
+                                "マルセロ・ガルシア", "ゴードン・ライアン", "ギャリー・トナン", "ニッキー・ライアン",
+                                "ミカエル・ムシュメシ", "フェリペ・ペナ", "ブカシャ兄弟", "アンドレ・ガウヴァオ",
+                                "ラファエル・メンデス", "コブリンハ", "ルーカス・レプリ", "レアンドロ・ロー",
+                                "カイオ・テハ", "ジョアオ・ミヤオ", "パウロ・ミヤオ", "ハファエル・ロバート",
+                                "ブルーノ・マルファシーニ", "ギジェルミ・メンデス", "ミヤオ兄弟", "ケーナン・コーネリアス"
+                              ].map((fighter) => {
+                                const isSelected = editValues.favorite_fighters?.includes(fighter);
+                                return (
+                                  <Button
+                                    key={fighter}
+                                    size="sm"
+                                    variant={isSelected ? "default" : "outline"}
+                                    onClick={() => {
+                                      const current = editValues.favorite_fighters || [];
+                                      if (isSelected) {
+                                        setEditValues({ 
+                                          ...editValues, 
+                                          favorite_fighters: current.filter((f: string) => f !== fighter)
+                                        });
+                                      } else {
+                                        setEditValues({ 
+                                          ...editValues, 
+                                          favorite_fighters: [...current, fighter]
+                                        });
+                                      }
+                                    }}
+                                    className="justify-start text-left h-auto py-2"
+                                  >
+                                    {isSelected && <Check className="w-3 h-3 mr-1" />}
+                                    {fighter}
+                                  </Button>
+                                );
+                              })}
                             </div>
-                          ))}
-                          <Button 
-                            size="sm" 
-                            variant="outline" 
-                            onClick={() => setEditValues({ 
-                              ...editValues, 
-                              favorite_fighters: [...(editValues.favorite_fighters || []), '']
-                            })}
-                            className="w-full gap-2"
-                          >
-                            <Plus className="w-4 h-4" />
-                            {language === "ja" ? "選手を追加" : "Add Fighter"}
-                          </Button>
+                          </div>
+                          
+                          <div className="p-3 bg-background rounded border">
+                            <h4 className="text-sm font-medium mb-2">{language === "ja" ? "カスタム入力" : "Custom Input"}</h4>
+                            <div className="flex gap-2">
+                              <Input
+                                placeholder={language === "ja" ? "選手名を入力" : "Enter fighter name"}
+                                className="h-12"
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter' && e.currentTarget.value.trim()) {
+                                    const current = editValues.favorite_fighters || [];
+                                    if (!current.includes(e.currentTarget.value.trim())) {
+                                      setEditValues({ 
+                                        ...editValues, 
+                                        favorite_fighters: [...current, e.currentTarget.value.trim()]
+                                      });
+                                    }
+                                    e.currentTarget.value = '';
+                                  }
+                                }}
+                              />
+                            </div>
+                          </div>
+
+                          {editValues.favorite_fighters && editValues.favorite_fighters.length > 0 && (
+                            <div className="p-3 bg-background rounded border">
+                              <h4 className="text-sm font-medium mb-2">{language === "ja" ? "選択済み" : "Selected"}</h4>
+                              <div className="flex flex-wrap gap-2">
+                                {editValues.favorite_fighters.map((fighter: string, index: number) => (
+                                  <Badge key={index} variant="secondary" className="gap-1">
+                                    {fighter}
+                                    <X 
+                                      className="w-3 h-3 cursor-pointer" 
+                                      onClick={() => {
+                                        const newFighters = editValues.favorite_fighters.filter((_: string, i: number) => i !== index);
+                                        setEditValues({ ...editValues, favorite_fighters: newFighters });
+                                      }}
+                                    />
+                                  </Badge>
+                                ))}
+                              </div>
+                            </div>
+                          )}
                         </div>
                       ) : (
                         profile?.favorite_fighters && profile.favorite_fighters.length > 0 ? (
-                          <div className="grid gap-3">
+                          <div className="flex flex-wrap gap-2">
                             {profile.favorite_fighters.map((fighter, index) => (
-                              <div key={index} className="p-3 bg-background rounded border border-primary/20">
-                                <div className="flex items-start gap-2">
-                                  <span className="text-2xl">👤</span>
-                                  <div className="flex-1">
-                                    <div className="font-semibold text-primary">{fighter}</div>
-                                  </div>
-                                </div>
-                              </div>
+                              <Badge key={index} variant="secondary" className="text-sm py-1.5 px-3">
+                                {fighter}
+                              </Badge>
                             ))}
                           </div>
                         ) : (
@@ -1857,56 +1898,97 @@ const MyPage = () => {
                         )}
                       </div>
                       {editingField === 'favorite_techniques' ? (
-                        <div className="space-y-3">
-                          {(editValues.favorite_techniques || []).map((technique: string, index: number) => (
-                            <div key={index} className="flex items-center gap-2 p-3 bg-background rounded border">
-                              <Input
-                                value={technique}
-                                onChange={(e) => {
-                                  const newTechniques = [...editValues.favorite_techniques];
-                                  newTechniques[index] = e.target.value;
-                                  setEditValues({ ...editValues, favorite_techniques: newTechniques });
-                                }}
-                                placeholder={language === "ja" ? "技名" : "Technique name"}
-                                className="flex-1 h-12"
-                              />
-                              <Button 
-                                size="sm" 
-                                variant="ghost" 
-                                onClick={() => {
-                                  const newTechniques = editValues.favorite_techniques.filter((_: any, i: number) => i !== index);
-                                  setEditValues({ ...editValues, favorite_techniques: newTechniques });
-                                }}
-                              >
-                                <X className="w-4 h-4" />
-                              </Button>
+                        <div className="space-y-4">
+                          <div className="p-3 bg-background rounded border">
+                            <h4 className="text-sm font-medium mb-3">{language === "ja" ? "よく選ばれる技" : "Popular Techniques"}</h4>
+                            <div className="grid grid-cols-2 gap-2 max-h-[300px] overflow-y-auto">
+                              {[
+                                "三角絞め", "腕十字", "キムラロック", "アームバー", "チョークスリーパー",
+                                "ギロチンチョーク", "リアネイキッドチョーク", "オモプラータ", "ダースチョーク",
+                                "デラヒーバガード", "スパイダーガード", "バタフライガード", "ラッソガード",
+                                "ベリンボロ", "50/50ガード", "Xガード", "シングルレッグX", "レッグドラッグ",
+                                "ヒールフック", "トーホールド", "アキレスロック", "ニーバー", "クルシフィックス",
+                                "バックテイク", "パスガード", "スイープ", "マウントポジション"
+                              ].map((technique) => {
+                                const isSelected = editValues.favorite_techniques?.includes(technique);
+                                return (
+                                  <Button
+                                    key={technique}
+                                    size="sm"
+                                    variant={isSelected ? "default" : "outline"}
+                                    onClick={() => {
+                                      const current = editValues.favorite_techniques || [];
+                                      if (isSelected) {
+                                        setEditValues({ 
+                                          ...editValues, 
+                                          favorite_techniques: current.filter((t: string) => t !== technique)
+                                        });
+                                      } else {
+                                        setEditValues({ 
+                                          ...editValues, 
+                                          favorite_techniques: [...current, technique]
+                                        });
+                                      }
+                                    }}
+                                    className="justify-start text-left h-auto py-2"
+                                  >
+                                    {isSelected && <Check className="w-3 h-3 mr-1" />}
+                                    {technique}
+                                  </Button>
+                                );
+                              })}
                             </div>
-                          ))}
-                          <Button 
-                            size="sm" 
-                            variant="outline" 
-                            onClick={() => setEditValues({ 
-                              ...editValues, 
-                              favorite_techniques: [...(editValues.favorite_techniques || []), '']
-                            })}
-                            className="w-full gap-2"
-                          >
-                            <Plus className="w-4 h-4" />
-                            {language === "ja" ? "技を追加" : "Add Technique"}
-                          </Button>
+                          </div>
+                          
+                          <div className="p-3 bg-background rounded border">
+                            <h4 className="text-sm font-medium mb-2">{language === "ja" ? "カスタム入力" : "Custom Input"}</h4>
+                            <div className="flex gap-2">
+                              <Input
+                                placeholder={language === "ja" ? "技名を入力" : "Enter technique name"}
+                                className="h-12"
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter' && e.currentTarget.value.trim()) {
+                                    const current = editValues.favorite_techniques || [];
+                                    if (!current.includes(e.currentTarget.value.trim())) {
+                                      setEditValues({ 
+                                        ...editValues, 
+                                        favorite_techniques: [...current, e.currentTarget.value.trim()]
+                                      });
+                                    }
+                                    e.currentTarget.value = '';
+                                  }
+                                }}
+                              />
+                            </div>
+                          </div>
+
+                          {editValues.favorite_techniques && editValues.favorite_techniques.length > 0 && (
+                            <div className="p-3 bg-background rounded border">
+                              <h4 className="text-sm font-medium mb-2">{language === "ja" ? "選択済み" : "Selected"}</h4>
+                              <div className="flex flex-wrap gap-2">
+                                {editValues.favorite_techniques.map((technique: string, index: number) => (
+                                  <Badge key={index} variant="secondary" className="gap-1">
+                                    {technique}
+                                    <X 
+                                      className="w-3 h-3 cursor-pointer" 
+                                      onClick={() => {
+                                        const newTechniques = editValues.favorite_techniques.filter((_: string, i: number) => i !== index);
+                                        setEditValues({ ...editValues, favorite_techniques: newTechniques });
+                                      }}
+                                    />
+                                  </Badge>
+                                ))}
+                              </div>
+                            </div>
+                          )}
                         </div>
                       ) : (
                         profile?.favorite_techniques && profile.favorite_techniques.length > 0 ? (
-                          <div className="grid gap-3">
+                          <div className="flex flex-wrap gap-2">
                             {profile.favorite_techniques.map((technique, index) => (
-                              <div key={index} className="p-3 bg-background rounded border border-primary/20">
-                                <div className="flex items-start gap-2">
-                                  <span className="text-2xl">🥋</span>
-                                  <div className="flex-1">
-                                    <div className="font-semibold text-primary">{technique}</div>
-                                  </div>
-                                </div>
-                              </div>
+                              <Badge key={index} variant="secondary" className="text-sm py-1.5 px-3">
+                                {technique}
+                              </Badge>
                             ))}
                           </div>
                         ) : (
