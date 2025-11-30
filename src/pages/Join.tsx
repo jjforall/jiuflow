@@ -14,6 +14,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
 import { Eye } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 
 const useCountdown = () => {
   const [timeLeft, setTimeLeft] = useState({
@@ -127,6 +129,11 @@ const Join = () => {
   const [referralPlanType, setReferralPlanType] = useState<'founder' | 'muratabros' | 'referral'>('referral');
   const [viewCount, setViewCount] = useState(0);
   const [isComposing, setIsComposing] = useState(false);
+  const [signupDialogOpen, setSignupDialogOpen] = useState(false);
+  const [signupEmail, setSignupEmail] = useState("");
+  const [signupPassword, setSignupPassword] = useState("");
+  const [isSigningUp, setIsSigningUp] = useState(false);
+  const [pendingCheckout, setPendingCheckout] = useState<{priceId: string; isSubscription: boolean} | null>(null);
   
   const { isLoading: authLoading, user } = useAuth();
   const { subscribed, loading: subscriptionLoading } = useSubscription();
@@ -240,17 +247,9 @@ const Join = () => {
     const { data: { session } } = await supabase.auth.getSession();
     
     if (!session) {
-      toast.error(
-        language === "ja" 
-          ? "ログインが必要です" 
-          : "Please log in first",
-        {
-          description: language === "ja"
-            ? "決済を行うにはログインしてください"
-            : "You need to log in to complete payment",
-        }
-      );
-      navigate("/login");
+      // Show signup dialog instead of error
+      setPendingCheckout({ priceId, isSubscription });
+      setSignupDialogOpen(true);
       return;
     }
 
@@ -276,6 +275,79 @@ const Join = () => {
       });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleSignUp = async () => {
+    if (!signupEmail || !signupPassword) {
+      toast.error(
+        language === "ja" ? "入力エラー" : "Input Error",
+        {
+          description: language === "ja" 
+            ? "メールアドレスとパスワードを入力してください" 
+            : "Please enter email and password"
+        }
+      );
+      return;
+    }
+
+    if (signupPassword.length < 6) {
+      toast.error(
+        language === "ja" ? "パスワードエラー" : "Password Error",
+        {
+          description: language === "ja" 
+            ? "パスワードは6文字以上で入力してください" 
+            : "Password must be at least 6 characters"
+        }
+      );
+      return;
+    }
+
+    setIsSigningUp(true);
+    try {
+      const redirectUrl = `${window.location.origin}/join`;
+      const { error } = await supabase.auth.signUp({
+        email: signupEmail,
+        password: signupPassword,
+        options: {
+          emailRedirectTo: redirectUrl
+        }
+      });
+
+      if (error) throw error;
+
+      // Wait for session to be established
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (session && pendingCheckout) {
+        toast.success(
+          language === "ja" ? "登録完了" : "Registration Complete",
+          {
+            description: language === "ja" 
+              ? "決済画面に移動します..." 
+              : "Redirecting to payment..."
+          }
+        );
+        
+        setSignupDialogOpen(false);
+        
+        // Proceed with checkout
+        setTimeout(() => {
+          handleCheckout(pendingCheckout.priceId, pendingCheckout.isSubscription);
+        }, 1000);
+      }
+    } catch (error: any) {
+      console.error("Signup error:", error);
+      toast.error(
+        language === "ja" ? "登録エラー" : "Registration Error",
+        {
+          description: error.message || (language === "ja" 
+            ? "登録に失敗しました" 
+            : "Registration failed")
+        }
+      );
+    } finally {
+      setIsSigningUp(false);
     }
   };
 
@@ -790,6 +862,97 @@ const Join = () => {
           </>
         </div>
       </main>
+
+      {/* Signup Dialog */}
+      <Dialog open={signupDialogOpen} onOpenChange={setSignupDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-2xl">
+              {language === "ja" ? "新規登録" : "Sign Up"}
+            </DialogTitle>
+            <DialogDescription>
+              {language === "ja" 
+                ? "アカウントを作成して、決済を完了させましょう" 
+                : "Create an account to complete your payment"}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="signup-email">
+                {language === "ja" ? "メールアドレス" : "Email"}
+              </Label>
+              <Input
+                id="signup-email"
+                type="email"
+                placeholder="you@example.com"
+                value={signupEmail}
+                onChange={(e) => setSignupEmail(e.target.value)}
+                disabled={isSigningUp}
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="signup-password">
+                {language === "ja" ? "パスワード（6文字以上）" : "Password (6+ characters)"}
+              </Label>
+              <Input
+                id="signup-password"
+                type="password"
+                placeholder="••••••"
+                value={signupPassword}
+                onChange={(e) => setSignupPassword(e.target.value)}
+                disabled={isSigningUp}
+              />
+            </div>
+
+            {referralCode && (
+              <div className="p-3 bg-primary/10 rounded-lg">
+                <p className="text-sm">
+                  {language === "ja" ? "紹介コード: " : "Referral Code: "}
+                  <span className="font-medium">{referralCode}</span>
+                </p>
+              </div>
+            )}
+          </div>
+
+          <div className="flex gap-3">
+            <Button
+              variant="outline"
+              onClick={() => setSignupDialogOpen(false)}
+              disabled={isSigningUp}
+              className="flex-1"
+            >
+              {language === "ja" ? "キャンセル" : "Cancel"}
+            </Button>
+            <Button
+              onClick={handleSignUp}
+              disabled={isSigningUp}
+              className="flex-1"
+            >
+              {isSigningUp 
+                ? (language === "ja" ? "登録中..." : "Signing up...") 
+                : (language === "ja" ? "登録して決済へ" : "Sign Up & Checkout")}
+            </Button>
+          </div>
+
+          <p className="text-xs text-center text-muted-foreground mt-2">
+            {language === "ja" 
+              ? "既にアカウントをお持ちの方は " 
+              : "Already have an account? "}
+            <button
+              onClick={() => {
+                setSignupDialogOpen(false);
+                navigate("/login");
+              }}
+              className="text-primary hover:underline"
+            >
+              {language === "ja" ? "ログイン" : "Log in"}
+            </button>
+          </p>
+        </DialogContent>
+      </Dialog>
+
       <Footer />
     </div>
   );
