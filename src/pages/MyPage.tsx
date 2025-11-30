@@ -1622,13 +1622,19 @@ const MyPage = () => {
                           {(editValues.titles || []).map((title: any, index: number) => {
                             const organizationTitles: Record<string, string[]> = {
                               "ADCC": ["World Champion", "Continental Champion", "Trials Winner"],
-                              "IBJJF": ["World Champion", "Pan Champion", "European Champion", "Asian Champion", "Brazilian Nationals Champion"],
+                              "IBJJF": ["World Champion", "Pan Champion", "European Champion", "Asian Champion", "Brazilian Nationals Champion", "World Master Champion"],
                               "Abu Dhabi Pro": ["Grand Slam Champion", "World Pro Champion", "Continental Pro Champion"],
+                              "JBJJF": ["全日本選手権", "アジアオープン", "東日本選手権", "西日本選手権", "関東オープン", "関西オープン"],
+                              "コパ・ジアパン": ["アダルト優勝", "マスター優勝", "シニア優勝"],
+                              "DUMAU": ["ライトコンタクトトーナメント優勝", "グランドスラム優勝"],
                               "Polaris": ["Champion", "Contender"],
                               "ONE Championship": ["Champion", "Interim Champion"],
                               "QUINTET": ["Team Champion"],
                               "JJWL": ["Team Champion"],
                               "Combat Jiu-Jitsu Worlds": ["Champion"],
+                              "Grappling Industries": ["Champion"],
+                              "SJJJF": ["全日本選手権", "関東選手権"],
+                              "パンパシフィック選手権": ["Champion"],
                               "その他": []
                             };
 
@@ -1651,11 +1657,17 @@ const MyPage = () => {
                                       <SelectItem value="ADCC">ADCC</SelectItem>
                                       <SelectItem value="IBJJF">IBJJF</SelectItem>
                                       <SelectItem value="Abu Dhabi Pro">Abu Dhabi Pro</SelectItem>
+                                      <SelectItem value="JBJJF">JBJJF</SelectItem>
+                                      <SelectItem value="コパ・ジアパン">コパ・ジアパン</SelectItem>
+                                      <SelectItem value="DUMAU">DUMAU</SelectItem>
                                       <SelectItem value="Polaris">Polaris</SelectItem>
                                       <SelectItem value="ONE Championship">ONE Championship</SelectItem>
                                       <SelectItem value="QUINTET">QUINTET</SelectItem>
                                       <SelectItem value="JJWL">JJWL</SelectItem>
                                       <SelectItem value="Combat Jiu-Jitsu Worlds">Combat Jiu-Jitsu Worlds</SelectItem>
+                                      <SelectItem value="Grappling Industries">Grappling Industries</SelectItem>
+                                      <SelectItem value="SJJJF">SJJJF</SelectItem>
+                                      <SelectItem value="パンパシフィック選手権">パンパシフィック選手権</SelectItem>
                                       <SelectItem value="その他">{language === "ja" ? "その他" : "Other"}</SelectItem>
                                     </SelectContent>
                                   </Select>
