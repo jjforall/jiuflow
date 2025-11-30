@@ -215,6 +215,35 @@ export type Database = {
           },
         ]
       }
+      celebrity_follows: {
+        Row: {
+          celebrity_id: string
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          celebrity_id: string
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          celebrity_id?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "celebrity_follows_celebrity_id_fkey"
+            columns: ["celebrity_id"]
+            isOneToOne: false
+            referencedRelation: "celebrities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contact_messages: {
         Row: {
           created_at: string
