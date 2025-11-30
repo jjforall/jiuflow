@@ -2971,29 +2971,117 @@ const MyPage = () => {
               </CardHeader>
               <CardContent className="space-y-6">
                 {/* Dojo Friends Code - 980円 */}
-                <div className="p-4 border border-primary/20 rounded-lg bg-primary/5">
-                  <div className="flex items-center justify-between mb-3">
-                    <div>
-                      <h3 className="font-semibold text-primary">
-                        {language === "ja" ? "🥋 道場内の友達用" : "🥋 Dojo Friends"}
-                      </h3>
-                      <p className="text-xs text-muted-foreground">
-                        {language === "ja" ? "Founder Plan特別値引き - ¥980" : "Founder Plan Special - ¥980"}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-2xl font-bold">{dojoFriendsUses}</div>
-                      <div className="text-xs text-muted-foreground">
-                        {language === "ja" ? "人招待" : "invites"}
+                <div className="relative p-5 border-2 border-primary/30 rounded-xl bg-gradient-to-br from-primary/10 via-primary/5 to-transparent shadow-lg hover:shadow-xl transition-all duration-300">
+                  <div className="absolute top-3 right-3">
+                    <div className="relative">
+                      <div className="text-center">
+                        <div className="text-3xl font-bold text-primary mb-1">{dojoFriendsUses}/3</div>
+                        <div className="text-xs text-muted-foreground">
+                          {language === "ja" ? "人招待" : "invites"}
+                        </div>
                       </div>
                       {dojoFriendsUses >= 3 && (
-                        <Badge variant="default" className="mt-1">
-                          🎬 {language === "ja" ? "特別動画" : "Special Video"}
-                        </Badge>
+                        <div className="absolute -top-2 -right-2 animate-bounce">
+                          <Badge variant="default" className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white border-0 shadow-lg">
+                            🎬 {language === "ja" ? "解放済" : "Unlocked"}
+                          </Badge>
+                        </div>
                       )}
                     </div>
                   </div>
-                  <div>
+                  
+                  <div className="pr-24">
+                    <h3 className="font-bold text-xl text-primary mb-1 flex items-center gap-2">
+                      🥋 {language === "ja" ? "道場内の友達用" : "Dojo Friends"}
+                    </h3>
+                    <p className="text-sm text-muted-foreground mb-3">
+                      {language === "ja" ? "Founder Plan特別値引き" : "Founder Plan Special"}
+                    </p>
+                    <div className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-full font-bold text-lg shadow-md">
+                      <span className="text-2xl">¥980</span>
+                      <span className="text-xs opacity-80 line-through">¥1,900</span>
+                    </div>
+                  </div>
+
+                  {/* Progress Bar */}
+                  <div className="mt-4 space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="font-medium">
+                        {language === "ja" ? "特別動画まで" : "To unlock"}
+                      </span>
+                      <span className="text-primary font-bold">
+                        {dojoFriendsUses >= 3 
+                          ? (language === "ja" ? "達成！" : "Achieved!") 
+                          : `${language === "ja" ? "あと" : ""} ${3 - dojoFriendsUses}${language === "ja" ? "人" : " more"}`
+                        }
+                      </span>
+                    </div>
+                    <div className="relative h-3 bg-muted rounded-full overflow-hidden">
+                      <div 
+                        className="absolute inset-y-0 left-0 bg-gradient-to-r from-primary to-primary/80 transition-all duration-500 ease-out rounded-full"
+                        style={{ width: `${Math.min((dojoFriendsUses / 3) * 100, 100)}%` }}
+                      >
+                        {dojoFriendsUses >= 3 && (
+                          <div className="absolute inset-0 bg-gradient-to-r from-yellow-400/30 to-orange-400/30 animate-pulse" />
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex justify-between text-xs text-muted-foreground">
+                      {[1, 2, 3].map((step) => (
+                        <div key={step} className="flex flex-col items-center">
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 transition-all ${
+                            dojoFriendsUses >= step 
+                              ? 'bg-primary text-primary-foreground border-primary scale-110' 
+                              : 'bg-muted border-muted-foreground/20'
+                          }`}>
+                            {dojoFriendsUses >= step ? '✓' : step}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Special Video Preview */}
+                  {dojoFriendsUses >= 2 && dojoFriendsUses < 3 && (
+                    <div className="mt-4 p-3 bg-gradient-to-r from-yellow-500/10 to-orange-500/10 border border-yellow-500/20 rounded-lg animate-pulse">
+                      <div className="flex items-center gap-2 text-sm">
+                        <span className="text-2xl">🎬</span>
+                        <div>
+                          <p className="font-bold text-foreground">
+                            {language === "ja" ? "もう少しです！" : "Almost there!"}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {language === "ja" 
+                              ? "あと1人で特別動画が見られます！" 
+                              : "One more friend to unlock special video!"}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {dojoFriendsUses >= 3 && (
+                    <div className="mt-4 p-4 bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border-2 border-yellow-500/50 rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <div className="text-4xl animate-bounce">🎉</div>
+                        <div className="flex-1">
+                          <p className="font-bold text-lg">
+                            {language === "ja" ? "おめでとうございます！" : "Congratulations!"}
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            {language === "ja" 
+                              ? "特別動画が視聴可能になりました" 
+                              : "Special videos are now available"}
+                          </p>
+                        </div>
+                        <Button className="bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white border-0">
+                          {language === "ja" ? "今すぐ見る" : "Watch Now"}
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="mt-4">
                     <p className="text-xs text-muted-foreground mb-2">
                       {language === "ja" ? "道場用コード" : "Dojo Code"}
                     </p>
@@ -3029,7 +3117,7 @@ const MyPage = () => {
                       </div>
                     ) : (
                       <div className="flex items-center gap-2">
-                        <code className="flex-1 p-3 bg-background rounded font-mono text-lg font-bold text-center border">
+                        <code className="flex-1 p-3 bg-background/80 backdrop-blur rounded-lg font-mono text-lg font-bold text-center border border-primary/20 shadow-inner">
                           {dojoFriendsCode || "loading..."}
                         </code>
                         <Button
@@ -3065,12 +3153,12 @@ const MyPage = () => {
                       <Input
                         value={`${window.location.origin}/join?referral=${dojoFriendsCode}`}
                         readOnly
-                        className="flex-1 text-sm"
+                        className="flex-1 text-sm bg-background/80 backdrop-blur"
                         disabled={!dojoFriendsCode}
                       />
                       <Button
                         size="sm"
-                        variant="outline"
+                        className="bg-primary hover:bg-primary/90"
                         onClick={() => {
                           navigator.clipboard.writeText(`${window.location.origin}/join?referral=${dojoFriendsCode}`);
                           toast.success(language === "ja" ? "リンクをコピーしました" : "Link copied!");
@@ -3084,29 +3172,116 @@ const MyPage = () => {
                 </div>
 
                 {/* Other Friends Code - 1900円 */}
-                <div className="p-4 border border-border rounded-lg">
-                  <div className="flex items-center justify-between mb-3">
-                    <div>
-                      <h3 className="font-semibold">
-                        {language === "ja" ? "👥 その他の友達用" : "👥 Other Friends"}
-                      </h3>
-                      <p className="text-xs text-muted-foreground">
-                        {language === "ja" ? "通常価格 - ¥1,900" : "Regular Price - ¥1,900"}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-2xl font-bold">{otherFriendsUses}</div>
-                      <div className="text-xs text-muted-foreground">
-                        {language === "ja" ? "人招待" : "invites"}
+                <div className="relative p-5 border-2 border-border rounded-xl bg-gradient-to-br from-muted/50 to-transparent shadow-md hover:shadow-lg transition-all duration-300">
+                  <div className="absolute top-3 right-3">
+                    <div className="relative">
+                      <div className="text-center">
+                        <div className="text-3xl font-bold mb-1">{otherFriendsUses}/3</div>
+                        <div className="text-xs text-muted-foreground">
+                          {language === "ja" ? "人招待" : "invites"}
+                        </div>
                       </div>
                       {otherFriendsUses >= 3 && (
-                        <Badge variant="default" className="mt-1">
-                          🎬 {language === "ja" ? "特別動画" : "Special Video"}
-                        </Badge>
+                        <div className="absolute -top-2 -right-2 animate-bounce">
+                          <Badge variant="default" className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white border-0 shadow-lg">
+                            🎬 {language === "ja" ? "解放済" : "Unlocked"}
+                          </Badge>
+                        </div>
                       )}
                     </div>
                   </div>
-                  <div>
+                  
+                  <div className="pr-24">
+                    <h3 className="font-bold text-xl mb-1 flex items-center gap-2">
+                      👥 {language === "ja" ? "その他の友達用" : "Other Friends"}
+                    </h3>
+                    <p className="text-sm text-muted-foreground mb-3">
+                      {language === "ja" ? "通常価格" : "Regular Price"}
+                    </p>
+                    <div className="inline-flex items-center gap-2 bg-foreground text-background px-4 py-2 rounded-full font-bold text-lg shadow-md">
+                      <span className="text-2xl">¥1,900</span>
+                    </div>
+                  </div>
+
+                  {/* Progress Bar */}
+                  <div className="mt-4 space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="font-medium">
+                        {language === "ja" ? "特別動画まで" : "To unlock"}
+                      </span>
+                      <span className="font-bold">
+                        {otherFriendsUses >= 3 
+                          ? (language === "ja" ? "達成！" : "Achieved!") 
+                          : `${language === "ja" ? "あと" : ""} ${3 - otherFriendsUses}${language === "ja" ? "人" : " more"}`
+                        }
+                      </span>
+                    </div>
+                    <div className="relative h-3 bg-muted rounded-full overflow-hidden">
+                      <div 
+                        className="absolute inset-y-0 left-0 bg-gradient-to-r from-foreground/80 to-foreground/60 transition-all duration-500 ease-out rounded-full"
+                        style={{ width: `${Math.min((otherFriendsUses / 3) * 100, 100)}%` }}
+                      >
+                        {otherFriendsUses >= 3 && (
+                          <div className="absolute inset-0 bg-gradient-to-r from-yellow-400/30 to-orange-400/30 animate-pulse" />
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex justify-between text-xs text-muted-foreground">
+                      {[1, 2, 3].map((step) => (
+                        <div key={step} className="flex flex-col items-center">
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 transition-all ${
+                            otherFriendsUses >= step 
+                              ? 'bg-foreground text-background border-foreground scale-110' 
+                              : 'bg-muted border-muted-foreground/20'
+                          }`}>
+                            {otherFriendsUses >= step ? '✓' : step}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Special Video Preview */}
+                  {otherFriendsUses >= 2 && otherFriendsUses < 3 && (
+                    <div className="mt-4 p-3 bg-gradient-to-r from-yellow-500/10 to-orange-500/10 border border-yellow-500/20 rounded-lg animate-pulse">
+                      <div className="flex items-center gap-2 text-sm">
+                        <span className="text-2xl">🎬</span>
+                        <div>
+                          <p className="font-bold text-foreground">
+                            {language === "ja" ? "もう少しです！" : "Almost there!"}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {language === "ja" 
+                              ? "あと1人で特別動画が見られます！" 
+                              : "One more friend to unlock special video!"}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {otherFriendsUses >= 3 && (
+                    <div className="mt-4 p-4 bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border-2 border-yellow-500/50 rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <div className="text-4xl animate-bounce">🎉</div>
+                        <div className="flex-1">
+                          <p className="font-bold text-lg">
+                            {language === "ja" ? "おめでとうございます！" : "Congratulations!"}
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            {language === "ja" 
+                              ? "特別動画が視聴可能になりました" 
+                              : "Special videos are now available"}
+                          </p>
+                        </div>
+                        <Button className="bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white border-0">
+                          {language === "ja" ? "今すぐ見る" : "Watch Now"}
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="mt-4">
                     <p className="text-xs text-muted-foreground mb-2">
                       {language === "ja" ? "あなたの紹介コード" : "Your Referral Code"}
                     </p>
@@ -3142,7 +3317,7 @@ const MyPage = () => {
                       </div>
                     ) : (
                       <div className="flex items-center gap-2">
-                        <code className="flex-1 p-3 bg-muted rounded font-mono text-lg font-bold text-center">
+                        <code className="flex-1 p-3 bg-background/80 backdrop-blur rounded-lg font-mono text-lg font-bold text-center border shadow-inner">
                           {otherFriendsCode || "loading..."}
                         </code>
                         <Button
@@ -3178,12 +3353,12 @@ const MyPage = () => {
                       <Input
                         value={`${window.location.origin}/join?referral=${otherFriendsCode}`}
                         readOnly
-                        className="flex-1 text-sm"
+                        className="flex-1 text-sm bg-background/80 backdrop-blur"
                         disabled={!otherFriendsCode}
                       />
                       <Button
                         size="sm"
-                        variant="outline"
+                        variant="default"
                         onClick={() => {
                           navigator.clipboard.writeText(`${window.location.origin}/join?referral=${otherFriendsCode}`);
                           toast.success(language === "ja" ? "リンクをコピーしました" : "Link copied!");
@@ -3196,15 +3371,34 @@ const MyPage = () => {
                   </div>
                 </div>
 
-                <div className="text-sm text-muted-foreground bg-muted/30 p-3 rounded">
-                  <p className="font-medium mb-1">
-                    {language === "ja" ? "🎁 特別特典" : "🎁 Special Reward"}
-                  </p>
-                  <p>
-                    {language === "ja" 
-                      ? "各コードで3人以上招待すると、特別動画が視聴できます！" 
-                      : "Invite 3+ friends with each code to unlock special videos!"}
-                  </p>
+                {/* Incentive Message */}
+                <div className="relative overflow-hidden rounded-xl bg-gradient-to-r from-primary/20 via-purple-500/20 to-pink-500/20 p-6 border border-primary/30">
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-3xl"></div>
+                  <div className="absolute bottom-0 left-0 w-32 h-32 bg-purple-500/10 rounded-full blur-3xl"></div>
+                  <div className="relative space-y-3">
+                    <div className="flex items-center gap-2">
+                      <span className="text-3xl">🎁</span>
+                      <h4 className="font-bold text-lg">
+                        {language === "ja" ? "特別報酬について" : "Special Rewards"}
+                      </h4>
+                    </div>
+                    <p className="text-sm leading-relaxed">
+                      {language === "ja" 
+                        ? "各コードで3人以上招待すると、限定の特別動画が視聴できます！合計6人招待すれば、2つの特別動画コレクションをアンロック🎬" 
+                        : "Invite 3+ friends with each code to unlock exclusive special videos! Invite 6 total to unlock both special video collections 🎬"}
+                    </p>
+                    <div className="flex flex-wrap gap-2 pt-2">
+                      <Badge variant="outline" className="text-xs">
+                        💎 {language === "ja" ? "限定コンテンツ" : "Exclusive Content"}
+                      </Badge>
+                      <Badge variant="outline" className="text-xs">
+                        🏆 {language === "ja" ? "永久アクセス" : "Lifetime Access"}
+                      </Badge>
+                      <Badge variant="outline" className="text-xs">
+                        🎯 {language === "ja" ? "高度なテクニック" : "Advanced Techniques"}
+                      </Badge>
+                    </div>
+                  </div>
                 </div>
               </CardContent>
             </Card>
