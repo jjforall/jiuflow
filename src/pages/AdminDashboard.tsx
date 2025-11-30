@@ -17,6 +17,7 @@ import { SubscriptionsTab } from "@/components/admin/SubscriptionsTab";
 import { PointsManagement } from "@/components/admin/PointsManagement";
 import { BeltsManagement } from "@/components/admin/BeltsManagement";
 import DojosManagement from "@/components/admin/DojosManagement";
+import { LogsTab } from "@/components/admin/LogsTab";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -196,6 +197,9 @@ const AdminDashboard = () => {
               <TabsTrigger value="belts">
                 帯管理
               </TabsTrigger>
+              <TabsTrigger value="logs">
+                ログ
+              </TabsTrigger>
             </TabsList>
 
             <TabsContent value="techniques" className="space-y-6">
@@ -224,6 +228,10 @@ const AdminDashboard = () => {
 
             <TabsContent value="belts" className="space-y-6">
               <BeltsManagement />
+            </TabsContent>
+
+            <TabsContent value="logs" className="space-y-6">
+              <LogsTab />
             </TabsContent>
           </Tabs>
         </div>
