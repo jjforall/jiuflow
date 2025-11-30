@@ -489,12 +489,16 @@ const About = () => {
                   </div>
                 </div>
 
-                {/* 濱田 */}
+                {/* 濱田 優貴 */}
                 <div className="border-l-2 border-primary pl-6 hover:bg-muted/20 p-4 -ml-4 transition-colors rounded-r-lg">
-                  <h3 className="text-2xl font-light mb-1">濱田 (Hamada)</h3>
-                  <p className="text-primary font-medium mb-2">Creative / Member</p>
-                  <p className="text-muted-foreground mb-3">映像制作・デザイン</p>
-                  <div className="flex gap-4 text-sm">
+                  <h3 className="text-2xl font-light mb-1">濱田 優貴 (Yuki Hamada)</h3>
+                  <p className="text-primary font-medium mb-2">Co-Founder / Creative</p>
+                  <p className="text-muted-foreground leading-relaxed">
+                    株式会社サイブリッジ創業者、元株式会社メルカリ取締役CINO。<br />
+                    JiuFlowではクリエイティブディレクションを担当。<br />
+                    デザイン、情報設計、AI開発を通じ、村田良蔵の技術を「見やすく、分かりやすい」形に落とし込んでいる。
+                  </p>
+                  <div className="flex gap-4 text-sm mt-3">
                     <a 
                       href="https://www.instagram.com/yukihamada/" 
                       target="_blank" 
