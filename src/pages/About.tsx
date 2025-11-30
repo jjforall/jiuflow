@@ -429,6 +429,19 @@ const About = () => {
             </div>
           </section>
 
+          {/* Contact Form Section */}
+          <section className="py-16 max-w-4xl mx-auto">
+            <div className="space-y-6">
+              <p className="text-lg">
+                ✉️ お問い合わせ、新しい技の共有、ご提案などがございましたら、<br />
+                お気軽にご連絡ください。
+              </p>
+              <div className="border border-border p-8 bg-muted/10 rounded-lg">
+                <ContactForm />
+              </div>
+            </div>
+          </section>
+
           {/* Team Section */}
           <section className="py-16 bg-muted/30">
             <div className="max-w-4xl mx-auto px-6">
@@ -537,18 +550,6 @@ const About = () => {
             </div>
           </section>
 
-          {/* Contact Form Section */}
-          <section className="py-16 max-w-4xl mx-auto">
-            <div className="space-y-6">
-              <p className="text-lg">
-                ✉️ お問い合わせ、新しい技の共有、ご提案などがございましたら、<br />
-                お気軽にご連絡ください。
-              </p>
-              <div className="border border-border p-8 bg-muted/10 rounded-lg">
-                <ContactForm />
-              </div>
-            </div>
-          </section>
         </div>
       </main>
       
