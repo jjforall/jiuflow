@@ -48,7 +48,7 @@ serve(async (req) => {
           price_data: {
             currency: "jpy",
             product_data: {
-              name: "動画投げ銭",
+              name: "JiuFlow - 動画投げ銭",
               description: message || "動画への応援",
             },
             unit_amount: amount,

@@ -46,6 +46,11 @@ serve(async (req) => {
         },
       },
       payment_method_collection: 'if_required',
+      custom_text: {
+        submit: {
+          message: "JiuFlow",
+        },
+      },
       success_url: "https://jiuflow.art/payment-success?session_id={CHECKOUT_SESSION_ID}",
       cancel_url: "https://jiuflow.art/join?canceled=true",
     });
