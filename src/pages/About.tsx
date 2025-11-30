@@ -32,7 +32,7 @@ const About = () => {
         .select("id, name, name_ja, name_pt, category");
 
       if (data) {
-        const stats: TechniqueStats[] = [
+        const allStats: TechniqueStats[] = [
           {
             category: "pull",
             count: data.filter(t => t.category === "pull").length,
@@ -54,6 +54,8 @@ const About = () => {
             techniques: data.filter(t => t.category === "submission").slice(0, 5)
           }
         ];
+        // Filter out categories with 0 count
+        const stats = allStats.filter(stat => stat.count > 0);
         setTechniqueStats(stats);
       }
       setIsLoading(false);
