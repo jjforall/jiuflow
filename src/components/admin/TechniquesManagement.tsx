@@ -59,7 +59,7 @@ export const TechniquesManagement = () => {
   const { isAdmin } = useAuth();
   const { language } = useLanguage();
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(50);
+  const [pageSize, setPageSize] = useState(20);
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [sortBy, setSortBy] = useState<"order" | "name" | "category">("order");
@@ -1433,11 +1433,22 @@ export const TechniquesManagement = () => {
                     </Popover>
                   </td>
                   <td className="px-4 py-3">
-                    <VideoThumbnail
-                      videoUrl={getVideoUrlForLanguage(technique as any, language)}
-                      className="w-32 h-20"
-                      showPlayButton
-                    />
+                    {technique.thumbnail_url ? (
+                      <img
+                        src={technique.thumbnail_url}
+                        className="w-24 h-16 object-cover rounded"
+                        loading="lazy"
+                        alt={technique.name}
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="96" height="64"%3E%3Crect fill="%23ddd" width="96" height="64"/%3E%3Ctext fill="%23999" x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle"%3ENo Image%3C/text%3E%3C/svg%3E';
+                        }}
+                      />
+                    ) : (
+                      <div className="w-24 h-16 bg-muted rounded flex items-center justify-center text-xs text-muted-foreground">
+                        No Image
+                      </div>
+                    )}
                   </td>
                   <td className="px-4 py-3 text-right">
                     <div className="flex gap-2 justify-end">
