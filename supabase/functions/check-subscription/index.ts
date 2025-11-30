@@ -95,6 +95,17 @@ serve(async (req) => {
       }
     }
 
+    // Jiuflow専用のPrice IDs
+    const JIUFLOW_PRICE_IDS = [
+      "price_1SR3ZmDqLakc8NxkNdqL5BtO", // Founder Access - ¥980/month
+      "price_1SNQoeDqLakc8NxkEUVTTs3k", // Monthly Plan - ¥2,900/month
+      "price_1SNQoqDqLakc8NxkOaQIL8wX", // Annual Plan - ¥29,000/year
+      "price_1SY2D0DqLakc8NxkMKonyIi8", // MURATABROS VIP - ¥50,000 one-time
+      "price_1SYK2lDqLakc8Nxkp6TBKYhT", // Referral Plan
+      "price_1SZ5L1DqLakc8NxkfciIKEr5", // Standard Monthly - ¥1,900/month
+      "price_1SZ5LKDqLakc8Nxk9uwq1aGV", // Standard Annual - ¥19,000/year
+    ];
+
     // Check for both active and trialing subscriptions
     const subscriptions = await stripe.subscriptions.list({
       customer: customerId,
@@ -102,10 +113,13 @@ serve(async (req) => {
       limit: 10,
     });
     
-    // Filter for active or trialing subscriptions
-    const activeOrTrialingSubs = subscriptions.data.filter((sub: any) => 
-      sub.status === "active" || sub.status === "trialing"
-    );
+    // Filter for active or trialing subscriptions that are Jiuflow-specific
+    const activeOrTrialingSubs = subscriptions.data.filter((sub: any) => {
+      const isActiveOrTrialing = sub.status === "active" || sub.status === "trialing";
+      const priceId = sub.items.data[0]?.price?.id;
+      const isJiuflowPrice = JIUFLOW_PRICE_IDS.includes(priceId);
+      return isActiveOrTrialing && isJiuflowPrice;
+    });
     
     const hasActiveSub = activeOrTrialingSubs.length > 0;
     let productId = null;

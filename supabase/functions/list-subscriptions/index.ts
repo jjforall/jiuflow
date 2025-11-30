@@ -88,6 +88,17 @@ serve(async (req) => {
       });
     }
 
+    // Jiuflow専用のPrice IDs
+    const JIUFLOW_PRICE_IDS = [
+      "price_1SR3ZmDqLakc8NxkNdqL5BtO", // Founder Access - ¥980/month
+      "price_1SNQoeDqLakc8NxkEUVTTs3k", // Monthly Plan - ¥2,900/month
+      "price_1SNQoqDqLakc8NxkOaQIL8wX", // Annual Plan - ¥29,000/year
+      "price_1SY2D0DqLakc8NxkMKonyIi8", // MURATABROS VIP - ¥50,000 one-time
+      "price_1SYK2lDqLakc8Nxkp6TBKYhT", // Referral Plan
+      "price_1SZ5L1DqLakc8NxkfciIKEr5", // Standard Monthly - ¥1,900/month
+      "price_1SZ5LKDqLakc8Nxk9uwq1aGV", // Standard Annual - ¥19,000/year
+    ];
+
     const stripe = new Stripe(stripeKey, {
       apiVersion: "2025-08-27.basil",
     });
@@ -101,8 +112,15 @@ serve(async (req) => {
     });
     logStep("Fetched subscriptions", { count: subscriptions.data.length });
 
+    // Filter subscriptions to only include Jiuflow ones
+    const jiuflowSubscriptions = subscriptions.data.filter((sub: Stripe.Subscription) => {
+      const priceId = sub.items.data[0]?.price?.id;
+      return JIUFLOW_PRICE_IDS.includes(priceId);
+    });
+    logStep("Filtered to Jiuflow subscriptions", { count: jiuflowSubscriptions.length });
+
     // Map subscriptions and fetch product details separately
-    const subscriptionList = await Promise.all(subscriptions.data.map(async (sub: Stripe.Subscription) => {
+    const subscriptionList = await Promise.all(jiuflowSubscriptions.map(async (sub: Stripe.Subscription) => {
       const customer = sub.customer as Stripe.Customer;
       const price = sub.items.data[0]?.price;
       
