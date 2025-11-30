@@ -24,20 +24,57 @@ const handler = async (req: Request): Promise<Response> => {
   try {
     const { name, email, subject, message }: ContactEmailRequest = await req.json();
 
-    console.log("Sending contact email from:", name, email);
+    // Validate and sanitize inputs
+    if (!name || !email || !subject || !message) {
+      return new Response(
+        JSON.stringify({ error: "All fields are required" }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        }
+      );
+    }
+
+    // Sanitize input by escaping HTML special characters
+    const escapeHtml = (text: string): string => {
+      return text
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    };
+
+    const sanitizedName = escapeHtml(name.trim().substring(0, 100));
+    const sanitizedSubject = escapeHtml(subject.trim().substring(0, 200));
+    const sanitizedMessage = escapeHtml(message.trim().substring(0, 2000));
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return new Response(
+        JSON.stringify({ error: "Invalid email format" }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        }
+      );
+    }
+
+    console.log("Sending contact email from:", sanitizedName, email);
 
     // Send notification to site owner
     const ownerEmail = await resend.emails.send({
       from: "BJJ Contact Form <onboarding@resend.dev>",
       to: ["ryozomurata@gmail.com"], // Site owner email
-      subject: `【お問い合わせ】${subject}`,
+      subject: `【お問い合わせ】${sanitizedSubject}`,
       html: `
         <h2>新しいお問い合わせが届きました</h2>
-        <p><strong>お名前:</strong> ${name}</p>
-        <p><strong>メールアドレス:</strong> ${email}</p>
-        <p><strong>件名:</strong> ${subject}</p>
+        <p><strong>お名前:</strong> ${sanitizedName}</p>
+        <p><strong>メールアドレス:</strong> ${escapeHtml(email)}</p>
+        <p><strong>件名:</strong> ${sanitizedSubject}</p>
         <p><strong>メッセージ:</strong></p>
-        <p style="white-space: pre-wrap;">${message}</p>
+        <p style="white-space: pre-wrap;">${sanitizedMessage}</p>
       `,
       reply_to: email,
     });
@@ -48,13 +85,13 @@ const handler = async (req: Request): Promise<Response> => {
       to: [email],
       subject: "お問い合わせを受け付けました",
       html: `
-        <h2>${name} 様</h2>
+        <h2>${sanitizedName} 様</h2>
         <p>お問い合わせいただきありがとうございます。</p>
         <p>以下の内容でお問い合わせを受け付けました。</p>
         <hr />
-        <p><strong>件名:</strong> ${subject}</p>
+        <p><strong>件名:</strong> ${sanitizedSubject}</p>
         <p><strong>メッセージ:</strong></p>
-        <p style="white-space: pre-wrap;">${message}</p>
+        <p style="white-space: pre-wrap;">${sanitizedMessage}</p>
         <hr />
         <p>できるだけ早くご返信させていただきます。</p>
         <p>今しばらくお待ちください。</p>
