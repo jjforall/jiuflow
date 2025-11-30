@@ -1169,8 +1169,16 @@ const MyPage = () => {
                 </div>
                 <Button 
                   variant="outline"
-                  onClick={() => window.open(`/${profile?.username || user?.id}`, '_blank')}
+                  onClick={() => {
+                    const profileUrl = profile?.username || user?.id;
+                    if (!profileUrl) {
+                      toast.error("プロフィールURLを取得できませんでした");
+                      return;
+                    }
+                    window.open(`/${profileUrl}`, '_blank');
+                  }}
                   className="gap-2 mb-4"
+                  disabled={!user?.id}
                 >
                   <ExternalLink className="w-4 h-4" />
                   {language === "ja" ? "公開プロフィール" : "View Profile"}
