@@ -109,7 +109,8 @@ const useCountdown = () => {
 // Stripe price IDs
 const PRICE_IDS = {
   founder: "price_1SR3ZmDqLakc8NxkNdqL5BtO", // ¥980/month
-  monthly: "price_1SNQoeDqLakc8NxkEUVTTs3k", // ¥2,900/month
+  campaign: "price_1SZ5O2DqLakc8Nxk0e6QYg6D", // ¥1,900/month (Campaign price - 12月限定)
+  monthly: "price_1SNQoeDqLakc8NxkEUVTTs3k", // ¥2,900/month (Regular price)
   annual: "price_1SNQoqDqLakc8NxkOaQIL8wX",  // ¥29,000/year
   muratabros: "price_1SY2D0DqLakc8NxkMKonyIi8", // ¥50,000 one-time
 };
@@ -418,6 +419,55 @@ const Join = () => {
           )}
 
           <>
+            {/* Campaign Banner - 12月限定 */}
+            {!subscribed && (
+              <div className="mb-12 relative overflow-hidden rounded-2xl animate-fade-up">
+                <div className="absolute inset-0 bg-gradient-to-br from-red-500/20 via-primary/20 to-orange-500/20" />
+                <div className="relative p-10 border-2 border-red-500/50 rounded-2xl backdrop-blur-sm">
+                  <div className="text-center space-y-4">
+                    <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-br from-red-500 to-orange-500 mb-2 shadow-2xl animate-pulse">
+                      <span className="text-4xl">🎉</span>
+                    </div>
+                    <h2 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-red-500 via-orange-500 to-yellow-500 bg-clip-text text-transparent">
+                      {language === "ja" 
+                        ? "12月限定キャンペーン！" 
+                        : "December Campaign!"}
+                    </h2>
+                    <div className="space-y-3">
+                      <p className="text-2xl md:text-3xl font-bold text-foreground">
+                        {language === "ja" 
+                          ? "1ヶ月無料 + 一生1,900円/月" 
+                          : "1 Month Free + ¥1,900/month Forever"}
+                      </p>
+                      <p className="text-lg text-muted-foreground">
+                        {language === "ja" 
+                          ? "通常2,900円 → 永久に1,900円！" 
+                          : "Regular ¥2,900 → Forever ¥1,900!"}
+                      </p>
+                      {timeLeft.days > 0 && (
+                        <div className="flex justify-center gap-4 pt-4">
+                          <div className="text-center">
+                            <div className="text-3xl md:text-4xl font-bold text-red-500">{timeLeft.days}</div>
+                            <div className="text-sm text-muted-foreground">{language === "ja" ? "日" : "Days"}</div>
+                          </div>
+                          <div className="text-3xl md:text-4xl font-bold text-muted-foreground">:</div>
+                          <div className="text-center">
+                            <div className="text-3xl md:text-4xl font-bold text-orange-500">{timeLeft.hours}</div>
+                            <div className="text-sm text-muted-foreground">{language === "ja" ? "時間" : "Hours"}</div>
+                          </div>
+                          <div className="text-3xl md:text-4xl font-bold text-muted-foreground">:</div>
+                          <div className="text-center">
+                            <div className="text-3xl md:text-4xl font-bold text-yellow-500">{timeLeft.minutes}</div>
+                            <div className="text-sm text-muted-foreground">{language === "ja" ? "分" : "Mins"}</div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div className="text-center mb-16 animate-fade-up">
               <h1 className="text-5xl md:text-6xl font-light mb-6">{t.join.title}</h1>
               <p className="text-xl text-muted-foreground font-light">
@@ -709,40 +759,56 @@ const Join = () => {
               {/* Monthly Plan - Only shown when no valid referral code */}
               {!isValidReferralCode && (
                 <div className="relative rounded-2xl group hover:shadow-2xl transition-all">
-                  <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-secondary/5 to-background rounded-2xl" />
-                  <div className="relative border-2 border-primary/50 p-10 rounded-2xl backdrop-blur-sm">
-                    <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-primary text-primary-foreground px-6 py-2 text-sm font-medium rounded-full shadow-lg z-10">
-                      {language === "ja" ? "人気" : language === "pt" ? "Popular" : "Most Popular"}
+                  <div className="absolute inset-0 bg-gradient-to-br from-red-500/10 via-orange-500/10 to-yellow-500/10 rounded-2xl" />
+                  <div className="relative border-2 border-red-500/50 p-10 rounded-2xl backdrop-blur-sm">
+                    <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-red-500 to-orange-500 text-white px-6 py-2 text-sm font-bold rounded-full shadow-lg z-10 animate-pulse">
+                      {language === "ja" ? "🔥 12月限定" : "🔥 December Only"}
                     </div>
                     <h3 className="text-3xl font-light mb-6 mt-2">
-                      {language === "ja" ? "月額プラン" : language === "pt" ? "Plano Mensal" : "Monthly Plan"}
+                      {language === "ja" ? "キャンペーンプラン" : "Campaign Plan"}
                     </h3>
                     <div className="mb-8">
-                      <div className="text-5xl font-light mb-3 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">¥2,900</div>
-                      <div className="text-base text-muted-foreground font-light">
-                        {language === "ja" ? "月額（1ヶ月無料・いつでもキャンセル可能）" : language === "pt" ? "Por mês (1 mês grátis・cancele a qualquer momento)" : "per month (1 month free・cancel anytime)"}
+                      <div className="flex items-baseline gap-3 mb-3">
+                        <div className="text-5xl font-bold bg-gradient-to-r from-red-500 to-orange-500 bg-clip-text text-transparent">¥1,900</div>
+                        <div className="text-2xl line-through text-muted-foreground">¥2,900</div>
+                      </div>
+                      <div className="space-y-1">
+                        <div className="text-base font-medium text-red-500">
+                          {language === "ja" ? "月額（永久価格・いつでもキャンセル可能）" : "per month (forever price・cancel anytime)"}
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          {language === "ja" ? "※12月中の登録で一生この価格" : "※Register in December for lifetime price"}
+                        </div>
                       </div>
                     </div>
                    <ul className="space-y-4 mb-8 text-base font-light">
                     <li className="flex items-start">
-                      <span className="mr-3 text-primary text-xl">✓</span>
-                      <span>{language === "ja" ? "全技術動画へのアクセス" : language === "pt" ? "Acesso a todos os vídeos técnicos" : "Access to all technique videos"}</span>
+                      <span className="mr-3 text-red-500 text-xl font-bold">✓</span>
+                      <span className="font-bold text-red-500">{language === "ja" ? "1ヶ月完全無料（100%オフ）" : "1 month completely free (100% off)"}</span>
+                    </li>
+                    <li className="flex items-start">
+                      <span className="mr-3 text-orange-500 text-xl font-bold">✓</span>
+                      <span className="font-bold text-orange-500">{language === "ja" ? "永久に月額1,900円（値上げなし）" : "Forever ¥1,900/month (no price increase)"}</span>
                     </li>
                     <li className="flex items-start">
                       <span className="mr-3 text-primary text-xl">✓</span>
-                      <span>{language === "ja" ? "新規コンテンツの追加" : language === "pt" ? "Novos conteúdos adicionados" : "New content additions"}</span>
+                      <span>{language === "ja" ? "全技術動画へのアクセス" : "Access to all technique videos"}</span>
                     </li>
                     <li className="flex items-start">
                       <span className="mr-3 text-primary text-xl">✓</span>
-                      <span>{language === "ja" ? "柔軟な支払い" : language === "pt" ? "Pagamento flexível" : "Flexible payment"}</span>
+                      <span>{language === "ja" ? "新規コンテンツの追加" : "New content additions"}</span>
+                    </li>
+                    <li className="flex items-start">
+                      <span className="mr-3 text-primary text-xl">✓</span>
+                      <span>{language === "ja" ? "柔軟な支払い" : "Flexible payment"}</span>
                     </li>
                   </ul>
                   <Button
-                    className="w-full h-14 text-lg bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90 shadow-lg transition-all"
-                    onClick={() => handleCheckout(PRICE_IDS.monthly, true)}
+                    className="w-full h-14 text-lg bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white shadow-lg transition-all font-bold"
+                    onClick={() => handleCheckout(PRICE_IDS.campaign, true)}
                     disabled={isLoading}
                   >
-                    {language === "ja" ? "月額で始める" : language === "pt" ? "Começar mensalmente" : "Start Monthly"}
+                    {language === "ja" ? "今すぐ始める（1ヶ月無料）" : "Start Now (1 Month Free)"}
                   </Button>
                 </div>
                 </div>
