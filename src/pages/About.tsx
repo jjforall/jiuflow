@@ -251,18 +251,62 @@ const About = () => {
 
           {/* Mission Section */}
           <section className="py-16 max-w-4xl mx-auto">
+            <h2 className="text-4xl font-light mb-8 text-center">我々が考える「いい柔術」とは。</h2>
             <div className="space-y-6 text-lg leading-relaxed">
               <p>
-                私たちは、<strong>「技術としての柔術」</strong>を映像というフォーマットで整理し、<br />
-                誰もが理解しやすく、続けやすく、そして長く強くなれる形で届けています。
-              </p>
-              <p className="space-y-2">
-                上面からの4K撮影。<br />
-                明確に見える技の流れ。<br />
-                ひとつひとつの動きに込められた意味。
+                柔術は本来、力の弱い者が強い者を制するために生まれた技術です。<br />
+                しかし、練習で怪我をしてしまったり、年齢と共に体力が落ちて続けられなくなっては意味がありません。
               </p>
               <p>
-                それらを通して、柔術の本質――「流れ・呼吸・構造・意図」――を伝えます。
+                私たちのミッションは明確です。<br />
+                <strong>「安全で、長くできて、試合でも強い柔術」</strong>を広めること。
+              </p>
+              <p>
+                無理な力に頼らず、身体の構造と理（ことわり）を使うこと。<br />
+                それは怪我のリスクを最小限に抑えるだけでなく、<br />
+                世界選手権という最高峰の舞台でも通用する「本当の強さ」に直結します。
+              </p>
+              <p>
+                JiuFlowは、その技術体系を誰もが学べる形で提供します。
+              </p>
+            </div>
+          </section>
+
+          {/* Features Section */}
+          <section className="py-16 bg-muted/30">
+            <div className="max-w-4xl mx-auto px-6">
+              <h2 className="text-4xl font-light mb-8 text-center">「見て、理解する」から、動きが変わる。</h2>
+              <div className="space-y-6 text-lg leading-relaxed mb-8">
+                <p>
+                  私たちは<strong>「技術としての柔術」</strong>を映像というフォーマットで整理し、<br />
+                  誰もが理解しやすく、続けやすく、そして確実に強くなれる形で届けています。
+                </p>
+              </div>
+              
+              <div className="grid md:grid-cols-3 gap-8 mb-8">
+                <div className="text-center space-y-3">
+                  <h3 className="text-xl font-light">上面からの4K撮影</h3>
+                  <p className="text-muted-foreground">
+                    相手との位置関係、重心の移動を明確に可視化。
+                  </p>
+                </div>
+                <div className="text-center space-y-3">
+                  <h3 className="text-xl font-light">体系化された流れ</h3>
+                  <p className="text-muted-foreground">
+                    引き込みから極めまで、点の技術ではなく「線」で理解。
+                  </p>
+                </div>
+                <div className="text-center space-y-3">
+                  <h3 className="text-xl font-light">構造と意図の言語化</h3>
+                  <p className="text-muted-foreground">
+                    「なぜそう動くのか」を論理的に解説。
+                  </p>
+                </div>
+              </div>
+              
+              <p className="text-lg leading-relaxed text-center">
+                曖昧さを排除し、正しい形をインプットすることで、<br />
+                安全で効率的な上達をサポートします。
               </p>
             </div>
           </section>
@@ -287,6 +331,9 @@ const About = () => {
                   <p className="text-2xl font-light">
                     村田 良蔵（Ryozo Murata）
                   </p>
+                  <p className="text-xl font-light italic text-muted-foreground border-l-4 border-primary pl-4">
+                    「怪我なく、毎日続けられる柔術こそが、最強への近道である」
+                  </p>
                   <p>
                     1980年生まれ。北海道出身。 ブラジリアン柔術において、北海道初のグレイシー直系黒帯を取得。 選手としては、2018年・2019年のSJJIF世界選手権（マスター2黒帯フェザー級）で日本人初の世界チャンピオンとなり連覇を達成。2025年にはIBJJFワールドマスター選手権に初出場し、銅メダル（フェザー級黒帯マスター3）を獲得している。
                   </p>
@@ -294,7 +341,7 @@ const About = () => {
                     指導者・実業家としても精力的に活動し、Over Limit 札幌、YAWARA JIU-JITSU ACADEMY（YAWARA）、SWEEP JIU-JITSU ACADEMY（SWEEP）の3道場で代表を務める。特に2021年に設立したYAWARAは、SJJJF全日本柔術選手権やASJJF Asia Jiu Jitsu Cupで団体優勝を果たすなど、団体表彰の常連道場へと成長した。 また普及活動にも尽力し、2018年にNPO法人スポーツ柔術日本連盟（SJJJF）を設立、代表理事に就任。
                   </p>
                   <p>
-                    「怪我なく、毎日続けられる柔術」「ライフスタイルとしての柔術」をテーマに、ヨガや身体構造、ウェルネスの視点を融合。無理なく楽しみながらも、着実に強くなれる指導法に定評がある。
+                    40代を迎えてなお世界の第一線で戦い続ける実績が、JiuFlowのメソッドの有効性を証明しています。ヨガ・身体構造・ウェルネスの視点を融合し、「怪我なく、毎日続けられる柔術」「ライフスタイルとしての柔術」をテーマに、無理なく楽しみながらも、着実に強くなれる指導法に定評がある。
                   </p>
                 </div>
               </div>
@@ -306,15 +353,46 @@ const About = () => {
             <h2 className="text-4xl font-light mb-8">Philosophy</h2>
             <div className="space-y-6 text-lg leading-relaxed">
               <p>
-                柔術は常にアップデートされる「生きた学問」です。<br />
-                私たちは現時点で最良と思える方法を提供していますが、<br />
-                日々、より良い形を探し続けています。
+                柔術は、常にアップデートされる「生きた学問」です。
               </p>
               <p>
-                もし新しい視点やテクニック、トレーニング法を知っていたら、<br />
-                ぜひ教えてください。<br />
-                柔術を通じて、世界中がつながり、共に成長できるように。
+                私たちは現時点で「最も理にかなっている」と思える方法を提供していますが、<br />
+                それがゴールではありません。
               </p>
+              <p>
+                「安全に、長く、強く」。<br />
+                この基準を満たすより良い方法があれば、私たちは柔軟に取り入れ、進化し続けます。
+              </p>
+              <p>
+                柔術を通じて、世界中の人々が健康的に、長くマットの上に立ち続けられるように。<br />
+                私たちと一緒に、柔術の深淵を探求していきましょう。
+              </p>
+            </div>
+          </section>
+
+          {/* Invitation Section */}
+          <section className="py-20 bg-gradient-to-br from-primary/5 to-transparent">
+            <div className="max-w-3xl mx-auto px-6 text-center">
+              <h2 className="text-4xl md:text-5xl font-light mb-6">
+                静かに、深く。そして強く。
+              </h2>
+              <div className="space-y-4 text-lg leading-relaxed mb-10">
+                <p>
+                  あなたの柔術ライフを、より安全で、より豊かなものへ。<br />
+                  試合で勝つための技術も、一生続けるための身体操作も、すべてここにあります。
+                </p>
+                <p className="text-xl font-light">
+                  その一歩を、ここから始めてみませんか？
+                </p>
+              </div>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <Button onClick={() => navigate("/join")} size="lg">
+                  {language === "ja" ? "プランを見る" : language === "pt" ? "Ver Planos" : "View Plans"}
+                </Button>
+                <Button onClick={() => navigate("/login")} variant="outline" size="lg">
+                  {language === "ja" ? "ログイン" : language === "pt" ? "Entrar" : "Login"}
+                </Button>
+              </div>
             </div>
           </section>
 
