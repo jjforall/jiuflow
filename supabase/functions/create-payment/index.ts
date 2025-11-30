@@ -40,6 +40,11 @@ serve(async (req) => {
       mode: "payment",
       success_url: `${req.headers.get("origin")}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${req.headers.get("origin")}/join?canceled=true`,
+      custom_text: {
+        submit: {
+          message: "jiufight - Brazilian Jiu-Jitsu Learning Platform",
+        },
+      },
     };
 
     // Add email if provided
