@@ -902,12 +902,22 @@ export default function Dojo() {
                     {language === "ja" ? "ギャラリー" : "Gallery"}
                   </h2>
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                    {dojo.gallery.map((item: any, idx: number) => (
-                      <div key={idx} className="relative">
-                        <img src={item.url} alt={item.caption || ""} className="w-full h-48 object-cover rounded" />
-                        {item.caption && <p className="text-sm text-center mt-1">{item.caption}</p>}
-                      </div>
-                    ))}
+                    {dojo.gallery.map((item: any, idx: number) => {
+                      const imageUrl = typeof item === 'string' ? item : item.url;
+                      const caption = typeof item === 'string' ? '' : item.caption;
+                      return (
+                        <div key={idx} className="relative overflow-hidden rounded-lg group">
+                          <img 
+                            src={imageUrl} 
+                            alt={caption || `Gallery image ${idx + 1}`} 
+                            className="w-full h-48 object-cover transition-transform duration-300 group-hover:scale-110" 
+                          />
+                          {caption && (
+                            <p className="text-sm text-center mt-1 text-muted-foreground">{caption}</p>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 </CardContent>
               </Card>
