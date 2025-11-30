@@ -102,6 +102,7 @@ export const TechniquesManagement = () => {
   const [newCategory, setNewCategory] = useState("");
   const [previewVideoUrl, setPreviewVideoUrl] = useState<string | null>(null);
   const [showVideoPreview, setShowVideoPreview] = useState(false);
+  const [seriesMapping, setSeriesMapping] = useState<Array<{ series_name: string; series_prefix: string }>>([]);
 
 
   // すべての言語（カウント用）
@@ -140,22 +141,27 @@ export const TechniquesManagement = () => {
     const fetchSeriesNames = async () => {
       const { data: techniqueData, error } = await supabase
         .from('techniques')
-        .select('series_name');
+        .select('series_name, series_prefix');
       
       if (error) {
         console.error('Error fetching series names:', error);
         return;
       }
       
-      // ユニークなシリーズ名のリストを作成（nullを除外）
-      const uniqueSeriesNames = Array.from(
-        new Set(
-          techniqueData
-            .map(item => item.series_name)
-            .filter(name => name !== null && name !== '')
-        )
-      );
-      setSeriesNameSuggestions(uniqueSeriesNames.sort());
+      // ユニークなシリーズ名とprefixの組み合わせを作成
+      const seriesMap = new Map<string, string>();
+      techniqueData.forEach(item => {
+        if (item.series_name && item.series_prefix) {
+          seriesMap.set(item.series_name, item.series_prefix);
+        }
+      });
+      
+      const mappings = Array.from(seriesMap.entries())
+        .map(([series_name, series_prefix]) => ({ series_name, series_prefix }))
+        .sort((a, b) => a.series_prefix.localeCompare(b.series_prefix));
+      
+      setSeriesMapping(mappings);
+      setSeriesNameSuggestions(mappings.map(m => m.series_name));
     };
     
     fetchCategories();
@@ -166,21 +172,73 @@ export const TechniquesManagement = () => {
   const refetchSeriesNames = async () => {
     const { data: techniqueData, error } = await supabase
       .from('techniques')
-      .select('series_name');
+      .select('series_name, series_prefix');
     
     if (error) {
       console.error('Error fetching series names:', error);
       return;
     }
     
-    const uniqueSeriesNames = Array.from(
-      new Set(
-        techniqueData
-          .map(item => item.series_name)
-          .filter(name => name !== null && name !== '')
-      )
-    );
-    setSeriesNameSuggestions(uniqueSeriesNames.sort());
+    // ユニークなシリーズ名とprefixの組み合わせを作成
+    const seriesMap = new Map<string, string>();
+    techniqueData.forEach(item => {
+      if (item.series_name && item.series_prefix) {
+        seriesMap.set(item.series_name, item.series_prefix);
+      }
+    });
+    
+    const mappings = Array.from(seriesMap.entries())
+      .map(([series_name, series_prefix]) => ({ series_name, series_prefix }))
+      .sort((a, b) => a.series_prefix.localeCompare(b.series_prefix));
+    
+    setSeriesMapping(mappings);
+    setSeriesNameSuggestions(mappings.map(m => m.series_name));
+  };
+  
+  // 次に利用可能なアルファベットを取得
+  const getNextAvailablePrefix = (): string => {
+    if (seriesMapping.length === 0) return 'A';
+    
+    const usedPrefixes = new Set(seriesMapping.map(m => m.series_prefix));
+    const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    
+    for (let i = 0; i < alphabet.length; i++) {
+      if (!usedPrefixes.has(alphabet[i])) {
+        return alphabet[i];
+      }
+    }
+    
+    // All single letters used, start with AA
+    return 'AA';
+  };
+  
+  // シリーズ名が変更されたときにprefixを自動設定
+  const handleSeriesNameChange = (newSeriesName: string) => {
+    const existingMapping = seriesMapping.find(m => m.series_name === newSeriesName);
+    
+    if (existingMapping) {
+      // 既存のシリーズ名 - 既存のprefixを使用
+      setFormData({
+        ...formData,
+        series_name: newSeriesName,
+        series_prefix: existingMapping.series_prefix
+      });
+    } else if (newSeriesName.trim() === '') {
+      // 空欄の場合
+      setFormData({
+        ...formData,
+        series_name: '',
+        series_prefix: ''
+      });
+    } else {
+      // 新しいシリーズ名 - 次のアルファベットを割り当て
+      const nextPrefix = getNextAvailablePrefix();
+      setFormData({
+        ...formData,
+        series_name: newSeriesName,
+        series_prefix: nextPrefix
+      });
+    }
   };
 
   // LocalStorageから進行中の翻訳を復元
@@ -451,10 +509,26 @@ export const TechniquesManagement = () => {
         value = editValue ? parseInt(editValue) : null;
       }
       
-      const updates = {
+      const updates: Partial<Technique> = {
         ...technique,
         [editingCell.field]: value
       };
+      
+      // series_nameが更新された場合、series_prefixも自動設定
+      if (editingCell.field === 'series_name') {
+        const newSeriesName = (value as string).trim();
+        if (newSeriesName) {
+          const existingMapping = seriesMapping.find(m => m.series_name === newSeriesName);
+          if (existingMapping) {
+            updates.series_prefix = existingMapping.series_prefix;
+          } else {
+            // 新しいシリーズ名の場合、次のアルファベットを割り当て
+            updates.series_prefix = getNextAvailablePrefix();
+          }
+        } else {
+          updates.series_prefix = '';
+        }
+      }
       
       await updateTechnique.mutateAsync(updates as Technique);
       toast.success("更新しました");
@@ -1148,6 +1222,31 @@ export const TechniquesManagement = () => {
         </div>
       </div>
 
+      {/* Series Mapping Section */}
+      {seriesMapping.length > 0 && (
+        <div className="mb-6 border rounded-lg p-4 bg-muted/10">
+          <h3 className="text-lg font-semibold mb-4">シリーズアルファベット対応表</h3>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {seriesMapping.map((mapping) => (
+              <div
+                key={mapping.series_prefix}
+                className="flex items-center gap-2 p-3 border rounded-lg bg-background"
+              >
+                <div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary/10 text-primary font-bold">
+                  {mapping.series_prefix}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-sm truncate">{mapping.series_name}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+          <p className="text-xs text-muted-foreground mt-3">
+            新しいシリーズが追加されると、次のアルファベット「{getNextAvailablePrefix()}」が自動的に割り当てられます
+          </p>
+        </div>
+      )}
+
       {/* Active Translations Section */}
       {activeTranslations.length > 0 && (
         <div className="mb-6 border rounded-lg p-4 bg-muted/50">
@@ -1386,68 +1485,48 @@ export const TechniquesManagement = () => {
                   </td>
                   <td className="px-4 py-3">
                     <div className="space-y-2">
-                      {/* Series Prefix (Alphabet) */}
-                      {editingCell?.id === technique.id && editingCell?.field === 'series_prefix' ? (
-                        <div className="flex gap-2 items-center">
-                          <Input
-                            value={editValue}
-                            onChange={(e) => setEditValue(e.target.value.toUpperCase())}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter' && !e.nativeEvent.isComposing) saveEdit(technique as Technique);
-                              if (e.key === 'Escape') cancelEditing();
-                            }}
-                            className="h-8 text-sm w-20"
-                            autoFocus
-                            placeholder="A"
-                            maxLength={3}
-                          />
-                          <Button size="sm" variant="ghost" onClick={() => saveEdit(technique as Technique)}>
-                            <Check className="h-4 w-4" />
-                          </Button>
-                          <Button size="sm" variant="ghost" onClick={cancelEditing}>
-                            <X className="h-4 w-4" />
-                          </Button>
+                      {/* Series Prefix (Alphabet) - Read Only */}
+                      <div className="flex items-center gap-2">
+                        {(technique as Technique).series_prefix && (
+                          <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary font-bold text-sm">
+                            {(technique as Technique).series_prefix}
+                          </div>
+                        )}
+                        <div className="flex-1">
+                          {/* Series Name */}
+                          {editingCell?.id === technique.id && editingCell?.field === 'series_name' ? (
+                            <div className="flex gap-2 items-center">
+                              <InputWithSuggestions
+                                value={editValue}
+                                onChange={(e) => setEditValue(e.target.value)}
+                                onSelectSuggestion={(value) => setEditValue(value)}
+                                suggestions={seriesNameSuggestions}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter' && !e.nativeEvent.isComposing) saveEdit(technique as Technique);
+                                  if (e.key === 'Escape') cancelEditing();
+                                }}
+                                className="h-8 text-sm"
+                                autoFocus
+                                placeholder="シリーズ名"
+                              />
+                              <Button size="sm" variant="ghost" onClick={() => saveEdit(technique as Technique)}>
+                                <Check className="h-4 w-4" />
+                              </Button>
+                              <Button size="sm" variant="ghost" onClick={cancelEditing}>
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          ) : (
+                            <p 
+                              className={`text-sm px-2 py-1 rounded ${isAdmin ? 'cursor-pointer hover:bg-accent hover:text-accent-foreground' : ''}`}
+                              onClick={() => isAdmin && startEditing(technique.id, 'series_name', (technique as Technique).series_name || '', technique as Technique)}
+                              title={isAdmin ? "クリックして編集（アルファベットは自動割り当て）" : ""}
+                            >
+                              {(technique as Technique).series_name || <span className="text-muted-foreground">シリーズなし</span>}
+                            </p>
+                          )}
                         </div>
-                      ) : (
-                        <p 
-                          className={`text-sm font-semibold px-2 py-1 rounded ${isAdmin ? 'cursor-pointer hover:bg-accent hover:text-accent-foreground' : ''}`}
-                          onClick={() => isAdmin && startEditing(technique.id, 'series_prefix', (technique as Technique).series_prefix || '', technique as Technique)}
-                        >
-                          {(technique as Technique).series_prefix ? `${(technique as Technique).series_prefix}` : <span className="text-muted-foreground text-xs font-normal">アルファベット</span>}
-                        </p>
-                      )}
-                      
-                      {/* Series Name */}
-                      {editingCell?.id === technique.id && editingCell?.field === 'series_name' ? (
-                        <div className="flex gap-2 items-center">
-                          <InputWithSuggestions
-                            value={editValue}
-                            onChange={(e) => setEditValue(e.target.value)}
-                            onSelectSuggestion={(value) => setEditValue(value)}
-                            suggestions={seriesNameSuggestions}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter' && !e.nativeEvent.isComposing) saveEdit(technique as Technique);
-                              if (e.key === 'Escape') cancelEditing();
-                            }}
-                            className="h-8 text-sm"
-                            autoFocus
-                            placeholder="シリーズ名"
-                          />
-                          <Button size="sm" variant="ghost" onClick={() => saveEdit(technique as Technique)}>
-                            <Check className="h-4 w-4" />
-                          </Button>
-                          <Button size="sm" variant="ghost" onClick={cancelEditing}>
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      ) : (
-                        <p 
-                          className={`text-sm px-2 py-1 rounded ${isAdmin ? 'cursor-pointer hover:bg-accent hover:text-accent-foreground' : ''}`}
-                          onClick={() => isAdmin && startEditing(technique.id, 'series_name', (technique as Technique).series_name || '', technique as Technique)}
-                        >
-                          {(technique as Technique).series_name || <span className="text-muted-foreground">シリーズなし</span>}
-                        </p>
-                      )}
+                      </div>
                       
                       {/* Series Order */}
                       {editingCell?.id === technique.id && editingCell?.field === 'series_order' ? (
@@ -1803,30 +1882,34 @@ export const TechniquesManagement = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className="text-sm font-medium">シリーズアルファベット (Prefix)</label>
-                <Input
-                  value={formData.series_prefix}
-                  onChange={(e) => setFormData({...formData, series_prefix: e.target.value.toUpperCase()})}
-                  placeholder="A, B, C..."
-                  disabled={!isAdmin}
-                  maxLength={3}
-                />
-                <p className="text-xs text-muted-foreground mt-1">
-                  シリーズを識別するアルファベット
-                </p>
-              </div>
-              <div>
                 <label className="text-sm font-medium">シリーズ名 (Series Name)</label>
                 <InputWithSuggestions
                   value={formData.series_name}
-                  onChange={(e) => setFormData({...formData, series_name: e.target.value})}
-                  onSelectSuggestion={(value) => setFormData({...formData, series_name: value})}
+                  onChange={(e) => handleSeriesNameChange(e.target.value)}
+                  onSelectSuggestion={(value) => handleSeriesNameChange(value)}
                   suggestions={seriesNameSuggestions}
-                  placeholder="例: Closed Guard Series"
+                  placeholder="例: クローズドガード"
                   disabled={!isAdmin}
                 />
                 <p className="text-xs text-muted-foreground mt-1">
                   空欄の場合は「その他の技」として表示されます
+                </p>
+              </div>
+              <div>
+                <label className="text-sm font-medium">
+                  シリーズアルファベット (自動割り当て)
+                </label>
+                <Input
+                  value={formData.series_prefix}
+                  readOnly
+                  disabled
+                  placeholder="自動設定"
+                  className="bg-muted"
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  {formData.series_name && formData.series_prefix
+                    ? `「${formData.series_name}」には「${formData.series_prefix}」が割り当てられています`
+                    : 'シリーズ名を入力すると自動的に割り当てられます'}
                 </p>
               </div>
               <div>
