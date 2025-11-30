@@ -7,7 +7,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Globe, Instagram, Facebook, Phone, Mail, Users, ExternalLink, Heart } from "lucide-react";
+import { 
+  MapPin, Globe, Instagram, Facebook, Phone, Mail, Users, ExternalLink, Heart, 
+  Calendar, Clock, Award, Shield, BookOpen, Target, Sparkles, CheckCircle
+} from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { toast } from "sonner";
 
@@ -326,204 +329,318 @@ export default function Dojo() {
     <div className="min-h-screen flex flex-col">
       <Navigation />
       <main className="flex-grow pt-20 pb-16">
-        <div className="container mx-auto px-4 md:px-6 max-w-4xl">
-          {/* Cover Image - Only show if exists */}
+        <div className="container mx-auto px-4 md:px-6 max-w-6xl">
+          {/* Hero Section with Cover Image */}
           {dojo.cover_image_url && (
-            <div className="relative h-64 md:h-80 bg-gradient-to-br from-primary/20 to-primary/5 rounded-lg overflow-hidden mb-8">
+            <div className="relative h-[400px] md:h-[500px] rounded-2xl overflow-hidden mb-12 shadow-2xl">
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent z-10" />
               <img
                 src={dojo.cover_image_url}
                 alt={getDojoName(dojo)}
                 className="w-full h-full object-cover"
               />
-              {dojo.is_verified && (
-                <div className="absolute top-4 right-4 bg-primary text-primary-foreground px-3 py-1 rounded-full text-sm font-medium">
-                  {language === "ja" ? "公認道場" : "Verified"}
+              <div className="absolute bottom-0 left-0 right-0 p-8 md:p-12 z-20">
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex-1">
+                    <h1 className="text-4xl md:text-6xl font-bold text-white mb-4 drop-shadow-lg">
+                      {getDojoName(dojo)}
+                    </h1>
+                    {dojo.location && (
+                      <div className="flex items-center gap-2 text-white/90 text-lg mb-4">
+                        <MapPin className="w-5 h-5" />
+                        <span>{dojo.location}</span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-3">
+                    {dojo.is_verified && (
+                      <Badge className="bg-primary text-primary-foreground text-sm md:text-base px-4 py-2 gap-2">
+                        <Award className="w-4 h-4" />
+                        {language === "ja" ? "公認道場" : "Verified"}
+                      </Badge>
+                    )}
+                    {userId && (
+                      <Button
+                        onClick={toggleFavorite}
+                        variant="secondary"
+                        size="icon"
+                        className="rounded-full h-12 w-12 shadow-lg"
+                      >
+                        <Heart 
+                          className={`w-6 h-6 transition-all ${isFavorite ? 'fill-red-500 text-red-500 scale-110' : ''}`}
+                        />
+                      </Button>
+                    )}
+                  </div>
                 </div>
-              )}
+              </div>
             </div>
           )}
 
-          {/* Header */}
-          <div className="mb-8">
-            <div className="flex items-start justify-between mb-4">
-              <h1 className="text-4xl font-bold flex-1">{getDojoName(dojo)}</h1>
-              <div className="flex items-center gap-3">
-                {!dojo.cover_image_url && dojo.is_verified && (
-                  <Badge className="text-sm">
-                    {language === "ja" ? "公認道場" : "Verified"}
-                  </Badge>
-                )}
-                {userId && (
-                  <Button
-                    onClick={toggleFavorite}
-                    variant="outline"
-                    size="icon"
-                    className="rounded-full"
-                  >
-                    <Heart 
-                      className={`w-5 h-5 ${isFavorite ? 'fill-red-500 text-red-500' : ''}`}
-                    />
-                  </Button>
-                )}
-              </div>
-            </div>
-            
-            {dojo.location && (
-              <div className="flex items-center gap-2 text-muted-foreground mb-4">
-                <MapPin className="w-5 h-5" />
-                <span className="text-lg">{dojo.location}</span>
-              </div>
-            )}
-
-            {getDojoDescription(dojo) && (
-              <Card className="mb-6">
-                <CardContent className="p-6">
-                  <h2 className="text-xl font-semibold mb-3">
-                    {language === "ja" ? "道場について" : language === "pt" ? "Sobre o Dojo" : "About"}
-                  </h2>
-                  <p className="text-base leading-relaxed whitespace-pre-line">
-                    {getDojoDescription(dojo)}
-                  </p>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Contact Information Card */}
-            <Card className="mb-6">
-              <CardContent className="p-6">
-                <h2 className="text-xl font-semibold mb-4">
-                  {language === "ja" ? "お問い合わせ" : language === "pt" ? "Contato" : "Contact"}
-                </h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {dojo.website && (
-                    <a href={dojo.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-3 rounded-lg border hover:bg-accent transition-colors">
-                      <Globe className="w-5 h-5 text-primary" />
-                      <div>
-                        <div className="text-sm text-muted-foreground">
-                          {language === "ja" ? "ウェブサイト" : "Website"}
-                        </div>
-                        <div className="font-medium flex items-center gap-1">
-                          {language === "ja" ? "公式サイトを見る" : "Visit Website"}
-                          <ExternalLink className="w-3 h-3" />
-                        </div>
-                      </div>
-                    </a>
-                  )}
-                  {dojo.instagram && (
-                    <a href={`https://instagram.com/${dojo.instagram}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-3 rounded-lg border hover:bg-accent transition-colors">
-                      <Instagram className="w-5 h-5 text-primary" />
-                      <div>
-                        <div className="text-sm text-muted-foreground">Instagram</div>
-                        <div className="font-medium">@{dojo.instagram}</div>
-                      </div>
-                    </a>
-                  )}
-                  {dojo.facebook && (
-                    <a href={dojo.facebook} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-3 rounded-lg border hover:bg-accent transition-colors">
-                      <Facebook className="w-5 h-5 text-primary" />
-                      <div>
-                        <div className="text-sm text-muted-foreground">Facebook</div>
-                        <div className="font-medium flex items-center gap-1">
-                          {language === "ja" ? "Facebookを見る" : "View Facebook"}
-                          <ExternalLink className="w-3 h-3" />
-                        </div>
-                      </div>
-                    </a>
-                  )}
-                  {dojo.phone && (
-                    <a href={`tel:${dojo.phone}`} className="flex items-center gap-3 p-3 rounded-lg border hover:bg-accent transition-colors">
-                      <Phone className="w-5 h-5 text-primary" />
-                      <div>
-                        <div className="text-sm text-muted-foreground">
-                          {language === "ja" ? "電話" : "Phone"}
-                        </div>
-                        <div className="font-medium">{dojo.phone}</div>
-                      </div>
-                    </a>
-                  )}
-                  {dojo.email && (
-                    <a href={`mailto:${dojo.email}`} className="flex items-center gap-3 p-3 rounded-lg border hover:bg-accent transition-colors">
-                      <Mail className="w-5 h-5 text-primary" />
-                      <div>
-                        <div className="text-sm text-muted-foreground">
-                          {language === "ja" ? "メール" : "Email"}
-                        </div>
-                        <div className="font-medium">{dojo.email}</div>
-                      </div>
-                    </a>
+          {/* Header for Dojos without cover */}
+          {!dojo.cover_image_url && (
+            <div className="mb-12 p-8 md:p-12 bg-gradient-to-br from-primary/10 via-primary/5 to-background rounded-2xl border">
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex-1">
+                  <h1 className="text-4xl md:text-6xl font-bold mb-4">{getDojoName(dojo)}</h1>
+                  {dojo.location && (
+                    <div className="flex items-center gap-2 text-muted-foreground text-lg">
+                      <MapPin className="w-5 h-5" />
+                      <span>{dojo.location}</span>
+                    </div>
                   )}
                 </div>
-              </CardContent>
-            </Card>
+                <div className="flex items-center gap-3">
+                  {dojo.is_verified && (
+                    <Badge className="text-sm md:text-base px-4 py-2 gap-2">
+                      <Award className="w-4 h-4" />
+                      {language === "ja" ? "公認道場" : "Verified"}
+                    </Badge>
+                  )}
+                  {userId && (
+                    <Button
+                      onClick={toggleFavorite}
+                      variant="outline"
+                      size="icon"
+                      className="rounded-full h-12 w-12"
+                    >
+                      <Heart 
+                        className={`w-6 h-6 transition-all ${isFavorite ? 'fill-red-500 text-red-500 scale-110' : ''}`}
+                      />
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
 
-            {/* Mission & Philosophy */}
-            {getMission(dojo) && (
-              <Card className="mb-6">
-                <CardContent className="p-6">
-                  <h2 className="text-xl font-semibold mb-3">
-                    {language === "ja" ? "理念・ミッション" : "Mission & Philosophy"}
-                  </h2>
-                  <p className="text-base leading-relaxed whitespace-pre-line">{getMission(dojo)}</p>
-                </CardContent>
-              </Card>
-            )}
+            {/* Main Content Grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
+              {/* Left Column - Main Info */}
+              <div className="lg:col-span-2 space-y-8">
+                {getDojoDescription(dojo) && (
+                  <Card className="border-none shadow-lg bg-gradient-to-br from-card to-card/50 hover:shadow-xl transition-all duration-300">
+                    <CardContent className="p-8">
+                      <div className="flex items-center gap-3 mb-6">
+                        <div className="p-3 rounded-xl bg-primary/10">
+                          <BookOpen className="w-6 h-6 text-primary" />
+                        </div>
+                        <h2 className="text-2xl font-bold">
+                          {language === "ja" ? "道場について" : language === "pt" ? "Sobre o Dojo" : "About"}
+                        </h2>
+                      </div>
+                      <p className="text-lg leading-relaxed whitespace-pre-line text-muted-foreground">
+                        {getDojoDescription(dojo)}
+                      </p>
+                    </CardContent>
+                  </Card>
+                )}
 
-            {/* Target Audience */}
-            {getTargetAudience(dojo) && (
-              <Card className="mb-6">
-                <CardContent className="p-6">
-                  <h2 className="text-xl font-semibold mb-3">
-                    {language === "ja" ? "対象者" : "Who Should Join"}
-                  </h2>
-                  <p className="text-base leading-relaxed whitespace-pre-line">{getTargetAudience(dojo)}</p>
-                </CardContent>
-              </Card>
-            )}
+                {/* Mission & Philosophy */}
+                {getMission(dojo) && (
+                  <Card className="border-none shadow-lg bg-gradient-to-br from-card to-card/50 hover:shadow-xl transition-all duration-300">
+                    <CardContent className="p-8">
+                      <div className="flex items-center gap-3 mb-6">
+                        <div className="p-3 rounded-xl bg-primary/10">
+                          <Target className="w-6 h-6 text-primary" />
+                        </div>
+                        <h2 className="text-2xl font-bold">
+                          {language === "ja" ? "理念・ミッション" : "Mission & Philosophy"}
+                        </h2>
+                      </div>
+                      <p className="text-lg leading-relaxed whitespace-pre-line text-muted-foreground">
+                        {getMission(dojo)}
+                      </p>
+                    </CardContent>
+                  </Card>
+                )}
 
-            {/* Features */}
-            {dojo.features && (
-              <Card className="mb-6">
-                <CardContent className="p-6">
-                  <h2 className="text-xl font-semibold mb-4">
-                    {language === "ja" ? "特徴" : "Features"}
-                  </h2>
-                  {dojo.features.highlights && Array.isArray(dojo.features.highlights) && dojo.features.highlights.length > 0 ? (
-                    <ul className="space-y-2">
-                      {dojo.features.highlights.map((highlight: any, idx: number) => (
-                        <li key={idx} className="flex items-start gap-2">
-                          <span className="text-primary mt-1">•</span>
-                          <span>{getLocalizedValue(highlight)}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  ) : Array.isArray(dojo.features) && dojo.features.length > 0 ? (
-                    <div className="flex flex-wrap gap-2">
-                      {dojo.features.map((feature: any, idx: number) => (
-                        <Badge key={idx} variant="secondary">{getLocalizedValue(feature)}</Badge>
-                      ))}
+                {/* Target Audience */}
+                {getTargetAudience(dojo) && (
+                  <Card className="border-none shadow-lg bg-gradient-to-br from-card to-card/50 hover:shadow-xl transition-all duration-300">
+                    <CardContent className="p-8">
+                      <div className="flex items-center gap-3 mb-6">
+                        <div className="p-3 rounded-xl bg-primary/10">
+                          <Users className="w-6 h-6 text-primary" />
+                        </div>
+                        <h2 className="text-2xl font-bold">
+                          {language === "ja" ? "対象者" : "Who Should Join"}
+                        </h2>
+                      </div>
+                      <p className="text-lg leading-relaxed whitespace-pre-line text-muted-foreground">
+                        {getTargetAudience(dojo)}
+                      </p>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Features */}
+                {dojo.features && (
+                  <Card className="border-none shadow-lg bg-gradient-to-br from-card to-card/50 hover:shadow-xl transition-all duration-300">
+                    <CardContent className="p-8">
+                      <div className="flex items-center gap-3 mb-6">
+                        <div className="p-3 rounded-xl bg-primary/10">
+                          <Sparkles className="w-6 h-6 text-primary" />
+                        </div>
+                        <h2 className="text-2xl font-bold">
+                          {language === "ja" ? "特徴" : "Features"}
+                        </h2>
+                      </div>
+                      {dojo.features.highlights && Array.isArray(dojo.features.highlights) && dojo.features.highlights.length > 0 ? (
+                        <ul className="space-y-3">
+                          {dojo.features.highlights.map((highlight: any, idx: number) => (
+                            <li key={idx} className="flex items-start gap-3 text-lg">
+                              <CheckCircle className="w-6 h-6 text-primary flex-shrink-0 mt-1" />
+                              <span className="text-muted-foreground">{getLocalizedValue(highlight)}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      ) : Array.isArray(dojo.features) && dojo.features.length > 0 ? (
+                        <div className="flex flex-wrap gap-3">
+                          {dojo.features.map((feature: any, idx: number) => (
+                            <Badge key={idx} variant="secondary" className="text-base px-4 py-2">
+                              {getLocalizedValue(feature)}
+                            </Badge>
+                          ))}
+                        </div>
+                      ) : null}
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+
+              {/* Right Column - Contact & Quick Info */}
+              <div className="space-y-8">
+                {/* Contact Information Card */}
+                <Card className="border-none shadow-lg bg-gradient-to-br from-primary/5 to-card sticky top-24">
+                  <CardContent className="p-6">
+                    <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
+                      <Phone className="w-5 h-5 text-primary" />
+                      {language === "ja" ? "お問い合わせ" : language === "pt" ? "Contato" : "Contact"}
+                    </h2>
+                    <div className="space-y-3">
+                      {dojo.website && (
+                        <a 
+                          href={dojo.website} 
+                          target="_blank" 
+                          rel="noopener noreferrer" 
+                          className="flex items-center gap-3 p-4 rounded-xl border bg-card hover:bg-accent transition-all duration-200 hover:scale-105 hover:shadow-md group"
+                        >
+                          <div className="p-2 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors">
+                            <Globe className="w-5 h-5 text-primary" />
+                          </div>
+                          <div className="flex-1">
+                            <div className="text-xs text-muted-foreground">
+                              {language === "ja" ? "ウェブサイト" : "Website"}
+                            </div>
+                            <div className="font-medium flex items-center gap-1">
+                              {language === "ja" ? "公式サイト" : "Visit"}
+                              <ExternalLink className="w-3 h-3" />
+                            </div>
+                          </div>
+                        </a>
+                      )}
+                      {dojo.instagram && (
+                        <a 
+                          href={`https://instagram.com/${dojo.instagram}`} 
+                          target="_blank" 
+                          rel="noopener noreferrer" 
+                          className="flex items-center gap-3 p-4 rounded-xl border bg-card hover:bg-accent transition-all duration-200 hover:scale-105 hover:shadow-md group"
+                        >
+                          <div className="p-2 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors">
+                            <Instagram className="w-5 h-5 text-primary" />
+                          </div>
+                          <div className="flex-1">
+                            <div className="text-xs text-muted-foreground">Instagram</div>
+                            <div className="font-medium">@{dojo.instagram}</div>
+                          </div>
+                        </a>
+                      )}
+                      {dojo.facebook && (
+                        <a 
+                          href={dojo.facebook} 
+                          target="_blank" 
+                          rel="noopener noreferrer" 
+                          className="flex items-center gap-3 p-4 rounded-xl border bg-card hover:bg-accent transition-all duration-200 hover:scale-105 hover:shadow-md group"
+                        >
+                          <div className="p-2 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors">
+                            <Facebook className="w-5 h-5 text-primary" />
+                          </div>
+                          <div className="flex-1">
+                            <div className="text-xs text-muted-foreground">Facebook</div>
+                            <div className="font-medium text-sm">{language === "ja" ? "ページを見る" : "View"}</div>
+                          </div>
+                        </a>
+                      )}
+                      {dojo.phone && (
+                        <a 
+                          href={`tel:${dojo.phone}`} 
+                          className="flex items-center gap-3 p-4 rounded-xl border bg-card hover:bg-accent transition-all duration-200 hover:scale-105 hover:shadow-md group"
+                        >
+                          <div className="p-2 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors">
+                            <Phone className="w-5 h-5 text-primary" />
+                          </div>
+                          <div className="flex-1">
+                            <div className="text-xs text-muted-foreground">
+                              {language === "ja" ? "電話" : "Phone"}
+                            </div>
+                            <div className="font-medium text-sm">{dojo.phone}</div>
+                          </div>
+                        </a>
+                      )}
+                      {dojo.email && (
+                        <a 
+                          href={`mailto:${dojo.email}`} 
+                          className="flex items-center gap-3 p-4 rounded-xl border bg-card hover:bg-accent transition-all duration-200 hover:scale-105 hover:shadow-md group"
+                        >
+                          <div className="p-2 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors">
+                            <Mail className="w-5 h-5 text-primary" />
+                          </div>
+                          <div className="flex-1">
+                            <div className="text-xs text-muted-foreground">
+                              {language === "ja" ? "メール" : "Email"}
+                            </div>
+                            <div className="font-medium text-sm break-all">{dojo.email}</div>
+                          </div>
+                        </a>
+                      )}
                     </div>
-                  ) : null}
-                </CardContent>
-              </Card>
-            )}
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+
+            {/* Additional Sections in Full Width */}
 
             {/* Classes */}
             {dojo.classes && Array.isArray(dojo.classes) && dojo.classes.length > 0 && (
-              <Card className="mb-6">
-                <CardContent className="p-6">
-                  <h2 className="text-xl font-semibold mb-4">
-                    {language === "ja" ? "クラス情報" : "Classes"}
-                  </h2>
-                  <div className="space-y-3">
+              <Card className="mb-8 border-none shadow-lg">
+                <CardContent className="p-8">
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="p-3 rounded-xl bg-primary/10">
+                      <Calendar className="w-6 h-6 text-primary" />
+                    </div>
+                    <h2 className="text-2xl font-bold">
+                      {language === "ja" ? "クラス情報" : "Classes"}
+                    </h2>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {dojo.classes.map((cls: any, idx: number) => (
-                      <div key={idx} className="p-4 border rounded-lg">
-                        <h3 className="font-semibold text-lg">
+                      <div key={idx} className="p-6 border rounded-xl hover:shadow-md transition-all duration-200 hover:scale-105 bg-gradient-to-br from-card to-card/50">
+                        <h3 className="font-bold text-lg mb-3 text-primary">
                           {getLocalizedValue(cls, 'name')}
                         </h3>
-                        {cls.time && <p className="text-muted-foreground">{cls.time}</p>}
-                        {cls.level && <Badge className="mt-2">{cls.level}</Badge>}
+                        {cls.time && (
+                          <div className="flex items-center gap-2 text-muted-foreground mb-2">
+                            <Clock className="w-4 h-4" />
+                            <span>{cls.time}</span>
+                          </div>
+                        )}
+                        {cls.level && <Badge className="mb-3">{cls.level}</Badge>}
                         {(cls.description || cls.description_en) && (
-                          <p className="mt-2">{getLocalizedValue(cls, 'description')}</p>
+                          <p className="text-sm text-muted-foreground leading-relaxed">
+                            {getLocalizedValue(cls, 'description')}
+                          </p>
                         )}
                       </div>
                     ))}
@@ -534,25 +651,31 @@ export default function Dojo() {
 
             {/* Pricing */}
             {dojo.pricing && Object.keys(dojo.pricing).length > 0 && (
-              <Card className="mb-6">
-                <CardContent className="p-6">
-                  <h2 className="text-xl font-semibold mb-4">
-                    {language === "ja" ? "料金" : "Pricing"}
-                  </h2>
+              <Card className="mb-8 border-none shadow-lg">
+                <CardContent className="p-8">
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="p-3 rounded-xl bg-primary/10">
+                      <Award className="w-6 h-6 text-primary" />
+                    </div>
+                    <h2 className="text-2xl font-bold">
+                      {language === "ja" ? "料金プラン" : "Pricing Plans"}
+                    </h2>
+                  </div>
                   {dojo.pricing.plans && Array.isArray(dojo.pricing.plans) ? (
-                    <div className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       {dojo.pricing.plans.map((plan: any, idx: number) => (
-                        <div key={idx} className="p-4 border rounded-lg">
-                          <div className="flex justify-between items-start mb-2">
-                            <h3 className="font-semibold text-lg">
-                              {getLocalizedValue(plan, 'name')}
-                            </h3>
-                            <span className="text-xl font-bold">
-                              ¥{(plan.price || 0).toLocaleString()}
+                        <div key={idx} className="p-6 border-2 rounded-2xl hover:border-primary hover:shadow-lg transition-all duration-300 bg-gradient-to-br from-card to-card/50">
+                          <h3 className="font-bold text-xl mb-4 text-primary">
+                            {getLocalizedValue(plan, 'name')}
+                          </h3>
+                          <div className="text-4xl font-bold mb-4">
+                            ¥{(plan.price || 0).toLocaleString()}
+                            <span className="text-base text-muted-foreground font-normal">
+                              {language === "ja" ? "/月" : "/month"}
                             </span>
                           </div>
                           {(plan.description || plan.description_en) && (
-                            <p className="text-sm text-muted-foreground">
+                            <p className="text-sm text-muted-foreground leading-relaxed">
                               {getLocalizedValue(plan, 'description')}
                             </p>
                           )}
@@ -560,11 +683,13 @@ export default function Dojo() {
                       ))}
                     </div>
                   ) : (
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                       {Object.entries(dojo.pricing).map(([key, value]: [string, any]) => (
-                        <div key={key} className="flex justify-between items-center p-3 border rounded">
-                          <span className="font-medium">{key}</span>
-                          <span className="text-lg">¥{typeof value === 'number' ? value.toLocaleString() : value}</span>
+                        <div key={key} className="flex justify-between items-center p-4 border rounded-xl hover:shadow-md transition-all bg-card">
+                          <span className="font-semibold text-lg">{key}</span>
+                          <span className="text-2xl font-bold text-primary">
+                            ¥{typeof value === 'number' ? value.toLocaleString() : value}
+                          </span>
                         </div>
                       ))}
                     </div>
@@ -831,37 +956,40 @@ export default function Dojo() {
                 </CardContent>
               </Card>
             )}
-          </div>
 
-          {/* Members Section */}
-          {(homeMembers.length > 0 || trainingMembers.length > 0) && (
-            <Card>
-              <CardContent className="p-6">
-                <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
-                  <Users className="w-6 h-6" />
-                  {language === "ja" ? "メンバー" : "Members"}
-                </h2>
+            {/* Members Section */}
+            {(homeMembers.length > 0 || trainingMembers.length > 0) && (
+              <Card className="mt-8 border-none shadow-lg">
+                <CardContent className="p-8">
+                  <div className="flex items-center gap-3 mb-8">
+                    <div className="p-3 rounded-xl bg-primary/10">
+                      <Users className="w-6 h-6 text-primary" />
+                    </div>
+                    <h2 className="text-2xl font-bold">
+                      {language === "ja" ? "メンバー" : "Members"}
+                    </h2>
+                  </div>
 
                 {/* Home Members */}
                 {homeMembers.length > 0 && (
-                  <div className="mb-6">
-                    <h3 className="text-lg font-semibold mb-3">
+                  <div className="mb-8">
+                    <h3 className="text-lg font-semibold mb-4 text-primary">
                       {language === "ja" ? "所属" : "Home Gym"}
                     </h3>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
                       {homeMembers.map((member) => (
                         <Link
                           key={member.id}
                           to={`/${member.username || member.id}`}
-                          className="flex flex-col items-center gap-2 p-3 rounded-lg hover:bg-accent transition-colors"
+                          className="flex flex-col items-center gap-3 p-4 rounded-xl hover:bg-accent transition-all duration-200 hover:scale-105 group"
                         >
-                          <Avatar className="w-16 h-16">
+                          <Avatar className="w-20 h-20 ring-2 ring-transparent group-hover:ring-primary transition-all">
                             <AvatarImage src={member.avatar_url || undefined} />
-                            <AvatarFallback>
+                            <AvatarFallback className="text-lg">
                               {member.display_name?.[0] || member.username?.[0] || "U"}
                             </AvatarFallback>
                           </Avatar>
-                          <span className="text-sm text-center font-medium">
+                          <span className="text-sm text-center font-medium line-clamp-2">
                             {member.display_name || member.username || "User"}
                           </span>
                         </Link>
@@ -873,23 +1001,23 @@ export default function Dojo() {
                 {/* Training Members */}
                 {trainingMembers.length > 0 && (
                   <div>
-                    <h3 className="text-lg font-semibold mb-3">
+                    <h3 className="text-lg font-semibold mb-4 text-primary">
                       {language === "ja" ? "出稽古" : "Training Here"}
                     </h3>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
                       {trainingMembers.map((member) => (
                         <Link
                           key={member.id}
                           to={`/${member.username || member.id}`}
-                          className="flex flex-col items-center gap-2 p-3 rounded-lg hover:bg-accent transition-colors"
+                          className="flex flex-col items-center gap-3 p-4 rounded-xl hover:bg-accent transition-all duration-200 hover:scale-105 group"
                         >
-                          <Avatar className="w-16 h-16">
+                          <Avatar className="w-20 h-20 ring-2 ring-transparent group-hover:ring-primary transition-all">
                             <AvatarImage src={member.avatar_url || undefined} />
-                            <AvatarFallback>
+                            <AvatarFallback className="text-lg">
                               {member.display_name?.[0] || member.username?.[0] || "U"}
                             </AvatarFallback>
                           </Avatar>
-                          <span className="text-sm text-center font-medium">
+                          <span className="text-sm text-center font-medium line-clamp-2">
                             {member.display_name || member.username || "User"}
                           </span>
                         </Link>
