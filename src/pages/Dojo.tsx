@@ -761,7 +761,7 @@ export default function Dojo() {
                       {homeMembers.map((member) => (
                         <Link
                           key={member.id}
-                          to={`/user/${member.username || member.id}`}
+                          to={`/${member.username || member.id}`}
                           className="flex flex-col items-center gap-2 p-3 rounded-lg hover:bg-accent transition-colors"
                         >
                           <Avatar className="w-16 h-16">
@@ -789,7 +789,7 @@ export default function Dojo() {
                       {trainingMembers.map((member) => (
                         <Link
                           key={member.id}
-                          to={`/user/${member.username || member.id}`}
+                          to={`/${member.username || member.id}`}
                           className="flex flex-col items-center gap-2 p-3 rounded-lg hover:bg-accent transition-colors"
                         >
                           <Avatar className="w-16 h-16">
