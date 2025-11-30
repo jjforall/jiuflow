@@ -123,7 +123,7 @@ interface Profile {
   belt_history: Array<{belt: string; date?: string; instructor?: string}> | null;
   home_dojo: string | null;
   training_locations: Array<string> | null;
-  titles: Array<{title: string; date?: string; organization?: string; customTitle?: string}> | null;
+  titles: Array<{title: string; rank?: string; organization?: string; customTitle?: string}> | null;
   favorite_fighters: Array<string> | null;
   favorite_techniques: Array<string> | null;
   hometown: string | null;
@@ -1686,12 +1686,21 @@ const MyPage = () => {
                                         className="h-12"
                                       />
                                     )}
-                                    <Input
-                                      value={title.date || ''}
-                                      onChange={(e) => updateTitle(index, 'date', e.target.value)}
-                                      placeholder={language === "ja" ? "取得日" : "Date"}
-                                      className="h-12"
-                                    />
+                                    <Select
+                                      value={title.rank || ''}
+                                      onValueChange={(value) => updateTitle(index, 'rank', value)}
+                                    >
+                                      <SelectTrigger className="h-12">
+                                        <SelectValue placeholder={language === "ja" ? "順位" : "Rank"} />
+                                      </SelectTrigger>
+                                      <SelectContent className="bg-popover z-50">
+                                        <SelectItem value="優勝">{language === "ja" ? "優勝" : "Champion"}</SelectItem>
+                                        <SelectItem value="準優勝">{language === "ja" ? "準優勝" : "Runner-up"}</SelectItem>
+                                        <SelectItem value="3位">{language === "ja" ? "3位" : "3rd Place"}</SelectItem>
+                                        <SelectItem value="ベスト8">{language === "ja" ? "ベスト8" : "Quarter-finalist"}</SelectItem>
+                                        <SelectItem value="ベスト16">{language === "ja" ? "ベスト16" : "Round of 16"}</SelectItem>
+                                      </SelectContent>
+                                    </Select>
                                   </div>
                                   
                                   {title.title === "custom" && (
@@ -1733,8 +1742,10 @@ const MyPage = () => {
                                     {title.organization && (
                                       <div className="text-sm text-muted-foreground">{title.organization}</div>
                                     )}
-                                    {title.date && (
-                                      <div className="text-xs text-muted-foreground mt-1">{title.date}</div>
+                                    {title.rank && (
+                                      <div className="text-xs text-muted-foreground mt-1">
+                                        <Badge variant="outline" className="text-xs">{title.rank}</Badge>
+                                      </div>
                                     )}
                                   </div>
                                 </div>
