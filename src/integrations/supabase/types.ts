@@ -612,6 +612,8 @@ export type Database = {
         Row: {
           code: string
           created_at: string
+          dojo_friends_code: string | null
+          dojo_friends_uses: number
           id: string
           updated_at: string
           user_id: string
@@ -620,6 +622,8 @@ export type Database = {
         Insert: {
           code: string
           created_at?: string
+          dojo_friends_code?: string | null
+          dojo_friends_uses?: number
           id?: string
           updated_at?: string
           user_id: string
@@ -628,6 +632,8 @@ export type Database = {
         Update: {
           code?: string
           created_at?: string
+          dojo_friends_code?: string | null
+          dojo_friends_uses?: number
           id?: string
           updated_at?: string
           user_id?: string
