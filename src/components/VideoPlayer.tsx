@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import Hls from "hls.js";
 import { toast } from "sonner";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { Loader2 } from "lucide-react";
+import { Loader2, SkipForward, SkipBack } from "lucide-react";
 
 interface VideoPlayerProps {
   videoUrl: string;
@@ -19,6 +19,9 @@ export const VideoPlayer = ({ videoUrl, autoPlay = true, thumbnailUrl, onPlay }:
   const [quality, setQuality] = useState<string>("auto");
   const [isLoading, setIsLoading] = useState(true);
   const [hasStarted, setHasStarted] = useState(false);
+  const [showSkipIndicator, setShowSkipIndicator] = useState<'forward' | 'backward' | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const lastTapRef = useRef<{ time: number; side: 'left' | 'right' } | null>(null);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -200,6 +203,80 @@ export const VideoPlayer = ({ videoUrl, autoPlay = true, thumbnailUrl, onPlay }:
     };
   }, [videoUrl]);
 
+  // Keyboard shortcuts
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ignore if user is typing in an input
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+        return;
+      }
+
+      switch (e.key) {
+        case 'ArrowRight':
+          e.preventDefault();
+          video.currentTime = Math.min(video.currentTime + 10, video.duration);
+          showSkipFeedback('forward');
+          break;
+        case 'ArrowLeft':
+          e.preventDefault();
+          video.currentTime = Math.max(video.currentTime - 10, 0);
+          showSkipFeedback('backward');
+          break;
+        case ' ':
+          e.preventDefault();
+          if (video.paused) {
+            video.play();
+          } else {
+            video.pause();
+          }
+          break;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  // Double tap handling
+  useEffect(() => {
+    const container = containerRef.current;
+    const video = videoRef.current;
+    if (!container || !video) return;
+
+    const handleClick = (e: MouseEvent) => {
+      const rect = container.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const side = x < rect.width / 2 ? 'left' : 'right';
+      const now = Date.now();
+
+      if (lastTapRef.current && 
+          now - lastTapRef.current.time < 300 && 
+          lastTapRef.current.side === side) {
+        // Double tap detected
+        if (side === 'left') {
+          video.currentTime = Math.max(video.currentTime - 10, 0);
+          showSkipFeedback('backward');
+        } else {
+          video.currentTime = Math.min(video.currentTime + 10, video.duration);
+          showSkipFeedback('forward');
+        }
+        lastTapRef.current = null;
+      } else {
+        lastTapRef.current = { time: now, side };
+      }
+    };
+
+    container.addEventListener('click', handleClick);
+    return () => container.removeEventListener('click', handleClick);
+  }, []);
+
+  const showSkipFeedback = (direction: 'forward' | 'backward') => {
+    setShowSkipIndicator(direction);
+    setTimeout(() => setShowSkipIndicator(null), 600);
+  };
 
   const changeQuality = (levelIndex: number) => {
     if (hlsRef.current) {
@@ -209,15 +286,34 @@ export const VideoPlayer = ({ videoUrl, autoPlay = true, thumbnailUrl, onPlay }:
   };
 
   return (
-    <div className="relative bg-black">
+    <div ref={containerRef} className="relative bg-black">
       {/* Loading indicator */}
       {isLoading && !hasStarted && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black/80 z-10">
+        <div className="absolute inset-0 flex items-center justify-center bg-black/80 z-10 pointer-events-none">
           <div className="flex flex-col items-center gap-3">
             <Loader2 className="w-8 h-8 text-primary animate-spin" />
             <p className="text-sm text-muted-foreground">
               {language === "ja" ? "読み込み中..." : language === "pt" ? "Carregando..." : "Loading..."}
             </p>
+          </div>
+        </div>
+      )}
+      
+      {/* Skip indicators */}
+      {showSkipIndicator === 'backward' && (
+        <div className="absolute left-8 top-1/2 -translate-y-1/2 z-20 pointer-events-none animate-scale-in">
+          <div className="flex flex-col items-center gap-2 bg-background/90 backdrop-blur-sm rounded-full p-6 border-2 border-primary shadow-lg">
+            <SkipBack className="w-12 h-12 text-primary" />
+            <span className="text-sm font-medium">10秒</span>
+          </div>
+        </div>
+      )}
+      
+      {showSkipIndicator === 'forward' && (
+        <div className="absolute right-8 top-1/2 -translate-y-1/2 z-20 pointer-events-none animate-scale-in">
+          <div className="flex flex-col items-center gap-2 bg-background/90 backdrop-blur-sm rounded-full p-6 border-2 border-primary shadow-lg">
+            <SkipForward className="w-12 h-12 text-primary" />
+            <span className="text-sm font-medium">10秒</span>
           </div>
         </div>
       )}
