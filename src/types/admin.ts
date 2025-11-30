@@ -12,6 +12,9 @@ export interface Technique {
   video_url: string | null;
   display_order: number;
   hashtags: string[];
+  series_name: string | null;
+  series_order: number | null;
+  series_prefix: string | null;
 }
 
 export interface UploadProgress {

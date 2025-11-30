@@ -41,6 +41,7 @@ interface Technique {
   hashtags: string[];
   series_name: string | null;
   series_order: number | null;
+  series_prefix: string | null;
   created_at?: string;
   updated_at?: string;
   video_metadata?: Record<string, {
@@ -358,8 +359,10 @@ export const TechniquesManagement = () => {
     hashtags: [] as string[],
     series_name: "" as string,
     series_order: null as number | null,
+    series_prefix: "" as string,
   });
   const [hashtagInput, setHashtagInput] = useState("");
+  const [maxSeriesOrder, setMaxSeriesOrder] = useState<number | null>(null);
 
   const { data, isLoading, error } = usePaginatedTechniques(page, pageSize, {
     search: searchQuery,
@@ -370,6 +373,36 @@ export const TechniquesManagement = () => {
   const updateTechnique = useUpdateTechnique();
   const deleteTechnique = useDeleteTechnique();
   const createTechnique = useCreateTechnique();
+
+  // シリーズ名が変更されたら最大番号を取得
+  useEffect(() => {
+    const fetchMaxSeriesOrder = async () => {
+      if (!formData.series_prefix) {
+        setMaxSeriesOrder(null);
+        return;
+      }
+      
+      const { data, error } = await supabase
+        .from('techniques')
+        .select('series_order')
+        .eq('series_prefix', formData.series_prefix)
+        .order('series_order', { ascending: false })
+        .limit(1);
+      
+      if (error) {
+        console.error('Error fetching max series order:', error);
+        return;
+      }
+      
+      if (data && data.length > 0 && data[0].series_order !== null) {
+        setMaxSeriesOrder(data[0].series_order);
+      } else {
+        setMaxSeriesOrder(0);
+      }
+    };
+    
+    fetchMaxSeriesOrder();
+  }, [formData.series_prefix]);
 
   const startEditing = (id: string, field: string, currentValue: string) => {
     if (!isAdmin) return; // Staff cannot edit
@@ -1036,10 +1069,12 @@ export const TechniquesManagement = () => {
       hashtags: [],
       series_name: "",
       series_order: null,
+      series_prefix: "",
     });
     setHashtagInput("");
     setVideoFile(null);
     setEditingTechnique(null);
+    setMaxSeriesOrder(null);
   };
 
   const openEditDialog = (technique: Technique) => {
@@ -1055,6 +1090,7 @@ export const TechniquesManagement = () => {
       hashtags: technique.hashtags || [],
       series_name: technique.series_name || "",
       series_order: technique.series_order,
+      series_prefix: technique.series_prefix || "",
     });
     setShowEditDialog(true);
   };
@@ -1326,6 +1362,37 @@ export const TechniquesManagement = () => {
                   </td>
                   <td className="px-4 py-3">
                     <div className="space-y-2">
+                      {/* Series Prefix (Alphabet) */}
+                      {editingCell?.id === technique.id && editingCell?.field === 'series_prefix' ? (
+                        <div className="flex gap-2 items-center">
+                          <Input
+                            value={editValue}
+                            onChange={(e) => setEditValue(e.target.value.toUpperCase())}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' && !e.nativeEvent.isComposing) saveEdit(technique as Technique);
+                              if (e.key === 'Escape') cancelEditing();
+                            }}
+                            className="h-8 text-sm w-20"
+                            autoFocus
+                            placeholder="A"
+                            maxLength={3}
+                          />
+                          <Button size="sm" variant="ghost" onClick={() => saveEdit(technique as Technique)}>
+                            <Check className="h-4 w-4" />
+                          </Button>
+                          <Button size="sm" variant="ghost" onClick={cancelEditing}>
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <p 
+                          className={`text-sm font-semibold px-2 py-1 rounded ${isAdmin ? 'cursor-pointer hover:bg-accent hover:text-accent-foreground' : ''}`}
+                          onClick={() => isAdmin && startEditing(technique.id, 'series_prefix', (technique as Technique).series_prefix || '')}
+                        >
+                          {(technique as Technique).series_prefix ? `${(technique as Technique).series_prefix}` : <span className="text-muted-foreground text-xs font-normal">アルファベット</span>}
+                        </p>
+                      )}
+                      
                       {/* Series Name */}
                       {editingCell?.id === technique.id && editingCell?.field === 'series_name' ? (
                         <div className="flex gap-2 items-center">
@@ -1369,7 +1436,7 @@ export const TechniquesManagement = () => {
                               if (e.key === 'Enter' && !e.nativeEvent.isComposing) saveEdit(technique as Technique);
                               if (e.key === 'Escape') cancelEditing();
                             }}
-                            className="h-8 text-sm"
+                            className="h-8 text-sm w-20"
                             autoFocus
                             placeholder="順序"
                           />
@@ -1703,7 +1770,20 @@ export const TechniquesManagement = () => {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="text-sm font-medium">シリーズアルファベット (Prefix)</label>
+                <Input
+                  value={formData.series_prefix}
+                  onChange={(e) => setFormData({...formData, series_prefix: e.target.value.toUpperCase()})}
+                  placeholder="A, B, C..."
+                  disabled={!isAdmin}
+                  maxLength={3}
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  シリーズを識別するアルファベット
+                </p>
+              </div>
               <div>
                 <label className="text-sm font-medium">シリーズ名 (Series Name)</label>
                 <InputWithSuggestions
@@ -1727,6 +1807,11 @@ export const TechniquesManagement = () => {
                   placeholder="1, 2, 3..."
                   disabled={!isAdmin}
                 />
+                {maxSeriesOrder !== null && formData.series_prefix && (
+                  <p className="text-xs text-green-600 mt-1">
+                    このシリーズは現在{maxSeriesOrder}番まで使用中
+                  </p>
+                )}
                 <p className="text-xs text-muted-foreground mt-1">
                   シリーズ内での表示順序（1から始まる連番）
                 </p>
