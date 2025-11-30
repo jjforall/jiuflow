@@ -173,22 +173,37 @@ export default function UserProfile() {
   }, [actualUserId, currentUser]);
 
   const resolveUserAndLoadData = async () => {
-    if (!identifier) return;
+    if (!identifier) {
+      console.error('No identifier provided');
+      return;
+    }
 
+    setLoading(true);
     try {
+      console.log('Resolving user with identifier:', identifier);
+      
       // Check if identifier looks like a UUID
       const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(identifier);
+      console.log('Is UUID:', isUUID);
       
       // Try to resolve as username first if not UUID, otherwise use ID
-      const { data: profileByUsername } = await supabase
+      const { data: profileByUsername, error: profileError } = await supabase
         .from('profiles')
         .select('id, email, display_name, bio, avatar_url, username, education, work_experience, belt_history, home_dojo, training_locations, titles, created_at, cover_image_url, organization_id, favorite_fighters, favorite_techniques, hometown, hobbies, date_of_birth, social_links')
         .eq(isUUID ? 'id' : 'username', identifier)
         .maybeSingle();
+      
+      console.log('Profile query result:', { profileByUsername, profileError });
+
+      if (profileError) {
+        console.error('Profile query error:', profileError);
+        throw profileError;
+      }
 
       let resolvedUserId: string;
       
       if (profileByUsername) {
+        console.log('Profile found:', profileByUsername);
         resolvedUserId = profileByUsername.id;
         setProfile({
           ...profileByUsername,
@@ -203,15 +218,22 @@ export default function UserProfile() {
           social_links: (profileByUsername.social_links as any) || {}
         });
       } else {
+        console.log('Profile not found, trying fallback with UUID');
         // Fall back to UUID (shouldn't happen if logic above works)
         resolvedUserId = identifier;
-        const { data: profileById } = await supabase
+        const { data: profileById, error: fallbackError } = await supabase
           .from('profiles')
           .select('id, email, display_name, bio, avatar_url, username, education, work_experience, belt_history, home_dojo, training_locations, titles, created_at, cover_image_url, organization_id, favorite_fighters, favorite_techniques, hometown, hobbies, date_of_birth, social_links')
           .eq('id', identifier)
           .single();
         
+        if (fallbackError) {
+          console.error('Fallback query error:', fallbackError);
+          throw fallbackError;
+        }
+        
         if (profileById) {
+          console.log('Profile found by ID:', profileById);
           setProfile({
             ...profileById,
             education: (profileById.education as any) || [],
@@ -224,9 +246,14 @@ export default function UserProfile() {
             hobbies: (profileById.hobbies as any) || [],
             social_links: (profileById.social_links as any) || {}
           });
+        } else {
+          console.error('No profile found');
+          toast.error("ユーザーが見つかりませんでした");
+          return;
         }
       }
       
+      console.log('Setting actualUserId:', resolvedUserId);
       setActualUserId(resolvedUserId);
       await Promise.all([
         loadUserVideos(resolvedUserId),
@@ -236,6 +263,8 @@ export default function UserProfile() {
     } catch (error) {
       console.error('Error resolving user:', error);
       toast.error("プロフィールの読み込みに失敗しました");
+    } finally {
+      setLoading(false);
     }
   };
 
