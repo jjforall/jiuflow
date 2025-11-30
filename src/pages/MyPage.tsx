@@ -2065,48 +2065,95 @@ const MyPage = () => {
                         )}
                       </div>
                       {editingField === 'hobbies' ? (
-                        <div className="space-y-2">
-                          {(editValues.hobbies || []).map((hobby: string, index: number) => (
-                            <div key={index} className="flex items-center gap-2">
-                              <Input
-                                value={hobby}
-                                onChange={(e) => {
-                                  const newHobbies = [...editValues.hobbies];
-                                  newHobbies[index] = e.target.value;
-                                  setEditValues({ ...editValues, hobbies: newHobbies });
-                                }}
-                                placeholder={language === "ja" ? "趣味" : "Hobby"}
-                              />
-                              <Button 
-                                size="sm" 
-                                variant="ghost" 
-                                onClick={() => {
-                                  const newHobbies = editValues.hobbies.filter((_: any, i: number) => i !== index);
-                                  setEditValues({ ...editValues, hobbies: newHobbies });
-                                }}
-                              >
-                                <X className="w-4 h-4" />
-                              </Button>
+                        <div className="space-y-4">
+                          <div className="p-3 bg-background rounded border">
+                            <h4 className="text-sm font-medium mb-3">{language === "ja" ? "よく選ばれる趣味" : "Popular Hobbies"}</h4>
+                            <div className="grid grid-cols-2 gap-2 max-h-[300px] overflow-y-auto">
+                              {[
+                                "読書", "映画鑑賞", "音楽鑑賞", "料理", "旅行",
+                                "写真撮影", "ゲーム", "釣り", "ゴルフ", "サーフィン",
+                                "スノーボード", "スキー", "登山", "キャンプ", "ランニング",
+                                "サイクリング", "筋トレ", "ヨガ", "水泳", "ダンス",
+                                "楽器演奏", "絵画", "書道", "陶芸", "手芸",
+                                "ガーデニング", "ペット", "車", "バイク", "アニメ・漫画"
+                              ].map((hobby) => {
+                                const isSelected = editValues.hobbies?.includes(hobby);
+                                return (
+                                  <Button
+                                    key={hobby}
+                                    size="sm"
+                                    variant={isSelected ? "default" : "outline"}
+                                    onClick={() => {
+                                      const current = editValues.hobbies || [];
+                                      if (isSelected) {
+                                        setEditValues({ 
+                                          ...editValues, 
+                                          hobbies: current.filter((h: string) => h !== hobby)
+                                        });
+                                      } else {
+                                        setEditValues({ 
+                                          ...editValues, 
+                                          hobbies: [...current, hobby]
+                                        });
+                                      }
+                                    }}
+                                    className="justify-start text-left h-auto py-2"
+                                  >
+                                    {isSelected && <Check className="w-3 h-3 mr-1" />}
+                                    {hobby}
+                                  </Button>
+                                );
+                              })}
                             </div>
-                          ))}
-                          <Button 
-                            size="sm" 
-                            variant="outline" 
-                            onClick={() => setEditValues({ 
-                              ...editValues, 
-                              hobbies: [...(editValues.hobbies || []), '']
-                            })}
-                            className="w-full gap-2"
-                          >
-                            <Plus className="w-4 h-4" />
-                            {language === "ja" ? "趣味を追加" : "Add Hobby"}
-                          </Button>
+                          </div>
+                          
+                          <div className="p-3 bg-background rounded border">
+                            <h4 className="text-sm font-medium mb-2">{language === "ja" ? "カスタム入力" : "Custom Input"}</h4>
+                            <div className="flex gap-2">
+                              <Input
+                                placeholder={language === "ja" ? "趣味を入力" : "Enter hobby"}
+                                className="h-12"
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter' && e.currentTarget.value.trim()) {
+                                    const current = editValues.hobbies || [];
+                                    if (!current.includes(e.currentTarget.value.trim())) {
+                                      setEditValues({ 
+                                        ...editValues, 
+                                        hobbies: [...current, e.currentTarget.value.trim()]
+                                      });
+                                    }
+                                    e.currentTarget.value = '';
+                                  }
+                                }}
+                              />
+                            </div>
+                          </div>
+
+                          {editValues.hobbies && editValues.hobbies.length > 0 && (
+                            <div className="p-3 bg-background rounded border">
+                              <h4 className="text-sm font-medium mb-2">{language === "ja" ? "選択済み" : "Selected"}</h4>
+                              <div className="flex flex-wrap gap-2">
+                                {editValues.hobbies.map((hobby: string, index: number) => (
+                                  <Badge key={index} variant="secondary" className="gap-1">
+                                    {hobby}
+                                    <X 
+                                      className="w-3 h-3 cursor-pointer" 
+                                      onClick={() => {
+                                        const newHobbies = editValues.hobbies.filter((_: string, i: number) => i !== index);
+                                        setEditValues({ ...editValues, hobbies: newHobbies });
+                                      }}
+                                    />
+                                  </Badge>
+                                ))}
+                              </div>
+                            </div>
+                          )}
                         </div>
                       ) : (
                         profile?.hobbies && profile.hobbies.length > 0 ? (
                           <div className="flex flex-wrap gap-2">
                             {profile.hobbies.map((hobby, index) => (
-                              <Badge key={index} variant="secondary">{hobby}</Badge>
+                              <Badge key={index} variant="secondary" className="text-sm py-1.5 px-3">{hobby}</Badge>
                             ))}
                           </div>
                         ) : (
