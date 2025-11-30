@@ -58,11 +58,23 @@ export default function Dojos() {
       const { data, error } = await supabase
         .from('dojos')
         .select('*')
+        .order('is_verified', { ascending: false })
         .order('name');
 
       if (error) throw error;
-      setDojos(data || []);
-      setFilteredDojos(data || []);
+      
+      // Priority dojos: Yawara, Sweep, Overlimit Sapporo
+      const priorityNames = ['ヤワラ', 'スウィープ', 'オーバーリミット札幌'];
+      const priorityDojos = (data || []).filter(dojo => 
+        priorityNames.some(name => dojo.name_ja.includes(name))
+      );
+      const otherDojos = (data || []).filter(dojo => 
+        !priorityNames.some(name => dojo.name_ja.includes(name))
+      );
+      
+      const sortedDojos = [...priorityDojos, ...otherDojos];
+      setDojos(sortedDojos);
+      setFilteredDojos(sortedDojos);
     } catch (error) {
       console.error('Error loading dojos:', error);
       toast.error(language === "ja" ? "道場の読み込みに失敗しました" : "Failed to load dojos");
