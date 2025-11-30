@@ -42,6 +42,7 @@ interface Technique {
   thumbnail_url_ja: string | null;
   thumbnail_url_pt: string | null;
   video_metadata?: any;
+  updated_at?: string;
 }
 
 const Video = () => {
@@ -259,14 +260,16 @@ const Video = () => {
       }
     }
 
-    // Cache the result
-    sessionStorage.setItem(cacheKey, JSON.stringify({
+    // Cache the result with updated_at as part of the key
+    const cacheData = {
       technique: techniqueData,
       seriesVideos: seriesVids,
       seriesLetter: letterValue,
       viewCount: viewCount,
-      timestamp: Date.now()
-    }));
+      timestamp: Date.now(),
+      updated_at: techniqueData.updated_at // Track when the technique was last updated
+    };
+    sessionStorage.setItem(cacheKey, JSON.stringify(cacheData));
 
     setIsLoading(false);
   }, [viewCount]);
@@ -283,14 +286,25 @@ const Video = () => {
         const cachedData = JSON.parse(cached);
         const cacheAge = Date.now() - (cachedData.timestamp || 0);
         
-        // Use cache if less than 5 minutes old
+        // Check if cache is still valid (less than 5 minutes old)
         if (cacheAge < 5 * 60 * 1000) {
-          setTechnique(cachedData.technique);
-          setSeriesVideos(cachedData.seriesVideos || []);
-          setSeriesLetter(cachedData.seriesLetter || "");
-          setViewCount(cachedData.viewCount || 0);
-          setIsLoading(false);
-          return;
+          // Verify if the data has been updated by checking updated_at
+          const { data: currentData } = await supabase
+            .from("techniques")
+            .select("updated_at")
+            .eq("id", id)
+            .maybeSingle();
+          
+          // If updated_at matches cache, use cache
+          if (currentData && currentData.updated_at === cachedData.updated_at) {
+            setTechnique(cachedData.technique);
+            setSeriesVideos(cachedData.seriesVideos || []);
+            setSeriesLetter(cachedData.seriesLetter || "");
+            setViewCount(cachedData.viewCount || 0);
+            setIsLoading(false);
+            return;
+          }
+          // If updated_at doesn't match, cache is stale, reload from server
         }
       } catch (e) {
         console.error('Cache parse error:', e);
