@@ -122,6 +122,7 @@ const App = () => (
                       <GenerateImages />
                     </ProtectedRoute>
                   } />
+                  <Route path="/:username" element={<UserProfile />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </Suspense>
