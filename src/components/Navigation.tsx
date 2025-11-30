@@ -86,8 +86,10 @@ const Navigation = () => {
   const links = [
     { to: "/", label: t.nav.home },
     { to: "/map", label: t.nav.map },
+    { to: "/dojos", label: t.nav.dojos },
     { to: "/about", label: t.nav.about },
-    ...(subscribed ? [] : [{ to: "/join", label: t.nav.join }]),
+    { to: "/contact", label: t.nav.contact },
+    ...(!subscribed ? [{ to: "/join", label: t.nav.join }] : []),
   ];
 
   const languages: Array<{ code: "ja" | "en" | "pt" | "es" | "fr" | "de" | "zh" | "ko" | "it" | "ru" | "ar" | "hi"; label: string; name: string }> = [

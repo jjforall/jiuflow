@@ -28,12 +28,13 @@ const PaymentCanceled = lazy(() => import("./pages/PaymentCanceled"));
 const PaymentError = lazy(() => import("./pages/PaymentError"));
 const MyPage = lazy(() => import("./pages/MyPage"));
 const VideoUploadInfo = lazy(() => import("./pages/VideoUploadInfo"));
-const AdminLogin = lazy(() => import("./pages/AdminLogin"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
+const AdminLogin = lazy(() => import("./pages/AdminLogin"));
 const UserProfile = lazy(() => import("./pages/UserProfile"));
 const Dojos = lazy(() => import("./pages/Dojos"));
-const Dojo = lazy(() => import("./pages/Dojo"));
 const DojoNew = lazy(() => import("./pages/DojoNew"));
+const Dojo = lazy(() => import("./pages/Dojo"));
+const Contact = lazy(() => import("./pages/Contact"));
 const FounderTrial = lazy(() => import("./pages/FounderTrial"));
 const GenerateImages = lazy(() => import("./pages/GenerateImages"));
 const NotFound = lazy(() => import("./pages/NotFound"));
@@ -89,6 +90,7 @@ const App = () => (
                     </ProtectedRoute>
                   } />
                   <Route path="/about" element={<About />} />
+                  <Route path="/contact" element={<Contact />} />
                   <Route path="/join" element={<Join />} />
                   <Route path="/payment-success" element={<PaymentSuccess />} />
                   <Route path="/payment-canceled" element={<PaymentCanceled />} />
