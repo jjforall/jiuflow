@@ -24,6 +24,7 @@ import { ContactsManagement } from "@/components/admin/ContactsManagement";
 import { CelebrityApplicationsManagement } from "@/components/admin/CelebrityApplicationsManagement";
 import { CelebritiesManagement } from "@/components/admin/CelebritiesManagement";
 import { LineageManagement } from "@/components/admin/LineageManagement";
+import { CelebrityEditRequestsManagement } from "@/components/admin/CelebrityEditRequestsManagement";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -194,6 +195,7 @@ const AdminDashboard = () => {
                 {activeTab === "belts" && <BeltsManagement />}
                 {activeTab === "celebrities" && <CelebritiesManagement />}
                 {activeTab === "lineage" && <LineageManagement />}
+                {activeTab === "edit-requests" && <CelebrityEditRequestsManagement />}
                 {activeTab === "celebrity" && <CelebrityApplicationsManagement />}
                 {activeTab === "contacts" && <ContactsManagement />}
                 {activeTab === "logs" && <LogsTab />}
