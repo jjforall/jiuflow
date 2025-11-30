@@ -24,20 +24,38 @@ export const UserProfileEditDialog = ({ open, onOpenChange, userId, onSuccess }:
   const [username, setUsername] = useState("");
   const [education, setEducation] = useState<Array<{school: string; degree?: string; period?: string}>>([]);
   const [workExperience, setWorkExperience] = useState<Array<{company: string; position: string; period?: string; description?: string}>>([]);
+  const [titles, setTitles] = useState<Array<{title: string; rank?: string; organization?: string; customTitle?: string; weight_class?: string}>>([]);
+  const [organizationId, setOrganizationId] = useState<string>("");
+  const [organizations, setOrganizations] = useState<Array<{id: string; name: string; name_ja: string}>>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     if (open && userId) {
       loadProfile();
+      loadOrganizations();
     }
   }, [open, userId]);
+
+  const loadOrganizations = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('organizations')
+        .select('id, name, name_ja')
+        .order('name_ja');
+
+      if (error) throw error;
+      setOrganizations(data || []);
+    } catch (error) {
+      console.error('Error loading organizations:', error);
+    }
+  };
 
   const loadProfile = async () => {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('display_name, bio, avatar_url, username, education, work_experience')
+        .select('display_name, bio, avatar_url, username, education, work_experience, titles, organization_id')
         .eq('id', userId)
         .single();
 
@@ -49,6 +67,8 @@ export const UserProfileEditDialog = ({ open, onOpenChange, userId, onSuccess }:
       setUsername(data?.username || "");
       setEducation((data?.education as any) || []);
       setWorkExperience((data?.work_experience as any) || []);
+      setTitles((data?.titles as any) || []);
+      setOrganizationId(data?.organization_id || "");
     } catch (error) {
       console.error('Error loading profile:', error);
     }
@@ -126,6 +146,8 @@ export const UserProfileEditDialog = ({ open, onOpenChange, userId, onSuccess }:
           username: username.trim() || null,
           education: education.filter(e => e.school.trim()),
           work_experience: workExperience.filter(w => w.company.trim() && w.position.trim()),
+          titles: titles.filter(t => t.title || t.customTitle),
+          organization_id: organizationId || null,
         })
         .eq('id', userId);
 
@@ -377,6 +399,66 @@ export const UserProfileEditDialog = ({ open, onOpenChange, userId, onSuccess }:
             >
               {language === "ja" ? "職歴を追加" : "Add Work Experience"}
             </Button>
+          </div>
+
+          {/* Titles Section */}
+          <div className="space-y-2">
+            <Label>
+              {language === "ja" ? "タイトル・実績" : "Titles"}
+            </Label>
+            {titles.map((titleItem, index) => (
+              <div key={index} className="space-y-2 p-3 border border-border rounded-md">
+                <Input
+                  placeholder={language === "ja" ? "カスタムタイトル（例：全日本柔術選手権 優勝）" : "Custom Title"}
+                  value={titleItem.customTitle || ""}
+                  onChange={(e) => {
+                    const newTitles = [...titles];
+                    newTitles[index].customTitle = e.target.value;
+                    setTitles(newTitles);
+                  }}
+                />
+                <Button
+                  type="button"
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => {
+                    const newTitles = titles.filter((_, i) => i !== index);
+                    setTitles(newTitles);
+                  }}
+                >
+                  {language === "ja" ? "削除" : "Remove"}
+                </Button>
+              </div>
+            ))}
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setTitles([...titles, { title: "", customTitle: "" }])}
+            >
+              {language === "ja" ? "タイトルを追加" : "Add Title"}
+            </Button>
+          </div>
+
+          {/* Organization Section */}
+          <div className="space-y-2">
+            <Label htmlFor="organization">
+              {language === "ja" ? "所属団体" : "Organization"}
+            </Label>
+            <select
+              id="organization"
+              value={organizationId}
+              onChange={(e) => setOrganizationId(e.target.value)}
+              className="w-full h-10 px-3 py-2 text-sm rounded-md border border-input bg-background ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            >
+              <option value="">
+                {language === "ja" ? "選択してください" : "Select organization"}
+              </option>
+              {organizations.map((org) => (
+                <option key={org.id} value={org.id}>
+                  {language === "ja" ? org.name_ja : org.name}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div className="flex gap-2 justify-end pt-4">
