@@ -5,9 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Navigation from "@/components/Navigation";
 import { toast } from "sonner";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Users, ShieldCheck, Grid3X3, DollarSign, UserCheck, Mail } from "lucide-react";
+import { Users, DollarSign, UserCheck } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { AdminSidebar } from "@/components/admin/AdminSidebar";
 
 // Import tab components
 import { TechniquesManagement } from "@/components/admin/TechniquesManagement";
@@ -24,6 +25,7 @@ import { ContactsManagement } from "@/components/admin/ContactsManagement";
 const AdminDashboard = () => {
   const navigate = useNavigate();
   const { signOut } = useAuth();
+  const [activeTab, setActiveTab] = useState("techniques");
   const [stats, setStats] = useState({
     totalMembers: 0,
     paidMembers: 0,
@@ -94,17 +96,23 @@ const AdminDashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <Navigation />
+    <SidebarProvider defaultOpen>
+      <div className="min-h-screen w-full flex bg-background">
+        <AdminSidebar activeTab={activeTab} onTabChange={setActiveTab} />
 
-      <div className="pt-32 pb-20 px-6">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex justify-between items-center mb-12">
-            <h1 className="text-4xl font-light">Admin Dashboard</h1>
+        <div className="flex-1 flex flex-col">
+          <header className="h-16 border-b flex items-center px-6 justify-between sticky top-0 bg-background z-10">
+            <div className="flex items-center gap-4">
+              <SidebarTrigger />
+              <h1 className="text-2xl font-light">Admin Dashboard</h1>
+            </div>
             <Button variant="outline" onClick={handleLogout}>
               Logout
             </Button>
-          </div>
+          </header>
+
+          <main className="flex-1 px-6 py-8 overflow-auto">
+            <div className="max-w-7xl mx-auto">
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
             <Card>
@@ -173,87 +181,23 @@ const AdminDashboard = () => {
             </Card>
           </div>
 
-          <Tabs defaultValue="techniques" className="w-full">
-            <TabsList className="grid w-full grid-cols-9 mb-8">
-              <TabsTrigger value="techniques" className="flex items-center gap-2">
-                <Grid3X3 className="w-4 h-4" />
-                テクニック管理
-              </TabsTrigger>
-              <TabsTrigger value="users" className="flex items-center gap-2">
-                <Users className="w-4 h-4" />
-                会員管理
-              </TabsTrigger>
-              <TabsTrigger value="dojos">
-                道場管理
-              </TabsTrigger>
-              <TabsTrigger value="subscriptions">
-                サブスク管理
-              </TabsTrigger>
-              <TabsTrigger value="plans" className="flex items-center gap-2">
-                <ShieldCheck className="w-4 h-4" />
-                プラン管理
-              </TabsTrigger>
-              <TabsTrigger value="points">
-                ポイント管理
-              </TabsTrigger>
-              <TabsTrigger value="belts">
-                帯管理
-              </TabsTrigger>
-              <TabsTrigger value="contacts" className="flex items-center gap-2">
-                <Mail className="w-4 h-4" />
-                お問い合わせ
-              </TabsTrigger>
-              <TabsTrigger value="logs">
-                ログ
-              </TabsTrigger>
-              <TabsTrigger value="tips">
-                投げ銭
-              </TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="techniques" className="space-y-6">
-              <TechniquesManagement />
-            </TabsContent>
-
-            <TabsContent value="users" className="space-y-6">
-              <UsersTab />
-            </TabsContent>
-
-            <TabsContent value="dojos" className="space-y-6">
-              <DojosManagement />
-            </TabsContent>
-
-            <TabsContent value="subscriptions">
-              <SubscriptionsTab />
-            </TabsContent>
-
-            <TabsContent value="plans" className="space-y-6">
-              <PlansTab />
-            </TabsContent>
-
-            <TabsContent value="points" className="space-y-6">
-              <PointsManagement />
-            </TabsContent>
-
-            <TabsContent value="belts" className="space-y-6">
-              <BeltsManagement />
-            </TabsContent>
-
-            <TabsContent value="contacts" className="space-y-6">
-              <ContactsManagement />
-            </TabsContent>
-
-            <TabsContent value="logs" className="space-y-6">
-              <LogsTab />
-            </TabsContent>
-
-            <TabsContent value="tips" className="space-y-6">
-              <TipsManagement />
-            </TabsContent>
-          </Tabs>
+              <div className="space-y-6">
+                {activeTab === "techniques" && <TechniquesManagement />}
+                {activeTab === "users" && <UsersTab />}
+                {activeTab === "dojos" && <DojosManagement />}
+                {activeTab === "subscriptions" && <SubscriptionsTab />}
+                {activeTab === "plans" && <PlansTab />}
+                {activeTab === "points" && <PointsManagement />}
+                {activeTab === "belts" && <BeltsManagement />}
+                {activeTab === "contacts" && <ContactsManagement />}
+                {activeTab === "logs" && <LogsTab />}
+                {activeTab === "tips" && <TipsManagement />}
+              </div>
+            </div>
+          </main>
         </div>
       </div>
-    </div>
+    </SidebarProvider>
   );
 };
 
