@@ -175,6 +175,7 @@ const MyPage = () => {
   const [dojoDialogOpen, setDojoDialogOpen] = useState(false);
   const [availableDojos, setAvailableDojos] = useState<Array<{ id: string; name: string; name_ja: string; name_pt: string; location: string | null }>>([]);
   const [selectedDojoId, setSelectedDojoId] = useState<string>("");
+  const [selectedDojoName, setSelectedDojoName] = useState<string>("");
   const [selectedRelationshipType, setSelectedRelationshipType] = useState<"home" | "training">("home");
   const [coverGalleryOpen, setCoverGalleryOpen] = useState(false);
   const [coverUploadOpen, setCoverUploadOpen] = useState(false);
@@ -673,6 +674,7 @@ const MyPage = () => {
       toast.success(language === "ja" ? "道場を追加しました" : "Dojo added");
       setDojoDialogOpen(false);
       setSelectedDojoId("");
+      setSelectedDojoName("");
       setSelectedRelationshipType("home");
       loadUserDojos();
     } catch (error: any) {
@@ -3136,19 +3138,45 @@ const MyPage = () => {
           <div className="space-y-4">
             <div>
               <Label>{language === "ja" ? "道場を選択" : "Select Dojo"}</Label>
-              <Select value={selectedDojoId} onValueChange={setSelectedDojoId}>
-                <SelectTrigger>
-                  <SelectValue placeholder={language === "ja" ? "道場を選択してください" : "Select a dojo"} />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableDojos.map((dojo) => (
-                    <SelectItem key={dojo.id} value={dojo.id}>
-                      {language === "ja" ? dojo.name_ja : language === "pt" ? dojo.name_pt : dojo.name}
-                      {dojo.location && ` - ${dojo.location}`}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <InputWithSuggestions
+                value={selectedDojoName}
+                onChange={(e) => {
+                  const newName = e.target.value;
+                  setSelectedDojoName(newName);
+                  
+                  // Find matching dojo
+                  const matchedDojo = availableDojos.find((dojo) => {
+                    const displayName = language === "ja" ? dojo.name_ja : language === "pt" ? dojo.name_pt : dojo.name;
+                    const displayNameWithLocation = dojo.location ? `${displayName} - ${dojo.location}` : displayName;
+                    return displayNameWithLocation === newName || displayName === newName;
+                  });
+                  
+                  if (matchedDojo) {
+                    setSelectedDojoId(matchedDojo.id);
+                  } else {
+                    setSelectedDojoId("");
+                  }
+                }}
+                onSelectSuggestion={(value) => {
+                  setSelectedDojoName(value);
+                  
+                  // Find matching dojo
+                  const matchedDojo = availableDojos.find((dojo) => {
+                    const displayName = language === "ja" ? dojo.name_ja : language === "pt" ? dojo.name_pt : dojo.name;
+                    const displayNameWithLocation = dojo.location ? `${displayName} - ${dojo.location}` : displayName;
+                    return displayNameWithLocation === value || displayName === value;
+                  });
+                  
+                  if (matchedDojo) {
+                    setSelectedDojoId(matchedDojo.id);
+                  }
+                }}
+                suggestions={availableDojos.map((dojo) => {
+                  const displayName = language === "ja" ? dojo.name_ja : language === "pt" ? dojo.name_pt : dojo.name;
+                  return dojo.location ? `${displayName} - ${dojo.location}` : displayName;
+                })}
+                placeholder={language === "ja" ? "道場を選択してください" : "Select a dojo"}
+              />
             </div>
             
             <div>
