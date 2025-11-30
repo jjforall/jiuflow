@@ -1578,34 +1578,46 @@ const MyPage = () => {
                                 {language === "ja" ? "所属" : "Home Gym"}
                               </h4>
                               <div className="space-y-2">
-                                {userDojos.filter(ud => ud.relationship_type === 'home').map((userDojo) => (
-                                  <div key={userDojo.id} className="flex items-center justify-between p-3 bg-background rounded-lg border">
-                                    <Link 
-                                      to={`/dojo/${userDojo.dojo.id}`}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="flex-1 hover:text-primary transition-colors"
-                                    >
-                                      <div className="font-medium flex items-center gap-1">
-                                        {language === "ja" ? userDojo.dojo.name_ja : language === "pt" ? userDojo.dojo.name_pt : userDojo.dojo.name}
-                                        <ExternalLink className="w-3 h-3 opacity-50" />
-                                      </div>
-                                      {userDojo.dojo.location && (
-                                        <div className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
-                                          <MapPin className="w-3 h-3" />
-                                          {userDojo.dojo.location}
-                                        </div>
-                                      )}
-                                    </Link>
-                                    <Button
-                                      size="sm"
-                                      variant="ghost"
-                                      onClick={() => handleRemoveDojo(userDojo.id)}
-                                    >
-                                      <Trash2 className="w-4 h-4" />
-                                    </Button>
-                                  </div>
-                                ))}
+                                 {userDojos.filter(ud => ud.relationship_type === 'home').map((userDojo) => (
+                                   <div key={userDojo.id} className="flex items-center gap-3 p-3 bg-background rounded-lg border group hover:border-primary/50 transition-colors">
+                                     {/* Dojo Image */}
+                                     <div className="flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden bg-muted">
+                                       {(userDojo.dojo.cover_image_url || userDojo.dojo.logo_url) ? (
+                                         <img 
+                                           src={userDojo.dojo.cover_image_url || userDojo.dojo.logo_url} 
+                                           alt={language === "ja" ? userDojo.dojo.name_ja : language === "pt" ? userDojo.dojo.name_pt : userDojo.dojo.name}
+                                           className="w-full h-full object-cover"
+                                         />
+                                       ) : (
+                                         <div className="w-full h-full flex items-center justify-center text-2xl">
+                                           🥋
+                                         </div>
+                                       )}
+                                     </div>
+                                     
+                                     {/* Dojo Info */}
+                                     <Link 
+                                       to={`/dojo/${userDojo.dojo.id}`}
+                                       target="_blank"
+                                       rel="noopener noreferrer"
+                                       className="flex-1 hover:text-primary transition-colors"
+                                     >
+                                       <div className="font-medium flex items-center gap-1">
+                                         {language === "ja" ? userDojo.dojo.name_ja : language === "pt" ? userDojo.dojo.name_pt : userDojo.dojo.name}
+                                         <ExternalLink className="w-3 h-3 opacity-50" />
+                                       </div>
+                                     </Link>
+                                     
+                                     <Button
+                                       size="sm"
+                                       variant="ghost"
+                                       onClick={() => handleRemoveDojo(userDojo.id)}
+                                       className="opacity-0 group-hover:opacity-100 transition-opacity"
+                                     >
+                                       <Trash2 className="w-4 h-4" />
+                                     </Button>
+                                   </div>
+                                 ))}
                               </div>
                             </div>
                           )}
@@ -1617,34 +1629,46 @@ const MyPage = () => {
                                 {language === "ja" ? "出稽古" : "Training"}
                               </h4>
                               <div className="space-y-2">
-                                {userDojos.filter(ud => ud.relationship_type === 'training').map((userDojo) => (
-                                  <div key={userDojo.id} className="flex items-center justify-between p-3 bg-background rounded-lg border">
-                                    <Link 
-                                      to={`/dojo/${userDojo.dojo.id}`}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="flex-1 hover:text-primary transition-colors"
-                                    >
-                                      <div className="font-medium flex items-center gap-1">
-                                        {language === "ja" ? userDojo.dojo.name_ja : language === "pt" ? userDojo.dojo.name_pt : userDojo.dojo.name}
-                                        <ExternalLink className="w-3 h-3 opacity-50" />
-                                      </div>
-                                      {userDojo.dojo.location && (
-                                        <div className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
-                                          <MapPin className="w-3 h-3" />
-                                          {userDojo.dojo.location}
-                                        </div>
-                                      )}
-                                    </Link>
-                                    <Button
-                                      size="sm"
-                                      variant="ghost"
-                                      onClick={() => handleRemoveDojo(userDojo.id)}
-                                    >
-                                      <Trash2 className="w-4 h-4" />
-                                    </Button>
-                                  </div>
-                                ))}
+                                 {userDojos.filter(ud => ud.relationship_type === 'training').map((userDojo) => (
+                                   <div key={userDojo.id} className="flex items-center gap-3 p-3 bg-background rounded-lg border group hover:border-primary/50 transition-colors">
+                                     {/* Dojo Image */}
+                                     <div className="flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden bg-muted">
+                                       {(userDojo.dojo.cover_image_url || userDojo.dojo.logo_url) ? (
+                                         <img 
+                                           src={userDojo.dojo.cover_image_url || userDojo.dojo.logo_url} 
+                                           alt={language === "ja" ? userDojo.dojo.name_ja : language === "pt" ? userDojo.dojo.name_pt : userDojo.dojo.name}
+                                           className="w-full h-full object-cover"
+                                         />
+                                       ) : (
+                                         <div className="w-full h-full flex items-center justify-center text-2xl">
+                                           🥋
+                                         </div>
+                                       )}
+                                     </div>
+                                     
+                                     {/* Dojo Info */}
+                                     <Link 
+                                       to={`/dojo/${userDojo.dojo.id}`}
+                                       target="_blank"
+                                       rel="noopener noreferrer"
+                                       className="flex-1 hover:text-primary transition-colors"
+                                     >
+                                       <div className="font-medium flex items-center gap-1">
+                                         {language === "ja" ? userDojo.dojo.name_ja : language === "pt" ? userDojo.dojo.name_pt : userDojo.dojo.name}
+                                         <ExternalLink className="w-3 h-3 opacity-50" />
+                                       </div>
+                                     </Link>
+                                     
+                                     <Button
+                                       size="sm"
+                                       variant="ghost"
+                                       onClick={() => handleRemoveDojo(userDojo.id)}
+                                       className="opacity-0 group-hover:opacity-100 transition-opacity"
+                                     >
+                                       <Trash2 className="w-4 h-4" />
+                                     </Button>
+                                   </div>
+                                 ))}
                               </div>
                             </div>
                           )}
