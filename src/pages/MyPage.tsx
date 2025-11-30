@@ -1406,18 +1406,39 @@ const MyPage = () => {
                                     </SelectItem>
                                   </SelectContent>
                                 </Select>
-                                <div className="grid grid-cols-2 gap-2">
+                                <div className="grid grid-cols-3 gap-2">
                                   <Select
-                                    value={belt.date || ''}
-                                    onValueChange={(value) => updateBeltHistory(index, 'date', value)}
+                                    value={belt.date?.split('-')[0] || ''}
+                                    onValueChange={(value) => {
+                                      const month = belt.date?.split('-')[1] || '';
+                                      updateBeltHistory(index, 'date', month ? `${value}-${month}` : value);
+                                    }}
                                   >
                                     <SelectTrigger className="h-12">
-                                      <SelectValue placeholder={language === "ja" ? "取得年" : "Year"} />
+                                      <SelectValue placeholder={language === "ja" ? "年" : "Year"} />
                                     </SelectTrigger>
                                     <SelectContent>
                                       {Array.from({ length: new Date().getFullYear() - 1949 }, (_, i) => new Date().getFullYear() - i).map((year) => (
                                         <SelectItem key={year} value={year.toString()}>
                                           {year}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                  <Select
+                                    value={belt.date?.split('-')[1] || ''}
+                                    onValueChange={(value) => {
+                                      const year = belt.date?.split('-')[0] || new Date().getFullYear().toString();
+                                      updateBeltHistory(index, 'date', `${year}-${value}`);
+                                    }}
+                                  >
+                                    <SelectTrigger className="h-12">
+                                      <SelectValue placeholder={language === "ja" ? "月" : "Month"} />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {Array.from({ length: 12 }, (_, i) => (i + 1).toString().padStart(2, '0')).map((month) => (
+                                        <SelectItem key={month} value={month}>
+                                          {month}
                                         </SelectItem>
                                       ))}
                                     </SelectContent>
