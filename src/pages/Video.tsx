@@ -279,7 +279,8 @@ const Video = () => {
     };
 
     checkAuthAndLoadTechnique();
-  }, [id, navigate, loadTechnique]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id, navigate]);
 
   const getTechniqueName = (tech: Technique) => {
     switch (language) {
