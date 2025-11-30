@@ -10,7 +10,9 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { Star, Languages } from "lucide-react";
+import { Star, Languages, GitBranch } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { LineageTreeView } from "@/components/LineageTreeView";
 
 interface Celebrity {
   id: string;
@@ -121,39 +123,54 @@ const Athletes = () => {
             </p>
           </div>
 
-          {/* Loading State */}
-          {isLoading ? (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 animate-fade-in">
-              {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-                <Card key={i} className="overflow-hidden">
-                  <CardHeader>
-                    <div className="flex items-center gap-4">
-                      <Skeleton className="h-20 w-20 rounded-full" />
-                      <div className="flex-1 space-y-2">
-                        <Skeleton className="h-6 w-32" />
-                        <Skeleton className="h-4 w-24" />
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <Skeleton className="h-4 w-full mb-2" />
-                    <Skeleton className="h-4 w-3/4" />
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          ) : celebrities.length === 0 ? (
-            <div className="text-center py-16">
-              <p className="text-lg text-muted-foreground">
-                {language === "ja" 
-                  ? "選手が登録されていません" 
-                  : language === "pt" 
-                  ? "Nenhum atleta registrado" 
-                  : "No athletes registered"}
-              </p>
-            </div>
-          ) : (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 animate-fade-in">
+          {/* Tabs for different views */}
+          <Tabs defaultValue="grid" className="w-full">
+            <TabsList className="grid w-full max-w-md mx-auto grid-cols-2 mb-8">
+              <TabsTrigger value="grid" className="gap-2">
+                <Star className="h-4 w-4" />
+                {language === "ja" ? "選手一覧" : language === "pt" ? "Lista" : "Grid View"}
+              </TabsTrigger>
+              <TabsTrigger value="lineage" className="gap-2">
+                <GitBranch className="h-4 w-4" />
+                {language === "ja" ? "系統図" : language === "pt" ? "Linhagem" : "Lineage Tree"}
+              </TabsTrigger>
+            </TabsList>
+
+            {/* Grid View */}
+            <TabsContent value="grid">
+              {/* Loading State */}
+              {isLoading ? (
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 animate-fade-in">
+                  {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+                    <Card key={i} className="overflow-hidden">
+                      <CardHeader>
+                        <div className="flex items-center gap-4">
+                          <Skeleton className="h-20 w-20 rounded-full" />
+                          <div className="flex-1 space-y-2">
+                            <Skeleton className="h-6 w-32" />
+                            <Skeleton className="h-4 w-24" />
+                          </div>
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        <Skeleton className="h-4 w-full mb-2" />
+                        <Skeleton className="h-4 w-3/4" />
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              ) : celebrities.length === 0 ? (
+                <div className="text-center py-16">
+                  <p className="text-lg text-muted-foreground">
+                    {language === "ja" 
+                      ? "選手が登録されていません" 
+                      : language === "pt" 
+                      ? "Nenhum atleta registrado" 
+                      : "No athletes registered"}
+                  </p>
+                </div>
+              ) : (
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 animate-fade-in">
               {celebrities.map((celebrity) => (
                 <div key={celebrity.id} className="group">
                   <Link
@@ -241,9 +258,18 @@ const Athletes = () => {
                   </Card>
                 </Link>
                 </div>
-              ))}
-            </div>
-          )}
+                  ))}
+                </div>
+              )}
+            </TabsContent>
+
+            {/* Lineage Tree View */}
+            <TabsContent value="lineage">
+              <div className="max-w-6xl mx-auto">
+                <LineageTreeView />
+              </div>
+            </TabsContent>
+          </Tabs>
         </div>
       </main>
 
