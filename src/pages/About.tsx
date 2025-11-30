@@ -130,10 +130,10 @@ const About = () => {
           <section className="py-20 text-center">
             <h1 className="text-5xl md:text-6xl font-light mb-6">About</h1>
             <p className="text-2xl md:text-3xl font-light mb-8 max-w-3xl mx-auto">
-              柔術を、映像で体系化する──
+              安全で、長く続けられ、かつ試合でも強い。
             </p>
             <p className="text-xl text-muted-foreground font-light max-w-2xl mx-auto">
-              それが、私たちのミッションです。
+              我々が考える「いい柔術」を広める──それが、私たちのミッションです。
             </p>
           </section>
 
