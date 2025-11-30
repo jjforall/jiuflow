@@ -20,6 +20,7 @@ import { VideoRating } from "@/components/VideoRating";
 import { VideoComments } from "@/components/VideoComments";
 import { VideoTip } from "@/components/VideoTip";
 import { Separator } from "@/components/ui/separator";
+import { useFloatingVideo } from "@/contexts/FloatingVideoContext";
 
 interface Technique {
   id: string;
@@ -51,6 +52,7 @@ const Video = () => {
   const navigate = useNavigate();
   const { subscribed, loading: subscriptionLoading } = useSubscription();
   const { isAdmin, isStaff, user } = useAuth();
+  const { setFloatingVideo } = useFloatingVideo();
   const [technique, setTechnique] = useState<Technique | null>(null);
   const [seriesVideos, setSeriesVideos] = useState<Technique[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -60,6 +62,7 @@ const Video = () => {
   const [isUIVisible, setIsUIVisible] = useState(true);
   const [isVideoPlaying, setIsVideoPlaying] = useState(false);
   const hideUITimerRef = useRef<NodeJS.Timeout | null>(null);
+  const videoElementRef = useRef<HTMLVideoElement | null>(null);
 
   // Handle video playback and UI hiding
   const handleVideoPlay = useCallback(() => {
@@ -92,14 +95,35 @@ const Video = () => {
     }
   }, [isVideoPlaying]);
 
-  // Cleanup timer on unmount
+  // Cleanup timer on unmount and activate floating video
   useEffect(() => {
     return () => {
       if (hideUITimerRef.current) {
         clearTimeout(hideUITimerRef.current);
       }
+      
+      // Activate floating video if there's a technique and it was playing
+      if (technique && isVideoPlaying) {
+        const videoUrl = getTechniqueVideoUrl(technique);
+        const thumbnailUrl = getTechniqueThumbnailUrl(technique);
+        const title = getTechniqueName(technique);
+        
+        // Try to get current time from video element
+        const progressKey = `video-progress:${videoUrl}`;
+        const savedProgress = sessionStorage.getItem(progressKey);
+        const currentTime = savedProgress ? parseFloat(savedProgress) : 0;
+        
+        if (videoUrl) {
+          setFloatingVideo({
+            videoUrl,
+            thumbnailUrl,
+            title,
+            currentTime
+          });
+        }
+      }
     };
-  }, []);
+  }, [technique, isVideoPlaying, language, setFloatingVideo]);
 
   // Check for tip success
   useEffect(() => {
