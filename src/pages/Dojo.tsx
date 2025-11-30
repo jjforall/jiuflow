@@ -16,6 +16,7 @@ import { toast } from "sonner";
 
 interface Dojo {
   id: string;
+  slug?: string | null;
   name: string;
   name_ja: string;
   name_pt: string;
@@ -78,7 +79,7 @@ interface Member {
 }
 
 export default function Dojo() {
-  const { id } = useParams();
+  const { id, slugOrUsername } = useParams<{ id?: string; slugOrUsername?: string }>();
   const { language } = useLanguage();
   const [dojo, setDojo] = useState<Dojo | null>(null);
   const [members, setMembers] = useState<Member[]>([]);
@@ -86,19 +87,27 @@ export default function Dojo() {
   const [userId, setUserId] = useState<string | null>(null);
   const [isFavorite, setIsFavorite] = useState(false);
 
+  // Determine if we're using an ID or slug
+  const identifier = id || slugOrUsername;
+
   useEffect(() => {
-    if (id) {
+    if (identifier) {
       loadDojo();
+    }
+  }, [identifier]);
+
+  useEffect(() => {
+    if (dojo?.id) {
       loadMembers();
       checkAuth();
     }
-  }, [id]);
+  }, [dojo?.id]);
 
   useEffect(() => {
-    if (userId && id) {
+    if (userId && dojo?.id) {
       checkFavorite();
     }
-  }, [userId, id]);
+  }, [userId, dojo?.id]);
 
   const checkAuth = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -106,14 +115,14 @@ export default function Dojo() {
   };
 
   const checkFavorite = async () => {
-    if (!userId || !id) return;
+    if (!userId || !dojo?.id) return;
     
     try {
       const { data, error } = await supabase
         .from('favorite_dojos')
         .select('id')
         .eq('user_id', userId)
-        .eq('dojo_id', id)
+        .eq('dojo_id', dojo.id)
         .maybeSingle();
 
       if (error) throw error;
@@ -124,7 +133,7 @@ export default function Dojo() {
   };
 
   const toggleFavorite = async () => {
-    if (!userId || !id) {
+    if (!userId || !dojo?.id) {
       toast.error(language === "ja" ? "ログインが必要です" : "Login required");
       return;
     }
@@ -135,7 +144,7 @@ export default function Dojo() {
           .from('favorite_dojos')
           .delete()
           .eq('user_id', userId)
-          .eq('dojo_id', id);
+          .eq('dojo_id', dojo.id);
 
         if (error) throw error;
         
@@ -144,7 +153,7 @@ export default function Dojo() {
       } else {
         const { error } = await supabase
           .from('favorite_dojos')
-          .insert({ user_id: userId, dojo_id: id });
+          .insert({ user_id: userId, dojo_id: dojo.id });
 
         if (error) throw error;
         
@@ -158,14 +167,26 @@ export default function Dojo() {
   };
 
   const loadDojo = async () => {
+    if (!identifier) return;
+
     try {
-      const { data, error } = await supabase
-        .from('dojos')
-        .select('*')
-        .eq('id', id)
-        .single();
+      let query = supabase.from('dojos').select('*');
+      
+      // Check if identifier is a UUID (ID) or a slug
+      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(identifier);
+      
+      if (isUUID) {
+        query = query.eq('id', identifier);
+      } else {
+        query = query.eq('slug', identifier);
+      }
+
+      const { data, error } = await query.maybeSingle();
 
       if (error) throw error;
+      if (!data) {
+        toast.error(language === "ja" ? "道場が見つかりませんでした" : "Dojo not found");
+      }
       setDojo(data);
     } catch (error) {
       console.error('Error loading dojo:', error);
@@ -176,6 +197,8 @@ export default function Dojo() {
   };
 
   const loadMembers = async () => {
+    if (!dojo?.id) return;
+
     try {
       const { data, error } = await supabase
         .from('user_dojos')
@@ -188,7 +211,7 @@ export default function Dojo() {
             avatar_url
           )
         `)
-        .eq('dojo_id', id);
+        .eq('dojo_id', dojo.id);
 
       if (error) throw error;
       
@@ -977,7 +1000,7 @@ export default function Dojo() {
                       {language === "ja" ? "所属" : "Home Gym"}
                     </h3>
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                      {homeMembers.map((member) => (
+                      {homeMembers.slice(0, 10).map((member) => (
                         <Link
                           key={member.id}
                           to={`/${member.username || member.id}`}
@@ -995,6 +1018,11 @@ export default function Dojo() {
                         </Link>
                       ))}
                     </div>
+                    {homeMembers.length > 10 && (
+                      <p className="text-center text-muted-foreground mt-4 text-sm">
+                        {language === "ja" ? `その他${homeMembers.length - 10}名` : `and ${homeMembers.length - 10} more`}
+                      </p>
+                    )}
                   </div>
                 )}
 
@@ -1005,7 +1033,7 @@ export default function Dojo() {
                       {language === "ja" ? "出稽古" : "Training Here"}
                     </h3>
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                      {trainingMembers.map((member) => (
+                      {trainingMembers.slice(0, 10).map((member) => (
                         <Link
                           key={member.id}
                           to={`/${member.username || member.id}`}
@@ -1023,6 +1051,11 @@ export default function Dojo() {
                         </Link>
                       ))}
                     </div>
+                    {trainingMembers.length > 10 && (
+                      <p className="text-center text-muted-foreground mt-4 text-sm">
+                        {language === "ja" ? `その他${trainingMembers.length - 10}名` : `and ${trainingMembers.length - 10} more`}
+                      </p>
+                    )}
                   </div>
                 )}
               </CardContent>

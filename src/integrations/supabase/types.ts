@@ -155,6 +155,7 @@ export type Database = {
           safety_measures_ja: string | null
           safety_measures_pt: string | null
           schedule: Json | null
+          slug: string | null
           target_audience: string | null
           target_audience_ja: string | null
           target_audience_pt: string | null
@@ -212,6 +213,7 @@ export type Database = {
           safety_measures_ja?: string | null
           safety_measures_pt?: string | null
           schedule?: Json | null
+          slug?: string | null
           target_audience?: string | null
           target_audience_ja?: string | null
           target_audience_pt?: string | null
@@ -269,6 +271,7 @@ export type Database = {
           safety_measures_ja?: string | null
           safety_measures_pt?: string | null
           schedule?: Json | null
+          slug?: string | null
           target_audience?: string | null
           target_audience_ja?: string | null
           target_audience_pt?: string | null

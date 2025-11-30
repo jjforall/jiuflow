@@ -34,6 +34,7 @@ const UserProfile = lazy(() => import("./pages/UserProfile"));
 const Dojos = lazy(() => import("./pages/Dojos"));
 const DojoNew = lazy(() => import("./pages/DojoNew"));
 const Dojo = lazy(() => import("./pages/Dojo"));
+const DojoOrProfile = lazy(() => import("./pages/DojoOrProfile"));
 const Contact = lazy(() => import("./pages/Contact"));
 const FounderTrial = lazy(() => import("./pages/FounderTrial"));
 const GenerateImages = lazy(() => import("./pages/GenerateImages"));
@@ -112,6 +113,7 @@ const App = () => (
                     </ProtectedRoute>
                   } />
                   <Route path="/dojo/:id" element={<Dojo />} />
+                  <Route path="/:slugOrUsername" element={<DojoOrProfile />} />
                   <Route path="/founder-trial" element={<FounderTrial />} />
                   <Route path="/admin" element={<AdminLogin />} />
                   <Route path="/admin-dashboard" element={
@@ -129,7 +131,6 @@ const App = () => (
                       <GenerateImages />
                     </ProtectedRoute>
                   } />
-                  <Route path="/:username" element={<UserProfile />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </Suspense>
