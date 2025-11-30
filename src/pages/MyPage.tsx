@@ -150,8 +150,6 @@ const MyPage = () => {
   const [userVideos, setUserVideos] = useState<UserVideo[]>([]);
   const [videosLoading, setVideosLoading] = useState(true);
   const [referralCode, setReferralCode] = useState<string>("");
-  const [userPoints, setUserPoints] = useState<number>(0);
-  const [pointsLoading, setPointsLoading] = useState(true);
   const [isEditingCode, setIsEditingCode] = useState(false);
   const [editedCode, setEditedCode] = useState("");
   const [editingVideo, setEditingVideo] = useState<UserVideo | null>(null);
@@ -217,7 +215,7 @@ const MyPage = () => {
   useEffect(() => {
     if (user) {
       loadUserVideos();
-      loadReferralCodeAndPoints();
+      loadReferralCode();
       loadProfile();
       loadDojoSuggestions();
       loadInstructorSuggestions();
@@ -556,10 +554,9 @@ const MyPage = () => {
     }
   };
 
-  const loadReferralCodeAndPoints = async () => {
+  const loadReferralCode = async () => {
     if (!user) return;
     
-    setPointsLoading(true);
     try {
       // Load referral code
       const { data: codeData, error: codeError } = await supabase
@@ -574,6 +571,7 @@ const MyPage = () => {
 
       if (codeData) {
         setReferralCode(codeData.code);
+        setEditedCode(codeData.code);
         
         // Create Stripe coupon for this referral code
         const { data: { session } } = await supabase.auth.getSession();
@@ -596,6 +594,7 @@ const MyPage = () => {
 
         if (!insertError) {
           setReferralCode(newCode);
+          setEditedCode(newCode);
           
           // Create Stripe coupon for the new code
           const { data: { session } } = await supabase.auth.getSession();
@@ -608,33 +607,8 @@ const MyPage = () => {
           }
         }
       }
-
-      // Load points
-      const { data: pointsData, error: pointsError } = await supabase
-        .from('user_points')
-        .select('points')
-        .eq('user_id', user.id)
-        .maybeSingle();
-
-      if (pointsError) {
-        console.error('Error loading points:', pointsError);
-      }
-      
-      setUserPoints(pointsData?.points || 0);
-      
-      // Initialize points if not exists
-      if (!pointsData) {
-        await supabase
-          .from('user_points')
-          .insert({
-            user_id: user.id,
-            points: 0,
-          });
-      }
     } catch (error) {
-      console.error('Error loading referral code and points:', error);
-    } finally {
-      setPointsLoading(false);
+      console.error('Error loading referral code:', error);
     }
   };
 
@@ -1048,21 +1022,6 @@ const MyPage = () => {
       
       if (error) throw error;
       setSubscription(data);
-
-      // Award monthly points if subscribed
-      if (data?.subscribed) {
-        try {
-          await supabase.functions.invoke("award-monthly-points", {
-            headers: {
-              Authorization: `Bearer ${session.access_token}`,
-            },
-          });
-          // Reload points after awarding
-          loadReferralCodeAndPoints();
-        } catch (pointsError) {
-          console.error("Error awarding points:", pointsError);
-        }
-      }
     } catch (error: unknown) {
       console.error("Subscription check error:", error);
       toast.error(language === "ja" ? "サブスクリプション情報の取得に失敗しました" : "Failed to fetch subscription");
@@ -1294,10 +1253,6 @@ const MyPage = () => {
                   <div>
                     <span className="font-bold">{userVideos.length}</span>
                     <span className="text-muted-foreground ml-1">{language === "ja" ? "動画" : "Videos"}</span>
-                  </div>
-                  <div>
-                    <span className="font-bold">{userPoints.toLocaleString()}</span>
-                    <span className="text-muted-foreground ml-1">{language === "ja" ? "ポイント" : "Points"}</span>
                   </div>
                   {profile?.titles && profile.titles.length > 0 && (
                     <div>
@@ -2846,8 +2801,8 @@ const MyPage = () => {
             </Card>
           </div>
 
-          {/* Referral Code and Points Section */}
-          <div className="grid md:grid-cols-2 gap-6 mb-12 animate-fade-up">
+          {/* Referral Code Section */}
+          <div className="mb-12 animate-fade-up">
             {/* Referral Code Card */}
             <Card>
               <CardHeader>
@@ -2863,156 +2818,103 @@ const MyPage = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                {pointsLoading ? (
-                  <div className="h-12 bg-muted/50 animate-pulse rounded" />
-                ) : (
-                  <>
-                    <div>
-                      <p className="text-xs text-muted-foreground mb-2">
-                        {language === "ja" ? "あなたの紹介コード" : "Your Referral Code"}
-                      </p>
-                      {isEditingCode ? (
-                        <div className="flex items-center gap-2">
-                          <Input
-                            value={editedCode}
-                            onChange={(e) => setEditedCode(e.target.value.toUpperCase())}
-                            placeholder={language === "ja" ? "新しいコード" : "New code"}
-                            maxLength={12}
-                            className="flex-1 font-mono text-lg font-bold text-center"
-                          />
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => {
-                              updateReferralCode(editedCode);
-                              setIsEditingCode(false);
-                            }}
-                          >
-                            <Check className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => {
-                              setIsEditingCode(false);
-                              setEditedCode(referralCode);
-                            }}
-                          >
-                            <X className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-2">
-                          <code className="flex-1 p-3 bg-muted rounded font-mono text-lg font-bold text-center">
-                            {referralCode || "loading..."}
-                          </code>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => {
-                              setEditedCode(referralCode);
-                              setIsEditingCode(true);
-                            }}
-                            disabled={!referralCode}
-                          >
-                            <Edit2 className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => {
-                              navigator.clipboard.writeText(referralCode);
-                              toast.success(language === "ja" ? "コピーしました" : "Copied!");
-                            }}
-                            disabled={!referralCode}
-                          >
-                            {language === "ja" ? "コピー" : "Copy"}
-                          </Button>
-                        </div>
-                      )}
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground mb-2">
-                        {language === "ja" ? "紹介リンク" : "Referral Link"}
-                      </p>
+                <>
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-2">
+                      {language === "ja" ? "あなたの紹介コード" : "Your Referral Code"}
+                    </p>
+                    {isEditingCode ? (
                       <div className="flex items-center gap-2">
                         <Input
-                          value={`${window.location.origin}/join?referral=${referralCode}`}
-                          readOnly
-                          className="flex-1 text-sm"
-                          disabled={!referralCode}
+                          value={editedCode}
+                          onChange={(e) => setEditedCode(e.target.value.toUpperCase())}
+                          placeholder={language === "ja" ? "新しいコード" : "New code"}
+                          maxLength={12}
+                          className="flex-1 font-mono text-lg font-bold text-center"
                         />
                         <Button
                           size="sm"
                           variant="outline"
                           onClick={() => {
-                            navigator.clipboard.writeText(`${window.location.origin}/join?referral=${referralCode}`);
-                            toast.success(language === "ja" ? "リンクをコピーしました" : "Link copied!");
+                            updateReferralCode(editedCode);
+                            setIsEditingCode(false);
+                          }}
+                        >
+                          <Check className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            setIsEditingCode(false);
+                            setEditedCode(referralCode);
+                          }}
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <code className="flex-1 p-3 bg-muted rounded font-mono text-lg font-bold text-center">
+                          {referralCode || "loading..."}
+                        </code>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            setEditedCode(referralCode);
+                            setIsEditingCode(true);
                           }}
                           disabled={!referralCode}
                         >
-                          <Copy className="w-4 h-4" />
+                          <Edit2 className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            navigator.clipboard.writeText(referralCode);
+                            toast.success(language === "ja" ? "コピーしました" : "Copied!");
+                          }}
+                          disabled={!referralCode}
+                        >
+                          {language === "ja" ? "コピー" : "Copy"}
                         </Button>
                       </div>
-                    </div>
-                    <div className="text-sm text-muted-foreground space-y-1">
-                      <p>
-                        {language === "ja" 
-                          ? "友達がこのコードで加入すると、初月無料になります" 
-                          : "Friends get first month free with this code"}
-                      </p>
-                      <p className="text-primary font-medium">
-                        {language === "ja" 
-                          ? "あなたには毎月500円分のポイントが付与されます" 
-                          : "You earn ¥500 points every month"}
-                      </p>
-                    </div>
-                  </>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Points Card */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center justify-between font-light">
-                  <div className="flex items-center gap-2">
-                    <CreditCard className="h-5 w-5" />
-                    {language === "ja" ? "ポイント" : "Points"}
+                    )}
                   </div>
-                  <Badge variant="outline" className="gap-1">
-                    <Lock className="w-3 h-3" />
-                    {language === "ja" ? "非公開" : "Private"}
-                  </Badge>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {pointsLoading ? (
-                  <div className="h-12 bg-muted/50 animate-pulse rounded" />
-                ) : (
-                  <>
-                    <div>
-                      <p className="text-xs text-muted-foreground mb-2">
-                        {language === "ja" ? "現在のポイント" : "Current Points"}
-                      </p>
-                      <div className="flex items-baseline gap-2">
-                        <p className="text-4xl font-bold text-primary">
-                          {userPoints.toLocaleString()}
-                        </p>
-                        <p className="text-lg text-muted-foreground">
-                          {language === "ja" ? "円分" : "¥"}
-                        </p>
-                      </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-2">
+                      {language === "ja" ? "紹介リンク" : "Referral Link"}
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        value={`${window.location.origin}/join?referral=${referralCode}`}
+                        readOnly
+                        className="flex-1 text-sm"
+                        disabled={!referralCode}
+                      />
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          navigator.clipboard.writeText(`${window.location.origin}/join?referral=${referralCode}`);
+                          toast.success(language === "ja" ? "リンクをコピーしました" : "Link copied!");
+                        }}
+                        disabled={!referralCode}
+                      >
+                        <Copy className="w-4 h-4" />
+                      </Button>
                     </div>
-                    <div className="pt-2">
-                      <p className="text-sm text-muted-foreground">
-                        {language === "ja" 
-                          ? "ポイントは割引クーポンに交換できます（近日公開予定）" 
-                          : "Points can be exchanged for discount coupons (coming soon)"}
-                      </p>
-                    </div>
-                  </>
-                )}
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    <p>
+                      {language === "ja" 
+                        ? "友達がこのコードで加入すると、初月無料になります" 
+                        : "Friends get first month free with this code"}
+                    </p>
+                  </div>
+                </>
               </CardContent>
             </Card>
           </div>
