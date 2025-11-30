@@ -1732,11 +1732,10 @@ const MyPage = () => {
                     </div>
 
                     {/* Favorite Fighters Section */}
-                    <div>
+                    <div className="mb-6 p-4 bg-muted/30 rounded-lg border border-border/50">
                       <div className="flex items-center justify-between mb-3">
-                        <h3 className="text-sm font-semibold flex items-center gap-2">
-                          <span>👤</span>
-                          {language === "ja" ? "好きな選手" : "Favorite Fighters"}
+                        <h3 className="text-base font-semibold flex items-center gap-2">
+                          👤 {language === "ja" ? "好きな選手" : "Favorite Fighters"}
                         </h3>
                         {editingField === 'favorite_fighters' ? (
                           <div className="flex gap-2">
@@ -1758,9 +1757,9 @@ const MyPage = () => {
                         )}
                       </div>
                       {editingField === 'favorite_fighters' ? (
-                        <div className="space-y-2">
+                        <div className="space-y-3">
                           {(editValues.favorite_fighters || []).map((fighter: string, index: number) => (
-                            <div key={index} className="flex items-center gap-2">
+                            <div key={index} className="flex items-center gap-2 p-3 bg-background rounded border">
                               <Input
                                 value={fighter}
                                 onChange={(e) => {
@@ -1769,6 +1768,7 @@ const MyPage = () => {
                                   setEditValues({ ...editValues, favorite_fighters: newFighters });
                                 }}
                                 placeholder={language === "ja" ? "選手名" : "Fighter name"}
+                                className="flex-1"
                               />
                               <Button 
                                 size="sm" 
@@ -1797,9 +1797,16 @@ const MyPage = () => {
                         </div>
                       ) : (
                         profile?.favorite_fighters && profile.favorite_fighters.length > 0 ? (
-                          <div className="flex flex-wrap gap-2">
+                          <div className="grid gap-3">
                             {profile.favorite_fighters.map((fighter, index) => (
-                              <Badge key={index} variant="secondary">{fighter}</Badge>
+                              <div key={index} className="p-3 bg-background rounded border border-primary/20">
+                                <div className="flex items-start gap-2">
+                                  <span className="text-2xl">👤</span>
+                                  <div className="flex-1">
+                                    <div className="font-semibold text-primary">{fighter}</div>
+                                  </div>
+                                </div>
+                              </div>
                             ))}
                           </div>
                         ) : (
