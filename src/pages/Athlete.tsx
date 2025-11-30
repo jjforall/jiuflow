@@ -15,6 +15,7 @@ import { BeltBadge } from "@/components/ui/belt-badge";
 import { Star, MapPin, Trophy, Edit, Instagram, Twitter, Youtube, Globe, Languages, User, UserMinus, UserPlus, Camera, Image as ImageIcon } from "lucide-react";
 import { toast } from "sonner";
 import { UserVideoCard } from "@/components/UserVideoCard";
+import { LineageTree } from "@/components/LineageTree";
 import hero1 from "@/assets/hero-1.jpg";
 import hero2 from "@/assets/hero-2.jpg";
 import hero3 from "@/assets/hero-3.jpg";
@@ -633,42 +634,14 @@ const Athlete = () => {
                   </CardHeader>
                   <CardContent>
                     <div className="flex flex-wrap gap-2">
-                      {celebrity.social_links.instagram && (
-                        <Button variant="outline" size="sm" asChild>
-                          <a href={celebrity.social_links.instagram} target="_blank" rel="noopener noreferrer" className="gap-2">
-                            <Instagram className="h-4 w-4" />
-                            Instagram
-                          </a>
-                        </Button>
-                      )}
-                      {celebrity.social_links.twitter && (
-                        <Button variant="outline" size="sm" asChild>
-                          <a href={celebrity.social_links.twitter} target="_blank" rel="noopener noreferrer" className="gap-2">
-                            <Twitter className="h-4 w-4" />
-                            X
-                          </a>
-                        </Button>
-                      )}
-                      {celebrity.social_links.youtube && (
-                        <Button variant="outline" size="sm" asChild>
-                          <a href={celebrity.social_links.youtube} target="_blank" rel="noopener noreferrer" className="gap-2">
-                            <Youtube className="h-4 w-4" />
-                            YouTube
-                          </a>
-                        </Button>
-                      )}
-                      {celebrity.social_links.website && (
-                        <Button variant="outline" size="sm" asChild>
-                          <a href={celebrity.social_links.website} target="_blank" rel="noopener noreferrer" className="gap-2">
-                            <Globe className="h-4 w-4" />
-                            Website
-                          </a>
-                        </Button>
-                      )}
+...
                     </div>
                   </CardContent>
                 </Card>
               )}
+
+              {/* Lineage Tree */}
+              <LineageTree celebrityId={celebrity.id} />
             </div>
 
             {/* Right Column - Videos */}
