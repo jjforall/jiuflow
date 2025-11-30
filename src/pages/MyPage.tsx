@@ -1407,36 +1407,28 @@ const MyPage = () => {
                                   </SelectContent>
                                 </Select>
                                 <div className="grid grid-cols-2 gap-2">
-                                  <Popover>
-                                    <PopoverTrigger asChild>
-                                      <Button
-                                        variant="outline"
-                                        className="justify-start text-left font-normal"
-                                      >
-                                        <CalendarIcon className="mr-2 h-4 w-4" />
-                                        {belt.date ? format(new Date(belt.date), "yyyy/MM") : (language === "ja" ? "取得月" : "Month")}
-                                      </Button>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-auto p-0" align="start">
-                                      <CalendarComponent
-                                        mode="single"
-                                        selected={belt.date ? new Date(belt.date) : undefined}
-                                        onSelect={(date) => {
-                                          if (date) {
-                                            updateBeltHistory(index, 'date', format(date, "yyyy-MM"));
-                                          }
-                                        }}
-                                        initialFocus
-                                        className="pointer-events-auto"
-                                      />
-                                    </PopoverContent>
-                                  </Popover>
+                                  <Select
+                                    value={belt.date || ''}
+                                    onValueChange={(value) => updateBeltHistory(index, 'date', value)}
+                                  >
+                                    <SelectTrigger className="h-12">
+                                      <SelectValue placeholder={language === "ja" ? "取得年" : "Year"} />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {Array.from({ length: new Date().getFullYear() - 1949 }, (_, i) => new Date().getFullYear() - i).map((year) => (
+                                        <SelectItem key={year} value={year.toString()}>
+                                          {year}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
                                   <InputWithSuggestions
                                     value={belt.instructor || ''}
                                     onChange={(e) => updateBeltHistory(index, 'instructor', e.target.value)}
                                     onSelectSuggestion={(value) => updateBeltHistory(index, 'instructor', value)}
                                     suggestions={instructorSuggestions}
                                     placeholder={language === "ja" ? "授与者" : "Instructor"}
+                                    className="h-12"
                                   />
                                 </div>
                               </div>
