@@ -55,12 +55,23 @@ const Athlete = () => {
     
     setIsLoading(true);
     try {
-      // Try to find celebrity by user_id
-      const { data, error } = await supabase
+      // Try to find celebrity by user_id first
+      let { data, error } = await supabase
         .from('celebrities')
         .select('*, organization:organizations(name, name_ja, name_pt)')
         .eq('user_id', slugOrUsername)
         .maybeSingle();
+
+      // If not found by user_id, try by id
+      if (!data && !error) {
+        const result = await supabase
+          .from('celebrities')
+          .select('*, organization:organizations(name, name_ja, name_pt)')
+          .eq('id', slugOrUsername)
+          .maybeSingle();
+        data = result.data;
+        error = result.error;
+      }
 
       if (error) throw error;
       
