@@ -14,7 +14,7 @@ interface VideoPlayerProps {
 export const VideoPlayer = ({ videoUrl, autoPlay = true, thumbnailUrl, onPlay }: VideoPlayerProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const hlsRef = useRef<Hls | null>(null);
-  const savedStateRef = useRef<{ currentTime: number; paused: boolean } | null>(null);
+  
   const { language } = useLanguage();
   const [quality, setQuality] = useState<string>("auto");
   const [isLoading, setIsLoading] = useState(true);
@@ -156,60 +156,6 @@ export const VideoPlayer = ({ videoUrl, autoPlay = true, thumbnailUrl, onPlay }:
     };
   }, [videoUrl, autoPlay]);
 
-  // Keep playback position and state when switching browser tabs
-  useEffect(() => {
-    const video = videoRef.current;
-    if (!video) return;
-
-    // Save current time periodically during playback
-    const handleTimeUpdate = () => {
-      savedStateRef.current = {
-        currentTime: video.currentTime,
-        paused: video.paused
-      };
-    };
-
-    const handleVisibilityChange = () => {
-      if (document.hidden) {
-        // Save state when tab is hidden
-        savedStateRef.current = {
-          currentTime: video.currentTime,
-          paused: video.paused
-        };
-      } else if (savedStateRef.current != null) {
-        // Restore state when tab becomes visible
-        const { currentTime, paused } = savedStateRef.current;
-        
-        // Use requestAnimationFrame to ensure video is ready
-        requestAnimationFrame(() => {
-          if (video.readyState >= 2) { // HAVE_CURRENT_DATA or better
-            video.currentTime = currentTime;
-            if (!paused) {
-              video.play().catch(e => console.log('Autoplay after tab switch prevented:', e));
-            }
-          } else {
-            // If not ready, wait for canplay event
-            const restoreState = () => {
-              video.currentTime = currentTime;
-              if (!paused) {
-                video.play().catch(e => console.log('Autoplay after tab switch prevented:', e));
-              }
-              video.removeEventListener('canplay', restoreState);
-            };
-            video.addEventListener('canplay', restoreState);
-          }
-        });
-      }
-    };
-
-    video.addEventListener('timeupdate', handleTimeUpdate);
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-
-    return () => {
-      video.removeEventListener('timeupdate', handleTimeUpdate);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-  }, []);
 
   const changeQuality = (levelIndex: number) => {
     if (hlsRef.current) {
