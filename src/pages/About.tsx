@@ -539,7 +539,6 @@ const About = () => {
 
           {/* Contact Form Section */}
           <section className="py-16 max-w-4xl mx-auto">
-            <h2 className="text-4xl font-light mb-8">Contact</h2>
             <div className="space-y-6">
               <p className="text-lg">
                 ✉️ お問い合わせ、新しい技の共有、ご提案などがございましたら、<br />
