@@ -15,7 +15,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { CalendarIcon } from "lucide-react";
-import { User, CreditCard, Calendar, Mail, Upload, Video, Eye, Edit2, Check, X, Trash2, Lock, Globe, Plus, Copy, MapPin, Building2, Camera, Image, Moon, Sun, Settings } from "lucide-react";
+import { User, CreditCard, Calendar, Mail, Upload, Video, Eye, Edit2, Check, X, Trash2, Lock, Globe, Plus, Copy, MapPin, Building2, Camera, Image, Moon, Sun, Settings, ChevronDown } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import { useTheme } from "next-themes";
 import { Switch } from "@/components/ui/switch";
@@ -1099,7 +1100,34 @@ const MyPage = () => {
       <Navigation />
       
       <main className="pt-32 pb-20 px-6">
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-4xl mx-auto relative">
+          {/* Settings Dropdown */}
+          <div className="absolute right-0 -top-6 z-10">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="gap-2">
+                  <Settings className="w-4 h-4" />
+                  {language === "ja" ? "設定" : language === "pt" ? "Configurações" : "Settings"}
+                  <ChevronDown className="w-3 h-3" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48 bg-popover">
+                <DropdownMenuItem onClick={() => setTheme(theme === "dark" ? "light" : "dark")} className="gap-2 cursor-pointer">
+                  {theme === "dark" ? (
+                    <>
+                      <Sun className="w-4 h-4" />
+                      {language === "ja" ? "ライトモード" : language === "pt" ? "Modo Claro" : "Light Mode"}
+                    </>
+                  ) : (
+                    <>
+                      <Moon className="w-4 h-4" />
+                      {language === "ja" ? "ダークモード" : language === "pt" ? "Modo Escuro" : "Dark Mode"}
+                    </>
+                  )}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
           <div className="relative mb-16 animate-fade-up">
             {/* Cover Image Area */}
             <div className="h-40 sm:h-48 md:h-56 bg-gradient-to-r from-primary/30 via-primary/20 to-accent/30 rounded-t-2xl shadow-lg relative overflow-hidden group">
