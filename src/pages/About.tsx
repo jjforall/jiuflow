@@ -499,6 +499,13 @@ const About = () => {
                     デザイン、情報設計、AI開発を通じ、村田良蔵の技術を「見やすく、分かりやすい」形に落とし込んでいる。
                   </p>
                   <div className="flex gap-4 text-sm mt-3">
+                    <Link 
+                      to="/yuki" 
+                      className="text-primary hover:underline flex items-center gap-1"
+                    >
+                      <Users className="w-4 h-4" />
+                      JiuFlow Profile
+                    </Link>
                     <a 
                       href="https://www.instagram.com/yukihamada/" 
                       target="_blank" 
