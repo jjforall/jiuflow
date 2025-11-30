@@ -20,7 +20,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import mapBackground from "@/assets/map-background.jpg";
+import mapBackground from "@/assets/jiuflow-map-background.png";
 
 interface Technique {
   id: string;
