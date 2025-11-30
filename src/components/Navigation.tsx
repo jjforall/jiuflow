@@ -87,7 +87,6 @@ const Navigation = () => {
     { to: "/", label: t.nav.home },
     { to: "/map", label: t.nav.map },
     { to: "/athletes", label: language === "ja" ? "有名選手" : language === "pt" ? "Atletas" : "Athletes" },
-    { to: "/dojos", label: t.nav.dojos },
     { to: "/about", label: t.nav.about },
     { to: "/contact", label: t.nav.contact },
     ...(!subscribed ? [{ to: "/join", label: t.nav.join }] : []),
