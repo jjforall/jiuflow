@@ -251,6 +251,16 @@ export default function Dojo() {
     return dojo.online_resources;
   };
 
+  // Helper function to get localized value from multilingual objects
+  const getLocalizedValue = (obj: any): string => {
+    if (!obj) return '';
+    if (typeof obj === 'string') return obj;
+    if (language === "ja" && obj.ja) return obj.ja;
+    if (language === "pt" && obj.pt) return obj.pt;
+    if (obj.en) return obj.en;
+    return String(obj);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex flex-col">
@@ -447,17 +457,28 @@ export default function Dojo() {
             )}
 
             {/* Features */}
-            {dojo.features && Array.isArray(dojo.features) && dojo.features.length > 0 && (
+            {dojo.features && (
               <Card className="mb-6">
                 <CardContent className="p-6">
                   <h2 className="text-xl font-semibold mb-4">
                     {language === "ja" ? "特徴" : "Features"}
                   </h2>
-                  <div className="flex flex-wrap gap-2">
-                    {dojo.features.map((feature: string, idx: number) => (
-                      <Badge key={idx} variant="secondary">{feature}</Badge>
-                    ))}
-                  </div>
+                  {dojo.features.highlights && Array.isArray(dojo.features.highlights) && dojo.features.highlights.length > 0 ? (
+                    <ul className="space-y-2">
+                      {dojo.features.highlights.map((highlight: any, idx: number) => (
+                        <li key={idx} className="flex items-start gap-2">
+                          <span className="text-primary mt-1">•</span>
+                          <span>{getLocalizedValue(highlight)}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : Array.isArray(dojo.features) && dojo.features.length > 0 ? (
+                    <div className="flex flex-wrap gap-2">
+                      {dojo.features.map((feature: any, idx: number) => (
+                        <Badge key={idx} variant="secondary">{getLocalizedValue(feature)}</Badge>
+                      ))}
+                    </div>
+                  ) : null}
                 </CardContent>
               </Card>
             )}
@@ -472,10 +493,14 @@ export default function Dojo() {
                   <div className="space-y-3">
                     {dojo.classes.map((cls: any, idx: number) => (
                       <div key={idx} className="p-4 border rounded-lg">
-                        <h3 className="font-semibold text-lg">{cls.name}</h3>
+                        <h3 className="font-semibold text-lg">
+                          {getLocalizedValue(cls.name_en ? cls : cls.name || cls)}
+                        </h3>
                         {cls.time && <p className="text-muted-foreground">{cls.time}</p>}
                         {cls.level && <Badge className="mt-2">{cls.level}</Badge>}
-                        {cls.description && <p className="mt-2">{cls.description}</p>}
+                        {(cls.description || cls.description_en) && (
+                          <p className="mt-2">{getLocalizedValue(cls.description_en ? cls : cls.description || cls)}</p>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -490,14 +515,36 @@ export default function Dojo() {
                   <h2 className="text-xl font-semibold mb-4">
                     {language === "ja" ? "料金" : "Pricing"}
                   </h2>
-                  <div className="space-y-2">
-                    {Object.entries(dojo.pricing).map(([key, value]: [string, any]) => (
-                      <div key={key} className="flex justify-between items-center p-3 border rounded">
-                        <span className="font-medium">{key}</span>
-                        <span className="text-lg">¥{value.toLocaleString()}</span>
-                      </div>
-                    ))}
-                  </div>
+                  {dojo.pricing.plans && Array.isArray(dojo.pricing.plans) ? (
+                    <div className="space-y-4">
+                      {dojo.pricing.plans.map((plan: any, idx: number) => (
+                        <div key={idx} className="p-4 border rounded-lg">
+                          <div className="flex justify-between items-start mb-2">
+                            <h3 className="font-semibold text-lg">
+                              {getLocalizedValue(plan.name_en ? plan : plan.name || plan)}
+                            </h3>
+                            <span className="text-xl font-bold">
+                              ¥{(plan.price || 0).toLocaleString()}
+                            </span>
+                          </div>
+                          {(plan.description || plan.description_en) && (
+                            <p className="text-sm text-muted-foreground">
+                              {getLocalizedValue(plan.description_en ? plan : plan.description || plan)}
+                            </p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {Object.entries(dojo.pricing).map(([key, value]: [string, any]) => (
+                        <div key={key} className="flex justify-between items-center p-3 border rounded">
+                          <span className="font-medium">{key}</span>
+                          <span className="text-lg">¥{typeof value === 'number' ? value.toLocaleString() : value}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             )}
@@ -531,13 +578,24 @@ export default function Dojo() {
                   </h2>
                   <div className="space-y-4">
                     {dojo.instructors.map((instructor: any, idx: number) => (
-                      <div key={idx} className="flex gap-4 p-4 border rounded-lg">
-                        {instructor.photo_url && (
-                          <img src={instructor.photo_url} alt={instructor.name} className="w-20 h-20 rounded-full object-cover" />
-                        )}
-                        <div>
-                          <h3 className="font-semibold text-lg">{instructor.name}</h3>
-                          {instructor.bio && <p className="text-muted-foreground mt-1">{instructor.bio}</p>}
+                      <div key={idx} className="p-4 border rounded-lg">
+                        <div className="flex gap-4">
+                          {instructor.photo_url && (
+                            <img src={instructor.photo_url} alt={instructor.name || instructor.name_en} className="w-20 h-20 rounded-full object-cover flex-shrink-0" />
+                          )}
+                          <div className="flex-1">
+                            <h3 className="font-semibold text-lg mb-2">
+                              {instructor.name_en ? getLocalizedValue(instructor) : (instructor.name || '')}
+                            </h3>
+                            {(instructor.message || instructor.message_en) && (
+                              <p className="text-muted-foreground text-sm whitespace-pre-line">
+                                {getLocalizedValue(instructor.message_en ? { en: instructor.message_en, ja: instructor.message_ja, pt: instructor.message_pt } : instructor.message || instructor.bio || '')}
+                              </p>
+                            )}
+                            {instructor.bio && !instructor.message && !instructor.message_en && (
+                              <p className="text-muted-foreground text-sm">{instructor.bio}</p>
+                            )}
+                          </div>
                         </div>
                       </div>
                     ))}
@@ -556,11 +614,11 @@ export default function Dojo() {
                   {dojo.facilities && Object.keys(dojo.facilities).length > 0 && (
                     <div className="mb-4">
                       <h3 className="font-semibold mb-2">{language === "ja" ? "設備" : "Amenities"}</h3>
-                      <div className="grid grid-cols-2 gap-2">
+                      <div className="space-y-2">
                         {Object.entries(dojo.facilities).map(([key, value]: [string, any]) => (
-                          <div key={key} className="flex justify-between p-2 border rounded">
-                            <span>{key}</span>
-                            <span className="text-muted-foreground">{value}</span>
+                          <div key={key} className="flex items-start gap-2 p-2 border rounded">
+                            <span className="font-medium min-w-[120px]">{key}:</span>
+                            <span className="text-muted-foreground">{getLocalizedValue(value)}</span>
                           </div>
                         ))}
                       </div>
@@ -569,14 +627,18 @@ export default function Dojo() {
                   {dojo.opening_hours && Object.keys(dojo.opening_hours).length > 0 && (
                     <div className="mb-4">
                       <h3 className="font-semibold mb-2">{language === "ja" ? "営業時間" : "Hours"}</h3>
-                      <div className="space-y-1">
-                        {Object.entries(dojo.opening_hours).map(([day, hours]: [string, any]) => (
-                          <div key={day} className="flex justify-between p-2 border rounded">
-                            <span>{day}</span>
-                            <span>{hours}</span>
-                          </div>
-                        ))}
-                      </div>
+                      {typeof dojo.opening_hours === 'object' && dojo.opening_hours.note_en ? (
+                        <p className="text-muted-foreground">{getLocalizedValue(dojo.opening_hours)}</p>
+                      ) : (
+                        <div className="space-y-1">
+                          {Object.entries(dojo.opening_hours).map(([day, hours]: [string, any]) => (
+                            <div key={day} className="flex justify-between p-2 border rounded">
+                              <span>{day}</span>
+                              <span>{getLocalizedValue(hours)}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   )}
                   {getAccessInfo(dojo) && (
@@ -596,14 +658,18 @@ export default function Dojo() {
                   <h2 className="text-xl font-semibold mb-4">
                     {language === "ja" ? "体験案内" : "Trial Information"}
                   </h2>
-                  <div className="space-y-2">
-                    {Object.entries(dojo.trial_info).map(([key, value]: [string, any]) => (
-                      <div key={key} className="flex gap-2">
-                        <span className="font-medium min-w-[120px]">{key}:</span>
-                        <span>{value}</span>
-                      </div>
-                    ))}
-                  </div>
+                  {dojo.trial_info.description_en ? (
+                    <p className="text-base leading-relaxed">{getLocalizedValue(dojo.trial_info)}</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {Object.entries(dojo.trial_info).map(([key, value]: [string, any]) => (
+                        <div key={key} className="flex gap-2">
+                          <span className="font-medium min-w-[120px]">{key}:</span>
+                          <span>{getLocalizedValue(value)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             )}
@@ -618,8 +684,12 @@ export default function Dojo() {
                   <div className="space-y-4">
                     {dojo.faq.map((item: any, idx: number) => (
                       <div key={idx} className="border-b pb-4 last:border-0">
-                        <h3 className="font-semibold mb-2">Q: {item.q}</h3>
-                        <p className="text-muted-foreground">A: {item.a}</p>
+                        <h3 className="font-semibold mb-2">
+                          Q: {getLocalizedValue(item.question_en ? item : item.q || item.question || item)}
+                        </h3>
+                        <p className="text-muted-foreground">
+                          A: {getLocalizedValue(item.answer_en ? { en: item.answer_en, ja: item.answer_ja, pt: item.answer_pt } : item.a || item.answer || '')}
+                        </p>
                       </div>
                     ))}
                   </div>
