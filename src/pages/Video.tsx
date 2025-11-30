@@ -280,28 +280,22 @@ const Video = () => {
   };
 
   const getTechniqueVideoUrl = (tech: Technique) => {
-    const addCacheBuster = (url: string | null | undefined) => {
-      if (!url) return null;
-      const separator = url.includes("?") ? "&" : "?";
-      return `${url}${separator}v=${Date.now()}`;
-    };
-
     // まずvideo_metadataをチェック
     if (tech.video_metadata) {
       const metadata = tech.video_metadata[language];
       if (metadata?.video_url) {
-        return addCacheBuster(metadata.video_url);
+        return metadata.video_url;
       }
     }
     
     // 従来のフィールドをチェック
     switch (language) {
       case "ja":
-        return addCacheBuster(tech.video_url_ja || tech.video_url);
+        return tech.video_url_ja || tech.video_url;
       case "pt":
-        return addCacheBuster(tech.video_url_pt || tech.video_url);
+        return tech.video_url_pt || tech.video_url;
       default:
-        return addCacheBuster(tech.video_url);
+        return tech.video_url;
     }
   };
   const getTechniqueThumbnailUrl = (tech: Technique) => {
