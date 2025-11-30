@@ -1,10 +1,8 @@
-import { CheckCircle, Mail, Loader2, Award, Users, Video } from "lucide-react";
+import { CheckCircle, Award, Users, Video } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { useNavigate, useSearchParams } from "react-router-dom";
-import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
+import { useEffect } from "react";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -12,45 +10,9 @@ import { useLanguage } from "@/contexts/LanguageContext";
 const PaymentSuccess = () => {
   const navigate = useNavigate();
   const { language } = useLanguage();
-  const [searchParams] = useSearchParams();
-  const [isLoading, setIsLoading] = useState(true);
-  const [email, setEmail] = useState<string | null>(null);
-  const sessionId = searchParams.get("session_id");
-
   useEffect(() => {
     window.scrollTo(0, 0);
-
-    const sendMagicLink = async () => {
-      if (!sessionId) {
-        setIsLoading(false);
-        return;
-      }
-
-      try {
-        const { data, error } = await supabase.functions.invoke(
-          "check-payment-and-send-magic-link",
-          {
-            body: { sessionId },
-          }
-        );
-
-        if (error) throw error;
-
-        if (data?.email) {
-          setEmail(data.email);
-        }
-        
-        toast.success(data?.message || "ログインリンクを送信しました");
-      } catch (error: any) {
-        console.error("Error sending magic link:", error);
-        toast.error(error.message || "エラーが発生しました");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    sendMagicLink();
-  }, [sessionId]);
+  }, []);
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-background via-background to-primary/5">
@@ -58,19 +20,7 @@ const PaymentSuccess = () => {
       
       <main className="flex-1 flex items-center justify-center px-4 sm:px-6 pt-24 sm:pt-32 pb-16 sm:pb-20">
         <div className="max-w-4xl w-full space-y-8 animate-fade-up">
-          {isLoading ? (
-            <div className="flex flex-col items-center space-y-4">
-              <Loader2 className="w-12 h-12 animate-spin text-primary" />
-              <p className="text-muted-foreground">
-                {language === "ja" 
-                  ? "処理中..." 
-                  : language === "pt" 
-                  ? "Processando..." 
-                  : "Processing..."}
-              </p>
-            </div>
-          ) : (
-            <>
+          <>
               {/* Brand Header */}
               <div className="text-center space-y-4">
                 <div className="flex justify-center mb-6">
@@ -102,45 +52,25 @@ const PaymentSuccess = () => {
                       : "Payment Complete!"}
                   </h2>
                   
-                  <div className="flex items-center justify-center gap-3 text-base sm:text-lg text-muted-foreground">
-                    <Mail className="w-5 h-5 sm:w-6 sm:h-6" />
-                    <p>
-                      {language === "ja" 
-                        ? "メールを確認してログインしてください" 
-                        : language === "pt" 
-                        ? "Verifique seu e-mail para fazer login" 
-                        : "Check your email to log in"}
-                    </p>
-                  </div>
+                  <p className="text-base sm:text-lg text-muted-foreground">
+                    {language === "ja" 
+                      ? "技マップですべてのテクニック動画を見ることができます" 
+                      : language === "pt" 
+                      ? "Você pode assistir a todos os vídeos técnicos no Mapa de Técnicas" 
+                      : "You can watch all technique videos on the Technique Map"}
+                  </p>
 
-                  <div className="border-2 border-primary/20 bg-gradient-to-br from-muted/50 to-primary/5 rounded-xl p-4 sm:p-6 space-y-3">
-                    <p className="text-sm sm:text-base">
-                      {email ? (
-                        <>
-                          {language === "ja" 
-                            ? <><strong className="text-primary font-semibold">{email}</strong> にログイン用のマジックリンクを送信しました。</> 
-                            : language === "pt" 
-                            ? <>Enviamos um link mágico para <strong className="text-primary font-semibold">{email}</strong>.</> 
-                            : <>We've sent a magic link to <strong className="text-primary font-semibold">{email}</strong>.</>}
-                        </>
-                      ) : (
-                        <>
-                          {language === "ja" 
-                            ? "ログイン用のマジックリンクを送信しました。" 
-                            : language === "pt" 
-                            ? "Enviamos um link mágico para seu e-mail." 
-                            : "We've sent a magic link to your email."}
-                        </>
-                      )}
-                    </p>
-                    <p className="text-xs sm:text-sm text-muted-foreground">
-                      {language === "ja" 
-                        ? "メール内のリンクをクリックするだけでログインできます。" 
-                        : language === "pt" 
-                        ? "Basta clicar no link no e-mail para fazer login." 
-                        : "Simply click the link in the email to log in."}
-                    </p>
-                  </div>
+                  <Button
+                    size="lg"
+                    onClick={() => navigate("/map")}
+                    className="w-full sm:w-auto text-lg py-6 px-8"
+                  >
+                    {language === "ja" 
+                      ? "技マップへ移動" 
+                      : language === "pt" 
+                      ? "Ir para o Mapa de Técnicas" 
+                      : "Go to Technique Map"}
+                  </Button>
                 </CardContent>
               </Card>
 
@@ -219,91 +149,7 @@ const PaymentSuccess = () => {
                 </Card>
               </div>
 
-              {/* Instructions */}
-              <Card>
-                <CardContent className="p-4 sm:p-6 space-y-4">
-                  <h2 className="text-lg sm:text-xl font-semibold text-center">
-                    {language === "ja" 
-                      ? "次のステップ" 
-                      : language === "pt" 
-                      ? "Próximos Passos" 
-                      : "Next Steps"}
-                  </h2>
-                  <ol className="space-y-3 text-sm sm:text-base">
-                    <li className="flex gap-3 items-start">
-                      <span className="flex-shrink-0 w-7 h-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-semibold text-sm">
-                        1
-                      </span>
-                      <span>
-                        {language === "ja" 
-                          ? "メールボックスを確認してください" 
-                          : language === "pt" 
-                          ? "Verifique sua caixa de entrada" 
-                          : "Check your email inbox"}
-                      </span>
-                    </li>
-                    <li className="flex gap-3 items-start">
-                      <span className="flex-shrink-0 w-7 h-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-semibold text-sm">
-                        2
-                      </span>
-                      <span>
-                        {language === "ja" 
-                          ? "「ログインする」というメールを開いてください" 
-                          : language === "pt" 
-                          ? "Abra o e-mail 'Fazer login'" 
-                          : "Open the 'Log in' email from JiuFlow"}
-                      </span>
-                    </li>
-                    <li className="flex gap-3 items-start">
-                      <span className="flex-shrink-0 w-7 h-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-semibold text-sm">
-                        3
-                      </span>
-                      <span>
-                        {language === "ja" 
-                          ? "メール内のリンクをクリックしてログインし、学習を始めましょう！" 
-                          : language === "pt" 
-                          ? "Clique no link no e-mail e comece a aprender!" 
-                          : "Click the link in the email and start learning!"}
-                      </span>
-                    </li>
-                  </ol>
-                  
-                  <p className="text-xs text-center text-muted-foreground pt-4">
-                    {language === "ja" 
-                      ? "メールが届かない場合は、迷惑メールフォルダもご確認ください。" 
-                      : language === "pt" 
-                      ? "Se não receber o e-mail, verifique sua pasta de spam." 
-                      : "If you don't receive the email, please check your spam folder."}
-                  </p>
-                </CardContent>
-              </Card>
 
-              {/* Action Buttons */}
-              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
-                <Button
-                  variant="outline"
-                  size="lg"
-                  onClick={() => navigate("/")}
-                  className="w-full sm:w-auto"
-                >
-                  {language === "ja" 
-                    ? "ホームに戻る" 
-                    : language === "pt" 
-                    ? "Voltar ao Início" 
-                    : "Back to Home"}
-                </Button>
-                <Button
-                  size="lg"
-                  onClick={() => window.open("https://mail.google.com", "_blank")}
-                  className="w-full sm:w-auto"
-                >
-                  {language === "ja" 
-                    ? "メールを確認" 
-                    : language === "pt" 
-                    ? "Verificar E-mail" 
-                    : "Check Email"}
-                </Button>
-              </div>
 
               {/* Brand Footer Message */}
               <div className="text-center space-y-2 pt-4">
@@ -322,8 +168,7 @@ const PaymentSuccess = () => {
                     : "Let's start your Jiu-Jitsu journey together"}
                 </p>
               </div>
-            </>
-          )}
+          </>
         </div>
       </main>
 
