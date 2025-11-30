@@ -433,8 +433,9 @@ export const TechniquesManagement = () => {
   const handleVideoUpload = async (file: File, techniqueId?: string) => {
     const fileName = file.name;
     const fileExt = fileName.split('.').pop();
+    const timestamp = Date.now();
     const filePath = techniqueId 
-      ? `${techniqueId}.${fileExt}`
+      ? `${techniqueId}_${timestamp}.${fileExt}`
       : `${crypto.randomUUID()}.${fileExt}`;
 
     setUploadQueue(prev => [...prev, {
@@ -444,6 +445,24 @@ export const TechniquesManagement = () => {
     }]);
 
     try {
+      // Delete old video file if updating
+      if (techniqueId) {
+        const { data: files } = await supabase.storage
+          .from('technique-videos')
+          .list('', {
+            search: techniqueId
+          });
+        
+        if (files && files.length > 0) {
+          const oldFiles = files.filter(f => f.name.startsWith(techniqueId));
+          for (const oldFile of oldFiles) {
+            await supabase.storage
+              .from('technique-videos')
+              .remove([oldFile.name]);
+          }
+        }
+      }
+
       // Simulate upload progress
       const progressInterval = setInterval(() => {
         setUploadQueue(prev => prev.map(item => 
@@ -455,7 +474,7 @@ export const TechniquesManagement = () => {
 
       const { error: uploadError } = await supabase.storage
         .from('technique-videos')
-        .upload(filePath, file, { upsert: true });
+        .upload(filePath, file, { upsert: false });
 
       clearInterval(progressInterval);
 
@@ -464,6 +483,9 @@ export const TechniquesManagement = () => {
       const { data: { publicUrl } } = supabase.storage
         .from('technique-videos')
         .getPublicUrl(filePath);
+      
+      // Add cache-busting query parameter
+      const videoUrlWithCacheBuster = `${publicUrl}?t=${timestamp}`;
 
       // Generate thumbnail
       setUploadQueue(prev => prev.map(item => 
@@ -474,9 +496,29 @@ export const TechniquesManagement = () => {
 
       let thumbnailUrl: string | null = null;
       try {
-        const thumbnailBlob = await generateThumbnail(publicUrl);
+        // Delete old thumbnails first
+        if (techniqueId) {
+          const { data: thumbFiles } = await supabase.storage
+            .from('technique-videos')
+            .list('thumbnails', {
+              search: techniqueId
+            });
+          
+          if (thumbFiles && thumbFiles.length > 0) {
+            const oldThumbs = thumbFiles.filter(f => f.name.startsWith(techniqueId));
+            for (const oldThumb of oldThumbs) {
+              await supabase.storage
+                .from('technique-videos')
+                .remove([`thumbnails/${oldThumb.name}`]);
+            }
+          }
+        }
+        
+        const thumbnailBlob = await generateThumbnail(videoUrlWithCacheBuster);
         const tempId = techniqueId || crypto.randomUUID();
         thumbnailUrl = await uploadThumbnail(thumbnailBlob, tempId);
+        // Add cache-busting to thumbnail URL
+        thumbnailUrl = `${thumbnailUrl}?t=${timestamp}`;
       } catch (error: unknown) {
         console.error('Failed to generate thumbnail:', error);
         toast.error('サムネイル生成エラー', {
@@ -490,7 +532,7 @@ export const TechniquesManagement = () => {
           : item
       ));
 
-      return { videoUrl: publicUrl, thumbnailUrl };
+      return { videoUrl: videoUrlWithCacheBuster, thumbnailUrl };
     } catch (error: unknown) {
       setUploadQueue(prev => prev.map(item => 
         item.fileName === fileName 
