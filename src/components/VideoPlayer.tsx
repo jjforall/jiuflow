@@ -153,7 +153,7 @@ export const VideoPlayer = ({ videoUrl, autoPlay = true, thumbnailUrl, onPlay }:
       video.removeEventListener('canplay', handleCanPlay);
       video.removeEventListener('playing', handlePlaying);
     };
-  }, [videoUrl, autoPlay, language, onPlay]);
+  }, [videoUrl, autoPlay]);
 
   const changeQuality = (levelIndex: number) => {
     if (hlsRef.current) {
