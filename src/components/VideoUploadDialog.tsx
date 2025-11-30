@@ -22,7 +22,7 @@ export function VideoUploadDialog({ open, onOpenChange }: VideoUploadDialogProps
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
-  const [price, setPrice] = useState(0);
+  const [price, setPrice] = useState("");
   const [isPublic, setIsPublic] = useState(true);
 
   const handleVideoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -109,7 +109,7 @@ export function VideoUploadDialog({ open, onOpenChange }: VideoUploadDialogProps
           description: description || null,
           video_type: videoType,
           video_url: publicUrl,
-          price,
+          price: price ? Number(price) : 0,
           is_public: isPublic
         });
 
@@ -123,7 +123,7 @@ export function VideoUploadDialog({ open, onOpenChange }: VideoUploadDialogProps
       setDescription("");
       setVideoType("other");
       setVideoFile(null);
-      setPrice(0);
+      setPrice("");
       setIsPublic(true);
       setUploadProgress(0);
       onOpenChange(false);
@@ -212,8 +212,8 @@ export function VideoUploadDialog({ open, onOpenChange }: VideoUploadDialogProps
               type="number"
               min="0"
               step="100"
-              value={price || ""}
-              onChange={(e) => setPrice(e.target.value ? Number(e.target.value) : 0)}
+              value={price}
+              onChange={(e) => setPrice(e.target.value)}
               placeholder="0"
             />
             <p className="text-xs text-muted-foreground">
