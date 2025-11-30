@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowRight, Lock, PlayCircle, UserX } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import murataImage from "@/assets/murata-ryozo.jpg";
 
 interface TechniqueStats {
   category: string;
@@ -270,23 +271,32 @@ const About = () => {
           <section className="py-16 bg-muted/30">
             <div className="max-w-4xl mx-auto px-6">
               <h2 className="text-4xl font-light mb-8">Instructor</h2>
-              <div className="space-y-6 text-lg leading-relaxed">
-                <p className="text-2xl font-light">
-                  村田 良蔵（Ryozo Murata）<br />
-                  <span className="text-base text-muted-foreground">1980年4月24日生まれ。北海道出身。</span>
-                </p>
-                <p>
-                  ブラジリアン柔術において、北海道初のグレイシー直系黒帯。<br />
-                  2018年・2019年、SJJIF世界選手権マスター2黒帯フェザー級 優勝。<br />
-                  日本人初の世界チャンピオン。<br />
-                  2025年、IBJJF世界マスター選手権 初出場で銅メダル（フェザー級黒帯マスター3）。
-                </p>
-                <p>
-                  道場代表・実業家・指導者として活動し、<br />
-                  「怪我なく、毎日続けられる柔術」<br />
-                  「ライフスタイルとしての柔術」をテーマに、<br />
-                  ヨガ・身体構造・ウェルネスの視点も融合しています。
-                </p>
+              
+              <div className="flex flex-col md:flex-row gap-8 items-start">
+                {/* Image */}
+                <div className="w-full md:w-1/3 flex-shrink-0">
+                  <img 
+                    src={murataImage} 
+                    alt="村田 良蔵 (Ryozo Murata)"
+                    className="w-full rounded-lg shadow-lg"
+                  />
+                </div>
+                
+                {/* Profile Text */}
+                <div className="flex-1 space-y-6 text-lg leading-relaxed">
+                  <p className="text-2xl font-light">
+                    村田 良蔵（Ryozo Murata）
+                  </p>
+                  <p>
+                    1980年生まれ。北海道出身。 ブラジリアン柔術において、北海道初のグレイシー直系黒帯を取得。 選手としては、2018年・2019年のSJJIF世界選手権（マスター2黒帯フェザー級）で日本人初の世界チャンピオンとなり連覇を達成。2025年にはIBJJFワールドマスター選手権に初出場し、銅メダル（フェザー級黒帯マスター3）を獲得している。
+                  </p>
+                  <p>
+                    指導者・実業家としても精力的に活動し、Over Limit 札幌、YAWARA JIU-JITSU ACADEMY（YAWARA）、SWEEP JIU-JITSU ACADEMY（SWEEP）の3道場で代表を務める。特に2021年に設立したYAWARAは、SJJJF全日本柔術選手権やASJJF Asia Jiu Jitsu Cupで団体優勝を果たすなど、団体表彰の常連道場へと成長した。 また普及活動にも尽力し、2018年にNPO法人スポーツ柔術日本連盟（SJJJF）を設立、代表理事に就任。
+                  </p>
+                  <p>
+                    「怪我なく、毎日続けられる柔術」「ライフスタイルとしての柔術」をテーマに、ヨガや身体構造、ウェルネスの視点を融合。無理なく楽しみながらも、着実に強くなれる指導法に定評がある。
+                  </p>
+                </div>
               </div>
             </div>
           </section>
