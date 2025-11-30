@@ -8,7 +8,7 @@ import { useState, useEffect } from "react";
 import { ContactForm } from "@/components/ContactForm";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
-import { ArrowRight, Lock, PlayCircle, UserX } from "lucide-react";
+import { ArrowRight, Lock, PlayCircle, UserX, Trophy, Users, BookOpen } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import murataImage from "@/assets/murata-ryozo.jpg";
@@ -316,11 +316,11 @@ const About = () => {
           </section>
 
           {/* Instructor Section */}
-          <section className="py-16 bg-muted/30">
+          <section className="py-16">
             <div className="max-w-4xl mx-auto px-6">
-              <h2 className="text-4xl font-light mb-8">Instructor</h2>
+              <h2 className="text-4xl font-light mb-12">Instructor</h2>
               
-              <div className="flex flex-col md:flex-row gap-8 items-start">
+              <div className="flex flex-col md:flex-row gap-8 items-start mb-12">
                 {/* Image */}
                 <div className="w-full md:w-1/3 flex-shrink-0">
                   <img 
@@ -331,23 +331,71 @@ const About = () => {
                 </div>
                 
                 {/* Profile Text */}
-                <div className="flex-1 space-y-6 text-lg leading-relaxed">
-                  <p className="text-2xl font-light">
-                    村田 良蔵（Ryozo Murata）
+                <div className="flex-1 space-y-6">
+                  <div>
+                    <h3 className="text-2xl font-light mb-2">村田 良蔵（Ryozo Murata）</h3>
+                    <p className="text-xl font-light italic text-primary border-l-4 border-primary pl-4 py-2">
+                      「怪我なく勝つ。理詰めで動く。それが大人の柔術。」
+                    </p>
+                  </div>
+                  
+                  <p className="text-lg leading-relaxed">
+                    1980年生まれ、北海道出身。<br />
+                    北海道初のグレイシー直系黒帯として、40代を迎えた今なお世界の第一線で進化を続ける「実践する指導者」。
                   </p>
-                  <p className="text-xl font-light italic text-muted-foreground border-l-4 border-primary pl-4">
-                    「怪我なく、毎日続けられる柔術こそが、最強への近道である」
-                  </p>
-                  <p>
-                    1980年生まれ。北海道出身。 ブラジリアン柔術において、北海道初のグレイシー直系黒帯を取得。 選手としては、2018年・2019年のSJJIF世界選手権（マスター2黒帯フェザー級）で日本人初の世界チャンピオンとなり連覇を達成。2025年にはIBJJFワールドマスター選手権に初出場し、銅メダル（フェザー級黒帯マスター3）を獲得している。
-                  </p>
-                  <p>
-                    指導者・実業家としても精力的に活動し、Over Limit 札幌、YAWARA JIU-JITSU ACADEMY（YAWARA）、SWEEP JIU-JITSU ACADEMY（SWEEP）の3道場で代表を務める。特に2021年に設立したYAWARAは、SJJJF全日本柔術選手権やASJJF Asia Jiu Jitsu Cupで団体優勝を果たすなど、団体表彰の常連道場へと成長した。 また普及活動にも尽力し、2018年にNPO法人スポーツ柔術日本連盟（SJJJF）を設立、代表理事に就任。
-                  </p>
-                  <p>
-                    40代を迎えてなお世界の第一線で戦い続ける実績が、JiuFlowのメソッドの有効性を証明しています。ヨガ・身体構造・ウェルネスの視点を融合し、「怪我なく、毎日続けられる柔術」「ライフスタイルとしての柔術」をテーマに、無理なく楽しみながらも、着実に強くなれる指導法に定評がある。
+                  
+                  <p className="text-lg leading-relaxed">
+                    彼の強さの秘密は、フィジカル（筋力）への依存を捨て、身体構造（骨格・重心）を最大限に活かす<strong>「理（ことわり）の柔術」</strong>にあります。ヨガやウェルネスの知見を融合させたそのメソッドは、怪我のリスクを最小限に抑えながら、確実な強さを手に入れるための最適解です。
                   </p>
                 </div>
+              </div>
+              
+              {/* Achievements */}
+              <div className="grid md:grid-cols-2 gap-8 mb-12">
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3 mb-4">
+                    <Trophy className="w-6 h-6 text-primary" />
+                    <h4 className="text-xl font-light">主な戦績 - Strength</h4>
+                  </div>
+                  <ul className="space-y-3 text-lg leading-relaxed">
+                    <li className="flex items-start gap-2">
+                      <span className="text-primary mt-1">•</span>
+                      <span><strong>世界王者:</strong> 2018・2019年 SJJIF世界選手権 マスター2黒帯フェザー級 優勝（日本人初・連覇）</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-primary mt-1">•</span>
+                      <span><strong>世界への挑戦:</strong> 2025年 IBJJF世界マスター選手権 銅メダル（フェザー級黒帯マスター3）</span>
+                    </li>
+                  </ul>
+                </div>
+                
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3 mb-4">
+                    <Users className="w-6 h-6 text-primary" />
+                    <h4 className="text-xl font-light">指導と普及 - Leadership</h4>
+                  </div>
+                  <ul className="space-y-3 text-lg leading-relaxed">
+                    <li className="flex items-start gap-2">
+                      <span className="text-primary mt-1">•</span>
+                      <span><strong>道場経営:</strong> Over Limit 札幌、YAWARA JIU-JITSU ACADEMY、SWEEP JIU-JITSU ACADEMY 代表。特にYAWARAは設立から短期間で全日本選手権等の団体優勝を重ねる強豪へ成長。</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-primary mt-1">•</span>
+                      <span><strong>組織運営:</strong> NPO法人スポーツ柔術日本連盟（SJJJF）代表理事として、柔術の社会的地位向上と普及に尽力。</span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+              
+              {/* Message */}
+              <div className="bg-gradient-to-br from-primary/5 to-transparent border-l-4 border-primary p-8 rounded-r-lg">
+                <div className="flex items-start gap-3 mb-4">
+                  <BookOpen className="w-6 h-6 text-primary mt-1 flex-shrink-0" />
+                  <h4 className="text-xl font-light">Message</h4>
+                </div>
+                <p className="text-lg leading-relaxed italic">
+                  「柔術は、正しく学べば一生続けられるライフワークになります。痛みに耐えるのではなく、仕組みを理解する楽しさを。私が辿り着いた『安全で強い柔術』を、ぜひ体感してください。」
+                </p>
               </div>
             </div>
           </section>
@@ -403,37 +451,60 @@ const About = () => {
           {/* Team Section */}
           <section className="py-16 bg-muted/30">
             <div className="max-w-4xl mx-auto px-6">
-              <h2 className="text-4xl font-light mb-8">Team</h2>
+              <h2 className="text-4xl font-light mb-6">Team</h2>
+              <p className="text-lg text-muted-foreground mb-12 leading-relaxed">
+                JiuFlowは、柔術家、クリエイター、エンジニアが連携し、<br />
+                「最高の学習体験」を作るために活動しています。
+              </p>
+              
               <div className="space-y-8">
                 {/* 村田 良蔵 */}
-                <div className="border-l-2 border-primary pl-6">
-                  <h3 className="text-2xl font-light mb-2">村田 良蔵（Ryozo Murata）</h3>
-                  <p className="text-muted-foreground mb-3">創設者・インストラクター</p>
+                <div className="border-l-2 border-primary pl-6 hover:bg-muted/20 p-4 -ml-4 transition-colors rounded-r-lg">
+                  <h3 className="text-2xl font-light mb-1">村田 良蔵 (Ryozo Murata)</h3>
+                  <p className="text-primary font-medium mb-2">Founder / Head Instructor</p>
+                  <p className="text-muted-foreground mb-3">メソッド開発・技術監修</p>
                   <div className="flex gap-4 text-sm">
-                    <a href="https://www.ryozo-murata.com" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                    <a 
+                      href="https://www.ryozo-murata.com" 
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      className="text-primary hover:underline flex items-center gap-1"
+                    >
                       Website
                     </a>
                   </div>
                 </div>
 
                 {/* 濱田 */}
-                <div className="border-l-2 border-primary pl-6">
-                  <h3 className="text-2xl font-light mb-2">濱田</h3>
-                  <p className="text-muted-foreground mb-3">メンバー</p>
+                <div className="border-l-2 border-primary pl-6 hover:bg-muted/20 p-4 -ml-4 transition-colors rounded-r-lg">
+                  <h3 className="text-2xl font-light mb-1">濱田 (Hamada)</h3>
+                  <p className="text-primary font-medium mb-2">Creative / Member</p>
+                  <p className="text-muted-foreground mb-3">映像制作・デザイン</p>
                   <div className="flex gap-4 text-sm">
-                    <a href="https://www.instagram.com/yukihamada/" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
-                      Instagram → @yukihamada
+                    <a 
+                      href="https://www.instagram.com/yukihamada/" 
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      className="text-primary hover:underline"
+                    >
+                      Instagram
                     </a>
-                    <a href="https://x.com/yukihamada" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
-                      X (Twitter) → @yukihamada
+                    <a 
+                      href="https://x.com/yukihamada" 
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      className="text-primary hover:underline"
+                    >
+                      X (Twitter)
                     </a>
                   </div>
                 </div>
 
                 {/* 野島 */}
-                <div className="border-l-2 border-primary pl-6">
-                  <h3 className="text-2xl font-light mb-2">野島</h3>
-                  <p className="text-muted-foreground">メンバー</p>
+                <div className="border-l-2 border-primary pl-6 hover:bg-muted/20 p-4 -ml-4 transition-colors rounded-r-lg">
+                  <h3 className="text-2xl font-light mb-1">野島 (Nojima)</h3>
+                  <p className="text-primary font-medium mb-2">Engineering / Member</p>
+                  <p className="text-muted-foreground">システム開発・テクニカルサポート</p>
                 </div>
               </div>
             </div>
