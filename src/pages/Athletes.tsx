@@ -3,12 +3,14 @@ import { Link } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useTranslation } from "@/hooks/useTranslation";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Star } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Star, Languages } from "lucide-react";
 
 interface Celebrity {
   id: string;
@@ -30,8 +32,11 @@ interface Celebrity {
 
 const Athletes = () => {
   const { language } = useLanguage();
+  const { translateText } = useTranslation();
   const [celebrities, setCelebrities] = useState<Celebrity[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [translatedBios, setTranslatedBios] = useState<Record<string, string>>({});
+  const [translatingIds, setTranslatingIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     loadCelebrities();
@@ -69,6 +74,31 @@ const Athletes = () => {
       case 'pt': return org.name_pt;
       default: return org.name;
     }
+  };
+
+  const handleTranslateBio = async (celebrityId: string, bio: string) => {
+    if (translatingIds.has(celebrityId)) return;
+    
+    setTranslatingIds(prev => new Set(prev).add(celebrityId));
+    try {
+      const translated = await translateText(bio, 'en');
+      setTranslatedBios(prev => ({ ...prev, [celebrityId]: translated }));
+    } catch (error) {
+      console.error('Translation error:', error);
+    } finally {
+      setTranslatingIds(prev => {
+        const next = new Set(prev);
+        next.delete(celebrityId);
+        return next;
+      });
+    }
+  };
+
+  const getBioText = (celebrity: Celebrity) => {
+    if (translatedBios[celebrity.id]) {
+      return translatedBios[celebrity.id];
+    }
+    return celebrity.bio;
   };
 
   return (
@@ -125,11 +155,11 @@ const Athletes = () => {
           ) : (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 animate-fade-in">
               {celebrities.map((celebrity) => (
-                <Link
-                  key={celebrity.id}
-                  to={celebrity.user_id ? `/${celebrity.user_id}` : `/athlete/${celebrity.id}`}
-                  className="group"
-                >
+                <div key={celebrity.id} className="group">
+                  <Link
+                    to={`/athlete/${celebrity.user_id || celebrity.id}`}
+                    className="block"
+                  >
                   <Card className="overflow-hidden transition-all duration-300 hover:shadow-xl hover:scale-[1.02] h-full">
                     <CardHeader>
                       <div className="flex items-start gap-4">
@@ -164,9 +194,30 @@ const Athletes = () => {
                     
                     <CardContent className="space-y-3">
                       {celebrity.bio && (
-                        <p className="text-sm text-muted-foreground line-clamp-2">
-                          {celebrity.bio}
-                        </p>
+                        <div className="space-y-2">
+                          <p className="text-sm text-muted-foreground line-clamp-2">
+                            {getBioText(celebrity)}
+                          </p>
+                          {language !== 'en' && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                handleTranslateBio(celebrity.id, celebrity.bio!);
+                              }}
+                              disabled={translatingIds.has(celebrity.id)}
+                              className="h-6 px-2 text-xs"
+                            >
+                              <Languages className="h-3 w-3 mr-1" />
+                              {translatingIds.has(celebrity.id) 
+                                ? (language === 'ja' ? '翻訳中...' : 'Traduzindo...') 
+                                : translatedBios[celebrity.id]
+                                ? (language === 'ja' ? '原文' : 'Original')
+                                : (language === 'ja' ? '翻訳' : 'Traduzir')}
+                            </Button>
+                          )}
+                        </div>
                       )}
                       
                       {celebrity.home_dojo && (
@@ -189,6 +240,7 @@ const Athletes = () => {
                     </CardContent>
                   </Card>
                 </Link>
+                </div>
               ))}
             </div>
           )}

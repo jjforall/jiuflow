@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useTranslation } from "@/hooks/useTranslation";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -11,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { BeltBadge } from "@/components/ui/belt-badge";
-import { Star, MapPin, Trophy, Edit, Instagram, Twitter, Youtube, Globe } from "lucide-react";
+import { Star, MapPin, Trophy, Edit, Instagram, Twitter, Youtube, Globe, Languages } from "lucide-react";
 
 interface Celebrity {
   id: string;
@@ -36,11 +37,14 @@ interface Celebrity {
 const Athlete = () => {
   const { slugOrUsername } = useParams<{ slugOrUsername: string }>();
   const { language } = useLanguage();
+  const { translateText } = useTranslation();
   const { user } = useAuth();
   const navigate = useNavigate();
   const [celebrity, setCelebrity] = useState<Celebrity | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isOwner, setIsOwner] = useState(false);
+  const [translatedBio, setTranslatedBio] = useState<string | null>(null);
+  const [isTranslating, setIsTranslating] = useState(false);
 
   useEffect(() => {
     loadCelebrity();
@@ -83,6 +87,25 @@ const Athlete = () => {
       case 'ja': return org.name_ja;
       case 'pt': return org.name_pt;
       default: return org.name;
+    }
+  };
+
+  const handleTranslateBio = async () => {
+    if (!celebrity?.bio || isTranslating) return;
+    
+    if (translatedBio) {
+      setTranslatedBio(null);
+      return;
+    }
+
+    setIsTranslating(true);
+    try {
+      const translated = await translateText(celebrity.bio, 'en');
+      setTranslatedBio(translated);
+    } catch (error) {
+      console.error('Translation error:', error);
+    } finally {
+      setIsTranslating(false);
     }
   };
 
@@ -162,9 +185,26 @@ const Athlete = () => {
                 </div>
 
                 {celebrity.bio && (
-                  <p className="text-lg text-muted-foreground mb-4">
-                    {celebrity.bio}
-                  </p>
+                  <div className="mb-4">
+                    <p className="text-lg text-muted-foreground mb-2">
+                      {translatedBio || celebrity.bio}
+                    </p>
+                    {language !== 'en' && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleTranslateBio}
+                        disabled={isTranslating}
+                      >
+                        <Languages className="h-4 w-4 mr-2" />
+                        {isTranslating 
+                          ? (language === 'ja' ? '翻訳中...' : 'Traduzindo...') 
+                          : translatedBio
+                          ? (language === 'ja' ? '原文を表示' : 'Mostrar original')
+                          : (language === 'ja' ? '英語に翻訳' : 'Traduzir para inglês')}
+                      </Button>
+                    )}
+                  </div>
                 )}
 
                 {isOwner && (
