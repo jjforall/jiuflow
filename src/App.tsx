@@ -23,6 +23,8 @@ const Video = lazy(() => import("./pages/Video"));
 const About = lazy(() => import("./pages/About"));
 const Join = lazy(() => import("./pages/Join"));
 const PaymentSuccess = lazy(() => import("./pages/PaymentSuccess"));
+const PaymentCanceled = lazy(() => import("./pages/PaymentCanceled"));
+const PaymentError = lazy(() => import("./pages/PaymentError"));
 const MyPage = lazy(() => import("./pages/MyPage"));
 const VideoUploadInfo = lazy(() => import("./pages/VideoUploadInfo"));
 const AdminLogin = lazy(() => import("./pages/AdminLogin"));
@@ -87,6 +89,8 @@ const App = () => (
                   <Route path="/about" element={<About />} />
                   <Route path="/join" element={<Join />} />
                   <Route path="/payment-success" element={<PaymentSuccess />} />
+                  <Route path="/payment-canceled" element={<PaymentCanceled />} />
+                  <Route path="/payment-error" element={<PaymentError />} />
                   <Route path="/mypage" element={
                     <ProtectedRoute>
                       <MyPage />

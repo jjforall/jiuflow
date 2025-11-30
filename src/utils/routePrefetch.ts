@@ -27,6 +27,15 @@ export const prefetchRoute = async (routePath: string) => {
       case '/join':
         await import('../pages/Join');
         break;
+      case '/payment-success':
+        await import('../pages/PaymentSuccess');
+        break;
+      case '/payment-canceled':
+        await import('../pages/PaymentCanceled');
+        break;
+      case '/payment-error':
+        await import('../pages/PaymentError');
+        break;
       case '/mypage':
         await import('../pages/MyPage');
         break;
