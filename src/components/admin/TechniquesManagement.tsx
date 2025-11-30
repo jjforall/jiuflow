@@ -94,6 +94,8 @@ export const TechniquesManagement = () => {
     targetLang: string;
     startTime: number;
   }>>([]);
+  const [availableCategories, setAvailableCategories] = useState<string[]>([]);
+  const [newCategory, setNewCategory] = useState("");
 
 
   // すべての言語（カウント用）
@@ -111,6 +113,26 @@ export const TechniquesManagement = () => {
     { code: "ar", name: "العربية", nativeName: "アラビア語" },
     { code: "hi", name: "हिन्दी", nativeName: "ヒンディー語" },
   ];
+
+  // カテゴリーをデータベースから取得
+  useEffect(() => {
+    const fetchCategories = async () => {
+      const { data: techniqueData, error } = await supabase
+        .from('techniques')
+        .select('category');
+      
+      if (error) {
+        console.error('Error fetching categories:', error);
+        return;
+      }
+      
+      // ユニークなカテゴリーのリストを作成
+      const uniqueCategories = Array.from(new Set(techniqueData.map(item => item.category)));
+      setAvailableCategories(uniqueCategories.sort());
+    };
+    
+    fetchCategories();
+  }, []);
 
   // LocalStorageから進行中の翻訳を復元
   useEffect(() => {
@@ -285,7 +307,7 @@ export const TechniquesManagement = () => {
     description: "",
     description_ja: "",
     description_pt: "",
-    category: "pull" as "pull" | "control" | "submission" | "guard-pass",
+    category: "",
     hashtags: [] as string[],
     series_name: "" as string,
     series_order: null as number | null,
@@ -952,7 +974,7 @@ export const TechniquesManagement = () => {
       description: "",
       description_ja: "",
       description_pt: "",
-      category: "pull",
+      category: "",
       hashtags: [],
       series_name: "",
       series_order: null,
@@ -971,7 +993,7 @@ export const TechniquesManagement = () => {
       description: technique.description || "",
       description_ja: technique.description_ja || "",
       description_pt: technique.description_pt || "",
-      category: technique.category as "pull" | "control" | "submission" | "guard-pass",
+      category: technique.category,
       hashtags: technique.hashtags || [],
       series_name: technique.series_name || "",
       series_order: technique.series_order,
@@ -1073,10 +1095,11 @@ export const TechniquesManagement = () => {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">すべて</SelectItem>
-            <SelectItem value="pull">引き込み</SelectItem>
-            <SelectItem value="guard-pass">ガードパス</SelectItem>
-            <SelectItem value="control">コントロール</SelectItem>
-            <SelectItem value="submission">極め技</SelectItem>
+            {availableCategories.map((category) => (
+              <SelectItem key={category} value={category}>
+                {category}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
         <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
@@ -1208,9 +1231,40 @@ export const TechniquesManagement = () => {
                     </div>
                   </td>
                   <td className="px-4 py-3">
-                    <span className="px-2 py-1 text-xs rounded-full bg-primary/10 text-primary">
-                      {technique.category}
-                    </span>
+                    {editingCell?.id === technique.id && editingCell?.field === 'category' && isAdmin ? (
+                      <div className="flex gap-2 items-center">
+                        <Input
+                          value={editValue}
+                          onChange={(e) => setEditValue(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' && !e.nativeEvent.isComposing) saveEdit(technique as Technique);
+                            if (e.key === 'Escape') cancelEditing();
+                          }}
+                          className="h-8 w-40"
+                          autoFocus
+                          placeholder="新規カテゴリー"
+                          list="categories-list"
+                        />
+                        <datalist id="categories-list">
+                          {availableCategories.map((cat) => (
+                            <option key={cat} value={cat} />
+                          ))}
+                        </datalist>
+                        <Button size="sm" variant="ghost" onClick={() => saveEdit(technique as Technique)}>
+                          <Check className="h-4 w-4" />
+                        </Button>
+                        <Button size="sm" variant="ghost" onClick={cancelEditing}>
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <span 
+                        className={`px-2 py-1 text-xs rounded-full bg-primary/10 text-primary ${isAdmin ? 'cursor-pointer hover:bg-primary/20' : ''}`}
+                        onClick={() => isAdmin && startEditing(technique.id, 'category', technique.category)}
+                      >
+                        {technique.category}
+                      </span>
+                    )}
                   </td>
                   <td className="px-4 py-3">
                     <div className="space-y-2">
@@ -1311,12 +1365,13 @@ export const TechniquesManagement = () => {
                                 e.preventDefault();
                                 addHashtag(technique as Technique);
                               }
-                            }}
-                            onBlur={() => {
-                              if (editingCell?.id === technique.id && editingCell?.field === 'hashtags') {
+                              if (e.key === 'Escape') {
                                 setHashtagEditValue('');
                                 setEditingCell(null);
                               }
+                            }}
+                            onFocus={() => {
+                              setEditingCell({ id: technique.id, field: 'hashtags' });
                             }}
                             placeholder="追加..."
                             className="h-7 text-xs"
@@ -1324,7 +1379,10 @@ export const TechniquesManagement = () => {
                           <Button 
                             size="sm" 
                             variant="ghost" 
-                            onClick={() => addHashtag(technique as Technique)}
+                            onMouseDown={(e) => {
+                              e.preventDefault(); // Prevent blur event
+                              addHashtag(technique as Technique);
+                            }}
                             className="h-7 px-2"
                           >
                             <Check className="h-3 w-3" />
@@ -1514,21 +1572,38 @@ export const TechniquesManagement = () => {
 
             <div>
               <label className="text-sm font-medium">Category *</label>
-              <Select 
-                value={formData.category} 
-                onValueChange={(value: any) => setFormData({...formData, category: value})}
-                disabled={!isAdmin}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="pull">引き込み (Pull)</SelectItem>
-                  <SelectItem value="guard-pass">ガードパス (Guard Pass)</SelectItem>
-                  <SelectItem value="control">コントロール (Control)</SelectItem>
-                  <SelectItem value="submission">極め技 (Submission)</SelectItem>
-                </SelectContent>
-              </Select>
+              <div className="space-y-2">
+                <Input
+                  value={formData.category}
+                  onChange={(e) => setFormData({...formData, category: e.target.value})}
+                  placeholder="カテゴリー名を入力または選択"
+                  disabled={!isAdmin}
+                  list="dialog-categories-list"
+                  required
+                />
+                <datalist id="dialog-categories-list">
+                  {availableCategories.map((cat) => (
+                    <option key={cat} value={cat} />
+                  ))}
+                </datalist>
+                {availableCategories.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {availableCategories.map((cat) => (
+                      <Button
+                        key={cat}
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setFormData({...formData, category: cat})}
+                        disabled={!isAdmin}
+                        className={formData.category === cat ? "bg-primary/10" : ""}
+                      >
+                        {cat}
+                      </Button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
