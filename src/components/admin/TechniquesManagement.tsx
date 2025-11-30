@@ -64,7 +64,8 @@ export const TechniquesManagement = () => {
   const [pageSize, setPageSize] = useState(20);
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
-  const [sortBy, setSortBy] = useState<"order" | "name" | "category">("order");
+  const [seriesFilter, setSeriesFilter] = useState<string>("all");
+  const [sortBy, setSortBy] = useState<"order" | "name" | "category" | "series">("order");
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [editingTechnique, setEditingTechnique] = useState<Technique | null>(null);
   const [uploadQueue, setUploadQueue] = useState<UploadProgress[]>([]);
@@ -426,6 +427,7 @@ export const TechniquesManagement = () => {
   const { data, isLoading, error } = usePaginatedTechniques(page, pageSize, {
     search: searchQuery,
     category: categoryFilter,
+    series: seriesFilter,
     sortBy,
   });
 
@@ -1319,6 +1321,22 @@ export const TechniquesManagement = () => {
             ))}
           </SelectContent>
         </Select>
+        <Select value={seriesFilter} onValueChange={(value) => {
+          setSeriesFilter(value);
+          setPage(1);
+        }}>
+          <SelectTrigger className="w-[200px]">
+            <SelectValue placeholder="シリーズ" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">すべて</SelectItem>
+            {seriesMapping.map((mapping) => (
+              <SelectItem key={mapping.series_prefix} value={mapping.series_prefix}>
+                {mapping.series_prefix}. {mapping.series_name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
           <SelectTrigger className="w-[180px]">
             <SelectValue placeholder="並び順" />
@@ -1327,6 +1345,7 @@ export const TechniquesManagement = () => {
             <SelectItem value="order">表示順</SelectItem>
             <SelectItem value="name">名前順</SelectItem>
             <SelectItem value="category">カテゴリー順</SelectItem>
+            <SelectItem value="series">シリーズ順</SelectItem>
           </SelectContent>
         </Select>
       </div>

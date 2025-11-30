@@ -28,7 +28,8 @@ interface PaginatedResponse {
 interface TechniqueFilters {
   search?: string;
   category?: string;
-  sortBy?: 'order' | 'name' | 'category';
+  series?: string;
+  sortBy?: 'order' | 'name' | 'category' | 'series';
   sortDirection?: 'asc' | 'desc';
 }
 
@@ -58,11 +59,17 @@ export const usePaginatedTechniques = (
         query = query.eq('category', filters.category);
       }
 
+      // Apply series filter
+      if (filters.series && filters.series !== 'all') {
+        query = query.eq('series_prefix', filters.series);
+      }
+
       // Apply sorting
       const sortByMapping = {
         'order': 'display_order',
         'name': 'name',
-        'category': 'category'
+        'category': 'category',
+        'series': 'series_prefix'
       };
       const sortColumn = sortByMapping[filters.sortBy as keyof typeof sortByMapping] || 'display_order';
       const sortDirection = filters.sortDirection || 'asc';
