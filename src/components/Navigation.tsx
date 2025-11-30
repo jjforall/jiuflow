@@ -1,5 +1,6 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
+import { useTheme } from "next-themes";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { translations } from "@/lib/translations";
 import { prefetchRoute } from "@/utils/routePrefetch";
@@ -20,6 +21,7 @@ import { useSubscription } from "@/hooks/useSubscription";
 const Navigation = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { theme } = useTheme();
   const { language, setLanguage } = useLanguage();
   const t = translations[language] || translations.ja; // Fallback to Japanese
   const [isOpen, setIsOpen] = useState(false);
@@ -108,7 +110,7 @@ const Navigation = () => {
       <div className="container mx-auto px-6 py-4">
         <div className="flex items-center justify-between">
           <Link to="/" className="text-xl font-light tracking-tight">
-            JiuFlow
+            <span className={theme === "dark" ? "filter invert" : ""}>JiuFlow</span>
           </Link>
           
           {/* Desktop Navigation */}

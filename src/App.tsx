@@ -3,6 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { ThemeProvider } from "next-themes";
 import { LanguageProvider } from "./contexts/LanguageContext";
 import { AuthProvider } from "./hooks/useAuth";
 import { ProtectedRoute } from "./components/ProtectedRoute";
@@ -41,13 +42,14 @@ const queryClient = new QueryClient();
 
 const App = () => (
   <ErrorBoundary>
-    <LanguageProvider>
-      <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-          <Sonner position="top-center" richColors closeButton />
-          <BrowserRouter>
-            <AuthProvider>
-              <FloatingVideoProvider>
+    <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
+      <LanguageProvider>
+        <QueryClientProvider client={queryClient}>
+          <TooltipProvider>
+            <Sonner position="top-center" richColors closeButton />
+            <BrowserRouter>
+              <AuthProvider>
+                <FloatingVideoProvider>
                 <RoutePrefetcher />
                 <Suspense
                   fallback={
@@ -136,6 +138,7 @@ const App = () => (
       </TooltipProvider>
     </QueryClientProvider>
   </LanguageProvider>
+    </ThemeProvider>
   </ErrorBoundary>
 );
 
