@@ -16,6 +16,7 @@ import { Star, MapPin, Trophy, Edit, Instagram, Twitter, Youtube, Globe, Languag
 import { toast } from "sonner";
 import { UserVideoCard } from "@/components/UserVideoCard";
 import { LineageTree } from "@/components/LineageTree";
+import { CelebrityEditRequestDialog } from "@/components/CelebrityEditRequestDialog";
 import hero1 from "@/assets/hero-1.jpg";
 import hero2 from "@/assets/hero-2.jpg";
 import hero3 from "@/assets/hero-3.jpg";
@@ -105,6 +106,7 @@ const Athlete = () => {
   const [followingCount, setFollowingCount] = useState(0);
   const [videos, setVideos] = useState<UserVideo[]>([]);
   const [purchasedVideos, setPurchasedVideos] = useState<Set<string>>(new Set());
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
   useEffect(() => {
     loadCelebrity();
@@ -501,10 +503,19 @@ const Athlete = () => {
 
                 <div className="flex gap-2">
                   {isOwner ? (
-                    <Button onClick={() => navigate('/mypage')} className="gap-2">
-                      <Edit className="h-4 w-4" />
-                      {language === "ja" ? "編集" : language === "pt" ? "Editar" : "Edit"}
-                    </Button>
+                    <>
+                      {celebrity.user_id ? (
+                        <Button onClick={() => navigate('/mypage')} className="gap-2">
+                          <Edit className="h-4 w-4" />
+                          {language === "ja" ? "編集" : language === "pt" ? "Editar" : "Edit"}
+                        </Button>
+                      ) : (
+                        <Button onClick={() => setIsEditDialogOpen(true)} className="gap-2">
+                          <Edit className="h-4 w-4" />
+                          {language === "ja" ? "編集リクエスト" : language === "pt" ? "Solicitar Edição" : "Request Edit"}
+                        </Button>
+                      )}
+                    </>
                   ) : (
                     celebrity.user_id && (
                       <Button 
@@ -672,6 +683,14 @@ const Athlete = () => {
           </div>
         </div>
       </main>
+
+      {celebrity && (
+        <CelebrityEditRequestDialog
+          open={isEditDialogOpen}
+          onOpenChange={setIsEditDialogOpen}
+          celebrity={celebrity}
+        />
+      )}
 
       <Footer />
     </div>

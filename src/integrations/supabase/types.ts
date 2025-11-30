@@ -215,6 +215,95 @@ export type Database = {
           },
         ]
       }
+      celebrity_edit_requests: {
+        Row: {
+          avatar_url: string | null
+          belt_history: Json | null
+          bio: string | null
+          celebrity_id: string
+          created_at: string
+          display_name: string | null
+          home_dojo: string | null
+          id: string
+          organization_id: string | null
+          rejection_reason: string | null
+          requested_by: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          social_links: Json | null
+          status: string
+          titles: Json | null
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          belt_history?: Json | null
+          bio?: string | null
+          celebrity_id: string
+          created_at?: string
+          display_name?: string | null
+          home_dojo?: string | null
+          id?: string
+          organization_id?: string | null
+          rejection_reason?: string | null
+          requested_by: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          social_links?: Json | null
+          status?: string
+          titles?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          belt_history?: Json | null
+          bio?: string | null
+          celebrity_id?: string
+          created_at?: string
+          display_name?: string | null
+          home_dojo?: string | null
+          id?: string
+          organization_id?: string | null
+          rejection_reason?: string | null
+          requested_by?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          social_links?: Json | null
+          status?: string
+          titles?: Json | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "celebrity_edit_requests_celebrity_id_fkey"
+            columns: ["celebrity_id"]
+            isOneToOne: false
+            referencedRelation: "celebrities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "celebrity_edit_requests_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "celebrity_edit_requests_requested_by_fkey"
+            columns: ["requested_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "celebrity_edit_requests_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       celebrity_follows: {
         Row: {
           celebrity_id: string
