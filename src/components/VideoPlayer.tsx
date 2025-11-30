@@ -14,6 +14,7 @@ interface VideoPlayerProps {
 export const VideoPlayer = ({ videoUrl, autoPlay = true, thumbnailUrl, onPlay }: VideoPlayerProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const hlsRef = useRef<Hls | null>(null);
+  const lastTimeRef = useRef<number | null>(null);
   const { language } = useLanguage();
   const [quality, setQuality] = useState<string>("auto");
   const [isLoading, setIsLoading] = useState(true);
@@ -154,6 +155,29 @@ export const VideoPlayer = ({ videoUrl, autoPlay = true, thumbnailUrl, onPlay }:
       video.removeEventListener('playing', handlePlaying);
     };
   }, [videoUrl, autoPlay]);
+
+  // Keep playback position when switching browser tabs or window visibility
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        // Store current time when tab is hidden
+        lastTimeRef.current = video.currentTime;
+      } else if (lastTimeRef.current != null) {
+        // Restore last position when tab becomes visible again
+        video.currentTime = lastTimeRef.current;
+        // Do not auto-play here; respect user's play/pause state
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, []);
 
   const changeQuality = (levelIndex: number) => {
     if (hlsRef.current) {
