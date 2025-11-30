@@ -244,6 +244,57 @@ export type Database = {
           },
         ]
       }
+      celebrity_lineage: {
+        Row: {
+          belt_level: string | null
+          created_at: string | null
+          ended_at: string | null
+          id: string
+          instructor_id: string
+          notes: string | null
+          started_at: string | null
+          student_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          belt_level?: string | null
+          created_at?: string | null
+          ended_at?: string | null
+          id?: string
+          instructor_id: string
+          notes?: string | null
+          started_at?: string | null
+          student_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          belt_level?: string | null
+          created_at?: string | null
+          ended_at?: string | null
+          id?: string
+          instructor_id?: string
+          notes?: string | null
+          started_at?: string | null
+          student_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "celebrity_lineage_instructor_id_fkey"
+            columns: ["instructor_id"]
+            isOneToOne: false
+            referencedRelation: "celebrities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "celebrity_lineage_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "celebrities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contact_messages: {
         Row: {
           created_at: string
