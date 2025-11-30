@@ -123,7 +123,7 @@ interface Profile {
   belt_history: Array<{belt: string; date?: string; instructor?: string}> | null;
   home_dojo: string | null;
   training_locations: Array<string> | null;
-  titles: Array<{title: string; rank?: string; organization?: string; customTitle?: string}> | null;
+  titles: Array<{title: string; rank?: string; organization?: string; customTitle?: string; weight_class?: string}> | null;
   favorite_fighters: Array<string> | null;
   favorite_techniques: Array<string> | null;
   hometown: string | null;
@@ -1687,14 +1687,14 @@ const MyPage = () => {
                                               {t}
                                             </SelectItem>
                                           ))}
-                                          <SelectItem value="custom">{language === "ja" ? "カスタム入力" : "Custom"}</SelectItem>
+                                          <SelectItem value="custom">{language === "ja" ? "カスタム" : "Custom"}</SelectItem>
                                         </SelectContent>
                                       </Select>
                                     ) : (
                                       <Input
-                                        value={title.title || ''}
-                                        onChange={(e) => updateTitle(index, 'title', e.target.value)}
-                                        placeholder={language === "ja" ? "タイトル名" : "Title"}
+                                        value={title.customTitle || ''}
+                                        onChange={(e) => updateTitle(index, 'customTitle', e.target.value)}
+                                        placeholder={language === "ja" ? "カスタムタイトル" : "Custom Title"}
                                         className="h-12"
                                       />
                                     )}
@@ -1714,6 +1714,27 @@ const MyPage = () => {
                                       </SelectContent>
                                     </Select>
                                   </div>
+
+                                  <Select
+                                    value={title.weight_class || ''}
+                                    onValueChange={(value) => updateTitle(index, 'weight_class', value)}
+                                  >
+                                    <SelectTrigger className="h-12">
+                                      <SelectValue placeholder={language === "ja" ? "階級を選択" : "Select Weight Class"} />
+                                    </SelectTrigger>
+                                    <SelectContent className="bg-popover z-50">
+                                      <SelectItem value="ルースター">{language === "ja" ? "ルースター" : "Rooster"}</SelectItem>
+                                      <SelectItem value="ライトフェザー">{language === "ja" ? "ライトフェザー" : "Light Feather"}</SelectItem>
+                                      <SelectItem value="フェザー">{language === "ja" ? "フェザー" : "Feather"}</SelectItem>
+                                      <SelectItem value="ライト">{language === "ja" ? "ライト" : "Light"}</SelectItem>
+                                      <SelectItem value="ミディアム">{language === "ja" ? "ミディアム" : "Medium"}</SelectItem>
+                                      <SelectItem value="ミディアムヘビー">{language === "ja" ? "ミディアムヘビー" : "Medium Heavy"}</SelectItem>
+                                      <SelectItem value="ヘビー">{language === "ja" ? "ヘビー" : "Heavy"}</SelectItem>
+                                      <SelectItem value="スーパーヘビー">{language === "ja" ? "スーパーヘビー" : "Super Heavy"}</SelectItem>
+                                      <SelectItem value="ウルトラヘビー">{language === "ja" ? "ウルトラヘビー" : "Ultra Heavy"}</SelectItem>
+                                      <SelectItem value="オープンクラス">{language === "ja" ? "オープンクラス" : "Absolute"}</SelectItem>
+                                    </SelectContent>
+                                  </Select>
                                   
                                   {title.title === "custom" && (
                                     <Input
@@ -1741,7 +1762,7 @@ const MyPage = () => {
                           </Button>
                         </div>
                       ) : (
-                        profile?.titles && profile.titles.length > 0 ? (
+                          profile?.titles && profile.titles.length > 0 ? (
                           <div className="grid gap-3">
                             {profile.titles.map((title, index) => (
                               <div key={index} className="p-3 bg-background rounded border border-primary/20">
@@ -1754,11 +1775,14 @@ const MyPage = () => {
                                     {title.organization && (
                                       <div className="text-sm text-muted-foreground">{title.organization}</div>
                                     )}
-                                    {title.rank && (
-                                      <div className="text-xs text-muted-foreground mt-1">
+                                    <div className="flex gap-2 mt-1">
+                                      {title.weight_class && (
+                                        <Badge variant="secondary" className="text-xs">{title.weight_class}</Badge>
+                                      )}
+                                      {title.rank && (
                                         <Badge variant="outline" className="text-xs">{title.rank}</Badge>
-                                      </div>
-                                    )}
+                                      )}
+                                    </div>
                                   </div>
                                 </div>
                               </div>
