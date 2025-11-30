@@ -85,6 +85,7 @@ export type Database = {
           home_dojo: string | null
           id: string
           organization_id: string | null
+          slug: string | null
           social_links: Json | null
           sort_order: number | null
           stats: Json | null
@@ -102,6 +103,7 @@ export type Database = {
           home_dojo?: string | null
           id?: string
           organization_id?: string | null
+          slug?: string | null
           social_links?: Json | null
           sort_order?: number | null
           stats?: Json | null
@@ -119,6 +121,7 @@ export type Database = {
           home_dojo?: string | null
           id?: string
           organization_id?: string | null
+          slug?: string | null
           social_links?: Json | null
           sort_order?: number | null
           stats?: Json | null
