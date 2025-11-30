@@ -845,19 +845,28 @@ export default function Dojo() {
 
             {/* FAQ */}
             {dojo.faq && Array.isArray(dojo.faq) && dojo.faq.length > 0 && (
-              <Card className="mb-6">
-                <CardContent className="p-6">
-                  <h2 className="text-xl font-semibold mb-4">
-                    {language === "ja" ? "よくある質問" : "FAQ"}
-                  </h2>
-                  <div className="space-y-4">
+              <Card className="mb-8 border-none shadow-lg">
+                <CardContent className="p-8">
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="p-3 rounded-xl bg-primary/10">
+                      <Shield className="w-6 h-6 text-primary" />
+                    </div>
+                    <h2 className="text-2xl font-bold">
+                      {language === "ja" ? "よくある質問" : "FAQ"}
+                    </h2>
+                  </div>
+                  <div className="space-y-6">
                     {dojo.faq.map((item: any, idx: number) => (
-                      <div key={idx} className="border-b pb-4 last:border-0">
-                        <h3 className="font-semibold mb-2">
-                          Q: {getLocalizedValue(item, 'question') || getLocalizedValue(item, 'q')}
+                      <div key={idx} className="p-6 border-l-4 border-primary/30 bg-gradient-to-r from-primary/5 to-transparent rounded-r-xl">
+                        <h3 className="font-bold text-lg mb-3 text-primary">
+                          Q: {language === "ja" && item.question_ja ? item.question_ja : 
+                             language === "pt" && item.question_pt ? item.question_pt : 
+                             item.question_en || item.question || ''}
                         </h3>
-                        <p className="text-muted-foreground">
-                          A: {getLocalizedValue(item, 'answer') || getLocalizedValue(item, 'a')}
+                        <p className="text-muted-foreground leading-relaxed">
+                          A: {language === "ja" && item.answer_ja ? item.answer_ja : 
+                             language === "pt" && item.answer_pt ? item.answer_pt : 
+                             item.answer_en || item.answer || ''}
                         </p>
                       </div>
                     ))}
