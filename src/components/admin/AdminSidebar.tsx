@@ -39,6 +39,7 @@ const menuItems = [
   { id: "points", label: "ポイント管理", icon: Award },
   { id: "belts", label: "帯管理", icon: Award },
   { id: "celebrities", label: "有名選手", icon: Star },
+  { id: "lineage", label: "系統管理", icon: Star },
   { id: "celebrity", label: "有名人申請", icon: Star },
   { id: "contacts", label: "お問い合わせ", icon: Mail },
   { id: "logs", label: "ログ", icon: FileText },
