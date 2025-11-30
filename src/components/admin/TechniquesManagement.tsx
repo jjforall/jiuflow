@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { InputWithSuggestions } from "@/components/ui/input-with-suggestions";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Upload, Trash2, Search, Check, X, Languages, ExternalLink } from "lucide-react";
@@ -95,6 +96,7 @@ export const TechniquesManagement = () => {
     startTime: number;
   }>>([]);
   const [availableCategories, setAvailableCategories] = useState<string[]>([]);
+  const [seriesNameSuggestions, setSeriesNameSuggestions] = useState<string[]>([]);
   const [newCategory, setNewCategory] = useState("");
   const [previewVideoUrl, setPreviewVideoUrl] = useState<string | null>(null);
   const [showVideoPreview, setShowVideoPreview] = useState(false);
@@ -116,7 +118,7 @@ export const TechniquesManagement = () => {
     { code: "hi", name: "हिन्दी", nativeName: "ヒンディー語" },
   ];
 
-  // カテゴリーをデータベースから取得
+  // カテゴリーとシリーズ名をデータベースから取得
   useEffect(() => {
     const fetchCategories = async () => {
       const { data: techniqueData, error } = await supabase
@@ -132,9 +134,52 @@ export const TechniquesManagement = () => {
       const uniqueCategories = Array.from(new Set(techniqueData.map(item => item.category)));
       setAvailableCategories(uniqueCategories.sort());
     };
+
+    const fetchSeriesNames = async () => {
+      const { data: techniqueData, error } = await supabase
+        .from('techniques')
+        .select('series_name');
+      
+      if (error) {
+        console.error('Error fetching series names:', error);
+        return;
+      }
+      
+      // ユニークなシリーズ名のリストを作成（nullを除外）
+      const uniqueSeriesNames = Array.from(
+        new Set(
+          techniqueData
+            .map(item => item.series_name)
+            .filter(name => name !== null && name !== '')
+        )
+      );
+      setSeriesNameSuggestions(uniqueSeriesNames.sort());
+    };
     
     fetchCategories();
+    fetchSeriesNames();
   }, []);
+
+  // シリーズ名リストを再取得する関数
+  const refetchSeriesNames = async () => {
+    const { data: techniqueData, error } = await supabase
+      .from('techniques')
+      .select('series_name');
+    
+    if (error) {
+      console.error('Error fetching series names:', error);
+      return;
+    }
+    
+    const uniqueSeriesNames = Array.from(
+      new Set(
+        techniqueData
+          .map(item => item.series_name)
+          .filter(name => name !== null && name !== '')
+      )
+    );
+    setSeriesNameSuggestions(uniqueSeriesNames.sort());
+  };
 
   // LocalStorageから進行中の翻訳を復元
   useEffect(() => {
@@ -356,6 +401,12 @@ export const TechniquesManagement = () => {
       
       await updateTechnique.mutateAsync(updates as Technique);
       toast.success("更新しました");
+      
+      // シリーズ名が更新された場合はリストを再取得
+      if (editingCell.field === 'series_name' && editValue.trim() !== '') {
+        await refetchSeriesNames();
+      }
+      
       cancelEditing();
     } catch (error) {
       console.error('Error updating technique:', error);
@@ -661,6 +712,11 @@ export const TechniquesManagement = () => {
       } else {
         await createTechnique.mutateAsync(techniqueData);
         toast.success("技術を作成しました");
+      }
+
+      // シリーズ名が更新された場合はリストを再取得
+      if (formData.series_name && formData.series_name.trim() !== '') {
+        await refetchSeriesNames();
       }
 
       resetForm();
@@ -1273,9 +1329,11 @@ export const TechniquesManagement = () => {
                       {/* Series Name */}
                       {editingCell?.id === technique.id && editingCell?.field === 'series_name' ? (
                         <div className="flex gap-2 items-center">
-                          <Input
+                          <InputWithSuggestions
                             value={editValue}
                             onChange={(e) => setEditValue(e.target.value)}
+                            onSelectSuggestion={(value) => setEditValue(value)}
+                            suggestions={seriesNameSuggestions}
                             onKeyDown={(e) => {
                               if (e.key === 'Enter' && !e.nativeEvent.isComposing) saveEdit(technique as Technique);
                               if (e.key === 'Escape') cancelEditing();
@@ -1648,9 +1706,11 @@ export const TechniquesManagement = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="text-sm font-medium">シリーズ名 (Series Name)</label>
-                <Input
+                <InputWithSuggestions
                   value={formData.series_name}
                   onChange={(e) => setFormData({...formData, series_name: e.target.value})}
+                  onSelectSuggestion={(value) => setFormData({...formData, series_name: value})}
+                  suggestions={seriesNameSuggestions}
                   placeholder="例: Closed Guard Series"
                   disabled={!isAdmin}
                 />
