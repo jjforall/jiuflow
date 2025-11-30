@@ -117,7 +117,7 @@ interface Profile {
 }
 
 export default function UserProfile() {
-  const { identifier } = useParams();
+  const { slugOrUsername: identifier } = useParams();
   const { language } = useLanguage();
   const [videos, setVideos] = useState<UserVideo[]>([]);
   const [profile, setProfile] = useState<Profile | null>(null);
