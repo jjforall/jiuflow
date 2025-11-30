@@ -154,9 +154,14 @@ const MyPage = () => {
   const [userVideos, setUserVideos] = useState<UserVideo[]>([]);
   const [videosLoading, setVideosLoading] = useState(true);
   const [displayedVideosCount, setDisplayedVideosCount] = useState(9);
-  const [referralCode, setReferralCode] = useState<string>("");
-  const [isEditingCode, setIsEditingCode] = useState(false);
-  const [editedCode, setEditedCode] = useState("");
+  const [dojoFriendsCode, setDojoFriendsCode] = useState<string>("");
+  const [dojoFriendsUses, setDojoFriendsUses] = useState<number>(0);
+  const [otherFriendsCode, setOtherFriendsCode] = useState<string>("");
+  const [otherFriendsUses, setOtherFriendsUses] = useState<number>(0);
+  const [isEditingDojoCode, setIsEditingDojoCode] = useState(false);
+  const [isEditingOtherCode, setIsEditingOtherCode] = useState(false);
+  const [editedDojoCode, setEditedDojoCode] = useState("");
+  const [editedOtherCode, setEditedOtherCode] = useState("");
   const [editingVideo, setEditingVideo] = useState<UserVideo | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deletingVideoId, setDeletingVideoId] = useState<string | null>(null);
@@ -565,10 +570,10 @@ const MyPage = () => {
     if (!user) return;
     
     try {
-      // Load referral code
+      // Load referral codes
       const { data: codeData, error: codeError } = await supabase
         .from('referral_codes')
-        .select('code')
+        .select('code, uses_count, dojo_friends_code, dojo_friends_uses')
         .eq('user_id', user.id)
         .maybeSingle();
 
@@ -577,10 +582,15 @@ const MyPage = () => {
       }
 
       if (codeData) {
-        setReferralCode(codeData.code);
-        setEditedCode(codeData.code);
+        setOtherFriendsCode(codeData.code);
+        setOtherFriendsUses(codeData.uses_count || 0);
+        setEditedOtherCode(codeData.code);
         
-        // Create Stripe coupon for this referral code
+        setDojoFriendsCode(codeData.dojo_friends_code);
+        setDojoFriendsUses(codeData.dojo_friends_uses || 0);
+        setEditedDojoCode(codeData.dojo_friends_code);
+        
+        // Create Stripe coupons for both codes
         const { data: { session } } = await supabase.auth.getSession();
         if (session) {
           await supabase.functions.invoke('create-referral-coupon', {
@@ -590,20 +600,24 @@ const MyPage = () => {
           });
         }
       } else {
-        // Generate new referral code if none exists
-        const newCode = generateReferralCode();
+        // Generate new referral codes if none exist
+        const newOtherCode = generateReferralCode();
+        const newDojoCode = 'DJ-' + generateReferralCode().substring(0, 6);
         const { error: insertError } = await supabase
           .from('referral_codes')
           .insert({
             user_id: user.id,
-            code: newCode,
+            code: newOtherCode,
+            dojo_friends_code: newDojoCode,
           });
 
         if (!insertError) {
-          setReferralCode(newCode);
-          setEditedCode(newCode);
+          setOtherFriendsCode(newOtherCode);
+          setEditedOtherCode(newOtherCode);
+          setDojoFriendsCode(newDojoCode);
+          setEditedDojoCode(newDojoCode);
           
-          // Create Stripe coupon for the new code
+          // Create Stripe coupons for the new codes
           const { data: { session } } = await supabase.auth.getSession();
           if (session) {
             await supabase.functions.invoke('create-referral-coupon', {
@@ -958,7 +972,61 @@ const MyPage = () => {
     setEditValues({ ...editValues, titles: newTitles });
   };
 
-  const updateReferralCode = async (newCode: string) => {
+  const updateDojoReferralCode = async (newCode: string) => {
+    if (!user) return;
+    
+    const trimmedCode = newCode.trim().toUpperCase();
+    if (trimmedCode.length < 4 || trimmedCode.length > 12) {
+      toast.error(language === "ja" ? "コードは4〜12文字で入力してください" : "Code must be 4-12 characters");
+      return;
+    }
+
+    if (!/^[A-Z0-9-]+$/.test(trimmedCode)) {
+      toast.error(language === "ja" ? "英数字とハイフンのみ使用できます" : "Only alphanumeric characters and hyphen allowed");
+      return;
+    }
+
+    try {
+      // Check if code is already taken
+      const { data: existingCode } = await supabase
+        .from('referral_codes')
+        .select('dojo_friends_code')
+        .eq('dojo_friends_code', trimmedCode)
+        .neq('user_id', user.id)
+        .maybeSingle();
+
+      if (existingCode) {
+        toast.error(language === "ja" ? "このコードは既に使用されています" : "This code is already taken");
+        return;
+      }
+
+      // Update the code
+      const { error } = await supabase
+        .from('referral_codes')
+        .update({ dojo_friends_code: trimmedCode })
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      setDojoFriendsCode(trimmedCode);
+      toast.success(language === "ja" ? "道場用コードを更新しました" : "Dojo code updated");
+
+      // Create Stripe coupon for the new code
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        await supabase.functions.invoke('create-referral-coupon', {
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+          },
+        });
+      }
+    } catch (error) {
+      console.error('Error updating dojo referral code:', error);
+      toast.error(language === "ja" ? "コードの更新に失敗しました" : "Failed to update code");
+    }
+  };
+
+  const updateOtherReferralCode = async (newCode: string) => {
     if (!user) return;
     
     const trimmedCode = newCode.trim().toUpperCase();
@@ -994,7 +1062,7 @@ const MyPage = () => {
 
       if (error) throw error;
 
-      setReferralCode(trimmedCode);
+      setOtherFriendsCode(trimmedCode);
       toast.success(language === "ja" ? "紹介コードを更新しました" : "Referral code updated");
 
       // Create Stripe coupon for the new code
@@ -2901,17 +2969,39 @@ const MyPage = () => {
                   </Badge>
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <>
+              <CardContent className="space-y-6">
+                {/* Dojo Friends Code - 980円 */}
+                <div className="p-4 border border-primary/20 rounded-lg bg-primary/5">
+                  <div className="flex items-center justify-between mb-3">
+                    <div>
+                      <h3 className="font-semibold text-primary">
+                        {language === "ja" ? "🥋 道場内の友達用" : "🥋 Dojo Friends"}
+                      </h3>
+                      <p className="text-xs text-muted-foreground">
+                        {language === "ja" ? "Founder Plan特別値引き - ¥980" : "Founder Plan Special - ¥980"}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-2xl font-bold">{dojoFriendsUses}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {language === "ja" ? "人招待" : "invites"}
+                      </div>
+                      {dojoFriendsUses >= 3 && (
+                        <Badge variant="default" className="mt-1">
+                          🎬 {language === "ja" ? "特別動画" : "Special Video"}
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
                   <div>
                     <p className="text-xs text-muted-foreground mb-2">
-                      {language === "ja" ? "あなたの紹介コード" : "Your Referral Code"}
+                      {language === "ja" ? "道場用コード" : "Dojo Code"}
                     </p>
-                    {isEditingCode ? (
+                    {isEditingDojoCode ? (
                       <div className="flex items-center gap-2">
                         <Input
-                          value={editedCode}
-                          onChange={(e) => setEditedCode(e.target.value.toUpperCase())}
+                          value={editedDojoCode}
+                          onChange={(e) => setEditedDojoCode(e.target.value.toUpperCase())}
                           placeholder={language === "ja" ? "新しいコード" : "New code"}
                           maxLength={12}
                           className="flex-1 font-mono text-lg font-bold text-center"
@@ -2920,8 +3010,8 @@ const MyPage = () => {
                           size="sm"
                           variant="outline"
                           onClick={() => {
-                            updateReferralCode(editedCode);
-                            setIsEditingCode(false);
+                            updateDojoReferralCode(editedDojoCode);
+                            setIsEditingDojoCode(false);
                           }}
                         >
                           <Check className="w-4 h-4" />
@@ -2930,8 +3020,121 @@ const MyPage = () => {
                           size="sm"
                           variant="outline"
                           onClick={() => {
-                            setIsEditingCode(false);
-                            setEditedCode(referralCode);
+                            setIsEditingDojoCode(false);
+                            setEditedDojoCode(dojoFriendsCode);
+                          }}
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <code className="flex-1 p-3 bg-background rounded font-mono text-lg font-bold text-center border">
+                          {dojoFriendsCode || "loading..."}
+                        </code>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            setEditedDojoCode(dojoFriendsCode);
+                            setIsEditingDojoCode(true);
+                          }}
+                          disabled={!dojoFriendsCode}
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            navigator.clipboard.writeText(dojoFriendsCode);
+                            toast.success(language === "ja" ? "コピーしました" : "Copied!");
+                          }}
+                          disabled={!dojoFriendsCode}
+                        >
+                          {language === "ja" ? "コピー" : "Copy"}
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                  <div className="mt-3">
+                    <p className="text-xs text-muted-foreground mb-2">
+                      {language === "ja" ? "紹介リンク" : "Referral Link"}
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        value={`${window.location.origin}/join?referral=${dojoFriendsCode}`}
+                        readOnly
+                        className="flex-1 text-sm"
+                        disabled={!dojoFriendsCode}
+                      />
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          navigator.clipboard.writeText(`${window.location.origin}/join?referral=${dojoFriendsCode}`);
+                          toast.success(language === "ja" ? "リンクをコピーしました" : "Link copied!");
+                        }}
+                        disabled={!dojoFriendsCode}
+                      >
+                        <Copy className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Other Friends Code - 1900円 */}
+                <div className="p-4 border border-border rounded-lg">
+                  <div className="flex items-center justify-between mb-3">
+                    <div>
+                      <h3 className="font-semibold">
+                        {language === "ja" ? "👥 その他の友達用" : "👥 Other Friends"}
+                      </h3>
+                      <p className="text-xs text-muted-foreground">
+                        {language === "ja" ? "通常価格 - ¥1,900" : "Regular Price - ¥1,900"}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-2xl font-bold">{otherFriendsUses}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {language === "ja" ? "人招待" : "invites"}
+                      </div>
+                      {otherFriendsUses >= 3 && (
+                        <Badge variant="default" className="mt-1">
+                          🎬 {language === "ja" ? "特別動画" : "Special Video"}
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-2">
+                      {language === "ja" ? "あなたの紹介コード" : "Your Referral Code"}
+                    </p>
+                    {isEditingOtherCode ? (
+                      <div className="flex items-center gap-2">
+                        <Input
+                          value={editedOtherCode}
+                          onChange={(e) => setEditedOtherCode(e.target.value.toUpperCase())}
+                          placeholder={language === "ja" ? "新しいコード" : "New code"}
+                          maxLength={12}
+                          className="flex-1 font-mono text-lg font-bold text-center"
+                        />
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            updateOtherReferralCode(editedOtherCode);
+                            setIsEditingOtherCode(false);
+                          }}
+                        >
+                          <Check className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            setIsEditingOtherCode(false);
+                            setEditedOtherCode(otherFriendsCode);
                           }}
                         >
                           <X className="w-4 h-4" />
@@ -2940,16 +3143,16 @@ const MyPage = () => {
                     ) : (
                       <div className="flex items-center gap-2">
                         <code className="flex-1 p-3 bg-muted rounded font-mono text-lg font-bold text-center">
-                          {referralCode || "loading..."}
+                          {otherFriendsCode || "loading..."}
                         </code>
                         <Button
                           size="sm"
                           variant="outline"
                           onClick={() => {
-                            setEditedCode(referralCode);
-                            setIsEditingCode(true);
+                            setEditedOtherCode(otherFriendsCode);
+                            setIsEditingOtherCode(true);
                           }}
-                          disabled={!referralCode}
+                          disabled={!otherFriendsCode}
                         >
                           <Edit2 className="w-4 h-4" />
                         </Button>
@@ -2957,48 +3160,52 @@ const MyPage = () => {
                           size="sm"
                           variant="outline"
                           onClick={() => {
-                            navigator.clipboard.writeText(referralCode);
+                            navigator.clipboard.writeText(otherFriendsCode);
                             toast.success(language === "ja" ? "コピーしました" : "Copied!");
                           }}
-                          disabled={!referralCode}
+                          disabled={!otherFriendsCode}
                         >
                           {language === "ja" ? "コピー" : "Copy"}
                         </Button>
                       </div>
                     )}
                   </div>
-                  <div>
+                  <div className="mt-3">
                     <p className="text-xs text-muted-foreground mb-2">
                       {language === "ja" ? "紹介リンク" : "Referral Link"}
                     </p>
                     <div className="flex items-center gap-2">
                       <Input
-                        value={`${window.location.origin}/join?referral=${referralCode}`}
+                        value={`${window.location.origin}/join?referral=${otherFriendsCode}`}
                         readOnly
                         className="flex-1 text-sm"
-                        disabled={!referralCode}
+                        disabled={!otherFriendsCode}
                       />
                       <Button
                         size="sm"
                         variant="outline"
                         onClick={() => {
-                          navigator.clipboard.writeText(`${window.location.origin}/join?referral=${referralCode}`);
+                          navigator.clipboard.writeText(`${window.location.origin}/join?referral=${otherFriendsCode}`);
                           toast.success(language === "ja" ? "リンクをコピーしました" : "Link copied!");
                         }}
-                        disabled={!referralCode}
+                        disabled={!otherFriendsCode}
                       >
                         <Copy className="w-4 h-4" />
                       </Button>
                     </div>
                   </div>
-                  <div className="text-sm text-muted-foreground">
-                    <p>
-                      {language === "ja" 
-                        ? "友達がこのコードで加入すると、初月無料になります" 
-                        : "Friends get first month free with this code"}
-                    </p>
-                  </div>
-                </>
+                </div>
+
+                <div className="text-sm text-muted-foreground bg-muted/30 p-3 rounded">
+                  <p className="font-medium mb-1">
+                    {language === "ja" ? "🎁 特別特典" : "🎁 Special Reward"}
+                  </p>
+                  <p>
+                    {language === "ja" 
+                      ? "各コードで3人以上招待すると、特別動画が視聴できます！" 
+                      : "Invite 3+ friends with each code to unlock special videos!"}
+                  </p>
+                </div>
               </CardContent>
             </Card>
           </div>
