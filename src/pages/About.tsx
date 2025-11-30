@@ -129,11 +129,12 @@ const About = () => {
           {/* Header Section */}
           <section className="py-20 text-center">
             <h1 className="text-5xl md:text-6xl font-light mb-6">About</h1>
-            <p className="text-2xl md:text-3xl font-light mb-8 max-w-3xl mx-auto">
-              安全で、長く続けられ、かつ試合でも強い。
+            <p className="text-2xl md:text-3xl font-light mb-4 max-w-3xl mx-auto">
+              安全で、長く続けられ、かつ試合でも強い。<br />
+              我々が考える「いい柔術」を広める
             </p>
             <p className="text-xl text-muted-foreground font-light max-w-2xl mx-auto">
-              我々が考える「いい柔術」を広める──それが、私たちのミッションです。
+              それが、私たちのミッションです。
             </p>
           </section>
 
