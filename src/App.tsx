@@ -8,6 +8,8 @@ import { AuthProvider } from "./hooks/useAuth";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { RoutePrefetcher } from "./components/RoutePrefetcher";
+import { FloatingVideoProvider } from "./contexts/FloatingVideoContext";
+import { FloatingVideoPlayer } from "./components/FloatingVideoPlayer";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 
@@ -43,85 +45,88 @@ const App = () => (
           <Sonner position="top-center" richColors closeButton />
           <BrowserRouter>
             <AuthProvider>
-              <RoutePrefetcher />
-              <Suspense
-                fallback={
-                  <div className="min-h-screen bg-background">
-                    <Navigation />
-                    <main className="pt-16">
-                      <div className="mx-auto flex max-w-5xl flex-col gap-8 px-4 py-16">
-                        <div className="h-10 w-40 animate-pulse rounded-full bg-muted" />
-                        <div className="grid gap-6 md:grid-cols-2">
-                          <div className="h-40 animate-pulse rounded-xl bg-muted" />
-                          <div className="h-40 animate-pulse rounded-xl bg-muted" />
+              <FloatingVideoProvider>
+                <RoutePrefetcher />
+                <Suspense
+                  fallback={
+                    <div className="min-h-screen bg-background">
+                      <Navigation />
+                      <main className="pt-16">
+                        <div className="mx-auto flex max-w-5xl flex-col gap-8 px-4 py-16">
+                          <div className="h-10 w-40 animate-pulse rounded-full bg-muted" />
+                          <div className="grid gap-6 md:grid-cols-2">
+                            <div className="h-40 animate-pulse rounded-xl bg-muted" />
+                            <div className="h-40 animate-pulse rounded-xl bg-muted" />
+                          </div>
+                          <div className="space-y-4">
+                            <div className="h-4 w-3/4 animate-pulse rounded bg-muted" />
+                            <div className="h-4 w-2/3 animate-pulse rounded bg-muted" />
+                            <div className="h-4 w-1/2 animate-pulse rounded bg-muted" />
+                          </div>
                         </div>
-                        <div className="space-y-4">
-                          <div className="h-4 w-3/4 animate-pulse rounded bg-muted" />
-                          <div className="h-4 w-2/3 animate-pulse rounded bg-muted" />
-                          <div className="h-4 w-1/2 animate-pulse rounded bg-muted" />
-                        </div>
-                      </div>
-                    </main>
-                    <Footer />
-                  </div>
-                }
-              >
-                <Routes>
-                <Route path="/" element={<Home />} />
-                <Route path="/login" element={<Login />} />
-                <Route path="/reset-password" element={<ResetPassword />} />
-                <Route path="/update-password" element={<UpdatePassword />} />
-                <Route path="/map" element={
-                  <ProtectedRoute>
-                    <Map />
-                  </ProtectedRoute>
-                } />
-                <Route path="/video/:id" element={
-                  <ProtectedRoute>
-                    <Video />
-                  </ProtectedRoute>
-                } />
-                <Route path="/about" element={<About />} />
-                <Route path="/join" element={<Join />} />
-                <Route path="/payment-success" element={<PaymentSuccess />} />
-                <Route path="/mypage" element={
-                  <ProtectedRoute>
-                    <MyPage />
-                  </ProtectedRoute>
-                } />
-                <Route path="/video-upload-info" element={
-                  <ProtectedRoute>
-                    <VideoUploadInfo />
-                  </ProtectedRoute>
-                } />
-                <Route path="/user/:identifier" element={<UserProfile />} />
-                <Route path="/dojos" element={<Dojos />} />
-                <Route path="/dojos/new" element={
-                  <ProtectedRoute>
-                    <DojoNew />
-                  </ProtectedRoute>
-                } />
-                <Route path="/dojo/:id" element={<Dojo />} />
-                <Route path="/founder-trial" element={<FounderTrial />} />
-                <Route path="/admin" element={<AdminLogin />} />
-                <Route path="/admin-dashboard" element={
-                  <ProtectedRoute requireAdmin>
-                    <AdminDashboard />
-                  </ProtectedRoute>
-                } />
-                <Route path="/admin/dashboard" element={
-                  <ProtectedRoute requireAdmin>
-                    <AdminDashboard />
-                  </ProtectedRoute>
-                } />
-                <Route path="/generate-images" element={
-                  <ProtectedRoute requireAdmin>
-                    <GenerateImages />
-                  </ProtectedRoute>
-                } />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </Suspense>
+                      </main>
+                      <Footer />
+                    </div>
+                  }
+                >
+                  <Routes>
+                  <Route path="/" element={<Home />} />
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/reset-password" element={<ResetPassword />} />
+                  <Route path="/update-password" element={<UpdatePassword />} />
+                  <Route path="/map" element={
+                    <ProtectedRoute>
+                      <Map />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/video/:id" element={
+                    <ProtectedRoute>
+                      <Video />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/about" element={<About />} />
+                  <Route path="/join" element={<Join />} />
+                  <Route path="/payment-success" element={<PaymentSuccess />} />
+                  <Route path="/mypage" element={
+                    <ProtectedRoute>
+                      <MyPage />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/video-upload-info" element={
+                    <ProtectedRoute>
+                      <VideoUploadInfo />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/user/:identifier" element={<UserProfile />} />
+                  <Route path="/dojos" element={<Dojos />} />
+                  <Route path="/dojos/new" element={
+                    <ProtectedRoute>
+                      <DojoNew />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/dojo/:id" element={<Dojo />} />
+                  <Route path="/founder-trial" element={<FounderTrial />} />
+                  <Route path="/admin" element={<AdminLogin />} />
+                  <Route path="/admin-dashboard" element={
+                    <ProtectedRoute requireAdmin>
+                      <AdminDashboard />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/admin/dashboard" element={
+                    <ProtectedRoute requireAdmin>
+                      <AdminDashboard />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/generate-images" element={
+                    <ProtectedRoute requireAdmin>
+                      <GenerateImages />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </Suspense>
+              <FloatingVideoPlayer />
+            </FloatingVideoProvider>
           </AuthProvider>
         </BrowserRouter>
       </TooltipProvider>
