@@ -675,6 +675,7 @@ export type Database = {
           name_pt: string
           series_name: string | null
           series_order: number | null
+          series_prefix: string | null
           thumbnail_url: string | null
           thumbnail_url_ja: string | null
           thumbnail_url_pt: string | null
@@ -698,6 +699,7 @@ export type Database = {
           name_pt: string
           series_name?: string | null
           series_order?: number | null
+          series_prefix?: string | null
           thumbnail_url?: string | null
           thumbnail_url_ja?: string | null
           thumbnail_url_pt?: string | null
@@ -721,6 +723,7 @@ export type Database = {
           name_pt?: string
           series_name?: string | null
           series_order?: number | null
+          series_prefix?: string | null
           thumbnail_url?: string | null
           thumbnail_url_ja?: string | null
           thumbnail_url_pt?: string | null
