@@ -285,28 +285,13 @@ const About = () => {
               </div>
               
               <div className="relative aspect-video rounded-xl overflow-hidden shadow-2xl bg-muted animate-scale-in">
-                {/* Video Player Placeholder */}
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="text-center space-y-4">
-                    <div className="w-20 h-20 mx-auto rounded-full bg-primary/10 flex items-center justify-center">
-                      <svg className="w-8 h-8 text-primary" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M8 5v14l11-7z"/>
-                      </svg>
-                    </div>
-                    <p className="text-muted-foreground">
-                      メッセージ動画（3分）
-                    </p>
-                  </div>
-                </div>
-                
-                {/* 実際の動画URLが決まったら、以下のように実装 */}
-                {/* <video 
-                  controls
+                <iframe
                   className="w-full h-full"
-                  poster="/path/to/thumbnail.jpg"
-                >
-                  <source src="/path/to/video.mp4" type="video/mp4" />
-                </video> */}
+                  src="https://www.youtube.com/embed/h982P-og66w"
+                  title="創設者からのメッセージ"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                />
               </div>
               
               <p className="text-center text-sm text-muted-foreground mt-6">
