@@ -293,10 +293,6 @@ const About = () => {
                   allowFullScreen
                 />
               </div>
-              
-              <p className="text-center text-sm text-muted-foreground mt-6">
-                約3分の動画です
-              </p>
             </div>
           </section>
 
