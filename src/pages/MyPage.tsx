@@ -1478,10 +1478,13 @@ const MyPage = () => {
                                   <div key={userDojo.id} className="flex items-center justify-between p-3 bg-background rounded-lg border">
                                     <Link 
                                       to={`/dojo/${userDojo.dojo.id}`}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
                                       className="flex-1 hover:text-primary transition-colors"
                                     >
-                                      <div className="font-medium">
+                                      <div className="font-medium flex items-center gap-1">
                                         {language === "ja" ? userDojo.dojo.name_ja : language === "pt" ? userDojo.dojo.name_pt : userDojo.dojo.name}
+                                        <ExternalLink className="w-3 h-3 opacity-50" />
                                       </div>
                                       {userDojo.dojo.location && (
                                         <div className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
@@ -1514,10 +1517,13 @@ const MyPage = () => {
                                   <div key={userDojo.id} className="flex items-center justify-between p-3 bg-background rounded-lg border">
                                     <Link 
                                       to={`/dojo/${userDojo.dojo.id}`}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
                                       className="flex-1 hover:text-primary transition-colors"
                                     >
-                                      <div className="font-medium">
+                                      <div className="font-medium flex items-center gap-1">
                                         {language === "ja" ? userDojo.dojo.name_ja : language === "pt" ? userDojo.dojo.name_pt : userDojo.dojo.name}
+                                        <ExternalLink className="w-3 h-3 opacity-50" />
                                       </div>
                                       {userDojo.dojo.location && (
                                         <div className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
