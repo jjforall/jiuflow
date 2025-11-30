@@ -438,6 +438,7 @@ const Map = () => {
               {/* Series-based Accordion (alphabetically ordered) */}
               <Accordion type="multiple" className="w-full space-y-2">
                 {Object.entries(seriesTechniques).map(([seriesPrefix, { seriesName, techniques: seriesTechs }]) => {
+                  const maxSeriesOrder = Math.max(...seriesTechs.map(t => t.series_order || 1));
                   return (
                     <AccordionItem 
                       key={seriesPrefix} 
@@ -448,7 +449,7 @@ const Map = () => {
                         <div className="flex items-center justify-between w-full pr-4">
                           <div className="flex items-center gap-3 md:gap-4 text-left">
                             <div className="flex items-center justify-center w-10 h-10 md:w-12 md:h-12 rounded-xl font-bold text-base md:text-lg flex-shrink-0 shadow-sm bg-primary/10 border border-primary/20">
-                              {seriesTechs.length}
+                              {maxSeriesOrder}
                             </div>
                             <div>
                               <h3 className="text-base md:text-lg font-semibold text-foreground">
@@ -456,10 +457,10 @@ const Map = () => {
                               </h3>
                               <p className="text-xs md:text-sm text-muted-foreground mt-0.5">
                                 {language === "ja" 
-                                  ? `${seriesTechs.length}本の動画` 
+                                  ? `${maxSeriesOrder}本の動画` 
                                   : language === "pt" 
-                                  ? `${seriesTechs.length} vídeos` 
-                                  : `${seriesTechs.length} videos`}
+                                  ? `${maxSeriesOrder} vídeos` 
+                                  : `${maxSeriesOrder} videos`}
                               </p>
                             </div>
                           </div>
