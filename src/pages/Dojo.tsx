@@ -7,7 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Globe, Instagram, Facebook, Phone, Mail, Users, ExternalLink } from "lucide-react";
+import { MapPin, Globe, Instagram, Facebook, Phone, Mail, Users, ExternalLink, Heart } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { toast } from "sonner";
 
@@ -80,13 +80,79 @@ export default function Dojo() {
   const [dojo, setDojo] = useState<Dojo | null>(null);
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [isFavorite, setIsFavorite] = useState(false);
 
   useEffect(() => {
     if (id) {
       loadDojo();
       loadMembers();
+      checkAuth();
     }
   }, [id]);
+
+  useEffect(() => {
+    if (userId && id) {
+      checkFavorite();
+    }
+  }, [userId, id]);
+
+  const checkAuth = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    setUserId(user?.id || null);
+  };
+
+  const checkFavorite = async () => {
+    if (!userId || !id) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('favorite_dojos')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('dojo_id', id)
+        .maybeSingle();
+
+      if (error) throw error;
+      setIsFavorite(!!data);
+    } catch (error) {
+      console.error('Error checking favorite:', error);
+    }
+  };
+
+  const toggleFavorite = async () => {
+    if (!userId || !id) {
+      toast.error(language === "ja" ? "ログインが必要です" : "Login required");
+      return;
+    }
+
+    try {
+      if (isFavorite) {
+        const { error } = await supabase
+          .from('favorite_dojos')
+          .delete()
+          .eq('user_id', userId)
+          .eq('dojo_id', id);
+
+        if (error) throw error;
+        
+        setIsFavorite(false);
+        toast.success(language === "ja" ? "お気に入りから削除しました" : "Removed from favorites");
+      } else {
+        const { error } = await supabase
+          .from('favorite_dojos')
+          .insert({ user_id: userId, dojo_id: id });
+
+        if (error) throw error;
+        
+        setIsFavorite(true);
+        toast.success(language === "ja" ? "お気に入りに追加しました" : "Added to favorites");
+      }
+    } catch (error) {
+      console.error('Error toggling favorite:', error);
+      toast.error(language === "ja" ? "エラーが発生しました" : "An error occurred");
+    }
+  };
 
   const loadDojo = async () => {
     try {
@@ -246,12 +312,26 @@ export default function Dojo() {
           {/* Header */}
           <div className="mb-8">
             <div className="flex items-start justify-between mb-4">
-              <h1 className="text-4xl font-bold">{getDojoName(dojo)}</h1>
-              {!dojo.cover_image_url && dojo.is_verified && (
-                <Badge className="text-sm">
-                  {language === "ja" ? "公認道場" : "Verified"}
-                </Badge>
-              )}
+              <h1 className="text-4xl font-bold flex-1">{getDojoName(dojo)}</h1>
+              <div className="flex items-center gap-3">
+                {!dojo.cover_image_url && dojo.is_verified && (
+                  <Badge className="text-sm">
+                    {language === "ja" ? "公認道場" : "Verified"}
+                  </Badge>
+                )}
+                {userId && (
+                  <Button
+                    onClick={toggleFavorite}
+                    variant="outline"
+                    size="icon"
+                    className="rounded-full"
+                  >
+                    <Heart 
+                      className={`w-5 h-5 ${isFavorite ? 'fill-red-500 text-red-500' : ''}`}
+                    />
+                  </Button>
+                )}
+              </div>
             </div>
             
             {dojo.location && (

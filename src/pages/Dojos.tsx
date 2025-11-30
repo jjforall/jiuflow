@@ -7,7 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { MapPin, Search, Plus, Globe, Instagram, Facebook, Phone, Mail } from "lucide-react";
+import { MapPin, Search, Plus, Globe, Instagram, Facebook, Phone, Mail, Heart } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { toast } from "sonner";
 
@@ -29,6 +29,7 @@ interface Dojo {
   cover_image_url: string | null;
   is_verified: boolean;
   created_at: string;
+  is_favorite?: boolean;
 }
 
 export default function Dojos() {
@@ -38,6 +39,8 @@ export default function Dojos() {
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [favorites, setFavorites] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     loadDojos();
@@ -45,12 +48,82 @@ export default function Dojos() {
   }, []);
 
   useEffect(() => {
+    if (userId) {
+      loadFavorites();
+    }
+  }, [userId]);
+
+  useEffect(() => {
     filterDojos();
-  }, [searchQuery, dojos]);
+  }, [searchQuery, dojos, favorites]);
 
   const checkAuth = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     setIsAuthenticated(!!user);
+    setUserId(user?.id || null);
+  };
+
+  const loadFavorites = async () => {
+    if (!userId) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('favorite_dojos')
+        .select('dojo_id')
+        .eq('user_id', userId);
+
+      if (error) throw error;
+      
+      const favoriteIds = new Set((data || []).map(f => f.dojo_id));
+      setFavorites(favoriteIds);
+    } catch (error) {
+      console.error('Error loading favorites:', error);
+    }
+  };
+
+  const toggleFavorite = async (dojoId: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (!userId) {
+      toast.error(language === "ja" ? "ログインが必要です" : "Login required");
+      return;
+    }
+
+    const isFavorite = favorites.has(dojoId);
+    
+    try {
+      if (isFavorite) {
+        const { error } = await supabase
+          .from('favorite_dojos')
+          .delete()
+          .eq('user_id', userId)
+          .eq('dojo_id', dojoId);
+
+        if (error) throw error;
+        
+        setFavorites(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(dojoId);
+          return newSet;
+        });
+        
+        toast.success(language === "ja" ? "お気に入りから削除しました" : "Removed from favorites");
+      } else {
+        const { error } = await supabase
+          .from('favorite_dojos')
+          .insert({ user_id: userId, dojo_id: dojoId });
+
+        if (error) throw error;
+        
+        setFavorites(prev => new Set(prev).add(dojoId));
+        
+        toast.success(language === "ja" ? "お気に入りに追加しました" : "Added to favorites");
+      }
+    } catch (error) {
+      console.error('Error toggling favorite:', error);
+      toast.error(language === "ja" ? "エラーが発生しました" : "An error occurred");
+    }
   };
 
   const loadDojos = async () => {
@@ -63,18 +136,8 @@ export default function Dojos() {
 
       if (error) throw error;
       
-      // Priority dojos: Yawara, Sweep, Overlimit Sapporo
-      const priorityNames = ['ヤワラ', 'スウィープ', 'オーバーリミット札幌'];
-      const priorityDojos = (data || []).filter(dojo => 
-        priorityNames.some(name => dojo.name_ja.includes(name))
-      );
-      const otherDojos = (data || []).filter(dojo => 
-        !priorityNames.some(name => dojo.name_ja.includes(name))
-      );
-      
-      const sortedDojos = [...priorityDojos, ...otherDojos];
-      setDojos(sortedDojos);
-      setFilteredDojos(sortedDojos);
+      setDojos(data || []);
+      setFilteredDojos(data || []);
     } catch (error) {
       console.error('Error loading dojos:', error);
       toast.error(language === "ja" ? "道場の読み込みに失敗しました" : "Failed to load dojos");
@@ -84,17 +147,34 @@ export default function Dojos() {
   };
 
   const filterDojos = () => {
-    if (!searchQuery.trim()) {
-      setFilteredDojos(dojos);
-      return;
+    let filtered = [...dojos];
+    
+    // Apply search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(dojo => {
+        const name = language === "ja" ? dojo.name_ja : language === "pt" ? dojo.name_pt : dojo.name;
+        const location = dojo.location || "";
+        return name.toLowerCase().includes(query) || location.toLowerCase().includes(query);
+      });
     }
-
-    const query = searchQuery.toLowerCase();
-    const filtered = dojos.filter(dojo => {
-      const name = language === "ja" ? dojo.name_ja : language === "pt" ? dojo.name_pt : dojo.name;
-      const location = dojo.location || "";
-      return name.toLowerCase().includes(query) || location.toLowerCase().includes(query);
+    
+    // Sort: favorites first, then verified, then by name
+    filtered.sort((a, b) => {
+      const aFav = favorites.has(a.id);
+      const bFav = favorites.has(b.id);
+      
+      if (aFav && !bFav) return -1;
+      if (!aFav && bFav) return 1;
+      
+      if (a.is_verified && !b.is_verified) return -1;
+      if (!a.is_verified && b.is_verified) return 1;
+      
+      const aName = language === "ja" ? a.name_ja : language === "pt" ? a.name_pt : a.name;
+      const bName = language === "ja" ? b.name_ja : language === "pt" ? b.name_pt : b.name;
+      return aName.localeCompare(bName);
     });
+    
     setFilteredDojos(filtered);
   };
 
@@ -175,7 +255,18 @@ export default function Dojos() {
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredDojos.map((dojo) => (
                 <Link key={dojo.id} to={`/dojo/${dojo.id}`}>
-                  <Card className="h-full hover:shadow-lg transition-shadow">
+                  <Card className="h-full hover:shadow-lg transition-shadow relative">
+                    {/* Favorite button */}
+                    {isAuthenticated && (
+                      <button
+                        onClick={(e) => toggleFavorite(dojo.id, e)}
+                        className="absolute top-4 right-4 z-10 p-2 bg-background/80 backdrop-blur-sm rounded-full border border-border hover:bg-background transition-colors"
+                      >
+                        <Heart 
+                          className={`w-5 h-5 ${favorites.has(dojo.id) ? 'fill-red-500 text-red-500' : 'text-muted-foreground'}`}
+                        />
+                      </button>
+                    )}
                     <CardContent className="p-0">
                       {/* Cover Image - Only show if exists */}
                       {dojo.cover_image_url && (
