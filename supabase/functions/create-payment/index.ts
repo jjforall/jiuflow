@@ -42,7 +42,7 @@ serve(async (req) => {
       cancel_url: `${req.headers.get("origin")}/join?canceled=true`,
       custom_text: {
         submit: {
-          message: "jiufight - Brazilian Jiu-Jitsu Learning Platform",
+          message: "JiuFlow",
         },
       },
     };
