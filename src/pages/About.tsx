@@ -234,10 +234,10 @@ const About = () => {
                   </p>
                   <p className="text-sm text-primary font-medium mb-6">
                     {language === "ja" 
-                      ? "✨ 毎週金曜日に新しい動画を1本アップデート" 
+                      ? "✨ 毎月新しい動画をアップデート" 
                       : language === "pt" 
-                      ? "✨ Novo vídeo toda sexta-feira" 
-                      : "✨ New video every Friday"}
+                      ? "✨ Novos vídeos mensalmente" 
+                      : "✨ New videos every month"}
                   </p>
                   <div className="flex flex-col sm:flex-row gap-4 justify-center">
                     <Button onClick={() => navigate("/join")} size="lg">
