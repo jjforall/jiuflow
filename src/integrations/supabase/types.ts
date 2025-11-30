@@ -74,6 +74,75 @@ export type Database = {
           },
         ]
       }
+      celebrity_applications: {
+        Row: {
+          belt_history: Json | null
+          bio: string | null
+          created_at: string
+          display_name: string
+          email: string | null
+          home_dojo: string | null
+          id: string
+          organization_id: string | null
+          password: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          titles: Json | null
+          updated_at: string
+          username: string | null
+        }
+        Insert: {
+          belt_history?: Json | null
+          bio?: string | null
+          created_at?: string
+          display_name: string
+          email?: string | null
+          home_dojo?: string | null
+          id?: string
+          organization_id?: string | null
+          password?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          titles?: Json | null
+          updated_at?: string
+          username?: string | null
+        }
+        Update: {
+          belt_history?: Json | null
+          bio?: string | null
+          created_at?: string
+          display_name?: string
+          email?: string | null
+          home_dojo?: string | null
+          id?: string
+          organization_id?: string | null
+          password?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          titles?: Json | null
+          updated_at?: string
+          username?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "celebrity_applications_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "celebrity_applications_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contact_messages: {
         Row: {
           created_at: string
