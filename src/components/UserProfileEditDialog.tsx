@@ -404,19 +404,91 @@ export const UserProfileEditDialog = ({ open, onOpenChange, userId, onSuccess }:
           {/* Titles Section */}
           <div className="space-y-2">
             <Label>
-              {language === "ja" ? "タイトル・実績" : "Titles"}
+              {language === "ja" ? "タイトル・実績" : "Titles & Achievements"}
             </Label>
             {titles.map((titleItem, index) => (
-              <div key={index} className="space-y-2 p-3 border border-border rounded-md">
-                <Input
-                  placeholder={language === "ja" ? "カスタムタイトル（例：全日本柔術選手権 優勝）" : "Custom Title"}
-                  value={titleItem.customTitle || ""}
+              <div key={index} className="space-y-2 p-3 border border-border rounded-md bg-muted/20">
+                <select
+                  value={titleItem.title || ""}
                   onChange={(e) => {
                     const newTitles = [...titles];
-                    newTitles[index].customTitle = e.target.value;
+                    newTitles[index].title = e.target.value;
+                    setTitles(newTitles);
+                  }}
+                  className="w-full h-10 px-3 py-2 text-sm rounded-md border border-input bg-background"
+                >
+                  <option value="">{language === "ja" ? "大会を選択" : "Select Tournament"}</option>
+                  <option value="世界柔術選手権">{language === "ja" ? "世界柔術選手権（ムンジアル）" : "World Championship (Mundials)"}</option>
+                  <option value="パンアメリカン選手権">{language === "ja" ? "パンアメリカン選手権" : "Pan American Championship"}</option>
+                  <option value="ヨーロピアン選手権">{language === "ja" ? "ヨーロピアン選手権" : "European Championship"}</option>
+                  <option value="アジア選手権">{language === "ja" ? "アジア選手権" : "Asian Championship"}</option>
+                  <option value="全日本柔術選手権">{language === "ja" ? "全日本柔術選手権" : "All Japan Championship"}</option>
+                  <option value="ADCC">{language === "ja" ? "ADCC世界選手権" : "ADCC World Championship"}</option>
+                  <option value="アブダビプロ">{language === "ja" ? "アブダビプロ" : "Abu Dhabi Pro"}</option>
+                  <option value="custom">{language === "ja" ? "カスタム" : "Custom"}</option>
+                </select>
+
+                {titleItem.title === "custom" && (
+                  <Input
+                    placeholder={language === "ja" ? "カスタムタイトル名（例：東京大会 優勝）" : "Custom title name"}
+                    value={titleItem.customTitle || ""}
+                    onChange={(e) => {
+                      const newTitles = [...titles];
+                      newTitles[index].customTitle = e.target.value;
+                      setTitles(newTitles);
+                    }}
+                  />
+                )}
+
+                <Input
+                  placeholder={language === "ja" ? "主催団体（任意、例：IBJJF）" : "Organization (optional, e.g. IBJJF)"}
+                  value={titleItem.organization || ""}
+                  onChange={(e) => {
+                    const newTitles = [...titles];
+                    newTitles[index].organization = e.target.value;
                     setTitles(newTitles);
                   }}
                 />
+
+                <select
+                  value={titleItem.rank || ""}
+                  onChange={(e) => {
+                    const newTitles = [...titles];
+                    newTitles[index].rank = e.target.value;
+                    setTitles(newTitles);
+                  }}
+                  className="w-full h-10 px-3 py-2 text-sm rounded-md border border-input bg-background"
+                >
+                  <option value="">{language === "ja" ? "順位を選択（任意）" : "Select Rank (optional)"}</option>
+                  <option value="優勝">{language === "ja" ? "優勝" : "Champion"}</option>
+                  <option value="準優勝">{language === "ja" ? "準優勝" : "Runner-up"}</option>
+                  <option value="3位">{language === "ja" ? "3位" : "3rd Place"}</option>
+                  <option value="ベスト8">{language === "ja" ? "ベスト8" : "Quarter-finalist"}</option>
+                  <option value="ベスト16">{language === "ja" ? "ベスト16" : "Round of 16"}</option>
+                </select>
+
+                <select
+                  value={titleItem.weight_class || ""}
+                  onChange={(e) => {
+                    const newTitles = [...titles];
+                    newTitles[index].weight_class = e.target.value;
+                    setTitles(newTitles);
+                  }}
+                  className="w-full h-10 px-3 py-2 text-sm rounded-md border border-input bg-background"
+                >
+                  <option value="">{language === "ja" ? "階級を選択（任意）" : "Select Weight Class (optional)"}</option>
+                  <option value="ルースター">{language === "ja" ? "ルースター" : "Rooster"}</option>
+                  <option value="ライトフェザー">{language === "ja" ? "ライトフェザー" : "Light Feather"}</option>
+                  <option value="フェザー">{language === "ja" ? "フェザー" : "Feather"}</option>
+                  <option value="ライト">{language === "ja" ? "ライト" : "Light"}</option>
+                  <option value="ミディアム">{language === "ja" ? "ミディアム" : "Medium"}</option>
+                  <option value="ミディアムヘビー">{language === "ja" ? "ミディアムヘビー" : "Medium Heavy"}</option>
+                  <option value="ヘビー">{language === "ja" ? "ヘビー" : "Heavy"}</option>
+                  <option value="スーパーヘビー">{language === "ja" ? "スーパーヘビー" : "Super Heavy"}</option>
+                  <option value="ウルトラヘビー">{language === "ja" ? "ウルトラヘビー" : "Ultra Heavy"}</option>
+                  <option value="オープンクラス">{language === "ja" ? "オープンクラス" : "Absolute"}</option>
+                </select>
+
                 <Button
                   type="button"
                   variant="destructive"
