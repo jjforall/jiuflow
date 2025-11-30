@@ -19,6 +19,42 @@ interface Dojo {
   description: string | null;
   description_ja: string | null;
   description_pt: string | null;
+  mission: string | null;
+  mission_ja: string | null;
+  mission_pt: string | null;
+  target_audience: string | null;
+  target_audience_ja: string | null;
+  target_audience_pt: string | null;
+  features: any;
+  classes: any;
+  pricing: any;
+  schedule: any;
+  instructors: any;
+  facilities: any;
+  opening_hours: any;
+  access_info: string | null;
+  access_info_ja: string | null;
+  access_info_pt: string | null;
+  trial_info: any;
+  faq: any;
+  testimonials: any;
+  gallery: any;
+  news: any;
+  rules: string | null;
+  rules_ja: string | null;
+  rules_pt: string | null;
+  safety_measures: string | null;
+  safety_measures_ja: string | null;
+  safety_measures_pt: string | null;
+  perks: any;
+  media_coverage: any;
+  online_resources: string | null;
+  online_resources_ja: string | null;
+  online_resources_pt: string | null;
+  youtube: string | null;
+  twitter: string | null;
+  line: string | null;
+  blog_url: string | null;
   location: string | null;
   website: string | null;
   instagram: string | null;
@@ -111,6 +147,42 @@ export default function Dojo() {
     if (language === "ja") return dojo.description_ja;
     if (language === "pt") return dojo.description_pt;
     return dojo.description;
+  };
+
+  const getMission = (dojo: Dojo) => {
+    if (language === "ja") return dojo.mission_ja;
+    if (language === "pt") return dojo.mission_pt;
+    return dojo.mission;
+  };
+
+  const getTargetAudience = (dojo: Dojo) => {
+    if (language === "ja") return dojo.target_audience_ja;
+    if (language === "pt") return dojo.target_audience_pt;
+    return dojo.target_audience;
+  };
+
+  const getAccessInfo = (dojo: Dojo) => {
+    if (language === "ja") return dojo.access_info_ja;
+    if (language === "pt") return dojo.access_info_pt;
+    return dojo.access_info;
+  };
+
+  const getRules = (dojo: Dojo) => {
+    if (language === "ja") return dojo.rules_ja;
+    if (language === "pt") return dojo.rules_pt;
+    return dojo.rules;
+  };
+
+  const getSafetyMeasures = (dojo: Dojo) => {
+    if (language === "ja") return dojo.safety_measures_ja;
+    if (language === "pt") return dojo.safety_measures_pt;
+    return dojo.safety_measures;
+  };
+
+  const getOnlineResources = (dojo: Dojo) => {
+    if (language === "ja") return dojo.online_resources_ja;
+    if (language === "pt") return dojo.online_resources_pt;
+    return dojo.online_resources;
   };
 
   if (loading) {
@@ -269,6 +341,325 @@ export default function Dojo() {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Mission & Philosophy */}
+            {getMission(dojo) && (
+              <Card className="mb-6">
+                <CardContent className="p-6">
+                  <h2 className="text-xl font-semibold mb-3">
+                    {language === "ja" ? "理念・ミッション" : "Mission & Philosophy"}
+                  </h2>
+                  <p className="text-base leading-relaxed whitespace-pre-line">{getMission(dojo)}</p>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Target Audience */}
+            {getTargetAudience(dojo) && (
+              <Card className="mb-6">
+                <CardContent className="p-6">
+                  <h2 className="text-xl font-semibold mb-3">
+                    {language === "ja" ? "対象者" : "Who Should Join"}
+                  </h2>
+                  <p className="text-base leading-relaxed whitespace-pre-line">{getTargetAudience(dojo)}</p>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Features */}
+            {dojo.features && Array.isArray(dojo.features) && dojo.features.length > 0 && (
+              <Card className="mb-6">
+                <CardContent className="p-6">
+                  <h2 className="text-xl font-semibold mb-4">
+                    {language === "ja" ? "特徴" : "Features"}
+                  </h2>
+                  <div className="flex flex-wrap gap-2">
+                    {dojo.features.map((feature: string, idx: number) => (
+                      <Badge key={idx} variant="secondary">{feature}</Badge>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Classes */}
+            {dojo.classes && Array.isArray(dojo.classes) && dojo.classes.length > 0 && (
+              <Card className="mb-6">
+                <CardContent className="p-6">
+                  <h2 className="text-xl font-semibold mb-4">
+                    {language === "ja" ? "クラス情報" : "Classes"}
+                  </h2>
+                  <div className="space-y-3">
+                    {dojo.classes.map((cls: any, idx: number) => (
+                      <div key={idx} className="p-4 border rounded-lg">
+                        <h3 className="font-semibold text-lg">{cls.name}</h3>
+                        {cls.time && <p className="text-muted-foreground">{cls.time}</p>}
+                        {cls.level && <Badge className="mt-2">{cls.level}</Badge>}
+                        {cls.description && <p className="mt-2">{cls.description}</p>}
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Pricing */}
+            {dojo.pricing && Object.keys(dojo.pricing).length > 0 && (
+              <Card className="mb-6">
+                <CardContent className="p-6">
+                  <h2 className="text-xl font-semibold mb-4">
+                    {language === "ja" ? "料金" : "Pricing"}
+                  </h2>
+                  <div className="space-y-2">
+                    {Object.entries(dojo.pricing).map(([key, value]: [string, any]) => (
+                      <div key={key} className="flex justify-between items-center p-3 border rounded">
+                        <span className="font-medium">{key}</span>
+                        <span className="text-lg">¥{value.toLocaleString()}</span>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Schedule */}
+            {dojo.schedule && Array.isArray(dojo.schedule) && dojo.schedule.length > 0 && (
+              <Card className="mb-6">
+                <CardContent className="p-6">
+                  <h2 className="text-xl font-semibold mb-4">
+                    {language === "ja" ? "スケジュール" : "Schedule"}
+                  </h2>
+                  <div className="space-y-2">
+                    {dojo.schedule.map((item: any, idx: number) => (
+                      <div key={idx} className="flex items-center gap-4 p-3 border rounded">
+                        <div className="font-semibold min-w-[60px]">{item.day}</div>
+                        <div className="flex-1">{item.time}</div>
+                        {item.class && <Badge>{item.class}</Badge>}
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Instructors */}
+            {dojo.instructors && Array.isArray(dojo.instructors) && dojo.instructors.length > 0 && (
+              <Card className="mb-6">
+                <CardContent className="p-6">
+                  <h2 className="text-xl font-semibold mb-4">
+                    {language === "ja" ? "講師紹介" : "Instructors"}
+                  </h2>
+                  <div className="space-y-4">
+                    {dojo.instructors.map((instructor: any, idx: number) => (
+                      <div key={idx} className="flex gap-4 p-4 border rounded-lg">
+                        {instructor.photo_url && (
+                          <img src={instructor.photo_url} alt={instructor.name} className="w-20 h-20 rounded-full object-cover" />
+                        )}
+                        <div>
+                          <h3 className="font-semibold text-lg">{instructor.name}</h3>
+                          {instructor.bio && <p className="text-muted-foreground mt-1">{instructor.bio}</p>}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Facilities */}
+            {(dojo.facilities && Object.keys(dojo.facilities).length > 0) || (dojo.opening_hours && Object.keys(dojo.opening_hours).length > 0) || getAccessInfo(dojo) ? (
+              <Card className="mb-6">
+                <CardContent className="p-6">
+                  <h2 className="text-xl font-semibold mb-4">
+                    {language === "ja" ? "施設・アクセス" : "Facilities & Access"}
+                  </h2>
+                  {dojo.facilities && Object.keys(dojo.facilities).length > 0 && (
+                    <div className="mb-4">
+                      <h3 className="font-semibold mb-2">{language === "ja" ? "設備" : "Amenities"}</h3>
+                      <div className="grid grid-cols-2 gap-2">
+                        {Object.entries(dojo.facilities).map(([key, value]: [string, any]) => (
+                          <div key={key} className="flex justify-between p-2 border rounded">
+                            <span>{key}</span>
+                            <span className="text-muted-foreground">{value}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {dojo.opening_hours && Object.keys(dojo.opening_hours).length > 0 && (
+                    <div className="mb-4">
+                      <h3 className="font-semibold mb-2">{language === "ja" ? "営業時間" : "Hours"}</h3>
+                      <div className="space-y-1">
+                        {Object.entries(dojo.opening_hours).map(([day, hours]: [string, any]) => (
+                          <div key={day} className="flex justify-between p-2 border rounded">
+                            <span>{day}</span>
+                            <span>{hours}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {getAccessInfo(dojo) && (
+                    <div>
+                      <h3 className="font-semibold mb-2">{language === "ja" ? "アクセス" : "Access"}</h3>
+                      <p className="whitespace-pre-line">{getAccessInfo(dojo)}</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            ) : null}
+
+            {/* Trial Info */}
+            {dojo.trial_info && Object.keys(dojo.trial_info).length > 0 && (
+              <Card className="mb-6">
+                <CardContent className="p-6">
+                  <h2 className="text-xl font-semibold mb-4">
+                    {language === "ja" ? "体験案内" : "Trial Information"}
+                  </h2>
+                  <div className="space-y-2">
+                    {Object.entries(dojo.trial_info).map(([key, value]: [string, any]) => (
+                      <div key={key} className="flex gap-2">
+                        <span className="font-medium min-w-[120px]">{key}:</span>
+                        <span>{value}</span>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* FAQ */}
+            {dojo.faq && Array.isArray(dojo.faq) && dojo.faq.length > 0 && (
+              <Card className="mb-6">
+                <CardContent className="p-6">
+                  <h2 className="text-xl font-semibold mb-4">
+                    {language === "ja" ? "よくある質問" : "FAQ"}
+                  </h2>
+                  <div className="space-y-4">
+                    {dojo.faq.map((item: any, idx: number) => (
+                      <div key={idx} className="border-b pb-4 last:border-0">
+                        <h3 className="font-semibold mb-2">Q: {item.q}</h3>
+                        <p className="text-muted-foreground">A: {item.a}</p>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Testimonials */}
+            {dojo.testimonials && Array.isArray(dojo.testimonials) && dojo.testimonials.length > 0 && (
+              <Card className="mb-6">
+                <CardContent className="p-6">
+                  <h2 className="text-xl font-semibold mb-4">
+                    {language === "ja" ? "会員の声" : "Testimonials"}
+                  </h2>
+                  <div className="space-y-4">
+                    {dojo.testimonials.map((item: any, idx: number) => (
+                      <div key={idx} className="p-4 border rounded-lg">
+                        <p className="mb-2 italic">"{item.text}"</p>
+                        <p className="text-sm text-muted-foreground">— {item.name}</p>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Gallery */}
+            {dojo.gallery && Array.isArray(dojo.gallery) && dojo.gallery.length > 0 && (
+              <Card className="mb-6">
+                <CardContent className="p-6">
+                  <h2 className="text-xl font-semibold mb-4">
+                    {language === "ja" ? "ギャラリー" : "Gallery"}
+                  </h2>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    {dojo.gallery.map((item: any, idx: number) => (
+                      <div key={idx} className="relative">
+                        <img src={item.url} alt={item.caption || ""} className="w-full h-48 object-cover rounded" />
+                        {item.caption && <p className="text-sm text-center mt-1">{item.caption}</p>}
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* News */}
+            {dojo.news && Array.isArray(dojo.news) && dojo.news.length > 0 && (
+              <Card className="mb-6">
+                <CardContent className="p-6">
+                  <h2 className="text-xl font-semibold mb-4">
+                    {language === "ja" ? "お知らせ" : "News"}
+                  </h2>
+                  <div className="space-y-4">
+                    {dojo.news.map((item: any, idx: number) => (
+                      <div key={idx} className="border-b pb-4 last:border-0">
+                        <div className="flex justify-between items-start mb-2">
+                          <h3 className="font-semibold">{item.title}</h3>
+                          {item.date && <span className="text-sm text-muted-foreground">{item.date}</span>}
+                        </div>
+                        {item.content && <p>{item.content}</p>}
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Rules & Safety */}
+            {(getRules(dojo) || getSafetyMeasures(dojo)) && (
+              <Card className="mb-6">
+                <CardContent className="p-6">
+                  <h2 className="text-xl font-semibold mb-4">
+                    {language === "ja" ? "規約・安全対策" : "Rules & Safety"}
+                  </h2>
+                  {getRules(dojo) && (
+                    <div className="mb-4">
+                      <h3 className="font-semibold mb-2">{language === "ja" ? "規約" : "Rules"}</h3>
+                      <p className="whitespace-pre-line">{getRules(dojo)}</p>
+                    </div>
+                  )}
+                  {getSafetyMeasures(dojo) && (
+                    <div>
+                      <h3 className="font-semibold mb-2">{language === "ja" ? "安全対策" : "Safety Measures"}</h3>
+                      <p className="whitespace-pre-line">{getSafetyMeasures(dojo)}</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Perks */}
+            {dojo.perks && Array.isArray(dojo.perks) && dojo.perks.length > 0 && (
+              <Card className="mb-6">
+                <CardContent className="p-6">
+                  <h2 className="text-xl font-semibold mb-4">
+                    {language === "ja" ? "会員特典" : "Member Benefits"}
+                  </h2>
+                  <ul className="space-y-2">
+                    {dojo.perks.map((perk: string, idx: number) => (
+                      <li key={idx} className="flex items-start gap-2">
+                        <span className="text-primary">•</span>
+                        <span>{perk}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Online Resources */}
+            {getOnlineResources(dojo) && (
+              <Card className="mb-6">
+                <CardContent className="p-6">
+                  <h2 className="text-xl font-semibold mb-3">
+                    {language === "ja" ? "オンライン教材" : "Online Resources"}
+                  </h2>
+                  <p className="whitespace-pre-line">{getOnlineResources(dojo)}</p>
+                </CardContent>
+              </Card>
+            )}
           </div>
 
           {/* Members Section */}

@@ -76,6 +76,11 @@ export type Database = {
       }
       dojos: {
         Row: {
+          access_info: string | null
+          access_info_ja: string | null
+          access_info_pt: string | null
+          blog_url: string | null
+          classes: Json | null
           cover_image_url: string | null
           created_at: string
           created_by: string | null
@@ -84,19 +89,55 @@ export type Database = {
           description_pt: string | null
           email: string | null
           facebook: string | null
+          facilities: Json | null
+          faq: Json | null
+          features: Json | null
+          gallery: Json | null
           id: string
           instagram: string | null
+          instructors: Json | null
           is_verified: boolean | null
+          line: string | null
           location: string | null
           logo_url: string | null
+          media_coverage: Json | null
+          mission: string | null
+          mission_ja: string | null
+          mission_pt: string | null
           name: string
           name_ja: string
           name_pt: string
+          news: Json | null
+          online_resources: string | null
+          online_resources_ja: string | null
+          online_resources_pt: string | null
+          opening_hours: Json | null
+          perks: Json | null
           phone: string | null
+          pricing: Json | null
+          rules: string | null
+          rules_ja: string | null
+          rules_pt: string | null
+          safety_measures: string | null
+          safety_measures_ja: string | null
+          safety_measures_pt: string | null
+          schedule: Json | null
+          target_audience: string | null
+          target_audience_ja: string | null
+          target_audience_pt: string | null
+          testimonials: Json | null
+          trial_info: Json | null
+          twitter: string | null
           updated_at: string
           website: string | null
+          youtube: string | null
         }
         Insert: {
+          access_info?: string | null
+          access_info_ja?: string | null
+          access_info_pt?: string | null
+          blog_url?: string | null
+          classes?: Json | null
           cover_image_url?: string | null
           created_at?: string
           created_by?: string | null
@@ -105,19 +146,55 @@ export type Database = {
           description_pt?: string | null
           email?: string | null
           facebook?: string | null
+          facilities?: Json | null
+          faq?: Json | null
+          features?: Json | null
+          gallery?: Json | null
           id?: string
           instagram?: string | null
+          instructors?: Json | null
           is_verified?: boolean | null
+          line?: string | null
           location?: string | null
           logo_url?: string | null
+          media_coverage?: Json | null
+          mission?: string | null
+          mission_ja?: string | null
+          mission_pt?: string | null
           name: string
           name_ja: string
           name_pt: string
+          news?: Json | null
+          online_resources?: string | null
+          online_resources_ja?: string | null
+          online_resources_pt?: string | null
+          opening_hours?: Json | null
+          perks?: Json | null
           phone?: string | null
+          pricing?: Json | null
+          rules?: string | null
+          rules_ja?: string | null
+          rules_pt?: string | null
+          safety_measures?: string | null
+          safety_measures_ja?: string | null
+          safety_measures_pt?: string | null
+          schedule?: Json | null
+          target_audience?: string | null
+          target_audience_ja?: string | null
+          target_audience_pt?: string | null
+          testimonials?: Json | null
+          trial_info?: Json | null
+          twitter?: string | null
           updated_at?: string
           website?: string | null
+          youtube?: string | null
         }
         Update: {
+          access_info?: string | null
+          access_info_ja?: string | null
+          access_info_pt?: string | null
+          blog_url?: string | null
+          classes?: Json | null
           cover_image_url?: string | null
           created_at?: string
           created_by?: string | null
@@ -126,17 +203,48 @@ export type Database = {
           description_pt?: string | null
           email?: string | null
           facebook?: string | null
+          facilities?: Json | null
+          faq?: Json | null
+          features?: Json | null
+          gallery?: Json | null
           id?: string
           instagram?: string | null
+          instructors?: Json | null
           is_verified?: boolean | null
+          line?: string | null
           location?: string | null
           logo_url?: string | null
+          media_coverage?: Json | null
+          mission?: string | null
+          mission_ja?: string | null
+          mission_pt?: string | null
           name?: string
           name_ja?: string
           name_pt?: string
+          news?: Json | null
+          online_resources?: string | null
+          online_resources_ja?: string | null
+          online_resources_pt?: string | null
+          opening_hours?: Json | null
+          perks?: Json | null
           phone?: string | null
+          pricing?: Json | null
+          rules?: string | null
+          rules_ja?: string | null
+          rules_pt?: string | null
+          safety_measures?: string | null
+          safety_measures_ja?: string | null
+          safety_measures_pt?: string | null
+          schedule?: Json | null
+          target_audience?: string | null
+          target_audience_ja?: string | null
+          target_audience_pt?: string | null
+          testimonials?: Json | null
+          trial_info?: Json | null
+          twitter?: string | null
           updated_at?: string
           website?: string | null
+          youtube?: string | null
         }
         Relationships: []
       }
