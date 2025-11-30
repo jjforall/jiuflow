@@ -749,19 +749,19 @@ export default function UserProfile() {
                         </div>
                       )}
 
-                      <div className="flex items-center gap-2 px-3 py-2 bg-accent/10 rounded-lg border border-accent/20">
-                        <User className="w-4 h-4 text-accent" />
+                      <div className="flex items-center gap-2 px-4 py-2 bg-accent/10 rounded-xl border border-accent/30 hover:border-accent/50 transition-colors cursor-pointer shadow-sm">
+                        <User className="w-5 h-5 text-accent" />
                         <div className="flex flex-col">
-                          <span className="font-bold text-lg">{followersCount}</span>
+                          <span className="font-bold text-xl">{followersCount}</span>
                           <span className="text-xs text-muted-foreground">
                             {language === "ja" ? "フォロワー" : "Followers"}
                           </span>
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-2 px-3 py-2 bg-muted/50 rounded-lg border border-border">
+                      <div className="flex items-center gap-2 px-4 py-2 bg-muted/50 rounded-xl border border-border hover:border-border/70 transition-colors cursor-pointer shadow-sm">
                         <div className="flex flex-col">
-                          <span className="font-bold text-lg">{followingCount}</span>
+                          <span className="font-bold text-xl">{followingCount}</span>
                           <span className="text-xs text-muted-foreground">
                             {language === "ja" ? "フォロー中" : "Following"}
                           </span>
@@ -802,13 +802,23 @@ export default function UserProfile() {
                           onClick={isFollowing ? handleUnfollow : handleFollow}
                           variant={isFollowing ? "outline" : "default"}
                           size="lg"
-                          className="ml-auto"
+                          className={`ml-auto transition-all duration-300 ${
+                            isFollowing 
+                              ? "hover:bg-destructive hover:text-destructive-foreground hover:border-destructive" 
+                              : "bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-lg hover:shadow-xl hover:scale-105"
+                          }`}
                         >
-                          <User className="w-4 h-4 mr-2" />
-                          {isFollowing 
-                            ? (language === "ja" ? "フォロー中" : "Following")
-                            : (language === "ja" ? "フォロー" : "Follow")
-                          }
+                          {isFollowing ? (
+                            <>
+                              <Check className="w-4 h-4 mr-2" />
+                              {language === "ja" ? "フォロー中" : "Following"}
+                            </>
+                          ) : (
+                            <>
+                              <User className="w-4 h-4 mr-2" />
+                              {language === "ja" ? "フォロー" : "Follow"}
+                            </>
+                          )}
                         </Button>
                       )}
                     </div>
