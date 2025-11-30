@@ -43,34 +43,35 @@ export default function Dojos() {
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
 
   useEffect(() => {
-    loadDojos();
-    checkAuth();
+    const initPage = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setIsAuthenticated(!!user);
+      setUserId(user?.id || null);
+      
+      // Load dojos and favorites in parallel
+      const promises = [loadDojos()];
+      if (user?.id) {
+        promises.push(loadFavorites(user.id));
+      }
+      await Promise.all(promises);
+    };
+    
+    initPage();
   }, []);
-
-  useEffect(() => {
-    if (userId) {
-      loadFavorites();
-    }
-  }, [userId]);
 
   useEffect(() => {
     filterDojos();
   }, [searchQuery, dojos, favorites]);
 
-  const checkAuth = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    setIsAuthenticated(!!user);
-    setUserId(user?.id || null);
-  };
-
-  const loadFavorites = async () => {
-    if (!userId) return;
+  const loadFavorites = async (userIdParam?: string) => {
+    const id = userIdParam || userId;
+    if (!id) return;
     
     try {
       const { data, error } = await supabase
         .from('favorite_dojos')
         .select('dojo_id')
-        .eq('user_id', userId);
+        .eq('user_id', id);
 
       if (error) throw error;
       
@@ -195,8 +196,8 @@ export default function Dojos() {
       <Navigation />
       <main className="flex-grow pt-20 pb-16">
         <div className="container mx-auto px-4 md:px-6 max-w-7xl">
-          {/* Header */}
-          <div className="mb-12 text-center">
+          {/* Header - Always show immediately */}
+          <div className="mb-12 text-center animate-fade-in">
             <h1 className="text-4xl md:text-5xl font-light mb-4">
               {language === "ja" ? "道場一覧" : language === "pt" ? "Lista de Dojos" : "Dojos"}
             </h1>
@@ -209,8 +210,8 @@ export default function Dojos() {
             </p>
           </div>
 
-          {/* Search and Add */}
-          <div className="flex gap-4 mb-8 flex-col md:flex-row">
+          {/* Search and Add - Always show immediately */}
+          <div className="flex gap-4 mb-8 flex-col md:flex-row animate-fade-in">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-5 h-5" />
               <Input
@@ -218,6 +219,7 @@ export default function Dojos() {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder={language === "ja" ? "道場名、場所で検索..." : "Search by name, location..."}
                 className="pl-10"
+                disabled={loading}
               />
             </div>
             {isAuthenticated && (
@@ -232,13 +234,14 @@ export default function Dojos() {
 
           {/* Dojos Grid */}
           {loading ? (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[...Array(6)].map((_, i) => (
-                <Card key={i} className="animate-pulse">
-                  <CardContent className="p-6">
-                    <div className="h-48 bg-muted rounded mb-4" />
-                    <div className="h-6 bg-muted rounded mb-2" />
-                    <div className="h-4 bg-muted rounded w-2/3" />
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 animate-fade-in">
+              {[...Array(9)].map((_, i) => (
+                <Card key={i} className="overflow-hidden">
+                  <div className="h-48 bg-muted animate-pulse" />
+                  <CardContent className="p-6 space-y-3">
+                    <div className="h-6 bg-muted rounded animate-pulse" />
+                    <div className="h-4 bg-muted rounded w-2/3 animate-pulse" />
+                    <div className="h-4 bg-muted rounded w-1/2 animate-pulse" />
                   </CardContent>
                 </Card>
               ))}
