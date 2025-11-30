@@ -1352,49 +1352,60 @@ const MyPage = () => {
           ) : (
             <>
               {/* BJJ Profile Information Card */}
-              <Card className="mb-6 animate-fade-up">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 font-light">
-                    <Globe className="h-5 w-5 text-green-600" />
+              <Card className="mb-8 animate-fade-up border-border/50 shadow-lg overflow-hidden">
+                <CardHeader className="bg-gradient-to-r from-primary/10 via-accent/5 to-primary/10 border-b border-border/50">
+                  <CardTitle className="flex items-center gap-3 text-2xl">
+                    <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center">
+                      <Globe className="h-6 w-6 text-primary" />
+                    </div>
                     {language === "ja" ? "プロフィール詳細" : "Profile Details"}
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div className="space-y-6">
+                <CardContent className="p-6 md:p-8">
+                  <div className="grid gap-6 md:grid-cols-2">
                     
                     {/* Organization Section */}
-                    <div className="mb-4">
-                      <div className="flex items-center gap-2 mb-2 group">
-                        <h3 className="text-sm font-semibold">{language === "ja" ? "所属団体" : "Organization"}</h3>
+                    <div className="p-4 rounded-xl border border-border/50 bg-card/50 backdrop-blur-sm hover:shadow-md transition-all group">
+                      <div className="flex items-center justify-between mb-3">
+                        <h3 className="text-base font-semibold flex items-center gap-2">
+                          <Building2 className="w-5 h-5 text-primary" />
+                          {language === "ja" ? "所属団体" : "Organization"}
+                        </h3>
                         {editingField !== 'organization' && (
                           <Button 
                             size="sm" 
-                            variant="ghost"
-                            className="opacity-0 group-hover:opacity-100 transition-opacity"
+                            variant="outline"
+                            className="h-8 gap-2"
                             onClick={() => {
                               setEditingField('organization');
                               setEditValues({ organization_id: selectedOrganization });
                             }}
                           >
                             <Edit2 className="w-4 h-4" />
+                            {language === "ja" ? "編集" : "Edit"}
                           </Button>
                         )}
                       </div>
                       {editingField === 'organization' ? (
-                        <div className="flex items-center gap-2">
-                          <select
+                        <div className="space-y-3">
+                          <Select
                             value={editValues.organization_id || ''}
-                            onChange={(e) => setEditValues({ ...editValues, organization_id: e.target.value || null })}
-                            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                            onValueChange={(value) => setEditValues({ ...editValues, organization_id: value || null })}
                           >
-                            <option value="">{language === "ja" ? "選択してください" : "Select"}</option>
-                            {organizations.map((org) => (
-                              <option key={org.id} value={org.id}>
-                                {language === "ja" ? org.name_ja : language === "pt" ? org.name_pt : org.name}
-                              </option>
-                            ))}
-                          </select>
-                          <Button size="sm" onClick={async () => {
+                            <SelectTrigger className="h-11 text-base">
+                              <SelectValue placeholder={language === "ja" ? "団体を選択してください" : "Select organization"} />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="">{language === "ja" ? "未所属" : "None"}</SelectItem>
+                              {organizations.map((org) => (
+                                <SelectItem key={org.id} value={org.id}>
+                                  {language === "ja" ? org.name_ja : language === "pt" ? org.name_pt : org.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <div className="flex gap-2">
+                          <Button size="default" onClick={async () => {
                             try {
                               const { error } = await supabase
                                 .from('profiles')
@@ -1414,175 +1425,245 @@ const MyPage = () => {
                               console.error('Error updating organization:', error);
                               toast.error(language === "ja" ? "更新に失敗しました" : "Update failed");
                             }
-                          }}>
+                          }} className="gap-2">
                             <Check className="w-4 h-4" />
+                            {language === "ja" ? "保存" : "Save"}
                           </Button>
-                          <Button size="sm" variant="outline" onClick={cancelEditing}>
+                          <Button size="default" variant="outline" onClick={cancelEditing} className="gap-2">
                             <X className="w-4 h-4" />
+                            {language === "ja" ? "キャンセル" : "Cancel"}
                           </Button>
+                          </div>
                         </div>
                       ) : (
-                        <p className="text-muted-foreground">
-                          {selectedOrganization ? (
-                            organizations.find(org => org.id === selectedOrganization)?.[
-                              language === "ja" ? "name_ja" : language === "pt" ? "name_pt" : "name"
-                            ] || (language === "ja" ? "未設定" : "Not set")
-                          ) : (
-                            language === "ja" ? "未設定" : "Not set"
-                          )}
-                        </p>
+                        <div className="p-3 bg-muted/30 rounded-lg">
+                          <p className="text-base font-medium">
+                            {selectedOrganization ? (
+                              organizations.find(org => org.id === selectedOrganization)?.[
+                                language === "ja" ? "name_ja" : language === "pt" ? "name_pt" : "name"
+                              ] || (language === "ja" ? "未設定" : "Not set")
+                            ) : (
+                              <span className="text-muted-foreground italic">{language === "ja" ? "未設定" : "Not set"}</span>
+                            )}
+                          </p>
+                        </div>
                       )}
                     </div>
                     
                     {/* Education Section */}
-                    <div className="mb-4">
-                        <div className="flex items-center gap-2 mb-2">
-                          <h3 className="text-sm font-semibold">{language === "ja" ? "学歴" : "Education"}</h3>
-                          {editingField === 'education' && (
-                            <Button size="sm" variant="ghost" onClick={addEducation}>
-                              <Plus className="w-4 h-4" />
-                            </Button>
-                          )}
+                    <div className="p-4 rounded-xl border border-border/50 bg-card/50 backdrop-blur-sm hover:shadow-md transition-all group md:col-span-2">
+                        <div className="flex items-center justify-between mb-4">
+                          <h3 className="text-base font-semibold flex items-center gap-2">
+                            <span className="text-2xl">🎓</span>
+                            {language === "ja" ? "学歴" : "Education"}
+                          </h3>
                           {editingField !== 'education' && (
                             <Button 
                               size="sm" 
-                              variant="ghost"
+                              variant="outline"
+                              className="h-8 gap-2"
                               onClick={() => startEditing('education', profile?.education || [])}
                             >
                               <Edit2 className="w-4 h-4" />
+                              {language === "ja" ? "編集" : "Edit"}
                             </Button>
                           )}
                         </div>
                         {editingField === 'education' ? (
-                          <div className="space-y-2">
+                          <div className="space-y-3">
                             {(editValues.education || []).map((edu: any, index: number) => (
-                              <div key={index} className="flex items-start gap-2 p-2 border rounded">
-                                <div className="flex-1 space-y-2">
-                                  <InputWithSuggestions
-                                    value={edu.school || ''}
-                                    onChange={(e) => updateEducation(index, 'school', e.target.value)}
-                                    onSelectSuggestion={(value) => updateEducation(index, 'school', value)}
-                                    suggestions={schoolSuggestions}
-                                    placeholder={language === "ja" ? "学校名" : "School"}
-                                  />
+                              <div key={index} className="p-4 border-2 border-primary/20 rounded-xl bg-background space-y-3">
+                                <InputWithSuggestions
+                                  value={edu.school || ''}
+                                  onChange={(e) => updateEducation(index, 'school', e.target.value)}
+                                  onSelectSuggestion={(value) => updateEducation(index, 'school', value)}
+                                  suggestions={schoolSuggestions}
+                                  placeholder={language === "ja" ? "🏫 学校名" : "🏫 School name"}
+                                  className="h-11 text-base"
+                                />
+                                <div className="grid grid-cols-2 gap-3">
                                   <Input
                                     value={edu.degree || ''}
                                     onChange={(e) => updateEducation(index, 'degree', e.target.value)}
-                                    placeholder={language === "ja" ? "学位/専攻" : "Degree"}
+                                    placeholder={language === "ja" ? "📚 学位/専攻" : "📚 Degree"}
+                                    className="h-11"
                                   />
                                   <Input
                                     value={edu.period || ''}
                                     onChange={(e) => updateEducation(index, 'period', e.target.value)}
-                                    placeholder={language === "ja" ? "期間" : "Period"}
+                                    placeholder={language === "ja" ? "📅 期間" : "📅 Period"}
+                                    className="h-11"
                                   />
                                 </div>
-                                <Button size="sm" variant="ghost" onClick={() => removeEducation(index)}>
-                                  <X className="w-4 h-4" />
+                                <Button 
+                                  size="sm" 
+                                  variant="ghost" 
+                                  onClick={() => removeEducation(index)}
+                                  className="w-full text-destructive hover:text-destructive hover:bg-destructive/10"
+                                >
+                                  <Trash2 className="w-4 h-4 mr-2" />
+                                  {language === "ja" ? "削除" : "Remove"}
                                 </Button>
                               </div>
                             ))}
-                            <div className="flex gap-2">
-                              <Button size="sm" onClick={() => saveField('education')}><Check className="w-4 h-4 mr-1" /> {language === "ja" ? "保存" : "Save"}</Button>
-                              <Button size="sm" variant="outline" onClick={cancelEditing}><X className="w-4 h-4 mr-1" /> {language === "ja" ? "キャンセル" : "Cancel"}</Button>
+                            <Button 
+                              variant="outline" 
+                              onClick={addEducation}
+                              className="w-full h-11 gap-2 border-dashed"
+                            >
+                              <Plus className="w-5 h-5" />
+                              {language === "ja" ? "学歴を追加" : "Add Education"}
+                            </Button>
+                            <div className="flex gap-3 pt-2">
+                              <Button size="default" onClick={() => saveField('education')} className="flex-1 gap-2">
+                                <Check className="w-4 h-4" /> {language === "ja" ? "保存" : "Save"}
+                              </Button>
+                              <Button size="default" variant="outline" onClick={cancelEditing} className="flex-1 gap-2">
+                                <X className="w-4 h-4" /> {language === "ja" ? "キャンセル" : "Cancel"}
+                              </Button>
                             </div>
                           </div>
                         ) : (
                           profile?.education && profile.education.length > 0 ? (
-                            <ul className="space-y-1">
+                            <div className="space-y-3">
                               {profile.education.map((edu, index) => (
-                                <li key={index} className="text-sm text-muted-foreground">
-                                  {edu.school}
-                                  {edu.degree && ` - ${edu.degree}`}
-                                  {edu.period && ` (${edu.period})`}
-                                </li>
+                                <div key={index} className="p-3 bg-muted/30 rounded-lg">
+                                  <p className="font-medium text-base">{edu.school}</p>
+                                  {edu.degree && <p className="text-sm text-muted-foreground mt-1">{edu.degree}</p>}
+                                  {edu.period && <p className="text-xs text-muted-foreground mt-1">{edu.period}</p>}
+                                </div>
                               ))}
-                            </ul>
+                            </div>
                           ) : (
-                            <p className="text-sm text-muted-foreground">{language === "ja" ? "学歴を追加" : "Add education"}</p>
+                            <div className="p-8 border-2 border-dashed border-border/50 rounded-xl text-center">
+                              <p className="text-muted-foreground italic">{language === "ja" ? "学歴を追加してプロフィールを充実させましょう" : "Add your education"}</p>
+                            </div>
                           )
                         )}
                       </div>
 
                       {/* Work Experience Section */}
-                      <div className="mb-4">
-                        <div className="flex items-center gap-2 mb-2">
-                          <h3 className="text-sm font-semibold">{language === "ja" ? "職歴" : "Work Experience"}</h3>
-                          {editingField === 'work_experience' && (
-                            <Button size="sm" variant="ghost" onClick={addWorkExperience}>
-                              <Plus className="w-4 h-4" />
-                            </Button>
-                          )}
+                      <div className="p-4 rounded-xl border border-border/50 bg-card/50 backdrop-blur-sm hover:shadow-md transition-all group md:col-span-2">
+                        <div className="flex items-center justify-between mb-4">
+                          <h3 className="text-base font-semibold flex items-center gap-2">
+                            <span className="text-2xl">💼</span>
+                            {language === "ja" ? "職歴" : "Work Experience"}
+                          </h3>
                           {editingField !== 'work_experience' && (
                             <Button 
                               size="sm" 
-                              variant="ghost"
+                              variant="outline"
+                              className="h-8 gap-2"
                               onClick={() => startEditing('work_experience', profile?.work_experience || [])}
                             >
                               <Edit2 className="w-4 h-4" />
+                              {language === "ja" ? "編集" : "Edit"}
                             </Button>
                           )}
                         </div>
                         {editingField === 'work_experience' ? (
-                          <div className="space-y-2">
+                          <div className="space-y-3">
                             {(editValues.work_experience || []).map((work: any, index: number) => (
-                              <div key={index} className="flex items-start gap-2 p-2 border rounded">
-                                <div className="flex-1 space-y-2">
-                                  <InputWithSuggestions
-                                    value={work.company || ''}
-                                    onChange={(e) => updateWorkExperience(index, 'company', e.target.value)}
-                                    onSelectSuggestion={(value) => updateWorkExperience(index, 'company', value)}
-                                    suggestions={companySuggestions}
-                                    placeholder={language === "ja" ? "会社名" : "Company"}
-                                  />
+                              <div key={index} className="p-4 border-2 border-primary/20 rounded-xl bg-background space-y-3">
+                                <InputWithSuggestions
+                                  value={work.company || ''}
+                                  onChange={(e) => updateWorkExperience(index, 'company', e.target.value)}
+                                  onSelectSuggestion={(value) => updateWorkExperience(index, 'company', value)}
+                                  suggestions={companySuggestions}
+                                  placeholder={language === "ja" ? "🏢 会社名" : "🏢 Company"}
+                                  className="h-11 text-base font-medium"
+                                />
+                                <div className="grid grid-cols-2 gap-3">
                                   <Input
                                     value={work.position || ''}
                                     onChange={(e) => updateWorkExperience(index, 'position', e.target.value)}
-                                    placeholder={language === "ja" ? "役職" : "Position"}
+                                    placeholder={language === "ja" ? "👔 役職" : "👔 Position"}
+                                    className="h-11"
                                   />
                                   <Input
                                     value={work.period || ''}
                                     onChange={(e) => updateWorkExperience(index, 'period', e.target.value)}
-                                    placeholder={language === "ja" ? "期間" : "Period"}
-                                  />
-                                  <Textarea
-                                    value={work.description || ''}
-                                    onChange={(e) => updateWorkExperience(index, 'description', e.target.value)}
-                                    placeholder={language === "ja" ? "説明" : "Description"}
-                                    rows={2}
+                                    placeholder={language === "ja" ? "📅 期間" : "📅 Period"}
+                                    className="h-11"
                                   />
                                 </div>
-                                <Button size="sm" variant="ghost" onClick={() => removeWorkExperience(index)}>
-                                  <X className="w-4 h-4" />
+                                <Textarea
+                                  value={work.description || ''}
+                                  onChange={(e) => updateWorkExperience(index, 'description', e.target.value)}
+                                  placeholder={language === "ja" ? "📝 業務内容や実績..." : "📝 Description..."}
+                                  rows={3}
+                                  className="resize-none"
+                                />
+                                <Button 
+                                  size="sm" 
+                                  variant="ghost" 
+                                  onClick={() => removeWorkExperience(index)}
+                                  className="w-full text-destructive hover:text-destructive hover:bg-destructive/10"
+                                >
+                                  <Trash2 className="w-4 h-4 mr-2" />
+                                  {language === "ja" ? "削除" : "Remove"}
                                 </Button>
                               </div>
                             ))}
-                            <div className="flex gap-2">
-                              <Button size="sm" onClick={() => saveField('work_experience')}><Check className="w-4 h-4 mr-1" /> {language === "ja" ? "保存" : "Save"}</Button>
-                              <Button size="sm" variant="outline" onClick={cancelEditing}><X className="w-4 h-4 mr-1" /> {language === "ja" ? "キャンセル" : "Cancel"}</Button>
+                            <Button 
+                              variant="outline" 
+                              onClick={addWorkExperience}
+                              className="w-full h-11 gap-2 border-dashed"
+                            >
+                              <Plus className="w-5 h-5" />
+                              {language === "ja" ? "職歴を追加" : "Add Work Experience"}
+                            </Button>
+                            <div className="flex gap-3 pt-2">
+                              <Button size="default" onClick={() => saveField('work_experience')} className="flex-1 gap-2">
+                                <Check className="w-4 h-4" /> {language === "ja" ? "保存" : "Save"}
+                              </Button>
+                              <Button size="default" variant="outline" onClick={cancelEditing} className="flex-1 gap-2">
+                                <X className="w-4 h-4" /> {language === "ja" ? "キャンセル" : "Cancel"}
+                              </Button>
                             </div>
                           </div>
                         ) : (
                           profile?.work_experience && profile.work_experience.length > 0 ? (
-                            <ul className="space-y-2">
+                            <div className="space-y-3">
                               {profile.work_experience.map((work, index) => (
-                                <li key={index} className="text-sm">
-                                  <div className="font-medium">{work.company} - {work.position}</div>
+                                <div key={index} className="p-3 bg-muted/30 rounded-lg">
+                                  <div className="font-medium text-base">{work.company}</div>
+                                  <div className="text-sm text-primary mt-1">{work.position}</div>
                                   {work.period && (
-                                    <div className="text-muted-foreground text-xs">{work.period}</div>
+                                    <div className="text-xs text-muted-foreground mt-1">{work.period}</div>
                                   )}
                                   {work.description && (
-                                    <div className="text-muted-foreground mt-1">{work.description}</div>
+                                    <p className="text-sm text-muted-foreground mt-2 leading-relaxed">{work.description}</p>
                                   )}
-                                </li>
+                                </div>
                               ))}
-                            </ul>
+                            </div>
                           ) : (
-                            <p className="text-sm text-muted-foreground">{language === "ja" ? "職歴を追加" : "Add work experience"}</p>
+                            <div className="p-8 border-2 border-dashed border-border/50 rounded-xl text-center">
+                              <p className="text-muted-foreground italic">{language === "ja" ? "職歴を追加してプロフィールを充実させましょう" : "Add your work experience"}</p>
+                            </div>
                           )
                         )}
                       </div>
 
-                    {/* Belt History Section */}
+                  </div>
+                </CardContent>
+              </Card>
+
+               {/* Belt History Section */}
+               <Card className="mb-8 animate-fade-up border-border/50 shadow-lg overflow-hidden">
+                <CardHeader className="bg-gradient-to-r from-accent/10 via-primary/5 to-accent/10 border-b border-border/50">
+                  <CardTitle className="flex items-center gap-3 text-2xl">
+                    <div className="w-10 h-10 rounded-xl bg-accent/20 flex items-center justify-center text-xl">
+                      🥋
+                    </div>
+                    {language === "ja" ? "柔術プロフィール" : "BJJ Profile"}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-6 md:p-8">
+                  <div className="grid gap-6">
+
+                     {/* Belt History Section */}
                     <div className="mb-6 p-4 bg-muted/30 rounded-lg border border-border/50">
                       <div className="flex items-center justify-between mb-3">
                         <h3 className="text-base font-semibold flex items-center gap-2">
@@ -2547,15 +2628,11 @@ const MyPage = () => {
                       )}
                     </div>
 
-                      <p className="text-sm text-muted-foreground mt-4">
-                        <Video className="inline h-4 w-4 mr-1" />
-                        動画 {userVideos.length}件
-                      </p>
-                    </div>
-                  </CardContent>
-                </Card>
+                  </div>
+                </CardContent>
+              </Card>
 
-                <div className="grid md:grid-cols-2 gap-6 mb-6 animate-fade-up">
+              <div className="grid md:grid-cols-2 gap-6 mb-6 animate-fade-up">
             {/* Private Info Card */}
             <Card>
               <CardHeader>
