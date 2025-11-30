@@ -44,7 +44,24 @@ export default function DojoOrProfile() {
         return;
       }
 
-      // If not found as dojo slug, assume it's a username
+      // Then try to find a celebrity with this user_id
+      const { data: celebrityData, error: celebrityError } = await supabase
+        .from('celebrities')
+        .select('id')
+        .eq('user_id', slugOrUsername)
+        .maybeSingle();
+
+      if (celebrityError) {
+        console.error('Error checking celebrity:', celebrityError);
+      }
+
+      if (celebrityData) {
+        // Redirect to athlete page
+        window.location.href = `/athlete/${slugOrUsername}`;
+        return;
+      }
+
+      // If not found as dojo slug or celebrity, assume it's a username
       setIsDojo(false);
       setIsLoading(false);
     } catch (error) {
