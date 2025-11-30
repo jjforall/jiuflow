@@ -272,45 +272,6 @@ const About = () => {
             </div>
           </section>
 
-          {/* Features Section */}
-          <section className="py-16 bg-muted/30">
-            <div className="max-w-4xl mx-auto px-6">
-              <h2 className="text-4xl font-light mb-8 text-center">「見て、理解する」から、動きが変わる。</h2>
-              <div className="space-y-6 text-lg leading-relaxed mb-8">
-                <p>
-                  私たちは<strong>「技術としての柔術」</strong>を映像というフォーマットで整理し、<br />
-                  誰もが理解しやすく、続けやすく、そして確実に強くなれる形で届けています。
-                </p>
-              </div>
-              
-              <div className="grid md:grid-cols-3 gap-8 mb-8">
-                <div className="text-center space-y-3">
-                  <h3 className="text-xl font-light">上面からの4K撮影</h3>
-                  <p className="text-muted-foreground">
-                    相手との位置関係、重心の移動を明確に可視化。
-                  </p>
-                </div>
-                <div className="text-center space-y-3">
-                  <h3 className="text-xl font-light">体系化された流れ</h3>
-                  <p className="text-muted-foreground">
-                    引き込みから極めまで、点の技術ではなく「線」で理解。
-                  </p>
-                </div>
-                <div className="text-center space-y-3">
-                  <h3 className="text-xl font-light">構造と意図の言語化</h3>
-                  <p className="text-muted-foreground">
-                    「なぜそう動くのか」を論理的に解説。
-                  </p>
-                </div>
-              </div>
-              
-              <p className="text-lg leading-relaxed text-center">
-                曖昧さを排除し、正しい形をインプットすることで、<br />
-                安全で効率的な上達をサポートします。
-              </p>
-            </div>
-          </section>
-
           {/* Instructor Section */}
           <section className="py-16 bg-muted/30">
             <div className="max-w-4xl mx-auto px-6">
