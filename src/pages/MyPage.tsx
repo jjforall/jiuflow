@@ -3,6 +3,8 @@ import Footer from "@/components/Footer";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { AthleteApplicationForm } from "@/components/AthleteApplicationForm";
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -1263,22 +1265,25 @@ const MyPage = () => {
                     <Upload className="w-4 h-4" />
                   </Button>
                 </div>
-                <Button 
-                  variant="outline"
-                  onClick={() => {
-                    const profileUrl = profile?.username || user?.id;
-                    if (!profileUrl) {
-                      toast.error("プロフィールURLを取得できませんでした");
-                      return;
-                    }
-                    window.open(`/${profileUrl}`, '_blank');
-                  }}
-                  className="gap-2 mb-4"
-                  disabled={!user?.id}
-                >
-                  <ExternalLink className="w-4 h-4" />
-                  {language === "ja" ? "公開プロフィール" : "View Profile"}
-                </Button>
+                <div className="flex gap-2 mb-4">
+                  <Button 
+                    variant="outline"
+                    onClick={() => {
+                      const profileUrl = profile?.username || user?.id;
+                      if (!profileUrl) {
+                        toast.error("プロフィールURLを取得できませんでした");
+                        return;
+                      }
+                      window.open(`/${profileUrl}`, '_blank');
+                    }}
+                    className="gap-2"
+                    disabled={!user?.id}
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                    {language === "ja" ? "公開プロフィール" : "View Profile"}
+                  </Button>
+                  <AthleteApplicationForm />
+                </div>
               </div>
               
               <div className="mt-4">
