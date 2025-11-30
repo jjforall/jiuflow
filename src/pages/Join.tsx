@@ -456,9 +456,8 @@ const Join = () => {
                       setReferralCode(target.value.toUpperCase());
                     }}
                     onChange={(e) => {
-                      if (!isComposing) {
-                        setReferralCode(e.target.value.toUpperCase());
-                      }
+                      const value = e.target.value;
+                      setReferralCode(isComposing ? value : value.toUpperCase());
                     }}
                     className="h-12 text-base bg-background/50 backdrop-blur-sm border-border/50 focus:border-primary transition-all"
                   />
