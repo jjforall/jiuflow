@@ -101,7 +101,6 @@ const App = () => (
                       <VideoUploadInfo />
                     </ProtectedRoute>
                   } />
-                  <Route path="/user/:identifier" element={<UserProfile />} />
                   <Route path="/dojos" element={<Dojos />} />
                   <Route path="/dojos/new" element={
                     <ProtectedRoute>

@@ -703,7 +703,7 @@ const MyPage = () => {
   };
 
   const copyProfileUrl = () => {
-    const url = `${window.location.origin}/user/${profile?.username || user?.id}`;
+    const url = `${window.location.origin}/${profile?.username || user?.id}`;
     navigator.clipboard.writeText(url);
     toast.success(language === "ja" ? "プロフィールURLをコピーしました" : "Profile URL copied");
   };
@@ -1162,7 +1162,7 @@ const MyPage = () => {
                 </div>
                 <Button 
                   variant="outline"
-                  onClick={() => window.open(`/user/${profile?.username || user?.id}`, '_blank')}
+                  onClick={() => window.open(`/${profile?.username || user?.id}`, '_blank')}
                   className="gap-2 mb-4"
                 >
                   <ExternalLink className="w-4 h-4" />
@@ -2725,7 +2725,7 @@ const MyPage = () => {
                       </div>
                       <p className="text-xs text-muted-foreground">
                         {language === "ja" ? "プロフィールURL: " : "Profile URL: "}
-                        {window.location.origin}/user/{editValues.username || profile?.username || user?.id}
+                        {window.location.origin}/{editValues.username || profile?.username || user?.id}
                       </p>
                     </div>
                   ) : (
@@ -2733,7 +2733,7 @@ const MyPage = () => {
                       <p className="text-sm font-light mb-1">{profile?.username || <span className="text-muted-foreground italic">{language === "ja" ? "未設定" : "Not set"}</span>}</p>
                       <p className="text-xs text-muted-foreground">
                         {language === "ja" ? "プロフィールURL: " : "Profile URL: "}
-                        {window.location.origin}/user/{profile?.username || user?.id}
+                        {window.location.origin}/{profile?.username || user?.id}
                       </p>
                     </div>
                   )}
@@ -3084,7 +3084,7 @@ const MyPage = () => {
                   className="flex items-center gap-3 p-3 rounded-lg hover:bg-accent transition-colors cursor-pointer"
                   onClick={() => {
                     const identifier = user.username || user.id;
-                    navigate(`/user/${identifier}`);
+                    navigate(`/${identifier}`);
                     setShowFollowList(null);
                   }}
                 >
