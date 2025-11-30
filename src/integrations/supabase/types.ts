@@ -328,6 +328,35 @@ export type Database = {
         }
         Relationships: []
       }
+      favorite_dojos: {
+        Row: {
+          created_at: string
+          dojo_id: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          dojo_id: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          dojo_id?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "favorite_dojos_dojo_id_fkey"
+            columns: ["dojo_id"]
+            isOneToOne: false
+            referencedRelation: "dojos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       founder_plan_count: {
         Row: {
           count: number
