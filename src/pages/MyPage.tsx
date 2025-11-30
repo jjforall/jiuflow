@@ -31,6 +31,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { AvatarUploadDialog } from "@/components/AvatarUploadDialog";
 import { CoverUploadDialog } from "@/components/CoverUploadDialog";
 import { CoverImageGalleryDialog } from "@/components/CoverImageGalleryDialog";
+import { FollowedCelebrities } from "@/components/FollowedCelebrities";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import hero1 from "@/assets/hero-1.jpg";
@@ -1897,129 +1898,9 @@ const MyPage = () => {
                       )}
                     </div>
 
-                    {/* Favorite Fighters Section */}
+                    {/* Followed Celebrities Section */}
                     <div className="mb-6 p-4 bg-muted/30 rounded-lg border border-border/50">
-                      <div className="flex items-center justify-between mb-3">
-                        <h3 className="text-base font-semibold flex items-center gap-2">
-                          👤 {language === "ja" ? "好きな選手" : "Favorite Fighters"}
-                        </h3>
-                        {editingField === 'favorite_fighters' ? (
-                          <div className="flex gap-2">
-                            <Button size="sm" onClick={() => saveField('favorite_fighters')} className="gap-1">
-                              <Check className="w-4 h-4" /> {language === "ja" ? "保存" : "Save"}
-                            </Button>
-                            <Button size="sm" variant="outline" onClick={cancelEditing} className="gap-1">
-                              <X className="w-4 h-4" /> {language === "ja" ? "キャンセル" : "Cancel"}
-                            </Button>
-                          </div>
-                        ) : (
-                          <Button 
-                            size="sm" 
-                            variant="outline"
-                            onClick={() => startEditing('favorite_fighters', profile?.favorite_fighters || [])}
-                          >
-                            <Edit2 className="w-4 h-4" />
-                          </Button>
-                        )}
-                      </div>
-                      {editingField === 'favorite_fighters' ? (
-                        <div className="space-y-4">
-                          <div className="p-3 bg-background rounded border">
-                            <h4 className="text-sm font-medium mb-3">{language === "ja" ? "よく選ばれる選手" : "Popular Fighters"}</h4>
-                            <div className="grid grid-cols-2 gap-2 max-h-[300px] overflow-y-auto">
-                              {[
-                                "ホジェー・グレイシー", "ヒクソン・グレイシー", "ヘンゾ・グレイシー", "ホイラー・グレイシー",
-                                "マルセロ・ガルシア", "ゴードン・ライアン", "ギャリー・トナン", "ニッキー・ライアン",
-                                "ミカエル・ムシュメシ", "フェリペ・ペナ", "ブカシャ兄弟", "アンドレ・ガウヴァオ",
-                                "ラファエル・メンデス", "コブリンハ", "ルーカス・レプリ", "レアンドロ・ロー",
-                                "カイオ・テハ", "ジョアオ・ミヤオ", "パウロ・ミヤオ", "ハファエル・ロバート",
-                                "ブルーノ・マルファシーニ", "ギジェルミ・メンデス", "ミヤオ兄弟", "ケーナン・コーネリアス"
-                              ].map((fighter) => {
-                                const isSelected = editValues.favorite_fighters?.includes(fighter);
-                                return (
-                                  <Button
-                                    key={fighter}
-                                    size="sm"
-                                    variant={isSelected ? "default" : "outline"}
-                                    onClick={() => {
-                                      const current = editValues.favorite_fighters || [];
-                                      if (isSelected) {
-                                        setEditValues({ 
-                                          ...editValues, 
-                                          favorite_fighters: current.filter((f: string) => f !== fighter)
-                                        });
-                                      } else {
-                                        setEditValues({ 
-                                          ...editValues, 
-                                          favorite_fighters: [...current, fighter]
-                                        });
-                                      }
-                                    }}
-                                    className="justify-start text-left h-auto py-2"
-                                  >
-                                    {isSelected && <Check className="w-3 h-3 mr-1" />}
-                                    {fighter}
-                                  </Button>
-                                );
-                              })}
-                            </div>
-                          </div>
-                          
-                          <div className="p-3 bg-background rounded border">
-                            <h4 className="text-sm font-medium mb-2">{language === "ja" ? "カスタム入力" : "Custom Input"}</h4>
-                            <div className="flex gap-2">
-                              <Input
-                                placeholder={language === "ja" ? "選手名を入力" : "Enter fighter name"}
-                                className="h-12"
-                                onKeyDown={(e) => {
-                                  if (e.key === 'Enter' && e.currentTarget.value.trim()) {
-                                    const current = editValues.favorite_fighters || [];
-                                    if (!current.includes(e.currentTarget.value.trim())) {
-                                      setEditValues({ 
-                                        ...editValues, 
-                                        favorite_fighters: [...current, e.currentTarget.value.trim()]
-                                      });
-                                    }
-                                    e.currentTarget.value = '';
-                                  }
-                                }}
-                              />
-                            </div>
-                          </div>
-
-                          {editValues.favorite_fighters && editValues.favorite_fighters.length > 0 && (
-                            <div className="p-3 bg-background rounded border">
-                              <h4 className="text-sm font-medium mb-2">{language === "ja" ? "選択済み" : "Selected"}</h4>
-                              <div className="flex flex-wrap gap-2">
-                                {editValues.favorite_fighters.map((fighter: string, index: number) => (
-                                  <Badge key={index} variant="secondary" className="gap-1">
-                                    {fighter}
-                                    <X 
-                                      className="w-3 h-3 cursor-pointer" 
-                                      onClick={() => {
-                                        const newFighters = editValues.favorite_fighters.filter((_: string, i: number) => i !== index);
-                                        setEditValues({ ...editValues, favorite_fighters: newFighters });
-                                      }}
-                                    />
-                                  </Badge>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      ) : (
-                        profile?.favorite_fighters && profile.favorite_fighters.length > 0 ? (
-                          <div className="flex flex-wrap gap-2">
-                            {profile.favorite_fighters.map((fighter, index) => (
-                              <Badge key={index} variant="secondary" className="text-sm py-1.5 px-3">
-                                {fighter}
-                              </Badge>
-                            ))}
-                          </div>
-                        ) : (
-                          <p className="text-sm text-muted-foreground italic">{language === "ja" ? "好きな選手を追加してください" : "Add favorite fighters"}</p>
-                        )
-                      )}
+                      {user && <FollowedCelebrities userId={user.id} />}
                     </div>
 
                     {/* Favorite Techniques Section */}
