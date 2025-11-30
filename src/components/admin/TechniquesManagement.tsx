@@ -96,6 +96,8 @@ export const TechniquesManagement = () => {
   }>>([]);
   const [availableCategories, setAvailableCategories] = useState<string[]>([]);
   const [newCategory, setNewCategory] = useState("");
+  const [previewVideoUrl, setPreviewVideoUrl] = useState<string | null>(null);
+  const [showVideoPreview, setShowVideoPreview] = useState(false);
 
 
   // すべての言語（カウント用）
@@ -1436,9 +1438,15 @@ export const TechniquesManagement = () => {
                     {technique.thumbnail_url ? (
                       <img
                         src={technique.thumbnail_url}
-                        className="w-24 h-16 object-cover rounded"
+                        className="w-24 h-16 object-cover rounded cursor-pointer hover:opacity-80 transition-opacity"
                         loading="lazy"
                         alt={technique.name}
+                        onClick={() => {
+                          if (technique.video_url) {
+                            setPreviewVideoUrl(technique.video_url);
+                            setShowVideoPreview(true);
+                          }
+                        }}
                         onError={(e) => {
                           const target = e.target as HTMLImageElement;
                           target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="96" height="64"%3E%3Crect fill="%23ddd" width="96" height="64"/%3E%3Ctext fill="%23999" x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle"%3ENo Image%3C/text%3E%3C/svg%3E';
@@ -1540,6 +1548,26 @@ export const TechniquesManagement = () => {
           ))}
         </div>
       )}
+
+      {/* Video Preview Dialog */}
+      <Dialog open={showVideoPreview} onOpenChange={setShowVideoPreview}>
+        <DialogContent className="max-w-4xl">
+          <DialogHeader>
+            <DialogTitle>動画プレビュー</DialogTitle>
+          </DialogHeader>
+          {previewVideoUrl && (
+            <div className="w-full">
+              <video
+                src={previewVideoUrl}
+                controls
+                autoPlay
+                className="w-full rounded-lg"
+                style={{ maxHeight: '70vh' }}
+              />
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Edit/Create Dialog */}
       <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
