@@ -273,6 +273,48 @@ const About = () => {
             </div>
           </section>
 
+          {/* Message Video Section */}
+          <section className="py-20 bg-gradient-to-br from-primary/5 to-transparent">
+            <div className="max-w-4xl mx-auto px-6">
+              <div className="text-center mb-10 animate-fade-in">
+                <h2 className="text-4xl font-light mb-4">創設者からのメッセージ</h2>
+                <p className="text-xl text-muted-foreground font-light">
+                  なぜこのサービスを作ったのか？<br />
+                  村田良蔵が語る、JiuFlowに込めた想い
+                </p>
+              </div>
+              
+              <div className="relative aspect-video rounded-xl overflow-hidden shadow-2xl bg-muted animate-scale-in">
+                {/* Video Player Placeholder */}
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="text-center space-y-4">
+                    <div className="w-20 h-20 mx-auto rounded-full bg-primary/10 flex items-center justify-center">
+                      <svg className="w-8 h-8 text-primary" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M8 5v14l11-7z"/>
+                      </svg>
+                    </div>
+                    <p className="text-muted-foreground">
+                      メッセージ動画（3分）
+                    </p>
+                  </div>
+                </div>
+                
+                {/* 実際の動画URLが決まったら、以下のように実装 */}
+                {/* <video 
+                  controls
+                  className="w-full h-full"
+                  poster="/path/to/thumbnail.jpg"
+                >
+                  <source src="/path/to/video.mp4" type="video/mp4" />
+                </video> */}
+              </div>
+              
+              <p className="text-center text-sm text-muted-foreground mt-6">
+                約3分の動画です
+              </p>
+            </div>
+          </section>
+
           {/* Instructor Section */}
           <section className="py-16 bg-muted/30">
             <div className="max-w-4xl mx-auto px-6">
