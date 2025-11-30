@@ -21,6 +21,7 @@ import DojosManagement from "@/components/admin/DojosManagement";
 import { LogsTab } from "@/components/admin/LogsTab";
 import { TipsManagement } from "@/components/admin/TipsManagement";
 import { ContactsManagement } from "@/components/admin/ContactsManagement";
+import { CelebrityApplicationsManagement } from "@/components/admin/CelebrityApplicationsManagement";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -189,6 +190,7 @@ const AdminDashboard = () => {
                 {activeTab === "plans" && <PlansTab />}
                 {activeTab === "points" && <PointsManagement />}
                 {activeTab === "belts" && <BeltsManagement />}
+                {activeTab === "celebrity" && <CelebrityApplicationsManagement />}
                 {activeTab === "contacts" && <ContactsManagement />}
                 {activeTab === "logs" && <LogsTab />}
                 {activeTab === "tips" && <TipsManagement />}
