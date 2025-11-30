@@ -861,29 +861,7 @@ const Join = () => {
                 <h3 className="text-3xl font-light mb-10 text-center">
                   {language === "ja" ? "🎁 リワードシステム" : "🎁 Rewards System"}
                 </h3>
-                <div className="grid md:grid-cols-3 gap-8">
-                  <div className="text-center p-6 rounded-xl bg-background/50 hover:bg-background/80 transition-all group">
-                    <div className="text-5xl mb-4 group-hover:scale-110 transition-transform">🎨</div>
-                    <h4 className="font-medium mb-3 text-lg">
-                      {language === "ja" ? "NFTバッジ" : "NFT Badges"}
-                    </h4>
-                    <p className="text-sm text-muted-foreground leading-relaxed">
-                      {language === "ja" 
-                        ? "プラン購入時に限定NFTを自動付与。コレクションとして保有可能"
-                        : "Exclusive NFTs automatically awarded with plan purchase"}
-                    </p>
-                  </div>
-                  <div className="text-center p-6 rounded-xl bg-background/50 hover:bg-background/80 transition-all group">
-                    <div className="text-5xl mb-4 group-hover:scale-110 transition-transform">🎯</div>
-                    <h4 className="font-medium mb-3 text-lg">
-                      {language === "ja" ? "ポイント" : "Points"}
-                    </h4>
-                    <p className="text-sm text-muted-foreground leading-relaxed">
-                      {language === "ja" 
-                        ? "毎月・毎年ポイント獲得。限定コンテンツやグッズ交換に使用可能"
-                        : "Earn points monthly/yearly. Use for exclusive content and merchandise"}
-                    </p>
-                  </div>
+                <div className="grid md:grid-cols-1 gap-8">
                   <div className="text-center p-6 rounded-xl bg-background/50 hover:bg-background/80 transition-all group">
                     <div className="text-5xl mb-4 group-hover:scale-110 transition-transform">👥</div>
                     <h4 className="font-medium mb-3 text-lg">
@@ -891,8 +869,8 @@ const Join = () => {
                     </h4>
                     <p className="text-sm text-muted-foreground leading-relaxed">
                       {language === "ja" 
-                        ? "専用紹介コードで友達を招待。1人紹介ごとにポイント獲得"
-                        : "Invite friends with your unique code and earn points per referral"}
+                        ? "専用紹介コードで友達を招待すると、特別コンテンツや講習会などに参加できます"
+                        : "Invite friends with your unique code to access exclusive content and workshops"}
                     </p>
                   </div>
                 </div>
