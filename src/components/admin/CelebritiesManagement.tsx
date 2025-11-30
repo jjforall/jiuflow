@@ -55,6 +55,8 @@ export const CelebritiesManagement = () => {
     home_dojo: "",
     organization_id: "",
     featured: false,
+    belt_history: [] as Array<{ belt: string; year: string | null; organization: string }>,
+    titles: [] as Array<{ title: string; year: string | null; event: string }>,
   });
 
   useEffect(() => {
@@ -105,6 +107,8 @@ export const CelebritiesManagement = () => {
         home_dojo: celebrity.home_dojo || "",
         organization_id: celebrity.organization_id || "",
         featured: celebrity.featured,
+        belt_history: celebrity.belt_history || [],
+        titles: celebrity.titles || [],
       });
     } else {
       setEditingCelebrity(null);
@@ -115,6 +119,8 @@ export const CelebritiesManagement = () => {
         home_dojo: "",
         organization_id: "",
         featured: false,
+        belt_history: [],
+        titles: [],
       });
     }
     setIsDialogOpen(true);
@@ -134,6 +140,8 @@ export const CelebritiesManagement = () => {
             home_dojo: formData.home_dojo || null,
             organization_id: formData.organization_id || null,
             featured: formData.featured,
+            belt_history: formData.belt_history,
+            titles: formData.titles,
           })
           .eq('id', editingCelebrity.id);
 
@@ -149,6 +157,8 @@ export const CelebritiesManagement = () => {
             home_dojo: formData.home_dojo || null,
             organization_id: formData.organization_id || null,
             featured: formData.featured,
+            belt_history: formData.belt_history,
+            titles: formData.titles,
           });
 
         if (error) throw error;
@@ -376,6 +386,48 @@ export const CelebritiesManagement = () => {
                 onCheckedChange={(checked) => setFormData({ ...formData, featured: checked })}
               />
               <Label htmlFor="featured">注目選手として表示</Label>
+            </div>
+
+            <div className="space-y-2">
+              <Label>帯履歴（JSON形式）</Label>
+              <Textarea
+                value={JSON.stringify(formData.belt_history, null, 2)}
+                onChange={(e) => {
+                  try {
+                    const parsed = JSON.parse(e.target.value);
+                    setFormData({ ...formData, belt_history: parsed });
+                  } catch (err) {
+                    // Invalid JSON, don't update
+                  }
+                }}
+                placeholder='[{"belt": "Black Belt", "year": "2000", "organization": "BJJ"}]'
+                rows={4}
+                className="font-mono text-sm"
+              />
+              <p className="text-xs text-muted-foreground">
+                例: {`[{"belt": "Black Belt", "year": "2000", "organization": "Brazilian Jiu-Jitsu"}]`}
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label>タイトル（JSON形式）</Label>
+              <Textarea
+                value={JSON.stringify(formData.titles, null, 2)}
+                onChange={(e) => {
+                  try {
+                    const parsed = JSON.parse(e.target.value);
+                    setFormData({ ...formData, titles: parsed });
+                  } catch (err) {
+                    // Invalid JSON, don't update
+                  }
+                }}
+                placeholder='[{"title": "World Champion", "year": "2010", "event": "IBJJF Worlds"}]'
+                rows={4}
+                className="font-mono text-sm"
+              />
+              <p className="text-xs text-muted-foreground">
+                例: {`[{"title": "World Champion", "year": "2010", "event": "IBJJF Worlds"}]`}
+              </p>
             </div>
 
             <div className="flex justify-end gap-2">

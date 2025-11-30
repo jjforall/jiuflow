@@ -23,6 +23,7 @@ import { TipsManagement } from "@/components/admin/TipsManagement";
 import { ContactsManagement } from "@/components/admin/ContactsManagement";
 import { CelebrityApplicationsManagement } from "@/components/admin/CelebrityApplicationsManagement";
 import { CelebritiesManagement } from "@/components/admin/CelebritiesManagement";
+import { LineageManagement } from "@/components/admin/LineageManagement";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -192,6 +193,7 @@ const AdminDashboard = () => {
                 {activeTab === "points" && <PointsManagement />}
                 {activeTab === "belts" && <BeltsManagement />}
                 {activeTab === "celebrities" && <CelebritiesManagement />}
+                {activeTab === "lineage" && <LineageManagement />}
                 {activeTab === "celebrity" && <CelebrityApplicationsManagement />}
                 {activeTab === "contacts" && <ContactsManagement />}
                 {activeTab === "logs" && <LogsTab />}
