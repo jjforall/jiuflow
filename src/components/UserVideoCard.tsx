@@ -46,6 +46,8 @@ export function UserVideoCard({
             src={video.thumbnail_url} 
             alt={video.title}
             className="w-full h-full object-cover"
+            loading="lazy"
+            decoding="async"
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center">

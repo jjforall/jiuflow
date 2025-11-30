@@ -149,6 +149,7 @@ const MyPage = () => {
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [userVideos, setUserVideos] = useState<UserVideo[]>([]);
   const [videosLoading, setVideosLoading] = useState(true);
+  const [displayedVideosCount, setDisplayedVideosCount] = useState(9);
   const [referralCode, setReferralCode] = useState<string>("");
   const [isEditingCode, setIsEditingCode] = useState(false);
   const [editedCode, setEditedCode] = useState("");
@@ -178,7 +179,7 @@ const MyPage = () => {
   const [coverGalleryOpen, setCoverGalleryOpen] = useState(false);
   const [coverUploadOpen, setCoverUploadOpen] = useState(false);
 
-  const loadUserVideos = async () => {
+  const loadUserVideos = useCallback(async () => {
     if (!user) return;
     
     setVideosLoading(true);
@@ -191,12 +192,13 @@ const MyPage = () => {
 
       if (error) throw error;
       setUserVideos(data || []);
+      setDisplayedVideosCount(9);
     } catch (error) {
       console.error('Error loading videos:', error);
     } finally {
       setVideosLoading(false);
     }
-  };
+  }, [user]);
 
   const checkAuth = useCallback(async () => {
     const { data: { session } } = await supabase.auth.getSession();
@@ -2973,17 +2975,30 @@ const MyPage = () => {
                 </Button>
               </div>
             ) : (
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {userVideos.map((video) => (
-                  <UserVideoCard
-                    key={video.id}
-                    video={video}
-                    onEdit={handleEditVideo}
-                    onDelete={handleDeleteVideo}
-                    isOwner={true}
-                  />
-                ))}
-              </div>
+              <>
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {userVideos.slice(0, displayedVideosCount).map((video) => (
+                    <UserVideoCard
+                      key={video.id}
+                      video={video}
+                      onEdit={handleEditVideo}
+                      onDelete={handleDeleteVideo}
+                      isOwner={true}
+                    />
+                  ))}
+                </div>
+                {userVideos.length > displayedVideosCount && (
+                  <div className="text-center mt-8">
+                    <Button
+                      variant="outline"
+                      onClick={() => setDisplayedVideosCount(prev => prev + 9)}
+                    >
+                      {language === "ja" ? "もっと見る" : language === "pt" ? "Ver mais" : "Load More"}
+                      ({userVideos.length - displayedVideosCount} {language === "ja" ? "件" : ""})
+                    </Button>
+                  </div>
+                )}
+              </>
             )}
           </div>
 
