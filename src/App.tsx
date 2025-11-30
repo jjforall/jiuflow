@@ -38,6 +38,7 @@ const DojoOrProfile = lazy(() => import("./pages/DojoOrProfile"));
 const Contact = lazy(() => import("./pages/Contact"));
 const FounderTrial = lazy(() => import("./pages/FounderTrial"));
 const GenerateImages = lazy(() => import("./pages/GenerateImages"));
+const Athletes = lazy(() => import("./pages/Athletes"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
@@ -113,6 +114,7 @@ const App = () => (
                     </ProtectedRoute>
                   } />
                   <Route path="/dojo/:id" element={<Dojo />} />
+                  <Route path="/athletes" element={<Athletes />} />
                   <Route path="/:slugOrUsername" element={<DojoOrProfile />} />
                   <Route path="/founder-trial" element={<FounderTrial />} />
                   <Route path="/admin" element={<AdminLogin />} />
