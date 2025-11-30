@@ -3,7 +3,7 @@ import Footer from "@/components/Footer";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -1485,110 +1485,102 @@ const MyPage = () => {
                       )}
                     </div>
 
-                    {/* Home Dojo */}
+                    {/* Dojos */}
                     <div className="mb-6 p-4 bg-muted/30 rounded-lg border border-border/50">
                       <div className="flex items-center justify-between mb-3">
                         <h3 className="text-base font-semibold flex items-center gap-2">
-                          🏛️ {language === "ja" ? "所属道場" : "Home Dojo"}
+                          🏛️ {language === "ja" ? "所属道場・出稽古先" : "Dojos"}
                         </h3>
-                        {editingField === 'home_dojo' ? (
-                          <div className="flex gap-2">
-                            <Button size="sm" onClick={() => saveField('home_dojo')} className="gap-1">
-                              <Check className="w-4 h-4" /> {language === "ja" ? "保存" : "Save"}
-                            </Button>
-                            <Button size="sm" variant="outline" onClick={cancelEditing} className="gap-1">
-                              <X className="w-4 h-4" /> {language === "ja" ? "キャンセル" : "Cancel"}
-                            </Button>
-                          </div>
-                        ) : (
-                          <Button 
-                            size="sm" 
-                            variant="outline"
-                            onClick={() => startEditing('home_dojo', profile?.home_dojo)}
-                          >
-                            <Edit2 className="w-4 h-4" />
-                          </Button>
-                        )}
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => setDojoDialogOpen(true)}
+                          className="gap-1"
+                        >
+                          <Plus className="w-4 h-4" />
+                          {language === "ja" ? "追加" : "Add"}
+                        </Button>
                       </div>
-                      {editingField === 'home_dojo' ? (
-                        <InputWithSuggestions
-                          value={editValues.home_dojo || ''}
-                          onChange={(e) => setEditValues({ ...editValues, home_dojo: e.target.value })}
-                          onSelectSuggestion={(value) => setEditValues({ ...editValues, home_dojo: value })}
-                          suggestions={dojoSuggestions}
-                          placeholder={language === "ja" ? "所属道場名" : "Dojo name"}
-                          className="font-medium"
-                        />
-                      ) : (
-                        <p className="text-sm p-2 bg-background rounded">
-                          {profile?.home_dojo || <span className="text-muted-foreground italic">{language === "ja" ? "所属道場を追加してください" : "Add home dojo"}</span>}
-                        </p>
-                      )}
-                    </div>
-
-                    {/* Training Locations */}
-                    <div className="mb-6 p-4 bg-muted/30 rounded-lg border border-border/50">
-                      <div className="flex items-center justify-between mb-3">
-                        <h3 className="text-base font-semibold flex items-center gap-2">
-                          🗺️ {language === "ja" ? "よくいく出稽古先" : "Training Locations"}
-                        </h3>
-                        {editingField === 'training_locations' ? (
-                          <div className="flex gap-2">
-                            <Button size="sm" onClick={() => saveField('training_locations')} className="gap-1">
-                              <Check className="w-4 h-4" /> {language === "ja" ? "保存" : "Save"}
-                            </Button>
-                            <Button size="sm" variant="outline" onClick={cancelEditing} className="gap-1">
-                              <X className="w-4 h-4" /> {language === "ja" ? "キャンセル" : "Cancel"}
-                            </Button>
-                          </div>
-                        ) : (
-                          <Button 
-                            size="sm" 
-                            variant="outline"
-                            onClick={() => startEditing('training_locations', profile?.training_locations || [])}
-                          >
-                            <Edit2 className="w-4 h-4" />
-                          </Button>
-                        )}
-                      </div>
-                      {editingField === 'training_locations' ? (
-                        <div className="space-y-2">
-                          {(editValues.training_locations || []).map((location: string, index: number) => (
-                            <div key={index} className="flex items-center gap-2">
-                              <InputWithSuggestions
-                                value={location}
-                                onChange={(e) => updateTrainingLocation(index, e.target.value)}
-                                onSelectSuggestion={(value) => updateTrainingLocation(index, value)}
-                                suggestions={dojoSuggestions}
-                                placeholder={language === "ja" ? "道場名" : "Location"}
-                              />
-                              <Button size="sm" variant="ghost" onClick={() => removeTrainingLocation(index)}>
-                                <X className="w-4 h-4" />
-                              </Button>
+                      {dojosLoading ? (
+                        <div className="text-sm text-muted-foreground">{language === "ja" ? "読み込み中..." : "Loading..."}</div>
+                      ) : userDojos.length > 0 ? (
+                        <div className="space-y-4">
+                          {/* Home Dojos */}
+                          {userDojos.filter(ud => ud.relationship_type === 'home').length > 0 && (
+                            <div>
+                              <h4 className="text-sm font-medium text-muted-foreground mb-2">
+                                {language === "ja" ? "所属" : "Home Gym"}
+                              </h4>
+                              <div className="space-y-2">
+                                {userDojos.filter(ud => ud.relationship_type === 'home').map((userDojo) => (
+                                  <div key={userDojo.id} className="flex items-center justify-between p-3 bg-background rounded-lg border">
+                                    <Link 
+                                      to={`/dojo/${userDojo.dojo.id}`}
+                                      className="flex-1 hover:text-primary transition-colors"
+                                    >
+                                      <div className="font-medium">
+                                        {language === "ja" ? userDojo.dojo.name_ja : language === "pt" ? userDojo.dojo.name_pt : userDojo.dojo.name}
+                                      </div>
+                                      {userDojo.dojo.location && (
+                                        <div className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
+                                          <MapPin className="w-3 h-3" />
+                                          {userDojo.dojo.location}
+                                        </div>
+                                      )}
+                                    </Link>
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      onClick={() => handleRemoveDojo(userDojo.id)}
+                                    >
+                                      <Trash2 className="w-4 h-4" />
+                                    </Button>
+                                  </div>
+                                ))}
+                              </div>
                             </div>
-                          ))}
-                          <Button 
-                            size="sm" 
-                            variant="outline" 
-                            onClick={addTrainingLocation}
-                            className="w-full gap-2"
-                          >
-                            <Plus className="w-4 h-4" />
-                            {language === "ja" ? "道場を追加" : "Add Location"}
-                          </Button>
+                          )}
+                          
+                          {/* Training Dojos */}
+                          {userDojos.filter(ud => ud.relationship_type === 'training').length > 0 && (
+                            <div>
+                              <h4 className="text-sm font-medium text-muted-foreground mb-2">
+                                {language === "ja" ? "出稽古" : "Training"}
+                              </h4>
+                              <div className="space-y-2">
+                                {userDojos.filter(ud => ud.relationship_type === 'training').map((userDojo) => (
+                                  <div key={userDojo.id} className="flex items-center justify-between p-3 bg-background rounded-lg border">
+                                    <Link 
+                                      to={`/dojo/${userDojo.dojo.id}`}
+                                      className="flex-1 hover:text-primary transition-colors"
+                                    >
+                                      <div className="font-medium">
+                                        {language === "ja" ? userDojo.dojo.name_ja : language === "pt" ? userDojo.dojo.name_pt : userDojo.dojo.name}
+                                      </div>
+                                      {userDojo.dojo.location && (
+                                        <div className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
+                                          <MapPin className="w-3 h-3" />
+                                          {userDojo.dojo.location}
+                                        </div>
+                                      )}
+                                    </Link>
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      onClick={() => handleRemoveDojo(userDojo.id)}
+                                    >
+                                      <Trash2 className="w-4 h-4" />
+                                    </Button>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
                         </div>
                       ) : (
-                        profile?.training_locations && profile.training_locations.length > 0 ? (
-                          <ul className="space-y-1">
-                            {profile.training_locations.map((location, index) => (
-                              <li key={index} className="text-sm p-2 bg-background rounded flex items-center gap-2">
-                                <span className="text-primary">•</span> {location}
-                              </li>
-                            ))}
-                          </ul>
-                        ) : (
-                          <p className="text-sm text-muted-foreground italic">{language === "ja" ? "出稽古先を追加してください" : "Add training locations"}</p>
-                        )
+                        <p className="text-sm text-muted-foreground italic">
+                          {language === "ja" ? "道場を追加してください" : "Add your dojos"}
+                        </p>
                       )}
                     </div>
 
@@ -3215,6 +3207,63 @@ const MyPage = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Add Dojo Dialog */}
+      <Dialog open={dojoDialogOpen} onOpenChange={setDojoDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {language === "ja" ? "道場を追加" : "Add Dojo"}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>{language === "ja" ? "道場を選択" : "Select Dojo"}</Label>
+              <Select value={selectedDojoId} onValueChange={setSelectedDojoId}>
+                <SelectTrigger>
+                  <SelectValue placeholder={language === "ja" ? "道場を選択してください" : "Select a dojo"} />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableDojos.map((dojo) => (
+                    <SelectItem key={dojo.id} value={dojo.id}>
+                      {language === "ja" ? dojo.name_ja : language === "pt" ? dojo.name_pt : dojo.name}
+                      {dojo.location && ` - ${dojo.location}`}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div>
+              <Label>{language === "ja" ? "関係" : "Relationship"}</Label>
+              <Select 
+                value={selectedRelationshipType} 
+                onValueChange={(value: "home" | "training") => setSelectedRelationshipType(value)}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="home">
+                    {language === "ja" ? "所属" : "Home Gym"}
+                  </SelectItem>
+                  <SelectItem value="training">
+                    {language === "ja" ? "出稽古" : "Training"}
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <Button 
+              onClick={handleAddDojo} 
+              disabled={!selectedDojoId}
+              className="w-full"
+            >
+              {language === "ja" ? "追加" : "Add"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <Footer />
     </div>
