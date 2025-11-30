@@ -76,6 +76,7 @@ export const TechniquesManagement = () => {
   const [hashtagEditValue, setHashtagEditValue] = useState<string>("");
   const [showTranslateDialog, setShowTranslateDialog] = useState(false);
   const [translatingTechnique, setTranslatingTechnique] = useState<Technique | null>(null);
+  const [inlineMaxSeriesOrder, setInlineMaxSeriesOrder] = useState<Record<string, number>>({});
   const [targetLanguage, setTargetLanguage] = useState<"en" | "pt" | "es" | "fr" | "de" | "zh" | "ko" | "it" | "ru" | "ar" | "hi">("en");
   const [translationProjectId, setTranslationProjectId] = useState<string | null>(null);
   const [translationStatus, setTranslationStatus] = useState<{
@@ -404,16 +405,39 @@ export const TechniquesManagement = () => {
     fetchMaxSeriesOrder();
   }, [formData.series_prefix]);
 
-  const startEditing = (id: string, field: string, currentValue: string) => {
+  const startEditing = async (id: string, field: string, currentValue: string, technique?: Technique) => {
     if (!isAdmin) return; // Staff cannot edit
     setEditingCell({ id, field });
     setEditValue(currentValue);
+    
+    // series_order編集時に最大番号を取得
+    if (field === 'series_order' && technique?.series_prefix) {
+      const { data, error } = await supabase
+        .from('techniques')
+        .select('series_order')
+        .eq('series_prefix', technique.series_prefix)
+        .order('series_order', { ascending: false })
+        .limit(1);
+      
+      if (!error && data && data.length > 0 && data[0].series_order !== null) {
+        setInlineMaxSeriesOrder(prev => ({
+          ...prev,
+          [id]: data[0].series_order
+        }));
+      } else {
+        setInlineMaxSeriesOrder(prev => ({
+          ...prev,
+          [id]: 0
+        }));
+      }
+    }
   };
 
   const cancelEditing = () => {
     setEditingCell(null);
     setEditValue("");
     setHashtagEditValue("");
+    setInlineMaxSeriesOrder({});
   };
 
   const saveEdit = async (technique: Technique) => {
@@ -1387,7 +1411,7 @@ export const TechniquesManagement = () => {
                       ) : (
                         <p 
                           className={`text-sm font-semibold px-2 py-1 rounded ${isAdmin ? 'cursor-pointer hover:bg-accent hover:text-accent-foreground' : ''}`}
-                          onClick={() => isAdmin && startEditing(technique.id, 'series_prefix', (technique as Technique).series_prefix || '')}
+                          onClick={() => isAdmin && startEditing(technique.id, 'series_prefix', (technique as Technique).series_prefix || '', technique as Technique)}
                         >
                           {(technique as Technique).series_prefix ? `${(technique as Technique).series_prefix}` : <span className="text-muted-foreground text-xs font-normal">アルファベット</span>}
                         </p>
@@ -1419,7 +1443,7 @@ export const TechniquesManagement = () => {
                       ) : (
                         <p 
                           className={`text-sm px-2 py-1 rounded ${isAdmin ? 'cursor-pointer hover:bg-accent hover:text-accent-foreground' : ''}`}
-                          onClick={() => isAdmin && startEditing(technique.id, 'series_name', (technique as Technique).series_name || '')}
+                          onClick={() => isAdmin && startEditing(technique.id, 'series_name', (technique as Technique).series_name || '', technique as Technique)}
                         >
                           {(technique as Technique).series_name || <span className="text-muted-foreground">シリーズなし</span>}
                         </p>
@@ -1427,30 +1451,37 @@ export const TechniquesManagement = () => {
                       
                       {/* Series Order */}
                       {editingCell?.id === technique.id && editingCell?.field === 'series_order' ? (
-                        <div className="flex gap-2 items-center">
-                          <Input
-                            type="number"
-                            value={editValue}
-                            onChange={(e) => setEditValue(e.target.value)}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter' && !e.nativeEvent.isComposing) saveEdit(technique as Technique);
-                              if (e.key === 'Escape') cancelEditing();
-                            }}
-                            className="h-8 text-sm w-20"
-                            autoFocus
-                            placeholder="順序"
-                          />
-                          <Button size="sm" variant="ghost" onClick={() => saveEdit(technique as Technique)}>
-                            <Check className="h-4 w-4" />
-                          </Button>
-                          <Button size="sm" variant="ghost" onClick={cancelEditing}>
-                            <X className="h-4 w-4" />
-                          </Button>
+                        <div className="space-y-1">
+                          <div className="flex gap-2 items-center">
+                            <Input
+                              type="number"
+                              value={editValue}
+                              onChange={(e) => setEditValue(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter' && !e.nativeEvent.isComposing) saveEdit(technique as Technique);
+                                if (e.key === 'Escape') cancelEditing();
+                              }}
+                              className="h-8 text-sm w-20"
+                              autoFocus
+                              placeholder="順序"
+                            />
+                            <Button size="sm" variant="ghost" onClick={() => saveEdit(technique as Technique)}>
+                              <Check className="h-4 w-4" />
+                            </Button>
+                            <Button size="sm" variant="ghost" onClick={cancelEditing}>
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                          {inlineMaxSeriesOrder[technique.id] !== undefined && (technique as Technique).series_prefix && (
+                            <p className="text-xs text-green-600 px-2">
+                              このシリーズは現在{inlineMaxSeriesOrder[technique.id]}番まで使用中
+                            </p>
+                          )}
                         </div>
                       ) : (
                         <p 
                           className={`text-xs text-muted-foreground px-2 py-1 rounded ${isAdmin ? 'cursor-pointer hover:bg-accent hover:text-accent-foreground' : ''}`}
-                          onClick={() => isAdmin && startEditing(technique.id, 'series_order', (technique as Technique).series_order?.toString() || '')}
+                          onClick={() => isAdmin && startEditing(technique.id, 'series_order', (technique as Technique).series_order?.toString() || '', technique as Technique)}
                         >
                           順序: {(technique as Technique).series_order || <span className="text-muted-foreground">-</span>}
                         </p>
