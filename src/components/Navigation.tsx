@@ -5,7 +5,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { translations } from "@/lib/translations";
 import { prefetchRoute } from "@/utils/routePrefetch";
 import { Button } from "@/components/ui/button";
-import { Menu, LogIn, User, LogOut, ShieldCheck } from "lucide-react";
+import { Menu, LogIn, User, LogOut, ShieldCheck, Moon, Sun } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { supabase } from "@/integrations/supabase/client";
 import { User as SupabaseUser } from "@supabase/supabase-js";
@@ -21,7 +21,7 @@ import { useSubscription } from "@/hooks/useSubscription";
 const Navigation = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { theme } = useTheme();
+  const { theme, setTheme } = useTheme();
   const { language, setLanguage } = useLanguage();
   const t = translations[language] || translations.ja; // Fallback to Japanese
   const [isOpen, setIsOpen] = useState(false);
@@ -153,6 +153,16 @@ const Navigation = () => {
                       {t.nav.adminDashboard || (language === "ja" ? "管理画面" : language === "pt" ? "Painel de Administração" : "Admin Dashboard")}
                     </DropdownMenuItem>
                   )}
+                  <DropdownMenuItem 
+                    onClick={() => setTheme(theme === "dark" ? "light" : "dark")} 
+                    className="gap-2 cursor-pointer"
+                  >
+                    {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+                    {theme === "dark" 
+                      ? (language === "ja" ? "ライトモード" : language === "pt" ? "Modo Claro" : "Light Mode")
+                      : (language === "ja" ? "ダークモード" : language === "pt" ? "Modo Escuro" : "Dark Mode")
+                    }
+                  </DropdownMenuItem>
                   <DropdownMenuItem onClick={handleLogout} className="gap-2 cursor-pointer">
                     <LogOut className="h-4 w-4" />
                     {t.nav.logout || (language === "ja" ? "ログアウト" : language === "pt" ? "Sair" : "Logout")}
@@ -254,6 +264,17 @@ const Navigation = () => {
                           </Button>
                         </Link>
                       )}
+                      <Button 
+                        variant="outline" 
+                        className="w-full gap-2"
+                        onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                      >
+                        {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+                        {theme === "dark" 
+                          ? (language === "ja" ? "ライトモード" : language === "pt" ? "Modo Claro" : "Light Mode")
+                          : (language === "ja" ? "ダークモード" : language === "pt" ? "Modo Escuro" : "Dark Mode")
+                        }
+                      </Button>
                       <Button 
                         variant="outline" 
                         className="w-full gap-2"
