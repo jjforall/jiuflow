@@ -40,12 +40,14 @@ interface Technique {
   hashtags: string[];
   series_name: string | null;
   series_order: number | null;
+  series_prefix: string | null;
   video_metadata?: any;
 }
 
-interface CategoryTechniques {
-  [category: string]: {
-    [seriesName: string]: Technique[];
+interface SeriesTechniques {
+  [seriesPrefix: string]: {
+    seriesName: string;
+    techniques: Technique[];
   };
 }
 
@@ -64,7 +66,7 @@ const Map = () => {
   const [hasMore, setHasMore] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [showUploadDialog, setShowUploadDialog] = useState(false);
-  const [categoryTechniques, setCategoryTechniques] = useState<CategoryTechniques>({});
+  const [seriesTechniques, setSeriesTechniques] = useState<SeriesTechniques>({});
   const [videoViews, setVideoViews] = useState<Record<string, number>>({});
   const observerTarget = useRef<HTMLDivElement>(null);
   const PAGE_SIZE = 50;
@@ -152,7 +154,7 @@ const Map = () => {
       const { data, error } = await supabase
         .from("techniques")
         .select("*")
-        .order("series_name", { ascending: true, nullsFirst: false })
+        .order("series_prefix", { ascending: true, nullsFirst: false })
         .order("series_order", { ascending: true, nullsFirst: false })
         .order("display_order", { ascending: true });
 
@@ -168,23 +170,31 @@ const Map = () => {
           );
         }
         
-        // Group techniques by category first, then by series
-        const categoryGroups: CategoryTechniques = {};
+        // Group techniques by series_prefix
+        const seriesGroups: SeriesTechniques = {};
         filteredData.forEach(tech => {
-          const category = tech.category || "other";
+          const seriesPrefix = tech.series_prefix || "Z";
           const seriesName = tech.series_name || "その他の技";
           
-          if (!categoryGroups[category]) {
-            categoryGroups[category] = {};
+          if (!seriesGroups[seriesPrefix]) {
+            seriesGroups[seriesPrefix] = {
+              seriesName,
+              techniques: []
+            };
           }
-          if (!categoryGroups[category][seriesName]) {
-            categoryGroups[category][seriesName] = [];
-          }
-          categoryGroups[category][seriesName].push(tech);
+          seriesGroups[seriesPrefix].techniques.push(tech);
         });
         
+        // Sort series by prefix (A, B, C...)
+        const sortedSeriesGroups: SeriesTechniques = {};
+        Object.keys(seriesGroups)
+          .sort()
+          .forEach(prefix => {
+            sortedSeriesGroups[prefix] = seriesGroups[prefix];
+          });
+        
         setTechniques(filteredData);
-        setCategoryTechniques(categoryGroups);
+        setSeriesTechniques(sortedSeriesGroups);
         setHasMore(false);
       }
     } catch (error) {
@@ -424,107 +434,93 @@ const Map = () => {
               <p className="text-lg text-muted-foreground">{language === "ja" ? "テクニックがまだ追加されていません" : language === "pt" ? "Nenhuma técnica adicionada ainda" : "No techniques added yet"}</p>
             </div>
           ) : (
-            <div className="animate-fade-up space-y-6 max-w-6xl mx-auto">
-              {/* Category-based Accordion */}
-              {Object.entries(categoryTechniques).map(([category, seriesGroups]) => (
-                <div key={category} className="space-y-3">
-                  {/* Category Header */}
-                  <div className={`border-l-4 pl-6 py-4 rounded-r-xl bg-gradient-to-r from-card/80 to-transparent backdrop-blur-sm ${categoryColors[category] || "border-muted"}`}>
-                    <h2 className="text-2xl md:text-3xl font-light">
-                      {getCategoryLabel(category)}
-                    </h2>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      {Object.values(seriesGroups).reduce((acc, series) => acc + series.length, 0)} {language === "ja" ? "本の動画" : "videos"}
-                    </p>
-                  </div>
-
-                  {/* Series Accordion within Category */}
-                  <Accordion type="multiple" className="w-full space-y-2">
-                    {Object.entries(seriesGroups).map(([seriesName, seriesTechs], seriesIndex) => {
-                      const seriesLetter = String.fromCharCode(65 + seriesIndex);
-                      return (
-                        <AccordionItem 
-                          key={seriesName} 
-                          value={`${category}-${seriesName}`}
-                          className="border rounded-xl bg-card/90 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all overflow-hidden"
-                        >
-                          <AccordionTrigger className="px-4 md:px-6 py-4 hover:no-underline hover:bg-gradient-to-r hover:from-muted/30 hover:to-transparent transition-all [&[data-state=open]>svg]:rotate-180">
-                            <div className="flex items-center justify-between w-full pr-4">
-                              <div className="flex items-center gap-3 md:gap-4 text-left">
-                                <div className={`flex items-center justify-center w-10 h-10 md:w-12 md:h-12 rounded-xl font-bold text-base md:text-lg flex-shrink-0 shadow-sm ${categoryColors[category]}`}>
-                                  {seriesTechs.length}
-                                </div>
-                                <div>
-                                  <h3 className="text-base md:text-lg font-semibold text-foreground">
-                                    {seriesLetter}. {seriesName}
-                                  </h3>
-                                  <p className="text-xs md:text-sm text-muted-foreground mt-0.5">
-                                    {language === "ja" 
-                                      ? `${seriesTechs.length}本の動画` 
-                                      : language === "pt" 
-                                      ? `${seriesTechs.length} vídeos` 
-                                      : `${seriesTechs.length} videos`}
-                                  </p>
-                                </div>
-                              </div>
+            <div className="animate-fade-up space-y-3 max-w-6xl mx-auto">
+              {/* Series-based Accordion (alphabetically ordered) */}
+              <Accordion type="multiple" className="w-full space-y-2">
+                {Object.entries(seriesTechniques).map(([seriesPrefix, { seriesName, techniques: seriesTechs }]) => {
+                  return (
+                    <AccordionItem 
+                      key={seriesPrefix} 
+                      value={seriesPrefix}
+                      className="border rounded-xl bg-card/90 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all overflow-hidden"
+                    >
+                      <AccordionTrigger className="px-4 md:px-6 py-4 hover:no-underline hover:bg-gradient-to-r hover:from-muted/30 hover:to-transparent transition-all [&[data-state=open]>svg]:rotate-180">
+                        <div className="flex items-center justify-between w-full pr-4">
+                          <div className="flex items-center gap-3 md:gap-4 text-left">
+                            <div className="flex items-center justify-center w-10 h-10 md:w-12 md:h-12 rounded-xl font-bold text-base md:text-lg flex-shrink-0 shadow-sm bg-primary/10 border border-primary/20">
+                              {seriesTechs.length}
                             </div>
-                          </AccordionTrigger>
-                          <AccordionContent className="px-0 pb-0">
-                            <div className="divide-y divide-border">
-                              {seriesTechs.map((tech, index) => {
-                                const viewCount = videoViews[tech.id];
-                                const isWatched = viewCount && viewCount > 0;
-                                
-                                return (
-                                  <Link
-                                    key={tech.id}
-                                    to={`/video/${tech.id}`}
-                                    className="flex items-center gap-3 md:gap-4 p-3 md:p-4 hover:bg-gradient-to-r hover:from-muted/50 hover:to-transparent transition-all group"
-                                  >
-                                    <div className={`flex items-center justify-center min-w-[2.5rem] h-8 md:h-10 px-2 rounded-lg font-semibold text-xs md:text-sm flex-shrink-0 transition-all shadow-sm ${
-                                      isWatched 
-                                        ? "bg-primary text-primary-foreground shadow-primary/20" 
-                                        : "bg-muted text-muted-foreground group-hover:bg-primary group-hover:text-primary-foreground group-hover:shadow-primary/20"
-                                    }`}>
-                                      {seriesLetter}-{tech.series_order || index + 1}
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                      <div className="flex items-center gap-2">
-                                        <h4 className="text-sm md:text-base font-medium text-foreground group-hover:text-primary transition-colors truncate">
-                                          {getTechniqueName(tech)}
-                                        </h4>
-                                        {isWatched && (
-                                          <div className="flex items-center justify-center w-5 h-5 rounded-full bg-primary/10 flex-shrink-0">
-                                            <Check className="w-3 h-3 text-primary" />
-                                          </div>
-                                        )}
+                            <div>
+                              <h3 className="text-base md:text-lg font-semibold text-foreground">
+                                {seriesPrefix}. {seriesName}
+                              </h3>
+                              <p className="text-xs md:text-sm text-muted-foreground mt-0.5">
+                                {language === "ja" 
+                                  ? `${seriesTechs.length}本の動画` 
+                                  : language === "pt" 
+                                  ? `${seriesTechs.length} vídeos` 
+                                  : `${seriesTechs.length} videos`}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      </AccordionTrigger>
+                      <AccordionContent className="px-0 pb-0">
+                        <div className="divide-y divide-border">
+                          {seriesTechs
+                            .sort((a, b) => (a.series_order || 0) - (b.series_order || 0))
+                            .map((tech, index) => {
+                            const viewCount = videoViews[tech.id];
+                            const isWatched = viewCount && viewCount > 0;
+                            
+                            return (
+                              <Link
+                                key={tech.id}
+                                to={`/video/${tech.id}`}
+                                className="flex items-center gap-3 md:gap-4 p-3 md:p-4 hover:bg-gradient-to-r hover:from-muted/50 hover:to-transparent transition-all group"
+                              >
+                                <div className={`flex items-center justify-center min-w-[2.5rem] h-8 md:h-10 px-2 rounded-lg font-semibold text-xs md:text-sm flex-shrink-0 transition-all shadow-sm ${
+                                  isWatched 
+                                    ? "bg-primary text-primary-foreground shadow-primary/20" 
+                                    : "bg-muted text-muted-foreground group-hover:bg-primary group-hover:text-primary-foreground group-hover:shadow-primary/20"
+                                }`}>
+                                  {seriesPrefix}-{tech.series_order || index + 1}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2">
+                                    <h4 className="text-sm md:text-base font-medium text-foreground group-hover:text-primary transition-colors truncate">
+                                      {getTechniqueName(tech)}
+                                    </h4>
+                                    {isWatched && (
+                                      <div className="flex items-center justify-center w-5 h-5 rounded-full bg-primary/10 flex-shrink-0">
+                                        <Check className="w-3 h-3 text-primary" />
                                       </div>
-                                      {getTechniqueDescription(tech) && (
-                                        <p className="text-xs md:text-sm text-muted-foreground line-clamp-1 mt-0.5">
-                                          {getTechniqueDescription(tech)}
-                                        </p>
-                                      )}
-                                    </div>
-                                    <div className="flex items-center gap-2 flex-shrink-0">
-                                      {isWatched && (
-                                        <Badge variant="secondary" className="flex items-center gap-1 text-xs shadow-sm">
-                                          <Eye className="w-3 h-3" />
-                                          {viewCount}
-                                        </Badge>
-                                      )}
-                                      <ChevronDown className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors -rotate-90" />
-                                    </div>
-                                  </Link>
-                                );
-                              })}
-                            </div>
-                          </AccordionContent>
-                        </AccordionItem>
-                      );
-                    })}
-                  </Accordion>
-                </div>
-              ))}
+                                    )}
+                                  </div>
+                                  {getTechniqueDescription(tech) && (
+                                    <p className="text-xs md:text-sm text-muted-foreground line-clamp-1 mt-0.5">
+                                      {getTechniqueDescription(tech)}
+                                    </p>
+                                  )}
+                                </div>
+                                <div className="flex items-center gap-2 flex-shrink-0">
+                                  {isWatched && (
+                                    <Badge variant="secondary" className="flex items-center gap-1 text-xs shadow-sm">
+                                      <Eye className="w-3 h-3" />
+                                      {viewCount}
+                                    </Badge>
+                                  )}
+                                  <ChevronDown className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors -rotate-90" />
+                                </div>
+                              </Link>
+                            );
+                          })}
+                        </div>
+                      </AccordionContent>
+                    </AccordionItem>
+                  );
+                })}
+              </Accordion>
             </div>
           )}
 
