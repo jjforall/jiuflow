@@ -74,6 +74,75 @@ export type Database = {
           },
         ]
       }
+      celebrities: {
+        Row: {
+          avatar_url: string | null
+          belt_history: Json | null
+          bio: string | null
+          created_at: string | null
+          display_name: string
+          featured: boolean | null
+          home_dojo: string | null
+          id: string
+          organization_id: string | null
+          social_links: Json | null
+          sort_order: number | null
+          stats: Json | null
+          titles: Json | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          belt_history?: Json | null
+          bio?: string | null
+          created_at?: string | null
+          display_name: string
+          featured?: boolean | null
+          home_dojo?: string | null
+          id?: string
+          organization_id?: string | null
+          social_links?: Json | null
+          sort_order?: number | null
+          stats?: Json | null
+          titles?: Json | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          belt_history?: Json | null
+          bio?: string | null
+          created_at?: string | null
+          display_name?: string
+          featured?: boolean | null
+          home_dojo?: string | null
+          id?: string
+          organization_id?: string | null
+          social_links?: Json | null
+          sort_order?: number | null
+          stats?: Json | null
+          titles?: Json | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "celebrities_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "celebrities_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       celebrity_applications: {
         Row: {
           belt_history: Json | null
@@ -1253,7 +1322,7 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin" | "user" | "staff"
+      app_role: "admin" | "user" | "staff" | "celebrity"
       application_status:
         | "pending"
         | "approved"
@@ -1388,7 +1457,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "user", "staff"],
+      app_role: ["admin", "user", "staff", "celebrity"],
       application_status: [
         "pending",
         "approved",

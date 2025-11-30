@@ -38,6 +38,7 @@ const menuItems = [
   { id: "plans", label: "プラン管理", icon: ShieldCheck },
   { id: "points", label: "ポイント管理", icon: Award },
   { id: "belts", label: "帯管理", icon: Award },
+  { id: "celebrities", label: "有名選手", icon: Star },
   { id: "celebrity", label: "有名人申請", icon: Star },
   { id: "contacts", label: "お問い合わせ", icon: Mail },
   { id: "logs", label: "ログ", icon: FileText },
