@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Navigation from "@/components/Navigation";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Users, ShieldCheck, Grid3X3, DollarSign, UserCheck } from "lucide-react";
+import { Users, ShieldCheck, Grid3X3, DollarSign, UserCheck, Mail } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 
 // Import tab components
@@ -19,6 +19,7 @@ import { BeltsManagement } from "@/components/admin/BeltsManagement";
 import DojosManagement from "@/components/admin/DojosManagement";
 import { LogsTab } from "@/components/admin/LogsTab";
 import { TipsManagement } from "@/components/admin/TipsManagement";
+import { ContactsManagement } from "@/components/admin/ContactsManagement";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -173,7 +174,7 @@ const AdminDashboard = () => {
           </div>
 
           <Tabs defaultValue="techniques" className="w-full">
-            <TabsList className="grid w-full grid-cols-8 mb-8">
+            <TabsList className="grid w-full grid-cols-9 mb-8">
               <TabsTrigger value="techniques" className="flex items-center gap-2">
                 <Grid3X3 className="w-4 h-4" />
                 テクニック管理
@@ -197,6 +198,10 @@ const AdminDashboard = () => {
               </TabsTrigger>
               <TabsTrigger value="belts">
                 帯管理
+              </TabsTrigger>
+              <TabsTrigger value="contacts" className="flex items-center gap-2">
+                <Mail className="w-4 h-4" />
+                お問い合わせ
               </TabsTrigger>
               <TabsTrigger value="logs">
                 ログ
@@ -232,6 +237,10 @@ const AdminDashboard = () => {
 
             <TabsContent value="belts" className="space-y-6">
               <BeltsManagement />
+            </TabsContent>
+
+            <TabsContent value="contacts" className="space-y-6">
+              <ContactsManagement />
             </TabsContent>
 
             <TabsContent value="logs" className="space-y-6">
