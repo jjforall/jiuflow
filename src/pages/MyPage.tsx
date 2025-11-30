@@ -1631,7 +1631,7 @@ const MyPage = () => {
                                       updateTitle(index, 'title', '');
                                     }}
                                   >
-                                    <SelectTrigger className="font-medium">
+                                    <SelectTrigger className="font-medium h-12">
                                       <SelectValue placeholder={language === "ja" ? "団体を選択" : "Select Organization"} />
                                     </SelectTrigger>
                                     <SelectContent className="bg-popover z-50">
@@ -1653,7 +1653,7 @@ const MyPage = () => {
                                         value={title.title || ''}
                                         onValueChange={(value) => updateTitle(index, 'title', value)}
                                       >
-                                        <SelectTrigger>
+                                        <SelectTrigger className="h-12">
                                           <SelectValue placeholder={language === "ja" ? "タイトルを選択" : "Select Title"} />
                                         </SelectTrigger>
                                         <SelectContent className="bg-popover z-50">
@@ -1670,12 +1670,14 @@ const MyPage = () => {
                                         value={title.title || ''}
                                         onChange={(e) => updateTitle(index, 'title', e.target.value)}
                                         placeholder={language === "ja" ? "タイトル名" : "Title"}
+                                        className="h-12"
                                       />
                                     )}
                                     <Input
                                       value={title.date || ''}
                                       onChange={(e) => updateTitle(index, 'date', e.target.value)}
                                       placeholder={language === "ja" ? "取得日" : "Date"}
+                                      className="h-12"
                                     />
                                   </div>
                                   
@@ -1684,6 +1686,7 @@ const MyPage = () => {
                                       value={title.customTitle || ''}
                                       onChange={(e) => updateTitle(index, 'customTitle', e.target.value)}
                                       placeholder={language === "ja" ? "カスタムタイトル名" : "Custom Title"}
+                                      className="h-12"
                                     />
                                   )}
                                 </div>
@@ -1768,7 +1771,7 @@ const MyPage = () => {
                                   setEditValues({ ...editValues, favorite_fighters: newFighters });
                                 }}
                                 placeholder={language === "ja" ? "選手名" : "Fighter name"}
-                                className="flex-1"
+                                className="flex-1 h-12"
                               />
                               <Button 
                                 size="sm" 
@@ -1816,11 +1819,10 @@ const MyPage = () => {
                     </div>
 
                     {/* Favorite Techniques Section */}
-                    <div>
+                    <div className="mb-6 p-4 bg-muted/30 rounded-lg border border-border/50">
                       <div className="flex items-center justify-between mb-3">
-                        <h3 className="text-sm font-semibold flex items-center gap-2">
-                          <span>🥋</span>
-                          {language === "ja" ? "好きな技" : "Favorite Techniques"}
+                        <h3 className="text-base font-semibold flex items-center gap-2">
+                          🥋 {language === "ja" ? "好きな技" : "Favorite Techniques"}
                         </h3>
                         {editingField === 'favorite_techniques' ? (
                           <div className="flex gap-2">
@@ -1842,9 +1844,9 @@ const MyPage = () => {
                         )}
                       </div>
                       {editingField === 'favorite_techniques' ? (
-                        <div className="space-y-2">
+                        <div className="space-y-3">
                           {(editValues.favorite_techniques || []).map((technique: string, index: number) => (
-                            <div key={index} className="flex items-center gap-2">
+                            <div key={index} className="flex items-center gap-2 p-3 bg-background rounded border">
                               <Input
                                 value={technique}
                                 onChange={(e) => {
@@ -1853,6 +1855,7 @@ const MyPage = () => {
                                   setEditValues({ ...editValues, favorite_techniques: newTechniques });
                                 }}
                                 placeholder={language === "ja" ? "技名" : "Technique name"}
+                                className="flex-1 h-12"
                               />
                               <Button 
                                 size="sm" 
@@ -1881,9 +1884,16 @@ const MyPage = () => {
                         </div>
                       ) : (
                         profile?.favorite_techniques && profile.favorite_techniques.length > 0 ? (
-                          <div className="flex flex-wrap gap-2">
+                          <div className="grid gap-3">
                             {profile.favorite_techniques.map((technique, index) => (
-                              <Badge key={index} variant="secondary">{technique}</Badge>
+                              <div key={index} className="p-3 bg-background rounded border border-primary/20">
+                                <div className="flex items-start gap-2">
+                                  <span className="text-2xl">🥋</span>
+                                  <div className="flex-1">
+                                    <div className="font-semibold text-primary">{technique}</div>
+                                  </div>
+                                </div>
+                              </div>
                             ))}
                           </div>
                         ) : (
