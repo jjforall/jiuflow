@@ -302,12 +302,20 @@ export default function UserProfile() {
 
     setLoading(true);
     try {
-      const { data, error } = await supabase
+      // 最新の認証情報を取得
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      let query = supabase
         .from('user_videos')
         .select('*')
-        .eq('user_id', userId)
-        .eq('is_public', true)
-        .order('created_at', { ascending: false });
+        .eq('user_id', userId);
+
+      // 自分のプロフィールでない場合のみ公開動画に限定
+      if (user?.id !== userId) {
+        query = query.eq('is_public', true);
+      }
+
+      const { data, error } = await query.order('created_at', { ascending: false });
 
       if (error) throw error;
       setVideos(data || []);
