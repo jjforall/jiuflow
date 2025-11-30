@@ -60,49 +60,11 @@ const Video = () => {
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const [seriesLetter, setSeriesLetter] = useState<string>("");
   const [viewCount, setViewCount] = useState<number>(0);
-  const [isUIVisible, setIsUIVisible] = useState(true);
   const [isVideoPlaying, setIsVideoPlaying] = useState(false);
-  const hideUITimerRef = useRef<NodeJS.Timeout | null>(null);
-  const videoElementRef = useRef<HTMLVideoElement | null>(null);
 
-  // Handle video playback and UI hiding
-  const handleVideoPlay = useCallback(() => {
-    setIsVideoPlaying(true);
-    
-    // Clear any existing timer
-    if (hideUITimerRef.current) {
-      clearTimeout(hideUITimerRef.current);
-    }
-    
-    // Hide UI after 5 seconds
-    hideUITimerRef.current = setTimeout(() => {
-      setIsUIVisible(false);
-    }, 5000);
-  }, []);
-
-  const handleMouseMove = useCallback(() => {
-    if (isVideoPlaying) {
-      setIsUIVisible(true);
-      
-      // Clear existing timer
-      if (hideUITimerRef.current) {
-        clearTimeout(hideUITimerRef.current);
-      }
-      
-      // Hide again after 3 seconds of inactivity
-      hideUITimerRef.current = setTimeout(() => {
-        setIsUIVisible(false);
-      }, 3000);
-    }
-  }, [isVideoPlaying]);
-
-  // Cleanup timer on unmount and activate floating video
+  // Cleanup and activate floating video on unmount
   useEffect(() => {
     return () => {
-      if (hideUITimerRef.current) {
-        clearTimeout(hideUITimerRef.current);
-      }
-      
       // Activate floating video if there's a technique and it was playing
       if (technique && isVideoPlaying) {
         const videoUrl = getTechniqueVideoUrl(technique);
@@ -540,16 +502,10 @@ const Video = () => {
   }
 
   return (
-    <div className="min-h-screen" onMouseMove={handleMouseMove} onTouchStart={handleMouseMove}>
-      <div 
-        className={`transition-all duration-500 ${
-          isUIVisible ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0'
-        }`}
-      >
-        <Navigation />
-      </div>
+    <div className="min-h-screen">
+      <Navigation />
       
-      <main className={`transition-all duration-300 ${isUIVisible ? 'pt-24' : 'pt-0'} pb-20`}>
+      <main className="pt-24 pb-20">
         <div className="max-w-7xl mx-auto px-4 md:px-6">
           <div className="flex flex-col lg:flex-row gap-6">
             {/* Main Video Section */}
@@ -561,7 +517,6 @@ const Video = () => {
                     videoUrl={getTechniqueVideoUrl(technique)!} 
                     thumbnailUrl={getTechniqueThumbnailUrl(technique)}
                     autoPlay 
-                    onPlay={handleVideoPlay}
                   />
                 ) : (
                   <div className="aspect-video flex items-center justify-center">
@@ -786,13 +741,7 @@ const Video = () => {
         </div>
        </main>
       
-      <div 
-        className={`transition-all duration-500 ${
-          isUIVisible ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0'
-        }`}
-      >
-        <Footer />
-      </div>
+      <Footer />
     </div>
   );
 };
