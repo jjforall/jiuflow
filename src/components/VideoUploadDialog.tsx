@@ -137,7 +137,7 @@ export function VideoUploadDialog({ open, onOpenChange }: VideoUploadDialogProps
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>動画を投稿する</DialogTitle>
           <DialogDescription className="space-y-2 pt-2">
@@ -212,8 +212,8 @@ export function VideoUploadDialog({ open, onOpenChange }: VideoUploadDialogProps
               type="number"
               min="0"
               step="100"
-              value={price}
-              onChange={(e) => setPrice(Number(e.target.value))}
+              value={price || ""}
+              onChange={(e) => setPrice(e.target.value ? Number(e.target.value) : 0)}
               placeholder="0"
             />
             <p className="text-xs text-muted-foreground">
@@ -228,11 +228,19 @@ export function VideoUploadDialog({ open, onOpenChange }: VideoUploadDialogProps
                 非公開にすると他のユーザーには表示されません
               </p>
             </div>
-            <Switch
-              id="public"
-              checked={isPublic}
-              onCheckedChange={setIsPublic}
-            />
+            <div className="flex items-center gap-3">
+              <span className={`text-sm font-medium ${isPublic ? 'text-primary' : 'text-muted-foreground'}`}>
+                公開
+              </span>
+              <Switch
+                id="public"
+                checked={isPublic}
+                onCheckedChange={setIsPublic}
+              />
+              <span className={`text-sm font-medium ${!isPublic ? 'text-primary' : 'text-muted-foreground'}`}>
+                非公開
+              </span>
+            </div>
           </div>
 
           {uploading && (
