@@ -77,8 +77,8 @@ const Athletes = () => {
       
       <main className="pt-20 md:pt-24 pb-16 px-4 md:px-8 lg:px-12">
         <div className="max-w-7xl mx-auto">
-          {/* Header */}
-          <div className="mb-12 text-center animate-fade-up">
+          {/* Header - Always show immediately */}
+          <div className="mb-12 text-center animate-fade-in">
             <h1 className="text-4xl md:text-6xl font-light tracking-tight mb-4">
               {language === "ja" ? "有名選手" : language === "pt" ? "Atletas Famosos" : "Famous Athletes"}
             </h1>
@@ -93,8 +93,8 @@ const Athletes = () => {
 
           {/* Loading State */}
           {isLoading ? (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[1, 2, 3, 4, 5, 6].map((i) => (
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 animate-fade-in">
+              {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
                 <Card key={i} className="overflow-hidden">
                   <CardHeader>
                     <div className="flex items-center gap-4">
@@ -123,7 +123,7 @@ const Athletes = () => {
               </p>
             </div>
           ) : (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 animate-fade-up">
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 animate-fade-in">
               {celebrities.map((celebrity) => (
                 <Link
                   key={celebrity.id}
