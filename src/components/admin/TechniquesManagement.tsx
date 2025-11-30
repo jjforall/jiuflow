@@ -549,18 +549,37 @@ export const TechniquesManagement = () => {
     
     try {
       let videoUrl = editingTechnique?.video_url;
+      let videoUrlJa = editingTechnique?.video_url_ja;
       let thumbnailUrl = editingTechnique?.thumbnail_url;
+      let thumbnailUrlJa = editingTechnique?.thumbnail_url_ja;
+      let videoMetadata = editingTechnique?.video_metadata;
       
       if (videoFile) {
         const result = await handleVideoUpload(videoFile, editingTechnique?.id);
         videoUrl = result.videoUrl;
+        videoUrlJa = result.videoUrl;
         thumbnailUrl = result.thumbnailUrl;
+        thumbnailUrlJa = result.thumbnailUrl;
+        
+        // Update video_metadata with Japanese version info
+        const currentMetadata = (editingTechnique?.video_metadata as Record<string, any>) || {};
+        videoMetadata = {
+          ...currentMetadata,
+          ja: {
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            video_url: result.videoUrl,
+          }
+        };
       }
 
       const techniqueData = {
         ...formData,
         video_url: videoUrl,
+        video_url_ja: videoUrlJa,
         thumbnail_url: thumbnailUrl,
+        thumbnail_url_ja: thumbnailUrlJa,
+        video_metadata: videoMetadata,
         display_order: editingTechnique?.display_order || 0,
         hashtags: formData.hashtags,
       };
@@ -570,14 +589,21 @@ export const TechniquesManagement = () => {
           ...techniqueData,
           id: editingTechnique.id,
         });
+        toast.success("技術を更新しました", {
+          description: videoFile ? "動画を差し替えました" : undefined
+        });
       } else {
         await createTechnique.mutateAsync(techniqueData);
+        toast.success("技術を作成しました");
       }
 
       resetForm();
       setShowEditDialog(false);
     } catch (error: unknown) {
       console.error('Error saving technique:', error);
+      toast.error("エラーが発生しました", {
+        description: error instanceof Error ? error.message : "技術の保存に失敗しました"
+      });
     }
   };
 
