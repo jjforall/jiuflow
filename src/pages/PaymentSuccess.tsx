@@ -76,25 +76,25 @@ const PaymentSuccess = () => {
                 <div className="flex justify-center mb-6">
                   <div className="relative">
                     <div className="absolute inset-0 bg-primary/20 blur-3xl rounded-full animate-pulse" />
-                    <CheckCircle className="relative w-20 h-20 sm:w-24 sm:h-24 text-primary" />
+                    <CheckCircle className="relative w-20 h-20 sm:w-24 sm:h-24 text-success" />
                   </div>
                 </div>
-                <h1 className="text-3xl sm:text-5xl md:text-6xl font-bold bg-gradient-to-r from-primary via-primary to-primary/60 bg-clip-text text-transparent">
-                  jiufight
+                <h1 className="text-4xl sm:text-6xl md:text-7xl font-bold bg-gradient-to-r from-primary via-accent to-secondary bg-clip-text text-transparent">
+                  JiuFlow
                 </h1>
                 <p className="text-lg sm:text-xl text-muted-foreground">
                   {language === "ja" 
-                    ? "ブラジリアン柔術学習プラットフォーム" 
+                    ? "世界をつなぐ柔術プラットフォーム" 
                     : language === "pt" 
-                    ? "Plataforma de Aprendizado de Jiu-Jitsu Brasileiro" 
-                    : "Brazilian Jiu-Jitsu Learning Platform"}
+                    ? "A Plataforma Global de Jiu-Jitsu" 
+                    : "The Global Jiu-Jitsu Platform"}
                 </p>
               </div>
 
               {/* Success Message */}
-              <Card className="border-2 border-primary/20 shadow-lg">
+              <Card className="border-2 border-success/30 shadow-xl bg-gradient-to-br from-card via-card to-success/5">
                 <CardContent className="p-6 sm:p-8 text-center space-y-6">
-                  <h2 className="text-2xl sm:text-3xl font-bold">
+                  <h2 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-success to-accent bg-clip-text text-transparent">
                     {language === "ja" 
                       ? "決済が完了しました！" 
                       : language === "pt" 
@@ -113,15 +113,15 @@ const PaymentSuccess = () => {
                     </p>
                   </div>
 
-                  <div className="border border-border/50 bg-muted/30 rounded-lg p-4 sm:p-6 space-y-3">
+                  <div className="border-2 border-primary/20 bg-gradient-to-br from-muted/50 to-primary/5 rounded-xl p-4 sm:p-6 space-y-3">
                     <p className="text-sm sm:text-base">
                       {email ? (
                         <>
                           {language === "ja" 
-                            ? <><strong className="text-primary">{email}</strong> にログイン用のマジックリンクを送信しました。</> 
+                            ? <><strong className="text-primary font-semibold">{email}</strong> にログイン用のマジックリンクを送信しました。</> 
                             : language === "pt" 
-                            ? <>Enviamos um link mágico para <strong className="text-primary">{email}</strong>.</> 
-                            : <>We've sent a magic link to <strong className="text-primary">{email}</strong>.</>}
+                            ? <>Enviamos um link mágico para <strong className="text-primary font-semibold">{email}</strong>.</> 
+                            : <>We've sent a magic link to <strong className="text-primary font-semibold">{email}</strong>.</>}
                         </>
                       ) : (
                         <>
@@ -146,10 +146,12 @@ const PaymentSuccess = () => {
 
               {/* Features Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
-                <Card className="border-primary/20 hover:border-primary/40 transition-colors">
+                <Card className="border-primary/20 hover:border-primary/40 transition-all hover:shadow-lg hover:-translate-y-1 bg-gradient-to-br from-card to-primary/5">
                   <CardContent className="p-4 sm:p-6 text-center space-y-3">
                     <div className="flex justify-center">
-                      <Video className="w-8 h-8 sm:w-10 sm:h-10 text-primary" />
+                      <div className="p-3 rounded-xl bg-primary/10">
+                        <Video className="w-8 h-8 sm:w-10 sm:h-10 text-primary" />
+                      </div>
                     </div>
                     <h3 className="font-semibold text-sm sm:text-base">
                       {language === "ja" 
@@ -168,10 +170,12 @@ const PaymentSuccess = () => {
                   </CardContent>
                 </Card>
 
-                <Card className="border-primary/20 hover:border-primary/40 transition-colors">
+                <Card className="border-accent/20 hover:border-accent/40 transition-all hover:shadow-lg hover:-translate-y-1 bg-gradient-to-br from-card to-accent/5">
                   <CardContent className="p-4 sm:p-6 text-center space-y-3">
                     <div className="flex justify-center">
-                      <Award className="w-8 h-8 sm:w-10 sm:h-10 text-primary" />
+                      <div className="p-3 rounded-xl bg-accent/10">
+                        <Award className="w-8 h-8 sm:w-10 sm:h-10 text-accent" />
+                      </div>
                     </div>
                     <h3 className="font-semibold text-sm sm:text-base">
                       {language === "ja" 
@@ -190,10 +194,12 @@ const PaymentSuccess = () => {
                   </CardContent>
                 </Card>
 
-                <Card className="border-primary/20 hover:border-primary/40 transition-colors">
+                <Card className="border-secondary/20 hover:border-secondary/40 transition-all hover:shadow-lg hover:-translate-y-1 bg-gradient-to-br from-card to-secondary/5">
                   <CardContent className="p-4 sm:p-6 text-center space-y-3">
                     <div className="flex justify-center">
-                      <Users className="w-8 h-8 sm:w-10 sm:h-10 text-primary" />
+                      <div className="p-3 rounded-xl bg-secondary/10">
+                        <Users className="w-8 h-8 sm:w-10 sm:h-10 text-secondary" />
+                      </div>
                     </div>
                     <h3 className="font-semibold text-sm sm:text-base">
                       {language === "ja" 
@@ -245,7 +251,7 @@ const PaymentSuccess = () => {
                           ? "「ログインする」というメールを開いてください" 
                           : language === "pt" 
                           ? "Abra o e-mail 'Fazer login'" 
-                          : "Open the 'Log in' email from jiufight"}
+                          : "Open the 'Log in' email from JiuFlow"}
                       </span>
                     </li>
                     <li className="flex gap-3 items-start">
@@ -300,13 +306,22 @@ const PaymentSuccess = () => {
               </div>
 
               {/* Brand Footer Message */}
-              <p className="text-center text-sm text-muted-foreground pt-4">
-                {language === "ja" 
-                  ? "jiufightへようこそ。一緒に柔術の旅を始めましょう！🥋" 
-                  : language === "pt" 
-                  ? "Bem-vindo ao jiufight. Vamos começar sua jornada no Jiu-Jitsu! 🥋" 
-                  : "Welcome to jiufight. Let's start your Jiu-Jitsu journey! 🥋"}
-              </p>
+              <div className="text-center space-y-2 pt-4">
+                <p className="text-base font-medium bg-gradient-to-r from-primary via-accent to-secondary bg-clip-text text-transparent">
+                  {language === "ja" 
+                    ? "JiuFlowへようこそ 🥋" 
+                    : language === "pt" 
+                    ? "Bem-vindo ao JiuFlow 🥋" 
+                    : "Welcome to JiuFlow 🥋"}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  {language === "ja" 
+                    ? "一緒に柔術の旅を始めましょう" 
+                    : language === "pt" 
+                    ? "Vamos começar sua jornada no Jiu-Jitsu" 
+                    : "Let's start your Jiu-Jitsu journey together"}
+                </p>
+              </div>
             </>
           )}
         </div>
