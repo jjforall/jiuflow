@@ -121,10 +121,31 @@ serve(async (req) => {
       }
     );
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    logStep("ERROR", { message: errorMessage });
+    // Handle both Error instances and Supabase error objects
+    let errorMessage = "Unknown error";
+    let errorDetails = {};
+    
+    if (error instanceof Error) {
+      errorMessage = error.message;
+    } else if (typeof error === 'object' && error !== null) {
+      // Supabase errors have message, details, hint, code properties
+      errorMessage = (error as any).message || JSON.stringify(error);
+      errorDetails = {
+        details: (error as any).details,
+        hint: (error as any).hint,
+        code: (error as any).code
+      };
+    } else {
+      errorMessage = String(error);
+    }
+    
+    logStep("ERROR", { message: errorMessage, ...errorDetails });
+    
     return new Response(
-      JSON.stringify({ error: errorMessage }),
+      JSON.stringify({ 
+        error: errorMessage,
+        ...errorDetails
+      }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 500,
