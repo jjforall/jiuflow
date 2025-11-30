@@ -1633,7 +1633,17 @@ const MyPage = () => {
                               "JJWL": ["Team Champion"],
                               "Combat Jiu-Jitsu Worlds": ["Champion"],
                               "Grappling Industries": ["Champion"],
-                              "SJJJF": ["全日本選手権", "関東選手権"],
+                            "SJJJF": [
+                              "世界選手権",           // World Championship (9月)
+                              "全日本選手権",         // All Japan Championship (9月)
+                              "関東オープン",         // Kanto Open
+                              "関東選手権",
+                              "関西選手権",
+                              "九州選手権",
+                              "東北選手権",
+                              "北海道選手権",
+                              "夏季柔術甲子園"        // Summer Jiu-Jitsu Koshien (10月)
+                            ],
                               "パンパシフィック選手権": ["Champion"],
                               "その他": []
                             };
@@ -1654,10 +1664,11 @@ const MyPage = () => {
                                       <SelectValue placeholder={language === "ja" ? "団体を選択" : "Select Organization"} />
                                     </SelectTrigger>
                                     <SelectContent className="bg-popover z-50">
-                                      <SelectItem value="ADCC">ADCC</SelectItem>
+                                      <SelectItem value="SJJJF">SJJJF</SelectItem>
                                       <SelectItem value="IBJJF">IBJJF</SelectItem>
-                                      <SelectItem value="Abu Dhabi Pro">Abu Dhabi Pro</SelectItem>
                                       <SelectItem value="JBJJF">JBJJF</SelectItem>
+                                      <SelectItem value="ADCC">ADCC</SelectItem>
+                                      <SelectItem value="Abu Dhabi Pro">Abu Dhabi Pro</SelectItem>
                                       <SelectItem value="コパ・ジアパン">コパ・ジアパン</SelectItem>
                                       <SelectItem value="DUMAU">DUMAU</SelectItem>
                                       <SelectItem value="Polaris">Polaris</SelectItem>
@@ -1666,7 +1677,6 @@ const MyPage = () => {
                                       <SelectItem value="JJWL">JJWL</SelectItem>
                                       <SelectItem value="Combat Jiu-Jitsu Worlds">Combat Jiu-Jitsu Worlds</SelectItem>
                                       <SelectItem value="Grappling Industries">Grappling Industries</SelectItem>
-                                      <SelectItem value="SJJJF">SJJJF</SelectItem>
                                       <SelectItem value="パンパシフィック選手権">パンパシフィック選手権</SelectItem>
                                       <SelectItem value="その他">{language === "ja" ? "その他" : "Other"}</SelectItem>
                                     </SelectContent>
