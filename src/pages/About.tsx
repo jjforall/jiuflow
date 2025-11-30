@@ -136,8 +136,8 @@ const About = () => {
             </p>
           </section>
 
-          {/* Flow Chart Section */}
-          <section className="py-16 max-w-5xl mx-auto">
+          {/* Flow Chart Section - Temporarily hidden for reconstruction */}
+          {/* <section className="py-16 max-w-5xl mx-auto">
             <h2 className="text-4xl font-light mb-12 text-center">技の流れ</h2>
             
             {isLoading ? (
@@ -146,12 +146,10 @@ const About = () => {
               </div>
             ) : (
               <div className="space-y-12">
-                {/* Flow visualization */}
                 <ScrollArea className="w-full">
                   <div className="flex items-center gap-4 pb-4" style={{ minWidth: 'max-content' }}>
                     {techniqueStats.map((stat, index) => (
                     <div key={stat.category} className="flex items-center gap-4 flex-shrink-0">
-                      {/* Category Card */}
                        <div className="bg-card border border-border rounded-xl p-6 w-64 shadow-lg hover:shadow-xl transition-all flex-shrink-0">
                         <div className="text-center mb-4">
                           <h3 className="text-2xl font-light mb-2">
@@ -168,7 +166,6 @@ const About = () => {
                           </Badge>
                         </div>
                         
-                        {/* Technique samples */}
                         <div className="space-y-2 mt-4">
                           {stat.count === 0 ? (
                             <div className="text-center py-4">
@@ -205,7 +202,6 @@ const About = () => {
                         </div>
                       </div>
                       
-                      {/* Arrow */}
                       {index < techniqueStats.length - 1 && (
                         <ArrowRight className="w-8 h-8 text-muted-foreground flex-shrink-0" />
                       )}
@@ -215,7 +211,6 @@ const About = () => {
                   <ScrollBar orientation="horizontal" />
                 </ScrollArea>
 
-                {/* CTA for more */}
                 <div className="text-center mt-12 p-8 bg-gradient-to-br from-primary/5 to-transparent border border-border rounded-xl">
                   <Lock className="w-12 h-12 mx-auto mb-4 text-primary" />
                   <h3 className="text-2xl font-light mb-4">
@@ -250,7 +245,7 @@ const About = () => {
                 </div>
               </div>
             )}
-          </section>
+          </section> */}
 
 
           {/* Mission Section */}
