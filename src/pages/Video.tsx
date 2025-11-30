@@ -202,14 +202,12 @@ const Video = () => {
     }
   };
 
-  const loadTechnique = useCallback(async () => {
-    if (!id || !user) return;
-    
+  const loadTechniqueFromServer = useCallback(async (videoId: string, userId: string, cacheKey: string) => {
     setIsLoading(true);
     const { data, error } = await supabase
       .from("techniques")
       .select("*")
-      .eq("id", id)
+      .eq("id", videoId)
       .maybeSingle();
 
     if (error) {
@@ -224,10 +222,13 @@ const Video = () => {
     setTechnique(techniqueData);
 
     // Load view count first, then record new view
-    await loadViewCount(id, user.id);
-    await recordVideoView(id, user.id);
+    await loadViewCount(videoId, userId);
+    await recordVideoView(videoId, userId);
 
     // Get all series to calculate letter index
+    let letterValue = "";
+    let seriesVids: Technique[] = [];
+    
     if (techniqueData?.series_name) {
       const { data: allSeries } = await supabase
         .from("techniques")
@@ -239,7 +240,8 @@ const Video = () => {
         const uniqueSeries = [...new Set(allSeries.map(s => s.series_name))].filter(Boolean) as string[];
         const seriesIndex = uniqueSeries.indexOf(techniqueData.series_name);
         if (seriesIndex !== -1) {
-          setSeriesLetter(String.fromCharCode(65 + seriesIndex));
+          letterValue = String.fromCharCode(65 + seriesIndex);
+          setSeriesLetter(letterValue);
         }
       }
 
@@ -248,16 +250,56 @@ const Video = () => {
         .from("techniques")
         .select("*")
         .eq("series_name", techniqueData.series_name)
-        .neq("id", id)
+        .neq("id", videoId)
         .order("series_order", { ascending: true });
 
       if (seriesData) {
-        setSeriesVideos(seriesData as Technique[]);
+        seriesVids = seriesData as Technique[];
+        setSeriesVideos(seriesVids);
       }
     }
 
+    // Cache the result
+    sessionStorage.setItem(cacheKey, JSON.stringify({
+      technique: techniqueData,
+      seriesVideos: seriesVids,
+      seriesLetter: letterValue,
+      viewCount: viewCount,
+      timestamp: Date.now()
+    }));
+
     setIsLoading(false);
-  }, [id, user]);
+  }, [viewCount]);
+
+  const loadTechnique = useCallback(async () => {
+    if (!id || !user) return;
+    
+    // Try to restore from cache first
+    const cacheKey = `technique:${id}`;
+    const cached = sessionStorage.getItem(cacheKey);
+    
+    if (cached) {
+      try {
+        const cachedData = JSON.parse(cached);
+        const cacheAge = Date.now() - (cachedData.timestamp || 0);
+        
+        // Use cache if less than 5 minutes old
+        if (cacheAge < 5 * 60 * 1000) {
+          setTechnique(cachedData.technique);
+          setSeriesVideos(cachedData.seriesVideos || []);
+          setSeriesLetter(cachedData.seriesLetter || "");
+          setViewCount(cachedData.viewCount || 0);
+          setIsLoading(false);
+          return;
+        }
+      } catch (e) {
+        console.error('Cache parse error:', e);
+      }
+    }
+    
+    // No valid cache, load from server
+    await loadTechniqueFromServer(id, user.id, cacheKey);
+  }, [id, user, loadTechniqueFromServer]);
 
   useEffect(() => {
     const checkAuthAndLoadTechnique = async () => {
