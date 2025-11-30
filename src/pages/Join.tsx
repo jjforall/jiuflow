@@ -126,6 +126,7 @@ const Join = () => {
   const [isCheckingCode, setIsCheckingCode] = useState(false);
   const [referralPlanType, setReferralPlanType] = useState<'founder' | 'muratabros' | 'referral'>('referral');
   const [viewCount, setViewCount] = useState(0);
+  const [isComposing, setIsComposing] = useState(false);
   
   const { isLoading: authLoading, user } = useAuth();
   const { subscribed, loading: subscriptionLoading } = useSubscription();
@@ -448,7 +449,17 @@ const Join = () => {
                     spellCheck={false}
                     placeholder={language === "ja" ? "紹介コードを入力" : "Enter referral code"}
                     value={referralCode}
-                    onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
+                    onCompositionStart={() => setIsComposing(true)}
+                    onCompositionEnd={(e) => {
+                      setIsComposing(false);
+                      const target = e.target as HTMLInputElement;
+                      setReferralCode(target.value.toUpperCase());
+                    }}
+                    onChange={(e) => {
+                      if (!isComposing) {
+                        setReferralCode(e.target.value.toUpperCase());
+                      }
+                    }}
                     className="h-12 text-base bg-background/50 backdrop-blur-sm border-border/50 focus:border-primary transition-all"
                   />
                   {referralCode.trim() && !isCheckingCode && (
