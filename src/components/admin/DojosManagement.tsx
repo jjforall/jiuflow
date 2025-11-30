@@ -66,6 +66,7 @@ interface Dojo {
   email: string | null;
   is_verified: boolean;
   created_at: string;
+  member_count?: number;
 }
 
 export default function DojosManagement() {
@@ -138,7 +139,23 @@ export default function DojosManagement() {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setDojos(data || []);
+
+      // 各道場の会員数を取得
+      const dojosWithMemberCount = await Promise.all(
+        (data || []).map(async (dojo) => {
+          const { count } = await supabase
+            .from('user_dojos')
+            .select('*', { count: 'exact', head: true })
+            .eq('dojo_id', dojo.id);
+
+          return {
+            ...dojo,
+            member_count: count || 0
+          };
+        })
+      );
+
+      setDojos(dojosWithMemberCount);
     } catch (error) {
       console.error('Error loading dojos:', error);
       toast.error(language === "ja" ? "道場の読み込みに失敗しました" : "Failed to load dojos");
@@ -468,6 +485,7 @@ export default function DojosManagement() {
               <TableRow>
                 <TableHead>{language === "ja" ? "名前" : "Name"}</TableHead>
                 <TableHead>{language === "ja" ? "場所" : "Location"}</TableHead>
+                <TableHead>{language === "ja" ? "会員数" : "Members"}</TableHead>
                 <TableHead>{language === "ja" ? "ステータス" : "Status"}</TableHead>
                 <TableHead className="text-right">{language === "ja" ? "操作" : "Actions"}</TableHead>
               </TableRow>
@@ -477,6 +495,11 @@ export default function DojosManagement() {
                 <TableRow key={dojo.id}>
                   <TableCell className="font-medium">{dojo.name_ja || dojo.name}</TableCell>
                   <TableCell>{dojo.location}</TableCell>
+                  <TableCell>
+                    <Badge variant="outline">
+                      {dojo.member_count || 0}人
+                    </Badge>
+                  </TableCell>
                   <TableCell>
                     {dojo.is_verified && (
                       <Badge variant="secondary">
