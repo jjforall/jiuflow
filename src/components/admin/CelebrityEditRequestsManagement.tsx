@@ -198,7 +198,28 @@ export const CelebrityEditRequestsManagement = () => {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-2">
+                  <div className="space-y-3">
+                    {request.avatar_url && (
+                      <div className="flex gap-3 p-3 bg-muted rounded">
+                        <div>
+                          <p className="text-xs text-muted-foreground mb-1">現在</p>
+                          <Avatar className="h-16 w-16">
+                            <AvatarImage src={request.celebrity.avatar_url || undefined} />
+                            <AvatarFallback>{request.celebrity.display_name[0]}</AvatarFallback>
+                          </Avatar>
+                        </div>
+                        <div className="flex items-center">
+                          <span className="text-muted-foreground">→</span>
+                        </div>
+                        <div>
+                          <p className="text-xs text-muted-foreground mb-1">新規</p>
+                          <Avatar className="h-16 w-16">
+                            <AvatarImage src={request.avatar_url || undefined} />
+                            <AvatarFallback>{request.celebrity.display_name[0]}</AvatarFallback>
+                          </Avatar>
+                        </div>
+                      </div>
+                    )}
                     {request.display_name && (
                       <p><strong>表示名:</strong> {request.display_name}</p>
                     )}
@@ -271,10 +292,27 @@ export const CelebrityEditRequestsManagement = () => {
                 <p className="mt-1">{viewingRequest.display_name}</p>
               </div>
 
-              <div>
-                <Label>プロフィール画像URL</Label>
-                <p className="mt-1 text-sm break-all">{viewingRequest.avatar_url || '未設定'}</p>
-              </div>
+              {viewingRequest.avatar_url && (
+                <div>
+                  <Label>プロフィール画像の変更</Label>
+                  <div className="mt-2 flex gap-4">
+                    <div className="flex-1">
+                      <p className="text-xs text-muted-foreground mb-2">現在の画像</p>
+                      <Avatar className="h-24 w-24">
+                        <AvatarImage src={viewingRequest.celebrity.avatar_url || undefined} />
+                        <AvatarFallback>{viewingRequest.celebrity.display_name[0]}</AvatarFallback>
+                      </Avatar>
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-xs text-muted-foreground mb-2">新しい画像</p>
+                      <Avatar className="h-24 w-24">
+                        <AvatarImage src={viewingRequest.avatar_url || undefined} />
+                        <AvatarFallback>{viewingRequest.celebrity.display_name[0]}</AvatarFallback>
+                      </Avatar>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               <div>
                 <Label>自己紹介</Label>
