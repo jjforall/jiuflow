@@ -28,6 +28,7 @@ const useCountdown = () => {
   const [founderMaxCount, setFounderMaxCount] = useState(10);
   const [founderCurrentPrice, setFounderCurrentPrice] = useState(50000);
   const [founderNextPrice, setFounderNextPrice] = useState(80000);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const endDateStr = import.meta.env.VITE_FOUNDER_PLAN_END_DATE || "2025-11-30T23:59:59+09:00";
@@ -56,16 +57,20 @@ const useCountdown = () => {
   // Fetch founder plan count
   useEffect(() => {
     const fetchFounderCount = async () => {
-      const { data, error } = await supabase
-        .from('founder_plan_count')
-        .select('*')
-        .single();
+      try {
+        const { data, error } = await supabase
+          .from('founder_plan_count')
+          .select('*')
+          .single();
 
-      if (data && !error) {
-        setFounderCount(data.count);
-        setFounderMaxCount(data.max_count);
-        setFounderCurrentPrice(data.current_price);
-        setFounderNextPrice(data.next_price);
+        if (data && !error) {
+          setFounderCount(data.count);
+          setFounderMaxCount(data.max_count);
+          setFounderCurrentPrice(data.current_price);
+          setFounderNextPrice(data.next_price);
+        }
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -102,7 +107,8 @@ const useCountdown = () => {
     founderCount, 
     founderMaxCount, 
     founderCurrentPrice, 
-    founderNextPrice 
+    founderNextPrice,
+    isLoading
   };
 };
 
@@ -121,7 +127,7 @@ const SAMPLE_VIDEO_ID = "6a70670c-e9f8-4a8b-adce-8e703ac56bee";
 const Join = () => {
   const { language } = useLanguage();
   const t = translations[language] || translations.ja;
-  const { timeLeft, founderCount, founderMaxCount, founderCurrentPrice, founderNextPrice } = useCountdown();
+  const { timeLeft, founderCount, founderMaxCount, founderCurrentPrice, founderNextPrice, isLoading: founderDataLoading } = useCountdown();
   const [isLoading, setIsLoading] = useState(false);
   const [sampleVideoUrl, setSampleVideoUrl] = useState<string | null>(null);
   const [referralCode, setReferralCode] = useState("");
@@ -352,7 +358,7 @@ const Join = () => {
     }
   };
 
-  if (authLoading) {
+  if (authLoading || subscriptionLoading || founderDataLoading) {
     return (
       <div className="min-h-screen">
         <Navigation />
