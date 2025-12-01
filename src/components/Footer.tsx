@@ -38,7 +38,7 @@ const Footer = () => {
           <div>
             <h3 className="font-light mb-4">
               <span className={theme === "dark" ? "text-white" : "text-foreground"}>
-                jiu<span className="text-red-500">l</span>flow
+                jiuF<span className="text-red-500">l</span>ow
               </span>
             </h3>
             <p className="text-sm text-muted-foreground font-light">

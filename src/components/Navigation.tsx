@@ -112,7 +112,7 @@ const Navigation = () => {
         <div className="flex items-center justify-between">
           <Link to="/" className="text-xl font-light tracking-tight">
             <span className={theme === "dark" ? "text-white" : "text-foreground"}>
-              Jiu<span className="text-red-500">l</span>Flow
+              JiuF<span className="text-red-500">l</span>ow
             </span>
           </Link>
           
