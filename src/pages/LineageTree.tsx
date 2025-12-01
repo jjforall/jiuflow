@@ -7,6 +7,7 @@ import { LineageFilters } from "@/components/lineage/LineageFilters";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
 import { useTranslation } from "@/hooks/useTranslation";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface Celebrity {
   id: string;
@@ -38,6 +39,7 @@ interface LineageNode {
 
 export default function LineageTree() {
   const { t } = useTranslation();
+  const { language } = useLanguage();
   const [lineageRoots, setLineageRoots] = useState<LineageNode[]>([]);
   const [allCelebrities, setAllCelebrities] = useState<Celebrity[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -45,6 +47,27 @@ export default function LineageTree() {
   const [selectedOrganization, setSelectedOrganization] = useState<string | null>(null);
   const [selectedBeltLevel, setSelectedBeltLevel] = useState<string | null>(null);
   const [showFeaturedOnly, setShowFeaturedOnly] = useState(false);
+
+  useEffect(() => {
+    const titles = {
+      ja: "系譜ツリー | jiuflow",
+      en: "Lineage Tree | jiuflow",
+      pt: "Árvore de Linhagem | jiuflow"
+    };
+    
+    const descriptions = {
+      ja: "ブラジリアン柔術の系譜を可視化。師弟関係、帯のレベル、組織別に系統図を確認できます。",
+      en: "Visualize Brazilian Jiu-Jitsu lineage. View instructor-student relationships, belt levels, and organizational trees.",
+      pt: "Visualize a linhagem do Jiu-Jitsu Brasileiro. Veja relacionamentos instrutor-aluno, níveis de faixa e árvores organizacionais."
+    };
+    
+    document.title = titles[language] || titles.ja;
+    
+    const metaDescription = document.querySelector('meta[name="description"]');
+    if (metaDescription) {
+      metaDescription.setAttribute('content', descriptions[language] || descriptions.ja);
+    }
+  }, [language]);
 
   useEffect(() => {
     loadLineageTree();

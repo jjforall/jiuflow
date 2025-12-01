@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { ContactForm } from "@/components/ContactForm";
 import { useTranslation } from "@/hooks/useTranslation";
 import Navigation from "@/components/Navigation";
@@ -7,6 +8,27 @@ import { Separator } from "@/components/ui/separator";
 
 const Contact = () => {
   const { language } = useTranslation();
+
+  useEffect(() => {
+    const titles = {
+      ja: "お問い合わせ | jiuflow",
+      en: "Contact | jiuflow",
+      pt: "Contato | jiuflow"
+    };
+    
+    const descriptions = {
+      ja: "jiuflowへのお問い合わせ、技の共有、ご提案はこちらから。お気軽にご連絡ください。",
+      en: "Contact jiuflow for inquiries, technique sharing, or suggestions. Feel free to reach out.",
+      pt: "Entre em contato com jiuflow para dúvidas, compartilhamento de técnicas ou sugestões."
+    };
+    
+    document.title = titles[language] || titles.ja;
+    
+    const metaDescription = document.querySelector('meta[name="description"]');
+    if (metaDescription) {
+      metaDescription.setAttribute('content', descriptions[language] || descriptions.ja);
+    }
+  }, [language]);
 
   const pageTitle = language === "ja" ? "お問い合わせ" : language === "pt" ? "Contato" : "Contact";
   const description = language === "ja" 

@@ -74,6 +74,27 @@ const Map = () => {
   const observerTarget = useRef<HTMLDivElement>(null);
   const PAGE_SIZE = 50;
 
+  useEffect(() => {
+    const titles = {
+      ja: "技術マップ | jiuflow",
+      en: "Technique Map | jiuflow",
+      pt: "Mapa de Técnicas | jiuflow"
+    };
+    
+    const descriptions = {
+      ja: "体系化されたブラジリアン柔術の技術マップ。プル、コントロール、サブミッション、コンバットベースの技を学べます。",
+      en: "Systematic Brazilian Jiu-Jitsu technique map. Learn pulls, controls, submissions, and combat base techniques.",
+      pt: "Mapa sistemático de técnicas de Jiu-Jitsu Brasileiro. Aprenda puxadas, controles, finalizações e base de combate."
+    };
+    
+    document.title = titles[language] || titles.ja;
+    
+    const metaDescription = document.querySelector('meta[name="description"]');
+    if (metaDescription) {
+      metaDescription.setAttribute('content', descriptions[language] || descriptions.ja);
+    }
+  }, [language]);
+
 
   const getTechniqueName = (tech: Technique) => {
     switch (language) {
