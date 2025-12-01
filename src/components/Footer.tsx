@@ -135,8 +135,8 @@ const Footer = () => {
                 {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
                 <span className="text-xs">
                   {theme === "dark" 
-                    ? (language === "ja" ? "ライト" : language === "pt" ? "Claro" : "Light")
-                    : (language === "ja" ? "ダーク" : language === "pt" ? "Escuro" : "Dark")
+                    ? (language === "ja" ? "白帯" : language === "pt" ? "Faixa Branca" : "White Belt")
+                    : (language === "ja" ? "黒帯" : language === "pt" ? "Faixa Preta" : "Black Belt")
                   }
                 </span>
               </Button>

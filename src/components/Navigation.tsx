@@ -160,8 +160,8 @@ const Navigation = () => {
                   >
                     {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
                     {theme === "dark" 
-                      ? (language === "ja" ? "ライトモード" : language === "pt" ? "Modo Claro" : "Light Mode")
-                      : (language === "ja" ? "ダークモード" : language === "pt" ? "Modo Escuro" : "Dark Mode")
+                      ? (language === "ja" ? "白帯" : language === "pt" ? "Faixa Branca" : "White Belt")
+                      : (language === "ja" ? "黒帯" : language === "pt" ? "Faixa Preta" : "Black Belt")
                     }
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={handleLogout} className="gap-2 cursor-pointer">
@@ -322,8 +322,8 @@ const Navigation = () => {
                         {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
                         <span className="text-base">
                           {theme === "dark" 
-                            ? (language === "ja" ? "ライトモード" : language === "pt" ? "Modo Claro" : "Light Mode")
-                            : (language === "ja" ? "ダークモード" : language === "pt" ? "Modo Escuro" : "Dark Mode")
+                            ? (language === "ja" ? "白帯" : language === "pt" ? "Faixa Branca" : "White Belt")
+                            : (language === "ja" ? "黒帯" : language === "pt" ? "Faixa Preta" : "Black Belt")
                           }
                         </span>
                       </Button>
