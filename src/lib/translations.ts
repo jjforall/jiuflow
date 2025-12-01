@@ -347,6 +347,19 @@ export const translations = {
         },
       },
     },
+    lineageTree: {
+      title: "Lineage Tree",
+      description: "Explore the connections and heritage of Brazilian Jiu-Jitsu masters",
+      searchPlaceholder: "Search by name...",
+      organization: "Organization",
+      allOrganizations: "All Organizations",
+      beltLevel: "Belt Level",
+      allBelts: "All Belts",
+      featuredOnly: "Featured Only",
+      clearFilters: "Clear Filters",
+      noResults: "No lineage data found matching your filters.",
+      instructions: "Click and drag to pan • Use zoom controls or scroll to zoom • Click on athletes to view their profiles",
+    },
   },
   pt: {
     nav: {
@@ -518,6 +531,19 @@ export const translations = {
         },
       },
     },
+    lineageTree: {
+      title: "Árvore de Linhagem",
+      description: "Explore as conexões e a herança dos mestres do Jiu-Jitsu Brasileiro",
+      searchPlaceholder: "Pesquisar por nome...",
+      organization: "Organização",
+      allOrganizations: "Todas as Organizações",
+      beltLevel: "Nível de Faixa",
+      allBelts: "Todas as Faixas",
+      featuredOnly: "Apenas Destacados",
+      clearFilters: "Limpar Filtros",
+      noResults: "Nenhum dado de linhagem encontrado para seus filtros.",
+      instructions: "Clique e arraste para mover • Use controles de zoom ou role para ampliar • Clique nos atletas para ver seus perfis",
+    },
   },
   es: {
     nav: {
@@ -685,9 +711,22 @@ export const translations = {
         q3: {
           q: "¿Se agregan técnicas regularmente?",
           a: "Sí. Planeamos agregar nuevas técnicas mensualmente. Se te notificará por correo cuando se agreguen.",
-        },
       },
     },
+    lineageTree: {
+      title: "系譜ツリー",
+      description: "ブラジリアン柔術マスターのつながりと遺産を探る",
+      searchPlaceholder: "名前で検索...",
+      organization: "組織",
+      allOrganizations: "全ての組織",
+      beltLevel: "帯レベル",
+      allBelts: "全ての帯",
+      featuredOnly: "注目のみ",
+      clearFilters: "フィルターをクリア",
+      noResults: "フィルターに一致する系譜データが見つかりません。",
+      instructions: "クリック＆ドラッグでパン • ズームコントロールまたはスクロールでズーム • アスリートをクリックしてプロフィールを表示",
+    },
+  },
   },
   fr: {
     nav: {
