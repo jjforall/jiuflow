@@ -31,7 +31,9 @@ import { CoverUploadDialog } from "@/components/CoverUploadDialog";
 import { CoverImageGalleryDialog } from "@/components/CoverImageGalleryDialog";
 import { FollowedCelebrities } from "@/components/FollowedCelebrities";
 import { PracticeRecords } from "@/components/PracticeRecords";
+import { WatchHistory } from "@/components/WatchHistory";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import hero1 from "@/assets/hero-1.jpg";
 import hero2 from "@/assets/hero-2.jpg";
@@ -3280,14 +3282,26 @@ const MyPage = () => {
             </Card>
           </div>
 
-          {/* Practice Records Section */}
+          {/* Tabs Section */}
           <div className="mt-12 animate-fade-up">
-            <PracticeRecords />
-          </div>
+            <Tabs defaultValue="videos" className="w-full">
+              <TabsList className="grid w-full grid-cols-4">
+                <TabsTrigger value="videos">
+                  {language === "ja" ? "動画" : "Videos"}
+                </TabsTrigger>
+                <TabsTrigger value="practice">
+                  {language === "ja" ? "練習記録" : "Practice"}
+                </TabsTrigger>
+                <TabsTrigger value="history">
+                  {language === "ja" ? "視聴履歴" : "History"}
+                </TabsTrigger>
+                <TabsTrigger value="athletes">
+                  {language === "ja" ? "フォロー中" : "Following"}
+                </TabsTrigger>
+              </TabsList>
 
-          {/* Video Upload Section */}
-          <div className="mt-12 animate-fade-up">
-            <div className="flex items-center justify-between mb-6">
+              <TabsContent value="videos" className="mt-6">
+                <div className="flex items-center justify-between mb-6">
               <div>
                 <div className="flex items-center gap-3 mb-2">
                   <h2 className="text-3xl font-light">
@@ -3302,68 +3316,82 @@ const MyPage = () => {
                   {language === "ja" ? "プロフィールページを共有" : "Share your profile"}
                 </Button>
               </div>
-              <div className="flex gap-3">
-                <Button variant="outline" onClick={() => navigate("/video-upload-info")}>
-                  {language === "ja" ? "詳細を見る" : language === "pt" ? "Ver detalhes" : "Learn More"}
-                </Button>
-                <Button onClick={() => setUploadDialogOpen(true)} className="gap-2">
-                  <Upload className="w-4 h-4" />
-                  {language === "ja" ? "動画をアップロード" : language === "pt" ? "Enviar vídeo" : "Upload Video"}
-                </Button>
-              </div>
-            </div>
-
-            {videosLoading ? (
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className="space-y-4 border border-border rounded-lg p-6 animate-pulse">
-                    <div className="aspect-video bg-muted rounded" />
-                    <div className="h-6 bg-muted rounded" />
-                    <div className="h-4 bg-muted rounded w-3/4" />
-                  </div>
-                ))}
-              </div>
-            ) : userVideos.length === 0 ? (
-              <div className="text-center py-12 border border-dashed border-border rounded-lg">
-                <Video className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-                <p className="text-muted-foreground mb-4">
-                  {language === "ja" 
-                    ? "まだ動画をアップロードしていません" 
-                    : language === "pt" 
-                    ? "Você ainda não enviou nenhum vídeo" 
-                    : "You haven't uploaded any videos yet"}
-                </p>
-                <Button onClick={() => setUploadDialogOpen(true)} variant="outline" className="gap-2">
-                  <Upload className="w-4 h-4" />
-                  {language === "ja" ? "最初の動画をアップロード" : language === "pt" ? "Enviar primeiro vídeo" : "Upload First Video"}
-                </Button>
-              </div>
-            ) : (
-              <>
-                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {userVideos.slice(0, displayedVideosCount).map((video) => (
-                    <UserVideoCard
-                      key={video.id}
-                      video={video}
-                      onEdit={handleEditVideo}
-                      onDelete={handleDeleteVideo}
-                      isOwner={true}
-                    />
-                  ))}
-                </div>
-                {userVideos.length > displayedVideosCount && (
-                  <div className="text-center mt-8">
-                    <Button
-                      variant="outline"
-                      onClick={() => setDisplayedVideosCount(prev => prev + 9)}
-                    >
-                      {language === "ja" ? "もっと見る" : language === "pt" ? "Ver mais" : "Load More"}
-                      ({userVideos.length - displayedVideosCount} {language === "ja" ? "件" : ""})
+                  <div className="flex gap-3">
+                    <Button variant="outline" onClick={() => navigate("/video-upload-info")}>
+                      {language === "ja" ? "詳細を見る" : language === "pt" ? "Ver detalhes" : "Learn More"}
+                    </Button>
+                    <Button onClick={() => setUploadDialogOpen(true)} className="gap-2">
+                      <Upload className="w-4 h-4" />
+                      {language === "ja" ? "動画をアップロード" : language === "pt" ? "Enviar vídeo" : "Upload Video"}
                     </Button>
                   </div>
+                </div>
+
+                {videosLoading ? (
+                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {[1, 2, 3].map((i) => (
+                      <div key={i} className="space-y-4 border border-border rounded-lg p-6 animate-pulse">
+                        <div className="aspect-video bg-muted rounded" />
+                        <div className="h-6 bg-muted rounded" />
+                        <div className="h-4 bg-muted rounded w-3/4" />
+                      </div>
+                    ))}
+                  </div>
+                ) : userVideos.length === 0 ? (
+                  <div className="text-center py-12 border border-dashed border-border rounded-lg">
+                    <Video className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+                    <p className="text-muted-foreground mb-4">
+                      {language === "ja" 
+                        ? "まだ動画をアップロードしていません" 
+                        : language === "pt" 
+                        ? "Você ainda não enviou nenhum vídeo" 
+                        : "You haven't uploaded any videos yet"}
+                    </p>
+                    <Button onClick={() => setUploadDialogOpen(true)} variant="outline" className="gap-2">
+                      <Upload className="w-4 h-4" />
+                      {language === "ja" ? "最初の動画をアップロード" : language === "pt" ? "Enviar primeiro vídeo" : "Upload First Video"}
+                    </Button>
+                  </div>
+                ) : (
+                  <>
+                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {userVideos.slice(0, displayedVideosCount).map((video) => (
+                        <UserVideoCard
+                          key={video.id}
+                          video={video}
+                          onEdit={handleEditVideo}
+                          onDelete={handleDeleteVideo}
+                          isOwner={true}
+                        />
+                      ))}
+                    </div>
+                    {userVideos.length > displayedVideosCount && (
+                      <div className="text-center mt-8">
+                        <Button
+                          variant="outline"
+                          onClick={() => setDisplayedVideosCount(prev => prev + 9)}
+                        >
+                          {language === "ja" ? "もっと見る" : language === "pt" ? "Ver mais" : "Load More"}
+                          ({userVideos.length - displayedVideosCount} {language === "ja" ? "件" : ""})
+                        </Button>
+                      </div>
+                    )}
+                  </>
                 )}
-              </>
-            )}
+              </TabsContent>
+
+              <TabsContent value="practice" className="mt-6">
+                <PracticeRecords />
+              </TabsContent>
+
+              <TabsContent value="history" className="mt-6">
+                <WatchHistory />
+              </TabsContent>
+
+              <TabsContent value="athletes" className="mt-6">
+                <FollowedCelebrities userId={user?.id || ''} />
+              </TabsContent>
+            </Tabs>
           </div>
 
             </>
