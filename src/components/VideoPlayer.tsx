@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import Hls from "hls.js";
 import { toast } from "sonner";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -22,6 +22,7 @@ export const VideoPlayer = ({ videoUrl, autoPlay = true, thumbnailUrl, onPlay }:
   const [showSkipIndicator, setShowSkipIndicator] = useState<'forward' | 'backward' | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const lastTapRef = useRef<{ time: number; side: 'left' | 'right' } | null>(null);
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -38,10 +39,20 @@ export const VideoPlayer = ({ videoUrl, autoPlay = true, thumbnailUrl, onPlay }:
       onPlay?.();
     };
 
+    // Debounced time update to reduce sessionStorage writes
     const handleTimeUpdate = () => {
       try {
         if (!video.duration || video.duration < 5) return;
-        sessionStorage.setItem(progressKey, video.currentTime.toString());
+        
+        // Clear existing timeout
+        if (saveTimeoutRef.current) {
+          clearTimeout(saveTimeoutRef.current);
+        }
+        
+        // Save after 1 second of no updates (reduces writes significantly)
+        saveTimeoutRef.current = setTimeout(() => {
+          sessionStorage.setItem(progressKey, video.currentTime.toString());
+        }, 1000);
       } catch (e) {
         console.log('Unable to save video progress:', e);
       }
@@ -56,15 +67,23 @@ export const VideoPlayer = ({ videoUrl, autoPlay = true, thumbnailUrl, onPlay }:
     const isHLS = videoUrl.includes('.m3u8');
 
     if (isHLS && Hls.isSupported()) {
-      // Initialize HLS.js
+      // Initialize HLS.js with mobile-optimized settings
       const hls = new Hls({
         enableWorker: true,
         lowLatencyMode: false,
-        backBufferLength: 90,
-        // Adaptive bitrate streaming settings
+        backBufferLength: 30, // Reduced for mobile memory optimization
+        maxBufferLength: 30, // Limit buffer size for mobile
+        maxBufferSize: 60 * 1000 * 1000, // 60MB max buffer
+        // Adaptive bitrate streaming settings optimized for mobile
         abrEwmaDefaultEstimate: 500000,
         abrBandWidthFactor: 0.95,
         abrBandWidthUpFactor: 0.7,
+        // Additional mobile optimizations
+        maxMaxBufferLength: 60,
+        startLevel: -1, // Auto start quality
+        autoStartLoad: true,
+        // Reduce overhead on mobile
+        capLevelToPlayerSize: true, // Don't load higher quality than needed
       });
 
       hlsRef.current = hls;
@@ -136,9 +155,9 @@ export const VideoPlayer = ({ videoUrl, autoPlay = true, thumbnailUrl, onPlay }:
         }
       });
 
-      // Bandwidth monitoring (removed due to type issues)
-      hls.on(Hls.Events.LEVEL_LOADED, (event, data) => {
-        console.log(`Quality level loaded: ${data.level}`);
+      // Reduced logging for performance
+      hls.on(Hls.Events.LEVEL_LOADED, () => {
+        // Removed console.log for performance
       });
 
       return () => {
@@ -146,6 +165,9 @@ export const VideoPlayer = ({ videoUrl, autoPlay = true, thumbnailUrl, onPlay }:
         video.removeEventListener('canplay', handleCanPlay);
         video.removeEventListener('playing', handlePlaying);
         video.removeEventListener('timeupdate', handleTimeUpdate);
+        if (saveTimeoutRef.current) {
+          clearTimeout(saveTimeoutRef.current);
+        }
         if (hlsRef.current) {
           hlsRef.current.destroy();
           hlsRef.current = null;
@@ -170,6 +192,9 @@ export const VideoPlayer = ({ videoUrl, autoPlay = true, thumbnailUrl, onPlay }:
       video.removeEventListener('canplay', handleCanPlay);
       video.removeEventListener('playing', handlePlaying);
       video.removeEventListener('timeupdate', handleTimeUpdate);
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
     };
   }, [videoUrl, autoPlay, language, onPlay]);
 
@@ -273,17 +298,17 @@ export const VideoPlayer = ({ videoUrl, autoPlay = true, thumbnailUrl, onPlay }:
     return () => container.removeEventListener('click', handleClick);
   }, []);
 
-  const showSkipFeedback = (direction: 'forward' | 'backward') => {
+  const showSkipFeedback = useCallback((direction: 'forward' | 'backward') => {
     setShowSkipIndicator(direction);
     setTimeout(() => setShowSkipIndicator(null), 600);
-  };
+  }, []);
 
-  const changeQuality = (levelIndex: number) => {
+  const changeQuality = useCallback((levelIndex: number) => {
     if (hlsRef.current) {
       hlsRef.current.currentLevel = levelIndex;
       setQuality(levelIndex === -1 ? 'auto' : `${hlsRef.current.levels[levelIndex].height}p`);
     }
-  };
+  }, []);
 
   return (
     <div ref={containerRef} className="relative bg-black">
@@ -324,9 +349,11 @@ export const VideoPlayer = ({ videoUrl, autoPlay = true, thumbnailUrl, onPlay }:
         controlsList="nodownload"
         className="w-full h-full"
         playsInline
-        preload="metadata"
+        preload="auto"
         poster={thumbnailUrl || undefined}
         onContextMenu={(e) => e.preventDefault()}
+        disablePictureInPicture
+        webkit-playsinline="true"
       >
         Your browser does not support the video tag.
       </video>
