@@ -111,7 +111,9 @@ const Navigation = () => {
       <div className="container mx-auto px-6 py-4">
         <div className="flex items-center justify-between">
           <Link to="/" className="text-xl font-light tracking-tight">
-            <span className={theme === "dark" ? "filter invert" : ""}>JiuFlow</span>
+            <span className={theme === "dark" ? "text-white" : "text-foreground"}>
+              Jiu<span className="text-red-500">l</span>Flow
+            </span>
           </Link>
           
           {/* Desktop Navigation */}
