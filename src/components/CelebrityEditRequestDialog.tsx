@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
+import { CelebrityAvatarUploadDialog } from "@/components/CelebrityAvatarUploadDialog";
 
 interface Celebrity {
   id: string;
@@ -45,6 +46,7 @@ export const CelebrityEditRequestDialog = ({
     titles: [] as any[],
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isAvatarUploadOpen, setIsAvatarUploadOpen] = useState(false);
 
   useEffect(() => {
     if (celebrity) {
@@ -96,6 +98,7 @@ export const CelebrityEditRequestDialog = ({
   };
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
@@ -118,11 +121,21 @@ export const CelebrityEditRequestDialog = ({
 
           <div className="space-y-2">
             <Label>プロフィール画像URL</Label>
-            <Input
-              value={formData.avatar_url}
-              onChange={(e) => setFormData({ ...formData, avatar_url: e.target.value })}
-              placeholder="https://..."
-            />
+            <div className="flex gap-2">
+              <Input
+                value={formData.avatar_url}
+                onChange={(e) => setFormData({ ...formData, avatar_url: e.target.value })}
+                placeholder="https://..."
+                className="flex-1"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsAvatarUploadOpen(true)}
+              >
+                アップロード
+              </Button>
+            </div>
           </div>
 
           <div className="space-y-2">
@@ -197,5 +210,18 @@ export const CelebrityEditRequestDialog = ({
         </form>
       </DialogContent>
     </Dialog>
+    
+    {celebrity && (
+      <CelebrityAvatarUploadDialog
+        open={isAvatarUploadOpen}
+        onOpenChange={setIsAvatarUploadOpen}
+        celebrityId={celebrity.id}
+        isAdmin={false}
+        onUploadComplete={() => {
+          // Avatar will be updated via edit request
+        }}
+      />
+    )}
+    </>
   );
 };
