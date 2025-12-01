@@ -2672,103 +2672,17 @@ const MyPage = () => {
                             <p className="text-sm text-muted-foreground italic">{language === "ja" ? "職歴を追加してください" : "Add work experience"}</p>
                           )
                         )}
-                      </div>
+                       </div>
 
                    </div>
                 </CardContent>
               </Card>
 
-               <div className="grid md:grid-cols-2 gap-6 mb-6 animate-fade-up">
-            {/* Private Info Card */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center justify-between font-light">
-                  <div className="flex items-center gap-2">
-                    <Lock className="h-5 w-5 text-orange-600" />
-                    {language === "ja" ? "非公開情報" : "Private Information"}
-                  </div>
-                  <Badge variant="outline" className="gap-1">
-                    <Lock className="w-3 h-3" />
-                    {language === "ja" ? "非公開" : "Private"}
-                  </Badge>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <Mail className="h-4 w-4 text-muted-foreground" />
-                  <div>
-                    <p className="text-xs text-muted-foreground">
-                      {language === "ja" ? "メールアドレス" : "Email"}
-                    </p>
-                    <p className="font-light">{user?.email}</p>
-                  </div>
-                </div>
-                
-                {/* Username field */}
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-sm font-semibold">{language === "ja" ? "公開用URL（ユーザー名）" : "Public URL (Username)"}</h3>
-                    {editingField !== 'username' && (
-                      <Button 
-                        size="sm" 
-                        variant="outline"
-                        onClick={() => startEditing('username', profile?.username)}
-                      >
-                        <Edit2 className="w-4 h-4" />
-                      </Button>
-                    )}
-                  </div>
-                  {editingField === 'username' ? (
-                    <div className="space-y-2">
-                      <Input
-                        value={editValues.username || ''}
-                        onChange={(e) => setEditValues({ ...editValues, username: e.target.value })}
-                        placeholder="your-username"
-                      />
-                      <div className="flex gap-2">
-                        <Button size="sm" onClick={() => saveField('username')}>
-                          <Check className="w-4 h-4 mr-1" />
-                          {language === "ja" ? "保存" : "Save"}
-                        </Button>
-                        <Button size="sm" variant="outline" onClick={cancelEditing}>
-                          <X className="w-4 h-4 mr-1" />
-                          {language === "ja" ? "キャンセル" : "Cancel"}
-                        </Button>
-                      </div>
-                      <p className="text-xs text-muted-foreground">
-                        {language === "ja" ? "プロフィールURL: " : "Profile URL: "}
-                        {window.location.origin}/{editValues.username || profile?.username || user?.id}
-                      </p>
-                    </div>
-                  ) : (
-                    <div>
-                      <p className="text-sm font-light mb-1">{profile?.username || <span className="text-muted-foreground italic">{language === "ja" ? "未設定" : "Not set"}</span>}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {language === "ja" ? "プロフィールURL: " : "Profile URL: "}
-                        {window.location.origin}/{profile?.username || user?.id}
-                      </p>
-                    </div>
-                  )}
-                </div>
-
-                <div className="flex items-center gap-3">
-                  <Calendar className="h-4 w-4 text-muted-foreground" />
-                  <div>
-                    <p className="text-xs text-muted-foreground">
-                      {language === "ja" ? "ユーザーID" : "User ID"}
-                    </p>
-                    <p className="font-light text-xs">{user?.id.slice(0, 8)}...</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Subscription Card */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 font-light">
-                  <CreditCard className="h-5 w-5" />
-                  {language === "ja" ? "プラン情報" : language === "pt" ? "Informações do plano" : "Plan Information"}
+          {/* Tabs Section */}
+          <div className="mt-12 animate-fade-up">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <TabsList className="grid w-full grid-cols-5">
+                <TabsTrigger value="videos">
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -3297,7 +3211,7 @@ const MyPage = () => {
           {/* Tabs Section */}
           <div className="mt-12 animate-fade-up">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-4">
+              <TabsList className="grid w-full grid-cols-5">
                 <TabsTrigger value="videos">
                   {language === "ja" ? "動画" : "Videos"}
                 </TabsTrigger>
@@ -3309,6 +3223,9 @@ const MyPage = () => {
                 </TabsTrigger>
                 <TabsTrigger value="athletes">
                   {language === "ja" ? "フォロー中" : "Following"}
+                </TabsTrigger>
+                <TabsTrigger value="settings">
+                  {language === "ja" ? "設定" : "Settings"}
                 </TabsTrigger>
               </TabsList>
 
@@ -3402,6 +3319,218 @@ const MyPage = () => {
 
               <TabsContent value="athletes" className="mt-6">
                 <FollowedCelebrities userId={user?.id || ''} />
+              </TabsContent>
+
+              <TabsContent value="settings" className="mt-6 space-y-6">
+                <h2 className="text-2xl font-light mb-6">
+                  {language === "ja" ? "設定・管理" : "Settings & Management"}
+                </h2>
+
+                {/* Account Information Card */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 font-light">
+                      <User className="h-5 w-5" />
+                      {language === "ja" ? "アカウント情報" : "Account Information"}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <div className="flex items-center gap-3">
+                      <Mail className="h-4 w-4 text-muted-foreground" />
+                      <div>
+                        <p className="text-xs text-muted-foreground">
+                          {language === "ja" ? "メールアドレス" : "Email"}
+                        </p>
+                        <p className="font-light">{user?.email}</p>
+                      </div>
+                    </div>
+
+                    {/* Username field */}
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <h3 className="text-sm font-semibold">{language === "ja" ? "公開用URL（ユーザー名）" : "Public URL (Username)"}</h3>
+                        {editingField !== 'username' && (
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => startEditing('username', profile?.username)}
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </Button>
+                        )}
+                      </div>
+                      {editingField === 'username' ? (
+                        <div className="space-y-2">
+                          <Input
+                            value={editValues.username || ''}
+                            onChange={(e) => setEditValues({ ...editValues, username: e.target.value })}
+                            placeholder="your-username"
+                          />
+                          <div className="flex gap-2">
+                            <Button size="sm" onClick={() => saveField('username')}>
+                              <Check className="w-4 h-4 mr-1" />
+                              {language === "ja" ? "保存" : "Save"}
+                            </Button>
+                            <Button size="sm" variant="outline" onClick={cancelEditing}>
+                              <X className="w-4 h-4 mr-1" />
+                              {language === "ja" ? "キャンセル" : "Cancel"}
+                            </Button>
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            {language === "ja" ? "プロフィールURL: " : "Profile URL: "}
+                            {window.location.origin}/{editValues.username || profile?.username || user?.id}
+                          </p>
+                        </div>
+                      ) : (
+                        <div>
+                          <p className="text-sm font-light mb-1">{profile?.username || <span className="text-muted-foreground italic">{language === "ja" ? "未設定" : "Not set"}</span>}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {language === "ja" ? "プロフィールURL: " : "Profile URL: "}
+                            {window.location.origin}/{profile?.username || user?.id}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <Calendar className="h-4 w-4 text-muted-foreground" />
+                      <div>
+                        <p className="text-xs text-muted-foreground">
+                          {language === "ja" ? "ユーザーID" : "User ID"}
+                        </p>
+                        <p className="font-light text-xs">{user?.id.slice(0, 8)}...</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Subscription Card */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 font-light">
+                      <CreditCard className="h-5 w-5" />
+                      {language === "ja" ? "プラン情報" : "Plan Information"}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-1">
+                        {language === "ja" ? "現在のプラン" : "Current Plan"}
+                      </p>
+                      <div className="flex items-center gap-2">
+                        <p className="font-light text-lg">
+                          {subscription?.subscribed ? getPlanName(subscription.price_id) : (language === "ja" ? "未登録" : "No Plan")}
+                        </p>
+                        {subscription?.is_trialing && (
+                          <Badge variant="secondary" className="text-xs">
+                            {language === "ja" ? "トライアル中" : "Trial"}
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                    {subscription?.subscribed && subscription.subscription_end && (
+                      <div>
+                        <p className="text-xs text-muted-foreground mb-1">
+                          {language === "ja" ? "次回更新日" : "Next Renewal"}
+                        </p>
+                        <p className="font-light">{formatDate(subscription.subscription_end)}</p>
+                      </div>
+                    )}
+                    <div className="pt-4">
+                      {subscription?.subscribed ? (
+                        <p className="text-sm text-green-600 dark:text-green-400">
+                          ✓ {language === "ja" ? "有効なプラン" : "Active Plan"}
+                        </p>
+                      ) : (
+                        <Button
+                          onClick={() => navigate("/join")}
+                          className="w-full"
+                        >
+                          {language === "ja" ? "プランに参加する" : "Join a Plan"}
+                        </Button>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Referral Code Card (Simplified) */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 font-light">
+                      <User className="h-5 w-5" />
+                      {language === "ja" ? "紹介プログラム" : "Referral Program"}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    {/* Dojo Friends Code */}
+                    <div>
+                      <div className="flex items-center gap-2 mb-2">
+                        <h4 className="font-semibold text-sm">
+                          {language === "ja" ? "道場仲間用コード" : "Dojo Friends Code"}
+                        </h4>
+                        <Badge variant="outline" className="text-xs">
+                          {language === "ja" ? `${dojoFriendsUses}人利用` : `${dojoFriendsUses} uses`}
+                        </Badge>
+                      </div>
+                      <p className="text-xs text-muted-foreground mb-3">
+                        {language === "ja" 
+                          ? "同じ道場のメンバーがこのコードで登録すると、お互いに特典があります" 
+                          : "Members from your dojo get benefits when they use this code"}
+                      </p>
+                      <div className="flex gap-2">
+                        <Input
+                          value={`${window.location.origin}/join?referral=${dojoFriendsCode}`}
+                          readOnly
+                          className="flex-1 text-sm"
+                        />
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            navigator.clipboard.writeText(`${window.location.origin}/join?referral=${dojoFriendsCode}`);
+                            toast.success(language === "ja" ? "リンクをコピーしました" : "Link copied!");
+                          }}
+                        >
+                          <Copy className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* Regular Referral Code */}
+                    <div>
+                      <div className="flex items-center gap-2 mb-2">
+                        <h4 className="font-semibold text-sm">
+                          {language === "ja" ? "一般紹介コード" : "General Referral Code"}
+                        </h4>
+                        <Badge variant="outline" className="text-xs">
+                          {language === "ja" ? `${otherFriendsUses}人利用` : `${otherFriendsUses} uses`}
+                        </Badge>
+                      </div>
+                      <p className="text-xs text-muted-foreground mb-3">
+                        {language === "ja" 
+                          ? "誰でも使える紹介コード。登録時に割引が適用されます" 
+                          : "Anyone can use this code to get a discount on signup"}
+                      </p>
+                      <div className="flex gap-2">
+                        <Input
+                          value={`${window.location.origin}/join?referral=${otherFriendsCode}`}
+                          readOnly
+                          className="flex-1 text-sm"
+                        />
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            navigator.clipboard.writeText(`${window.location.origin}/join?referral=${otherFriendsCode}`);
+                            toast.success(language === "ja" ? "リンクをコピーしました" : "Link copied!");
+                          }}
+                        >
+                          <Copy className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
               </TabsContent>
             </Tabs>
           </div>
