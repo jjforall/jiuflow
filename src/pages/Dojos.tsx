@@ -301,7 +301,7 @@ export default function Dojos() {
                             className="w-full h-full object-cover"
                           />
                           {dojo.is_verified && (
-                            <div className="absolute top-2 right-2 bg-primary text-primary-foreground px-2 py-1 rounded text-xs font-medium">
+                            <div className="absolute bottom-2 left-2 bg-muted/80 text-muted-foreground px-2 py-0.5 rounded text-xs">
                               PR
                             </div>
                           )}
@@ -312,7 +312,7 @@ export default function Dojos() {
                       <div className="p-6">
                         {!dojo.cover_image_url && dojo.is_verified && (
                           <div className="mb-3">
-                            <Badge variant="default" className="text-xs">
+                            <Badge variant="secondary" className="text-xs opacity-60">
                               PR
                             </Badge>
                           </div>

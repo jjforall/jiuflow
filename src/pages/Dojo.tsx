@@ -377,8 +377,7 @@ export default function Dojo() {
                   </div>
                   <div className="flex items-center gap-3">
                     {dojo.is_verified && (
-                      <Badge className="bg-primary text-primary-foreground text-sm md:text-base px-4 py-2 gap-2">
-                        <Award className="w-4 h-4" />
+                      <Badge variant="secondary" className="text-xs opacity-60 px-2 py-1">
                         PR
                       </Badge>
                     )}
@@ -415,8 +414,7 @@ export default function Dojo() {
                 </div>
                 <div className="flex items-center gap-3">
                   {dojo.is_verified && (
-                    <Badge className="text-sm md:text-base px-4 py-2 gap-2">
-                      <Award className="w-4 h-4" />
+                    <Badge variant="secondary" className="text-xs opacity-60 px-2 py-1">
                       PR
                     </Badge>
                   )}
