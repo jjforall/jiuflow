@@ -4,8 +4,13 @@ import { Input } from "@/components/ui/input";
 import { InputWithSuggestions } from "@/components/ui/input-with-suggestions";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Upload, Trash2, Search, Check, X, Languages, ExternalLink } from "lucide-react";
+import { Upload, Trash2, Search, Check, X, Languages, ExternalLink, ChevronDown } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { PaginationControls } from "@/components/ui/pagination-controls";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -77,6 +82,7 @@ export const TechniquesManagement = () => {
   const [editValue, setEditValue] = useState<string>("");
   const [hashtagEditValue, setHashtagEditValue] = useState<string>("");
   const [showTranslateDialog, setShowTranslateDialog] = useState(false);
+  const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [translatingTechnique, setTranslatingTechnique] = useState<Technique | null>(null);
   const [inlineMaxSeriesOrder, setInlineMaxSeriesOrder] = useState<Record<string, number>>({});
   const [targetLanguage, setTargetLanguage] = useState<"en" | "pt" | "es" | "fr" | "de" | "zh" | "ko" | "it" | "ru" | "ar" | "hi">("en");
@@ -499,6 +505,18 @@ export const TechniquesManagement = () => {
     setEditValue("");
     setHashtagEditValue("");
     setInlineMaxSeriesOrder({});
+  };
+
+  const toggleRow = (id: string) => {
+    setExpandedRows((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(id)) {
+        newSet.delete(id);
+      } else {
+        newSet.add(id);
+      }
+      return newSet;
+    });
   };
 
   const saveEdit = async (technique: Technique) => {
@@ -1472,14 +1490,12 @@ export const TechniquesManagement = () => {
         <table className="w-full">
           <thead className="bg-muted">
             <tr>
+              <th className="px-4 py-3 text-left w-[50px]"></th>
               <th className="px-4 py-3 text-left">技術名</th>
-              <th className="px-4 py-3 text-left">カテゴリー</th>
-              <th className="px-4 py-3 text-left">シリーズ</th>
-              <th className="px-4 py-3 text-left">ハッシュタグ</th>
-              <th className="px-4 py-3 text-left">表示順</th>
-              <th className="px-4 py-3 text-left">翻訳</th>
-              <th className="px-4 py-3 text-left">動画</th>
-              <th className="px-4 py-3 text-right">アクション</th>
+              <th className="px-4 py-3 text-left w-[120px]">カテゴリー</th>
+              <th className="px-4 py-3 text-left w-[100px]">動画</th>
+              <th className="px-4 py-3 text-left w-[80px]">翻訳</th>
+              <th className="px-4 py-3 text-right w-[140px]">操作</th>
             </tr>
           </thead>
           <tbody>
@@ -1488,391 +1504,212 @@ export const TechniquesManagement = () => {
               Array.from({ length: 5 }).map((_, i) => (
                 <tr key={i} className="border-t">
                   <td className="px-4 py-3">
-                    <Skeleton className="h-4 w-48" />
+                    <Skeleton className="h-8 w-8" />
                   </td>
                   <td className="px-4 py-3">
-                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-12 w-full" />
                   </td>
                   <td className="px-4 py-3">
-                    <Skeleton className="h-4 w-32" />
+                    <Skeleton className="h-6 w-20" />
                   </td>
                   <td className="px-4 py-3">
-                    <Skeleton className="h-4 w-32" />
+                    <Skeleton className="h-16 w-24" />
                   </td>
                   <td className="px-4 py-3">
-                    <Skeleton className="h-4 w-12" />
+                    <Skeleton className="h-6 w-12" />
                   </td>
                   <td className="px-4 py-3">
-                    <Skeleton className="h-4 w-16" />
-                  </td>
-                  <td className="px-4 py-3">
-                    <Skeleton className="h-20 w-32" />
-                  </td>
-                  <td className="px-4 py-3">
-                    <Skeleton className="h-8 w-20 ml-auto" />
+                    <Skeleton className="h-8 w-full" />
                   </td>
                 </tr>
               ))
             ) : data?.data.length === 0 ? (
               <tr>
-                <td colSpan={8} className="px-4 py-8 text-center text-muted-foreground">
+                <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
                   技術が見つかりませんでした
                 </td>
               </tr>
             ) : (
               data?.data.map((technique) => (
-                <tr key={technique.id} className="border-t hover:bg-muted/50">
-                  <td className="px-4 py-3">
-                    <div className="space-y-2">
-                      {/* English Name */}
-                      {editingCell?.id === technique.id && editingCell?.field === 'name' ? (
-                        <div className="flex gap-2 items-center">
-                          <Input
-                            value={editValue}
-                            onChange={(e) => setEditValue(e.target.value)}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter' && !e.nativeEvent.isComposing) saveEdit(technique as Technique);
-                              if (e.key === 'Escape') cancelEditing();
-                            }}
-                            className="h-8 text-sm"
-                            autoFocus
-                          />
-                          <Button size="sm" variant="ghost" onClick={() => saveEdit(technique as Technique)}>
-                            <Check className="h-4 w-4" />
-                          </Button>
-                          <Button size="sm" variant="ghost" onClick={cancelEditing}>
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      ) : (
-                        <p 
-                          className="font-medium cursor-pointer hover:bg-accent hover:text-accent-foreground px-2 py-1 rounded"
-                          onClick={() => startEditing(technique.id, 'name', technique.name)}
-                        >
-                          {technique.name}
-                        </p>
-                      )}
-                      
-                      {/* Japanese Name */}
-                      {editingCell?.id === technique.id && editingCell?.field === 'name_ja' ? (
-                        <div className="flex gap-2 items-center">
-                          <Input
-                            value={editValue}
-                            onChange={(e) => setEditValue(e.target.value)}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter' && !e.nativeEvent.isComposing) saveEdit(technique as Technique);
-                              if (e.key === 'Escape') cancelEditing();
-                            }}
-                            className="h-8 text-sm"
-                            autoFocus
-                          />
-                          <Button size="sm" variant="ghost" onClick={() => saveEdit(technique as Technique)}>
-                            <Check className="h-4 w-4" />
-                          </Button>
-                          <Button size="sm" variant="ghost" onClick={cancelEditing}>
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      ) : (
-                        <p 
-                          className={`text-sm text-muted-foreground px-2 py-1 rounded ${isAdmin ? 'cursor-pointer hover:bg-accent hover:text-accent-foreground' : ''}`}
-                          onClick={() => isAdmin && startEditing(technique.id, 'name_ja', technique.name_ja)}
-                        >
-                          {technique.name_ja}
-                        </p>
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-4 py-3">
-                    {editingCell?.id === technique.id && editingCell?.field === 'category' && isAdmin ? (
-                      <div className="flex gap-2 items-center">
-                        <Input
-                          value={editValue}
-                          onChange={(e) => setEditValue(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter' && !e.nativeEvent.isComposing) saveEdit(technique as Technique);
-                            if (e.key === 'Escape') cancelEditing();
-                          }}
-                          className="h-8 w-40"
-                          autoFocus
-                          placeholder="新規カテゴリー"
-                          list="categories-list"
-                        />
-                        <datalist id="categories-list">
-                          {availableCategories.map((cat) => (
-                            <option key={cat} value={cat} />
-                          ))}
-                        </datalist>
-                        <Button size="sm" variant="ghost" onClick={() => saveEdit(technique as Technique)}>
-                          <Check className="h-4 w-4" />
+                <Collapsible key={technique.id} open={expandedRows.has(technique.id)} onOpenChange={() => toggleRow(technique.id)}>
+                  <tr className="border-t hover:bg-muted/50 group">
+                    <td className="px-4 py-3">
+                      <CollapsibleTrigger asChild>
+                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                          <ChevronDown className={`h-4 w-4 transition-transform ${expandedRows.has(technique.id) ? "rotate-180" : ""}`} />
                         </Button>
-                        <Button size="sm" variant="ghost" onClick={cancelEditing}>
-                          <X className="h-4 w-4" />
-                        </Button>
+                      </CollapsibleTrigger>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="space-y-1">
+                        <p className="font-medium">{technique.name}</p>
+                        <p className="text-sm text-muted-foreground">{technique.name_ja}</p>
                       </div>
-                    ) : (
-                      <span 
-                        className={`px-2 py-1 text-xs rounded-full bg-primary/10 text-primary ${isAdmin ? 'cursor-pointer hover:bg-primary/20' : ''}`}
-                        onClick={() => isAdmin && startEditing(technique.id, 'category', technique.category)}
-                      >
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className="px-2 py-1 text-xs rounded-full bg-primary/10 text-primary">
                         {technique.category}
                       </span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="space-y-2">
-                      {/* Series Prefix (Alphabet) - Read Only */}
-                      <div className="flex items-center gap-2">
-                        {(technique as Technique).series_prefix && (
-                          <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary font-bold text-sm">
-                            {(technique as Technique).series_prefix}
-                          </div>
-                        )}
-                        <div className="flex-1">
-                          {/* Series Name */}
-                          {editingCell?.id === technique.id && editingCell?.field === 'series_name' ? (
-                            <div className="flex gap-2 items-center">
-                              <InputWithSuggestions
-                                value={editValue}
-                                onChange={(e) => setEditValue(e.target.value)}
-                                onSelectSuggestion={(value) => setEditValue(value)}
-                                suggestions={seriesNameSuggestions}
-                                onKeyDown={(e) => {
-                                  if (e.key === 'Enter' && !e.nativeEvent.isComposing) saveEdit(technique as Technique);
-                                  if (e.key === 'Escape') cancelEditing();
-                                }}
-                                className="h-8 text-sm"
-                                autoFocus
-                                placeholder="シリーズ名"
-                              />
-                              <Button size="sm" variant="ghost" onClick={() => saveEdit(technique as Technique)}>
-                                <Check className="h-4 w-4" />
-                              </Button>
-                              <Button size="sm" variant="ghost" onClick={cancelEditing}>
-                                <X className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          ) : (
-                            <p 
-                              className={`text-sm px-2 py-1 rounded ${isAdmin ? 'cursor-pointer hover:bg-accent hover:text-accent-foreground' : ''}`}
-                              onClick={() => isAdmin && startEditing(technique.id, 'series_name', (technique as Technique).series_name || '', technique as Technique)}
-                              title={isAdmin ? "クリックして編集（アルファベットは自動割り当て）" : ""}
-                            >
-                              {(technique as Technique).series_name || <span className="text-muted-foreground">シリーズなし</span>}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                      
-                      {/* Series Order */}
-                      {editingCell?.id === technique.id && editingCell?.field === 'series_order' ? (
-                        <div className="space-y-1">
-                          <div className="flex gap-2 items-center">
-                            <Input
-                              type="number"
-                              value={editValue}
-                              onChange={(e) => setEditValue(e.target.value)}
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter' && !e.nativeEvent.isComposing) saveEdit(technique as Technique);
-                                if (e.key === 'Escape') cancelEditing();
-                              }}
-                              className="h-8 text-sm w-20"
-                              autoFocus
-                              placeholder="順序"
-                            />
-                            <Button size="sm" variant="ghost" onClick={() => saveEdit(technique as Technique)}>
-                              <Check className="h-4 w-4" />
-                            </Button>
-                            <Button size="sm" variant="ghost" onClick={cancelEditing}>
-                              <X className="h-4 w-4" />
-                            </Button>
-                          </div>
-                          {inlineMaxSeriesOrder[technique.id] !== undefined && (technique as Technique).series_prefix && (
-                            <p className="text-xs text-green-600 px-2">
-                              このシリーズは現在{inlineMaxSeriesOrder[technique.id]}番まで使用中
-                            </p>
-                          )}
-                        </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      {technique.thumbnail_url ? (
+                        <img
+                          src={technique.thumbnail_url}
+                          className="w-20 h-12 object-cover rounded cursor-pointer hover:opacity-80 transition-opacity"
+                          loading="lazy"
+                          alt={technique.name}
+                          onClick={() => {
+                            if (technique.video_url) {
+                              setPreviewVideoUrl(technique.video_url);
+                              setShowVideoPreview(true);
+                            }
+                          }}
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="96" height="64"%3E%3Crect fill="%23ddd" width="96" height="64"/%3E%3Ctext fill="%23999" x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle"%3ENo Image%3C/text%3E%3C/svg%3E';
+                          }}
+                        />
                       ) : (
-                        <p 
-                          className={`text-xs text-muted-foreground px-2 py-1 rounded ${isAdmin ? 'cursor-pointer hover:bg-accent hover:text-accent-foreground' : ''}`}
-                          onClick={() => isAdmin && startEditing(technique.id, 'series_order', (technique as Technique).series_order?.toString() || '', technique as Technique)}
-                        >
-                          順序: {(technique as Technique).series_order || <span className="text-muted-foreground">-</span>}
-                        </p>
+                        <div className="w-20 h-12 bg-muted rounded flex items-center justify-center text-xs text-muted-foreground">
+                          未登録
+                        </div>
                       )}
-                    </div>
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="space-y-2">
-                      <div className="flex flex-wrap gap-1 max-w-[300px]">
-                        {technique.hashtags && technique.hashtags.length > 0 ? (
-                          technique.hashtags.map((tag) => (
-                            <div 
-                              key={tag}
-                              className={`flex items-center gap-1 px-2 py-1 bg-primary/10 text-primary rounded text-xs ${isAdmin ? 'group cursor-pointer hover:bg-primary/20' : ''}`}
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className="text-sm">{getTranslationCount(technique as any)}言語</span>
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <div className="flex gap-1 justify-end">
+                        {isAdmin ? (
+                          <>
+                            {technique.video_url && (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-8 w-8 p-0"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setTranslatingTechnique(technique as any);
+                                  setShowTranslateDialog(true);
+                                }}
+                                title="動画を他言語に翻訳"
+                              >
+                                <Languages className="h-4 w-4" />
+                              </Button>
+                            )}
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-8 w-8 p-0"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDelete(technique.id);
+                              }}
+                              title="削除"
                             >
-                              <span>#{tag}</span>
-                              {isAdmin && (
-                                <button
-                                  onClick={() => removeHashtag(technique as Technique, tag)}
-                                  className="opacity-0 group-hover:opacity-100 transition-opacity"
-                                >
-                                  <X className="h-3 w-3" />
-                                </button>
-                              )}
-                            </div>
-                          ))
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </>
                         ) : null}
                       </div>
-                      {isAdmin && (
-                        <div className="flex gap-1">
-                          <Input
-                            value={editingCell?.id === technique.id && editingCell?.field === 'hashtags' ? hashtagEditValue : ''}
-                            onChange={(e) => {
-                              setHashtagEditValue(e.target.value);
-                              setEditingCell({ id: technique.id, field: 'hashtags' });
-                            }}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter' && !e.nativeEvent.isComposing) {
-                                e.preventDefault();
-                                addHashtag(technique as Technique);
-                              }
-                              if (e.key === 'Escape') {
-                                setHashtagEditValue('');
-                                setEditingCell(null);
-                              }
-                            }}
-                            onFocus={() => {
-                              setEditingCell({ id: technique.id, field: 'hashtags' });
-                            }}
-                            placeholder="追加..."
-                            className="h-7 text-xs"
-                          />
-                          <Button 
-                            size="sm" 
-                            variant="ghost" 
-                            onMouseDown={(e) => {
-                              e.preventDefault(); // Prevent blur event
-                              addHashtag(technique as Technique);
-                            }}
-                            className="h-7 px-2"
-                          >
-                            <Check className="h-3 w-3" />
-                          </Button>
-                        </div>
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-4 py-3">{technique.display_order}</td>
-                  <td className="px-4 py-3">
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button variant="ghost" size="sm" className="h-auto p-1">
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm font-medium">{getTranslationCount(technique as any)}</span>
-                            <span className="text-xs text-muted-foreground">言語</span>
+                    </td>
+                  </tr>
+                  <CollapsibleContent asChild>
+                    <tr>
+                      <td colSpan={6} className="bg-muted/50 p-4">
+                        <div className="space-y-4">
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <h4 className="text-sm font-medium mb-2">詳細情報</h4>
+                              <div className="space-y-2 text-sm">
+                                <div>
+                                  <span className="font-medium">English:</span>
+                                  <p className="text-muted-foreground mt-1">{technique.name}</p>
+                                </div>
+                                <div>
+                                  <span className="font-medium">日本語:</span>
+                                  <p className="text-muted-foreground mt-1">{technique.name_ja}</p>
+                                </div>
+                                <div>
+                                  <span className="font-medium">Português:</span>
+                                  <p className="text-muted-foreground mt-1">{technique.name_pt}</p>
+                                </div>
+                                <div>
+                                  <span className="font-medium">表示順:</span>
+                                  <span className="text-muted-foreground ml-2">{technique.display_order}</span>
+                                </div>
+                              </div>
+                            </div>
+                            <div>
+                              <h4 className="text-sm font-medium mb-2">シリーズ・タグ</h4>
+                              <div className="space-y-2 text-sm">
+                                {(technique as Technique).series_name && (
+                                  <div>
+                                    <span className="font-medium">シリーズ:</span>
+                                    <div className="flex items-center gap-2 mt-1">
+                                      {(technique as Technique).series_prefix && (
+                                        <div className="flex items-center justify-center w-6 h-6 rounded-full bg-primary/10 text-primary font-bold text-xs">
+                                          {(technique as Technique).series_prefix}
+                                        </div>
+                                      )}
+                                      <span className="text-muted-foreground">{(technique as Technique).series_name}</span>
+                                      {(technique as Technique).series_order && (
+                                        <span className="text-xs text-muted-foreground">#{(technique as Technique).series_order}</span>
+                                      )}
+                                    </div>
+                                  </div>
+                                )}
+                                {technique.hashtags && technique.hashtags.length > 0 && (
+                                  <div>
+                                    <span className="font-medium">ハッシュタグ:</span>
+                                    <div className="flex flex-wrap gap-1 mt-1">
+                                      {technique.hashtags.map((tag) => (
+                                        <span key={tag} className="px-2 py-0.5 bg-primary/10 text-primary rounded text-xs">
+                                          #{tag}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
                           </div>
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-80">
-                        <div className="space-y-2">
-                          <h4 className="font-medium text-sm">利用可能な動画</h4>
-                          <div className="space-y-1">
-                            {getAvailableTranslations(technique as any).length > 0 ? (
-                              getAvailableTranslations(technique as any).map((trans) => (
+                          <div>
+                            <h4 className="text-sm font-medium mb-2">利用可能な翻訳</h4>
+                            <div className="flex flex-wrap gap-2">
+                              {getAvailableTranslations(technique as any).map((trans) => (
                                 <a
                                   key={trans.code}
                                   href={trans.url}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="flex items-center justify-between p-2 rounded hover:bg-accent text-sm group"
+                                  className="flex items-center gap-2 px-3 py-1.5 rounded border hover:bg-accent text-sm group"
                                 >
-                                  <div className="flex items-center gap-2">
-                                    <span>{trans.name} ({trans.code.toUpperCase()})</span>
-                                    {trans.isOriginal && (
-                                      <span className="text-xs text-muted-foreground">オリジナル</span>
-                                    )}
-                                  </div>
+                                  <span>{trans.name}</span>
+                                  {trans.isOriginal && (
+                                    <span className="text-xs text-muted-foreground">(オリジナル)</span>
+                                  )}
                                   <ExternalLink className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
                                 </a>
-                              ))
-                            ) : (
-                              <p className="text-sm text-muted-foreground p-2">動画がありません</p>
-                            )}
+                              ))}
+                            </div>
                           </div>
-                        </div>
-                      </PopoverContent>
-                    </Popover>
-                  </td>
-                  <td className="px-4 py-3">
-                    {technique.thumbnail_url ? (
-                      <img
-                        src={technique.thumbnail_url}
-                        className="w-24 h-16 object-cover rounded cursor-pointer hover:opacity-80 transition-opacity"
-                        loading="lazy"
-                        alt={technique.name}
-                        onClick={() => {
-                          if (technique.video_url) {
-                            setPreviewVideoUrl(technique.video_url);
-                            setShowVideoPreview(true);
-                          }
-                        }}
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement;
-                          target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="96" height="64"%3E%3Crect fill="%23ddd" width="96" height="64"/%3E%3Ctext fill="%23999" x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle"%3ENo Image%3C/text%3E%3C/svg%3E';
-                        }}
-                      />
-                    ) : (
-                      <div className="w-24 h-16 bg-muted rounded flex items-center justify-center text-xs text-muted-foreground">
-                        No Image
-                      </div>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <div className="flex gap-2 justify-end">
-                      {isAdmin ? (
-                        <>
-                          {technique.video_url && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => {
-                                setTranslatingTechnique(technique as any);
-                                setShowTranslateDialog(true);
-                              }}
-                              title="動画を他言語に翻訳"
-                            >
-                              <Languages className="h-4 w-4" />
-                            </Button>
+                          {isAdmin && (
+                            <div className="pt-2 border-t">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => openEditDialog(technique as any)}
+                              >
+                                編集
+                              </Button>
+                            </div>
                           )}
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => openEditDialog(technique as any)}
-                          >
-                            編集
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            onClick={() => handleDelete(technique.id)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </>
-                      ) : (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => openEditDialog(technique as Technique)}
-                        >
-                          詳細
-                        </Button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
+                        </div>
+                      </td>
+                    </tr>
+                  </CollapsibleContent>
+                </Collapsible>
               ))
             )}
           </tbody>
