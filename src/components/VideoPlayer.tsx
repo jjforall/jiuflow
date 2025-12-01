@@ -2,7 +2,14 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import Hls from "hls.js";
 import { toast } from "sonner";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { Loader2, SkipForward, SkipBack } from "lucide-react";
+import { Loader2, SkipForward, SkipBack, Settings } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface VideoPlayerProps {
   videoUrl: string;
@@ -20,6 +27,7 @@ export const VideoPlayer = ({ videoUrl, autoPlay = true, thumbnailUrl, onPlay }:
   const [isLoading, setIsLoading] = useState(true);
   const [hasStarted, setHasStarted] = useState(false);
   const [showSkipIndicator, setShowSkipIndicator] = useState<'forward' | 'backward' | null>(null);
+  const [showQualityMenu, setShowQualityMenu] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const lastTapRef = useRef<{ time: number; side: 'left' | 'right' } | null>(null);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -307,7 +315,13 @@ export const VideoPlayer = ({ videoUrl, autoPlay = true, thumbnailUrl, onPlay }:
     if (hlsRef.current) {
       hlsRef.current.currentLevel = levelIndex;
       setQuality(levelIndex === -1 ? 'auto' : `${hlsRef.current.levels[levelIndex].height}p`);
+      setShowQualityMenu(false);
     }
+  }, []);
+
+  const getQualityLevels = useCallback(() => {
+    if (!hlsRef.current) return [];
+    return hlsRef.current.levels;
   }, []);
 
   return (
@@ -358,39 +372,49 @@ export const VideoPlayer = ({ videoUrl, autoPlay = true, thumbnailUrl, onPlay }:
         Your browser does not support the video tag.
       </video>
       
-      {/* Quality indicator */}
-      {quality && (
-        <div className="absolute top-4 right-4 bg-background/80 backdrop-blur-sm px-3 py-1 rounded text-xs border border-border">
-          {quality === 'auto' ? (
-            language === "ja" ? "自動" : language === "pt" ? "Auto" : "Auto"
-          ) : (
-            quality
-          )}
-        </div>
-      )}
-
-      {/* Quality selector (optional, for manual control) */}
+      {/* Quality selector button */}
       {hlsRef.current && hlsRef.current.levels.length > 1 && (
-        <div className="mt-2 flex gap-2 flex-wrap">
-          <button
-            onClick={() => changeQuality(-1)}
-            className={`px-3 py-1 text-xs border rounded ${
-              quality === 'auto' ? 'bg-primary text-primary-foreground' : 'bg-background'
-            }`}
-          >
-            {language === "ja" ? "自動" : language === "pt" ? "Auto" : "Auto"}
-          </button>
-          {hlsRef.current.levels.map((level, index) => (
-            <button
-              key={index}
-              onClick={() => changeQuality(index)}
-              className={`px-3 py-1 text-xs border rounded ${
-                quality === `${level.height}p` ? 'bg-primary text-primary-foreground' : 'bg-background'
-              }`}
-            >
-              {level.height}p
-            </button>
-          ))}
+        <div className="absolute top-4 right-4 z-30">
+          <DropdownMenu open={showQualityMenu} onOpenChange={setShowQualityMenu}>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="secondary"
+                size="sm"
+                className="h-9 px-3 bg-background/90 backdrop-blur-sm border border-border hover:bg-background/95 gap-2"
+              >
+                <Settings className="h-4 w-4" />
+                <span className="text-xs font-medium">
+                  {quality === 'auto' 
+                    ? (language === "ja" ? "自動" : language === "pt" ? "Auto" : "Auto")
+                    : quality
+                  }
+                </span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="min-w-[150px]">
+              <DropdownMenuItem
+                onClick={() => changeQuality(-1)}
+                className={quality === 'auto' ? 'bg-primary/10 font-semibold' : ''}
+              >
+                <span className="flex items-center justify-between w-full">
+                  {language === "ja" ? "自動" : language === "pt" ? "Auto" : "Auto"}
+                  {quality === 'auto' && <span className="ml-2">✓</span>}
+                </span>
+              </DropdownMenuItem>
+              {getQualityLevels().map((level, index) => (
+                <DropdownMenuItem
+                  key={index}
+                  onClick={() => changeQuality(index)}
+                  className={quality === `${level.height}p` ? 'bg-primary/10 font-semibold' : ''}
+                >
+                  <span className="flex items-center justify-between w-full">
+                    {level.height}p
+                    {quality === `${level.height}p` && <span className="ml-2">✓</span>}
+                  </span>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       )}
     </div>
