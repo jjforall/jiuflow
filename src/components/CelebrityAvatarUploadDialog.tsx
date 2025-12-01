@@ -23,7 +23,7 @@ const createImage = (url: string): Promise<HTMLImageElement> =>
     image.src = url;
   });
 
-async function getCroppedImg(imageSrc: string, pixelCrop: Area): Promise<Blob> {
+async function getCroppedImg(imageSrc: string, pixelCrop: Area, mimeType: string = 'image/jpeg'): Promise<Blob> {
   const image = await createImage(imageSrc);
   const canvas = document.createElement('canvas');
   const ctx = canvas.getContext('2d');
@@ -54,7 +54,7 @@ async function getCroppedImg(imageSrc: string, pixelCrop: Area): Promise<Blob> {
       } else {
         reject(new Error('Canvas is empty'));
       }
-    }, 'image/jpeg', 0.9);
+    }, mimeType, 0.9);
   });
 }
 
@@ -67,6 +67,7 @@ export const CelebrityAvatarUploadDialog = ({
 }: CelebrityAvatarUploadDialogProps) => {
   const { user } = useAuth();
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
+  const [fileMimeType, setFileMimeType] = useState<string>('image/jpeg');
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
@@ -83,6 +84,7 @@ export const CelebrityAvatarUploadDialog = ({
         toast.error('ファイルサイズは50MB以下にしてください');
         return;
       }
+      setFileMimeType(file.type);
       const reader = new FileReader();
       reader.onload = () => {
         setSelectedFile(reader.result as string);
@@ -97,10 +99,10 @@ export const CelebrityAvatarUploadDialog = ({
     setUploading(true);
     try {
       // Crop the image
-      const croppedBlob = await getCroppedImg(selectedFile, croppedAreaPixels);
+      const croppedBlob = await getCroppedImg(selectedFile, croppedAreaPixels, fileMimeType);
       
-      // Generate unique filename
-      const fileExt = 'jpg';
+      // Generate unique filename with correct extension
+      const fileExt = fileMimeType === 'image/png' ? 'png' : 'jpg';
       const fileName = `celebrities/${celebrityId}/${Date.now()}.${fileExt}`;
 
       // Upload to Supabase Storage
@@ -108,7 +110,7 @@ export const CelebrityAvatarUploadDialog = ({
         .from('avatars')
         .upload(fileName, croppedBlob, {
           upsert: true,
-          contentType: 'image/jpeg'
+          contentType: fileMimeType
         });
 
       if (uploadError) throw uploadError;
@@ -165,14 +167,14 @@ export const CelebrityAvatarUploadDialog = ({
             <div className="flex flex-col items-center justify-center p-8 border-2 border-dashed rounded-lg">
               <Upload className="w-12 h-12 text-muted-foreground mb-4" />
               <p className="text-sm text-muted-foreground mb-4">
-                写真をアップロード（最大50MB）
+                JPEGまたはPNG画像をアップロード（最大50MB）
               </p>
               <Button asChild>
                 <label className="cursor-pointer">
                   ファイルを選択
                   <input
                     type="file"
-                    accept="image/*"
+                    accept="image/jpeg,image/png,image/jpg"
                     onChange={handleFileSelect}
                     className="hidden"
                   />
