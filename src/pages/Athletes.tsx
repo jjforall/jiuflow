@@ -302,61 +302,61 @@ const Athletes = () => {
                 <div key={celebrity.id} className="group">
                   <Link
                     to={`/athlete/${celebrity.user_id || celebrity.id}`}
-                    className="block"
+                    className="block h-full"
                   >
-                  <Card className="overflow-hidden transition-all duration-300 hover:shadow-xl hover:scale-[1.02] h-full">
-                    <CardHeader>
+                  <Card className="overflow-hidden transition-all duration-300 hover:shadow-xl hover:scale-[1.02] h-full flex flex-col">
+                    <CardHeader className="pb-4">
                       <div className="flex items-start gap-4">
-                        <Avatar className="h-20 w-20 border-2 border-border group-hover:border-primary transition-colors">
+                        <Avatar className="h-24 w-24 border-2 border-border group-hover:border-primary transition-colors flex-shrink-0">
                           <AvatarImage src={celebrity.avatar_url || undefined} />
                           <AvatarFallback className="text-2xl">
                             {celebrity.display_name[0]}
                           </AvatarFallback>
                         </Avatar>
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <h3 className="text-xl font-semibold truncate group-hover:text-primary transition-colors">
+                          <div className="flex items-start gap-2 mb-2">
+                            <h3 className="text-xl font-semibold line-clamp-1 group-hover:text-primary transition-colors flex-1">
                               {celebrity.display_name}
                             </h3>
                             {celebrity.featured && (
-                              <Star className="h-5 w-5 text-yellow-500 fill-yellow-500 flex-shrink-0" />
+                              <Star className="h-5 w-5 text-yellow-500 fill-yellow-500 flex-shrink-0 mt-1" />
                             )}
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={(e) => {
-                                e.preventDefault();
-                                handleToggleFollow(celebrity.id);
-                              }}
-                              className="ml-auto p-2 h-8 w-8"
-                            >
-                              <Heart 
-                                className={`h-5 w-5 transition-colors ${
-                                  followedCelebrities.has(celebrity.id)
-                                    ? 'fill-red-500 text-red-500'
-                                    : 'text-muted-foreground hover:text-red-500'
-                                }`}
-                              />
-                            </Button>
                           </div>
                           {getBeltName(celebrity.belt_history) && (
-                            <Badge variant="secondary" className="mb-2">
+                            <Badge variant="secondary" className="mb-2 text-xs">
                               {getBeltName(celebrity.belt_history)}
                             </Badge>
                           )}
                           {getOrganizationName(celebrity.organization) && (
-                            <p className="text-sm text-muted-foreground truncate">
+                            <p className="text-sm text-muted-foreground line-clamp-1">
                               {getOrganizationName(celebrity.organization)}
                             </p>
                           )}
                         </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            handleToggleFollow(celebrity.id);
+                          }}
+                          className="p-2 h-9 w-9 flex-shrink-0"
+                        >
+                          <Heart 
+                            className={`h-5 w-5 transition-colors ${
+                              followedCelebrities.has(celebrity.id)
+                                ? 'fill-red-500 text-red-500'
+                                : 'text-muted-foreground hover:text-red-500'
+                            }`}
+                          />
+                        </Button>
                       </div>
                     </CardHeader>
                     
-                    <CardContent className="space-y-3">
+                    <CardContent className="flex-1 flex flex-col space-y-3 pt-0">
                       {celebrity.bio && (
-                        <div className="space-y-2">
-                          <p className="text-sm text-muted-foreground line-clamp-2">
+                        <div className="space-y-2 flex-1">
+                          <p className="text-sm text-muted-foreground line-clamp-3">
                             {getBioText(celebrity)}
                           </p>
                           {language !== 'en' && (
@@ -381,23 +381,25 @@ const Athletes = () => {
                         </div>
                       )}
                       
-                      {celebrity.home_dojo && (
-                        <div className="flex items-center gap-2 text-sm">
-                          <span className="text-muted-foreground">
-                            {language === "ja" ? "所属:" : language === "pt" ? "Academia:" : "Gym:"}
-                          </span>
-                          <span className="font-medium">{celebrity.home_dojo}</span>
-                        </div>
-                      )}
-                      
-                      {celebrity.titles && celebrity.titles.length > 0 && (
-                        <div className="flex items-center gap-2 text-sm">
-                          <span className="text-muted-foreground">🏆</span>
-                          <span className="font-medium">
-                            {celebrity.titles.length} {language === "ja" ? "タイトル" : language === "pt" ? "títulos" : "titles"}
-                          </span>
-                        </div>
-                      )}
+                      <div className="space-y-2 pt-2 border-t border-border/50">
+                        {celebrity.home_dojo && (
+                          <div className="flex items-center gap-2 text-sm">
+                            <span className="text-muted-foreground">
+                              {language === "ja" ? "所属:" : language === "pt" ? "Academia:" : "Gym:"}
+                            </span>
+                            <span className="font-medium truncate">{celebrity.home_dojo}</span>
+                          </div>
+                        )}
+                        
+                        {celebrity.titles && celebrity.titles.length > 0 && (
+                          <div className="flex items-center gap-2 text-sm">
+                            <span className="text-muted-foreground">🏆</span>
+                            <span className="font-medium">
+                              {celebrity.titles.length} {language === "ja" ? "タイトル" : language === "pt" ? "títulos" : "titles"}
+                            </span>
+                          </div>
+                        )}
+                      </div>
                     </CardContent>
                   </Card>
                 </Link>
