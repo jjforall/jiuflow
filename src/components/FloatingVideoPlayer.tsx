@@ -22,6 +22,11 @@ export const FloatingVideoPlayer = () => {
       const hls = new Hls({
         enableWorker: true,
         lowLatencyMode: false,
+        backBufferLength: 20, // Smaller buffer for floating player
+        maxBufferLength: 20,
+        maxBufferSize: 40 * 1000 * 1000, // 40MB max
+        capLevelToPlayerSize: true, // Match quality to small player size
+        startLevel: -1,
       });
       hlsRef.current = hls;
       hls.loadSource(floatingVideo.videoUrl);
@@ -99,8 +104,11 @@ export const FloatingVideoPlayer = () => {
           controlsList="nodownload"
           className="w-full h-full"
           playsInline
+          preload="auto"
           poster={floatingVideo.thumbnailUrl || undefined}
           onContextMenu={(e) => e.preventDefault()}
+          disablePictureInPicture
+          webkit-playsinline="true"
         >
           Your browser does not support the video tag.
         </video>
