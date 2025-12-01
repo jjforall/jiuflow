@@ -8,14 +8,14 @@ import { Star, ArrowRight } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { BeltBadge } from "@/components/ui/belt-badge";
 
-interface Celebrity {
+interface FollowedPerson {
   id: string;
   display_name: string;
   avatar_url: string | null;
   belt_history: any;
-  home_dojo: string | null;
   featured: boolean;
   user_id: string | null;
+  is_celebrity: boolean;
 }
 
 interface FollowedCelebritiesProps {
@@ -24,7 +24,7 @@ interface FollowedCelebritiesProps {
 
 export const FollowedCelebrities = ({ userId }: FollowedCelebritiesProps) => {
   const { language } = useLanguage();
-  const [celebrities, setCelebrities] = useState<Celebrity[]>([]);
+  const [followedPeople, setFollowedPeople] = useState<FollowedPerson[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -34,34 +34,67 @@ export const FollowedCelebrities = ({ userId }: FollowedCelebritiesProps) => {
   const loadFollowedCelebrities = async () => {
     setIsLoading(true);
     try {
+      const allFollowed: FollowedPerson[] = [];
+
       // Get celebrity follows
-      const { data: follows, error: followsError } = await supabase
+      const { data: celebrityFollows, error: celebrityFollowsError } = await supabase
         .from('celebrity_follows')
         .select('celebrity_id')
         .eq('user_id', userId);
 
-      if (followsError) throw followsError;
+      if (!celebrityFollowsError && celebrityFollows && celebrityFollows.length > 0) {
+        const celebrityIds = celebrityFollows.map(f => f.celebrity_id);
+        
+        const { data: celebs, error: celebsError } = await supabase
+          .from('celebrities')
+          .select('id, display_name, avatar_url, belt_history, featured, user_id')
+          .in('id', celebrityIds);
 
-      if (!follows || follows.length === 0) {
-        setCelebrities([]);
-        setIsLoading(false);
-        return;
+        if (!celebsError && celebs) {
+          allFollowed.push(...celebs.map(c => ({
+            ...c,
+            is_celebrity: true
+          })));
+        }
       }
 
-      const celebrityIds = follows.map(f => f.celebrity_id);
+      // Get user follows
+      const { data: userFollows, error: userFollowsError } = await supabase
+        .from('user_follows')
+        .select('following_id')
+        .eq('follower_id', userId);
 
-      // Get celebrity details
-      const { data: celebs, error: celebsError } = await supabase
-        .from('celebrities')
-        .select('id, display_name, avatar_url, belt_history, home_dojo, featured, user_id')
-        .in('id', celebrityIds)
-        .order('featured', { ascending: false })
-        .order('display_name', { ascending: true });
+      if (!userFollowsError && userFollows && userFollows.length > 0) {
+        const followingIds = userFollows.map(f => f.following_id);
+        
+        const { data: profiles, error: profilesError } = await supabase
+          .from('profiles')
+          .select('id, display_name, avatar_url, belt_history, username')
+          .in('id', followingIds);
 
-      if (celebsError) throw celebsError;
-      setCelebrities(celebs || []);
+        if (!profilesError && profiles) {
+          allFollowed.push(...profiles.map(p => ({
+            id: p.id,
+            display_name: p.display_name || p.username || 'Unknown',
+            avatar_url: p.avatar_url,
+            belt_history: p.belt_history,
+            featured: false,
+            user_id: p.id,
+            is_celebrity: false
+          })));
+        }
+      }
+
+      // Sort: featured first, then by name
+      allFollowed.sort((a, b) => {
+        if (a.featured && !b.featured) return -1;
+        if (!a.featured && b.featured) return 1;
+        return a.display_name.localeCompare(b.display_name);
+      });
+
+      setFollowedPeople(allFollowed);
     } catch (error) {
-      console.error('Error loading followed celebrities:', error);
+      console.error('Error loading followed people:', error);
     } finally {
       setIsLoading(false);
     }
@@ -96,71 +129,54 @@ export const FollowedCelebrities = ({ userId }: FollowedCelebritiesProps) => {
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold flex items-center gap-2">
           <Star className="w-5 h-5" />
-          {language === "ja" ? "フォロー中の選手" : language === "pt" ? "Atletas Seguidos" : "Following Athletes"}
+          {language === "ja" ? "フォロー中" : language === "pt" ? "Seguindo" : "Following"}
         </h3>
-        <Link to="/athletes">
-          <Button variant="ghost" size="sm" className="gap-2">
-            {language === "ja" ? "もっと見る" : language === "pt" ? "Ver mais" : "View All"}
-            <ArrowRight className="w-4 h-4" />
-          </Button>
-        </Link>
       </div>
 
-      {celebrities.length === 0 ? (
+      {followedPeople.length === 0 ? (
         <Card>
           <CardContent className="pt-6">
             <p className="text-center text-sm text-muted-foreground mb-4">
               {language === "ja" 
-                ? "まだフォローしている選手がいません" 
+                ? "まだ誰もフォローしていません" 
                 : language === "pt" 
-                ? "Você ainda não segue nenhum atleta" 
-                : "You're not following any athletes yet"}
+                ? "Você ainda não segue ninguém" 
+                : "You're not following anyone yet"}
             </p>
-            <Link to="/athletes">
-              <Button variant="outline" className="w-full gap-2">
-                {language === "ja" ? "選手を探す" : language === "pt" ? "Encontrar Atletas" : "Find Athletes"}
-                <ArrowRight className="w-4 h-4" />
-              </Button>
-            </Link>
           </CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-2 gap-3">
-          {celebrities.slice(0, 4).map((celebrity) => (
+        <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+          {followedPeople.map((person) => (
             <Link
-              key={celebrity.id}
-              to={`/athlete/${celebrity.user_id || celebrity.id}`}
+              key={person.id}
+              to={person.is_celebrity ? `/athlete/${person.user_id || person.id}` : `/profile/${person.user_id}`}
               className="group"
             >
-              <Card className="transition-all duration-300 hover:shadow-lg hover:scale-[1.02]">
-                <CardContent className="p-3">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Avatar className="h-12 w-12 border border-border group-hover:border-primary transition-colors">
-                      <AvatarImage src={celebrity.avatar_url || undefined} />
-                      <AvatarFallback className="text-sm">
-                        {celebrity.display_name[0]}
-                      </AvatarFallback>
-                    </Avatar>
-                    {celebrity.featured && (
-                      <Star className="h-4 w-4 text-yellow-500 fill-yellow-500 flex-shrink-0" />
-                    )}
-                  </div>
-                  <h4 className="font-semibold text-sm truncate group-hover:text-primary transition-colors">
-                    {celebrity.display_name}
-                  </h4>
-                  {getBeltName(celebrity.belt_history) && (
+              <div className="flex flex-col items-center gap-1.5 p-2 rounded-lg hover:bg-muted/50 transition-colors">
+                <div className="relative">
+                  <Avatar className="h-14 w-14 border border-border group-hover:border-primary transition-colors">
+                    <AvatarImage src={person.avatar_url || undefined} />
+                    <AvatarFallback className="text-sm">
+                      {person.display_name[0]}
+                    </AvatarFallback>
+                  </Avatar>
+                  {person.featured && (
+                    <Star className="h-3 w-3 text-yellow-500 fill-yellow-500 absolute -top-1 -right-1" />
+                  )}
+                </div>
+                <div className="text-center w-full">
+                  <p className="font-medium text-xs truncate group-hover:text-primary transition-colors">
+                    {person.display_name}
+                  </p>
+                  {getBeltName(person.belt_history) && (
                     <BeltBadge 
-                      belt={getBeltName(celebrity.belt_history)!} 
-                      className="text-xs px-2 py-0.5 mt-1"
+                      belt={getBeltName(person.belt_history)!} 
+                      className="text-[10px] px-1.5 py-0 mt-0.5 inline-block"
                     />
                   )}
-                  {celebrity.home_dojo && (
-                    <p className="text-xs text-muted-foreground truncate mt-1">
-                      {celebrity.home_dojo}
-                    </p>
-                  )}
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             </Link>
           ))}
         </div>
