@@ -829,6 +829,70 @@ export type Database = {
           },
         ]
       }
+      practice_records: {
+        Row: {
+          created_at: string
+          difficulty_rating: number | null
+          duration_minutes: number | null
+          id: string
+          notes: string | null
+          practice_date: string
+          success_rating: number | null
+          technique_id: string | null
+          updated_at: string
+          user_id: string
+          user_video_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          difficulty_rating?: number | null
+          duration_minutes?: number | null
+          id?: string
+          notes?: string | null
+          practice_date?: string
+          success_rating?: number | null
+          technique_id?: string | null
+          updated_at?: string
+          user_id: string
+          user_video_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          difficulty_rating?: number | null
+          duration_minutes?: number | null
+          id?: string
+          notes?: string | null
+          practice_date?: string
+          success_rating?: number | null
+          technique_id?: string | null
+          updated_at?: string
+          user_id?: string
+          user_video_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "practice_records_technique_id_fkey"
+            columns: ["technique_id"]
+            isOneToOne: false
+            referencedRelation: "techniques"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "practice_records_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "practice_records_user_video_id_fkey"
+            columns: ["user_video_id"]
+            isOneToOne: false
+            referencedRelation: "user_videos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null

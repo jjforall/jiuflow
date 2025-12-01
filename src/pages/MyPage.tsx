@@ -30,6 +30,7 @@ import { AvatarUploadDialog } from "@/components/AvatarUploadDialog";
 import { CoverUploadDialog } from "@/components/CoverUploadDialog";
 import { CoverImageGalleryDialog } from "@/components/CoverImageGalleryDialog";
 import { FollowedCelebrities } from "@/components/FollowedCelebrities";
+import { PracticeRecords } from "@/components/PracticeRecords";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import hero1 from "@/assets/hero-1.jpg";
@@ -3277,6 +3278,11 @@ const MyPage = () => {
                 </div>
               </CardContent>
             </Card>
+          </div>
+
+          {/* Practice Records Section */}
+          <div className="mt-12 animate-fade-up">
+            <PracticeRecords />
           </div>
 
           {/* Video Upload Section */}
