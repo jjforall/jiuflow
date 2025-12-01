@@ -5,8 +5,8 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { translations } from "@/lib/translations";
 import { prefetchRoute } from "@/utils/routePrefetch";
 import { Button } from "@/components/ui/button";
-import { Menu, LogIn, User, LogOut, ShieldCheck, Moon, Sun } from "lucide-react";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Menu, LogIn, User, LogOut, ShieldCheck, Moon, Sun, Home, Map, Info, UserPlus, Mail, X } from "lucide-react";
+import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { supabase } from "@/integrations/supabase/client";
 import { User as SupabaseUser } from "@supabase/supabase-js";
 import {
@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import { useSubscription } from "@/hooks/useSubscription";
+import { Separator } from "@/components/ui/separator";
 
 const Navigation = () => {
   const location = useLocation();
@@ -84,11 +85,11 @@ const Navigation = () => {
   };
 
   const links = [
-    { to: "/", label: t.nav.home },
-    { to: "/map", label: t.nav.map },
-    { to: "/about", label: t.nav.about },
-    ...(!subscribed ? [{ to: "/join", label: t.nav.join }] : []),
-    { to: "/contact", label: t.nav.contact },
+    { to: "/", label: t.nav.home, icon: Home },
+    { to: "/map", label: t.nav.map, icon: Map },
+    { to: "/about", label: t.nav.about, icon: Info },
+    ...(!subscribed ? [{ to: "/join", label: t.nav.join, icon: UserPlus }] : []),
+    { to: "/contact", label: t.nav.contact, icon: Mail },
   ];
 
   const languages: Array<{ code: "ja" | "en" | "pt" | "es" | "fr" | "de" | "zh" | "ko" | "it" | "ru" | "ar" | "hi"; label: string; name: string }> = [
@@ -225,73 +226,129 @@ const Navigation = () => {
           {/* Mobile Hamburger Menu */}
           <Sheet open={isOpen} onOpenChange={setIsOpen}>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon">
+              <Button 
+                variant="ghost" 
+                size="icon"
+                className="relative hover:bg-primary/10 transition-all"
+              >
                 <Menu className="h-6 w-6" />
               </Button>
             </SheetTrigger>
-            <SheetContent side="right" className="w-[300px] sm:w-[400px]">
-              <nav className="flex flex-col gap-6 mt-8">
-                {links.map((link) => (
-                  <Link
-                    key={link.to}
-                    to={link.to}
+            <SheetContent 
+              side="right" 
+              className="w-[85vw] max-w-[400px] p-0 flex flex-col"
+            >
+              <SheetHeader className="px-6 pt-6 pb-4 border-b border-border">
+                <div className="flex items-center justify-between">
+                  <SheetTitle className="text-2xl font-light">Menu</SheetTitle>
+                  <Button
+                    variant="ghost"
+                    size="icon"
                     onClick={() => setIsOpen(false)}
-                    className={`text-lg font-light transition-smooth ${
-                      location.pathname === link.to
-                        ? "text-foreground"
-                        : "text-muted-foreground hover:text-foreground"
-                    }`}
-                    onTouchStart={() => prefetchRoute(link.to)}
+                    className="h-8 w-8 rounded-full hover:bg-muted"
                   >
-                    {link.label}
-                  </Link>
-                ))}
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              </SheetHeader>
+
+              <nav className="flex-1 overflow-y-auto px-4 py-6">
+                <div className="space-y-2">
+                  {links.map((link) => {
+                    const Icon = link.icon;
+                    const isActive = location.pathname === link.to;
+                    return (
+                      <Link
+                        key={link.to}
+                        to={link.to}
+                        onClick={() => setIsOpen(false)}
+                        onTouchStart={() => prefetchRoute(link.to)}
+                        className={`
+                          flex items-center gap-4 px-4 py-3.5 rounded-lg
+                          transition-all duration-200 group
+                          ${isActive 
+                            ? "bg-primary text-primary-foreground shadow-md" 
+                            : "hover:bg-muted/50 active:bg-muted"
+                          }
+                        `}
+                      >
+                        <Icon className={`h-5 w-5 transition-transform group-hover:scale-110 ${
+                          isActive ? "" : "text-muted-foreground"
+                        }`} />
+                        <span className={`text-base font-medium ${
+                          isActive ? "" : "text-foreground"
+                        }`}>
+                          {link.label}
+                        </span>
+                      </Link>
+                    );
+                  })}
+                </div>
+
+                <Separator className="my-6" />
                 
-                <div className="border-t border-border pt-6 space-y-3">
+                <div className="space-y-2">
                   {user ? (
                     <>
                       <Link to="/mypage" onClick={() => setIsOpen(false)}>
-                        <Button variant="outline" className="w-full gap-2">
-                          <User className="h-4 w-4" />
-                          {t.nav.myPage || (language === "ja" ? "マイページ" : language === "pt" ? "Minha Página" : "My Page")}
+                        <Button 
+                          variant="ghost" 
+                          className="w-full justify-start gap-3 h-12 hover:bg-muted/50 active:bg-muted"
+                        >
+                          <User className="h-5 w-5" />
+                          <span className="text-base">
+                            {t.nav.myPage || (language === "ja" ? "マイページ" : language === "pt" ? "Minha Página" : "My Page")}
+                          </span>
                         </Button>
                       </Link>
                       {canAccessAdmin && (
                         <Link to="/admin/dashboard" onClick={() => setIsOpen(false)}>
-                          <Button variant="outline" className="w-full gap-2">
-                            <ShieldCheck className="h-4 w-4" />
-                            {t.nav.adminDashboard || (language === "ja" ? "管理画面" : language === "pt" ? "Painel de Administração" : "Admin Dashboard")}
+                          <Button 
+                            variant="ghost" 
+                            className="w-full justify-start gap-3 h-12 hover:bg-muted/50 active:bg-muted"
+                          >
+                            <ShieldCheck className="h-5 w-5" />
+                            <span className="text-base">
+                              {t.nav.adminDashboard || (language === "ja" ? "管理画面" : language === "pt" ? "Painel de Administração" : "Admin Dashboard")}
+                            </span>
                           </Button>
                         </Link>
                       )}
                       <Button 
-                        variant="outline" 
-                        className="w-full gap-2"
+                        variant="ghost" 
+                        className="w-full justify-start gap-3 h-12 hover:bg-muted/50 active:bg-muted"
                         onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
                       >
-                        {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-                        {theme === "dark" 
-                          ? (language === "ja" ? "ライトモード" : language === "pt" ? "Modo Claro" : "Light Mode")
-                          : (language === "ja" ? "ダークモード" : language === "pt" ? "Modo Escuro" : "Dark Mode")
-                        }
+                        {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+                        <span className="text-base">
+                          {theme === "dark" 
+                            ? (language === "ja" ? "ライトモード" : language === "pt" ? "Modo Claro" : "Light Mode")
+                            : (language === "ja" ? "ダークモード" : language === "pt" ? "Modo Escuro" : "Dark Mode")
+                          }
+                        </span>
                       </Button>
                       <Button 
-                        variant="outline" 
-                        className="w-full gap-2"
+                        variant="ghost" 
+                        className="w-full justify-start gap-3 h-12 text-destructive hover:bg-destructive/10 hover:text-destructive active:bg-destructive/20"
                         onClick={() => {
                           handleLogout();
                           setIsOpen(false);
                         }}
                       >
-                        <LogOut className="h-4 w-4" />
-                        {t.nav.logout || (language === "ja" ? "ログアウト" : language === "pt" ? "Sair" : "Logout")}
+                        <LogOut className="h-5 w-5" />
+                        <span className="text-base">
+                          {t.nav.logout || (language === "ja" ? "ログアウト" : language === "pt" ? "Sair" : "Logout")}
+                        </span>
                       </Button>
                     </>
                   ) : (
                     <Link to="/login" onClick={() => setIsOpen(false)}>
-                      <Button variant="outline" className="w-full gap-2">
-                        <LogIn className="h-4 w-4" />
-                        {t.nav.login}
+                      <Button 
+                        variant="default" 
+                        className="w-full justify-start gap-3 h-12"
+                      >
+                        <LogIn className="h-5 w-5" />
+                        <span className="text-base">{t.nav.login}</span>
                       </Button>
                     </Link>
                   )}
