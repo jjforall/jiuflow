@@ -1114,7 +1114,12 @@ export const TechniquesManagement = () => {
           progress: data.progress || prev.progress,
         }));
         
-        if (data.status === 'completed' && data.videoUrl) {
+        // merging_done も完了とみなす
+        const isCompleted = data.status === 'completed' || 
+                          data.status === 'done' || 
+                          data.status === 'merging_done';
+        
+        if (isCompleted && data.videoUrl) {
           // Update the technique with the translated video URL and metadata
           let updateField: string;
           let langName: string;
