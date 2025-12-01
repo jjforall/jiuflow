@@ -10,9 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { Star, Languages, GitBranch, Heart } from "lucide-react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LineageTreeView } from "@/components/LineageTreeView";
+import { Star, Languages, Heart } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 
@@ -250,21 +248,8 @@ const Athletes = () => {
             </p>
           </div>
 
-          {/* Tabs for different views */}
-          <Tabs defaultValue="grid" className="w-full">
-            <TabsList className="grid w-full max-w-md mx-auto grid-cols-2 mb-8">
-              <TabsTrigger value="grid" className="gap-2">
-                <Star className="h-4 w-4" />
-                {language === "ja" ? "選手一覧" : language === "pt" ? "Lista" : "Grid View"}
-              </TabsTrigger>
-              <TabsTrigger value="lineage" className="gap-2">
-                <GitBranch className="h-4 w-4" />
-                {language === "ja" ? "系統図" : language === "pt" ? "Linhagem" : "Lineage Tree"}
-              </TabsTrigger>
-            </TabsList>
-
-            {/* Grid View */}
-            <TabsContent value="grid">
+          {/* Athletes Grid */}
+          <div className="w-full">
               {/* Loading State */}
               {isLoading ? (
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 animate-fade-in">
@@ -407,15 +392,7 @@ const Athletes = () => {
                   ))}
                 </div>
               )}
-            </TabsContent>
-
-            {/* Lineage Tree View */}
-            <TabsContent value="lineage">
-              <div className="max-w-6xl mx-auto">
-                <LineageTreeView />
-              </div>
-            </TabsContent>
-          </Tabs>
+          </div>
         </div>
       </main>
 
