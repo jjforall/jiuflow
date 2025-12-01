@@ -101,38 +101,38 @@ export const LineageTreeView = () => {
           to={`/athlete/${node.celebrity.id}`}
           className="block group"
         >
-          <Card className={`inline-block bg-gradient-to-br ${eraInfo.color} border-2 hover:shadow-lg transition-all duration-300 hover:scale-[1.02]`}>
-            <CardContent className="p-6">
-              <div className="flex items-start gap-4">
-                <Avatar className="h-20 w-20 ring-2 ring-background shadow-lg">
+          <Card className={`inline-block w-full md:w-auto bg-gradient-to-br ${eraInfo.color} border-2 hover:shadow-lg transition-all duration-300 hover:scale-[1.02]`}>
+            <CardContent className="p-4 md:p-6">
+              <div className="flex items-start gap-3 md:gap-4">
+                <Avatar className="h-16 w-16 md:h-20 md:w-20 ring-2 ring-background shadow-lg flex-shrink-0">
                   <AvatarImage src={node.celebrity.avatar_url || undefined} />
-                  <AvatarFallback className="text-lg font-bold">{node.celebrity.display_name[0]}</AvatarFallback>
+                  <AvatarFallback className="text-base md:text-lg font-bold">{node.celebrity.display_name[0]}</AvatarFallback>
                 </Avatar>
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-start justify-between gap-2 mb-2">
-                    <h3 className="font-bold text-lg leading-tight group-hover:text-primary transition-colors">
+                  <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-2 mb-2">
+                    <h3 className="font-bold text-base md:text-lg leading-tight group-hover:text-primary transition-colors">
                       {node.celebrity.display_name}
                     </h3>
-                    <Badge variant="secondary" className="shrink-0 text-xs">
+                    <Badge variant="secondary" className="self-start md:shrink-0 text-xs">
                       {eraInfo.era}
                     </Badge>
                   </div>
                   
                   {belt && (
                     <div className="flex items-center gap-1.5 mb-1.5">
-                      <Award className="h-4 w-4 text-primary" />
-                      <p className="text-sm font-medium">{belt}</p>
+                      <Award className="h-3.5 w-3.5 md:h-4 md:w-4 text-primary flex-shrink-0" />
+                      <p className="text-xs md:text-sm font-medium">{belt}</p>
                     </div>
                   )}
                   
                   <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-2">
-                    <Calendar className="h-3.5 w-3.5" />
-                    <span>{eraInfo.year}</span>
+                    <Calendar className="h-3 w-3 md:h-3.5 md:w-3.5 flex-shrink-0" />
+                    <span className="text-xs">{eraInfo.year}</span>
                   </div>
                   
                   {node.students.length > 0 && (
-                    <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                      <Users className="h-4 w-4" />
+                    <div className="flex items-center gap-1.5 text-xs md:text-sm text-muted-foreground">
+                      <Users className="h-3.5 w-3.5 md:h-4 md:w-4 flex-shrink-0" />
                       <span className="font-medium">{node.students.length}人の弟子</span>
                     </div>
                   )}
@@ -143,15 +143,15 @@ export const LineageTreeView = () => {
         </Link>
 
         {node.students.length > 0 && (
-          <div className="relative mt-6 ml-12 space-y-6">
+          <div className="relative mt-4 md:mt-6 ml-6 md:ml-12 space-y-4 md:space-y-6">
             {/* Vertical connection line with gradient */}
-            <div className="absolute left-0 top-0 bottom-6 w-0.5 bg-gradient-to-b from-primary/50 to-primary/20" />
+            <div className="absolute left-0 top-0 bottom-4 md:bottom-6 w-0.5 bg-gradient-to-b from-primary/50 to-primary/20" />
             
             {node.students.map((student, idx) => (
-              <div key={student.celebrity.id} className="relative pl-12">
+              <div key={student.celebrity.id} className="relative pl-6 md:pl-12">
                 {/* Horizontal connection line */}
-                <div className="absolute left-0 top-10 h-0.5 w-12 bg-gradient-to-r from-primary/50 to-primary/20">
-                  <div className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full bg-primary/60 animate-pulse" />
+                <div className="absolute left-0 top-8 md:top-10 h-0.5 w-6 md:w-12 bg-gradient-to-r from-primary/50 to-primary/20">
+                  <div className="absolute -right-1 -top-1 h-2 w-2 md:h-2.5 md:w-2.5 rounded-full bg-primary/60 animate-pulse" />
                 </div>
                 {renderNode(student, depth + 1)}
               </div>
@@ -185,22 +185,24 @@ export const LineageTreeView = () => {
   }
 
   return (
-    <div className="space-y-16 py-8">
+    <div className="space-y-8 md:space-y-16 py-4 md:py-8">
       {/* Historical timeline header */}
-      <div className="text-center space-y-3 animate-fade-in">
-        <h2 className="text-3xl font-bold bg-gradient-to-r from-amber-500 via-red-500 to-purple-500 bg-clip-text text-transparent">
+      <div className="text-center space-y-2 md:space-y-3 animate-fade-in px-4">
+        <h2 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-amber-500 via-red-500 to-purple-500 bg-clip-text text-transparent">
           武道の系譜
         </h2>
-        <p className="text-muted-foreground max-w-2xl mx-auto">
+        <p className="text-sm md:text-base text-muted-foreground max-w-2xl mx-auto">
           日本古流柔術から講道館柔道、そしてブラジリアン柔術へと受け継がれてきた技術と精神の歴史
         </p>
       </div>
 
-      {lineageRoots.map((root, idx) => (
-        <div key={root.celebrity.id} className="relative" style={{ animationDelay: `${idx * 100}ms` }}>
-          {renderNode(root)}
-        </div>
-      ))}
+      <div className="space-y-8 md:space-y-16">
+        {lineageRoots.map((root, idx) => (
+          <div key={root.celebrity.id} className="relative" style={{ animationDelay: `${idx * 100}ms` }}>
+            {renderNode(root)}
+          </div>
+        ))}
+      </div>
     </div>
   );
 };
