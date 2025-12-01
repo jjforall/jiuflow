@@ -500,7 +500,7 @@ export default function DojosManagement() {
                     </div>
                     <div className="flex items-center gap-2">
                       <Switch checked={formData.is_verified} onCheckedChange={(checked) => setFormData({ ...formData, is_verified: checked })} />
-                      <Label>公認道場</Label>
+                      <Label>PR道場</Label>
                     </div>
                   </TabsContent>
 
@@ -634,7 +634,7 @@ export default function DojosManagement() {
                   <TableCell>
                     {dojo.is_verified && (
                       <Badge variant="secondary">
-                        {language === "ja" ? "公認" : "Verified"}
+                        PR
                       </Badge>
                     )}
                   </TableCell>

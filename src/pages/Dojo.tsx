@@ -379,7 +379,7 @@ export default function Dojo() {
                     {dojo.is_verified && (
                       <Badge className="bg-primary text-primary-foreground text-sm md:text-base px-4 py-2 gap-2">
                         <Award className="w-4 h-4" />
-                        {language === "ja" ? "公認道場" : "Verified"}
+                        PR
                       </Badge>
                     )}
                     {userId && (
@@ -417,7 +417,7 @@ export default function Dojo() {
                   {dojo.is_verified && (
                     <Badge className="text-sm md:text-base px-4 py-2 gap-2">
                       <Award className="w-4 h-4" />
-                      {language === "ja" ? "公認道場" : "Verified"}
+                      PR
                     </Badge>
                   )}
                   {userId && (

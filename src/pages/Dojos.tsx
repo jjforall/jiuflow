@@ -302,7 +302,7 @@ export default function Dojos() {
                           />
                           {dojo.is_verified && (
                             <div className="absolute top-2 right-2 bg-primary text-primary-foreground px-2 py-1 rounded text-xs font-medium">
-                              {language === "ja" ? "公認" : "Verified"}
+                              PR
                             </div>
                           )}
                         </div>
@@ -313,7 +313,7 @@ export default function Dojos() {
                         {!dojo.cover_image_url && dojo.is_verified && (
                           <div className="mb-3">
                             <Badge variant="default" className="text-xs">
-                              {language === "ja" ? "公認" : "Verified"}
+                              PR
                             </Badge>
                           </div>
                         )}
