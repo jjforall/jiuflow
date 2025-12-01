@@ -2,6 +2,7 @@ import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { AlertTriangle, RefreshCw, Home, FileText, Mail, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SupportTicketDialog } from './SupportTicketDialog';
+import { LanguageProvider } from '@/contexts/LanguageContext';
 
 interface Props {
   children: ReactNode;
@@ -185,12 +186,14 @@ export class ErrorBoundary extends Component<Props, State> {
             </div>
           </div>
 
-          <SupportTicketDialog
-            open={this.state.isTicketDialogOpen}
-            onOpenChange={this.handleCloseTicketDialog}
-            errorType="Runtime Error"
-            errorDetails={this.state.error?.toString() || "Unknown error"}
-          />
+          <LanguageProvider>
+            <SupportTicketDialog
+              open={this.state.isTicketDialogOpen}
+              onOpenChange={this.handleCloseTicketDialog}
+              errorType="Runtime Error"
+              errorDetails={this.state.error?.toString() || "Unknown error"}
+            />
+          </LanguageProvider>
         </div>
       );
     }
