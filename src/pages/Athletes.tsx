@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { Star, Languages, Heart, GitBranch } from "lucide-react";
+import { Star, Heart, GitBranch } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 
@@ -18,6 +18,18 @@ interface Celebrity {
   id: string;
   display_name: string;
   bio: string | null;
+  bio_ja: string | null;
+  bio_en: string | null;
+  bio_pt: string | null;
+  bio_es: string | null;
+  bio_fr: string | null;
+  bio_de: string | null;
+  bio_zh: string | null;
+  bio_ko: string | null;
+  bio_it: string | null;
+  bio_ru: string | null;
+  bio_ar: string | null;
+  bio_hi: string | null;
   avatar_url: string | null;
   belt_history: any;
   titles: any;
@@ -39,8 +51,6 @@ const Athletes = () => {
   const navigate = useNavigate();
   const [celebrities, setCelebrities] = useState<Celebrity[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [translatedBios, setTranslatedBios] = useState<Record<string, string>>({});
-  const [translatingIds, setTranslatingIds] = useState<Set<string>>(new Set());
   const [followedCelebrities, setFollowedCelebrities] = useState<Set<string>>(new Set());
 
   useEffect(() => {
@@ -115,29 +125,23 @@ const Athletes = () => {
     }
   };
 
-  const handleTranslateBio = async (celebrityId: string, bio: string) => {
-    if (translatingIds.has(celebrityId)) return;
-    
-    setTranslatingIds(prev => new Set(prev).add(celebrityId));
-    try {
-      const translated = await translateText(bio, 'en');
-      setTranslatedBios(prev => ({ ...prev, [celebrityId]: translated }));
-    } catch (error) {
-      console.error('Translation error:', error);
-    } finally {
-      setTranslatingIds(prev => {
-        const next = new Set(prev);
-        next.delete(celebrityId);
-        return next;
-      });
-    }
-  };
-
   const getBioText = (celebrity: Celebrity) => {
-    if (translatedBios[celebrity.id]) {
-      return translatedBios[celebrity.id];
-    }
-    return celebrity.bio;
+    const bioMap: Record<string, string | null> = {
+      ja: celebrity.bio_ja,
+      en: celebrity.bio_en,
+      pt: celebrity.bio_pt,
+      es: celebrity.bio_es,
+      fr: celebrity.bio_fr,
+      de: celebrity.bio_de,
+      zh: celebrity.bio_zh,
+      ko: celebrity.bio_ko,
+      it: celebrity.bio_it,
+      ru: celebrity.bio_ru,
+      ar: celebrity.bio_ar,
+      hi: celebrity.bio_hi,
+    };
+    
+    return bioMap[language] || celebrity.bio_ja || celebrity.bio || null;
   };
 
   const loadFollowedCelebrities = async () => {
@@ -347,30 +351,11 @@ const Athletes = () => {
                     </CardHeader>
                     
                     <CardContent className="flex-1 flex flex-col space-y-3 pt-0">
-                      {celebrity.bio && (
-                        <div className="space-y-2 flex-1">
+                      {getBioText(celebrity) && (
+                        <div className="flex-1">
                           <p className="text-sm text-muted-foreground line-clamp-3">
                             {getBioText(celebrity)}
                           </p>
-                          {language !== 'en' && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={(e) => {
-                                e.preventDefault();
-                                handleTranslateBio(celebrity.id, celebrity.bio!);
-                              }}
-                              disabled={translatingIds.has(celebrity.id)}
-                              className="h-6 px-2 text-xs"
-                            >
-                              <Languages className="h-3 w-3 mr-1" />
-                              {translatingIds.has(celebrity.id) 
-                                ? (language === 'ja' ? '翻訳中...' : 'Traduzindo...') 
-                                : translatedBios[celebrity.id]
-                                ? (language === 'ja' ? '原文' : 'Original')
-                                : (language === 'ja' ? '翻訳' : 'Traduzir')}
-                            </Button>
-                          )}
                         </div>
                       )}
                       

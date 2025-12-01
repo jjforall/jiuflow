@@ -79,6 +79,18 @@ export type Database = {
           avatar_url: string | null
           belt_history: Json | null
           bio: string | null
+          bio_ar: string | null
+          bio_de: string | null
+          bio_en: string | null
+          bio_es: string | null
+          bio_fr: string | null
+          bio_hi: string | null
+          bio_it: string | null
+          bio_ja: string | null
+          bio_ko: string | null
+          bio_pt: string | null
+          bio_ru: string | null
+          bio_zh: string | null
           created_at: string | null
           display_name: string
           featured: boolean | null
@@ -97,6 +109,18 @@ export type Database = {
           avatar_url?: string | null
           belt_history?: Json | null
           bio?: string | null
+          bio_ar?: string | null
+          bio_de?: string | null
+          bio_en?: string | null
+          bio_es?: string | null
+          bio_fr?: string | null
+          bio_hi?: string | null
+          bio_it?: string | null
+          bio_ja?: string | null
+          bio_ko?: string | null
+          bio_pt?: string | null
+          bio_ru?: string | null
+          bio_zh?: string | null
           created_at?: string | null
           display_name: string
           featured?: boolean | null
@@ -115,6 +139,18 @@ export type Database = {
           avatar_url?: string | null
           belt_history?: Json | null
           bio?: string | null
+          bio_ar?: string | null
+          bio_de?: string | null
+          bio_en?: string | null
+          bio_es?: string | null
+          bio_fr?: string | null
+          bio_hi?: string | null
+          bio_it?: string | null
+          bio_ja?: string | null
+          bio_ko?: string | null
+          bio_pt?: string | null
+          bio_ru?: string | null
+          bio_zh?: string | null
           created_at?: string | null
           display_name?: string
           featured?: boolean | null

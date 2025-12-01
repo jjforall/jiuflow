@@ -24,6 +24,18 @@ interface Celebrity {
   user_id: string | null;
   display_name: string;
   bio: string | null;
+  bio_ja: string | null;
+  bio_en: string | null;
+  bio_pt: string | null;
+  bio_es: string | null;
+  bio_fr: string | null;
+  bio_de: string | null;
+  bio_zh: string | null;
+  bio_ko: string | null;
+  bio_it: string | null;
+  bio_ru: string | null;
+  bio_ar: string | null;
+  bio_hi: string | null;
   avatar_url: string | null;
   belt_history: any;
   titles: any;
@@ -51,6 +63,18 @@ export const CelebritiesManagement = () => {
   const [formData, setFormData] = useState({
     display_name: "",
     bio: "",
+    bio_ja: "",
+    bio_en: "",
+    bio_pt: "",
+    bio_es: "",
+    bio_fr: "",
+    bio_de: "",
+    bio_zh: "",
+    bio_ko: "",
+    bio_it: "",
+    bio_ru: "",
+    bio_ar: "",
+    bio_hi: "",
     avatar_url: "",
     home_dojo: "",
     organization_id: "",
@@ -103,6 +127,18 @@ export const CelebritiesManagement = () => {
       setFormData({
         display_name: celebrity.display_name,
         bio: celebrity.bio || "",
+        bio_ja: celebrity.bio_ja || "",
+        bio_en: celebrity.bio_en || "",
+        bio_pt: celebrity.bio_pt || "",
+        bio_es: celebrity.bio_es || "",
+        bio_fr: celebrity.bio_fr || "",
+        bio_de: celebrity.bio_de || "",
+        bio_zh: celebrity.bio_zh || "",
+        bio_ko: celebrity.bio_ko || "",
+        bio_it: celebrity.bio_it || "",
+        bio_ru: celebrity.bio_ru || "",
+        bio_ar: celebrity.bio_ar || "",
+        bio_hi: celebrity.bio_hi || "",
         avatar_url: celebrity.avatar_url || "",
         home_dojo: celebrity.home_dojo || "",
         organization_id: celebrity.organization_id || "",
@@ -115,6 +151,18 @@ export const CelebritiesManagement = () => {
       setFormData({
         display_name: "",
         bio: "",
+        bio_ja: "",
+        bio_en: "",
+        bio_pt: "",
+        bio_es: "",
+        bio_fr: "",
+        bio_de: "",
+        bio_zh: "",
+        bio_ko: "",
+        bio_it: "",
+        bio_ru: "",
+        bio_ar: "",
+        bio_hi: "",
         avatar_url: "",
         home_dojo: "",
         organization_id: "",
@@ -136,6 +184,18 @@ export const CelebritiesManagement = () => {
           .update({
             display_name: formData.display_name,
             bio: formData.bio || null,
+            bio_ja: formData.bio_ja || null,
+            bio_en: formData.bio_en || null,
+            bio_pt: formData.bio_pt || null,
+            bio_es: formData.bio_es || null,
+            bio_fr: formData.bio_fr || null,
+            bio_de: formData.bio_de || null,
+            bio_zh: formData.bio_zh || null,
+            bio_ko: formData.bio_ko || null,
+            bio_it: formData.bio_it || null,
+            bio_ru: formData.bio_ru || null,
+            bio_ar: formData.bio_ar || null,
+            bio_hi: formData.bio_hi || null,
             avatar_url: formData.avatar_url || null,
             home_dojo: formData.home_dojo || null,
             organization_id: formData.organization_id || null,
@@ -153,6 +213,18 @@ export const CelebritiesManagement = () => {
           .insert({
             display_name: formData.display_name,
             bio: formData.bio || null,
+            bio_ja: formData.bio_ja || null,
+            bio_en: formData.bio_en || null,
+            bio_pt: formData.bio_pt || null,
+            bio_es: formData.bio_es || null,
+            bio_fr: formData.bio_fr || null,
+            bio_de: formData.bio_de || null,
+            bio_zh: formData.bio_zh || null,
+            bio_ko: formData.bio_ko || null,
+            bio_it: formData.bio_it || null,
+            bio_ru: formData.bio_ru || null,
+            bio_ar: formData.bio_ar || null,
+            bio_hi: formData.bio_hi || null,
             avatar_url: formData.avatar_url || null,
             home_dojo: formData.home_dojo || null,
             organization_id: formData.organization_id || null,
@@ -341,12 +413,122 @@ export const CelebritiesManagement = () => {
             </div>
 
             <div className="space-y-2">
-              <Label>自己紹介</Label>
+              <Label>自己紹介（日本語）</Label>
               <Textarea
-                value={formData.bio}
-                onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
+                value={formData.bio_ja}
+                onChange={(e) => setFormData({ ...formData, bio_ja: e.target.value })}
                 placeholder="選手の経歴や実績について..."
-                rows={4}
+                rows={3}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Bio (English)</Label>
+              <Textarea
+                value={formData.bio_en}
+                onChange={(e) => setFormData({ ...formData, bio_en: e.target.value })}
+                placeholder="About the athlete..."
+                rows={3}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Bio (Português)</Label>
+              <Textarea
+                value={formData.bio_pt}
+                onChange={(e) => setFormData({ ...formData, bio_pt: e.target.value })}
+                placeholder="Sobre o atleta..."
+                rows={3}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Bio (Español)</Label>
+              <Textarea
+                value={formData.bio_es}
+                onChange={(e) => setFormData({ ...formData, bio_es: e.target.value })}
+                placeholder="Sobre el atleta..."
+                rows={3}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Bio (Français)</Label>
+              <Textarea
+                value={formData.bio_fr}
+                onChange={(e) => setFormData({ ...formData, bio_fr: e.target.value })}
+                placeholder="À propos de l'athlète..."
+                rows={3}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Bio (Deutsch)</Label>
+              <Textarea
+                value={formData.bio_de}
+                onChange={(e) => setFormData({ ...formData, bio_de: e.target.value })}
+                placeholder="Über den Athleten..."
+                rows={3}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Bio (中文)</Label>
+              <Textarea
+                value={formData.bio_zh}
+                onChange={(e) => setFormData({ ...formData, bio_zh: e.target.value })}
+                placeholder="关于运动员..."
+                rows={3}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Bio (한국어)</Label>
+              <Textarea
+                value={formData.bio_ko}
+                onChange={(e) => setFormData({ ...formData, bio_ko: e.target.value })}
+                placeholder="선수에 대해..."
+                rows={3}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Bio (Italiano)</Label>
+              <Textarea
+                value={formData.bio_it}
+                onChange={(e) => setFormData({ ...formData, bio_it: e.target.value })}
+                placeholder="Sull'atleta..."
+                rows={3}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Bio (Русский)</Label>
+              <Textarea
+                value={formData.bio_ru}
+                onChange={(e) => setFormData({ ...formData, bio_ru: e.target.value })}
+                placeholder="О спортсмене..."
+                rows={3}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Bio (العربية)</Label>
+              <Textarea
+                value={formData.bio_ar}
+                onChange={(e) => setFormData({ ...formData, bio_ar: e.target.value })}
+                placeholder="عن الرياضي..."
+                rows={3}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Bio (हिन्दी)</Label>
+              <Textarea
+                value={formData.bio_hi}
+                onChange={(e) => setFormData({ ...formData, bio_hi: e.target.value })}
+                placeholder="एथलीट के बारे में..."
+                rows={3}
               />
             </div>
 
