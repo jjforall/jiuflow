@@ -1,6 +1,7 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
-import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
+import { AlertTriangle, RefreshCw, Home, FileText, Mail, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { SupportTicketDialog } from './SupportTicketDialog';
 
 interface Props {
   children: ReactNode;
@@ -11,17 +12,23 @@ interface State {
   hasError: boolean;
   error: Error | null;
   errorInfo: ErrorInfo | null;
+  isTicketDialogOpen: boolean;
+  countdown: number;
 }
 
 export class ErrorBoundary extends Component<Props, State> {
+  private countdownInterval?: NodeJS.Timeout;
+
   public state: State = {
     hasError: false,
     error: null,
     errorInfo: null,
+    isTicketDialogOpen: false,
+    countdown: 30,
   };
 
-  public static getDerivedStateFromError(error: Error): State {
-    return { hasError: true, error, errorInfo: null };
+  public static getDerivedStateFromError(error: Error): Partial<State> {
+    return { hasError: true, error, errorInfo: null, countdown: 30 };
   }
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
@@ -30,10 +37,35 @@ export class ErrorBoundary extends Component<Props, State> {
       error,
       errorInfo,
     });
+    
+    // Start countdown for auto-retry
+    this.startCountdown();
   }
 
+  public componentWillUnmount() {
+    if (this.countdownInterval) {
+      clearInterval(this.countdownInterval);
+    }
+  }
+
+  private startCountdown = () => {
+    this.countdownInterval = setInterval(() => {
+      this.setState((prevState) => {
+        const newCountdown = prevState.countdown - 1;
+        if (newCountdown <= 0) {
+          this.handleReset();
+          return { countdown: 30 };
+        }
+        return { countdown: newCountdown };
+      });
+    }, 1000);
+  };
+
   private handleReset = () => {
-    this.setState({ hasError: false, error: null, errorInfo: null });
+    if (this.countdownInterval) {
+      clearInterval(this.countdownInterval);
+    }
+    this.setState({ hasError: false, error: null, errorInfo: null, countdown: 30 });
   };
 
   private handleReload = () => {
@@ -42,6 +74,14 @@ export class ErrorBoundary extends Component<Props, State> {
 
   private handleGoHome = () => {
     window.location.href = '/';
+  };
+
+  private handleOpenTicketDialog = () => {
+    this.setState({ isTicketDialogOpen: true });
+  };
+
+  private handleCloseTicketDialog = () => {
+    this.setState({ isTicketDialogOpen: false });
   };
 
   public render() {
@@ -84,6 +124,11 @@ export class ErrorBoundary extends Component<Props, State> {
               </div>
             )}
 
+            <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground mb-4">
+              <Clock className="h-4 w-4" />
+              <span>{this.state.countdown}秒後に自動的に再試行します</span>
+            </div>
+
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <Button
                 variant="default"
@@ -91,7 +136,7 @@ export class ErrorBoundary extends Component<Props, State> {
                 className="flex items-center gap-2"
               >
                 <RefreshCw className="h-4 w-4" />
-                再試行
+                今すぐ再試行
               </Button>
               
               <Button
@@ -111,7 +156,41 @@ export class ErrorBoundary extends Component<Props, State> {
                 ホームへ戻る
               </Button>
             </div>
+
+            <div className="pt-6 border-t mt-6">
+              <p className="text-sm text-muted-foreground mb-3">
+                問題が解決しない場合
+              </p>
+              <div className="flex flex-col sm:flex-row gap-2 justify-center">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={this.handleOpenTicketDialog}
+                  className="flex items-center gap-2"
+                >
+                  <FileText className="h-4 w-4" />
+                  サポートチケット作成
+                </Button>
+                
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => window.location.href = '/contact'}
+                  className="flex items-center gap-2"
+                >
+                  <Mail className="h-4 w-4" />
+                  お問い合わせ
+                </Button>
+              </div>
+            </div>
           </div>
+
+          <SupportTicketDialog
+            open={this.state.isTicketDialogOpen}
+            onOpenChange={this.handleCloseTicketDialog}
+            errorType="Runtime Error"
+            errorDetails={this.state.error?.toString() || "Unknown error"}
+          />
         </div>
       );
     }
