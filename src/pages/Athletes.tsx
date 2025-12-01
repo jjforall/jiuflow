@@ -266,25 +266,6 @@ const Athletes = () => {
             {/* Lineage Tree View */}
             <TabsContent value="lineage">
               <div className="max-w-6xl mx-auto">
-                <div className="mb-6 text-center">
-                  <p className="text-muted-foreground mb-4">
-                    {language === "ja" 
-                      ? "ブラジリアン柔術の系譜を可視化しています" 
-                      : language === "pt" 
-                      ? "Visualizando a linhagem do Jiu-Jitsu Brasileiro" 
-                      : "Visualizing Brazilian Jiu-Jitsu lineage"}
-                  </p>
-                  <Link to="/lineage-tree">
-                    <Button size="lg" className="gap-2">
-                      <GitBranch className="h-5 w-5" />
-                      {language === "ja" 
-                        ? "詳細な系譜ツリーを見る" 
-                        : language === "pt" 
-                        ? "Ver Árvore de Linhagem Completa" 
-                        : "View Full Lineage Tree"}
-                    </Button>
-                  </Link>
-                </div>
                 <LineageTreeView />
               </div>
             </TabsContent>
