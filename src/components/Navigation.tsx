@@ -5,7 +5,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { translations } from "@/lib/translations";
 import { prefetchRoute } from "@/utils/routePrefetch";
 import { Button } from "@/components/ui/button";
-import { Menu, LogIn, User, LogOut, ShieldCheck, Moon, Sun, Home, Map, Info, UserPlus, X } from "lucide-react";
+import { Menu, LogIn, User, LogOut, ShieldCheck, Moon, Sun, Home, Map, Info, UserPlus, X, ClipboardList } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { supabase } from "@/integrations/supabase/client";
 import { User as SupabaseUser } from "@supabase/supabase-js";
@@ -148,6 +148,10 @@ const Navigation = () => {
                   <DropdownMenuItem onClick={() => navigate("/mypage")} className="gap-2 cursor-pointer">
                     <User className="h-4 w-4" />
                     {t.nav.myPage || (language === "ja" ? "マイページ" : language === "pt" ? "Minha Página" : "My Page")}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate("/mypage", { state: { tab: "practice" } })} className="gap-2 cursor-pointer">
+                    <ClipboardList className="h-4 w-4" />
+                    {language === "ja" ? "練習記録" : language === "pt" ? "Registros de Prática" : "Practice Records"}
                   </DropdownMenuItem>
                   {canAccessAdmin && (
                     <DropdownMenuItem onClick={() => navigate("/admin/dashboard")} className="gap-2 cursor-pointer">
@@ -307,6 +311,19 @@ const Navigation = () => {
                           </span>
                         </Button>
                       </Link>
+                      <Button 
+                        variant="ghost" 
+                        className="w-full justify-start gap-3 h-12 hover:bg-muted/50 active:bg-muted"
+                        onClick={() => {
+                          navigate("/mypage", { state: { tab: "practice" } });
+                          setIsOpen(false);
+                        }}
+                      >
+                        <ClipboardList className="h-5 w-5" />
+                        <span className="text-base">
+                          {language === "ja" ? "練習記録" : language === "pt" ? "Registros de Prática" : "Practice Records"}
+                        </span>
+                      </Button>
                       {canAccessAdmin && (
                         <Link to="/admin/dashboard" onClick={() => setIsOpen(false)}>
                           <Button 

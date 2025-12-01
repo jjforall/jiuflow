@@ -5,7 +5,7 @@ import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { AthleteApplicationForm } from "@/components/AthleteApplicationForm";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -150,6 +150,7 @@ interface Profile {
 const MyPage = () => {
   const { language } = useLanguage();
   const navigate = useNavigate();
+  const location = useLocation();
   const [user, setUser] = useState<{ id: string; email?: string } | null>(null);
   const [subscription, setSubscription] = useState<SubscriptionStatus | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -157,6 +158,7 @@ const MyPage = () => {
   const [userVideos, setUserVideos] = useState<UserVideo[]>([]);
   const [videosLoading, setVideosLoading] = useState(true);
   const [displayedVideosCount, setDisplayedVideosCount] = useState(9);
+  const [activeTab, setActiveTab] = useState("videos");
   const [dojoFriendsCode, setDojoFriendsCode] = useState<string>("");
   const [dojoFriendsUses, setDojoFriendsUses] = useState<number>(0);
   const [otherFriendsCode, setOtherFriendsCode] = useState<string>("");
@@ -241,6 +243,16 @@ const MyPage = () => {
       loadAvailableDojos();
     }
   }, [user]);
+
+  // Check if we should open a specific tab from navigation state
+  useEffect(() => {
+    const state = location.state as { tab?: string } | null;
+    if (state?.tab) {
+      setActiveTab(state.tab);
+      // Clear the state to prevent reopening the same tab on refresh
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
 
   const loadFollowStats = async () => {
     if (!user) return;
@@ -3284,7 +3296,7 @@ const MyPage = () => {
 
           {/* Tabs Section */}
           <div className="mt-12 animate-fade-up">
-            <Tabs defaultValue="videos" className="w-full">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <TabsList className="grid w-full grid-cols-4">
                 <TabsTrigger value="videos">
                   {language === "ja" ? "動画" : "Videos"}
