@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -10,9 +10,11 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { Star, Languages, GitBranch } from "lucide-react";
+import { Star, Languages, GitBranch, Heart } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LineageTreeView } from "@/components/LineageTreeView";
+import { useAuth } from "@/hooks/useAuth";
+import { toast } from "sonner";
 
 interface Celebrity {
   id: string;
@@ -35,14 +37,20 @@ interface Celebrity {
 const Athletes = () => {
   const { language } = useLanguage();
   const { translateText } = useTranslation();
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const [celebrities, setCelebrities] = useState<Celebrity[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [translatedBios, setTranslatedBios] = useState<Record<string, string>>({});
   const [translatingIds, setTranslatingIds] = useState<Set<string>>(new Set());
+  const [followedCelebrities, setFollowedCelebrities] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     loadCelebrities();
-  }, []);
+    if (user) {
+      loadFollowedCelebrities();
+    }
+  }, [user]);
 
   const loadCelebrities = async () => {
     setIsLoading(true);
@@ -101,6 +109,94 @@ const Athletes = () => {
       return translatedBios[celebrity.id];
     }
     return celebrity.bio;
+  };
+
+  const loadFollowedCelebrities = async () => {
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('celebrity_follows')
+        .select('celebrity_id')
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+      
+      const followedIds = new Set(data.map(f => f.celebrity_id));
+      setFollowedCelebrities(followedIds);
+    } catch (error) {
+      console.error('Error loading followed celebrities:', error);
+    }
+  };
+
+  const handleToggleFollow = async (celebrityId: string) => {
+    if (!user) {
+      toast.error(
+        language === "ja" 
+          ? "お気に入りに追加するにはログインが必要です" 
+          : language === "pt" 
+          ? "Faça login para favoritar" 
+          : "Please login to favorite"
+      );
+      navigate('/login');
+      return;
+    }
+
+    const isFollowing = followedCelebrities.has(celebrityId);
+
+    try {
+      if (isFollowing) {
+        const { error } = await supabase
+          .from('celebrity_follows')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('celebrity_id', celebrityId);
+
+        if (error) throw error;
+
+        setFollowedCelebrities(prev => {
+          const next = new Set(prev);
+          next.delete(celebrityId);
+          return next;
+        });
+
+        toast.success(
+          language === "ja" 
+            ? "お気に入りから削除しました" 
+            : language === "pt" 
+            ? "Removido dos favoritos" 
+            : "Removed from favorites"
+        );
+      } else {
+        const { error } = await supabase
+          .from('celebrity_follows')
+          .insert({
+            user_id: user.id,
+            celebrity_id: celebrityId
+          });
+
+        if (error) throw error;
+
+        setFollowedCelebrities(prev => new Set(prev).add(celebrityId));
+
+        toast.success(
+          language === "ja" 
+            ? "お気に入りに追加しました" 
+            : language === "pt" 
+            ? "Adicionado aos favoritos" 
+            : "Added to favorites"
+        );
+      }
+    } catch (error) {
+      console.error('Error toggling follow:', error);
+      toast.error(
+        language === "ja" 
+          ? "エラーが発生しました" 
+          : language === "pt" 
+          ? "Ocorreu um erro" 
+          : "An error occurred"
+      );
+    }
   };
 
   return (
@@ -194,6 +290,23 @@ const Athletes = () => {
                             {celebrity.featured && (
                               <Star className="h-5 w-5 text-yellow-500 fill-yellow-500 flex-shrink-0" />
                             )}
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                handleToggleFollow(celebrity.id);
+                              }}
+                              className="ml-auto p-2 h-8 w-8"
+                            >
+                              <Heart 
+                                className={`h-5 w-5 transition-colors ${
+                                  followedCelebrities.has(celebrity.id)
+                                    ? 'fill-red-500 text-red-500'
+                                    : 'text-muted-foreground hover:text-red-500'
+                                }`}
+                              />
+                            </Button>
                           </div>
                           {getBeltName(celebrity.belt_history) && (
                             <Badge variant="secondary" className="mb-2">
