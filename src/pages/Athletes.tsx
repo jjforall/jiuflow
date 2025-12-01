@@ -42,6 +42,12 @@ interface Celebrity {
     name_ja: string;
     name_pt: string;
   } | null;
+  instructors?: Array<{
+    instructor: {
+      display_name: string;
+      id: string;
+    };
+  }>;
 }
 
 const Athletes = () => {
@@ -86,7 +92,16 @@ const Athletes = () => {
     try {
       const { data, error } = await supabase
         .from('celebrities')
-        .select('*, organization:organizations(name, name_ja, name_pt)')
+        .select(`
+          *,
+          organization:organizations(name, name_ja, name_pt),
+          instructors:celebrity_lineage!celebrity_lineage_student_id_fkey(
+            instructor:celebrities!celebrity_lineage_instructor_id_fkey(
+              id,
+              display_name
+            )
+          )
+        `)
         .order('featured', { ascending: false })
         .order('sort_order', { ascending: true })
         .order('display_name', { ascending: true });
@@ -360,20 +375,13 @@ const Athletes = () => {
                       )}
                       
                       <div className="space-y-2 pt-2 border-t border-border/50">
-                        {celebrity.home_dojo && (
+                        {celebrity.instructors && celebrity.instructors.length > 0 && (
                           <div className="flex items-center gap-2 text-sm">
                             <span className="text-muted-foreground">
-                              {language === "ja" ? "所属:" : language === "pt" ? "Academia:" : "Gym:"}
+                              {language === "ja" ? "師匠:" : language === "pt" ? "Mestre:" : "Instructor:"}
                             </span>
-                            <span className="font-medium truncate">{celebrity.home_dojo}</span>
-                          </div>
-                        )}
-                        
-                        {celebrity.titles && celebrity.titles.length > 0 && (
-                          <div className="flex items-center gap-2 text-sm">
-                            <span className="text-muted-foreground">🏆</span>
-                            <span className="font-medium">
-                              {celebrity.titles.length} {language === "ja" ? "タイトル" : language === "pt" ? "títulos" : "titles"}
+                            <span className="font-medium truncate">
+                              {celebrity.instructors.map(i => i.instructor.display_name).join(", ")}
                             </span>
                           </div>
                         )}
