@@ -2678,54 +2678,6 @@ const MyPage = () => {
                 </CardContent>
               </Card>
 
-          {/* Tabs Section */}
-          <div className="mt-12 animate-fade-up">
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-5">
-                <TabsTrigger value="videos">
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <p className="text-xs text-muted-foreground mb-1">
-                    {language === "ja" ? "現在のプラン" : language === "pt" ? "Plano atual" : "Current Plan"}
-                  </p>
-                  <div className="flex items-center gap-2">
-                    <p className="font-light text-lg">
-                      {subscription?.subscribed ? getPlanName(subscription.price_id) : (language === "ja" ? "未登録" : "No Plan")}
-                    </p>
-                    {subscription?.is_trialing && (
-                      <Badge variant="secondary" className="text-xs">
-                        {language === "ja" ? "トライアル中" : "Trial"}
-                      </Badge>
-                    )}
-                  </div>
-                </div>
-                {subscription?.subscribed && subscription.subscription_end && (
-                  <div>
-                    <p className="text-xs text-muted-foreground mb-1">
-                      {language === "ja" ? "次回更新日" : language === "pt" ? "Próxima renovação" : "Next Renewal"}
-                    </p>
-                    <p className="font-light">{formatDate(subscription.subscription_end)}</p>
-                  </div>
-                )}
-                <div className="pt-4">
-                  {subscription?.subscribed ? (
-                    <p className="text-sm text-green-600 dark:text-green-400">
-                      ✓ {language === "ja" ? "有効なプラン" : language === "pt" ? "Plano ativo" : "Active Plan"}
-                    </p>
-                  ) : (
-                    <Button
-                      onClick={() => navigate("/join")}
-                      className="w-full"
-                    >
-                      {language === "ja" ? "プランに登録する" : language === "pt" ? "Assinar plano" : "Subscribe to Plan"}
-                    </Button>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
 
           {/* Referral Code Section */}
           <div className="mb-12 animate-fade-up">
