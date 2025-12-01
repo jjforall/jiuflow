@@ -106,7 +106,9 @@ const Footer = () => {
         
         <div className="pt-8 border-t border-border">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <p className="text-sm text-muted-foreground">&copy; 2025 jiuflow. All rights reserved.</p>
+            <p className="text-sm text-muted-foreground">
+              &copy; 2025 jiuf<span className="text-red-500">l</span>ow. All rights reserved.
+            </p>
             
             <div className="flex items-center gap-2">
               <DropdownMenu>
