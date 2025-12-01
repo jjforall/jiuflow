@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -449,59 +451,61 @@ const Athlete = () => {
       
       <main className="pt-16 md:pt-20 pb-16">
         {/* Cover Image */}
-        <div className="relative h-48 md:h-64 lg:h-80 w-full overflow-hidden">
+        <div className="relative h-40 sm:h-56 md:h-72 lg:h-80 w-full overflow-hidden">
           <img 
             src={coverImageUrl}
             alt="Cover" 
             className="w-full h-full object-cover"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-background/90 to-transparent" />
         </div>
 
-        <div className="max-w-5xl mx-auto px-4 md:px-8 lg:px-12 -mt-16 md:-mt-24 relative z-10">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 md:px-8 lg:px-12 -mt-12 sm:-mt-16 md:-mt-20 relative z-10">
           {/* Profile Header */}
-          <div className="flex flex-col md:flex-row gap-6 mb-8">
-            <Avatar className="h-32 w-32 md:h-40 md:w-40 border-4 border-background shadow-xl">
-              <AvatarImage src={celebrity.avatar_url || undefined} />
-              <AvatarFallback className="text-4xl md:text-5xl bg-primary/10">
-                {celebrity.display_name[0]}
-              </AvatarFallback>
-            </Avatar>
+          <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 mb-6 sm:mb-8">
+            <div className="flex justify-center sm:justify-start">
+              <Avatar className="h-24 w-24 sm:h-32 sm:w-32 md:h-40 md:w-40 border-4 border-background shadow-xl">
+                <AvatarImage src={celebrity.avatar_url || undefined} />
+                <AvatarFallback className="text-3xl sm:text-4xl md:text-5xl bg-primary/10">
+                  {celebrity.display_name[0]}
+                </AvatarFallback>
+              </Avatar>
+            </div>
 
-            <div className="flex-1 space-y-4">
-              <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-                <div>
-                  <div className="flex items-center gap-3 mb-2">
-                    <h1 className="text-3xl md:text-4xl font-light tracking-tight">
+            <div className="flex-1 space-y-3 sm:space-y-4">
+              <div className="flex flex-col gap-3 sm:gap-4">
+                <div className="text-center sm:text-left">
+                  <div className="flex items-center justify-center sm:justify-start gap-2 sm:gap-3 mb-2">
+                    <h1 className="text-2xl sm:text-3xl md:text-4xl font-light tracking-tight">
                       {celebrity.display_name}
                     </h1>
                     {celebrity.featured && (
-                      <Star className="h-6 w-6 text-yellow-500 fill-yellow-500" />
+                      <Star className="h-5 w-5 sm:h-6 sm:w-6 text-yellow-500 fill-yellow-500" />
                     )}
                   </div>
                   
-                  <div className="flex flex-wrap gap-2 mb-3">
+                  <div className="flex flex-wrap justify-center sm:justify-start gap-2 mb-3">
                     {currentBelt && <BeltBadge belt={currentBelt} />}
                     {orgName && (
-                      <Badge variant="outline" className="text-sm">
+                      <Badge variant="outline" className="text-xs sm:text-sm">
                         {orgName}
                       </Badge>
                     )}
                   </div>
 
-                  <div className="flex items-center gap-6 text-sm text-muted-foreground">
-                    <div className="flex items-center gap-2">
-                      <User className="h-4 w-4" />
+                  <div className="flex items-center justify-center sm:justify-start gap-4 sm:gap-6 text-xs sm:text-sm text-muted-foreground">
+                    <div className="flex items-center gap-1 sm:gap-2">
+                      <User className="h-3 w-3 sm:h-4 sm:w-4" />
                       <span>{followersCount} {language === "ja" ? "フォロワー" : language === "pt" ? "Seguidores" : "Followers"}</span>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <User className="h-4 w-4" />
+                    <div className="flex items-center gap-1 sm:gap-2">
+                      <User className="h-3 w-3 sm:h-4 sm:w-4" />
                       <span>{followingCount} {language === "ja" ? "フォロー中" : language === "pt" ? "Seguindo" : "Following"}</span>
                     </div>
                   </div>
                 </div>
 
-                <div className="flex gap-2">
+                <div className="flex justify-center sm:justify-start gap-2">
                   {isOwner ? (
                     <>
                       {celebrity.user_id ? (
@@ -541,11 +545,32 @@ const Athlete = () => {
               </div>
 
               {celebrity.bio && (
-                <Card>
-                  <CardContent className="pt-6">
-                    <p className="text-base text-muted-foreground whitespace-pre-wrap">
-                      {translatedBio || celebrity.bio}
-                    </p>
+                <Card className="mt-4">
+                  <CardContent className="pt-4 sm:pt-6">
+                    <div className="prose prose-sm sm:prose-base dark:prose-invert max-w-none text-sm sm:text-base text-muted-foreground">
+                      <ReactMarkdown 
+                        remarkPlugins={[remarkGfm]}
+                        components={{
+                          h1: ({node, ...props}) => <h1 className="text-xl sm:text-2xl font-bold mt-4 mb-2" {...props} />,
+                          h2: ({node, ...props}) => <h2 className="text-lg sm:text-xl font-bold mt-3 mb-2" {...props} />,
+                          h3: ({node, ...props}) => <h3 className="text-base sm:text-lg font-semibold mt-2 mb-1" {...props} />,
+                          p: ({node, ...props}) => <p className="mb-3 leading-relaxed" {...props} />,
+                          ul: ({node, ...props}) => <ul className="list-disc list-inside mb-3 space-y-1" {...props} />,
+                          ol: ({node, ...props}) => <ol className="list-decimal list-inside mb-3 space-y-1" {...props} />,
+                          li: ({node, ...props}) => <li className="ml-2" {...props} />,
+                          a: ({node, ...props}) => <a className="text-primary hover:underline" {...props} />,
+                          strong: ({node, ...props}) => <strong className="font-semibold" {...props} />,
+                          em: ({node, ...props}) => <em className="italic" {...props} />,
+                          blockquote: ({node, ...props}) => <blockquote className="border-l-4 border-primary/30 pl-4 italic my-3" {...props} />,
+                          code: ({node, inline, ...props}: any) => 
+                            inline 
+                              ? <code className="bg-muted px-1 py-0.5 rounded text-sm" {...props} />
+                              : <code className="block bg-muted p-3 rounded my-2 overflow-x-auto text-sm" {...props} />
+                        }}
+                      >
+                        {translatedBio || celebrity.bio}
+                      </ReactMarkdown>
+                    </div>
                     {language !== 'en' && (
                       <Button
                         variant="ghost"
@@ -569,28 +594,28 @@ const Athlete = () => {
           </div>
 
           {/* Content Grid */}
-          <div className="grid md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 mt-6 sm:mt-8">
             {/* Left Column - Info Cards */}
-            <div className="md:col-span-1 space-y-6">
+            <div className="lg:col-span-1 space-y-4 sm:space-y-6">
               {celebrity.home_dojo && (
                 <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-lg">
-                      <MapPin className="h-5 w-5" />
+                  <CardHeader className="pb-3">
+                    <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                      <MapPin className="h-4 w-4 sm:h-5 sm:w-5" />
                       {language === "ja" ? "所属道場" : language === "pt" ? "Academia" : "Home Gym"}
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-base">{celebrity.home_dojo}</p>
+                    <p className="text-sm sm:text-base">{celebrity.home_dojo}</p>
                   </CardContent>
                 </Card>
               )}
 
               {celebrity.titles && celebrity.titles.length > 0 && (
                 <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-lg">
-                      <Trophy className="h-5 w-5" />
+                  <CardHeader className="pb-3">
+                    <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                      <Trophy className="h-4 w-4 sm:h-5 sm:w-5" />
                       {language === "ja" ? "タイトル" : language === "pt" ? "Títulos" : "Titles"}
                     </CardTitle>
                   </CardHeader>
@@ -599,7 +624,7 @@ const Athlete = () => {
                       {celebrity.titles.map((title: any, index: number) => (
                         <li key={index} className="flex items-start gap-2">
                           <span className="text-primary">•</span>
-                          <span className="text-sm">{title.title || title}</span>
+                          <span className="text-xs sm:text-sm leading-relaxed">{title.title || title}</span>
                         </li>
                       ))}
                     </ul>
@@ -609,15 +634,15 @@ const Athlete = () => {
 
               {celebrity.belt_history && celebrity.belt_history.length > 0 && (
                 <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base sm:text-lg">
                       {language === "ja" ? "帯の履歴" : language === "pt" ? "Histórico de Faixas" : "Belt History"}
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="space-y-3">
+                    <div className="space-y-2 sm:space-y-3">
                       {celebrity.belt_history.map((item: any, index: number) => (
-                        <div key={index} className="flex items-center gap-3">
+                        <div key={index} className="flex flex-wrap items-center gap-2 sm:gap-3">
                           <BeltBadge belt={item.belt} />
                           {item.date && (
                             <span className="text-xs text-muted-foreground">
@@ -625,7 +650,7 @@ const Athlete = () => {
                             </span>
                           )}
                           {item.instructor && (
-                            <span className="text-xs text-muted-foreground">
+                            <span className="text-xs text-muted-foreground break-words">
                               {item.instructor}
                             </span>
                           )}
@@ -656,16 +681,16 @@ const Athlete = () => {
             </div>
 
             {/* Right Column - Videos */}
-            <div className="md:col-span-2">
+            <div className="lg:col-span-2">
               {videos.length > 0 && (
                 <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base sm:text-lg">
                       {language === "ja" ? "投稿動画" : language === "pt" ? "Vídeos" : "Videos"}
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="grid gap-6 md:grid-cols-2">
+                    <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2">
                       {videos.map((video) => (
                         <UserVideoCard
                           key={video.id}
