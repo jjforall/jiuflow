@@ -17,11 +17,9 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { CalendarIcon } from "lucide-react";
-import { User, CreditCard, Calendar, Mail, Upload, Video, Eye, Edit2, Check, X, Trash2, Lock, Globe, Plus, Copy, MapPin, Building2, Camera, Image, Moon, Sun, Settings, ChevronDown } from "lucide-react";
+import { User, CreditCard, Calendar, Mail, Upload, Video, Eye, Edit2, Check, X, Trash2, Lock, Globe, Plus, Copy, MapPin, Building2, Camera, Image } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
-import { useTheme } from "next-themes";
-import { Switch } from "@/components/ui/switch";
 import { VideoUploadDialog } from "@/components/VideoUploadDialog";
 import { VideoEditDialog } from "@/components/VideoEditDialog";
 import { UserVideoCard } from "@/components/UserVideoCard";
@@ -148,7 +146,6 @@ interface Profile {
 
 const MyPage = () => {
   const { language } = useLanguage();
-  const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
   const [user, setUser] = useState<{ id: string; email?: string } | null>(null);
   const [subscription, setSubscription] = useState<SubscriptionStatus | null>(null);
@@ -1172,33 +1169,6 @@ const MyPage = () => {
       
       <main className="pt-32 pb-20 px-6">
         <div className="max-w-4xl mx-auto relative">
-          {/* Settings Dropdown */}
-          <div className="absolute right-0 -top-6 z-10">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="gap-2">
-                  <Settings className="w-4 h-4" />
-                  {language === "ja" ? "設定" : language === "pt" ? "Configurações" : "Settings"}
-                  <ChevronDown className="w-3 h-3" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48 bg-popover">
-                <DropdownMenuItem onClick={() => setTheme(theme === "dark" ? "light" : "dark")} className="gap-2 cursor-pointer">
-                  {theme === "dark" ? (
-                    <>
-                      <Sun className="w-4 h-4" />
-                      {language === "ja" ? "ライトモード" : language === "pt" ? "Modo Claro" : "Light Mode"}
-                    </>
-                  ) : (
-                    <>
-                      <Moon className="w-4 h-4" />
-                      {language === "ja" ? "ダークモード" : language === "pt" ? "Modo Escuro" : "Dark Mode"}
-                    </>
-                  )}
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
           <div className="relative mb-16 animate-fade-up">
             {/* Cover Image Area */}
             <div className="h-40 sm:h-48 md:h-56 bg-gradient-to-r from-primary/30 via-primary/20 to-accent/30 rounded-t-2xl shadow-lg relative overflow-hidden group">
@@ -2823,41 +2793,6 @@ const MyPage = () => {
                       {language === "ja" ? "プランに登録する" : language === "pt" ? "Assinar plano" : "Subscribe to Plan"}
                     </Button>
                   )}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Settings Section */}
-          <div className="mb-12 animate-fade-up">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 font-light">
-                  <Settings className="h-5 w-5" />
-                  {language === "ja" ? "設定" : language === "pt" ? "Configurações" : "Settings"}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <div className="flex items-center gap-2">
-                      {theme === "dark" ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
-                      <span className="font-medium">
-                        {language === "ja" ? "ダークモード" : language === "pt" ? "Modo Escuro" : "Dark Mode"}
-                      </span>
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      {language === "ja" 
-                        ? "画面の配色を暗くします" 
-                        : language === "pt" 
-                        ? "Escurece a interface" 
-                        : "Switch to dark theme"}
-                    </p>
-                  </div>
-                  <Switch
-                    checked={theme === "dark"}
-                    onCheckedChange={(checked) => setTheme(checked ? "dark" : "light")}
-                  />
                 </div>
               </CardContent>
             </Card>
