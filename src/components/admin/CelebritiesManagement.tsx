@@ -18,6 +18,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { CelebrityAvatarUploadDialog } from "@/components/CelebrityAvatarUploadDialog";
 
 interface Celebrity {
   id: string;
@@ -60,6 +61,8 @@ export const CelebritiesManagement = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [editingCelebrity, setEditingCelebrity] = useState<Celebrity | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isAvatarUploadOpen, setIsAvatarUploadOpen] = useState(false);
+  const [selectedCelebrityForAvatar, setSelectedCelebrityForAvatar] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     display_name: "",
     bio: "",
@@ -405,11 +408,26 @@ export const CelebritiesManagement = () => {
 
             <div className="space-y-2">
               <Label>プロフィール画像URL</Label>
-              <Input
-                value={formData.avatar_url}
-                onChange={(e) => setFormData({ ...formData, avatar_url: e.target.value })}
-                placeholder="https://..."
-              />
+              <div className="flex gap-2">
+                <Input
+                  value={formData.avatar_url}
+                  onChange={(e) => setFormData({ ...formData, avatar_url: e.target.value })}
+                  placeholder="https://..."
+                  className="flex-1"
+                />
+                {editingCelebrity && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setSelectedCelebrityForAvatar(editingCelebrity.id);
+                      setIsAvatarUploadOpen(true);
+                    }}
+                  >
+                    アップロード
+                  </Button>
+                )}
+              </div>
             </div>
 
             <div className="space-y-2">
@@ -623,6 +641,31 @@ export const CelebritiesManagement = () => {
           </form>
         </DialogContent>
       </Dialog>
+
+      {selectedCelebrityForAvatar && (
+        <CelebrityAvatarUploadDialog
+          open={isAvatarUploadOpen}
+          onOpenChange={setIsAvatarUploadOpen}
+          celebrityId={selectedCelebrityForAvatar}
+          isAdmin={true}
+          onUploadComplete={() => {
+            loadCelebrities();
+            if (editingCelebrity) {
+              // Reload the specific celebrity to update avatar URL in form
+              supabase
+                .from('celebrities')
+                .select('avatar_url')
+                .eq('id', selectedCelebrityForAvatar)
+                .single()
+                .then(({ data }) => {
+                  if (data) {
+                    setFormData({ ...formData, avatar_url: data.avatar_url || '' });
+                  }
+                });
+            }
+          }}
+        />
+      )}
     </div>
   );
 };

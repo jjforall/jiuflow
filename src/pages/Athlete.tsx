@@ -19,6 +19,7 @@ import { toast } from "sonner";
 import { UserVideoCard } from "@/components/UserVideoCard";
 import { LineageTree } from "@/components/LineageTree";
 import { CelebrityEditRequestDialog } from "@/components/CelebrityEditRequestDialog";
+import { CelebrityAvatarUploadDialog } from "@/components/CelebrityAvatarUploadDialog";
 import hero1 from "@/assets/hero-1.jpg";
 import hero2 from "@/assets/hero-2.jpg";
 import hero3 from "@/assets/hero-3.jpg";
@@ -96,7 +97,7 @@ const Athlete = () => {
   const { slugOrUsername } = useParams<{ slugOrUsername: string }>();
   const { language } = useLanguage();
   const { translateText } = useTranslation();
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const navigate = useNavigate();
   const [celebrity, setCelebrity] = useState<Celebrity | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -109,6 +110,7 @@ const Athlete = () => {
   const [videos, setVideos] = useState<UserVideo[]>([]);
   const [purchasedVideos, setPurchasedVideos] = useState<Set<string>>(new Set());
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isAvatarUploadOpen, setIsAvatarUploadOpen] = useState(false);
 
   useEffect(() => {
     loadCelebrity();
@@ -463,13 +465,26 @@ const Athlete = () => {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 md:px-8 lg:px-12 -mt-12 sm:-mt-16 md:-mt-20 relative z-10">
           {/* Profile Header */}
           <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 mb-6 sm:mb-8">
-            <div className="flex justify-center sm:justify-start">
-              <Avatar className="h-24 w-24 sm:h-32 sm:w-32 md:h-40 md:w-40 border-4 border-background shadow-xl">
-                <AvatarImage src={celebrity.avatar_url || undefined} />
-                <AvatarFallback className="text-3xl sm:text-4xl md:text-5xl bg-primary/10">
-                  {celebrity.display_name[0]}
-                </AvatarFallback>
-              </Avatar>
+            <div className="flex flex-col items-center justify-center sm:justify-start gap-2">
+              <div className="relative">
+                <Avatar className="h-24 w-24 sm:h-32 sm:w-32 md:h-40 md:w-40 border-4 border-background shadow-xl">
+                  <AvatarImage src={celebrity.avatar_url || undefined} />
+                  <AvatarFallback className="text-3xl sm:text-4xl md:text-5xl bg-primary/10">
+                    {celebrity.display_name[0]}
+                  </AvatarFallback>
+                </Avatar>
+              </div>
+              {user && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsAvatarUploadOpen(true)}
+                  className="gap-2 text-xs"
+                >
+                  <Camera className="h-3 w-3" />
+                  画像変更
+                </Button>
+              )}
             </div>
 
             <div className="flex-1 space-y-3 sm:space-y-4">
@@ -708,11 +723,22 @@ const Athlete = () => {
       </main>
 
       {celebrity && (
-        <CelebrityEditRequestDialog
-          open={isEditDialogOpen}
-          onOpenChange={setIsEditDialogOpen}
-          celebrity={celebrity}
-        />
+        <>
+          <CelebrityEditRequestDialog
+            open={isEditDialogOpen}
+            onOpenChange={setIsEditDialogOpen}
+            celebrity={celebrity}
+          />
+          <CelebrityAvatarUploadDialog
+            open={isAvatarUploadOpen}
+            onOpenChange={setIsAvatarUploadOpen}
+            celebrityId={celebrity.id}
+            isAdmin={isAdmin}
+            onUploadComplete={() => {
+              loadCelebrity();
+            }}
+          />
+        </>
       )}
 
       <Footer />
