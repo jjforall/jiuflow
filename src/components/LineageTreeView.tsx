@@ -3,8 +3,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Link } from "react-router-dom";
-import { ArrowDown, Users } from "lucide-react";
+import { Users, Calendar, Award } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
 
 interface Celebrity {
   id: string;
@@ -77,31 +78,62 @@ export const LineageTreeView = () => {
     return beltHistory[beltHistory.length - 1]?.belt || '';
   };
 
+  const getEraInfo = (name: string) => {
+    if (name.includes('嘉納治五郎') || name.includes('Kano Jigoro')) {
+      return { era: '講道館柔道', year: '1882年', color: 'from-amber-500/20 to-orange-500/20 border-amber-500/30' };
+    }
+    if (name.includes('前田光世') || name.includes('Mitsuyo Maeda')) {
+      return { era: '講道館四天王', year: '1878-1941', color: 'from-red-500/20 to-rose-500/20 border-red-500/30' };
+    }
+    if (name.includes('Carlos Gracie') || name.includes('Helio Gracie')) {
+      return { era: 'グレイシー柔術', year: '1925年～', color: 'from-blue-500/20 to-cyan-500/20 border-blue-500/30' };
+    }
+    return { era: 'ブラジリアン柔術', year: '現代', color: 'from-purple-500/20 to-pink-500/20 border-purple-500/30' };
+  };
+
   const renderNode = (node: LineageNode, depth: number = 0) => {
     const belt = getBeltName(node.celebrity.belt_history);
+    const eraInfo = getEraInfo(node.celebrity.display_name);
     
     return (
-      <div key={node.celebrity.id} className="relative">
+      <div key={node.celebrity.id} className="relative animate-fade-in">
         <Link 
           to={`/athlete/${node.celebrity.id}`}
-          className="block transition-transform hover:scale-105"
+          className="block group"
         >
-          <Card className="inline-block">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <Avatar className="h-16 w-16">
+          <Card className={`inline-block bg-gradient-to-br ${eraInfo.color} border-2 hover:shadow-lg transition-all duration-300 hover:scale-[1.02]`}>
+            <CardContent className="p-6">
+              <div className="flex items-start gap-4">
+                <Avatar className="h-20 w-20 ring-2 ring-background shadow-lg">
                   <AvatarImage src={node.celebrity.avatar_url || undefined} />
-                  <AvatarFallback>{node.celebrity.display_name[0]}</AvatarFallback>
+                  <AvatarFallback className="text-lg font-bold">{node.celebrity.display_name[0]}</AvatarFallback>
                 </Avatar>
-                <div>
-                  <p className="font-semibold">{node.celebrity.display_name}</p>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <h3 className="font-bold text-lg leading-tight group-hover:text-primary transition-colors">
+                      {node.celebrity.display_name}
+                    </h3>
+                    <Badge variant="secondary" className="shrink-0 text-xs">
+                      {eraInfo.era}
+                    </Badge>
+                  </div>
+                  
                   {belt && (
-                    <p className="text-sm text-muted-foreground">{belt}</p>
+                    <div className="flex items-center gap-1.5 mb-1.5">
+                      <Award className="h-4 w-4 text-primary" />
+                      <p className="text-sm font-medium">{belt}</p>
+                    </div>
                   )}
+                  
+                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-2">
+                    <Calendar className="h-3.5 w-3.5" />
+                    <span>{eraInfo.year}</span>
+                  </div>
+                  
                   {node.students.length > 0 && (
-                    <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
-                      <Users className="h-3 w-3" />
-                      <span>{node.students.length} 弟子</span>
+                    <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                      <Users className="h-4 w-4" />
+                      <span className="font-medium">{node.students.length}人の弟子</span>
                     </div>
                   )}
                 </div>
@@ -111,13 +143,16 @@ export const LineageTreeView = () => {
         </Link>
 
         {node.students.length > 0 && (
-          <div className="ml-8 mt-4 space-y-4 border-l-2 border-border pl-8">
-            <div className="absolute left-0 top-20 h-4 w-8 border-b-2 border-l-2 border-border rounded-bl" />
+          <div className="relative mt-6 ml-12 space-y-6">
+            {/* Vertical connection line with gradient */}
+            <div className="absolute left-0 top-0 bottom-6 w-0.5 bg-gradient-to-b from-primary/50 to-primary/20" />
+            
             {node.students.map((student, idx) => (
-              <div key={student.celebrity.id} className="relative">
-                {idx > 0 && (
-                  <div className="absolute -left-8 -top-4 h-8 border-l-2 border-border" />
-                )}
+              <div key={student.celebrity.id} className="relative pl-12">
+                {/* Horizontal connection line */}
+                <div className="absolute left-0 top-10 h-0.5 w-12 bg-gradient-to-r from-primary/50 to-primary/20">
+                  <div className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full bg-primary/60 animate-pulse" />
+                </div>
                 {renderNode(student, depth + 1)}
               </div>
             ))}
@@ -150,9 +185,19 @@ export const LineageTreeView = () => {
   }
 
   return (
-    <div className="space-y-12">
-      {lineageRoots.map(root => (
-        <div key={root.celebrity.id}>
+    <div className="space-y-16 py-8">
+      {/* Historical timeline header */}
+      <div className="text-center space-y-3 animate-fade-in">
+        <h2 className="text-3xl font-bold bg-gradient-to-r from-amber-500 via-red-500 to-purple-500 bg-clip-text text-transparent">
+          武道の系譜
+        </h2>
+        <p className="text-muted-foreground max-w-2xl mx-auto">
+          日本古流柔術から講道館柔道、そしてブラジリアン柔術へと受け継がれてきた技術と精神の歴史
+        </p>
+      </div>
+
+      {lineageRoots.map((root, idx) => (
+        <div key={root.celebrity.id} className="relative" style={{ animationDelay: `${idx * 100}ms` }}>
           {renderNode(root)}
         </div>
       ))}
