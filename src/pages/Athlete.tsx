@@ -521,25 +521,23 @@ const Athlete = () => {
                       )}
                     </>
                   ) : (
-                    celebrity.user_id && (
-                      <Button 
-                        onClick={isFollowing ? handleUnfollow : handleFollow}
-                        variant={isFollowing ? "outline" : "default"}
-                        className="gap-2"
-                      >
-                        {isFollowing ? (
-                          <>
-                            <UserMinus className="h-4 w-4" />
-                            {language === "ja" ? "フォロー解除" : language === "pt" ? "Deixar de seguir" : "Unfollow"}
-                          </>
-                        ) : (
-                          <>
-                            <UserPlus className="h-4 w-4" />
-                            {language === "ja" ? "フォロー" : language === "pt" ? "Seguir" : "Follow"}
-                          </>
-                        )}
-                      </Button>
-                    )
+                    <Button 
+                      onClick={isFollowing ? handleUnfollow : handleFollow}
+                      variant={isFollowing ? "outline" : "default"}
+                      className="gap-2"
+                    >
+                      {isFollowing ? (
+                        <>
+                          <UserMinus className="h-4 w-4" />
+                          {language === "ja" ? "フォロー解除" : language === "pt" ? "Deixar de seguir" : "Unfollow"}
+                        </>
+                      ) : (
+                        <>
+                          <UserPlus className="h-4 w-4" />
+                          {language === "ja" ? "フォロー" : language === "pt" ? "Seguir" : "Follow"}
+                        </>
+                      )}
+                    </Button>
                   )}
                 </div>
               </div>
