@@ -43,6 +43,27 @@ export default function Dojos() {
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
 
   useEffect(() => {
+    const titles = {
+      ja: "道場一覧 | jiuflow",
+      en: "Dojos | jiuflow",
+      pt: "Academias | jiuflow"
+    };
+    
+    const descriptions = {
+      ja: "世界中のブラジリアン柔術道場を検索。道場の情報、場所、連絡先を確認できます。",
+      en: "Find Brazilian Jiu-Jitsu dojos worldwide. View gym information, locations, and contact details.",
+      pt: "Encontre academias de Jiu-Jitsu Brasileiro em todo o mundo. Veja informações, localizações e contatos."
+    };
+    
+    document.title = titles[language] || titles.ja;
+    
+    const metaDescription = document.querySelector('meta[name="description"]');
+    if (metaDescription) {
+      metaDescription.setAttribute('content', descriptions[language] || descriptions.ja);
+    }
+  }, [language]);
+
+  useEffect(() => {
     const initPage = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       setIsAuthenticated(!!user);

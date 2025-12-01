@@ -52,6 +52,27 @@ const Athletes = () => {
     }
   }, [user]);
 
+  useEffect(() => {
+    const titles = {
+      ja: "有名選手 | jiuflow",
+      en: "Famous Athletes | jiuflow",
+      pt: "Atletas Famosos | jiuflow"
+    };
+    
+    const descriptions = {
+      ja: "世界で活躍するトップブラジリアン柔術選手たち。選手のプロフィール、実績、系譜を確認できます。",
+      en: "Elite Brazilian Jiu-Jitsu athletes from around the world. View profiles, achievements, and lineage.",
+      pt: "Atletas de elite de Jiu-Jitsu Brasileiro do mundo todo. Veja perfis, conquistas e linhagem."
+    };
+    
+    document.title = titles[language] || titles.ja;
+    
+    const metaDescription = document.querySelector('meta[name="description"]');
+    if (metaDescription) {
+      metaDescription.setAttribute('content', descriptions[language] || descriptions.ja);
+    }
+  }, [language]);
+
   const loadCelebrities = async () => {
     setIsLoading(true);
     try {

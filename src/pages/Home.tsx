@@ -16,6 +16,37 @@ const Home = () => {
   const t = translations[language] || translations.ja; // Fallback to Japanese
   const { images, isLoading, currentIndex, totalImages } = useHeroImages();
 
+  useEffect(() => {
+    const titles = {
+      ja: "jiuflow | 柔術を、体系で学ぶ",
+      en: "jiuflow | Learn Jiu-Jitsu with Clarity",
+      pt: "jiuflow | Aprenda Jiu-Jitsu com Clareza"
+    };
+    
+    const descriptions = {
+      ja: "上面からの4K撮影、体系化された流れ、構造と意図の言語化。安全で、長く、そして強い一生モノの柔術を、あなたに。",
+      en: "4K overhead filming, systematic flows, verbalized structure and intent. Safe, lasting, and strong lifelong Jiu-Jitsu for you.",
+      pt: "Filmagem aérea 4K, fluxos sistemáticos, estrutura e intenção verbalizadas. Jiu-Jitsu seguro, duradouro e forte para toda a vida."
+    };
+    
+    document.title = titles[language] || titles.ja;
+    
+    const metaDescription = document.querySelector('meta[name="description"]');
+    if (metaDescription) {
+      metaDescription.setAttribute('content', descriptions[language] || descriptions.ja);
+    }
+    
+    const ogTitle = document.querySelector('meta[property="og:title"]');
+    if (ogTitle) {
+      ogTitle.setAttribute('content', titles[language] || titles.ja);
+    }
+    
+    const ogDescription = document.querySelector('meta[property="og:description"]');
+    if (ogDescription) {
+      ogDescription.setAttribute('content', descriptions[language] || descriptions.ja);
+    }
+  }, [language]);
+
   return (
     <div className="min-h-screen">
       <Navigation />
