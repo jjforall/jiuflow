@@ -51,14 +51,25 @@ const Contact = () => {
                     <h3 className="font-medium text-foreground mb-2">
                       {language === "ja" ? "販売事業者名" : language === "pt" ? "Nome do Vendedor" : "Seller Name"}
                     </h3>
-                    <p className="text-muted-foreground">jiuflow</p>
+                    <p className="text-muted-foreground">
+                      株式会社イネブラ
+                      <br />
+                      <a 
+                        href="https://enabler.fun" 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-primary hover:underline transition-smooth"
+                      >
+                        enabler.fun
+                      </a>
+                    </p>
                   </div>
 
                   <div>
                     <h3 className="font-medium text-foreground mb-2">
                       {language === "ja" ? "運営統括責任者" : language === "pt" ? "Responsável pela Operação" : "Chief Operating Officer"}
                     </h3>
-                    <p className="text-muted-foreground">jiuflow運営チーム</p>
+                    <p className="text-muted-foreground">株式会社イネブラ代表取締役</p>
                   </div>
 
                   <div>
