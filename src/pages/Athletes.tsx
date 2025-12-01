@@ -92,6 +92,16 @@ const Athletes = () => {
     }
   };
 
+  // Sort celebrities to show followed ones first
+  const sortedCelebrities = [...celebrities].sort((a, b) => {
+    const aFollowed = followedCelebrities.has(a.id);
+    const bFollowed = followedCelebrities.has(b.id);
+    
+    if (aFollowed && !bFollowed) return -1;
+    if (!aFollowed && bFollowed) return 1;
+    return 0;
+  });
+
   const getBeltName = (beltHistory: any[]) => {
     if (!beltHistory || beltHistory.length === 0) return null;
     const latestBelt = beltHistory[beltHistory.length - 1];
@@ -288,7 +298,7 @@ const Athletes = () => {
                 </div>
               ) : (
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 animate-fade-in">
-              {celebrities.map((celebrity) => (
+              {sortedCelebrities.map((celebrity) => (
                 <div key={celebrity.id} className="group">
                   <Link
                     to={`/athlete/${celebrity.user_id || celebrity.id}`}
