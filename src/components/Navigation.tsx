@@ -145,14 +145,14 @@ const Navigation = () => {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => navigate("/mypage")} className="gap-2 cursor-pointer">
-                    <User className="h-4 w-4" />
-                    {t.nav.myPage || (language === "ja" ? "マイページ" : language === "pt" ? "Minha Página" : "My Page")}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => navigate("/mypage", { state: { tab: "practice" } })} className="gap-2 cursor-pointer">
-                    <ClipboardList className="h-4 w-4" />
-                    {language === "ja" ? "練習記録" : language === "pt" ? "Registros de Prática" : "Practice Records"}
-                  </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate("/mypage")} className="gap-2 cursor-pointer">
+                  <User className="h-4 w-4" />
+                  {t.nav.myPage || (language === "ja" ? "マイページ" : language === "pt" ? "Minha Página" : "My Page")}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate("/practice-records")} className="gap-2 cursor-pointer">
+                  <ClipboardList className="h-4 w-4" />
+                  {language === "ja" ? "練習記録" : language === "pt" ? "Registros de Prática" : "Practice Records"}
+                </DropdownMenuItem>
                   {canAccessAdmin && (
                     <DropdownMenuItem onClick={() => navigate("/admin/dashboard")} className="gap-2 cursor-pointer">
                       <ShieldCheck className="h-4 w-4" />
@@ -315,7 +315,7 @@ const Navigation = () => {
                         variant="ghost" 
                         className="w-full justify-start gap-3 h-12 hover:bg-muted/50 active:bg-muted"
                         onClick={() => {
-                          navigate("/mypage", { state: { tab: "practice" } });
+                          navigate("/practice-records");
                           setIsOpen(false);
                         }}
                       >
