@@ -41,6 +41,7 @@ const GenerateImages = lazy(() => import("./pages/GenerateImages"));
 const Athletes = lazy(() => import("./pages/Athletes"));
 const LineageTree = lazy(() => import("./pages/LineageTree"));
 const Athlete = lazy(() => import("./pages/Athlete"));
+const PracticeRecordsPage = lazy(() => import("./pages/PracticeRecordsPage"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
@@ -118,6 +119,11 @@ const App = () => (
                   <Route path="/dojo/:id" element={<Dojo />} />
             <Route path="/athletes" element={<Athletes />} />
             <Route path="/lineage-tree" element={<LineageTree />} />
+                  <Route path="/practice-records" element={
+                    <ProtectedRoute>
+                      <PracticeRecordsPage />
+                    </ProtectedRoute>
+                  } />
                   <Route path="/athlete/:slugOrUsername" element={<Athlete />} />
                   <Route path="/ryozo" element={<Athlete />} />
                   <Route path="/:slugOrUsername" element={<DojoOrProfile />} />
