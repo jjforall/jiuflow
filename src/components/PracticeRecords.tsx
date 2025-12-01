@@ -406,14 +406,13 @@ export function PracticeRecords() {
             <div>
               <Label>技術（オプション）</Label>
               <Select
-                value={formData.technique_id}
+                value={formData.technique_id || undefined}
                 onValueChange={(value) => setFormData({ ...formData, technique_id: value })}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="技術を選択" />
+                  <SelectValue placeholder="技術を選択（任意）" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">なし</SelectItem>
                   {techniques.map((tech) => (
                     <SelectItem key={tech.id} value={tech.id}>
                       {tech.name_ja} ({tech.category})
@@ -426,14 +425,13 @@ export function PracticeRecords() {
             <div>
               <Label>動画（オプション）</Label>
               <Select
-                value={formData.user_video_id}
+                value={formData.user_video_id || undefined}
                 onValueChange={(value) => setFormData({ ...formData, user_video_id: value })}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="動画を選択" />
+                  <SelectValue placeholder="動画を選択（任意）" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">なし</SelectItem>
                   {userVideos.map((video) => (
                     <SelectItem key={video.id} value={video.id}>
                       {video.title}
@@ -458,14 +456,13 @@ export function PracticeRecords() {
               <div>
                 <Label>難易度（1-5）</Label>
                 <Select
-                  value={formData.difficulty_rating}
+                  value={formData.difficulty_rating || undefined}
                   onValueChange={(value) => setFormData({ ...formData, difficulty_rating: value })}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="選択" />
+                    <SelectValue placeholder="選択（任意）" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">なし</SelectItem>
                     <SelectItem value="1">⭐ とても簡単</SelectItem>
                     <SelectItem value="2">⭐⭐ 簡単</SelectItem>
                     <SelectItem value="3">⭐⭐⭐ 普通</SelectItem>
@@ -478,14 +475,13 @@ export function PracticeRecords() {
               <div>
                 <Label>成功度（1-5）</Label>
                 <Select
-                  value={formData.success_rating}
+                  value={formData.success_rating || undefined}
                   onValueChange={(value) => setFormData({ ...formData, success_rating: value })}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="選択" />
+                    <SelectValue placeholder="選択（任意）" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">なし</SelectItem>
                     <SelectItem value="1">⭐ 全然できなかった</SelectItem>
                     <SelectItem value="2">⭐⭐ あまりできなかった</SelectItem>
                     <SelectItem value="3">⭐⭐⭐ まあまあできた</SelectItem>
