@@ -707,14 +707,21 @@ export default function Dojo() {
                     </div>
                   ) : (
                     <div className="space-y-3">
-                      {Object.entries(dojo.pricing).map(([key, value]: [string, any]) => (
-                        <div key={key} className="flex justify-between items-center p-4 border rounded-xl hover:shadow-md transition-all bg-card">
-                          <span className="font-semibold text-lg">{key}</span>
-                          <span className="text-2xl font-bold text-primary">
-                            ¥{typeof value === 'number' ? value.toLocaleString() : value}
-                          </span>
-                        </div>
-                      ))}
+                      {Object.entries(dojo.pricing).map(([key, value]: [string, any]) => {
+                        // Skip if value is an object or not displayable
+                        if (typeof value === 'object' && value !== null) {
+                          return null;
+                        }
+                        
+                        return (
+                          <div key={key} className="flex justify-between items-center p-4 border rounded-xl hover:shadow-md transition-all bg-card">
+                            <span className="font-semibold text-lg">{key}</span>
+                            <span className="text-2xl font-bold text-primary">
+                              {typeof value === 'number' ? `¥${value.toLocaleString()}` : String(value)}
+                            </span>
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
                 </CardContent>
