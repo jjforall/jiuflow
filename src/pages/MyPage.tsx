@@ -2846,7 +2846,7 @@ const MyPage = () => {
                       {language === "ja" ? "Founder Plan特別値引き" : "Founder Plan Special"}
                     </p>
                     <div className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-full font-bold text-lg shadow-md">
-                      <span className="text-2xl">¥980</span>
+                      <span className="text-lg">¥980</span>
                       <span className="text-xs opacity-80 line-through">¥1,900</span>
                     </div>
                   </div>
@@ -3047,7 +3047,7 @@ const MyPage = () => {
                       {language === "ja" ? "通常価格" : "Regular Price"}
                     </p>
                     <div className="inline-flex items-center gap-2 bg-foreground text-background px-4 py-2 rounded-full font-bold text-lg shadow-md">
-                      <span className="text-2xl">¥1,900</span>
+                      <span className="text-lg">¥1,900</span>
                     </div>
                   </div>
 
