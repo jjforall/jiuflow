@@ -3,6 +3,7 @@ export const translations = {
     nav: {
       home: "ホーム",
       map: "技マップ",
+      lineageTree: "系譜ツリー",
       dojos: "道場",
       about: "私たちについて",
       contact: "お問い合わせ",
@@ -174,6 +175,7 @@ export const translations = {
     nav: {
       home: "Home",
       map: "Techniques",
+      lineageTree: "Lineage Tree",
       dojos: "Dojos",
       about: "About",
       contact: "Contact",
@@ -365,6 +367,7 @@ export const translations = {
     nav: {
       home: "Início",
       map: "Técnicas",
+      lineageTree: "Árvore de Linhagem",
       dojos: "Dojos",
       about: "Sobre",
       contact: "Contato",
@@ -549,6 +552,7 @@ export const translations = {
     nav: {
       home: "Inicio",
       map: "Técnicas",
+      lineageTree: "Árbol de Linaje",
       dojos: "Dojos",
       about: "Acerca de",
       contact: "Contacto",
@@ -732,6 +736,7 @@ export const translations = {
     nav: {
       home: "Accueil",
       map: "Techniques",
+      lineageTree: "Arbre Généalogique",
       dojos: "Dojos",
       about: "À propos",
       contact: "Contact",
@@ -902,6 +907,7 @@ export const translations = {
     nav: {
       home: "Startseite",
       map: "Techniken",
+      lineageTree: "Stammbaum",
       dojos: "Dojos",
       about: "Über uns",
       contact: "Kontakt",
@@ -1072,6 +1078,7 @@ export const translations = {
     nav: {
       home: "首页",
       map: "技术",
+      lineageTree: "传承树",
       dojos: "道场",
       about: "关于",
       contact: "联系",
@@ -1242,6 +1249,7 @@ export const translations = {
     nav: {
       home: "홈",
       map: "기술",
+      lineageTree: "계보 트리",
       dojos: "도장",
       about: "소개",
       contact: "연락처",
@@ -1412,6 +1420,7 @@ export const translations = {
     nav: {
       home: "Home",
       map: "Tecniche",
+      lineageTree: "Albero Genealogico",
       dojos: "Dojos",
       about: "Chi Siamo",
       contact: "Contatto",
@@ -1582,6 +1591,7 @@ export const translations = {
     nav: {
       home: "Главная",
       map: "Техники",
+      lineageTree: "Дерево Родословной",
       dojos: "Додзё",
       about: "О нас",
       contact: "Контакт",
@@ -1752,6 +1762,7 @@ export const translations = {
     nav: {
       home: "الرئيسية",
       map: "التقنيات",
+      lineageTree: "شجرة النسب",
       dojos: "دوجو",
       about: "حول",
       contact: "اتصل",
@@ -1922,6 +1933,7 @@ export const translations = {
     nav: {
       home: "होम",
       map: "तकनीकें",
+      lineageTree: "वंशावली वृक्ष",
       dojos: "डोजो",
       about: "के बारे में",
       contact: "संपर्क",
