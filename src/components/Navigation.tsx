@@ -154,16 +154,6 @@ const Navigation = () => {
                       {t.nav.adminDashboard || (language === "ja" ? "管理画面" : language === "pt" ? "Painel de Administração" : "Admin Dashboard")}
                     </DropdownMenuItem>
                   )}
-                  <DropdownMenuItem 
-                    onClick={() => setTheme(theme === "dark" ? "light" : "dark")} 
-                    className="gap-2 cursor-pointer"
-                  >
-                    {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-                    {theme === "dark" 
-                      ? (language === "ja" ? "白帯" : language === "pt" ? "Faixa Branca" : "White Belt")
-                      : (language === "ja" ? "黒帯" : language === "pt" ? "Faixa Preta" : "Black Belt")
-                    }
-                  </DropdownMenuItem>
                   <DropdownMenuItem onClick={handleLogout} className="gap-2 cursor-pointer">
                     <LogOut className="h-4 w-4" />
                     {t.nav.logout || (language === "ja" ? "ログアウト" : language === "pt" ? "Sair" : "Logout")}
@@ -178,6 +168,21 @@ const Navigation = () => {
                 </Button>
               </Link>
             )}
+            
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+              className="gap-2"
+            >
+              {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+              <span className="text-xs hidden lg:inline">
+                {theme === "dark" 
+                  ? (language === "ja" ? "白帯" : language === "pt" ? "Faixa Branca" : "White Belt")
+                  : (language === "ja" ? "黒帯" : language === "pt" ? "Faixa Preta" : "Black Belt")
+                }
+              </span>
+            </Button>
             
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -314,19 +319,6 @@ const Navigation = () => {
                           </Button>
                         </Link>
                       )}
-                      <Button 
-                        variant="ghost" 
-                        className="w-full justify-start gap-3 h-12 hover:bg-muted/50 active:bg-muted"
-                        onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-                      >
-                        {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-                        <span className="text-base">
-                          {theme === "dark" 
-                            ? (language === "ja" ? "白帯" : language === "pt" ? "Faixa Branca" : "White Belt")
-                            : (language === "ja" ? "黒帯" : language === "pt" ? "Faixa Preta" : "Black Belt")
-                          }
-                        </span>
-                      </Button>
                       <Button 
                         variant="ghost" 
                         className="w-full justify-start gap-3 h-12 text-destructive hover:bg-destructive/10 hover:text-destructive active:bg-destructive/20"
