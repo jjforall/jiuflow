@@ -25,6 +25,9 @@ import { CelebrityApplicationsManagement } from "@/components/admin/CelebrityApp
 import { CelebritiesManagement } from "@/components/admin/CelebritiesManagement";
 import { LineageManagement } from "@/components/admin/LineageManagement";
 import { CelebrityEditRequestsManagement } from "@/components/admin/CelebrityEditRequestsManagement";
+import { EventsManagement } from "@/components/admin/EventsManagement";
+import { UserVideosManagement } from "@/components/admin/UserVideosManagement";
+import { BrothersApplicationsManagement } from "@/components/admin/BrothersApplicationsManagement";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -197,6 +200,9 @@ const AdminDashboard = () => {
                 {activeTab === "lineage" && <LineageManagement />}
                 {activeTab === "edit-requests" && <CelebrityEditRequestsManagement />}
                 {activeTab === "celebrity" && <CelebrityApplicationsManagement />}
+                {activeTab === "events" && <EventsManagement />}
+                {activeTab === "user-videos" && <UserVideosManagement />}
+                {activeTab === "brothers" && <BrothersApplicationsManagement />}
                 {activeTab === "contacts" && <ContactsManagement />}
                 {activeTab === "logs" && <LogsTab />}
                 {activeTab === "tips" && <TipsManagement />}

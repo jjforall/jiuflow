@@ -11,7 +11,12 @@ import {
   Gift,
   ChevronDown,
   Star,
+  Calendar,
+  Video,
+  Moon,
+  Sun,
 } from "lucide-react";
+import { useTheme } from "next-themes";
 import {
   Sidebar,
   SidebarContent,
@@ -42,6 +47,9 @@ const menuItems = [
   { id: "lineage", label: "系統管理", icon: Star },
   { id: "edit-requests", label: "編集リクエスト", icon: Star },
   { id: "celebrity", label: "有名人申請", icon: Star },
+  { id: "events", label: "イベント管理", icon: Calendar },
+  { id: "user-videos", label: "ユーザー動画", icon: Video },
+  { id: "brothers", label: "Brothers申請", icon: Award },
   { id: "contacts", label: "お問い合わせ", icon: Mail },
   { id: "logs", label: "ログ", icon: FileText },
   { id: "tips", label: "投げ銭", icon: Gift },
@@ -49,13 +57,25 @@ const menuItems = [
 
 export function AdminSidebar({ activeTab, onTabChange }: AdminSidebarProps) {
   const { state } = useSidebar();
+  const { theme, setTheme } = useTheme();
   const [isExpanded, setIsExpanded] = useState(true);
   const isCollapsed = state === "collapsed";
 
   return (
     <Sidebar collapsible="icon">
-      <div className="p-4 border-b">
-        <SidebarTrigger className="ml-auto" />
+      <div className="p-4 border-b flex items-center justify-between">
+        <button
+          onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+          className="hover:bg-muted/50 rounded-lg p-2"
+          title={theme === "dark" ? "ライトモード" : "ダークモード"}
+        >
+          {theme === "dark" ? (
+            <Sun className="h-4 w-4" />
+          ) : (
+            <Moon className="h-4 w-4" />
+          )}
+        </button>
+        <SidebarTrigger />
       </div>
 
       <SidebarContent>
