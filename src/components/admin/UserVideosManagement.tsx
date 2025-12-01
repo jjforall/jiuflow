@@ -20,10 +20,15 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { ja } from "date-fns/locale";
-import { Video, Trash2, Eye, EyeOff, Search, BarChart3 } from "lucide-react";
+import { Video, Trash2, Eye, EyeOff, Search, BarChart3, ChevronDown } from "lucide-react";
 import {
   Pagination,
   PaginationContent,
@@ -41,6 +46,7 @@ export function UserVideosManagement() {
   const [filterType, setFilterType] = useState("all");
   const [filterVisibility, setFilterVisibility] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
+  const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const itemsPerPage = 10;
 
   useEffect(() => {
@@ -145,6 +151,18 @@ export function UserVideosManagement() {
   const privateVideos = videos.filter((v) => !v.is_public).length;
 
   const videoTypes = Array.from(new Set(videos.map((v) => v.video_type)));
+
+  const toggleRow = (id: string) => {
+    setExpandedRows((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(id)) {
+        newSet.delete(id);
+      } else {
+        newSet.add(id);
+      }
+      return newSet;
+    });
+  };
 
   if (loading) {
     return (
@@ -271,88 +289,131 @@ export function UserVideosManagement() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead className="w-[80px]">サムネイル</TableHead>
+                      <TableHead className="w-[50px]"></TableHead>
                       <TableHead>タイトル</TableHead>
-                      <TableHead>投稿者</TableHead>
-                      <TableHead>種類</TableHead>
-                      <TableHead>視聴数</TableHead>
-                      <TableHead>価格</TableHead>
-                      <TableHead>公開</TableHead>
-                      <TableHead>投稿日</TableHead>
-                      <TableHead className="text-right">操作</TableHead>
+                      <TableHead className="w-[100px]">投稿者</TableHead>
+                      <TableHead className="w-[100px]">視聴数</TableHead>
+                      <TableHead className="w-[80px]">状態</TableHead>
+                      <TableHead className="w-[100px]">投稿日</TableHead>
+                      <TableHead className="w-[100px] text-right">操作</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {currentVideos.map((video) => (
-                      <TableRow key={video.id}>
-                        <TableCell>
-                          {video.thumbnail_url ? (
-                            <img
-                              src={video.thumbnail_url}
-                              alt={video.title}
-                              className="w-16 h-12 object-cover rounded"
-                            />
-                          ) : (
-                            <div className="w-16 h-12 bg-muted rounded flex items-center justify-center">
-                              <Video className="w-6 h-6 text-muted-foreground" />
-                            </div>
-                          )}
-                        </TableCell>
-                        <TableCell className="max-w-xs">
-                          <div className="truncate font-medium">{video.title}</div>
-                          {video.description && (
-                            <div className="text-xs text-muted-foreground truncate">
-                              {video.description}
-                            </div>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          {video.profiles?.display_name || video.profiles?.username || "不明"}
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="secondary">{video.video_type}</Badge>
-                        </TableCell>
-                        <TableCell>{video.view_count.toLocaleString()}</TableCell>
-                        <TableCell>
-                          {video.price ? `¥${video.price.toLocaleString()}` : "無料"}
-                        </TableCell>
-                        <TableCell>
-                          {video.is_public ? (
-                            <Badge variant="default">公開</Badge>
-                          ) : (
-                            <Badge variant="secondary">非公開</Badge>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          {format(new Date(video.created_at), "yyyy/MM/dd", {
-                            locale: ja,
-                          })}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex gap-2 justify-end">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleToggleVisibility(video.id, video.is_public)}
-                              title={video.is_public ? "非公開にする" : "公開する"}
-                            >
-                              {video.is_public ? (
-                                <EyeOff className="w-4 h-4" />
+                      <Collapsible key={video.id} open={expandedRows.has(video.id)} onOpenChange={() => toggleRow(video.id)}>
+                        <TableRow className="group">
+                          <TableCell>
+                            <CollapsibleTrigger asChild>
+                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                <ChevronDown className={`h-4 w-4 transition-transform ${expandedRows.has(video.id) ? "rotate-180" : ""}`} />
+                              </Button>
+                            </CollapsibleTrigger>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-3">
+                              {video.thumbnail_url ? (
+                                <img
+                                  src={video.thumbnail_url}
+                                  alt={video.title}
+                                  className="w-12 h-9 object-cover rounded flex-shrink-0"
+                                />
                               ) : (
-                                <Eye className="w-4 h-4" />
+                                <div className="w-12 h-9 bg-muted rounded flex items-center justify-center flex-shrink-0">
+                                  <Video className="w-4 h-4 text-muted-foreground" />
+                                </div>
                               )}
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleDelete(video.id)}
-                              title="削除"
-                            >
-                              <Trash2 className="w-4 h-4 text-destructive" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
+                              <div className="min-w-0">
+                                <div className="font-medium truncate">{video.title}</div>
+                                <div className="text-xs text-muted-foreground">
+                                  {video.video_type}
+                                </div>
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-sm">
+                            {video.profiles?.display_name || video.profiles?.username || "不明"}
+                          </TableCell>
+                          <TableCell className="text-sm">{video.view_count.toLocaleString()}</TableCell>
+                          <TableCell>
+                            {video.is_public ? (
+                              <Badge variant="default" className="text-xs">公開</Badge>
+                            ) : (
+                              <Badge variant="secondary" className="text-xs">非公開</Badge>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-sm">
+                            {format(new Date(video.created_at), "MM/dd", { locale: ja })}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex gap-1 justify-end">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleToggleVisibility(video.id, video.is_public);
+                                }}
+                                title={video.is_public ? "非公開にする" : "公開する"}
+                              >
+                                {video.is_public ? (
+                                  <EyeOff className="w-4 h-4" />
+                                ) : (
+                                  <Eye className="w-4 h-4" />
+                                )}
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDelete(video.id);
+                                }}
+                                title="削除"
+                              >
+                                <Trash2 className="w-4 h-4 text-destructive" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                        <CollapsibleContent asChild>
+                          <TableRow>
+                            <TableCell colSpan={7} className="bg-muted/50 p-4">
+                              <div className="space-y-2 text-sm">
+                                <div className="grid grid-cols-2 gap-4">
+                                  <div>
+                                    <span className="font-medium">説明：</span>
+                                    <p className="text-muted-foreground mt-1">
+                                      {video.description || "説明なし"}
+                                    </p>
+                                  </div>
+                                  <div className="space-y-2">
+                                    <div>
+                                      <span className="font-medium">価格：</span>
+                                      <span className="text-muted-foreground ml-2">
+                                        {video.price ? `¥${video.price.toLocaleString()}` : "無料"}
+                                      </span>
+                                    </div>
+                                    <div>
+                                      <span className="font-medium">作成日：</span>
+                                      <span className="text-muted-foreground ml-2">
+                                        {format(new Date(video.created_at), "yyyy年MM月dd日 HH:mm", { locale: ja })}
+                                      </span>
+                                    </div>
+                                    <div>
+                                      <span className="font-medium">更新日：</span>
+                                      <span className="text-muted-foreground ml-2">
+                                        {format(new Date(video.updated_at), "yyyy年MM月dd日 HH:mm", { locale: ja })}
+                                      </span>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        </CollapsibleContent>
+                      </Collapsible>
                     ))}
                   </TableBody>
                 </Table>
