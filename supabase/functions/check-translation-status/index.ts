@@ -87,11 +87,21 @@ serve(async (req) => {
     const projectData = await statusRes.json();
     console.log("Project status:", projectData.status);
     console.log("Project progress:", projectData.progress);
+    console.log("Full project data:", JSON.stringify(projectData, null, 2));
 
-    // statusフィールドを確認
-    const isCompleted = projectData.status === "completed" || projectData.status === "done";
-    const videoUrl = isCompleted ? projectData.translated_video : null;
-    const progress = projectData.progress || 0;
+    // statusフィールドを確認（merging_doneも完了とみなす）
+    const isCompleted = projectData.status === "completed" || 
+                       projectData.status === "done" || 
+                       projectData.status === "merging_done";
+    
+    // 翻訳済み動画URLを取得（複数の可能性があるフィールド名をチェック）
+    const videoUrl = isCompleted 
+      ? (projectData.translated_video || projectData.output_url || projectData.video_url)
+      : null;
+    
+    const progress = projectData.progress || (isCompleted ? 100 : 0);
+    
+    console.log("Video URL extracted:", videoUrl);
 
     return new Response(
       JSON.stringify({
