@@ -335,29 +335,60 @@ export default function Dojos() {
                         {/* Social Links */}
                         <div className="flex gap-2 flex-wrap">
                           {dojo.website && (
-                            <div className="p-2 bg-muted/50 rounded">
+                            <a
+                              href={dojo.website}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              className="p-2 bg-muted/50 rounded hover:bg-muted transition-colors"
+                              title={language === "ja" ? "ウェブサイト" : "Website"}
+                            >
                               <Globe className="w-4 h-4 text-muted-foreground" />
-                            </div>
+                            </a>
                           )}
                           {dojo.instagram && (
-                            <div className="p-2 bg-muted/50 rounded">
+                            <a
+                              href={`https://instagram.com/${dojo.instagram.replace('@', '').replace('https://instagram.com/', '').replace('instagram.com/', '')}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              className="p-2 bg-muted/50 rounded hover:bg-muted transition-colors"
+                              title="Instagram"
+                            >
                               <Instagram className="w-4 h-4 text-muted-foreground" />
-                            </div>
+                            </a>
                           )}
                           {dojo.facebook && (
-                            <div className="p-2 bg-muted/50 rounded">
+                            <a
+                              href={dojo.facebook.startsWith('http') ? dojo.facebook : `https://facebook.com/${dojo.facebook}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              className="p-2 bg-muted/50 rounded hover:bg-muted transition-colors"
+                              title="Facebook"
+                            >
                               <Facebook className="w-4 h-4 text-muted-foreground" />
-                            </div>
+                            </a>
                           )}
                           {dojo.phone && (
-                            <div className="p-2 bg-muted/50 rounded">
+                            <a
+                              href={`tel:${dojo.phone}`}
+                              onClick={(e) => e.stopPropagation()}
+                              className="p-2 bg-muted/50 rounded hover:bg-muted transition-colors"
+                              title={language === "ja" ? "電話" : "Phone"}
+                            >
                               <Phone className="w-4 h-4 text-muted-foreground" />
-                            </div>
+                            </a>
                           )}
                           {dojo.email && (
-                            <div className="p-2 bg-muted/50 rounded">
+                            <a
+                              href={`mailto:${dojo.email}`}
+                              onClick={(e) => e.stopPropagation()}
+                              className="p-2 bg-muted/50 rounded hover:bg-muted transition-colors"
+                              title={language === "ja" ? "メール" : "Email"}
+                            >
                               <Mail className="w-4 h-4 text-muted-foreground" />
-                            </div>
+                            </a>
                           )}
                         </div>
                       </div>
