@@ -36,7 +36,11 @@ const Footer = () => {
       <div className="container mx-auto px-6 py-12">
         <div className="grid md:grid-cols-4 gap-8 mb-8">
           <div>
-            <h3 className="font-light mb-4">jiuflow</h3>
+            <h3 className="font-light mb-4">
+              <span className={theme === "dark" ? "text-white" : "text-foreground"}>
+                jiu<span className="text-red-500">l</span>flow
+              </span>
+            </h3>
             <p className="text-sm text-muted-foreground font-light">
               {t("home.hero.subtitle", "Learn Jiu-Jitsu Systematically.")}
             </p>
