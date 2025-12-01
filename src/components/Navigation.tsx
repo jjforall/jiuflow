@@ -87,7 +87,6 @@ const Navigation = () => {
   const links = [
     { to: "/", label: t.nav.home, icon: Home },
     { to: "/map", label: t.nav.map, icon: Map },
-    { to: "/lineage-tree", label: language === "ja" ? "系統図" : language === "pt" ? "Linhagem" : "Lineage", icon: ClipboardList },
     { to: "/about", label: t.nav.about, icon: Info },
     ...(!subscribed ? [{ to: "/join", label: t.nav.join, icon: UserPlus }] : []),
   ];
