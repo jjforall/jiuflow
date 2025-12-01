@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { Star, Languages, Heart } from "lucide-react";
+import { Star, Languages, Heart, GitBranch } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 
@@ -239,13 +239,21 @@ const Athletes = () => {
             <h1 className="text-4xl md:text-6xl font-light tracking-tight mb-4">
               {language === "ja" ? "有名選手" : language === "pt" ? "Atletas Famosos" : "Famous Athletes"}
             </h1>
-            <p className="text-lg md:text-xl text-muted-foreground">
+            <p className="text-lg md:text-xl text-muted-foreground mb-6">
               {language === "ja" 
                 ? "世界で活躍するトップ選手たち" 
                 : language === "pt" 
                 ? "Atletas de elite do mundo" 
                 : "Elite athletes from around the world"}
             </p>
+            <Button
+              onClick={() => navigate('/lineage-tree')}
+              variant="outline"
+              className="gap-2"
+            >
+              <GitBranch className="h-4 w-4" />
+              {language === "ja" ? "系統図を見る" : language === "pt" ? "Ver Linhagem" : "View Lineage Tree"}
+            </Button>
           </div>
 
           {/* Athletes Grid */}
