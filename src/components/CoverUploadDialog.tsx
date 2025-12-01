@@ -79,10 +79,12 @@ export function CoverUploadDialog({
       pixelCrop.height
     );
 
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
       canvas.toBlob((blob) => {
         if (blob) {
           resolve(blob);
+        } else {
+          reject(new Error('画像の処理に失敗しました'));
         }
       }, 'image/jpeg', 0.95);
     });
@@ -105,7 +107,10 @@ export function CoverUploadDialog({
 
     setUploading(true);
     try {
+      console.log('Starting image crop...');
       const croppedBlob = await getCroppedImg(previewUrl, croppedAreaPixels);
+      console.log('Image cropped successfully, blob size:', croppedBlob.size);
+      
       const croppedFile = new File([croppedBlob], selectedFile.name, {
         type: 'image/jpeg',
       });
@@ -114,6 +119,7 @@ export function CoverUploadDialog({
       const fileName = `${userId}-${Date.now()}.${fileExt}`;
       const filePath = `${fileName}`;
 
+      console.log('Uploading to storage:', filePath);
       const { error: uploadError } = await supabase.storage
         .from('avatars')
         .upload(filePath, croppedFile, {
@@ -121,27 +127,36 @@ export function CoverUploadDialog({
           upsert: true,
         });
 
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        console.error('Storage upload error:', uploadError);
+        throw uploadError;
+      }
 
+      console.log('Getting public URL...');
       const { data: { publicUrl } } = supabase.storage
         .from('avatars')
         .getPublicUrl(filePath);
 
+      console.log('Updating profile with URL:', publicUrl);
       const { error: updateError } = await supabase
         .from('profiles')
         .update({ cover_image_url: publicUrl })
         .eq('id', userId);
 
-      if (updateError) throw updateError;
+      if (updateError) {
+        console.error('Profile update error:', updateError);
+        throw updateError;
+      }
 
       toast.success("カバー画像をアップロードしました");
       onUploadComplete(publicUrl);
       onOpenChange(false);
       setSelectedFile(null);
       setPreviewUrl(null);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error uploading cover:', error);
-      toast.error("アップロードに失敗しました");
+      const errorMessage = error?.message || "アップロードに失敗しました";
+      toast.error(errorMessage);
     } finally {
       setUploading(false);
     }
