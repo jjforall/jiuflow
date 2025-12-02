@@ -1502,15 +1502,15 @@ export const TechniquesManagement = () => {
 
       {/* Techniques Table - Desktop */}
       <div className="hidden md:block border rounded-lg overflow-x-auto">
-        <table className="w-full min-w-[1000px]">
+        <table className="w-full min-w-[900px] table-fixed">
           <thead className="bg-muted">
             <tr>
-              <th className="px-3 py-3 text-left w-12"></th>
-              <th className="px-4 py-3 text-left w-auto">技術名</th>
-              <th className="px-4 py-3 text-left w-32">カテゴリー</th>
-              <th className="px-4 py-3 text-center w-28">動画</th>
-              <th className="px-4 py-3 text-center w-20">翻訳</th>
-              <th className="px-4 py-3 text-center w-24">操作</th>
+              <th className="px-3 py-3 text-left" style={{ width: '48px' }}></th>
+              <th className="px-4 py-3 text-left">技術名</th>
+              <th className="px-4 py-3 text-left" style={{ width: '120px' }}>カテゴリー</th>
+              <th className="px-4 py-3 text-center" style={{ width: '120px' }}>動画</th>
+              <th className="px-4 py-3 text-center" style={{ width: '80px' }}>翻訳</th>
+              <th className="px-4 py-3 text-center" style={{ width: '100px' }}>操作</th>
             </tr>
           </thead>
           <tbody>
