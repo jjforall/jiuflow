@@ -13,6 +13,9 @@ import {
   ChevronUp,
   ChevronDown,
   X,
+  Shuffle,
+  Repeat,
+  Repeat1,
 } from "lucide-react";
 
 const formatTime = (seconds: number) => {
@@ -37,6 +40,10 @@ const GlobalMusicPlayer = () => {
     seek,
     play,
     loadPlaylist,
+    isShuffle,
+    repeatMode,
+    toggleShuffle,
+    toggleRepeat,
   } = useMusic();
 
   const [isExpanded, setIsExpanded] = useState(false);
@@ -146,7 +153,16 @@ const GlobalMusicPlayer = () => {
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            className={`h-8 w-8 ${isShuffle ? "text-primary" : ""}`}
+            onClick={toggleShuffle}
+            title="シャッフル"
+          >
+            <Shuffle className="h-4 w-4" />
+          </Button>
           <Button
             variant="ghost"
             size="icon"
@@ -174,6 +190,19 @@ const GlobalMusicPlayer = () => {
             onClick={next}
           >
             <SkipForward className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className={`h-8 w-8 ${repeatMode !== "off" ? "text-primary" : ""}`}
+            onClick={toggleRepeat}
+            title={repeatMode === "off" ? "リピートオフ" : repeatMode === "all" ? "全曲リピート" : "1曲リピート"}
+          >
+            {repeatMode === "one" ? (
+              <Repeat1 className="h-4 w-4" />
+            ) : (
+              <Repeat className="h-4 w-4" />
+            )}
           </Button>
         </div>
 
