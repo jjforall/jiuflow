@@ -21,7 +21,7 @@ const getBeltColor = (belt: string): string => {
     return 'bg-amber-800 text-white';
   }
   if (beltLower.includes('黒') || beltLower.includes('black')) {
-    return 'bg-black text-white';
+    return 'bg-black text-white border border-gray-700';
   }
   
   return 'bg-muted text-foreground';
