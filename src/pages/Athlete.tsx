@@ -116,6 +116,60 @@ const Athlete = () => {
     loadCelebrity();
   }, [slugOrUsername]);
 
+  // SEO: Update page title and meta tags when celebrity data is loaded
+  useEffect(() => {
+    if (celebrity) {
+      const siteName = "JiuFlow";
+      const pageTitle = `${celebrity.display_name} | ${siteName}`;
+      const description = celebrity.bio 
+        ? celebrity.bio.slice(0, 160) 
+        : language === "ja" 
+          ? `${celebrity.display_name}の選手プロフィール - ${siteName}` 
+          : language === "pt"
+            ? `Perfil do atleta ${celebrity.display_name} - ${siteName}`
+            : `${celebrity.display_name} athlete profile - ${siteName}`;
+      const avatarUrl = celebrity.avatar_url || `${window.location.origin}/og-image.jpg`;
+      const pageUrl = window.location.href;
+
+      // Update document title
+      document.title = pageTitle;
+
+      // Helper function to update or create meta tags
+      const updateMetaTag = (property: string, content: string, isName = false) => {
+        const attr = isName ? 'name' : 'property';
+        let element = document.querySelector(`meta[${attr}="${property}"]`) as HTMLMetaElement;
+        if (!element) {
+          element = document.createElement('meta');
+          element.setAttribute(attr, property);
+          document.head.appendChild(element);
+        }
+        element.content = content;
+      };
+
+      // Update meta description
+      updateMetaTag('description', description, true);
+
+      // Open Graph tags
+      updateMetaTag('og:title', pageTitle);
+      updateMetaTag('og:description', description);
+      updateMetaTag('og:image', avatarUrl);
+      updateMetaTag('og:url', pageUrl);
+      updateMetaTag('og:type', 'profile');
+      updateMetaTag('og:site_name', siteName);
+
+      // Twitter Card tags
+      updateMetaTag('twitter:card', 'summary_large_image', true);
+      updateMetaTag('twitter:title', pageTitle, true);
+      updateMetaTag('twitter:description', description, true);
+      updateMetaTag('twitter:image', avatarUrl, true);
+
+      // Cleanup function to restore default title on unmount
+      return () => {
+        document.title = siteName;
+      };
+    }
+  }, [celebrity, language]);
+
   useEffect(() => {
     if (celebrity && user?.id) {
       loadFollowStatus();
