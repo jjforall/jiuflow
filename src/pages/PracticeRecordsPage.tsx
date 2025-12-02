@@ -535,17 +535,29 @@ const PracticeRecordsPage = () => {
           </div>
 
           <Tabs defaultValue="recent" className="space-y-4 sm:space-y-6">
-            <TabsList className="grid w-full grid-cols-2 gap-1 sm:gap-2 p-1">
-              <TabsTrigger value="recent" className="text-[10px] sm:text-sm whitespace-normal h-auto py-1.5 sm:py-2 px-1 sm:px-3">
+            <TabsList className="grid w-full grid-cols-4 gap-2 p-1.5 bg-muted/50 rounded-lg">
+              <TabsTrigger 
+                value="recent" 
+                className="text-xs sm:text-sm font-medium rounded-md data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all"
+              >
                 {texts.recentVideosTab}
               </TabsTrigger>
-              <TabsTrigger value="all" className="text-[10px] sm:text-sm whitespace-normal h-auto py-1.5 sm:py-2 px-1 sm:px-3">
+              <TabsTrigger 
+                value="all" 
+                className="text-xs sm:text-sm font-medium rounded-md data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all"
+              >
                 {texts.allRecordsTab}
               </TabsTrigger>
-              <TabsTrigger value="stats" className="text-[10px] sm:text-sm whitespace-normal h-auto py-1.5 sm:py-2 px-1 sm:px-3">
+              <TabsTrigger 
+                value="stats" 
+                className="text-xs sm:text-sm font-medium rounded-md data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all"
+              >
                 {texts.statsTab}
               </TabsTrigger>
-              <TabsTrigger value="other" className="text-[10px] sm:text-sm whitespace-normal h-auto py-1.5 sm:py-2 px-1 sm:px-3">
+              <TabsTrigger 
+                value="other" 
+                className="text-xs sm:text-sm font-medium rounded-md data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all"
+              >
                 {texts.otherPracticeTab}
               </TabsTrigger>
             </TabsList>
@@ -611,6 +623,10 @@ const PracticeRecordsPage = () => {
                                         {texts.nextMilestone}: {nextMilestone - stats.totalSessions}{texts.times}
                                       </p>
                                     )}
+                                  </div>
+                                  
+                                  <div className="text-[10px] sm:text-xs text-muted-foreground">
+                                    累計: <span className="font-semibold text-foreground">{stats.totalReps}</span>回
                                   </div>
                                   
                                   {badges.length > 0 && (
@@ -1007,7 +1023,7 @@ const PracticeRecordsPage = () => {
               <Label className="text-xs sm:text-sm font-medium">{texts.repetitions}</Label>
               <Input
                 type="number"
-                placeholder="1"
+                placeholder="30"
                 value={formData.repetition_count}
                 onChange={(e) => setFormData({ ...formData, repetition_count: e.target.value })}
                 min="0"
