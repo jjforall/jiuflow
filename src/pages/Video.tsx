@@ -80,39 +80,34 @@ const Video = () => {
     notes: "",
   });
 
-  // 動画ページに来たら、音楽が再生中の場合のみ音量を25%以下にフェードイン
+  // 動画ページに来たら、音楽が再生中で音量が25%以上なら25%にフェードダウン
   useEffect(() => {
     // 音楽が再生中でなければ何もしない
     if (!isPlaying) return;
+    // 音量が25%以下なら何もしない
+    if (volume <= 0.25) return;
 
-    const targetVolume = Math.min(volume, 0.25); // 現在の音量か25%の小さい方
-    const fadeDuration = 2000; // フェードイン時間（2秒）
-    const fadeSteps = 20; // フェードのステップ数
-    const stepDuration = fadeDuration / fadeSteps;
-    
-    let fadeInterval: NodeJS.Timeout;
-    let currentStep = 0;
     const startVolume = volume;
+    const targetVolume = 0.25;
+    const fadeDuration = 1000; // フェード時間（1秒）
+    const fadeSteps = 20;
+    const stepDuration = fadeDuration / fadeSteps;
+    const volumeStep = (startVolume - targetVolume) / fadeSteps;
+    
+    let currentStep = 0;
 
-    // 音量が25%以上なら25%に下げてからフェードイン
-    if (volume > 0.25) {
-      setVolume(0);
+    const fadeInterval = setInterval(() => {
+      currentStep++;
+      const newVolume = startVolume - (volumeStep * currentStep);
+      setVolume(Math.max(newVolume, targetVolume));
       
-      fadeInterval = setInterval(() => {
-        currentStep++;
-        const newVolume = (0.25 / fadeSteps) * currentStep;
-        setVolume(Math.min(newVolume, 0.25));
-        
-        if (currentStep >= fadeSteps) {
-          clearInterval(fadeInterval);
-        }
-      }, stepDuration);
-    }
-
-    return () => {
-      if (fadeInterval) {
+      if (currentStep >= fadeSteps) {
         clearInterval(fadeInterval);
       }
+    }, stepDuration);
+
+    return () => {
+      clearInterval(fadeInterval);
     };
   }, []); // 初回のみ実行
 
