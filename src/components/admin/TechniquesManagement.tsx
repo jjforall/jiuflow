@@ -1141,6 +1141,12 @@ export const TechniquesManagement = () => {
                           data.status === 'done' || 
                           data.status === 'merging_done';
         
+        // 進行中のステータス（ポーリング継続）
+        const isInProgress = [
+          'uploading', 'uploaded', 'transcription_started', 
+          'translation_started', 'voiceover_started', 'processing'
+        ].includes(data.status);
+        
         if (isCompleted && data.videoUrl) {
           // Update the technique with the translated video URL and metadata
           let updateField: string;
@@ -1185,8 +1191,8 @@ export const TechniquesManagement = () => {
             progress: 0,
             startTime: null,
           });
-        } else if (data.status === 'processing') {
-          // Poll again after 10 seconds
+        } else if (isInProgress) {
+          // Poll again after 10 seconds for any in-progress status
           setTimeout(() => checkTranslationStatus(projectId, targetLang), 10000);
         } else if (data.status === 'failed') {
           toast.error("動画翻訳エラー", {
@@ -2247,7 +2253,9 @@ export const TechniquesManagement = () => {
                 <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2">
                   {allLanguages.map(lang => {
                     const metadata = (translatingTechnique as any)?.video_metadata?.[lang.code];
-                    const isProcessing = translationStatus.status === 'processing' && targetLanguage === lang.code && translationProjectId;
+                    // 進行中のステータスをすべてチェック
+                    const inProgressStatuses = ['uploading', 'uploaded', 'transcription_started', 'translation_started', 'voiceover_started', 'processing'];
+                    const isProcessing = translationStatus.status && inProgressStatuses.includes(translationStatus.status) && targetLanguage === lang.code && translationProjectId;
                     const isJapanese = lang.code === 'ja';
                     
                     return (
@@ -2331,15 +2339,24 @@ export const TechniquesManagement = () => {
                 <div className="mt-4 p-4 bg-muted rounded-md space-y-3">
                   <div className="flex items-center justify-between">
                     <p className="text-sm font-medium">
-                      ステータス: {translationStatus.status === 'processing' ? '翻訳処理中...' : 
-                                  translationStatus.status === 'completed' ? '翻訳完了' : 
-                                  translationStatus.status === 'failed' ? '失敗' : translationStatus.status}
+                      ステータス: {
+                        translationStatus.status === 'uploading' ? '動画アップロード中...' :
+                        translationStatus.status === 'uploaded' ? 'アップロード完了' :
+                        translationStatus.status === 'transcription_started' ? '文字起こし中...' :
+                        translationStatus.status === 'translation_started' ? '翻訳処理中...' :
+                        translationStatus.status === 'voiceover_started' ? '音声生成中...' :
+                        translationStatus.status === 'merging_done' ? '動画結合完了' :
+                        translationStatus.status === 'completed' ? '翻訳完了' : 
+                        translationStatus.status === 'failed' ? '失敗' : 
+                        translationStatus.status === 'processing' ? '処理中...' : 
+                        translationStatus.status
+                      }
                     </p>
                     {translationStatus.progress > 0 && (
                       <p className="text-sm text-muted-foreground">{translationStatus.progress}%</p>
                     )}
                   </div>
-                  {translationStatus.progress > 0 && translationStatus.status === 'processing' && (
+                  {translationStatus.status && ['uploading', 'uploaded', 'transcription_started', 'translation_started', 'voiceover_started', 'processing'].includes(translationStatus.status) && (
                     <>
                       <Progress value={translationStatus.progress} className="h-2" />
                       {translationStatus.startTime && (
@@ -2384,9 +2401,11 @@ export const TechniquesManagement = () => {
               </Button>
               <Button 
                 onClick={handleVideoTranslate}
-                disabled={isTranslating || translationStatus.status === 'processing'}
+                disabled={isTranslating || (translationStatus.status && ['uploading', 'uploaded', 'transcription_started', 'translation_started', 'voiceover_started', 'processing'].includes(translationStatus.status))}
               >
-                {isTranslating ? '開始中...' : translationStatus.status === 'processing' ? '処理中' : '翻訳開始'}
+                {isTranslating ? '開始中...' : 
+                 translationStatus.status && ['uploading', 'uploaded', 'transcription_started', 'translation_started', 'voiceover_started', 'processing'].includes(translationStatus.status) ? '処理中' : 
+                 '翻訳開始'}
               </Button>
             </div>
           </div>
