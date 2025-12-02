@@ -1502,7 +1502,7 @@ export const TechniquesManagement = () => {
 
       {/* Techniques Table - Desktop */}
       <div className="hidden md:block border rounded-lg overflow-x-auto">
-        <table className="w-full table-fixed">
+        <table className="w-full min-w-[1000px]">
           <thead className="bg-muted">
             <tr>
               <th className="px-3 py-3 text-left w-12"></th>
@@ -1555,10 +1555,10 @@ export const TechniquesManagement = () => {
                         </Button>
                       </CollapsibleTrigger>
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3 align-top">
                       <div className="space-y-1.5">
-                        <p className="font-medium leading-tight">{technique.name}</p>
-                        <p className="text-sm text-muted-foreground leading-tight">{technique.name_ja}</p>
+                        <p className="font-medium leading-tight break-words">{technique.name}</p>
+                        <p className="text-sm text-muted-foreground leading-tight break-words">{technique.name_ja}</p>
                       </div>
                     </td>
                     <td className="px-4 py-3">
