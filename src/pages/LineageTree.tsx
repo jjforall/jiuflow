@@ -44,7 +44,6 @@ export default function LineageTree() {
   const [allCelebrities, setAllCelebrities] = useState<Celebrity[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedOrganization, setSelectedOrganization] = useState<string | null>(null);
   const [selectedBeltLevel, setSelectedBeltLevel] = useState<string | null>(null);
   const [showFeaturedOnly, setShowFeaturedOnly] = useState(false);
 
@@ -152,10 +151,6 @@ export default function LineageTree() {
             .toLowerCase()
             .includes(searchQuery.toLowerCase());
 
-        const matchesOrganization =
-          !selectedOrganization ||
-          node.celebrity.organization_id === selectedOrganization;
-
         const matchesBelt =
           !selectedBeltLevel ||
           (node.celebrity.belt_history &&
@@ -171,7 +166,6 @@ export default function LineageTree() {
 
         if (
           matchesSearch &&
-          matchesOrganization &&
           matchesBelt &&
           matchesFeatured
         ) {
@@ -186,14 +180,6 @@ export default function LineageTree() {
   };
 
   const filteredRoots = filterNodes(lineageRoots);
-
-  const organizations = Array.from(
-    new Map(
-      allCelebrities
-        .filter((c) => c.organization)
-        .map((c) => [c.organization!.id, c.organization!])
-    ).values()
-  );
 
   const beltLevels = [
     "White",
@@ -235,12 +221,9 @@ export default function LineageTree() {
           </div>
 
           <LineageFilters
-            organizations={organizations}
             beltLevels={beltLevels}
-            selectedOrganization={selectedOrganization}
             selectedBeltLevel={selectedBeltLevel}
             showFeaturedOnly={showFeaturedOnly}
-            onOrganizationChange={setSelectedOrganization}
             onBeltLevelChange={setSelectedBeltLevel}
             onFeaturedChange={setShowFeaturedOnly}
           />
