@@ -1494,15 +1494,15 @@ export const TechniquesManagement = () => {
 
       {/* Techniques Table - Desktop */}
       <div className="hidden md:block border rounded-lg overflow-x-auto">
-        <table className="w-full">
+        <table className="w-full min-w-[1000px]">
           <thead className="bg-muted">
             <tr>
-              <th className="px-4 py-3 text-left w-[50px]"></th>
-              <th className="px-4 py-3 text-left">技術名</th>
-              <th className="px-4 py-3 text-left w-[120px]">カテゴリー</th>
-              <th className="px-4 py-3 text-left w-[100px]">動画</th>
-              <th className="px-4 py-3 text-left w-[80px]">翻訳</th>
-              <th className="px-4 py-3 text-right w-[140px]">操作</th>
+              <th className="px-3 py-3 text-left w-[40px]"></th>
+              <th className="px-4 py-3 text-left min-w-[280px]">技術名</th>
+              <th className="px-4 py-3 text-left w-[140px]">カテゴリー</th>
+              <th className="px-4 py-3 text-center w-[120px]">動画</th>
+              <th className="px-4 py-3 text-center w-[90px]">翻訳</th>
+              <th className="px-4 py-3 text-center w-[100px]">操作</th>
             </tr>
           </thead>
           <tbody>
@@ -1540,7 +1540,7 @@ export const TechniquesManagement = () => {
               data?.data.map((technique) => (
                 <Collapsible key={technique.id} open={expandedRows.has(technique.id)} onOpenChange={() => toggleRow(technique.id)}>
                   <tr className="border-t hover:bg-muted/50 group">
-                    <td className="px-4 py-3">
+                    <td className="px-3 py-3">
                       <CollapsibleTrigger asChild>
                         <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
                           <ChevronDown className={`h-4 w-4 transition-transform ${expandedRows.has(technique.id) ? "rotate-180" : ""}`} />
@@ -1548,45 +1548,47 @@ export const TechniquesManagement = () => {
                       </CollapsibleTrigger>
                     </td>
                     <td className="px-4 py-3">
-                      <div className="space-y-1">
-                        <p className="font-medium">{technique.name}</p>
-                        <p className="text-sm text-muted-foreground">{technique.name_ja}</p>
+                      <div className="space-y-1.5">
+                        <p className="font-medium leading-tight">{technique.name}</p>
+                        <p className="text-sm text-muted-foreground leading-tight">{technique.name_ja}</p>
                       </div>
                     </td>
                     <td className="px-4 py-3">
-                      <span className="px-2 py-1 text-xs rounded-full bg-primary/10 text-primary">
+                      <span className="inline-block px-2.5 py-1 text-xs rounded-full bg-primary/10 text-primary whitespace-nowrap">
                         {technique.category}
                       </span>
                     </td>
                     <td className="px-4 py-3">
-                      {technique.thumbnail_url ? (
-                        <img
-                          src={technique.thumbnail_url}
-                          className="w-20 h-12 object-cover rounded cursor-pointer hover:opacity-80 transition-opacity"
-                          loading="lazy"
-                          alt={technique.name}
-                          onClick={() => {
-                            if (technique.video_url) {
-                              setPreviewVideoUrl(technique.video_url);
-                              setShowVideoPreview(true);
-                            }
-                          }}
-                          onError={(e) => {
-                            const target = e.target as HTMLImageElement;
-                            target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="96" height="64"%3E%3Crect fill="%23ddd" width="96" height="64"/%3E%3Ctext fill="%23999" x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle"%3ENo Image%3C/text%3E%3C/svg%3E';
-                          }}
-                        />
-                      ) : (
-                        <div className="w-20 h-12 bg-muted rounded flex items-center justify-center text-xs text-muted-foreground">
-                          未登録
-                        </div>
-                      )}
+                      <div className="flex justify-center">
+                        {technique.thumbnail_url ? (
+                          <img
+                            src={technique.thumbnail_url}
+                            className="w-24 h-14 object-cover rounded cursor-pointer hover:opacity-80 transition-opacity shadow-sm"
+                            loading="lazy"
+                            alt={technique.name}
+                            onClick={() => {
+                              if (technique.video_url) {
+                                setPreviewVideoUrl(technique.video_url);
+                                setShowVideoPreview(true);
+                              }
+                            }}
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="96" height="64"%3E%3Crect fill="%23ddd" width="96" height="64"/%3E%3Ctext fill="%23999" x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle"%3ENo Image%3C/text%3E%3C/svg%3E';
+                            }}
+                          />
+                        ) : (
+                          <div className="w-24 h-14 bg-muted rounded flex items-center justify-center text-xs text-muted-foreground">
+                            未登録
+                          </div>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      <span className="inline-block px-2 py-1 bg-accent rounded text-sm font-medium">{getTranslationCount(technique as any)}言語</span>
                     </td>
                     <td className="px-4 py-3">
-                      <span className="text-sm">{getTranslationCount(technique as any)}言語</span>
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <div className="flex gap-1 justify-end">
+                      <div className="flex gap-1 justify-center">
                         {isAdmin ? (
                           <>
                             {technique.video_url && (
