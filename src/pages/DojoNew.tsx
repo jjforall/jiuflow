@@ -10,12 +10,14 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { toast } from "sonner";
-import { ArrowLeft, Save } from "lucide-react";
+import { ArrowLeft, Save, Languages, Loader2 } from "lucide-react";
 
 export default function DojoNew() {
   const { language } = useLanguage();
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isTranslatingName, setIsTranslatingName] = useState(false);
+  const [isTranslatingDescription, setIsTranslatingDescription] = useState(false);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -31,6 +33,99 @@ export default function DojoNew() {
     phone: "",
     email: "",
   });
+
+  const translateText = async (text: string, sourceLang: string, targetLang: string): Promise<string> => {
+    try {
+      const { data, error } = await supabase.functions.invoke('translate-text', {
+        body: { text, sourceLang, targetLang }
+      });
+
+      if (error) throw error;
+      return data.translatedText || text;
+    } catch (error) {
+      console.error('Translation error:', error);
+      throw error;
+    }
+  };
+
+  const detectLanguage = (text: string): 'en' | 'ja' | 'pt' => {
+    // Simple detection based on character patterns
+    const hasJapanese = /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/.test(text);
+    const hasPortuguese = /[àáâãéêíóôõúç]/i.test(text);
+    
+    if (hasJapanese) return 'ja';
+    if (hasPortuguese) return 'pt';
+    return 'en';
+  };
+
+  const handleTranslateName = async () => {
+    // Find which field has content
+    const sourceText = formData.name_ja || formData.name || formData.name_pt;
+    if (!sourceText.trim()) {
+      toast.error(
+        language === "ja" ? "翻訳するテキストを入力してください" : "Please enter text to translate"
+      );
+      return;
+    }
+
+    setIsTranslatingName(true);
+    try {
+      const sourceLang = formData.name_ja ? 'ja' : formData.name ? 'en' : 'pt';
+      
+      const updates: Partial<typeof formData> = {};
+      
+      if (sourceLang !== 'en' && !formData.name) {
+        updates.name = await translateText(sourceText, sourceLang, 'en');
+      }
+      if (sourceLang !== 'ja' && !formData.name_ja) {
+        updates.name_ja = await translateText(sourceText, sourceLang, 'ja');
+      }
+      if (sourceLang !== 'pt' && !formData.name_pt) {
+        updates.name_pt = await translateText(sourceText, sourceLang, 'pt');
+      }
+
+      setFormData(prev => ({ ...prev, ...updates }));
+      toast.success(language === "ja" ? "翻訳完了" : "Translation complete");
+    } catch (error) {
+      toast.error(language === "ja" ? "翻訳に失敗しました" : "Translation failed");
+    } finally {
+      setIsTranslatingName(false);
+    }
+  };
+
+  const handleTranslateDescription = async () => {
+    const sourceText = formData.description_ja || formData.description || formData.description_pt;
+    if (!sourceText.trim()) {
+      toast.error(
+        language === "ja" ? "翻訳するテキストを入力してください" : "Please enter text to translate"
+      );
+      return;
+    }
+
+    setIsTranslatingDescription(true);
+    try {
+      const sourceLang = formData.description_ja ? 'ja' : formData.description ? 'en' : 'pt';
+      
+      const updates: Partial<typeof formData> = {};
+      
+      if (sourceLang !== 'en' && !formData.description) {
+        updates.description = await translateText(sourceText, sourceLang, 'en');
+      }
+      if (sourceLang !== 'ja' && !formData.description_ja) {
+        updates.description_ja = await translateText(sourceText, sourceLang, 'ja');
+      }
+      if (sourceLang !== 'pt' && !formData.description_pt) {
+        updates.description_pt = await translateText(sourceText, sourceLang, 'pt');
+      }
+
+      setFormData(prev => ({ ...prev, ...updates }));
+      toast.success(language === "ja" ? "翻訳完了" : "Translation complete");
+    } catch (error) {
+      toast.error(language === "ja" ? "翻訳に失敗しました" : "Translation failed");
+    } finally {
+      setIsTranslatingDescription(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -121,10 +216,10 @@ export default function DojoNew() {
             </h1>
             <p className="text-muted-foreground">
               {language === "ja"
-                ? "新しい道場を登録します。必須項目は英語・日本語・ポルトガル語の道場名です。"
+                ? "新しい道場を登録します。1つの言語で入力すると自動翻訳できます。"
                 : language === "pt"
-                ? "Registre um novo dojo. Os nomes em inglês, japonês e português são obrigatórios."
-                : "Register a new dojo. Names in English, Japanese, and Portuguese are required."}
+                ? "Registre um novo dojo. Digite em uma língua para traduzir automaticamente."
+                : "Register a new dojo. Enter in one language to auto-translate."}
             </p>
           </div>
 
@@ -144,46 +239,68 @@ export default function DojoNew() {
               </CardHeader>
               <CardContent className="space-y-6">
                 {/* Names - Required */}
-                <div className="grid md:grid-cols-3 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="name">
-                      {language === "ja" ? "道場名（英語）" : language === "pt" ? "Nome (Inglês)" : "Name (English)"}{" "}
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-base font-semibold">
+                      {language === "ja" ? "道場名" : language === "pt" ? "Nome do Dojo" : "Dojo Name"}{" "}
                       <span className="text-destructive">*</span>
                     </Label>
-                    <Input
-                      id="name"
-                      value={formData.name}
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      placeholder="Gracie Barra Tokyo"
-                      required
-                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={handleTranslateName}
+                      disabled={isTranslatingName}
+                      className="gap-2"
+                    >
+                      {isTranslatingName ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Languages className="w-4 h-4" />
+                      )}
+                      {language === "ja" ? "自動翻訳" : "Auto Translate"}
+                    </Button>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="name_ja">
-                      {language === "ja" ? "道場名（日本語）" : language === "pt" ? "Nome (Japonês)" : "Name (Japanese)"}{" "}
-                      <span className="text-destructive">*</span>
-                    </Label>
-                    <Input
-                      id="name_ja"
-                      value={formData.name_ja}
-                      onChange={(e) => setFormData({ ...formData, name_ja: e.target.value })}
-                      placeholder="グレイシーバッハ東京"
-                      required
-                    />
+                  <div className="grid md:grid-cols-3 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="name" className="text-muted-foreground">
+                        English
+                      </Label>
+                      <Input
+                        id="name"
+                        value={formData.name}
+                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                        placeholder="Gracie Barra Tokyo"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="name_ja" className="text-muted-foreground">
+                        日本語
+                      </Label>
+                      <Input
+                        id="name_ja"
+                        value={formData.name_ja}
+                        onChange={(e) => setFormData({ ...formData, name_ja: e.target.value })}
+                        placeholder="グレイシーバッハ東京"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="name_pt" className="text-muted-foreground">
+                        Português
+                      </Label>
+                      <Input
+                        id="name_pt"
+                        value={formData.name_pt}
+                        onChange={(e) => setFormData({ ...formData, name_pt: e.target.value })}
+                        placeholder="Gracie Barra Tóquio"
+                      />
+                    </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="name_pt">
-                      {language === "ja" ? "道場名（ポルトガル語）" : language === "pt" ? "Nome (Português)" : "Name (Portuguese)"}{" "}
-                      <span className="text-destructive">*</span>
-                    </Label>
-                    <Input
-                      id="name_pt"
-                      value={formData.name_pt}
-                      onChange={(e) => setFormData({ ...formData, name_pt: e.target.value })}
-                      placeholder="Gracie Barra Tokyo"
-                      required
-                    />
-                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {language === "ja" 
+                      ? "💡 1つの言語で入力し、「自動翻訳」ボタンをクリックすると、他の言語に翻訳されます"
+                      : "💡 Enter in one language and click 'Auto Translate' to fill other languages"}
+                  </p>
                 </div>
 
                 {/* Location */}
@@ -201,42 +318,69 @@ export default function DojoNew() {
 
                 {/* Descriptions */}
                 <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="description">
-                      {language === "ja" ? "説明（英語）" : language === "pt" ? "Descrição (Inglês)" : "Description (English)"}
+                  <div className="flex items-center justify-between">
+                    <Label className="text-base font-semibold">
+                      {language === "ja" ? "説明" : language === "pt" ? "Descrição" : "Description"}
                     </Label>
-                    <Textarea
-                      id="description"
-                      value={formData.description}
-                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                      placeholder="Describe your dojo..."
-                      rows={3}
-                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={handleTranslateDescription}
+                      disabled={isTranslatingDescription}
+                      className="gap-2"
+                    >
+                      {isTranslatingDescription ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Languages className="w-4 h-4" />
+                      )}
+                      {language === "ja" ? "自動翻訳" : "Auto Translate"}
+                    </Button>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="description_ja">
-                      {language === "ja" ? "説明（日本語）" : language === "pt" ? "Descrição (Japonês)" : "Description (Japanese)"}
-                    </Label>
-                    <Textarea
-                      id="description_ja"
-                      value={formData.description_ja}
-                      onChange={(e) => setFormData({ ...formData, description_ja: e.target.value })}
-                      placeholder="道場について説明してください..."
-                      rows={3}
-                    />
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="description" className="text-muted-foreground">
+                        English
+                      </Label>
+                      <Textarea
+                        id="description"
+                        value={formData.description}
+                        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                        placeholder="Describe your dojo..."
+                        rows={3}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="description_ja" className="text-muted-foreground">
+                        日本語
+                      </Label>
+                      <Textarea
+                        id="description_ja"
+                        value={formData.description_ja}
+                        onChange={(e) => setFormData({ ...formData, description_ja: e.target.value })}
+                        placeholder="道場について説明してください..."
+                        rows={3}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="description_pt" className="text-muted-foreground">
+                        Português
+                      </Label>
+                      <Textarea
+                        id="description_pt"
+                        value={formData.description_pt}
+                        onChange={(e) => setFormData({ ...formData, description_pt: e.target.value })}
+                        placeholder="Descreva seu dojo..."
+                        rows={3}
+                      />
+                    </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="description_pt">
-                      {language === "ja" ? "説明（ポルトガル語）" : language === "pt" ? "Descrição (Português)" : "Description (Portuguese)"}
-                    </Label>
-                    <Textarea
-                      id="description_pt"
-                      value={formData.description_pt}
-                      onChange={(e) => setFormData({ ...formData, description_pt: e.target.value })}
-                      placeholder="Descreva seu dojo..."
-                      rows={3}
-                    />
-                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {language === "ja" 
+                      ? "💡 1つの言語で入力し、「自動翻訳」ボタンをクリックすると、他の言語に翻訳されます"
+                      : "💡 Enter in one language and click 'Auto Translate' to fill other languages"}
+                  </p>
                 </div>
 
                 {/* Contact Information */}
