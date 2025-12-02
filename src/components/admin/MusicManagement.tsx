@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,7 +20,8 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2, Music, Play, Pause, GripVertical } from "lucide-react";
+import { Plus, Pencil, Trash2, Music, Play, Pause, GripVertical, Upload, Link } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface MusicTrack {
   id: string;
@@ -41,6 +42,10 @@ const MusicManagement = () => {
   const [editingTrack, setEditingTrack] = useState<MusicTrack | null>(null);
   const [playingTrackId, setPlayingTrackId] = useState<string | null>(null);
   const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadMode, setUploadMode] = useState<"url" | "file">("file");
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const thumbnailInputRef = useRef<HTMLInputElement>(null);
 
   const [formData, setFormData] = useState({
     title: "",
@@ -48,6 +53,8 @@ const MusicManagement = () => {
     audio_url: "",
     thumbnail_url: "",
     is_active: true,
+    audioFile: null as File | null,
+    thumbnailFile: null as File | null,
   });
 
   useEffect(() => {
@@ -75,18 +82,56 @@ const MusicManagement = () => {
     }
   };
 
+  const uploadFile = async (file: File, folder: string): Promise<string> => {
+    const fileExt = file.name.split(".").pop();
+    const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+    const filePath = `${folder}/${fileName}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from("music-tracks")
+      .upload(filePath, file);
+
+    if (uploadError) throw uploadError;
+
+    const { data } = supabase.storage
+      .from("music-tracks")
+      .getPublicUrl(filePath);
+
+    return data.publicUrl;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setUploading(true);
 
     try {
+      let audioUrl = formData.audio_url;
+      let thumbnailUrl = formData.thumbnail_url;
+
+      // Upload audio file if selected
+      if (formData.audioFile) {
+        audioUrl = await uploadFile(formData.audioFile, "audio");
+      }
+
+      // Upload thumbnail if selected
+      if (formData.thumbnailFile) {
+        thumbnailUrl = await uploadFile(formData.thumbnailFile, "thumbnails");
+      }
+
+      if (!audioUrl) {
+        toast.error("音声ファイルまたはURLを指定してください");
+        setUploading(false);
+        return;
+      }
+
       if (editingTrack) {
         const { error } = await supabase
           .from("music_tracks")
           .update({
             title: formData.title,
             artist: formData.artist || null,
-            audio_url: formData.audio_url,
-            thumbnail_url: formData.thumbnail_url || null,
+            audio_url: audioUrl,
+            thumbnail_url: thumbnailUrl || null,
             is_active: formData.is_active,
           })
           .eq("id", editingTrack.id);
@@ -98,8 +143,8 @@ const MusicManagement = () => {
         const { error } = await supabase.from("music_tracks").insert({
           title: formData.title,
           artist: formData.artist || null,
-          audio_url: formData.audio_url,
-          thumbnail_url: formData.thumbnail_url || null,
+          audio_url: audioUrl,
+          thumbnail_url: thumbnailUrl || null,
           is_active: formData.is_active,
           sort_order: maxOrder + 1,
         });
@@ -114,6 +159,8 @@ const MusicManagement = () => {
     } catch (error) {
       console.error("Error saving track:", error);
       toast.error("保存に失敗しました");
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -168,8 +215,13 @@ const MusicManagement = () => {
       audio_url: "",
       thumbnail_url: "",
       is_active: true,
+      audioFile: null,
+      thumbnailFile: null,
     });
     setEditingTrack(null);
+    setUploadMode("file");
+    if (fileInputRef.current) fileInputRef.current.value = "";
+    if (thumbnailInputRef.current) thumbnailInputRef.current.value = "";
   };
 
   const openEditDialog = (track: MusicTrack) => {
@@ -180,7 +232,10 @@ const MusicManagement = () => {
       audio_url: track.audio_url,
       thumbnail_url: track.thumbnail_url || "",
       is_active: track.is_active,
+      audioFile: null,
+      thumbnailFile: null,
     });
+    setUploadMode("url");
     setIsDialogOpen(true);
   };
 
@@ -226,31 +281,84 @@ const MusicManagement = () => {
                   }
                 />
               </div>
+
               <div>
-                <Label htmlFor="audio_url">音声URL *</Label>
-                <Input
-                  id="audio_url"
-                  type="url"
-                  value={formData.audio_url}
-                  onChange={(e) =>
-                    setFormData({ ...formData, audio_url: e.target.value })
-                  }
-                  placeholder="https://..."
-                  required
-                />
+                <Label>音声ファイル *</Label>
+                <Tabs value={uploadMode} onValueChange={(v) => setUploadMode(v as "url" | "file")} className="mt-2">
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="file" className="flex items-center gap-1">
+                      <Upload className="h-3 w-3" />
+                      ファイル
+                    </TabsTrigger>
+                    <TabsTrigger value="url" className="flex items-center gap-1">
+                      <Link className="h-3 w-3" />
+                      URL
+                    </TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="file" className="mt-2">
+                    <Input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="audio/*"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0] || null;
+                        setFormData({ ...formData, audioFile: file, audio_url: "" });
+                      }}
+                    />
+                    {formData.audioFile && (
+                      <p className="text-sm text-muted-foreground mt-1">
+                        選択中: {formData.audioFile.name}
+                      </p>
+                    )}
+                  </TabsContent>
+                  <TabsContent value="url" className="mt-2">
+                    <Input
+                      type="url"
+                      value={formData.audio_url}
+                      onChange={(e) =>
+                        setFormData({ ...formData, audio_url: e.target.value, audioFile: null })
+                      }
+                      placeholder="https://..."
+                    />
+                  </TabsContent>
+                </Tabs>
+                {editingTrack && formData.audio_url && !formData.audioFile && (
+                  <p className="text-sm text-muted-foreground mt-1">
+                    現在のURL: {formData.audio_url.substring(0, 50)}...
+                  </p>
+                )}
               </div>
+
               <div>
-                <Label htmlFor="thumbnail_url">サムネイルURL</Label>
-                <Input
-                  id="thumbnail_url"
-                  type="url"
-                  value={formData.thumbnail_url}
-                  onChange={(e) =>
-                    setFormData({ ...formData, thumbnail_url: e.target.value })
-                  }
-                  placeholder="https://..."
-                />
+                <Label>サムネイル画像</Label>
+                <div className="mt-2 space-y-2">
+                  <Input
+                    ref={thumbnailInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0] || null;
+                      setFormData({ ...formData, thumbnailFile: file });
+                    }}
+                  />
+                  {formData.thumbnailFile && (
+                    <p className="text-sm text-muted-foreground">
+                      選択中: {formData.thumbnailFile.name}
+                    </p>
+                  )}
+                  {!formData.thumbnailFile && (
+                    <Input
+                      type="url"
+                      value={formData.thumbnail_url}
+                      onChange={(e) =>
+                        setFormData({ ...formData, thumbnail_url: e.target.value })
+                      }
+                      placeholder="またはURLを入力: https://..."
+                    />
+                  )}
+                </div>
               </div>
+
               <div className="flex items-center gap-2">
                 <Switch
                   id="is_active"
@@ -266,10 +374,13 @@ const MusicManagement = () => {
                   type="button"
                   variant="outline"
                   onClick={() => setIsDialogOpen(false)}
+                  disabled={uploading}
                 >
                   キャンセル
                 </Button>
-                <Button type="submit">保存</Button>
+                <Button type="submit" disabled={uploading}>
+                  {uploading ? "アップロード中..." : "保存"}
+                </Button>
               </div>
             </form>
           </DialogContent>
