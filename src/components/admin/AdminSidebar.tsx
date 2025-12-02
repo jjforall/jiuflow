@@ -14,6 +14,7 @@ import {
   Calendar,
   Video,
   Settings,
+  Music,
 } from "lucide-react";
 import {
   Sidebar,
@@ -51,6 +52,7 @@ const menuItems = [
   { id: "contacts", label: "お問い合わせ", icon: Mail },
   { id: "logs", label: "ログ", icon: FileText },
   { id: "tips", label: "投げ銭", icon: Gift },
+  { id: "music", label: "音楽管理", icon: Music },
   { id: "settings", label: "設定", icon: Settings },
 ];
 

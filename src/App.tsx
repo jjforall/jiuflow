@@ -11,6 +11,8 @@ import { ErrorBoundary } from "./components/ErrorBoundary";
 import { RoutePrefetcher } from "./components/RoutePrefetcher";
 import { FloatingVideoProvider } from "./contexts/FloatingVideoContext";
 import { FloatingVideoPlayer } from "./components/FloatingVideoPlayer";
+import { MusicProvider } from "./contexts/MusicContext";
+import GlobalMusicPlayer from "./components/GlobalMusicPlayer";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 
@@ -56,6 +58,7 @@ const App = () => (
             <BrowserRouter>
               <AuthProvider>
                 <FloatingVideoProvider>
+                <MusicProvider>
                 <RoutePrefetcher />
                 <Suspense
                   fallback={
@@ -148,6 +151,8 @@ const App = () => (
                 </Routes>
               </Suspense>
               <FloatingVideoPlayer />
+              <GlobalMusicPlayer />
+            </MusicProvider>
             </FloatingVideoProvider>
           </AuthProvider>
         </BrowserRouter>
