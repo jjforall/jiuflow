@@ -6,12 +6,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { subDays, subWeeks, subMonths, startOfDay, startOfWeek, startOfMonth, endOfDay, endOfWeek, endOfMonth, eachDayOfInterval, eachWeekOfInterval, eachMonthOfInterval, format } from "date-fns";
+import { subDays, subWeeks, subMonths, startOfDay, startOfWeek, startOfMonth, endOfDay, endOfWeek, endOfMonth, eachDayOfInterval, eachWeekOfInterval, eachMonthOfInterval, format, differenceInDays } from "date-fns";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Link } from "react-router-dom";
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
-import { Eye, Repeat, Play, Clock } from "lucide-react";
+import { Eye, Repeat, Play, Clock, AlertTriangle, AlertCircle, CheckCircle } from "lucide-react";
 
 interface Technique {
   id: string;
@@ -51,30 +51,48 @@ const PracticeRecordsPage = () => {
   const t = {
     ja: {
       title: "練習記録",
-      recentTab: "最近見た動画",
-      unwatchedTab: "未視聴の動画",
+      recentTab: "最近見た",
+      unwatchedTab: "未視聴",
+      reviewTab: "復習タイミング",
       chartTab: "グラフ",
       noVideos: "動画がありません",
+      noReviewNeeded: "復習が必要な動画はありません",
       views: "回視聴",
       practices: "回練習",
+      urgent: "今すぐ復習",
+      soon: "もうすぐ",
+      ok: "定着中",
+      daysAgo: "日前",
     },
     en: {
       title: "Practice Records",
-      recentTab: "Recently Watched",
-      unwatchedTab: "Unwatched Videos",
+      recentTab: "Recent",
+      unwatchedTab: "Unwatched",
+      reviewTab: "Review Timing",
       chartTab: "Graph",
       noVideos: "No videos",
+      noReviewNeeded: "No videos need review",
       views: "views",
       practices: "practices",
+      urgent: "Review Now",
+      soon: "Soon",
+      ok: "Retaining",
+      daysAgo: "days ago",
     },
     pt: {
       title: "Registros de Prática",
-      recentTab: "Assistidos Recentemente",
+      recentTab: "Recentes",
       unwatchedTab: "Não Assistidos",
+      reviewTab: "Revisão",
       chartTab: "Gráfico",
       noVideos: "Nenhum vídeo",
+      noReviewNeeded: "Nenhum vídeo precisa de revisão",
       views: "visualizações",
       practices: "práticas",
+      urgent: "Revisar Agora",
+      soon: "Em Breve",
+      ok: "Retendo",
+      daysAgo: "dias atrás",
     },
   };
 
@@ -138,6 +156,35 @@ const PracticeRecordsPage = () => {
 
   // 未視聴の動画（視聴履歴がない）
   const unwatchedVideos = techniques.filter(t => !videoViews.some(v => v.video_id === t.id));
+
+  // 忘却曲線に基づく復習タイミング計算
+  // エビングハウスの忘却曲線: 1日後, 3日後, 7日後, 14日後, 30日後に復習
+  type ReviewStatus = "urgent" | "soon" | "ok";
+  
+  const getReviewStatus = (lastViewedAt: string): { status: ReviewStatus; daysAgo: number } => {
+    const daysAgo = differenceInDays(new Date(), new Date(lastViewedAt));
+    
+    // 復習間隔: 1, 3, 7, 14, 30日
+    // 次の復習ポイントを過ぎたらurgent、近づいたらsoon
+    if (daysAgo >= 7) return { status: "urgent", daysAgo };
+    if (daysAgo >= 3) return { status: "soon", daysAgo };
+    return { status: "ok", daysAgo };
+  };
+
+  // 復習が必要な動画（視聴済みで復習タイミングに達している）
+  const reviewVideos = recentVideos
+    .map(technique => {
+      const view = videoViews.find(v => v.video_id === technique.id);
+      const reviewInfo = view ? getReviewStatus(view.last_viewed_at) : null;
+      return { technique, reviewInfo };
+    })
+    .filter(item => item.reviewInfo && item.reviewInfo.status !== "ok")
+    .sort((a, b) => {
+      // urgent を先に、次に soon、日数が多い順
+      if (a.reviewInfo!.status === "urgent" && b.reviewInfo!.status !== "urgent") return -1;
+      if (a.reviewInfo!.status !== "urgent" && b.reviewInfo!.status === "urgent") return 1;
+      return b.reviewInfo!.daysAgo - a.reviewInfo!.daysAgo;
+    });
 
   // グラフデータ
   const getChartData = () => {
@@ -234,6 +281,80 @@ const PracticeRecordsPage = () => {
     );
   };
 
+  const ReviewVideoCard = ({ technique, reviewInfo }: { technique: Technique; reviewInfo: { status: ReviewStatus; daysAgo: number } }) => {
+    const viewCount = getViewCount(technique.id);
+    const practiceCount = getPracticeCount(technique.id);
+    const seriesLabel = getSeriesLabel(technique);
+
+    const statusConfig = {
+      urgent: {
+        icon: AlertCircle,
+        bg: "bg-red-500/90",
+        text: texts.urgent,
+        border: "ring-2 ring-red-500/50",
+      },
+      soon: {
+        icon: AlertTriangle,
+        bg: "bg-yellow-500/90",
+        text: texts.soon,
+        border: "ring-2 ring-yellow-500/50",
+      },
+      ok: {
+        icon: CheckCircle,
+        bg: "bg-green-500/90",
+        text: texts.ok,
+        border: "",
+      },
+    };
+
+    const config = statusConfig[reviewInfo.status];
+    const StatusIcon = config.icon;
+
+    return (
+      <Link to={`/video/${technique.id}`} className="group">
+        <Card className={`overflow-hidden hover:shadow-lg transition-all duration-300 h-full ${config.border}`}>
+          <div className="relative aspect-video bg-muted">
+            {technique.thumbnail_url ? (
+              <img
+                src={technique.thumbnail_url}
+                alt={getTechniqueName(technique)}
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center">
+                <Play className="h-12 w-12 text-muted-foreground/50" />
+              </div>
+            )}
+            {/* シリーズラベル */}
+            <div className="absolute top-2 right-2 bg-primary/90 text-primary-foreground text-[10px] sm:text-xs px-2 py-0.5 rounded font-medium">
+              {seriesLabel}
+            </div>
+            {/* 復習ステータスバッジ */}
+            <div className={`absolute top-2 left-2 ${config.bg} text-white text-[10px] sm:text-xs px-2 py-0.5 rounded font-medium flex items-center gap-1`}>
+              <StatusIcon className="h-3 w-3" />
+              {reviewInfo.daysAgo}{texts.daysAgo}
+            </div>
+          </div>
+          <CardContent className="p-3">
+            <h3 className="font-medium text-sm line-clamp-2 mb-2 group-hover:text-primary transition-colors">
+              {getTechniqueName(technique)}
+            </h3>
+            <div className="flex items-center gap-3 text-xs text-muted-foreground">
+              <div className="flex items-center gap-1">
+                <Eye className="h-3 w-3" />
+                <span>{viewCount}{texts.views}</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <Repeat className="h-3 w-3" />
+                <span>{practiceCount}{texts.practices}</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </Link>
+    );
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
@@ -262,8 +383,14 @@ const PracticeRecordsPage = () => {
             <h1 className="text-xl sm:text-3xl lg:text-4xl font-bold mb-2">{texts.title}</h1>
           </div>
 
-          <Tabs defaultValue="recent" className="space-y-4 sm:space-y-6">
-            <TabsList className="grid w-full grid-cols-3 gap-1 p-1.5 bg-muted/50 rounded-lg">
+          <Tabs defaultValue="review" className="space-y-4 sm:space-y-6">
+            <TabsList className="grid w-full grid-cols-4 gap-1 p-1.5 bg-muted/50 rounded-lg">
+              <TabsTrigger 
+                value="review" 
+                className="text-xs sm:text-sm font-medium rounded-md data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all"
+              >
+                {texts.reviewTab}
+              </TabsTrigger>
               <TabsTrigger 
                 value="recent" 
                 className="text-xs sm:text-sm font-medium rounded-md data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all"
@@ -283,6 +410,23 @@ const PracticeRecordsPage = () => {
                 {texts.chartTab}
               </TabsTrigger>
             </TabsList>
+
+            <TabsContent value="review" className="space-y-4">
+              {reviewVideos.length === 0 ? (
+                <Card>
+                  <CardContent className="p-8 text-center text-muted-foreground">
+                    <CheckCircle className="h-12 w-12 mx-auto mb-3 text-green-500" />
+                    {texts.noReviewNeeded}
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+                  {reviewVideos.map(({ technique, reviewInfo }) => (
+                    <ReviewVideoCard key={technique.id} technique={technique} reviewInfo={reviewInfo!} />
+                  ))}
+                </div>
+              )}
+            </TabsContent>
 
             <TabsContent value="recent" className="space-y-4">
               {recentVideos.length === 0 ? (
