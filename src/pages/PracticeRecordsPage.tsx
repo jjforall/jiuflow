@@ -649,6 +649,11 @@ const PracticeRecordsPage = () => {
                                   className="w-full h-full object-cover"
                                 />
                               )}
+                              {/* Video ID badge - top left */}
+                              <div className="absolute top-0.5 left-0.5 sm:top-1 sm:left-1 px-1 sm:px-1.5 py-0.5 rounded text-[8px] sm:text-[10px] font-mono bg-black/70 text-white">
+                                #{video.video_id.slice(0, 6)}
+                              </div>
+                              {/* Level badge - top right */}
                               {stats.totalSessions > 0 && (
                                 <div className={`absolute top-0.5 right-0.5 sm:top-1 sm:right-1 px-1 sm:px-2 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-bold text-white bg-gradient-to-r ${level.color} shadow-lg`}>
                                   <span className="hidden sm:inline">{level.emoji} </span>{stats.totalSessions}
@@ -664,7 +669,21 @@ const PracticeRecordsPage = () => {
                               </Link>
                               <p className="text-[10px] sm:text-sm text-muted-foreground mb-1 sm:mb-2">{video.video.category}</p>
                               
-                              {stats.totalSessions > 0 ? (
+                              {/* Always show view count and practice count */}
+                              <div className="flex flex-wrap items-center gap-1.5 sm:gap-3 text-[10px] sm:text-xs text-muted-foreground mb-1 sm:mb-2">
+                                <span className="whitespace-nowrap flex items-center gap-0.5">
+                                  👁 <span className="font-semibold text-foreground">{video.view_count}</span> {texts.viewCount}
+                                </span>
+                                <span className="whitespace-nowrap flex items-center gap-0.5">
+                                  🏋️ <span className="font-semibold text-foreground">{stats.totalSessions}</span> {texts.times}
+                                </span>
+                                <span className="whitespace-nowrap flex items-center gap-0.5">
+                                  <Repeat className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
+                                  <span className="font-semibold text-foreground">{stats.totalReps}</span> {texts.reps}
+                                </span>
+                              </div>
+                              
+                              {stats.totalSessions > 0 && (
                                 <div className="space-y-1 sm:space-y-2 mb-1 sm:mb-2">
                                   <div className="bg-gradient-to-r from-primary/20 to-primary/10 rounded p-1.5 sm:p-2">
                                     <div className="flex items-center justify-between mb-0.5 sm:mb-1">
@@ -684,10 +703,6 @@ const PracticeRecordsPage = () => {
                                     )}
                                   </div>
                                   
-                                  <div className="text-[10px] sm:text-xs text-muted-foreground">
-                                    累計: <span className="font-semibold text-foreground">{stats.totalReps}</span>回
-                                  </div>
-                                  
                                   {badges.length > 0 && (
                                     <div className="flex gap-0.5 sm:gap-1 flex-wrap">
                                       {badges.map((badge) => (
@@ -701,15 +716,6 @@ const PracticeRecordsPage = () => {
                                       ))}
                                     </div>
                                   )}
-                                </div>
-                              ) : (
-                                <div className="flex flex-wrap items-center gap-1 sm:gap-2 text-[10px] sm:text-xs text-muted-foreground mb-1 sm:mb-2">
-                                  <span className="whitespace-nowrap">
-                                    {texts.lastViewed}: {format(new Date(video.last_viewed_at), "yyyy/MM/dd")}
-                                  </span>
-                                  <span className="whitespace-nowrap">
-                                    {video.view_count} {texts.viewCount}
-                                  </span>
                                 </div>
                               )}
                               
