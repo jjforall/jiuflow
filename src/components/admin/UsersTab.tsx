@@ -288,23 +288,24 @@ export const UsersTab = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
         <h2 className="text-2xl font-semibold">会員管理</h2>
-        <div className="flex gap-2">
-          <Button onClick={loadProfiles} variant="outline" disabled={loadingProfiles}>
+        <div className="flex gap-2 w-full sm:w-auto">
+          <Button onClick={loadProfiles} variant="outline" disabled={loadingProfiles} className="flex-1 sm:flex-none">
             {loadingProfiles ? "読み込み中..." : "リロード"}
           </Button>
           {isAdmin && (
-            <Button onClick={() => setShowCreateUserDialog(true)}>
-              <UserPlus className="h-4 w-4 mr-2" />
-              新規ユーザー作成
+            <Button onClick={() => setShowCreateUserDialog(true)} className="flex-1 sm:flex-none">
+              <UserPlus className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">新規ユーザー作成</span>
+              <span className="sm:hidden">追加</span>
             </Button>
           )}
         </div>
       </div>
 
       {/* Search and Sort */}
-      <div className="flex gap-4">
+      <div className="flex flex-col sm:flex-row gap-3">
         <div className="flex-1 relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
           <Input
@@ -316,10 +317,10 @@ export const UsersTab = () => {
           />
         </div>
         <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
-          <SelectTrigger className="w-[200px]">
+          <SelectTrigger className="w-full sm:w-[180px]">
             <SelectValue placeholder="並び替え" />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="bg-background z-50">
             <SelectItem value="date">作成日順</SelectItem>
             <SelectItem value="email">メール順</SelectItem>
             <SelectItem value="role">権限順</SelectItem>
