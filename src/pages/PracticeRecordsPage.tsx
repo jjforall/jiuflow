@@ -22,6 +22,7 @@ interface Technique {
   thumbnail_url: string | null;
   series_name: string | null;
   series_prefix: string | null;
+  series_order: number | null;
 }
 
 interface VideoView {
@@ -90,7 +91,7 @@ const PracticeRecordsPage = () => {
     setLoading(true);
     try {
       const [techniquesRes, viewsRes, recordsRes] = await Promise.all([
-        supabase.from("techniques").select("id, name, name_ja, name_pt, category, thumbnail_url, series_name, series_prefix"),
+        supabase.from("techniques").select("id, name, name_ja, name_pt, category, thumbnail_url, series_name, series_prefix, series_order"),
         supabase.from("video_views").select("*").eq("user_id", user.id),
         supabase.from("practice_records").select("id, technique_id, practice_date, repetition_count").eq("user_id", user.id),
       ]);
@@ -110,7 +111,10 @@ const PracticeRecordsPage = () => {
   };
 
   const getSeriesLabel = (technique: Technique) => {
-    // series_prefix (B1など) を優先表示
+    // series_prefix + series_order (B1-3など) を優先表示
+    if (technique.series_prefix && technique.series_order) {
+      return `${technique.series_prefix}-${technique.series_order}`;
+    }
     return technique.series_prefix || technique.series_name || technique.category;
   };
 
