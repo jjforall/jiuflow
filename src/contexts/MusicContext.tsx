@@ -104,7 +104,12 @@ export const MusicProvider = ({ children }: { children: ReactNode }) => {
         audioRef.current.src = track.audio_url;
         setCurrentTrack(track);
       }
-    } else if (!currentTrack && playlist.length > 0) {
+    } else if (currentTrack) {
+      // currentTrackが設定されているがsrcが設定されていない場合
+      if (!audioRef.current.src || !audioRef.current.src.includes(currentTrack.audio_url)) {
+        audioRef.current.src = currentTrack.audio_url;
+      }
+    } else if (playlist.length > 0) {
       audioRef.current.src = playlist[0].audio_url;
       setCurrentTrack(playlist[0]);
     }
