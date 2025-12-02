@@ -419,7 +419,7 @@ const PracticeRecordsPage = () => {
         {Array.from({ length: 5 }).map((_, i) => (
           <Star
             key={i}
-            className={`h-4 w-4 ${i < rating ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground"}`}
+            className={`h-3 w-3 sm:h-4 sm:w-4 ${i < rating ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground"}`}
           />
         ))}
       </div>
@@ -529,23 +529,23 @@ const PracticeRecordsPage = () => {
     <div className="min-h-screen bg-background">
       <Navigation />
       <main className="pt-20 pb-16">
-        <div className="container mx-auto px-4 max-w-6xl">
-          <div className="mb-8">
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-2 break-words">{texts.title}</h1>
+        <div className="container mx-auto px-3 sm:px-4 max-w-6xl">
+          <div className="mb-4 sm:mb-8">
+            <h1 className="text-xl sm:text-3xl lg:text-4xl font-bold mb-2 break-words">{texts.title}</h1>
           </div>
 
-          <Tabs defaultValue="recent" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 gap-2">
-              <TabsTrigger value="recent" className="text-xs sm:text-sm whitespace-normal h-auto py-2">
+          <Tabs defaultValue="recent" className="space-y-4 sm:space-y-6">
+            <TabsList className="grid w-full grid-cols-2 gap-1 sm:gap-2 p-1">
+              <TabsTrigger value="recent" className="text-[10px] sm:text-sm whitespace-normal h-auto py-1.5 sm:py-2 px-1 sm:px-3">
                 {texts.recentVideosTab}
               </TabsTrigger>
-              <TabsTrigger value="all" className="text-xs sm:text-sm whitespace-normal h-auto py-2">
+              <TabsTrigger value="all" className="text-[10px] sm:text-sm whitespace-normal h-auto py-1.5 sm:py-2 px-1 sm:px-3">
                 {texts.allRecordsTab}
               </TabsTrigger>
-              <TabsTrigger value="stats" className="text-xs sm:text-sm whitespace-normal h-auto py-2">
+              <TabsTrigger value="stats" className="text-[10px] sm:text-sm whitespace-normal h-auto py-1.5 sm:py-2 px-1 sm:px-3">
                 {texts.statsTab}
               </TabsTrigger>
-              <TabsTrigger value="other" className="text-xs sm:text-sm whitespace-normal h-auto py-2">
+              <TabsTrigger value="other" className="text-[10px] sm:text-sm whitespace-normal h-auto py-1.5 sm:py-2 px-1 sm:px-3">
                 {texts.otherPracticeTab}
               </TabsTrigger>
             </TabsList>
@@ -558,7 +558,7 @@ const PracticeRecordsPage = () => {
                   </CardContent>
                 </Card>
               ) : (
-                <div className="grid gap-4 sm:grid-cols-2">
+                <div className="grid gap-3 sm:gap-4 sm:grid-cols-2">
                   {recentVideos.map((video) => {
                     const stats = getVideoStats(video.video_id);
                     const level = getLevel(stats.totalSessions);
@@ -568,9 +568,9 @@ const PracticeRecordsPage = () => {
                     
                     return (
                       <Card key={video.id} className="overflow-hidden hover-scale transition-all duration-300 hover:shadow-lg">
-                        <CardContent className="p-3 sm:p-4">
-                          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
-                            <div className="relative w-full sm:w-32 h-32 sm:h-20 bg-muted rounded-lg overflow-hidden flex-shrink-0">
+                        <CardContent className="p-2 sm:p-4">
+                          <div className="flex gap-2 sm:gap-4">
+                            <div className="relative w-24 h-16 sm:w-32 sm:h-20 bg-muted rounded overflow-hidden flex-shrink-0">
                               {video.video.thumbnail_url && (
                                 <img
                                   src={video.video.thumbnail_url}
@@ -579,48 +579,48 @@ const PracticeRecordsPage = () => {
                                 />
                               )}
                               {stats.totalSessions > 0 && (
-                                <div className={`absolute top-1 right-1 px-2 py-1 rounded-full text-xs font-bold text-white bg-gradient-to-r ${level.color} shadow-lg`}>
-                                  {level.emoji} {stats.totalSessions}
+                                <div className={`absolute top-0.5 right-0.5 sm:top-1 sm:right-1 px-1 sm:px-2 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-bold text-white bg-gradient-to-r ${level.color} shadow-lg`}>
+                                  <span className="hidden sm:inline">{level.emoji} </span>{stats.totalSessions}
                                 </div>
                               )}
                             </div>
                             <div className="flex-1 min-w-0">
                               <Link to={`/video/${video.video_id}`} className="group">
-                                <h3 className="font-semibold mb-1 text-sm sm:text-base line-clamp-2 group-hover:text-primary transition-colors flex items-center gap-1">
+                                <h3 className="font-semibold mb-0.5 sm:mb-1 text-xs sm:text-base line-clamp-2 group-hover:text-primary transition-colors flex items-center gap-1">
                                   {getTechniqueName(video.video)}
-                                  <ExternalLink className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
+                                  <ExternalLink className="h-2.5 w-2.5 sm:h-3 sm:w-3 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
                                 </h3>
                               </Link>
-                              <p className="text-xs sm:text-sm text-muted-foreground mb-2">{video.video.category}</p>
+                              <p className="text-[10px] sm:text-sm text-muted-foreground mb-1 sm:mb-2">{video.video.category}</p>
                               
                               {stats.totalSessions > 0 ? (
-                                <div className="space-y-2 mb-2">
-                                  <div className="bg-gradient-to-r from-primary/20 to-primary/10 rounded-lg p-2">
-                                    <div className="flex items-center justify-between mb-1">
-                                      <span className="text-xs font-semibold text-primary">{level.name}</span>
-                                      <span className="text-xs text-muted-foreground">{stats.totalSessions}/100</span>
+                                <div className="space-y-1 sm:space-y-2 mb-1 sm:mb-2">
+                                  <div className="bg-gradient-to-r from-primary/20 to-primary/10 rounded p-1.5 sm:p-2">
+                                    <div className="flex items-center justify-between mb-0.5 sm:mb-1">
+                                      <span className="text-[10px] sm:text-xs font-semibold text-primary">{level.name}</span>
+                                      <span className="text-[10px] sm:text-xs text-muted-foreground">{stats.totalSessions}/100</span>
                                     </div>
-                                    <div className="h-2 bg-background rounded-full overflow-hidden">
+                                    <div className="h-1.5 sm:h-2 bg-background rounded-full overflow-hidden">
                                       <div 
                                         className={`h-full bg-gradient-to-r ${level.color} transition-all duration-500 ease-out`}
                                         style={{ width: `${Math.min(progress, 100)}%` }}
                                       />
                                     </div>
                                     {stats.totalSessions < 100 && (
-                                      <p className="text-xs text-muted-foreground mt-1">
+                                      <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5 sm:mt-1">
                                         {texts.nextMilestone}: {nextMilestone - stats.totalSessions}{texts.times}
                                       </p>
                                     )}
                                   </div>
                                   
                                   {badges.length > 0 && (
-                                    <div className="flex gap-1 flex-wrap">
+                                    <div className="flex gap-0.5 sm:gap-1 flex-wrap">
                                       {badges.map((badge) => (
                                         <div 
                                           key={badge.value}
-                                          className={`${badge.color} text-white text-xs px-2 py-1 rounded-full flex items-center gap-1 animate-scale-in`}
+                                          className={`${badge.color} text-white text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full flex items-center gap-0.5 sm:gap-1 animate-scale-in`}
                                         >
-                                          <span>{badge.emoji}</span>
+                                          <span className="text-xs sm:text-sm">{badge.emoji}</span>
                                           <span className="font-bold">{badge.value}</span>
                                         </div>
                                       ))}
@@ -628,7 +628,7 @@ const PracticeRecordsPage = () => {
                                   )}
                                 </div>
                               ) : (
-                                <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs text-muted-foreground mb-2">
+                                <div className="flex flex-wrap items-center gap-1 sm:gap-2 text-[10px] sm:text-xs text-muted-foreground mb-1 sm:mb-2">
                                   <span className="whitespace-nowrap">
                                     {texts.lastViewed}: {format(new Date(video.last_viewed_at), "yyyy/MM/dd")}
                                   </span>
@@ -641,9 +641,9 @@ const PracticeRecordsPage = () => {
                               <Button 
                                 size="sm" 
                                 onClick={() => openDialog(video)} 
-                                className="w-full text-xs sm:text-sm bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 transition-all duration-300"
+                                className="w-full text-[10px] sm:text-sm py-1 sm:py-2 h-auto bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 transition-all duration-300"
                               >
-                                <Plus className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                                <Plus className="h-3 w-3 sm:h-4 sm:w-4 mr-0.5 sm:mr-2" />
                                 <span className="truncate">{texts.addFromVideo}</span>
                               </Button>
                             </div>
@@ -664,80 +664,80 @@ const PracticeRecordsPage = () => {
                   </CardContent>
                 </Card>
               ) : (
-                <div className="space-y-3 sm:space-y-4">
+                <div className="space-y-2 sm:space-y-4">
                   {records.map((record) => (
                     <Card key={record.id}>
-                      <CardContent className="p-3 sm:p-4">
-                        <div className="flex justify-between items-start gap-2 mb-3 sm:mb-4">
+                      <CardContent className="p-2 sm:p-4">
+                        <div className="flex justify-between items-start gap-1 sm:gap-2 mb-2 sm:mb-4">
                           <div className="flex-1 min-w-0">
-                            <p className="text-xs sm:text-sm text-muted-foreground mb-1">
+                            <p className="text-[10px] sm:text-sm text-muted-foreground mb-0.5 sm:mb-1">
                               {format(new Date(record.practice_date), "yyyy年MM月dd日")}
                             </p>
                             {record.technique && (
                               <Link to={`/video/${record.technique_id}`} className="group">
-                                <h3 className="font-semibold text-base sm:text-lg break-words group-hover:text-primary transition-colors flex items-center gap-1">
+                                <h3 className="font-semibold text-sm sm:text-lg break-words group-hover:text-primary transition-colors flex items-center gap-0.5 sm:gap-1">
                                   {getTechniqueName(record.technique)}
-                                  <ExternalLink className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
+                                  <ExternalLink className="h-3 w-3 sm:h-4 sm:w-4 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
                                 </h3>
                               </Link>
                             )}
                             {record.user_video && (
-                              <h3 className="font-semibold text-base sm:text-lg break-words">{record.user_video.title}</h3>
+                              <h3 className="font-semibold text-sm sm:text-lg break-words">{record.user_video.title}</h3>
                             )}
                             {!record.technique && !record.user_video && (
-                              <h3 className="font-semibold text-base sm:text-lg">{texts.other}</h3>
+                              <h3 className="font-semibold text-sm sm:text-lg">{texts.other}</h3>
                             )}
                           </div>
-                          <div className="flex gap-1 sm:gap-2 flex-shrink-0">
-                            <Button size="icon" variant="ghost" onClick={() => openDialog(undefined, record)} className="h-8 w-8 sm:h-10 sm:w-10">
+                          <div className="flex gap-0.5 sm:gap-2 flex-shrink-0">
+                            <Button size="icon" variant="ghost" onClick={() => openDialog(undefined, record)} className="h-7 w-7 sm:h-10 sm:w-10">
                               <Edit2 className="h-3 w-3 sm:h-4 sm:w-4" />
                             </Button>
                             <Button
                               size="icon"
                               variant="ghost"
-                              className="text-destructive h-8 w-8 sm:h-10 sm:w-10"
+                              className="text-destructive h-7 w-7 sm:h-10 sm:w-10"
                               onClick={() => handleDelete(record.id)}
                             >
                               <Trash2 className="h-3 w-3 sm:h-4 sm:w-4" />
                             </Button>
                           </div>
                         </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-3 sm:mb-4">
+                        <div className="grid grid-cols-2 gap-2 sm:gap-4 mb-2 sm:mb-4">
                           {record.duration_minutes && (
-                            <div className="flex items-center gap-2 text-sm">
-                              <Clock className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                            <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+                              <Clock className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
                               <span>
                                 {record.duration_minutes} {language === "ja" ? "分" : "min"}
                               </span>
                             </div>
                           )}
                           {record.repetition_count && (
-                            <div className="text-sm">
+                            <div className="text-xs sm:text-sm">
                               <span className="text-muted-foreground">{texts.repetitions}: </span>
                               <span className="font-semibold">{record.repetition_count}{texts.reps}</span>
                             </div>
                           )}
                           {record.proficiency_level && (
                             <div>
-                              <p className="text-xs text-muted-foreground mb-1">{texts.proficiency}</p>
+                              <p className="text-[10px] sm:text-xs text-muted-foreground mb-0.5 sm:mb-1">{texts.proficiency}</p>
                               {renderStars(record.proficiency_level)}
                             </div>
                           )}
                           {record.difficulty_rating && (
                             <div>
-                              <p className="text-xs text-muted-foreground mb-1">{texts.difficulty}</p>
+                              <p className="text-[10px] sm:text-xs text-muted-foreground mb-0.5 sm:mb-1">{texts.difficulty}</p>
                               {renderStars(record.difficulty_rating)}
                             </div>
                           )}
                           {record.success_rating && (
                             <div>
-                              <p className="text-xs text-muted-foreground mb-1">{texts.success}</p>
+                              <p className="text-[10px] sm:text-xs text-muted-foreground mb-0.5 sm:mb-1">{texts.success}</p>
                               {renderStars(record.success_rating)}
                             </div>
                           )}
                         </div>
                         {record.notes && (
-                          <p className="text-xs sm:text-sm text-muted-foreground whitespace-pre-wrap break-words">{record.notes}</p>
+                          <p className="text-[10px] sm:text-sm text-muted-foreground whitespace-pre-wrap break-words">{record.notes}</p>
                         )}
                       </CardContent>
                     </Card>
@@ -754,7 +754,7 @@ const PracticeRecordsPage = () => {
                   </CardContent>
                 </Card>
               ) : (
-                <div className="grid gap-3 sm:gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="grid gap-2 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                   {calculateTechniqueStats().map((stat) => {
                     const progressPercent = stat.latest_proficiency ? (stat.latest_proficiency / 5) * 100 : 0;
                     const level = getLevel(stat.total_sessions);
@@ -765,32 +765,32 @@ const PracticeRecordsPage = () => {
                     
                     return (
                       <Card key={stat.technique_id} className="overflow-hidden hover-scale transition-all duration-300 hover:shadow-xl">
-                        <div className={`h-2 bg-gradient-to-r ${level.color}`} />
-                        <CardContent className="p-3 sm:p-4">
-                          <div className="flex items-start justify-between mb-3">
+                        <div className={`h-1.5 sm:h-2 bg-gradient-to-r ${level.color}`} />
+                        <CardContent className="p-2 sm:p-4">
+                          <div className="flex items-start justify-between mb-2 sm:mb-3">
                             <Link to={`/video/${stat.technique_id}`} className="group flex-1">
-                              <h3 className="font-semibold text-base sm:text-lg break-words line-clamp-2 group-hover:text-primary transition-colors flex items-center gap-1">
+                              <h3 className="font-semibold text-sm sm:text-lg break-words line-clamp-2 group-hover:text-primary transition-colors flex items-center gap-0.5 sm:gap-1">
                                 {stat.technique_name}
-                                <ExternalLink className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
+                                <ExternalLink className="h-2.5 w-2.5 sm:h-3 sm:w-3 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
                               </h3>
                             </Link>
-                            <div className="flex-shrink-0 ml-2">
-                              <div className={`text-2xl bg-gradient-to-br ${level.color} rounded-full w-10 h-10 flex items-center justify-center shadow-lg`}>
+                            <div className="flex-shrink-0 ml-1 sm:ml-2">
+                              <div className={`text-lg sm:text-2xl bg-gradient-to-br ${level.color} rounded-full w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center shadow-lg`}>
                                 {level.emoji}
                               </div>
                             </div>
                           </div>
                           
-                          <div className="text-center mb-3 p-3 bg-gradient-to-br from-primary/10 to-primary/5 rounded-xl">
-                            <div className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent mb-1">
+                          <div className="text-center mb-2 sm:mb-3 p-2 sm:p-3 bg-gradient-to-br from-primary/10 to-primary/5 rounded-lg sm:rounded-xl">
+                            <div className="text-2xl sm:text-4xl font-bold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent mb-0.5 sm:mb-1">
                               {stat.total_sessions}
                             </div>
-                            <div className="text-xs text-muted-foreground">{texts.totalSessions}</div>
-                            <div className="text-sm font-semibold text-primary mt-1">{motivationMsg}</div>
+                            <div className="text-[10px] sm:text-xs text-muted-foreground">{texts.totalSessions}</div>
+                            <div className="text-xs sm:text-sm font-semibold text-primary mt-0.5 sm:mt-1">{motivationMsg}</div>
                           </div>
 
-                          <div className="relative mb-4">
-                            <svg className="w-full h-3" viewBox="0 0 100 3">
+                          <div className="relative mb-3 sm:mb-4">
+                            <svg className="w-full h-2 sm:h-3" viewBox="0 0 100 3">
                               <defs>
                                 <linearGradient id={`gradient-${stat.technique_id}`} x1="0%" y1="0%" x2="100%" y2="0%">
                                   <stop offset="0%" className="text-primary" stopColor="currentColor" />
@@ -806,13 +806,13 @@ const PracticeRecordsPage = () => {
                                 className="transition-all duration-1000 ease-out"
                               />
                             </svg>
-                            <div className="absolute -top-1 left-0 w-full flex justify-between px-1">
+                            <div className="absolute -top-0.5 sm:-top-1 left-0 w-full flex justify-between px-0.5 sm:px-1">
                               {[10, 25, 50, 75, 100].map((milestone) => {
                                 const isPassed = stat.total_sessions >= milestone;
                                 return (
                                   <div 
                                     key={milestone}
-                                    className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-300 ${
+                                    className={`w-4 h-4 sm:w-5 sm:h-5 rounded-full flex items-center justify-center text-[10px] sm:text-xs font-bold transition-all duration-300 ${
                                       isPassed 
                                         ? 'bg-gradient-to-br from-primary to-primary/80 text-white shadow-lg scale-110' 
                                         : 'bg-muted text-muted-foreground'
@@ -826,27 +826,27 @@ const PracticeRecordsPage = () => {
                           </div>
 
                           {badges.length > 0 && (
-                            <div className="flex gap-1 flex-wrap justify-center mb-3">
+                            <div className="flex gap-0.5 sm:gap-1 flex-wrap justify-center mb-2 sm:mb-3">
                               {badges.map((badge) => (
                                 <div 
                                   key={badge.value}
-                                  className={`${badge.color} text-white text-xs px-3 py-1 rounded-full flex items-center gap-1 animate-scale-in shadow-md`}
+                                  className={`${badge.color} text-white text-[10px] sm:text-xs px-2 sm:px-3 py-0.5 sm:py-1 rounded-full flex items-center gap-0.5 sm:gap-1 animate-scale-in shadow-md`}
                                 >
-                                  <span className="text-base">{badge.emoji}</span>
+                                  <span className="text-sm sm:text-base">{badge.emoji}</span>
                                   <span className="font-bold">{badge.value}</span>
                                 </div>
                               ))}
                             </div>
                           )}
                           
-                          <div className="grid grid-cols-2 gap-2">
-                            <div className="bg-gradient-to-br from-blue-500/10 to-blue-500/5 rounded-lg p-2 text-center">
-                              <p className="text-xs text-muted-foreground mb-1">{texts.totalReps}</p>
-                              <p className="text-lg sm:text-xl font-bold text-blue-600 dark:text-blue-400">{stat.total_repetitions}</p>
+                          <div className="grid grid-cols-2 gap-1.5 sm:gap-2">
+                            <div className="bg-gradient-to-br from-blue-500/10 to-blue-500/5 rounded p-1.5 sm:p-2 text-center">
+                              <p className="text-[10px] sm:text-xs text-muted-foreground mb-0.5 sm:mb-1">{texts.totalReps}</p>
+                              <p className="text-base sm:text-xl font-bold text-blue-600 dark:text-blue-400">{stat.total_repetitions}</p>
                             </div>
                             {stat.latest_proficiency > 0 && (
-                              <div className="bg-gradient-to-br from-purple-500/10 to-purple-500/5 rounded-lg p-2 text-center">
-                                <p className="text-xs text-muted-foreground mb-1">{texts.currentProficiency}</p>
+                              <div className="bg-gradient-to-br from-purple-500/10 to-purple-500/5 rounded p-1.5 sm:p-2 text-center">
+                                <p className="text-[10px] sm:text-xs text-muted-foreground mb-0.5 sm:mb-1">{texts.currentProficiency}</p>
                                 <div className="flex justify-center">
                                   {renderStars(stat.latest_proficiency)}
                                 </div>
@@ -863,82 +863,82 @@ const PracticeRecordsPage = () => {
 
             <TabsContent value="other">
               <Card>
-                <CardHeader className="p-3 sm:p-6">
-                  <CardTitle className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-4">
-                    <span className="text-base sm:text-lg">{texts.otherPracticeTab}</span>
-                    <Button onClick={() => openDialog()} size="sm" className="w-full sm:w-auto">
+                <CardHeader className="p-2 sm:p-6">
+                  <CardTitle className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                    <span className="text-sm sm:text-lg">{texts.otherPracticeTab}</span>
+                    <Button onClick={() => openDialog()} size="sm" className="w-full sm:w-auto text-xs sm:text-sm h-8 sm:h-9">
                       <Plus className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                      <span className="text-xs sm:text-sm">{texts.addRecord}</span>
+                      <span>{texts.addRecord}</span>
                     </Button>
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="p-3 sm:p-6">
-                  <div className="space-y-3 sm:space-y-4">
+                <CardContent className="p-2 sm:p-6">
+                  <div className="space-y-2 sm:space-y-4">
                     {records.filter((r) => !r.technique_id && !r.user_video_id).length === 0 ? (
-                      <p className="text-center text-muted-foreground py-8 text-sm">{texts.noRecords}</p>
+                      <p className="text-center text-muted-foreground py-6 sm:py-8 text-xs sm:text-sm">{texts.noRecords}</p>
                     ) : (
                       records
                         .filter((r) => !r.technique_id && !r.user_video_id)
                         .map((record) => (
                           <Card key={record.id}>
-                            <CardContent className="p-3 sm:p-4">
-                              <div className="flex justify-between items-start gap-2 mb-3 sm:mb-4">
+                            <CardContent className="p-2 sm:p-4">
+                              <div className="flex justify-between items-start gap-1 sm:gap-2 mb-2 sm:mb-4">
                                 <div className="flex-1 min-w-0">
-                                  <p className="text-xs sm:text-sm text-muted-foreground mb-1">
+                                  <p className="text-[10px] sm:text-sm text-muted-foreground mb-0.5 sm:mb-1">
                                     {format(new Date(record.practice_date), "yyyy年MM月dd日")}
                                   </p>
-                                  <h3 className="font-semibold text-base sm:text-lg">{texts.other}</h3>
+                                  <h3 className="font-semibold text-sm sm:text-lg">{texts.other}</h3>
                                 </div>
-                                <div className="flex gap-1 sm:gap-2 flex-shrink-0">
-                                  <Button size="icon" variant="ghost" onClick={() => openDialog(undefined, record)} className="h-8 w-8 sm:h-10 sm:w-10">
+                                <div className="flex gap-0.5 sm:gap-2 flex-shrink-0">
+                                  <Button size="icon" variant="ghost" onClick={() => openDialog(undefined, record)} className="h-7 w-7 sm:h-10 sm:w-10">
                                     <Edit2 className="h-3 w-3 sm:h-4 sm:w-4" />
                                   </Button>
                                   <Button
                                     size="icon"
                                     variant="ghost"
-                                    className="text-destructive h-8 w-8 sm:h-10 sm:w-10"
+                                    className="text-destructive h-7 w-7 sm:h-10 sm:w-10"
                                     onClick={() => handleDelete(record.id)}
                                   >
                                     <Trash2 className="h-3 w-3 sm:h-4 sm:w-4" />
                                   </Button>
                                 </div>
                               </div>
-                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-3 sm:mb-4">
+                              <div className="grid grid-cols-2 gap-2 sm:gap-4 mb-2 sm:mb-4">
                                 {record.duration_minutes && (
-                                  <div className="flex items-center gap-2 text-sm">
-                                    <Clock className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                                  <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+                                    <Clock className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
                                     <span>
                                       {record.duration_minutes} {language === "ja" ? "分" : "min"}
                                     </span>
                                   </div>
                                 )}
                                 {record.repetition_count && (
-                                  <div className="text-sm">
+                                  <div className="text-xs sm:text-sm">
                                     <span className="text-muted-foreground">{texts.repetitions}: </span>
                                     <span className="font-semibold">{record.repetition_count}{texts.reps}</span>
                                   </div>
                                 )}
                                 {record.proficiency_level && (
                                   <div>
-                                    <p className="text-xs text-muted-foreground mb-1">{texts.proficiency}</p>
+                                    <p className="text-[10px] sm:text-xs text-muted-foreground mb-0.5 sm:mb-1">{texts.proficiency}</p>
                                     {renderStars(record.proficiency_level)}
                                   </div>
                                 )}
                                 {record.difficulty_rating && (
                                   <div>
-                                    <p className="text-xs text-muted-foreground mb-1">{texts.difficulty}</p>
+                                    <p className="text-[10px] sm:text-xs text-muted-foreground mb-0.5 sm:mb-1">{texts.difficulty}</p>
                                     {renderStars(record.difficulty_rating)}
                                   </div>
                                 )}
                                 {record.success_rating && (
                                   <div>
-                                    <p className="text-xs text-muted-foreground mb-1">{texts.success}</p>
+                                    <p className="text-[10px] sm:text-xs text-muted-foreground mb-0.5 sm:mb-1">{texts.success}</p>
                                     {renderStars(record.success_rating)}
                                   </div>
                                 )}
                               </div>
                               {record.notes && (
-                                <p className="text-xs sm:text-sm text-muted-foreground whitespace-pre-wrap break-words">{record.notes}</p>
+                                <p className="text-[10px] sm:text-sm text-muted-foreground whitespace-pre-wrap break-words">{record.notes}</p>
                               )}
                             </CardContent>
                           </Card>
@@ -953,28 +953,28 @@ const PracticeRecordsPage = () => {
       </main>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{editingRecord ? texts.editRecord : texts.addRecord}</DialogTitle>
+            <DialogTitle className="text-base sm:text-lg">{editingRecord ? texts.editRecord : texts.addRecord}</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="space-y-3 sm:space-y-4">
             {selectedVideo && (
-              <div className="p-3 bg-muted rounded-lg">
-                <p className="text-sm font-medium">{getTechniqueName(selectedVideo.video)}</p>
-                <p className="text-xs text-muted-foreground">{selectedVideo.video.category}</p>
+              <div className="p-2 sm:p-3 bg-muted rounded">
+                <p className="text-xs sm:text-sm font-medium">{getTechniqueName(selectedVideo.video)}</p>
+                <p className="text-[10px] sm:text-xs text-muted-foreground">{selectedVideo.video.category}</p>
               </div>
             )}
             
             <div>
-              <Label className="text-sm font-medium">{texts.practiceDate}</Label>
+              <Label className="text-xs sm:text-sm font-medium">{texts.practiceDate}</Label>
               <Popover>
                 <PopoverTrigger asChild>
-                  <Button variant="outline" className="w-full justify-start text-left font-normal mt-1">
-                    <CalendarIcon className="mr-2 h-4 w-4" />
+                  <Button variant="outline" className="w-full justify-start text-left font-normal mt-1 text-xs sm:text-sm h-9 sm:h-10">
+                    <CalendarIcon className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
                     {format(formData.practice_date, "yyyy年MM月dd日")}
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
+                <PopoverContent className="w-auto p-0 z-50" align="start">
                   <Calendar
                     mode="single"
                     selected={formData.practice_date}
@@ -985,26 +985,26 @@ const PracticeRecordsPage = () => {
             </div>
 
             <div>
-              <Label className="text-sm font-medium">{texts.proficiency} *</Label>
+              <Label className="text-xs sm:text-sm font-medium">{texts.proficiency} *</Label>
               <Select
                 value={formData.proficiency_level}
                 onValueChange={(value) => setFormData({ ...formData, proficiency_level: value })}
               >
-                <SelectTrigger className="mt-1">
+                <SelectTrigger className="mt-1 text-xs sm:text-sm h-9 sm:h-10">
                   <SelectValue placeholder={language === "ja" ? "選択してください" : "Select"} />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="1">⭐ - {language === "ja" ? "初級" : language === "pt" ? "Iniciante" : "Beginner"}</SelectItem>
-                  <SelectItem value="2">⭐⭐ - {language === "ja" ? "初中級" : language === "pt" ? "Básico" : "Basic"}</SelectItem>
-                  <SelectItem value="3">⭐⭐⭐ - {language === "ja" ? "中級" : language === "pt" ? "Intermediário" : "Intermediate"}</SelectItem>
-                  <SelectItem value="4">⭐⭐⭐⭐ - {language === "ja" ? "上級" : language === "pt" ? "Avançado" : "Advanced"}</SelectItem>
-                  <SelectItem value="5">⭐⭐⭐⭐⭐ - {language === "ja" ? "熟練" : language === "pt" ? "Especialista" : "Expert"}</SelectItem>
+                <SelectContent className="z-50">
+                  <SelectItem value="1" className="text-xs sm:text-sm">⭐ - {language === "ja" ? "初級" : language === "pt" ? "Iniciante" : "Beginner"}</SelectItem>
+                  <SelectItem value="2" className="text-xs sm:text-sm">⭐⭐ - {language === "ja" ? "初中級" : language === "pt" ? "Básico" : "Basic"}</SelectItem>
+                  <SelectItem value="3" className="text-xs sm:text-sm">⭐⭐⭐ - {language === "ja" ? "中級" : language === "pt" ? "Intermediário" : "Intermediate"}</SelectItem>
+                  <SelectItem value="4" className="text-xs sm:text-sm">⭐⭐⭐⭐ - {language === "ja" ? "上級" : language === "pt" ? "Avançado" : "Advanced"}</SelectItem>
+                  <SelectItem value="5" className="text-xs sm:text-sm">⭐⭐⭐⭐⭐ - {language === "ja" ? "熟練" : language === "pt" ? "Especialista" : "Expert"}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div>
-              <Label className="text-sm font-medium">{texts.repetitions}</Label>
+              <Label className="text-xs sm:text-sm font-medium">{texts.repetitions}</Label>
               <Input
                 type="number"
                 placeholder="1"
@@ -1012,27 +1012,27 @@ const PracticeRecordsPage = () => {
                 onChange={(e) => setFormData({ ...formData, repetition_count: e.target.value })}
                 min="1"
                 max="999"
-                className="mt-1"
+                className="mt-1 text-xs sm:text-sm h-9 sm:h-10"
               />
             </div>
 
             <div>
-              <Label className="text-sm font-medium">{texts.notes}</Label>
+              <Label className="text-xs sm:text-sm font-medium">{texts.notes}</Label>
               <Textarea
                 placeholder={language === "ja" ? "メモを入力..." : "Add notes..."}
                 value={formData.notes}
                 onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                 rows={3}
                 maxLength={500}
-                className="mt-1"
+                className="mt-1 text-xs sm:text-sm"
               />
             </div>
 
-            <div className="flex gap-2 pt-2">
-              <Button onClick={handleSubmit} className="flex-1">
+            <div className="flex gap-2 pt-1 sm:pt-2">
+              <Button onClick={handleSubmit} className="flex-1 text-xs sm:text-sm h-9 sm:h-10">
                 {texts.save}
               </Button>
-              <Button onClick={closeDialog} variant="outline" className="flex-1">
+              <Button onClick={closeDialog} variant="outline" className="flex-1 text-xs sm:text-sm h-9 sm:h-10">
                 {texts.cancel}
               </Button>
             </div>
