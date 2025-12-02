@@ -1392,6 +1392,59 @@ const MyPage = () => {
             </div>
           ) : (
             <>
+              {/* Profile Visibility Toggle - Top */}
+              <div className="mb-6 animate-fade-in">
+                <div className="flex items-center justify-between p-4 rounded-xl bg-gradient-to-r from-muted/80 to-muted/40 border border-border/50 shadow-sm">
+                  <div className="flex items-center gap-3">
+                    {profile?.is_public ? (
+                      <div className="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center">
+                        <Globe className="h-5 w-5 text-green-500" />
+                      </div>
+                    ) : (
+                      <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
+                        <Lock className="h-5 w-5 text-muted-foreground" />
+                      </div>
+                    )}
+                    <div>
+                      <p className="font-medium">
+                        {profile?.is_public 
+                          ? (language === "ja" ? "🌐 公開中" : "🌐 Public")
+                          : (language === "ja" ? "🔒 非公開" : "🔒 Private")}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {profile?.is_public
+                          ? (language === "ja" ? "他のユーザーからプロフィールが見えます" : "Your profile is visible to others")
+                          : (language === "ja" ? "プロフィールは非公開です" : "Your profile is hidden from others")}
+                      </p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={profile?.is_public ?? false}
+                    onCheckedChange={async (checked) => {
+                      if (!user) return;
+                      try {
+                        const { error } = await supabase
+                          .from('profiles')
+                          .update({ is_public: checked })
+                          .eq('id', user.id);
+                        
+                        if (error) throw error;
+                        
+                        setProfile(prev => prev ? { ...prev, is_public: checked } : null);
+                        toast.success(
+                          checked
+                            ? (language === "ja" ? "プロフィールを公開しました" : "Profile is now public")
+                            : (language === "ja" ? "プロフィールを非公開にしました" : "Profile is now private")
+                        );
+                      } catch (error) {
+                        console.error('Error updating visibility:', error);
+                        toast.error(language === "ja" ? "更新に失敗しました" : "Failed to update");
+                      }
+                    }}
+                  />
+                </div>
+              </div>
+
               {/* Unified Profile Card */}
               <Card className="mb-8 animate-fade-up border-border/50 shadow-lg overflow-hidden">
                 <CardHeader className="bg-gradient-to-r from-accent/10 via-primary/5 to-accent/10 border-b border-border/50">
