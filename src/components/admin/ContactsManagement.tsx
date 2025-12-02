@@ -115,10 +115,10 @@ export const ContactsManagement = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div>
           <h2 className="text-2xl font-bold">お問い合わせ一覧</h2>
-          <p className="text-muted-foreground mt-1">
+          <p className="text-sm text-muted-foreground mt-1">
             未読: {unreadCount}件 / 全{messages.length}件
           </p>
         </div>
@@ -153,11 +153,11 @@ export const ContactsManagement = () => {
                         {message.status === 'unread' ? '未読' : '既読'}
                       </Badge>
                     </div>
-                    <CardTitle className="text-lg truncate">{message.subject}</CardTitle>
-                    <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
-                      <span>{message.name}</span>
-                      <span>{message.email}</span>
-                      <span>
+                    <CardTitle className="text-base sm:text-lg truncate">{message.subject}</CardTitle>
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 mt-2 text-xs sm:text-sm text-muted-foreground">
+                      <span className="truncate">{message.name}</span>
+                      <span className="truncate">{message.email}</span>
+                      <span className="whitespace-nowrap">
                         {new Date(message.created_at).toLocaleDateString('ja-JP', {
                           year: 'numeric',
                           month: '2-digit',
