@@ -32,7 +32,7 @@ const Footer = () => {
   ];
 
   return (
-    <footer className="border-t border-border bg-background">
+    <footer className="border-t border-border bg-background pb-20">
       <div className="container mx-auto px-6 py-12">
         <div className="grid md:grid-cols-4 gap-8 mb-8">
           <div>
