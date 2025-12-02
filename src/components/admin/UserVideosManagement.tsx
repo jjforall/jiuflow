@@ -238,8 +238,8 @@ export function UserVideosManagement() {
         </CardHeader>
         <CardContent className="space-y-4">
           {/* フィルター */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="relative">
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
                 placeholder="タイトル、投稿者で検索..."
@@ -249,10 +249,10 @@ export function UserVideosManagement() {
               />
             </div>
             <Select value={filterType} onValueChange={setFilterType}>
-              <SelectTrigger>
+              <SelectTrigger className="w-full md:w-[200px]">
                 <SelectValue placeholder="種類で絞り込み" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-background z-50">
                 <SelectItem value="all">すべての種類</SelectItem>
                 {videoTypes.map((type) => (
                   <SelectItem key={type} value={type}>
@@ -262,10 +262,10 @@ export function UserVideosManagement() {
               </SelectContent>
             </Select>
             <Select value={filterVisibility} onValueChange={setFilterVisibility}>
-              <SelectTrigger>
+              <SelectTrigger className="w-full md:w-[200px]">
                 <SelectValue placeholder="公開状態で絞り込み" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-background z-50">
                 <SelectItem value="all">すべて</SelectItem>
                 <SelectItem value="public">公開のみ</SelectItem>
                 <SelectItem value="private">非公開のみ</SelectItem>
@@ -273,7 +273,6 @@ export function UserVideosManagement() {
             </Select>
           </div>
 
-          {/* テーブル */}
           {currentVideos.length === 0 ? (
             <div className="text-center py-12">
               <Video className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
@@ -285,7 +284,8 @@ export function UserVideosManagement() {
             </div>
           ) : (
             <>
-              <div className="rounded-md border">
+              {/* PC用テーブル表示 */}
+              <div className="hidden md:block rounded-md border">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -417,6 +417,109 @@ export function UserVideosManagement() {
                     ))}
                   </TableBody>
                 </Table>
+              </div>
+
+              {/* スマホ用カード表示 */}
+              <div className="md:hidden space-y-4">
+                {currentVideos.map((video) => (
+                  <Card key={video.id}>
+                    <CardContent className="p-4">
+                      <Collapsible open={expandedRows.has(video.id)} onOpenChange={() => toggleRow(video.id)}>
+                        <div className="space-y-3">
+                          {/* サムネイルとタイトル */}
+                          <div className="flex gap-3">
+                            {video.thumbnail_url ? (
+                              <img
+                                src={video.thumbnail_url}
+                                alt={video.title}
+                                className="w-24 h-18 object-cover rounded flex-shrink-0"
+                              />
+                            ) : (
+                              <div className="w-24 h-18 bg-muted rounded flex items-center justify-center flex-shrink-0">
+                                <Video className="w-8 h-8 text-muted-foreground" />
+                              </div>
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <h3 className="font-medium line-clamp-2 mb-1">{video.title}</h3>
+                              <Badge variant="outline" className="text-xs mb-1">
+                                {video.video_type}
+                              </Badge>
+                              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                <span>{video.profiles?.display_name || video.profiles?.username || "不明"}</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* 情報とアクション */}
+                          <div className="flex items-center justify-between text-sm">
+                            <div className="flex items-center gap-3">
+                              <div className="flex items-center gap-1">
+                                <BarChart3 className="w-4 h-4 text-muted-foreground" />
+                                <span>{video.view_count.toLocaleString()}</span>
+                              </div>
+                              {video.is_public ? (
+                                <Badge variant="default" className="text-xs">公開</Badge>
+                              ) : (
+                                <Badge variant="secondary" className="text-xs">非公開</Badge>
+                              )}
+                            </div>
+                            <div className="flex gap-1">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0"
+                                onClick={() => handleToggleVisibility(video.id, video.is_public)}
+                              >
+                                {video.is_public ? (
+                                  <EyeOff className="w-4 h-4" />
+                                ) : (
+                                  <Eye className="w-4 h-4" />
+                                )}
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0"
+                                onClick={() => handleDelete(video.id)}
+                              >
+                                <Trash2 className="w-4 h-4 text-destructive" />
+                              </Button>
+                              <CollapsibleTrigger asChild>
+                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                  <ChevronDown className={`h-4 w-4 transition-transform ${expandedRows.has(video.id) ? "rotate-180" : ""}`} />
+                                </Button>
+                              </CollapsibleTrigger>
+                            </div>
+                          </div>
+
+                          {/* 詳細情報（折りたたみ） */}
+                          <CollapsibleContent className="space-y-2 pt-3 border-t">
+                            <div>
+                              <span className="text-sm font-medium">説明：</span>
+                              <p className="text-sm text-muted-foreground mt-1">
+                                {video.description || "説明なし"}
+                              </p>
+                            </div>
+                            <div className="grid grid-cols-2 gap-2 text-sm">
+                              <div>
+                                <span className="font-medium">価格：</span>
+                                <span className="text-muted-foreground ml-1">
+                                  {video.price ? `¥${video.price.toLocaleString()}` : "無料"}
+                                </span>
+                              </div>
+                              <div>
+                                <span className="font-medium">投稿日：</span>
+                                <span className="text-muted-foreground ml-1">
+                                  {format(new Date(video.created_at), "MM/dd", { locale: ja })}
+                                </span>
+                              </div>
+                            </div>
+                          </CollapsibleContent>
+                        </div>
+                      </Collapsible>
+                    </CardContent>
+                  </Card>
+                ))}
               </div>
 
               {/* ページネーション */}
