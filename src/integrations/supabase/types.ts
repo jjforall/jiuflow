@@ -873,6 +873,8 @@ export type Database = {
           id: string
           notes: string | null
           practice_date: string
+          proficiency_level: number | null
+          repetition_count: number | null
           success_rating: number | null
           technique_id: string | null
           updated_at: string
@@ -886,6 +888,8 @@ export type Database = {
           id?: string
           notes?: string | null
           practice_date?: string
+          proficiency_level?: number | null
+          repetition_count?: number | null
           success_rating?: number | null
           technique_id?: string | null
           updated_at?: string
@@ -899,6 +903,8 @@ export type Database = {
           id?: string
           notes?: string | null
           practice_date?: string
+          proficiency_level?: number | null
+          repetition_count?: number | null
           success_rating?: number | null
           technique_id?: string | null
           updated_at?: string
