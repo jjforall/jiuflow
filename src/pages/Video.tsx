@@ -84,11 +84,11 @@ const Video = () => {
   useEffect(() => {
     // 音楽が再生中でなければ何もしない
     if (!isPlaying) return;
-    // 音量が25%以下なら何もしない
-    if (volume <= 0.25) return;
+    // 音量が15%以下なら何もしない
+    if (volume <= 0.15) return;
 
     const startVolume = volume;
-    const targetVolume = 0.25;
+    const targetVolume = 0.15;
     const fadeDuration = 1000; // フェード時間（1秒）
     const fadeSteps = 20;
     const stepDuration = fadeDuration / fadeSteps;
