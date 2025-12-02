@@ -364,7 +364,7 @@ const PracticeRecordsPage = () => {
         difficulty_rating: null,
         success_rating: null,
         proficiency_level: parseInt(formData.proficiency_level),
-        repetition_count: parseInt(formData.repetition_count) || 1,
+        repetition_count: formData.repetition_count ? parseInt(formData.repetition_count) : 0,
         notes: formData.notes.trim() || null,
       };
 
@@ -1010,7 +1010,7 @@ const PracticeRecordsPage = () => {
                 placeholder="1"
                 value={formData.repetition_count}
                 onChange={(e) => setFormData({ ...formData, repetition_count: e.target.value })}
-                min="1"
+                min="0"
                 max="999"
                 className="mt-1 text-xs sm:text-sm h-9 sm:h-10"
               />
