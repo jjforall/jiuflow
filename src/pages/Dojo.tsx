@@ -805,26 +805,61 @@ export default function Dojo() {
                     <div className="mb-4">
                       <h3 className="font-semibold mb-2">{language === "ja" ? "設備" : "Amenities"}</h3>
                       <ul className="space-y-2">
-                        {Object.entries(dojo.facilities).map(([key, value]: [string, any]) => {
-                          // Get localized description from the facility object
-                          let displayText = '';
+                        {/* Equipment array display */}
+                        {dojo.facilities.equipment && Array.isArray(dojo.facilities.equipment) && 
+                          dojo.facilities.equipment.map((item: string, idx: number) => (
+                            <li key={`equip-${idx}`} className="flex items-start gap-2">
+                              <span className="text-primary">•</span>
+                              <span>{item}</span>
+                            </li>
+                          ))
+                        }
+                        {/* Boolean amenities display */}
+                        {!dojo.facilities.equipment && Object.entries(dojo.facilities).map(([key, value]: [string, any]) => {
+                          // Handle boolean values
+                          if (typeof value === 'boolean' && value) {
+                            const amenityNames: Record<string, { ja: string; en: string }> = {
+                              changingRoom: { ja: "更衣室", en: "Changing Room" },
+                              matSpace: { ja: "マットスペース", en: "Mat Space" },
+                              parking: { ja: "駐車場", en: "Parking" },
+                              showers: { ja: "シャワー", en: "Showers" },
+                              wifi: { ja: "Wi-Fi", en: "Wi-Fi" },
+                              airConditioning: { ja: "エアコン", en: "Air Conditioning" },
+                            };
+                            const displayText = amenityNames[key] 
+                              ? (language === "ja" ? amenityNames[key].ja : amenityNames[key].en)
+                              : key;
+                            return (
+                              <li key={key} className="flex items-start gap-2">
+                                <span className="text-primary">•</span>
+                                <span>{displayText}</span>
+                              </li>
+                            );
+                          }
+                          // Handle string values
                           if (typeof value === 'string') {
-                            displayText = value;
-                          } else if (typeof value === 'object' && value !== null) {
-                            if (language === "ja" && value.description_ja) {
-                              displayText = value.description_ja;
-                            } else if (value.description) {
-                              displayText = value.description;
-                            } else {
-                              displayText = getLocalizedValue(value);
+                            return (
+                              <li key={key} className="flex items-start gap-2">
+                                <span className="text-primary">•</span>
+                                <span>{value}</span>
+                              </li>
+                            );
+                          }
+                          // Handle object values
+                          if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+                            const displayText = language === "ja" && value.description_ja 
+                              ? value.description_ja 
+                              : value.description || getLocalizedValue(value);
+                            if (displayText) {
+                              return (
+                                <li key={key} className="flex items-start gap-2">
+                                  <span className="text-primary">•</span>
+                                  <span>{displayText}</span>
+                                </li>
+                              );
                             }
                           }
-                          return (
-                            <li key={key} className="flex items-start gap-2">
-                              <span className="text-primary">•</span>
-                              <span>{displayText}</span>
-                            </li>
-                          );
+                          return null;
                         })}
                       </ul>
                     </div>
@@ -869,6 +904,34 @@ export default function Dojo() {
                     {language === "ja" ? "体験案内" : "Trial Information"}
                   </h2>
                   <ul className="space-y-2">
+                    {/* Description */}
+                    {dojo.trial_info.description && (
+                      <li className="flex items-start gap-2">
+                        <span className="text-primary">•</span>
+                        <span>{dojo.trial_info.description}</span>
+                      </li>
+                    )}
+                    {/* Price */}
+                    {dojo.trial_info.price !== undefined && (
+                      <li className="flex items-start gap-2">
+                        <span className="text-primary">•</span>
+                        <span>{language === "ja" ? "料金: " : "Price: "}{dojo.trial_info.price === 0 ? (language === "ja" ? "無料" : "Free") : `¥${dojo.trial_info.price.toLocaleString()}`}</span>
+                      </li>
+                    )}
+                    {/* Duration */}
+                    {dojo.trial_info.duration && (
+                      <li className="flex items-start gap-2">
+                        <span className="text-primary">•</span>
+                        <span>{language === "ja" ? "所要時間: " : "Duration: "}{dojo.trial_info.duration}</span>
+                      </li>
+                    )}
+                    {/* Requirements */}
+                    {dojo.trial_info.requirements && (
+                      <li className="flex items-start gap-2">
+                        <span className="text-primary">•</span>
+                        <span>{dojo.trial_info.requirements}</span>
+                      </li>
+                    )}
                     {/* Note */}
                     {(dojo.trial_info.note || dojo.trial_info.note_ja) && (
                       <li className="flex items-start gap-2">
