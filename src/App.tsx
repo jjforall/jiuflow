@@ -1,4 +1,4 @@
-import { Suspense, lazy } from "react";
+import { lazy } from "react";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -14,6 +14,7 @@ import { FloatingVideoPlayer } from "./components/FloatingVideoPlayer";
 import { MusicProvider } from "./contexts/MusicContext";
 import GlobalMusicPlayer from "./components/GlobalMusicPlayer";
 import PageLoadingSkeleton from "@/components/PageLoadingSkeleton";
+import { SuspenseWrapper } from "@/components/SuspenseWrapper";
 
 // Lazy load route components for better performance
 const Home = lazy(() => import("./pages/Home"));
@@ -59,75 +60,84 @@ const App = () => (
                 <FloatingVideoProvider>
                 <MusicProvider>
                 <RoutePrefetcher />
-                <Suspense fallback={<PageLoadingSkeleton />}>
-                  <Routes>
-                  <Route path="/" element={<Home />} />
-                  <Route path="/login" element={<Login />} />
-                  <Route path="/reset-password" element={<ResetPassword />} />
-                  <Route path="/update-password" element={<UpdatePassword />} />
+                <Routes>
+                  {/* Default pages */}
+                  <Route path="/" element={<SuspenseWrapper><Home /></SuspenseWrapper>} />
+                  <Route path="/login" element={<SuspenseWrapper><Login /></SuspenseWrapper>} />
+                  <Route path="/reset-password" element={<SuspenseWrapper><ResetPassword /></SuspenseWrapper>} />
+                  <Route path="/update-password" element={<SuspenseWrapper><UpdatePassword /></SuspenseWrapper>} />
+                  <Route path="/about" element={<SuspenseWrapper><About /></SuspenseWrapper>} />
+                  <Route path="/contact" element={<SuspenseWrapper><Contact /></SuspenseWrapper>} />
+                  <Route path="/join" element={<SuspenseWrapper><Join /></SuspenseWrapper>} />
+                  <Route path="/payment-success" element={<SuspenseWrapper><PaymentSuccess /></SuspenseWrapper>} />
+                  <Route path="/payment-canceled" element={<SuspenseWrapper><PaymentCanceled /></SuspenseWrapper>} />
+                  <Route path="/payment-error" element={<SuspenseWrapper><PaymentError /></SuspenseWrapper>} />
+                  <Route path="/founder-trial" element={<SuspenseWrapper><FounderTrial /></SuspenseWrapper>} />
+
+                  {/* Map/Video grid pages */}
                   <Route path="/map" element={
                     <ProtectedRoute>
-                      <Map />
+                      <SuspenseWrapper variant="map"><Map /></SuspenseWrapper>
                     </ProtectedRoute>
                   } />
+                  <Route path="/dojos" element={<SuspenseWrapper variant="map"><Dojos /></SuspenseWrapper>} />
+                  <Route path="/athletes" element={<SuspenseWrapper variant="map"><Athletes /></SuspenseWrapper>} />
+                  <Route path="/lineage-tree" element={<SuspenseWrapper variant="map"><LineageTree /></SuspenseWrapper>} />
+
+                  {/* Video pages */}
                   <Route path="/video/:id" element={
                     <ProtectedRoute>
-                      <Video />
-                    </ProtectedRoute>
-                  } />
-                  <Route path="/about" element={<About />} />
-                  <Route path="/contact" element={<Contact />} />
-                  <Route path="/join" element={<Join />} />
-                  <Route path="/payment-success" element={<PaymentSuccess />} />
-                  <Route path="/payment-canceled" element={<PaymentCanceled />} />
-                  <Route path="/payment-error" element={<PaymentError />} />
-                  <Route path="/mypage" element={
-                    <ProtectedRoute>
-                      <MyPage />
+                      <SuspenseWrapper variant="video"><Video /></SuspenseWrapper>
                     </ProtectedRoute>
                   } />
                   <Route path="/video-upload-info" element={
                     <ProtectedRoute>
-                      <VideoUploadInfo />
+                      <SuspenseWrapper variant="video"><VideoUploadInfo /></SuspenseWrapper>
                     </ProtectedRoute>
                   } />
-                  <Route path="/dojos" element={<Dojos />} />
+
+                  {/* Profile pages */}
+                  <Route path="/mypage" element={
+                    <ProtectedRoute>
+                      <SuspenseWrapper variant="profile"><MyPage /></SuspenseWrapper>
+                    </ProtectedRoute>
+                  } />
                   <Route path="/dojos/new" element={
                     <ProtectedRoute>
-                      <DojoNew />
+                      <SuspenseWrapper variant="profile"><DojoNew /></SuspenseWrapper>
                     </ProtectedRoute>
                   } />
-                  <Route path="/dojo/:id" element={<Dojo />} />
-            <Route path="/athletes" element={<Athletes />} />
-            <Route path="/lineage-tree" element={<LineageTree />} />
+                  <Route path="/dojo/:id" element={<SuspenseWrapper variant="profile"><Dojo /></SuspenseWrapper>} />
+                  <Route path="/athlete/:slugOrUsername" element={<SuspenseWrapper variant="profile"><Athlete /></SuspenseWrapper>} />
+                  <Route path="/ryozo" element={<SuspenseWrapper variant="profile"><Athlete /></SuspenseWrapper>} />
+                  <Route path="/:slugOrUsername" element={<SuspenseWrapper variant="profile"><DojoOrProfile /></SuspenseWrapper>} />
                   <Route path="/practice-records" element={
                     <ProtectedRoute>
-                      <PracticeRecordsPage />
+                      <SuspenseWrapper variant="profile"><PracticeRecordsPage /></SuspenseWrapper>
                     </ProtectedRoute>
                   } />
-                  <Route path="/athlete/:slugOrUsername" element={<Athlete />} />
-                  <Route path="/ryozo" element={<Athlete />} />
-                  <Route path="/:slugOrUsername" element={<DojoOrProfile />} />
-                  <Route path="/founder-trial" element={<FounderTrial />} />
-                  <Route path="/admin" element={<AdminLogin />} />
+
+                  {/* Admin pages */}
+                  <Route path="/admin" element={<SuspenseWrapper variant="admin"><AdminLogin /></SuspenseWrapper>} />
                   <Route path="/admin-dashboard" element={
                     <ProtectedRoute requireAdmin>
-                      <AdminDashboard />
+                      <SuspenseWrapper variant="admin"><AdminDashboard /></SuspenseWrapper>
                     </ProtectedRoute>
                   } />
                   <Route path="/admin/dashboard" element={
                     <ProtectedRoute requireAdmin>
-                      <AdminDashboard />
+                      <SuspenseWrapper variant="admin"><AdminDashboard /></SuspenseWrapper>
                     </ProtectedRoute>
                   } />
                   <Route path="/generate-images" element={
                     <ProtectedRoute requireAdmin>
-                      <GenerateImages />
+                      <SuspenseWrapper variant="admin"><GenerateImages /></SuspenseWrapper>
                     </ProtectedRoute>
                   } />
-                  <Route path="*" element={<NotFound />} />
+
+                  {/* 404 */}
+                  <Route path="*" element={<SuspenseWrapper><NotFound /></SuspenseWrapper>} />
                 </Routes>
-              </Suspense>
               <FloatingVideoPlayer />
               <GlobalMusicPlayer />
             </MusicProvider>
