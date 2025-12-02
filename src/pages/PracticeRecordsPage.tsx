@@ -82,8 +82,8 @@ const PracticeRecordsPage = () => {
   const [selectedVideo, setSelectedVideo] = useState<VideoView | null>(null);
   const [formData, setFormData] = useState({
     practice_date: new Date(),
-    proficiency_level: "",
-    repetition_count: "1",
+    proficiency_level: "1",
+    repetition_count: "30",
     notes: "",
   });
 
@@ -326,8 +326,8 @@ const PracticeRecordsPage = () => {
     setEditingRecord(record || null);
     setFormData({
       practice_date: record ? new Date(record.practice_date) : new Date(),
-      proficiency_level: record?.proficiency_level?.toString() || "",
-      repetition_count: record?.repetition_count?.toString() || "1",
+      proficiency_level: record?.proficiency_level?.toString() || "1",
+      repetition_count: record?.repetition_count?.toString() || "30",
       notes: record?.notes || "",
     });
     setDialogOpen(true);
@@ -339,8 +339,8 @@ const PracticeRecordsPage = () => {
     setSelectedVideo(null);
     setFormData({
       practice_date: new Date(),
-      proficiency_level: "",
-      repetition_count: "1",
+      proficiency_level: "1",
+      repetition_count: "30",
       notes: "",
     });
   };
