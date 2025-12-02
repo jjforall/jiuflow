@@ -1,21 +1,11 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import type { Tables, TablesInsert, TablesUpdate } from '@/integrations/supabase/types';
 
-interface Technique {
-  id: string;
-  name: string;
-  name_ja: string;
-  name_pt: string;
-  description: string | null;
-  description_ja: string | null;
-  description_pt: string | null;
-  category: string;
-  video_url: string | null;
-  thumbnail_url: string | null;
-  display_order: number;
-  hashtags: string[];
-}
+export type Technique = Tables<'techniques'>;
+export type TechniqueInsert = TablesInsert<'techniques'>;
+export type TechniqueUpdate = TablesUpdate<'techniques'>;
 
 interface PaginatedResponse {
   data: Technique[];
@@ -101,20 +91,18 @@ export const useUpdateTechnique = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (technique: Technique) => {
+    mutationFn: async (technique: TechniqueUpdate & { id: string }) => {
+      const { id, ...updateData } = technique;
       const { error } = await supabase
         .from('techniques')
-        .update(technique)
-        .eq('id', technique.id);
+        .update(updateData)
+        .eq('id', id);
 
       if (error) throw error;
       return technique;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['techniques'] });
-      toast.success("Success", {
-        description: "Technique updated successfully",
-      });
     },
     onError: (error) => {
       toast.error("Error", {
@@ -155,7 +143,7 @@ export const useCreateTechnique = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (technique: Omit<Technique, 'id'>) => {
+    mutationFn: async (technique: TechniqueInsert) => {
       const { data, error } = await supabase
         .from('techniques')
         .insert([technique])
