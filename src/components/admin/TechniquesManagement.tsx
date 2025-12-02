@@ -20,41 +20,13 @@ import {
   usePaginatedTechniques, 
   useUpdateTechnique, 
   useDeleteTechnique, 
-  useCreateTechnique 
+  useCreateTechnique,
+  type Technique
 } from "@/hooks/usePaginatedTechniques";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { useLanguage } from "@/contexts/LanguageContext";
-
-interface Technique {
-  id: string;
-  name: string;
-  name_ja: string;
-  name_pt: string;
-  description: string | null;
-  description_ja: string | null;
-  description_pt: string | null;
-  category: string;
-  video_url: string | null;
-  video_url_ja: string | null;
-  video_url_pt: string | null;
-  thumbnail_url: string | null;
-  thumbnail_url_ja: string | null;
-  thumbnail_url_pt: string | null;
-  display_order: number;
-  hashtags: string[];
-  series_name: string | null;
-  series_order: number | null;
-  series_prefix: string | null;
-  created_at?: string;
-  updated_at?: string;
-  video_metadata?: Record<string, {
-    created_at: string;
-    updated_at: string;
-    video_url?: string;
-  }>;
-}
 
 interface UploadProgress {
   fileName: string;
@@ -534,8 +506,8 @@ export const TechniquesManagement = () => {
         value = editValue ? parseInt(editValue) : null;
       }
       
-      const updates: Partial<Technique> = {
-        ...technique,
+      const updates: Record<string, string | number | null> & { id: string } = {
+        id: technique.id,
         [editingCell.field]: value
       };
       
@@ -555,7 +527,7 @@ export const TechniquesManagement = () => {
         }
       }
       
-      await updateTechnique.mutateAsync(updates as Technique);
+      await updateTechnique.mutateAsync(updates as { id: string } & Record<string, unknown>);
       toast.success("更新しました");
       
       // シリーズ名が更新された場合はリストを再取得
@@ -578,9 +550,9 @@ export const TechniquesManagement = () => {
     
     try {
       await updateTechnique.mutateAsync({
-        ...technique,
+        id: technique.id,
         hashtags: newHashtags,
-      } as Technique);
+      });
       setHashtagEditValue("");
       toast.success("ハッシュタグを追加しました");
     } catch (error) {
@@ -594,9 +566,9 @@ export const TechniquesManagement = () => {
     
     try {
       await updateTechnique.mutateAsync({
-        ...technique,
+        id: technique.id,
         hashtags: newHashtags,
-      } as Technique);
+      });
       toast.success("ハッシュタグを削除しました");
     } catch (error) {
       console.error('Error removing hashtag:', error);
