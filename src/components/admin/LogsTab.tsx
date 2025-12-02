@@ -18,11 +18,30 @@ interface EdgeFunctionLog {
   timestamp: number;
 }
 
+interface TipLog {
+  id: string;
+  amount: number;
+  created_at: string;
+  message: string | null;
+  from_user: {
+    id: string;
+    display_name: string | null;
+    email: string | null;
+  } | null;
+  video: {
+    id: string;
+    title: string;
+    user_id: string;
+  } | null;
+}
+
 export const LogsTab = () => {
   const [edgeFunctionLogs, setEdgeFunctionLogs] = useState<EdgeFunctionLog[]>([]);
+  const [tipLogs, setTipLogs] = useState<TipLog[]>([]);
   const [selectedFunction, setSelectedFunction] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isTipsLoading, setIsTipsLoading] = useState(false);
   const [availableFunctions, setAvailableFunctions] = useState<string[]>([]);
 
   // エッジ関数のリスト
@@ -37,6 +56,7 @@ export const LogsTab = () => {
 
   useEffect(() => {
     fetchEdgeFunctionLogs();
+    fetchTipLogs();
   }, [selectedFunction]);
 
   const fetchEdgeFunctionLogs = async () => {
@@ -89,8 +109,72 @@ export const LogsTab = () => {
     }
   };
 
+  const fetchTipLogs = async () => {
+    setIsTipsLoading(true);
+    try {
+      const { data: tipsData, error } = await supabase
+        .from('video_tips')
+        .select(`
+          id,
+          amount,
+          created_at,
+          message,
+          from_user_id,
+          video_id
+        `)
+        .order('created_at', { ascending: false })
+        .limit(100);
+
+      if (error) throw error;
+
+      const tipsWithDetails = await Promise.all(
+        (tipsData || []).map(async (tip) => {
+          const [userResult, videoResult] = await Promise.all([
+            supabase
+              .from('profiles')
+              .select('id, display_name, email')
+              .eq('id', tip.from_user_id)
+              .single(),
+            supabase
+              .from('user_videos')
+              .select('id, title, user_id')
+              .eq('id', tip.video_id)
+              .single()
+          ]);
+
+          return {
+            id: tip.id,
+            amount: tip.amount,
+            created_at: tip.created_at,
+            message: tip.message,
+            from_user: userResult.data,
+            video: videoResult.data,
+          };
+        })
+      );
+
+      setTipLogs(tipsWithDetails);
+    } catch (error) {
+      console.error('投げ銭ログの取得エラー:', error);
+      toast.error('投げ銭ログの取得に失敗しました');
+    } finally {
+      setIsTipsLoading(false);
+    }
+  };
+
   const formatTimestamp = (timestamp: number) => {
     return new Date(timestamp / 1000).toLocaleString("ja-JP", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+    });
+  };
+
+  const formatDateString = (dateString: string) => {
+    return new Date(dateString).toLocaleString("ja-JP", {
       year: "numeric",
       month: "2-digit",
       day: "2-digit",
@@ -108,8 +192,9 @@ export const LogsTab = () => {
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="edge-functions" className="w-full">
-            <TabsList className="grid w-full grid-cols-1 mb-4">
+            <TabsList className="grid w-full grid-cols-2 mb-4">
               <TabsTrigger value="edge-functions">エッジ関数ログ</TabsTrigger>
+              <TabsTrigger value="tips">投げ銭ログ</TabsTrigger>
             </TabsList>
 
             <TabsContent value="edge-functions" className="space-y-4">
@@ -203,6 +288,88 @@ export const LogsTab = () => {
                   <span>全 {filteredLogs.length} 件のログ</span>
                   <span>
                     エラー: {filteredLogs.filter((l) => l.level.toLowerCase() === "error").length} 件
+                  </span>
+                </div>
+              )}
+            </TabsContent>
+
+            <TabsContent value="tips" className="space-y-4">
+              {/* Refresh Button */}
+              <div className="flex justify-end">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={fetchTipLogs}
+                  disabled={isTipsLoading}
+                >
+                  {isTipsLoading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <RefreshCw className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
+
+              {/* Tips Display */}
+              {isTipsLoading ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </div>
+              ) : tipLogs.length === 0 ? (
+                <div className="text-center py-12">
+                  <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground">
+                    投げ銭の履歴がありません
+                  </p>
+                </div>
+              ) : (
+                <ScrollArea className="h-[600px] rounded-md border">
+                  <div className="p-4 space-y-2">
+                    {tipLogs.map((tip) => (
+                      <Card key={tip.id} className="p-4">
+                        <div className="flex flex-col gap-3">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <Badge variant="default" className="bg-green-500">
+                                ¥{tip.amount.toLocaleString()}
+                              </Badge>
+                              <Badge variant="outline">
+                                {tip.from_user?.display_name || tip.from_user?.email || '不明'}
+                              </Badge>
+                              <span className="text-xs text-muted-foreground">
+                                {formatDateString(tip.created_at)}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="space-y-1 text-sm">
+                            <div className="flex items-center gap-2">
+                              <span className="text-muted-foreground">動画:</span>
+                              <span className="font-medium">
+                                {tip.video?.title || '削除された動画'}
+                              </span>
+                            </div>
+                            {tip.message && (
+                              <div className="flex items-start gap-2">
+                                <span className="text-muted-foreground">メッセージ:</span>
+                                <pre className="flex-1 text-xs bg-muted p-2 rounded whitespace-pre-wrap break-words">
+                                  {tip.message}
+                                </pre>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
+                </ScrollArea>
+              )}
+
+              {/* Stats */}
+              {tipLogs.length > 0 && (
+                <div className="flex items-center justify-between text-sm text-muted-foreground pt-4 border-t">
+                  <span>全 {tipLogs.length} 件の投げ銭</span>
+                  <span>
+                    合計: ¥{tipLogs.reduce((sum, tip) => sum + tip.amount, 0).toLocaleString()}
                   </span>
                 </div>
               )}
