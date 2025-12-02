@@ -13,12 +13,13 @@ import { Label } from "@/components/ui/label";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { CalendarIcon, Plus, Edit2, Trash2, Clock, Star, ExternalLink } from "lucide-react";
-import { format } from "date-fns";
+import { CalendarIcon, Plus, Edit2, Trash2, Clock, Star, ExternalLink, Repeat } from "lucide-react";
+import { format, subDays, subWeeks, subMonths, startOfDay, startOfWeek, startOfMonth, endOfDay, endOfWeek, endOfMonth, eachDayOfInterval, eachWeekOfInterval, eachMonthOfInterval } from "date-fns";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Link } from "react-router-dom";
+import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 
 interface PracticeRecord {
   id: string;
@@ -238,6 +239,8 @@ const PracticeRecordsPage = () => {
   };
 
   const texts = t[language as keyof typeof t] || t.ja;
+
+  const [chartPeriod, setChartPeriod] = useState<"day" | "week" | "month">("week");
 
   useEffect(() => {
     if (user) {
@@ -506,6 +509,56 @@ const PracticeRecordsPage = () => {
     return milestones.filter(m => count >= m.value);
   };
 
+  // グラフデータを生成する関数
+  const getChartData = () => {
+    const now = new Date();
+    let intervals: Date[] = [];
+    let formatString = "";
+
+    if (chartPeriod === "day") {
+      const start = subDays(now, 30);
+      intervals = eachDayOfInterval({ start, end: now });
+      formatString = "MM/dd";
+    } else if (chartPeriod === "week") {
+      const start = subWeeks(now, 12);
+      intervals = eachWeekOfInterval({ start, end: now });
+      formatString = "MM/dd";
+    } else {
+      const start = subMonths(now, 12);
+      intervals = eachMonthOfInterval({ start, end: now });
+      formatString = "yyyy/MM";
+    }
+
+    return intervals.map(date => {
+      let start: Date, end: Date;
+      
+      if (chartPeriod === "day") {
+        start = startOfDay(date);
+        end = endOfDay(date);
+      } else if (chartPeriod === "week") {
+        start = startOfWeek(date);
+        end = endOfWeek(date);
+      } else {
+        start = startOfMonth(date);
+        end = endOfMonth(date);
+      }
+
+      const periodRecords = records.filter(record => {
+        const recordDate = new Date(record.practice_date);
+        return recordDate >= start && recordDate <= end;
+      });
+
+      const totalSessions = periodRecords.length;
+      const totalReps = periodRecords.reduce((sum, r) => sum + (r.repetition_count || 0), 0);
+
+      return {
+        date: format(date, formatString),
+        sessions: totalSessions,
+        reps: totalReps,
+      };
+    });
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
@@ -535,7 +588,7 @@ const PracticeRecordsPage = () => {
           </div>
 
           <Tabs defaultValue="recent" className="space-y-4 sm:space-y-6">
-            <TabsList className="grid w-full grid-cols-4 gap-2 p-1.5 bg-muted/50 rounded-lg">
+            <TabsList className="grid w-full grid-cols-5 gap-2 p-1.5 bg-muted/50 rounded-lg">
               <TabsTrigger 
                 value="recent" 
                 className="text-xs sm:text-sm font-medium rounded-md data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all"
@@ -553,6 +606,12 @@ const PracticeRecordsPage = () => {
                 className="text-xs sm:text-sm font-medium rounded-md data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all"
               >
                 {texts.statsTab}
+              </TabsTrigger>
+              <TabsTrigger 
+                value="chart" 
+                className="text-xs sm:text-sm font-medium rounded-md data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all"
+              >
+                グラフ
               </TabsTrigger>
               <TabsTrigger 
                 value="other" 
@@ -875,6 +934,117 @@ const PracticeRecordsPage = () => {
                   })}
                 </div>
               )}
+            </TabsContent>
+
+            <TabsContent value="chart" className="space-y-4">
+              <Card>
+                <CardHeader className="p-4 sm:p-6">
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                    <CardTitle className="text-base sm:text-xl">練習推移グラフ</CardTitle>
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        variant={chartPeriod === "day" ? "default" : "outline"}
+                        onClick={() => setChartPeriod("day")}
+                        className="text-xs"
+                      >
+                        日別
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant={chartPeriod === "week" ? "default" : "outline"}
+                        onClick={() => setChartPeriod("week")}
+                        className="text-xs"
+                      >
+                        週別
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant={chartPeriod === "month" ? "default" : "outline"}
+                        onClick={() => setChartPeriod("month")}
+                        className="text-xs"
+                      >
+                        月別
+                      </Button>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="p-2 sm:p-6">
+                  {records.length === 0 ? (
+                    <div className="text-center py-12 text-muted-foreground">
+                      練習記録がありません
+                    </div>
+                  ) : (
+                    <div className="space-y-6">
+                      <div>
+                        <h3 className="text-sm font-medium mb-3">練習回数（セッション数）</h3>
+                        <ResponsiveContainer width="100%" height={250}>
+                          <LineChart data={getChartData()}>
+                            <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                            <XAxis 
+                              dataKey="date" 
+                              className="text-xs"
+                              tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                            />
+                            <YAxis 
+                              className="text-xs"
+                              tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                            />
+                            <Tooltip 
+                              contentStyle={{ 
+                                backgroundColor: 'hsl(var(--background))',
+                                border: '1px solid hsl(var(--border))',
+                                borderRadius: '6px'
+                              }}
+                            />
+                            <Legend />
+                            <Line 
+                              type="monotone" 
+                              dataKey="sessions" 
+                              stroke="hsl(var(--primary))" 
+                              strokeWidth={2}
+                              name="練習回数"
+                              dot={{ fill: 'hsl(var(--primary))' }}
+                            />
+                          </LineChart>
+                        </ResponsiveContainer>
+                      </div>
+
+                      <div>
+                        <h3 className="text-sm font-medium mb-3">累計練習回数（レップス）</h3>
+                        <ResponsiveContainer width="100%" height={250}>
+                          <BarChart data={getChartData()}>
+                            <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                            <XAxis 
+                              dataKey="date" 
+                              className="text-xs"
+                              tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                            />
+                            <YAxis 
+                              className="text-xs"
+                              tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                            />
+                            <Tooltip 
+                              contentStyle={{ 
+                                backgroundColor: 'hsl(var(--background))',
+                                border: '1px solid hsl(var(--border))',
+                                borderRadius: '6px'
+                              }}
+                            />
+                            <Legend />
+                            <Bar 
+                              dataKey="reps" 
+                              fill="hsl(var(--primary))"
+                              name="累計回数"
+                              radius={[4, 4, 0, 0]}
+                            />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
             </TabsContent>
 
             <TabsContent value="other">
