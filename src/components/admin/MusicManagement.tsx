@@ -302,7 +302,17 @@ const MusicManagement = () => {
                       accept="audio/*"
                       onChange={(e) => {
                         const file = e.target.files?.[0] || null;
-                        setFormData({ ...formData, audioFile: file, audio_url: "" });
+                        if (file) {
+                          const fileNameWithoutExt = file.name.replace(/\.[^/.]+$/, "");
+                          setFormData({ 
+                            ...formData, 
+                            audioFile: file, 
+                            audio_url: "",
+                            title: formData.title || fileNameWithoutExt
+                          });
+                        } else {
+                          setFormData({ ...formData, audioFile: file, audio_url: "" });
+                        }
                       }}
                     />
                     {formData.audioFile && (
