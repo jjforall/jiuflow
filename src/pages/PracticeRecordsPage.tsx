@@ -123,6 +123,21 @@ const PracticeRecordsPage = () => {
       currentProficiency: "現在の熟練度",
       reps: "回",
       times: "回",
+      goal: "目標達成",
+      milestone: "マイルストーン",
+      level: "レベル",
+      beginner: "初心者",
+      intermediate: "中級者",
+      advanced: "上級者",
+      expert: "エキスパート",
+      master: "マスター",
+      nextMilestone: "次の目標まで",
+      keepGoing: "頑張りましょう！",
+      almostThere: "もう少しです！",
+      wellDone: "素晴らしい！",
+      amazing: "すごい！",
+      incredible: "信じられない！",
+      legend: "レジェンド！",
     },
     en: {
       title: "Practice Records",
@@ -157,6 +172,21 @@ const PracticeRecordsPage = () => {
       currentProficiency: "Current Proficiency",
       reps: "reps",
       times: "times",
+      goal: "Goal",
+      milestone: "Milestone",
+      level: "Level",
+      beginner: "Beginner",
+      intermediate: "Intermediate",
+      advanced: "Advanced",
+      expert: "Expert",
+      master: "Master",
+      nextMilestone: "Next milestone",
+      keepGoing: "Keep going!",
+      almostThere: "Almost there!",
+      wellDone: "Well done!",
+      amazing: "Amazing!",
+      incredible: "Incredible!",
+      legend: "Legend!",
     },
     pt: {
       title: "Registros de Prática",
@@ -191,6 +221,21 @@ const PracticeRecordsPage = () => {
       currentProficiency: "Proficiência Atual",
       reps: "reps",
       times: "vezes",
+      goal: "Meta",
+      milestone: "Marco",
+      level: "Nível",
+      beginner: "Iniciante",
+      intermediate: "Intermediário",
+      advanced: "Avançado",
+      expert: "Especialista",
+      master: "Mestre",
+      nextMilestone: "Próxima meta",
+      keepGoing: "Continue!",
+      almostThere: "Quase lá!",
+      wellDone: "Muito bem!",
+      amazing: "Incrível!",
+      incredible: "Inacreditável!",
+      legend: "Lendário!",
     },
   };
 
@@ -426,6 +471,43 @@ const PracticeRecordsPage = () => {
     return { totalSessions, totalReps, latestRecord };
   };
 
+  const getLevel = (count: number) => {
+    if (count >= 100) return { name: texts.master, color: "from-purple-500 to-pink-500", emoji: "👑" };
+    if (count >= 75) return { name: texts.expert, color: "from-orange-500 to-red-500", emoji: "🔥" };
+    if (count >= 50) return { name: texts.advanced, color: "from-blue-500 to-cyan-500", emoji: "⭐" };
+    if (count >= 25) return { name: texts.intermediate, color: "from-green-500 to-emerald-500", emoji: "💪" };
+    return { name: texts.beginner, color: "from-gray-500 to-slate-500", emoji: "🌱" };
+  };
+
+  const getMotivationMessage = (count: number, nextMilestone: number) => {
+    const remaining = nextMilestone - count;
+    if (count >= 100) return texts.legend;
+    if (remaining <= 5) return texts.almostThere;
+    if (count >= 50) return texts.amazing;
+    if (count >= 25) return texts.wellDone;
+    return texts.keepGoing;
+  };
+
+  const getNextMilestone = (count: number) => {
+    if (count >= 100) return 100;
+    if (count >= 75) return 100;
+    if (count >= 50) return 75;
+    if (count >= 25) return 50;
+    if (count >= 10) return 25;
+    return 10;
+  };
+
+  const getMilestoneBadges = (count: number) => {
+    const milestones = [
+      { value: 10, emoji: "🥉", color: "bg-amber-700" },
+      { value: 25, emoji: "🥈", color: "bg-gray-400" },
+      { value: 50, emoji: "🥇", color: "bg-yellow-500" },
+      { value: 75, emoji: "💎", color: "bg-blue-500" },
+      { value: 100, emoji: "👑", color: "bg-purple-500" },
+    ];
+    return milestones.filter(m => count >= m.value);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
@@ -481,11 +563,16 @@ const PracticeRecordsPage = () => {
                 <div className="grid gap-4 sm:grid-cols-2">
                   {recentVideos.map((video) => {
                     const stats = getVideoStats(video.video_id);
+                    const level = getLevel(stats.totalSessions);
+                    const nextMilestone = getNextMilestone(stats.totalSessions);
+                    const progress = (stats.totalSessions / nextMilestone) * 100;
+                    const badges = getMilestoneBadges(stats.totalSessions);
+                    
                     return (
-                      <Card key={video.id} className="overflow-hidden">
+                      <Card key={video.id} className="overflow-hidden hover-scale transition-all duration-300 hover:shadow-lg">
                         <CardContent className="p-3 sm:p-4">
                           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
-                            <div className="w-full sm:w-32 h-32 sm:h-20 bg-muted rounded-lg overflow-hidden flex-shrink-0">
+                            <div className="relative w-full sm:w-32 h-32 sm:h-20 bg-muted rounded-lg overflow-hidden flex-shrink-0">
                               {video.video.thumbnail_url && (
                                 <img
                                   src={video.video.thumbnail_url}
@@ -493,30 +580,49 @@ const PracticeRecordsPage = () => {
                                   className="w-full h-full object-cover"
                                 />
                               )}
+                              {stats.totalSessions > 0 && (
+                                <div className={`absolute top-1 right-1 px-2 py-1 rounded-full text-xs font-bold text-white bg-gradient-to-r ${level.color} shadow-lg`}>
+                                  {level.emoji} {stats.totalSessions}
+                                </div>
+                              )}
                             </div>
                             <div className="flex-1 min-w-0">
                               <h3 className="font-semibold mb-1 text-sm sm:text-base line-clamp-2">{getTechniqueName(video.video)}</h3>
                               <p className="text-xs sm:text-sm text-muted-foreground mb-2">{video.video.category}</p>
                               
                               {stats.totalSessions > 0 ? (
-                                <div className="bg-primary/10 rounded-lg p-2 mb-2">
-                                  <div className="flex items-center gap-4 text-xs">
-                                    <div className="flex items-center gap-1">
-                                      <span className="font-semibold text-primary">{stats.totalSessions}</span>
-                                      <span className="text-muted-foreground">{texts.times}</span>
+                                <div className="space-y-2 mb-2">
+                                  <div className="bg-gradient-to-r from-primary/20 to-primary/10 rounded-lg p-2">
+                                    <div className="flex items-center justify-between mb-1">
+                                      <span className="text-xs font-semibold text-primary">{level.name}</span>
+                                      <span className="text-xs text-muted-foreground">{stats.totalSessions}/100</span>
                                     </div>
-                                    {stats.totalReps > 0 && (
-                                      <div className="flex items-center gap-1">
-                                        <span className="font-semibold text-primary">{stats.totalReps}</span>
-                                        <span className="text-muted-foreground">{texts.reps}</span>
-                                      </div>
-                                    )}
-                                    {stats.latestRecord && (
-                                      <span className="text-muted-foreground whitespace-nowrap">
-                                        {language === "ja" ? "最終:" : "Last:"} {format(new Date(stats.latestRecord.practice_date), "MM/dd")}
-                                      </span>
+                                    <div className="h-2 bg-background rounded-full overflow-hidden">
+                                      <div 
+                                        className={`h-full bg-gradient-to-r ${level.color} transition-all duration-500 ease-out`}
+                                        style={{ width: `${Math.min(progress, 100)}%` }}
+                                      />
+                                    </div>
+                                    {stats.totalSessions < 100 && (
+                                      <p className="text-xs text-muted-foreground mt-1">
+                                        {texts.nextMilestone}: {nextMilestone - stats.totalSessions}{texts.times}
+                                      </p>
                                     )}
                                   </div>
+                                  
+                                  {badges.length > 0 && (
+                                    <div className="flex gap-1 flex-wrap">
+                                      {badges.map((badge) => (
+                                        <div 
+                                          key={badge.value}
+                                          className={`${badge.color} text-white text-xs px-2 py-1 rounded-full flex items-center gap-1 animate-scale-in`}
+                                        >
+                                          <span>{badge.emoji}</span>
+                                          <span className="font-bold">{badge.value}</span>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  )}
                                 </div>
                               ) : (
                                 <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs text-muted-foreground mb-2">
@@ -529,7 +635,11 @@ const PracticeRecordsPage = () => {
                                 </div>
                               )}
                               
-                              <Button size="sm" onClick={() => openDialog(video)} className="w-full text-xs sm:text-sm">
+                              <Button 
+                                size="sm" 
+                                onClick={() => openDialog(video)} 
+                                className="w-full text-xs sm:text-sm bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 transition-all duration-300"
+                              >
                                 <Plus className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
                                 <span className="truncate">{texts.addFromVideo}</span>
                               </Button>
@@ -636,51 +746,100 @@ const PracticeRecordsPage = () => {
                   </CardContent>
                 </Card>
               ) : (
-                <div className="grid gap-3 sm:gap-4 sm:grid-cols-2">
+                <div className="grid gap-3 sm:gap-4 sm:grid-cols-2 lg:grid-cols-3">
                   {calculateTechniqueStats().map((stat) => {
                     const progressPercent = stat.latest_proficiency ? (stat.latest_proficiency / 5) * 100 : 0;
+                    const level = getLevel(stat.total_sessions);
+                    const nextMilestone = getNextMilestone(stat.total_sessions);
+                    const milestoneProgress = (stat.total_sessions / 100) * 100;
+                    const badges = getMilestoneBadges(stat.total_sessions);
+                    const motivationMsg = getMotivationMessage(stat.total_sessions, nextMilestone);
+                    
                     return (
-                      <Card key={stat.technique_id} className="overflow-hidden">
+                      <Card key={stat.technique_id} className="overflow-hidden hover-scale transition-all duration-300 hover:shadow-xl">
+                        <div className={`h-2 bg-gradient-to-r ${level.color}`} />
                         <CardContent className="p-3 sm:p-4">
-                          <div className="flex items-start justify-between mb-3 sm:mb-4">
-                            <h3 className="font-semibold text-base sm:text-lg break-words flex-1">{stat.technique_name}</h3>
+                          <div className="flex items-start justify-between mb-3">
+                            <h3 className="font-semibold text-base sm:text-lg break-words flex-1 line-clamp-2">{stat.technique_name}</h3>
+                            <div className="flex-shrink-0 ml-2">
+                              <div className={`text-2xl bg-gradient-to-br ${level.color} rounded-full w-10 h-10 flex items-center justify-center shadow-lg`}>
+                                {level.emoji}
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <div className="text-center mb-3 p-3 bg-gradient-to-br from-primary/10 to-primary/5 rounded-xl">
+                            <div className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent mb-1">
+                              {stat.total_sessions}
+                            </div>
+                            <div className="text-xs text-muted-foreground">{texts.totalSessions}</div>
+                            <div className="text-sm font-semibold text-primary mt-1">{motivationMsg}</div>
+                          </div>
+
+                          <div className="relative mb-4">
+                            <svg className="w-full h-3" viewBox="0 0 100 3">
+                              <defs>
+                                <linearGradient id={`gradient-${stat.technique_id}`} x1="0%" y1="0%" x2="100%" y2="0%">
+                                  <stop offset="0%" className="text-primary" stopColor="currentColor" />
+                                  <stop offset="100%" className="text-primary/60" stopColor="currentColor" />
+                                </linearGradient>
+                              </defs>
+                              <rect width="100" height="3" rx="1.5" fill="hsl(var(--muted))" />
+                              <rect 
+                                width={Math.min(milestoneProgress, 100)} 
+                                height="3" 
+                                rx="1.5" 
+                                fill={`url(#gradient-${stat.technique_id})`}
+                                className="transition-all duration-1000 ease-out"
+                              />
+                            </svg>
+                            <div className="absolute -top-1 left-0 w-full flex justify-between px-1">
+                              {[10, 25, 50, 75, 100].map((milestone) => {
+                                const isPassed = stat.total_sessions >= milestone;
+                                return (
+                                  <div 
+                                    key={milestone}
+                                    className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-300 ${
+                                      isPassed 
+                                        ? 'bg-gradient-to-br from-primary to-primary/80 text-white shadow-lg scale-110' 
+                                        : 'bg-muted text-muted-foreground'
+                                    }`}
+                                  >
+                                    {isPassed ? '✓' : milestone}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+
+                          {badges.length > 0 && (
+                            <div className="flex gap-1 flex-wrap justify-center mb-3">
+                              {badges.map((badge) => (
+                                <div 
+                                  key={badge.value}
+                                  className={`${badge.color} text-white text-xs px-3 py-1 rounded-full flex items-center gap-1 animate-scale-in shadow-md`}
+                                >
+                                  <span className="text-base">{badge.emoji}</span>
+                                  <span className="font-bold">{badge.value}</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                          
+                          <div className="grid grid-cols-2 gap-2">
+                            <div className="bg-gradient-to-br from-blue-500/10 to-blue-500/5 rounded-lg p-2 text-center">
+                              <p className="text-xs text-muted-foreground mb-1">{texts.totalReps}</p>
+                              <p className="text-lg sm:text-xl font-bold text-blue-600 dark:text-blue-400">{stat.total_repetitions}</p>
+                            </div>
                             {stat.latest_proficiency > 0 && (
-                              <div className="flex-shrink-0 ml-2">
-                                {renderStars(stat.latest_proficiency)}
+                              <div className="bg-gradient-to-br from-purple-500/10 to-purple-500/5 rounded-lg p-2 text-center">
+                                <p className="text-xs text-muted-foreground mb-1">{texts.currentProficiency}</p>
+                                <div className="flex justify-center">
+                                  {renderStars(stat.latest_proficiency)}
+                                </div>
                               </div>
                             )}
                           </div>
-                          
-                          {stat.latest_proficiency > 0 && (
-                            <div className="mb-3">
-                              <div className="h-2 bg-muted rounded-full overflow-hidden">
-                                <div 
-                                  className="h-full bg-gradient-to-r from-primary to-primary/80 transition-all duration-300"
-                                  style={{ width: `${progressPercent}%` }}
-                                />
-                              </div>
-                            </div>
-                          )}
-                          
-                          <div className="grid grid-cols-2 gap-2 sm:gap-3">
-                            <div className="bg-muted/50 rounded-lg p-2">
-                              <p className="text-xs text-muted-foreground mb-1">{texts.totalSessions}</p>
-                              <p className="text-lg sm:text-xl font-bold text-primary">{stat.total_sessions}</p>
-                            </div>
-                            <div className="bg-muted/50 rounded-lg p-2">
-                              <p className="text-xs text-muted-foreground mb-1">{texts.totalReps}</p>
-                              <p className="text-lg sm:text-xl font-bold text-primary">{stat.total_repetitions}</p>
-                            </div>
-                          </div>
-                          
-                          {stat.avg_proficiency > 0 && (
-                            <div className="mt-3 pt-3 border-t flex justify-between items-center">
-                              <span className="text-xs sm:text-sm text-muted-foreground">{texts.avgProficiency}</span>
-                              <div className="flex-shrink-0">
-                                {renderStars(Math.round(stat.avg_proficiency))}
-                              </div>
-                            </div>
-                          )}
                         </CardContent>
                       </Card>
                     );
