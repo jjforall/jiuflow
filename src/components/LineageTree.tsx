@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
+import { BeltBadge } from "@/components/ui/belt-badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { ArrowDown, ArrowUp } from "lucide-react";
@@ -157,9 +157,7 @@ export const LineageTree = ({ celebrityId }: LineageTreeProps) => {
                       {relation.instructor.display_name}
                     </h4>
                     {getBeltName(relation.instructor.belt_history) && (
-                      <Badge variant="secondary" className="text-xs mt-1">
-                        {getBeltName(relation.instructor.belt_history)}
-                      </Badge>
+                      <BeltBadge belt={getBeltName(relation.instructor.belt_history)!} className="text-xs mt-1" />
                     )}
                     {relation.instructor.home_dojo && (
                       <p className="text-xs text-muted-foreground truncate mt-1">
@@ -203,9 +201,7 @@ export const LineageTree = ({ celebrityId }: LineageTreeProps) => {
                       {relation.student.display_name}
                     </h4>
                     {getBeltName(relation.student.belt_history) && (
-                      <Badge variant="secondary" className="text-xs mt-1">
-                        {getBeltName(relation.student.belt_history)}
-                      </Badge>
+                      <BeltBadge belt={getBeltName(relation.student.belt_history)!} className="text-xs mt-1" />
                     )}
                     {relation.student.home_dojo && (
                       <p className="text-xs text-muted-foreground truncate mt-1">
