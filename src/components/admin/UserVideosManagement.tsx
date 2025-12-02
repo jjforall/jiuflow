@@ -420,105 +420,120 @@ export function UserVideosManagement() {
               </div>
 
               {/* スマホ用カード表示 */}
-              <div className="md:hidden space-y-4">
+              <div className="md:hidden space-y-2">
                 {currentVideos.map((video) => (
-                  <Card key={video.id}>
-                    <CardContent className="p-4">
-                      <Collapsible open={expandedRows.has(video.id)} onOpenChange={() => toggleRow(video.id)}>
-                        <div className="space-y-3">
-                          {/* サムネイルとタイトル */}
-                          <div className="flex gap-3">
-                            {video.thumbnail_url ? (
-                              <img
-                                src={video.thumbnail_url}
-                                alt={video.title}
-                                className="w-24 h-18 object-cover rounded flex-shrink-0"
-                              />
-                            ) : (
-                              <div className="w-24 h-18 bg-muted rounded flex items-center justify-center flex-shrink-0">
-                                <Video className="w-8 h-8 text-muted-foreground" />
-                              </div>
-                            )}
-                            <div className="flex-1 min-w-0">
-                              <h3 className="font-medium line-clamp-2 mb-1">{video.title}</h3>
-                              <Badge variant="outline" className="text-xs mb-1">
-                                {video.video_type}
-                              </Badge>
-                              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                <span>{video.profiles?.display_name || video.profiles?.username || "不明"}</span>
-                              </div>
-                            </div>
-                          </div>
+                  <div key={video.id} className="border-b border-border/50 last:border-0">
+                    <Collapsible open={expandedRows.has(video.id)} onOpenChange={() => toggleRow(video.id)}>
+                      <div className="p-3">
+                        <div className="flex items-start gap-3">
+                          <CollapsibleTrigger asChild>
+                            <Button variant="ghost" size="sm" className="h-6 w-6 p-0 shrink-0 mt-1">
+                              <ChevronDown className={`h-4 w-4 transition-transform ${expandedRows.has(video.id) ? "rotate-180" : ""}`} />
+                            </Button>
+                          </CollapsibleTrigger>
 
-                          {/* 情報とアクション */}
-                          <div className="flex items-center justify-between text-sm">
-                            <div className="flex items-center gap-3">
-                              <div className="flex items-center gap-1">
-                                <BarChart3 className="w-4 h-4 text-muted-foreground" />
-                                <span>{video.view_count.toLocaleString()}</span>
-                              </div>
-                              {video.is_public ? (
-                                <Badge variant="default" className="text-xs">公開</Badge>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-start gap-3 mb-2">
+                              {video.thumbnail_url ? (
+                                <img
+                                  src={video.thumbnail_url}
+                                  alt={video.title}
+                                  className="w-16 h-12 object-cover rounded shrink-0"
+                                />
                               ) : (
-                                <Badge variant="secondary" className="text-xs">非公開</Badge>
+                                <div className="w-16 h-12 bg-muted rounded flex items-center justify-center shrink-0">
+                                  <Video className="w-6 h-6 text-muted-foreground" />
+                                </div>
                               )}
+                              
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <h3 className="font-medium text-sm line-clamp-2">{video.title}</h3>
+                                </div>
+                                <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
+                                  <Badge 
+                                    variant="outline" 
+                                    className="text-xs px-1.5 py-0 h-5"
+                                    style={{ 
+                                      backgroundColor: video.video_type === 'sparring' ? 'hsl(var(--destructive))' : 
+                                                       video.video_type === 'training' ? 'hsl(var(--primary))' : 
+                                                       'hsl(var(--muted))',
+                                      color: video.video_type === 'sparring' || video.video_type === 'training' ? 'white' : 'inherit',
+                                      borderColor: 'transparent'
+                                    }}
+                                  >
+                                    {video.video_type}
+                                  </Badge>
+                                  <span>{video.profiles?.display_name || video.profiles?.username || "不明"}</span>
+                                </div>
+                              </div>
                             </div>
-                            <div className="flex gap-1">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-8 w-8 p-0"
-                                onClick={() => handleToggleVisibility(video.id, video.is_public)}
-                              >
+
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-3 text-sm">
+                                <div className="flex items-center gap-1">
+                                  <BarChart3 className="w-3.5 h-3.5 text-muted-foreground" />
+                                  <span className="text-xs">{video.view_count.toLocaleString()}</span>
+                                </div>
                                 {video.is_public ? (
-                                  <EyeOff className="w-4 h-4" />
+                                  <Badge variant="default" className="text-xs px-1.5 py-0 h-5">公開</Badge>
                                 ) : (
-                                  <Eye className="w-4 h-4" />
+                                  <Badge variant="secondary" className="text-xs px-1.5 py-0 h-5">非公開</Badge>
                                 )}
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-8 w-8 p-0"
-                                onClick={() => handleDelete(video.id)}
-                              >
-                                <Trash2 className="w-4 h-4 text-destructive" />
-                              </Button>
-                              <CollapsibleTrigger asChild>
-                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                                  <ChevronDown className={`h-4 w-4 transition-transform ${expandedRows.has(video.id) ? "rotate-180" : ""}`} />
+                              </div>
+                              <div className="flex gap-1">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-7 w-7 p-0"
+                                  onClick={() => handleToggleVisibility(video.id, video.is_public)}
+                                >
+                                  {video.is_public ? (
+                                    <EyeOff className="w-3.5 h-3.5" />
+                                  ) : (
+                                    <Eye className="w-3.5 h-3.5" />
+                                  )}
                                 </Button>
-                              </CollapsibleTrigger>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-7 w-7 p-0"
+                                  onClick={() => handleDelete(video.id)}
+                                >
+                                  <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                                </Button>
+                              </div>
                             </div>
                           </div>
+                        </div>
 
-                          {/* 詳細情報（折りたたみ） */}
-                          <CollapsibleContent className="space-y-2 pt-3 border-t">
+                        <CollapsibleContent className="mt-3 pt-3 border-t">
+                          <div className="space-y-2 text-sm pl-9">
                             <div>
-                              <span className="text-sm font-medium">説明：</span>
-                              <p className="text-sm text-muted-foreground mt-1">
+                              <span className="font-medium text-xs text-muted-foreground">説明</span>
+                              <p className="text-sm mt-1">
                                 {video.description || "説明なし"}
                               </p>
                             </div>
-                            <div className="grid grid-cols-2 gap-2 text-sm">
+                            <div className="grid grid-cols-2 gap-3 text-xs">
                               <div>
-                                <span className="font-medium">価格：</span>
-                                <span className="text-muted-foreground ml-1">
+                                <span className="font-medium text-muted-foreground">価格</span>
+                                <p className="mt-0.5">
                                   {video.price ? `¥${video.price.toLocaleString()}` : "無料"}
-                                </span>
+                                </p>
                               </div>
                               <div>
-                                <span className="font-medium">投稿日：</span>
-                                <span className="text-muted-foreground ml-1">
-                                  {format(new Date(video.created_at), "MM/dd", { locale: ja })}
-                                </span>
+                                <span className="font-medium text-muted-foreground">投稿日</span>
+                                <p className="mt-0.5">
+                                  {format(new Date(video.created_at), "yyyy/MM/dd", { locale: ja })}
+                                </p>
                               </div>
                             </div>
-                          </CollapsibleContent>
-                        </div>
-                      </Collapsible>
-                    </CardContent>
-                  </Card>
+                          </div>
+                        </CollapsibleContent>
+                      </div>
+                    </Collapsible>
+                  </div>
                 ))}
               </div>
 
