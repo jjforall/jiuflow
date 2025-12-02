@@ -21,6 +21,15 @@ import { VideoComments } from "@/components/VideoComments";
 import { VideoTip } from "@/components/VideoTip";
 import { Separator } from "@/components/ui/separator";
 import { useFloatingVideo } from "@/contexts/FloatingVideoContext";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { CalendarIcon, Plus } from "lucide-react";
+import { format } from "date-fns";
 
 interface Technique {
   id: string;
@@ -61,6 +70,13 @@ const Video = () => {
   const [seriesLetter, setSeriesLetter] = useState<string>("");
   const [viewCount, setViewCount] = useState<number>(0);
   const [isVideoPlaying, setIsVideoPlaying] = useState(false);
+  const [practiceDialogOpen, setPracticeDialogOpen] = useState(false);
+  const [formData, setFormData] = useState({
+    practice_date: new Date(),
+    proficiency_level: "1",
+    repetition_count: "30",
+    notes: "",
+  });
 
   // Cleanup and activate floating video on unmount
   useEffect(() => {
@@ -348,7 +364,49 @@ const Video = () => {
       case "pt":
         return tech.thumbnail_url_pt || tech.thumbnail_url;
       default:
-        return tech.thumbnail_url;
+      return tech.thumbnail_url;
+    }
+  };
+
+  const handlePracticeSubmit = async () => {
+    if (!user || !technique) return;
+
+    try {
+      const { error } = await supabase.from("practice_records").insert({
+        user_id: user.id,
+        technique_id: technique.id,
+        practice_date: format(formData.practice_date, "yyyy-MM-dd"),
+        proficiency_level: parseInt(formData.proficiency_level),
+        repetition_count: parseInt(formData.repetition_count),
+        notes: formData.notes || null,
+      });
+
+      if (error) throw error;
+
+      toast.success(
+        language === "ja" 
+          ? "練習記録を保存しました！" 
+          : language === "pt" 
+          ? "Registro de prática salvo!" 
+          : "Practice record saved!"
+      );
+
+      setPracticeDialogOpen(false);
+      setFormData({
+        practice_date: new Date(),
+        proficiency_level: "1",
+        repetition_count: "30",
+        notes: "",
+      });
+    } catch (error: any) {
+      console.error("Error saving practice record:", error);
+      toast.error(
+        language === "ja" 
+          ? "保存に失敗しました" 
+          : language === "pt" 
+          ? "Falha ao salvar" 
+          : "Failed to save"
+      );
     }
   };
 
@@ -637,6 +695,36 @@ const Video = () => {
                     )}
                   </div>
                 </Card>
+
+                {/* Practice Record Button */}
+                <Card className="p-4 bg-gradient-to-br from-accent/5 to-transparent border-accent/20">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-sm font-medium mb-1">
+                        {language === "ja" 
+                          ? "練習を記録する" 
+                          : language === "pt" 
+                          ? "Registrar prática" 
+                          : "Record Practice"}
+                      </h3>
+                      <p className="text-xs text-muted-foreground">
+                        {language === "ja" 
+                          ? "この技の練習を記録して進捗を追跡" 
+                          : language === "pt" 
+                          ? "Registre e acompanhe seu progresso" 
+                          : "Track your progress for this technique"}
+                      </p>
+                    </div>
+                    <Button 
+                      size="sm"
+                      onClick={() => setPracticeDialogOpen(true)}
+                      className="gap-2"
+                    >
+                      <Plus className="w-4 h-4" />
+                      {language === "ja" ? "記録" : language === "pt" ? "Registrar" : "Record"}
+                    </Button>
+                  </div>
+                </Card>
               </div>
 
               {getTechniqueDescription(technique) && (
@@ -742,6 +830,124 @@ const Video = () => {
        </main>
       
       <Footer />
+
+      {/* Practice Record Dialog */}
+      <Dialog open={practiceDialogOpen} onOpenChange={setPracticeDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {language === "ja" 
+                ? "練習記録を追加" 
+                : language === "pt" 
+                ? "Adicionar registro de prática" 
+                : "Add Practice Record"}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>
+                {language === "ja" ? "技術" : language === "pt" ? "Técnica" : "Technique"}
+              </Label>
+              <Input value={getTechniqueName(technique!)} disabled />
+            </div>
+            
+            <div className="space-y-2">
+              <Label>
+                {language === "ja" ? "練習日" : language === "pt" ? "Data da prática" : "Practice Date"}
+              </Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start text-left font-normal"
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {format(formData.practice_date, "PPP")}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                  <Calendar
+                    mode="single"
+                    selected={formData.practice_date}
+                    onSelect={(date) => date && setFormData({ ...formData, practice_date: date })}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            <div className="space-y-2">
+              <Label>
+                {language === "ja" ? "熟練度" : language === "pt" ? "Proficiência" : "Proficiency Level"}
+              </Label>
+              <Select
+                value={formData.proficiency_level}
+                onValueChange={(value) => setFormData({ ...formData, proficiency_level: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1">
+                    {language === "ja" ? "初心者" : language === "pt" ? "Iniciante" : "Beginner"}
+                  </SelectItem>
+                  <SelectItem value="2">
+                    {language === "ja" ? "中級者" : language === "pt" ? "Intermediário" : "Intermediate"}
+                  </SelectItem>
+                  <SelectItem value="3">
+                    {language === "ja" ? "上級者" : language === "pt" ? "Avançado" : "Advanced"}
+                  </SelectItem>
+                  <SelectItem value="4">
+                    {language === "ja" ? "エキスパート" : language === "pt" ? "Especialista" : "Expert"}
+                  </SelectItem>
+                  <SelectItem value="5">
+                    {language === "ja" ? "マスター" : language === "pt" ? "Mestre" : "Master"}
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>
+                {language === "ja" ? "練習回数" : language === "pt" ? "Repetições" : "Repetitions"}
+              </Label>
+              <Input
+                type="number"
+                min="1"
+                value={formData.repetition_count}
+                onChange={(e) => setFormData({ ...formData, repetition_count: e.target.value })}
+                placeholder="30"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>
+                {language === "ja" ? "メモ" : language === "pt" ? "Notas" : "Notes"}
+              </Label>
+              <Textarea
+                value={formData.notes}
+                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                placeholder={
+                  language === "ja" 
+                    ? "練習の詳細や気づきを記録..." 
+                    : language === "pt" 
+                    ? "Registre detalhes e observações..." 
+                    : "Record details and observations..."
+                }
+                rows={3}
+              />
+            </div>
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setPracticeDialogOpen(false)}>
+              {language === "ja" ? "キャンセル" : language === "pt" ? "Cancelar" : "Cancel"}
+            </Button>
+            <Button onClick={handlePracticeSubmit}>
+              {language === "ja" ? "保存" : language === "pt" ? "Salvar" : "Save"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
