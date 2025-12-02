@@ -35,6 +35,7 @@ import { WatchHistory } from "@/components/WatchHistory";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import hero1 from "@/assets/hero-1.jpg";
 import hero2 from "@/assets/hero-2.jpg";
 import hero3 from "@/assets/hero-3.jpg";
@@ -145,6 +146,7 @@ interface Profile {
     tiktok?: string;
     website?: string;
   } | null;
+  is_public: boolean;
 }
 
 const MyPage = () => {
@@ -505,7 +507,7 @@ const MyPage = () => {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('display_name, bio, avatar_url, username, education, work_experience, belt_history, home_dojo, training_locations, titles, created_at, cover_image_url, organization_id, favorite_fighters, favorite_techniques, hometown, hobbies, marital_status, date_of_birth, social_links')
+        .select('display_name, bio, avatar_url, username, education, work_experience, belt_history, home_dojo, training_locations, titles, created_at, cover_image_url, organization_id, favorite_fighters, favorite_techniques, hometown, hobbies, marital_status, date_of_birth, social_links, is_public')
         .eq('id', user.id)
         .single();
 
@@ -521,7 +523,8 @@ const MyPage = () => {
         favorite_fighters: (data.favorite_fighters as any) || [],
         favorite_techniques: (data.favorite_techniques as any) || [],
         hobbies: (data.hobbies as any) || [],
-        social_links: (data.social_links as any) || {}
+        social_links: (data.social_links as any) || {},
+        is_public: data.is_public ?? false
       });
       setCreatedAt(data.created_at);
     } catch (error) {
@@ -3287,6 +3290,51 @@ const MyPage = () => {
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-6">
+                    {/* Profile Visibility Toggle */}
+                    <div className="flex items-center justify-between p-4 rounded-lg bg-muted/50">
+                      <div className="flex items-center gap-3">
+                        {profile?.is_public ? (
+                          <Globe className="h-5 w-5 text-green-500" />
+                        ) : (
+                          <Lock className="h-5 w-5 text-muted-foreground" />
+                        )}
+                        <div>
+                          <p className="font-medium">
+                            {language === "ja" ? "プロフィール公開" : "Profile Visibility"}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {profile?.is_public
+                              ? (language === "ja" ? "他のユーザーからプロフィールが見えます" : "Your profile is visible to others")
+                              : (language === "ja" ? "プロフィールは非公開です" : "Your profile is private")}
+                          </p>
+                        </div>
+                      </div>
+                      <Switch
+                        checked={profile?.is_public ?? false}
+                        onCheckedChange={async (checked) => {
+                          if (!user) return;
+                          try {
+                            const { error } = await supabase
+                              .from('profiles')
+                              .update({ is_public: checked })
+                              .eq('id', user.id);
+                            
+                            if (error) throw error;
+                            
+                            setProfile(prev => prev ? { ...prev, is_public: checked } : null);
+                            toast.success(
+                              checked
+                                ? (language === "ja" ? "プロフィールを公開しました" : "Profile is now public")
+                                : (language === "ja" ? "プロフィールを非公開にしました" : "Profile is now private")
+                            );
+                          } catch (error) {
+                            console.error('Error updating visibility:', error);
+                            toast.error(language === "ja" ? "更新に失敗しました" : "Failed to update");
+                          }
+                        }}
+                      />
+                    </div>
+
                     <div className="flex items-center gap-3">
                       <Mail className="h-4 w-4 text-muted-foreground" />
                       <div>
