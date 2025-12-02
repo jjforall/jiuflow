@@ -181,13 +181,20 @@ export default function Dojos() {
       });
     }
     
-    // Sort: favorites first, then verified, then by name
+    // Sort: favorites first, then with photo, then verified, then by name
     filtered.sort((a, b) => {
       const aFav = favorites.has(a.id);
       const bFav = favorites.has(b.id);
       
       if (aFav && !bFav) return -1;
       if (!aFav && bFav) return 1;
+      
+      // Prioritize dojos with cover images (photos)
+      const aHasPhoto = !!a.cover_image_url;
+      const bHasPhoto = !!b.cover_image_url;
+      
+      if (aHasPhoto && !bHasPhoto) return -1;
+      if (!aHasPhoto && bHasPhoto) return 1;
       
       if (a.is_verified && !b.is_verified) return -1;
       if (!a.is_verified && b.is_verified) return 1;
