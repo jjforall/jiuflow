@@ -28,6 +28,8 @@ interface PracticeRecord {
   duration_minutes: number | null;
   difficulty_rating: number | null;
   success_rating: number | null;
+  proficiency_level: number | null;
+  repetition_count: number | null;
   notes: string | null;
   created_at: string;
   technique?: {
@@ -42,6 +44,15 @@ interface PracticeRecord {
     title: string;
     thumbnail_url: string | null;
   };
+}
+
+interface TechniqueStats {
+  technique_id: string;
+  technique_name: string;
+  total_sessions: number;
+  total_repetitions: number;
+  avg_proficiency: number;
+  latest_proficiency: number;
 }
 
 interface VideoView {
@@ -73,6 +84,8 @@ const PracticeRecordsPage = () => {
     duration_minutes: "",
     difficulty_rating: "",
     success_rating: "",
+    proficiency_level: "",
+    repetition_count: "",
     notes: "",
   });
 
@@ -82,6 +95,7 @@ const PracticeRecordsPage = () => {
       recentVideosTab: "最近見た動画から記録",
       allRecordsTab: "すべての記録",
       otherPracticeTab: "その他の練習",
+      statsTab: "技の統計",
       noRecentVideos: "最近見た動画がありません",
       noRecords: "練習記録がありません",
       addRecord: "記録を追加",
@@ -91,6 +105,8 @@ const PracticeRecordsPage = () => {
       duration: "練習時間（分）",
       difficulty: "難易度",
       success: "達成度",
+      proficiency: "熟練度",
+      repetitions: "練習回数",
       notes: "メモ",
       save: "保存",
       cancel: "キャンセル",
@@ -101,12 +117,19 @@ const PracticeRecordsPage = () => {
       video: "動画",
       technique: "技術",
       other: "その他",
+      totalSessions: "総練習回数",
+      totalReps: "累計練習回数",
+      avgProficiency: "平均熟練度",
+      currentProficiency: "現在の熟練度",
+      reps: "回",
+      times: "回",
     },
     en: {
       title: "Practice Records",
       recentVideosTab: "Record from Recent Videos",
       allRecordsTab: "All Records",
       otherPracticeTab: "Other Practice",
+      statsTab: "Technique Stats",
       noRecentVideos: "No recent videos",
       noRecords: "No practice records",
       addRecord: "Add Record",
@@ -116,6 +139,8 @@ const PracticeRecordsPage = () => {
       duration: "Duration (minutes)",
       difficulty: "Difficulty",
       success: "Success Rate",
+      proficiency: "Proficiency Level",
+      repetitions: "Repetitions",
       notes: "Notes",
       save: "Save",
       cancel: "Cancel",
@@ -126,12 +151,19 @@ const PracticeRecordsPage = () => {
       video: "Video",
       technique: "Technique",
       other: "Other",
+      totalSessions: "Total Sessions",
+      totalReps: "Total Repetitions",
+      avgProficiency: "Avg. Proficiency",
+      currentProficiency: "Current Proficiency",
+      reps: "reps",
+      times: "times",
     },
     pt: {
       title: "Registros de Prática",
       recentVideosTab: "Registrar de Vídeos Recentes",
       allRecordsTab: "Todos os Registros",
       otherPracticeTab: "Outras Práticas",
+      statsTab: "Estatísticas de Técnicas",
       noRecentVideos: "Nenhum vídeo recente",
       noRecords: "Nenhum registro de prática",
       addRecord: "Adicionar Registro",
@@ -141,6 +173,8 @@ const PracticeRecordsPage = () => {
       duration: "Duração (minutos)",
       difficulty: "Dificuldade",
       success: "Taxa de Sucesso",
+      proficiency: "Nível de Proficiência",
+      repetitions: "Repetições",
       notes: "Notas",
       save: "Salvar",
       cancel: "Cancelar",
@@ -151,6 +185,12 @@ const PracticeRecordsPage = () => {
       video: "Vídeo",
       technique: "Técnica",
       other: "Outro",
+      totalSessions: "Sessões Totais",
+      totalReps: "Repetições Totais",
+      avgProficiency: "Proficiência Média",
+      currentProficiency: "Proficiência Atual",
+      reps: "reps",
+      times: "vezes",
     },
   };
 
@@ -246,6 +286,8 @@ const PracticeRecordsPage = () => {
       duration_minutes: record?.duration_minutes?.toString() || "",
       difficulty_rating: record?.difficulty_rating?.toString() || "",
       success_rating: record?.success_rating?.toString() || "",
+      proficiency_level: record?.proficiency_level?.toString() || "",
+      repetition_count: record?.repetition_count?.toString() || "1",
       notes: record?.notes || "",
     });
     setDialogOpen(true);
@@ -260,6 +302,8 @@ const PracticeRecordsPage = () => {
       duration_minutes: "",
       difficulty_rating: "",
       success_rating: "",
+      proficiency_level: "",
+      repetition_count: "",
       notes: "",
     });
   };
@@ -276,6 +320,8 @@ const PracticeRecordsPage = () => {
         duration_minutes: formData.duration_minutes ? parseInt(formData.duration_minutes) : null,
         difficulty_rating: formData.difficulty_rating ? parseInt(formData.difficulty_rating) : null,
         success_rating: formData.success_rating ? parseInt(formData.success_rating) : null,
+        proficiency_level: formData.proficiency_level ? parseInt(formData.proficiency_level) : null,
+        repetition_count: formData.repetition_count ? parseInt(formData.repetition_count) : null,
         notes: formData.notes || null,
       };
 
@@ -337,6 +383,41 @@ const PracticeRecordsPage = () => {
     );
   };
 
+  const calculateTechniqueStats = (): TechniqueStats[] => {
+    const statsMap = new Map<string, TechniqueStats>();
+
+    records.forEach((record) => {
+      if (!record.technique_id || !record.technique) return;
+
+      const existing = statsMap.get(record.technique_id);
+      const reps = record.repetition_count || 0;
+      const prof = record.proficiency_level || 0;
+
+      if (existing) {
+        existing.total_sessions += 1;
+        existing.total_repetitions += reps;
+        if (prof > 0) {
+          existing.avg_proficiency = 
+            (existing.avg_proficiency * (existing.total_sessions - 1) + prof) / existing.total_sessions;
+        }
+        if (new Date(record.practice_date) >= new Date(records.find(r => r.technique_id === record.technique_id)!.practice_date)) {
+          existing.latest_proficiency = prof;
+        }
+      } else {
+        statsMap.set(record.technique_id, {
+          technique_id: record.technique_id,
+          technique_name: getTechniqueName(record.technique),
+          total_sessions: 1,
+          total_repetitions: reps,
+          avg_proficiency: prof,
+          latest_proficiency: prof,
+        });
+      }
+    });
+
+    return Array.from(statsMap.values()).sort((a, b) => b.total_sessions - a.total_sessions);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
@@ -366,9 +447,10 @@ const PracticeRecordsPage = () => {
           </div>
 
           <Tabs defaultValue="recent" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="recent">{texts.recentVideosTab}</TabsTrigger>
               <TabsTrigger value="all">{texts.allRecordsTab}</TabsTrigger>
+              <TabsTrigger value="stats">{texts.statsTab}</TabsTrigger>
               <TabsTrigger value="other">{texts.otherPracticeTab}</TabsTrigger>
             </TabsList>
 
@@ -464,8 +546,20 @@ const PracticeRecordsPage = () => {
                             <div className="flex items-center gap-2 text-sm">
                               <Clock className="h-4 w-4 text-muted-foreground" />
                               <span>
-                                {record.duration_minutes} {texts.duration}
+                                {record.duration_minutes} {language === "ja" ? "分" : "min"}
                               </span>
+                            </div>
+                          )}
+                          {record.repetition_count && (
+                            <div className="text-sm">
+                              <span className="text-muted-foreground">{texts.repetitions}: </span>
+                              <span className="font-semibold">{record.repetition_count}{texts.reps}</span>
+                            </div>
+                          )}
+                          {record.proficiency_level && (
+                            <div>
+                              <p className="text-xs text-muted-foreground mb-1">{texts.proficiency}</p>
+                              {renderStars(record.proficiency_level)}
                             </div>
                           )}
                           {record.difficulty_rating && (
@@ -484,6 +578,48 @@ const PracticeRecordsPage = () => {
                         {record.notes && (
                           <p className="text-sm text-muted-foreground whitespace-pre-wrap">{record.notes}</p>
                         )}
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </TabsContent>
+
+            <TabsContent value="stats" className="space-y-4">
+              {calculateTechniqueStats().length === 0 ? (
+                <Card>
+                  <CardContent className="p-8 text-center text-muted-foreground">
+                    {texts.noRecords}
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="grid gap-4 md:grid-cols-2">
+                  {calculateTechniqueStats().map((stat) => (
+                    <Card key={stat.technique_id}>
+                      <CardContent className="p-4">
+                        <h3 className="font-semibold text-lg mb-4">{stat.technique_name}</h3>
+                        <div className="space-y-3">
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm text-muted-foreground">{texts.totalSessions}</span>
+                            <span className="font-semibold">{stat.total_sessions}{texts.times}</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm text-muted-foreground">{texts.totalReps}</span>
+                            <span className="font-semibold">{stat.total_repetitions}{texts.reps}</span>
+                          </div>
+                          {stat.avg_proficiency > 0 && (
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm text-muted-foreground">{texts.avgProficiency}</span>
+                              {renderStars(Math.round(stat.avg_proficiency))}
+                            </div>
+                          )}
+                          {stat.latest_proficiency > 0 && (
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm text-muted-foreground">{texts.currentProficiency}</span>
+                              {renderStars(stat.latest_proficiency)}
+                            </div>
+                          )}
+                        </div>
                       </CardContent>
                     </Card>
                   ))}
@@ -540,6 +676,18 @@ const PracticeRecordsPage = () => {
                                     <span>
                                       {record.duration_minutes} {language === "ja" ? "分" : "min"}
                                     </span>
+                                  </div>
+                                )}
+                                {record.repetition_count && (
+                                  <div className="text-sm">
+                                    <span className="text-muted-foreground">{texts.repetitions}: </span>
+                                    <span className="font-semibold">{record.repetition_count}{texts.reps}</span>
+                                  </div>
+                                )}
+                                {record.proficiency_level && (
+                                  <div>
+                                    <p className="text-xs text-muted-foreground mb-1">{texts.proficiency}</p>
+                                    {renderStars(record.proficiency_level)}
                                   </div>
                                 )}
                                 {record.difficulty_rating && (
@@ -607,6 +755,34 @@ const PracticeRecordsPage = () => {
                 placeholder="30"
                 value={formData.duration_minutes}
                 onChange={(e) => setFormData({ ...formData, duration_minutes: e.target.value })}
+              />
+            </div>
+            <div>
+              <Label>{texts.proficiency}</Label>
+              <Select
+                value={formData.proficiency_level}
+                onValueChange={(value) => setFormData({ ...formData, proficiency_level: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={language === "ja" ? "選択してください" : "Select"} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1">⭐ - {language === "ja" ? "初級" : language === "pt" ? "Iniciante" : "Beginner"}</SelectItem>
+                  <SelectItem value="2">⭐⭐ - {language === "ja" ? "初中級" : language === "pt" ? "Básico" : "Basic"}</SelectItem>
+                  <SelectItem value="3">⭐⭐⭐ - {language === "ja" ? "中級" : language === "pt" ? "Intermediário" : "Intermediate"}</SelectItem>
+                  <SelectItem value="4">⭐⭐⭐⭐ - {language === "ja" ? "上級" : language === "pt" ? "Avançado" : "Advanced"}</SelectItem>
+                  <SelectItem value="5">⭐⭐⭐⭐⭐ - {language === "ja" ? "熟練" : language === "pt" ? "Especialista" : "Expert"}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>{texts.repetitions}</Label>
+              <Input
+                type="number"
+                placeholder="10"
+                value={formData.repetition_count}
+                onChange={(e) => setFormData({ ...formData, repetition_count: e.target.value })}
+                min="1"
               />
             </div>
             <div>
