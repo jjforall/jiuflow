@@ -30,6 +30,7 @@ import { CelebrityEditRequestsManagement } from "@/components/admin/CelebrityEdi
 import { EventsManagement } from "@/components/admin/EventsManagement";
 import { UserVideosManagement } from "@/components/admin/UserVideosManagement";
 import { BrothersApplicationsManagement } from "@/components/admin/BrothersApplicationsManagement";
+import { SettingsManagement } from "@/components/admin/SettingsManagement";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -294,6 +295,7 @@ const AdminDashboard = () => {
                 {activeTab === "contacts" && <ContactsManagement />}
                 {activeTab === "logs" && <LogsTab />}
                 {activeTab === "tips" && <TipsManagement />}
+                {activeTab === "settings" && <SettingsManagement />}
               </div>
             </div>
           </main>

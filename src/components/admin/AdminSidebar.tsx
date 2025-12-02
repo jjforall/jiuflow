@@ -13,10 +13,8 @@ import {
   Star,
   Calendar,
   Video,
-  Moon,
-  Sun,
+  Settings,
 } from "lucide-react";
-import { useTheme } from "next-themes";
 import {
   Sidebar,
   SidebarContent,
@@ -53,28 +51,17 @@ const menuItems = [
   { id: "contacts", label: "お問い合わせ", icon: Mail },
   { id: "logs", label: "ログ", icon: FileText },
   { id: "tips", label: "投げ銭", icon: Gift },
+  { id: "settings", label: "設定", icon: Settings },
 ];
 
 export function AdminSidebar({ activeTab, onTabChange }: AdminSidebarProps) {
   const { state } = useSidebar();
-  const { theme, setTheme } = useTheme();
   const [isExpanded, setIsExpanded] = useState(true);
   const isCollapsed = state === "collapsed";
 
   return (
     <Sidebar collapsible="icon">
-      <div className="p-4 border-b flex items-center justify-between">
-        <button
-          onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-          className="hover:bg-muted/50 rounded-lg p-2"
-          title={theme === "dark" ? "ライトモード" : "ダークモード"}
-        >
-          {theme === "dark" ? (
-            <Sun className="h-4 w-4" />
-          ) : (
-            <Moon className="h-4 w-4" />
-          )}
-        </button>
+      <div className="p-4 border-b flex items-center justify-end">
         <SidebarTrigger />
       </div>
 
