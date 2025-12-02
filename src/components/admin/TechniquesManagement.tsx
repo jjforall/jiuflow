@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Fragment } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { InputWithSuggestions } from "@/components/ui/input-with-suggestions";
@@ -1546,14 +1546,12 @@ export const TechniquesManagement = () => {
               </tr>
             ) : (
               data?.data.map((technique) => (
-                <Collapsible key={technique.id} open={expandedRows.has(technique.id)} onOpenChange={() => toggleRow(technique.id)}>
+                <Fragment key={technique.id}>
                   <tr className="border-t hover:bg-muted/50 group">
                     <td className="px-3 py-3">
-                      <CollapsibleTrigger asChild>
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                          <ChevronDown className={`h-4 w-4 transition-transform ${expandedRows.has(technique.id) ? "rotate-180" : ""}`} />
-                        </Button>
-                      </CollapsibleTrigger>
+                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => toggleRow(technique.id)}>
+                        <ChevronDown className={`h-4 w-4 transition-transform ${expandedRows.has(technique.id) ? "rotate-180" : ""}`} />
+                      </Button>
                     </td>
                     <td className="px-4 py-3 align-top">
                       <div className="space-y-1.5">
@@ -1631,7 +1629,7 @@ export const TechniquesManagement = () => {
                       </div>
                     </td>
                   </tr>
-                  <CollapsibleContent asChild>
+                  {expandedRows.has(technique.id) && (
                     <tr>
                       <td colSpan={6} className="bg-muted/50 p-4">
                         <div className="space-y-4">
@@ -1725,8 +1723,8 @@ export const TechniquesManagement = () => {
                         </div>
                       </td>
                     </tr>
-                  </CollapsibleContent>
-                </Collapsible>
+                  )}
+                </Fragment>
               ))
             )}
           </tbody>
