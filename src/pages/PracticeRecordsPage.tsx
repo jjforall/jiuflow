@@ -443,15 +443,23 @@ const PracticeRecordsPage = () => {
       <main className="pt-20 pb-16">
         <div className="container mx-auto px-4 max-w-6xl">
           <div className="mb-8">
-            <h1 className="text-4xl font-bold mb-2">{texts.title}</h1>
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-2 break-words">{texts.title}</h1>
           </div>
 
           <Tabs defaultValue="recent" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="recent">{texts.recentVideosTab}</TabsTrigger>
-              <TabsTrigger value="all">{texts.allRecordsTab}</TabsTrigger>
-              <TabsTrigger value="stats">{texts.statsTab}</TabsTrigger>
-              <TabsTrigger value="other">{texts.otherPracticeTab}</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 gap-2">
+              <TabsTrigger value="recent" className="text-xs sm:text-sm whitespace-normal h-auto py-2">
+                {texts.recentVideosTab}
+              </TabsTrigger>
+              <TabsTrigger value="all" className="text-xs sm:text-sm whitespace-normal h-auto py-2">
+                {texts.allRecordsTab}
+              </TabsTrigger>
+              <TabsTrigger value="stats" className="text-xs sm:text-sm whitespace-normal h-auto py-2">
+                {texts.statsTab}
+              </TabsTrigger>
+              <TabsTrigger value="other" className="text-xs sm:text-sm whitespace-normal h-auto py-2">
+                {texts.otherPracticeTab}
+              </TabsTrigger>
             </TabsList>
 
             <TabsContent value="recent" className="space-y-4">
