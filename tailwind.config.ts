@@ -91,6 +91,10 @@ export default {
           "50%": { transform: "translate(0, -40px) scale(1)", opacity: "0.3" },
           "75%": { transform: "translate(-20px, -20px) scale(0.95)", opacity: "0.5" },
         },
+        "spin-slow": {
+          from: { transform: "rotate(0deg)" },
+          to: { transform: "rotate(360deg)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -100,6 +104,7 @@ export default {
         "snowfall": "snowfall linear infinite",
         "wave": "wave 20s ease-in-out infinite",
         "float": "float 15s ease-in-out infinite",
+        "spin-slow": "spin-slow 8s linear infinite",
       },
     },
   },
