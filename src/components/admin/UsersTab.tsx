@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Users, Search, UserPlus } from "lucide-react";
+import { Users, Search, UserPlus, Globe, Lock } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Profile, NewUserData } from "@/types/admin";
@@ -73,6 +73,7 @@ export const UsersTab = () => {
       // Merge subscription data with profiles
       const profilesWithSubs = (profilesData || []).map(profile => ({
         ...profile,
+        is_public: profile.is_public ?? false,
         subscription: subsData?.find(sub => sub.user_id === profile.id)
       }));
 
@@ -108,6 +109,7 @@ export const UsersTab = () => {
   const handleUpdateProfile = async (profile: Profile) => {
     setIsLoading(true);
     try {
+      // Update stripe_customer_id via edge function
       const { data, error } = await supabase.functions.invoke("admin-users", {
         body: {
           action: "update",
@@ -118,6 +120,14 @@ export const UsersTab = () => {
 
       if (error) throw error;
       if (data.error) throw new Error(data.error);
+
+      // Update is_public directly in the database
+      const { error: profileError } = await supabase
+        .from("profiles")
+        .update({ is_public: profile.is_public })
+        .eq("id", profile.id);
+
+      if (profileError) throw profileError;
 
       toast.success("更新完了", {
         description: "会員情報を更新しました",
@@ -337,6 +347,7 @@ export const UsersTab = () => {
                 <th className="px-4 py-3 text-left">メールアドレス</th>
                 <th className="px-4 py-3 text-left">Stripe ID</th>
                 <th className="px-4 py-3 text-left">サブスク</th>
+                <th className="px-4 py-3 text-left">公開</th>
                 <th className="px-4 py-3 text-left">権限</th>
                 <th className="px-4 py-3 text-left">作成日</th>
                 <th className="px-4 py-3 text-right">アクション</th>
@@ -345,13 +356,13 @@ export const UsersTab = () => {
             <tbody>
               {loadingProfiles ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center">
+                  <td colSpan={7} className="px-4 py-8 text-center">
                     読み込み中...
                   </td>
                 </tr>
               ) : filteredProfiles.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
+                  <td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">
                     ユーザーが見つかりませんでした
                   </td>
                 </tr>
@@ -382,6 +393,13 @@ export const UsersTab = () => {
                           </div>
                         ) : (
                           <Badge variant="outline">未加入</Badge>
+                        )}
+                      </td>
+                      <td className="px-4 py-3">
+                        {profile.is_public ? (
+                          <Globe className="h-4 w-4 text-green-500" />
+                        ) : (
+                          <Lock className="h-4 w-4 text-muted-foreground" />
                         )}
                       </td>
                       <td className="px-4 py-3">
@@ -463,7 +481,14 @@ export const UsersTab = () => {
                     <div className="space-y-3">
                       <div className="flex justify-between items-start">
                         <div className="space-y-1">
-                          <p className="font-medium">{profile.email || 'N/A'}</p>
+                          <div className="flex items-center gap-2">
+                            <p className="font-medium">{profile.email || 'N/A'}</p>
+                            {profile.is_public ? (
+                              <Globe className="h-4 w-4 text-green-500" />
+                            ) : (
+                              <Lock className="h-4 w-4 text-muted-foreground" />
+                            )}
+                          </div>
                           <p className="text-xs text-muted-foreground">
                             {profile.stripe_customer_id || 'Stripe ID なし'}
                           </p>

@@ -29,6 +29,7 @@ export interface Profile {
   created_at: string;
   updated_at: string;
   stripe_customer_id: string | null;
+  is_public: boolean;
   user_roles?: Array<{ role: string }>;
   subscription?: {
     user_id: string;
