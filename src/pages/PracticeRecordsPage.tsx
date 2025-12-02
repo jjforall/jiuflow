@@ -210,7 +210,7 @@ const PracticeRecordsPage = () => {
               </div>
             )}
             {/* シリーズラベル */}
-            <div className="absolute top-2 left-2 bg-primary/90 text-primary-foreground text-[10px] sm:text-xs px-2 py-0.5 rounded font-medium">
+            <div className="absolute top-2 right-2 bg-primary/90 text-primary-foreground text-[10px] sm:text-xs px-2 py-0.5 rounded font-medium">
               {seriesLabel}
             </div>
           </div>
