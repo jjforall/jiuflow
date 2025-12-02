@@ -43,6 +43,7 @@ const GlobalMusicPlayer = () => {
   const [isVisible, setIsVisible] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [previousVolume, setPreviousVolume] = useState(0.5);
+  const [isMinimal, setIsMinimal] = useState(false);
 
   useEffect(() => {
     loadPlaylist();
@@ -66,6 +67,52 @@ const GlobalMusicPlayer = () => {
   };
 
   if (!isVisible || playlist.length === 0) return null;
+
+  // Minimal Mode - Small floating button
+  if (isMinimal) {
+    return (
+      <div className="fixed bottom-4 right-4 z-50">
+        <div className="relative">
+          <Button
+            variant="default"
+            size="icon"
+            className="h-14 w-14 rounded-full shadow-lg hover:scale-105 transition-transform"
+            onClick={togglePlay}
+          >
+            {currentTrack?.thumbnail_url ? (
+              <img
+                src={currentTrack.thumbnail_url}
+                alt={currentTrack.title}
+                className="w-full h-full rounded-full object-cover absolute inset-0"
+              />
+            ) : null}
+            <div className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-full">
+              {isPlaying ? (
+                <Pause className="h-6 w-6 text-white" />
+              ) : (
+                <Play className="h-6 w-6 text-white ml-0.5" />
+              )}
+            </div>
+            {isPlaying && (
+              <div className="absolute -top-1 -right-1 flex gap-0.5">
+                <span className="w-1 h-3 bg-primary rounded-full animate-pulse" />
+                <span className="w-1 h-3 bg-primary rounded-full animate-pulse delay-75" />
+                <span className="w-1 h-3 bg-primary rounded-full animate-pulse delay-150" />
+              </div>
+            )}
+          </Button>
+          <Button
+            variant="secondary"
+            size="icon"
+            className="absolute -top-2 -left-2 h-6 w-6 rounded-full shadow"
+            onClick={() => setIsMinimal(false)}
+          >
+            <ChevronUp className="h-3 w-3" />
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -182,6 +229,16 @@ const GlobalMusicPlayer = () => {
             ) : (
               <ChevronUp className="h-4 w-4" />
             )}
+          </Button>
+
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
+            onClick={() => setIsMinimal(true)}
+            title="ミニマルモード"
+          >
+            <Music className="h-4 w-4" />
           </Button>
 
           <Button
