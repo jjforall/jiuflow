@@ -287,7 +287,11 @@ export const TechniquesManagement = () => {
             continue;
           }
 
-          if (statusData?.status === 'completed' && statusData?.videoUrl) {
+          // merging_done も完了として扱う
+          const isCompleted = statusData?.status === 'completed' || 
+                             statusData?.status === 'merging_done';
+
+          if (isCompleted && statusData?.videoUrl) {
             // 翻訳完了 - DBから最新のtechniqueを取得
             const { data: techniqueData, error: fetchError } = await supabase
               .from('techniques')
@@ -1224,7 +1228,11 @@ export const TechniquesManagement = () => {
         return;
       }
 
-      if (statusData?.status === 'completed' && statusData?.videoUrl) {
+      // merging_done も完了として扱う
+      const isCompleted = statusData?.status === 'completed' || 
+                         statusData?.status === 'merging_done';
+
+      if (isCompleted && statusData?.videoUrl) {
         const { data: techniqueData, error: fetchError } = await supabase
           .from('techniques')
           .select('*')
