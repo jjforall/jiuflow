@@ -13,8 +13,7 @@ import { FloatingVideoProvider } from "./contexts/FloatingVideoContext";
 import { FloatingVideoPlayer } from "./components/FloatingVideoPlayer";
 import { MusicProvider } from "./contexts/MusicContext";
 import GlobalMusicPlayer from "./components/GlobalMusicPlayer";
-import Navigation from "@/components/Navigation";
-import Footer from "@/components/Footer";
+import PageLoadingSkeleton from "@/components/PageLoadingSkeleton";
 
 // Lazy load route components for better performance
 const Home = lazy(() => import("./pages/Home"));
@@ -60,28 +59,7 @@ const App = () => (
                 <FloatingVideoProvider>
                 <MusicProvider>
                 <RoutePrefetcher />
-                <Suspense
-                  fallback={
-                    <div className="min-h-screen bg-background">
-                      <Navigation />
-                      <main className="pt-16">
-                        <div className="mx-auto flex max-w-5xl flex-col gap-8 px-4 py-16">
-                          <div className="h-10 w-40 animate-pulse rounded-full bg-muted" />
-                          <div className="grid gap-6 md:grid-cols-2">
-                            <div className="h-40 animate-pulse rounded-xl bg-muted" />
-                            <div className="h-40 animate-pulse rounded-xl bg-muted" />
-                          </div>
-                          <div className="space-y-4">
-                            <div className="h-4 w-3/4 animate-pulse rounded bg-muted" />
-                            <div className="h-4 w-2/3 animate-pulse rounded bg-muted" />
-                            <div className="h-4 w-1/2 animate-pulse rounded bg-muted" />
-                          </div>
-                        </div>
-                      </main>
-                      <Footer />
-                    </div>
-                  }
-                >
+                <Suspense fallback={<PageLoadingSkeleton />}>
                   <Routes>
                   <Route path="/" element={<Home />} />
                   <Route path="/login" element={<Login />} />
