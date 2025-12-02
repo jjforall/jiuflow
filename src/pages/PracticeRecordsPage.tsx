@@ -418,6 +418,14 @@ const PracticeRecordsPage = () => {
     return Array.from(statsMap.values()).sort((a, b) => b.total_sessions - a.total_sessions);
   };
 
+  const getVideoStats = (videoId: string) => {
+    const videoRecords = records.filter(r => r.technique_id === videoId);
+    const totalSessions = videoRecords.length;
+    const totalReps = videoRecords.reduce((sum, r) => sum + (r.repetition_count || 0), 0);
+    const latestRecord = videoRecords[0]; // Already sorted by date desc
+    return { totalSessions, totalReps, latestRecord };
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
@@ -471,39 +479,66 @@ const PracticeRecordsPage = () => {
                 </Card>
               ) : (
                 <div className="grid gap-4 sm:grid-cols-2">
-                  {recentVideos.map((video) => (
-                    <Card key={video.id} className="overflow-hidden">
-                      <CardContent className="p-3 sm:p-4">
-                        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
-                          <div className="w-full sm:w-32 h-32 sm:h-20 bg-muted rounded-lg overflow-hidden flex-shrink-0">
-                            {video.video.thumbnail_url && (
-                              <img
-                                src={video.video.thumbnail_url}
-                                alt={getTechniqueName(video.video)}
-                                className="w-full h-full object-cover"
-                              />
-                            )}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <h3 className="font-semibold mb-1 text-sm sm:text-base line-clamp-2">{getTechniqueName(video.video)}</h3>
-                            <p className="text-xs sm:text-sm text-muted-foreground mb-2">{video.video.category}</p>
-                            <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs text-muted-foreground mb-3">
-                              <span className="whitespace-nowrap">
-                                {texts.lastViewed}: {format(new Date(video.last_viewed_at), "yyyy/MM/dd")}
-                              </span>
-                              <span className="whitespace-nowrap">
-                                {video.view_count} {texts.viewCount}
-                              </span>
+                  {recentVideos.map((video) => {
+                    const stats = getVideoStats(video.video_id);
+                    return (
+                      <Card key={video.id} className="overflow-hidden">
+                        <CardContent className="p-3 sm:p-4">
+                          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+                            <div className="w-full sm:w-32 h-32 sm:h-20 bg-muted rounded-lg overflow-hidden flex-shrink-0">
+                              {video.video.thumbnail_url && (
+                                <img
+                                  src={video.video.thumbnail_url}
+                                  alt={getTechniqueName(video.video)}
+                                  className="w-full h-full object-cover"
+                                />
+                              )}
                             </div>
-                            <Button size="sm" onClick={() => openDialog(video)} className="w-full text-xs sm:text-sm">
-                              <Plus className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                              <span className="truncate">{texts.addFromVideo}</span>
-                            </Button>
+                            <div className="flex-1 min-w-0">
+                              <h3 className="font-semibold mb-1 text-sm sm:text-base line-clamp-2">{getTechniqueName(video.video)}</h3>
+                              <p className="text-xs sm:text-sm text-muted-foreground mb-2">{video.video.category}</p>
+                              
+                              {stats.totalSessions > 0 ? (
+                                <div className="bg-primary/10 rounded-lg p-2 mb-2">
+                                  <div className="flex items-center gap-4 text-xs">
+                                    <div className="flex items-center gap-1">
+                                      <span className="font-semibold text-primary">{stats.totalSessions}</span>
+                                      <span className="text-muted-foreground">{texts.times}</span>
+                                    </div>
+                                    {stats.totalReps > 0 && (
+                                      <div className="flex items-center gap-1">
+                                        <span className="font-semibold text-primary">{stats.totalReps}</span>
+                                        <span className="text-muted-foreground">{texts.reps}</span>
+                                      </div>
+                                    )}
+                                    {stats.latestRecord && (
+                                      <span className="text-muted-foreground whitespace-nowrap">
+                                        {language === "ja" ? "最終:" : "Last:"} {format(new Date(stats.latestRecord.practice_date), "MM/dd")}
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs text-muted-foreground mb-2">
+                                  <span className="whitespace-nowrap">
+                                    {texts.lastViewed}: {format(new Date(video.last_viewed_at), "yyyy/MM/dd")}
+                                  </span>
+                                  <span className="whitespace-nowrap">
+                                    {video.view_count} {texts.viewCount}
+                                  </span>
+                                </div>
+                              )}
+                              
+                              <Button size="sm" onClick={() => openDialog(video)} className="w-full text-xs sm:text-sm">
+                                <Plus className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                                <span className="truncate">{texts.addFromVideo}</span>
+                              </Button>
+                            </div>
                           </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
                 </div>
               )}
             </TabsContent>
@@ -602,39 +637,54 @@ const PracticeRecordsPage = () => {
                 </Card>
               ) : (
                 <div className="grid gap-3 sm:gap-4 sm:grid-cols-2">
-                  {calculateTechniqueStats().map((stat) => (
-                    <Card key={stat.technique_id}>
-                      <CardContent className="p-3 sm:p-4">
-                        <h3 className="font-semibold text-base sm:text-lg mb-3 sm:mb-4 break-words">{stat.technique_name}</h3>
-                        <div className="space-y-2 sm:space-y-3">
-                          <div className="flex justify-between items-center gap-2">
-                            <span className="text-xs sm:text-sm text-muted-foreground">{texts.totalSessions}</span>
-                            <span className="font-semibold text-sm sm:text-base whitespace-nowrap">{stat.total_sessions}{texts.times}</span>
+                  {calculateTechniqueStats().map((stat) => {
+                    const progressPercent = stat.latest_proficiency ? (stat.latest_proficiency / 5) * 100 : 0;
+                    return (
+                      <Card key={stat.technique_id} className="overflow-hidden">
+                        <CardContent className="p-3 sm:p-4">
+                          <div className="flex items-start justify-between mb-3 sm:mb-4">
+                            <h3 className="font-semibold text-base sm:text-lg break-words flex-1">{stat.technique_name}</h3>
+                            {stat.latest_proficiency > 0 && (
+                              <div className="flex-shrink-0 ml-2">
+                                {renderStars(stat.latest_proficiency)}
+                              </div>
+                            )}
                           </div>
-                          <div className="flex justify-between items-center gap-2">
-                            <span className="text-xs sm:text-sm text-muted-foreground">{texts.totalReps}</span>
-                            <span className="font-semibold text-sm sm:text-base whitespace-nowrap">{stat.total_repetitions}{texts.reps}</span>
+                          
+                          {stat.latest_proficiency > 0 && (
+                            <div className="mb-3">
+                              <div className="h-2 bg-muted rounded-full overflow-hidden">
+                                <div 
+                                  className="h-full bg-gradient-to-r from-primary to-primary/80 transition-all duration-300"
+                                  style={{ width: `${progressPercent}%` }}
+                                />
+                              </div>
+                            </div>
+                          )}
+                          
+                          <div className="grid grid-cols-2 gap-2 sm:gap-3">
+                            <div className="bg-muted/50 rounded-lg p-2">
+                              <p className="text-xs text-muted-foreground mb-1">{texts.totalSessions}</p>
+                              <p className="text-lg sm:text-xl font-bold text-primary">{stat.total_sessions}</p>
+                            </div>
+                            <div className="bg-muted/50 rounded-lg p-2">
+                              <p className="text-xs text-muted-foreground mb-1">{texts.totalReps}</p>
+                              <p className="text-lg sm:text-xl font-bold text-primary">{stat.total_repetitions}</p>
+                            </div>
                           </div>
+                          
                           {stat.avg_proficiency > 0 && (
-                            <div className="flex justify-between items-center gap-2">
+                            <div className="mt-3 pt-3 border-t flex justify-between items-center">
                               <span className="text-xs sm:text-sm text-muted-foreground">{texts.avgProficiency}</span>
                               <div className="flex-shrink-0">
                                 {renderStars(Math.round(stat.avg_proficiency))}
                               </div>
                             </div>
                           )}
-                          {stat.latest_proficiency > 0 && (
-                            <div className="flex justify-between items-center gap-2">
-                              <span className="text-xs sm:text-sm text-muted-foreground">{texts.currentProficiency}</span>
-                              <div className="flex-shrink-0">
-                                {renderStars(stat.latest_proficiency)}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
                 </div>
               )}
             </TabsContent>
