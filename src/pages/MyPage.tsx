@@ -3335,17 +3335,7 @@ const MyPage = () => {
                       />
                     </div>
 
-                    <div className="flex items-center gap-3">
-                      <Mail className="h-4 w-4 text-muted-foreground" />
-                      <div>
-                        <p className="text-xs text-muted-foreground">
-                          {language === "ja" ? "メールアドレス" : "Email"}
-                        </p>
-                        <p className="font-light">{user?.email}</p>
-                      </div>
-                    </div>
-
-                    {/* Username field */}
+                    {/* Username field - moved to top */}
                     <div>
                       <div className="flex items-center justify-between mb-2">
                         <h3 className="text-sm font-semibold">{language === "ja" ? "公開用URL（ユーザー名）" : "Public URL (Username)"}</h3>
@@ -3390,6 +3380,16 @@ const MyPage = () => {
                           </p>
                         </div>
                       )}
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <Mail className="h-4 w-4 text-muted-foreground" />
+                      <div>
+                        <p className="text-xs text-muted-foreground">
+                          {language === "ja" ? "メールアドレス" : "Email"}
+                        </p>
+                        <p className="font-light">{user?.email}</p>
+                      </div>
                     </div>
 
                     <div className="flex items-center gap-3">
