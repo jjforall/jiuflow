@@ -3,12 +3,14 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import Navigation from "@/components/Navigation";
 import { toast } from "sonner";
 import { Users, DollarSign, UserCheck } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 
 // Import tab components
 import { TechniquesManagement } from "@/components/admin/TechniquesManagement";
@@ -41,6 +43,8 @@ const AdminDashboard = () => {
     trialRevenue: 0,
     loading: true,
   });
+  const [showMembersChart, setShowMembersChart] = useState(false);
+  const [chartData, setChartData] = useState<Array<{date: string; totalMembers: number; paidMembers: number}>>([]);
 
   useEffect(() => {
     fetchStats();
@@ -98,8 +102,81 @@ const AdminDashboard = () => {
     }
   };
 
+  const fetchChartData = async () => {
+    try {
+      // 全プロフィールを取得（作成日付順）
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('created_at')
+        .order('created_at', { ascending: true });
+
+      if (profilesError) throw profilesError;
+
+      // サブスクリプション情報を取得
+      const { data: subscriptionsData, error: subsError } = await supabase.functions.invoke("list-subscriptions");
+      if (subsError) throw subsError;
+
+      const subscriptions = subscriptionsData?.subscriptions || [];
+
+      // 日付ごとにデータを集計
+      const dateMap = new Map<string, { total: number; paid: number }>();
+      
+      // 過去30日分のデータを準備
+      const today = new Date();
+      for (let i = 29; i >= 0; i--) {
+        const date = new Date(today);
+        date.setDate(date.getDate() - i);
+        const dateStr = date.toISOString().split('T')[0];
+        dateMap.set(dateStr, { total: 0, paid: 0 });
+      }
+
+      // 各日付までの累計会員数を計算
+      profiles?.forEach(profile => {
+        const createdDate = new Date(profile.created_at);
+        dateMap.forEach((value, dateStr) => {
+          const targetDate = new Date(dateStr);
+          if (createdDate <= targetDate) {
+            value.total++;
+          }
+        });
+      });
+
+      // 各日付までの累計有料会員数を計算
+      subscriptions.forEach((sub: any) => {
+        if (sub.created_at) {
+          const createdDate = new Date(sub.created_at);
+          dateMap.forEach((value, dateStr) => {
+            const targetDate = new Date(dateStr);
+            if (createdDate <= targetDate && (sub.status === 'active' || sub.status === 'trialing')) {
+              value.paid++;
+            }
+          });
+        }
+      });
+
+      // グラフ用のデータに変換
+      const chartArray = Array.from(dateMap.entries()).map(([date, counts]) => ({
+        date: new Date(date).toLocaleDateString('ja-JP', { month: 'short', day: 'numeric' }),
+        totalMembers: counts.total,
+        paidMembers: counts.paid,
+      }));
+
+      setChartData(chartArray);
+    } catch (error) {
+      console.error('グラフデータ取得エラー:', error);
+      toast.error('グラフデータの取得に失敗しました');
+    }
+  };
+
   const handleLogout = async () => {
     await signOut();
+  };
+
+  const handleMembersCardClick = async () => {
+    setShowMembersChart(true);
+    if (chartData.length === 0) {
+      await fetchChartData();
+    }
   };
 
   return (
@@ -122,7 +199,10 @@ const AdminDashboard = () => {
             <div className="max-w-7xl mx-auto">
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
-            <Card>
+            <Card 
+              className="cursor-pointer hover:bg-accent/50 transition-colors"
+              onClick={handleMembersCardClick}
+            >
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">総会員数</CardTitle>
                 <Users className="h-4 w-4 text-muted-foreground" />
@@ -131,7 +211,7 @@ const AdminDashboard = () => {
                 <div className="text-2xl font-bold">
                   {stats.loading ? "..." : stats.totalMembers.toLocaleString()}
                 </div>
-                <p className="text-xs text-muted-foreground mt-1">登録ユーザー総数</p>
+                <p className="text-xs text-muted-foreground mt-1">登録ユーザー総数（クリックでグラフ表示）</p>
               </CardContent>
             </Card>
 
@@ -211,6 +291,39 @@ const AdminDashboard = () => {
           </main>
         </div>
       </div>
+
+      <Dialog open={showMembersChart} onOpenChange={setShowMembersChart}>
+        <DialogContent className="max-w-4xl">
+          <DialogHeader>
+            <DialogTitle>会員数の推移（過去30日間）</DialogTitle>
+          </DialogHeader>
+          <div className="h-[400px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={chartData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="date" />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                <Line 
+                  type="monotone" 
+                  dataKey="totalMembers" 
+                  stroke="hsl(var(--primary))" 
+                  name="総会員数"
+                  strokeWidth={2}
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="paidMembers" 
+                  stroke="hsl(var(--chart-2))" 
+                  name="有料会員数"
+                  strokeWidth={2}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </DialogContent>
+      </Dialog>
     </SidebarProvider>
   );
 };
