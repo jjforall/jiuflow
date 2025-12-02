@@ -682,7 +682,41 @@ export default function Dojo() {
                       {language === "ja" ? "料金プラン" : "Pricing Plans"}
                     </h2>
                   </div>
-                  {dojo.pricing.plans && Array.isArray(dojo.pricing.plans) ? (
+                  
+                  {/* Note display */}
+                  {(dojo.pricing.note || dojo.pricing.note_ja) && (
+                    <p className="text-muted-foreground mb-6 p-4 bg-muted/50 rounded-lg">
+                      {language === "ja" && dojo.pricing.note_ja ? dojo.pricing.note_ja : dojo.pricing.note}
+                    </p>
+                  )}
+                  
+                  {/* Personal Training Plans */}
+                  {dojo.pricing.personal_training && Array.isArray(dojo.pricing.personal_training) && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {dojo.pricing.personal_training.map((plan: any, idx: number) => (
+                        <div key={idx} className="p-6 border-2 rounded-2xl hover:border-primary hover:shadow-lg transition-all duration-300 bg-gradient-to-br from-card to-card/50">
+                          <h3 className="font-bold text-xl mb-4 text-primary">
+                            {plan.instructor}
+                          </h3>
+                          {plan.price_3 && (
+                            <div className="mb-2">
+                              <span className="text-lg font-semibold">3{language === "ja" ? "回" : " sessions"}: </span>
+                              <span className="text-2xl font-bold">¥{plan.price_3.toLocaleString()}</span>
+                            </div>
+                          )}
+                          {plan.price_10 && (
+                            <div>
+                              <span className="text-lg font-semibold">10{language === "ja" ? "回" : " sessions"}: </span>
+                              <span className="text-2xl font-bold">¥{plan.price_10.toLocaleString()}</span>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Standard Plans */}
+                  {dojo.pricing.plans && Array.isArray(dojo.pricing.plans) && (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       {dojo.pricing.plans.map((plan: any, idx: number) => (
                         <div key={idx} className="p-6 border-2 rounded-2xl hover:border-primary hover:shadow-lg transition-all duration-300 bg-gradient-to-br from-card to-card/50">
@@ -702,24 +736,6 @@ export default function Dojo() {
                           )}
                         </div>
                       ))}
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      {Object.entries(dojo.pricing).map(([key, value]: [string, any]) => {
-                        // Skip if value is an object or not displayable
-                        if (typeof value === 'object' && value !== null) {
-                          return null;
-                        }
-                        
-                        return (
-                          <div key={key} className="flex justify-between items-center p-4 border rounded-xl hover:shadow-md transition-all bg-card">
-                            <span className="font-semibold text-lg">{key}</span>
-                            <span className="text-2xl font-bold text-primary">
-                              {typeof value === 'number' ? `¥${value.toLocaleString()}` : String(value)}
-                            </span>
-                          </div>
-                        );
-                      })}
                     </div>
                   )}
                 </CardContent>
@@ -789,30 +805,50 @@ export default function Dojo() {
                     <div className="mb-4">
                       <h3 className="font-semibold mb-2">{language === "ja" ? "設備" : "Amenities"}</h3>
                       <ul className="space-y-2">
-                        {Object.entries(dojo.facilities).map(([key, value]: [string, any]) => (
-                          <li key={key} className="flex items-start gap-2">
-                            <span className="text-primary">•</span>
-                            <span>{typeof value === 'string' ? value : getLocalizedValue(value)}</span>
-                          </li>
-                        ))}
+                        {Object.entries(dojo.facilities).map(([key, value]: [string, any]) => {
+                          // Get localized description from the facility object
+                          let displayText = '';
+                          if (typeof value === 'string') {
+                            displayText = value;
+                          } else if (typeof value === 'object' && value !== null) {
+                            if (language === "ja" && value.description_ja) {
+                              displayText = value.description_ja;
+                            } else if (value.description) {
+                              displayText = value.description;
+                            } else {
+                              displayText = getLocalizedValue(value);
+                            }
+                          }
+                          return (
+                            <li key={key} className="flex items-start gap-2">
+                              <span className="text-primary">•</span>
+                              <span>{displayText}</span>
+                            </li>
+                          );
+                        })}
                       </ul>
                     </div>
                   )}
                   {dojo.opening_hours && Object.keys(dojo.opening_hours).length > 0 && (
                     <div className="mb-4">
                       <h3 className="font-semibold mb-2">{language === "ja" ? "営業時間" : "Hours"}</h3>
-                      {typeof dojo.opening_hours === 'object' && (dojo.opening_hours.note_en || dojo.opening_hours.note_ja || dojo.opening_hours.note) ? (
-                        <p className="text-muted-foreground">{getLocalizedValue(dojo.opening_hours, 'note')}</p>
-                      ) : (
-                        <div className="space-y-1">
-                          {Object.entries(dojo.opening_hours).map(([day, hours]: [string, any]) => (
-                            <div key={day} className="flex justify-between p-2 border rounded">
-                              <span className="font-medium">{day}</span>
+                      <div className="space-y-1">
+                        {Object.entries(dojo.opening_hours).map(([key, hours]: [string, any]) => {
+                          // Convert key to readable label
+                          const labelMap: Record<string, string> = {
+                            'wellbeing_design_9f': 'Wellbeing Design (9F)',
+                            'jiu_jitsu_academy_8f': 'Jiu-Jitsu Academy (8F)',
+                          };
+                          const label = labelMap[key] || key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                          
+                          return (
+                            <div key={key} className="flex justify-between p-2 border rounded">
+                              <span className="font-medium">{label}</span>
                               <span>{typeof hours === 'string' ? hours : getLocalizedValue(hours)}</span>
                             </div>
-                          ))}
-                        </div>
-                      )}
+                          );
+                        })}
+                      </div>
                     </div>
                   )}
                   {getAccessInfo(dojo) && (
@@ -832,18 +868,29 @@ export default function Dojo() {
                   <h2 className="text-xl font-semibold mb-4">
                     {language === "ja" ? "体験案内" : "Trial Information"}
                   </h2>
-                  {dojo.trial_info.description_en || dojo.trial_info.description_ja || dojo.trial_info.description ? (
-                    <p className="text-base leading-relaxed">{getLocalizedValue(dojo.trial_info, 'description')}</p>
-                  ) : (
-                    <ul className="space-y-2">
-                      {Object.entries(dojo.trial_info).map(([key, value]: [string, any]) => (
-                        <li key={key} className="flex items-start gap-2">
-                          <span className="text-primary">•</span>
-                          <span>{typeof value === 'string' ? value : getLocalizedValue(value)}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
+                  <ul className="space-y-2">
+                    {/* Note */}
+                    {(dojo.trial_info.note || dojo.trial_info.note_ja) && (
+                      <li className="flex items-start gap-2">
+                        <span className="text-primary">•</span>
+                        <span>{language === "ja" && dojo.trial_info.note_ja ? dojo.trial_info.note_ja : dojo.trial_info.note}</span>
+                      </li>
+                    )}
+                    {/* Required Items */}
+                    {(dojo.trial_info.required_items || dojo.trial_info.required_items_ja) && (
+                      <li className="flex items-start gap-2">
+                        <span className="text-primary">•</span>
+                        <span>{language === "ja" && dojo.trial_info.required_items_ja ? dojo.trial_info.required_items_ja : dojo.trial_info.required_items}</span>
+                      </li>
+                    )}
+                    {/* Contact Methods */}
+                    {dojo.trial_info.contact_methods && Array.isArray(dojo.trial_info.contact_methods) && (
+                      <li className="flex items-start gap-2">
+                        <span className="text-primary">•</span>
+                        <span>{dojo.trial_info.contact_methods.join('、')}</span>
+                      </li>
+                    )}
+                  </ul>
                 </CardContent>
               </Card>
             )}
