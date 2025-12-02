@@ -508,23 +508,23 @@ export function UserVideosManagement() {
                         </div>
 
                         <CollapsibleContent className="mt-3 pt-3 border-t">
-                          <div className="space-y-2 text-sm pl-9">
+                          <div className="space-y-3 text-sm pl-9">
                             <div>
-                              <span className="font-medium text-xs text-muted-foreground">説明</span>
-                              <p className="text-sm mt-1">
+                              <span className="font-medium text-xs text-muted-foreground block mb-1">説明</span>
+                              <p className="text-sm text-foreground">
                                 {video.description || "説明なし"}
                               </p>
                             </div>
-                            <div className="grid grid-cols-2 gap-3 text-xs">
+                            <div className="space-y-2">
                               <div>
-                                <span className="font-medium text-muted-foreground">価格</span>
-                                <p className="mt-0.5">
+                                <span className="font-medium text-xs text-muted-foreground block mb-1">価格</span>
+                                <p className="text-sm text-foreground">
                                   {video.price ? `¥${video.price.toLocaleString()}` : "無料"}
                                 </p>
                               </div>
                               <div>
-                                <span className="font-medium text-muted-foreground">投稿日</span>
-                                <p className="mt-0.5">
+                                <span className="font-medium text-xs text-muted-foreground block mb-1">投稿日</span>
+                                <p className="text-sm text-foreground">
                                   {format(new Date(video.created_at), "yyyy/MM/dd", { locale: ja })}
                                 </p>
                               </div>
