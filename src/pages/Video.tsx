@@ -80,26 +80,49 @@ const Video = () => {
     notes: "",
   });
 
-  // 動画ページに来たら音楽を再生し、音量を25%以下に調整
+  // 動画ページに来たら音楽を再生し、音量をフェードインで徐々に上げる
   useEffect(() => {
+    const targetVolume = 0.25; // 最終的な音量（25%）
+    const fadeDuration = 2000; // フェードイン時間（2秒）
+    const fadeSteps = 20; // フェードのステップ数
+    const stepDuration = fadeDuration / fadeSteps;
+    
+    let fadeInterval: NodeJS.Timeout;
+    let currentStep = 0;
+
     const startMusicOnVideoPage = async () => {
       // プレイリストがなければ読み込む
       if (playlist.length === 0) {
         await loadPlaylist();
       }
       
-      // 音量が25%以上なら25%に下げる
-      if (volume > 0.25) {
-        setVolume(0.25);
-      }
+      // 最初は音量を0にしてから再生開始
+      setVolume(0);
       
       // 再生していなければ再生開始
       if (!isPlaying) {
         play();
       }
+      
+      // フェードインで徐々に音量を上げる
+      fadeInterval = setInterval(() => {
+        currentStep++;
+        const newVolume = (targetVolume / fadeSteps) * currentStep;
+        setVolume(Math.min(newVolume, targetVolume));
+        
+        if (currentStep >= fadeSteps) {
+          clearInterval(fadeInterval);
+        }
+      }, stepDuration);
     };
 
     startMusicOnVideoPage();
+
+    return () => {
+      if (fadeInterval) {
+        clearInterval(fadeInterval);
+      }
+    };
   }, []); // 初回のみ実行
 
   // Cleanup and activate floating video on unmount
