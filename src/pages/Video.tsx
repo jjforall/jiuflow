@@ -21,6 +21,7 @@ import { VideoComments } from "@/components/VideoComments";
 import { VideoTip } from "@/components/VideoTip";
 import { Separator } from "@/components/ui/separator";
 import { useFloatingVideo } from "@/contexts/FloatingVideoContext";
+import { useMusic } from "@/contexts/MusicContext";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -63,6 +64,7 @@ const Video = () => {
   const { subscribed, loading: subscriptionLoading } = useSubscription();
   const { isAdmin, isStaff, user } = useAuth();
   const { setFloatingVideo } = useFloatingVideo();
+  const { play, isPlaying, volume, setVolume, playlist, loadPlaylist } = useMusic();
   const [technique, setTechnique] = useState<Technique | null>(null);
   const [seriesVideos, setSeriesVideos] = useState<Technique[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -77,6 +79,28 @@ const Video = () => {
     repetition_count: "30",
     notes: "",
   });
+
+  // 動画ページに来たら音楽を再生し、音量を25%以下に調整
+  useEffect(() => {
+    const startMusicOnVideoPage = async () => {
+      // プレイリストがなければ読み込む
+      if (playlist.length === 0) {
+        await loadPlaylist();
+      }
+      
+      // 音量が25%以上なら25%に下げる
+      if (volume > 0.25) {
+        setVolume(0.25);
+      }
+      
+      // 再生していなければ再生開始
+      if (!isPlaying) {
+        play();
+      }
+    };
+
+    startMusicOnVideoPage();
+  }, []); // 初回のみ実行
 
   // Cleanup and activate floating video on unmount
   useEffect(() => {
