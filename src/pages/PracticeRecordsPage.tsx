@@ -470,12 +470,12 @@ const PracticeRecordsPage = () => {
                   </CardContent>
                 </Card>
               ) : (
-                <div className="grid gap-4 md:grid-cols-2">
+                <div className="grid gap-4 sm:grid-cols-2">
                   {recentVideos.map((video) => (
                     <Card key={video.id} className="overflow-hidden">
-                      <CardContent className="p-4">
-                        <div className="flex gap-4">
-                          <div className="w-32 h-20 bg-muted rounded-lg overflow-hidden flex-shrink-0">
+                      <CardContent className="p-3 sm:p-4">
+                        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+                          <div className="w-full sm:w-32 h-32 sm:h-20 bg-muted rounded-lg overflow-hidden flex-shrink-0">
                             {video.video.thumbnail_url && (
                               <img
                                 src={video.video.thumbnail_url}
@@ -485,19 +485,19 @@ const PracticeRecordsPage = () => {
                             )}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <h3 className="font-semibold mb-1 truncate">{getTechniqueName(video.video)}</h3>
-                            <p className="text-sm text-muted-foreground mb-2">{video.video.category}</p>
-                            <div className="flex items-center gap-4 text-xs text-muted-foreground mb-3">
-                              <span>
+                            <h3 className="font-semibold mb-1 text-sm sm:text-base line-clamp-2">{getTechniqueName(video.video)}</h3>
+                            <p className="text-xs sm:text-sm text-muted-foreground mb-2">{video.video.category}</p>
+                            <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs text-muted-foreground mb-3">
+                              <span className="whitespace-nowrap">
                                 {texts.lastViewed}: {format(new Date(video.last_viewed_at), "yyyy/MM/dd")}
                               </span>
-                              <span>
+                              <span className="whitespace-nowrap">
                                 {video.view_count} {texts.viewCount}
                               </span>
                             </div>
-                            <Button size="sm" onClick={() => openDialog(video)} className="w-full">
-                              <Plus className="h-4 w-4 mr-2" />
-                              {texts.addFromVideo}
+                            <Button size="sm" onClick={() => openDialog(video)} className="w-full text-xs sm:text-sm">
+                              <Plus className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                              <span className="truncate">{texts.addFromVideo}</span>
                             </Button>
                           </div>
                         </div>
@@ -516,43 +516,43 @@ const PracticeRecordsPage = () => {
                   </CardContent>
                 </Card>
               ) : (
-                <div className="space-y-4">
+                <div className="space-y-3 sm:space-y-4">
                   {records.map((record) => (
                     <Card key={record.id}>
-                      <CardContent className="p-4">
-                        <div className="flex justify-between items-start mb-4">
-                          <div>
-                            <p className="text-sm text-muted-foreground mb-1">
+                      <CardContent className="p-3 sm:p-4">
+                        <div className="flex justify-between items-start gap-2 mb-3 sm:mb-4">
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs sm:text-sm text-muted-foreground mb-1">
                               {format(new Date(record.practice_date), "yyyy年MM月dd日")}
                             </p>
                             {record.technique && (
-                              <h3 className="font-semibold text-lg">{getTechniqueName(record.technique)}</h3>
+                              <h3 className="font-semibold text-base sm:text-lg break-words">{getTechniqueName(record.technique)}</h3>
                             )}
                             {record.user_video && (
-                              <h3 className="font-semibold text-lg">{record.user_video.title}</h3>
+                              <h3 className="font-semibold text-base sm:text-lg break-words">{record.user_video.title}</h3>
                             )}
                             {!record.technique && !record.user_video && (
-                              <h3 className="font-semibold text-lg">{texts.other}</h3>
+                              <h3 className="font-semibold text-base sm:text-lg">{texts.other}</h3>
                             )}
                           </div>
-                          <div className="flex gap-2">
-                            <Button size="icon" variant="ghost" onClick={() => openDialog(undefined, record)}>
-                              <Edit2 className="h-4 w-4" />
+                          <div className="flex gap-1 sm:gap-2 flex-shrink-0">
+                            <Button size="icon" variant="ghost" onClick={() => openDialog(undefined, record)} className="h-8 w-8 sm:h-10 sm:w-10">
+                              <Edit2 className="h-3 w-3 sm:h-4 sm:w-4" />
                             </Button>
                             <Button
                               size="icon"
                               variant="ghost"
-                              className="text-destructive"
+                              className="text-destructive h-8 w-8 sm:h-10 sm:w-10"
                               onClick={() => handleDelete(record.id)}
                             >
-                              <Trash2 className="h-4 w-4" />
+                              <Trash2 className="h-3 w-3 sm:h-4 sm:w-4" />
                             </Button>
                           </div>
                         </div>
-                        <div className="grid grid-cols-2 gap-4 mb-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-3 sm:mb-4">
                           {record.duration_minutes && (
                             <div className="flex items-center gap-2 text-sm">
-                              <Clock className="h-4 w-4 text-muted-foreground" />
+                              <Clock className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                               <span>
                                 {record.duration_minutes} {language === "ja" ? "分" : "min"}
                               </span>
@@ -584,7 +584,7 @@ const PracticeRecordsPage = () => {
                           )}
                         </div>
                         {record.notes && (
-                          <p className="text-sm text-muted-foreground whitespace-pre-wrap">{record.notes}</p>
+                          <p className="text-xs sm:text-sm text-muted-foreground whitespace-pre-wrap break-words">{record.notes}</p>
                         )}
                       </CardContent>
                     </Card>
@@ -601,30 +601,34 @@ const PracticeRecordsPage = () => {
                   </CardContent>
                 </Card>
               ) : (
-                <div className="grid gap-4 md:grid-cols-2">
+                <div className="grid gap-3 sm:gap-4 sm:grid-cols-2">
                   {calculateTechniqueStats().map((stat) => (
                     <Card key={stat.technique_id}>
-                      <CardContent className="p-4">
-                        <h3 className="font-semibold text-lg mb-4">{stat.technique_name}</h3>
-                        <div className="space-y-3">
-                          <div className="flex justify-between items-center">
-                            <span className="text-sm text-muted-foreground">{texts.totalSessions}</span>
-                            <span className="font-semibold">{stat.total_sessions}{texts.times}</span>
+                      <CardContent className="p-3 sm:p-4">
+                        <h3 className="font-semibold text-base sm:text-lg mb-3 sm:mb-4 break-words">{stat.technique_name}</h3>
+                        <div className="space-y-2 sm:space-y-3">
+                          <div className="flex justify-between items-center gap-2">
+                            <span className="text-xs sm:text-sm text-muted-foreground">{texts.totalSessions}</span>
+                            <span className="font-semibold text-sm sm:text-base whitespace-nowrap">{stat.total_sessions}{texts.times}</span>
                           </div>
-                          <div className="flex justify-between items-center">
-                            <span className="text-sm text-muted-foreground">{texts.totalReps}</span>
-                            <span className="font-semibold">{stat.total_repetitions}{texts.reps}</span>
+                          <div className="flex justify-between items-center gap-2">
+                            <span className="text-xs sm:text-sm text-muted-foreground">{texts.totalReps}</span>
+                            <span className="font-semibold text-sm sm:text-base whitespace-nowrap">{stat.total_repetitions}{texts.reps}</span>
                           </div>
                           {stat.avg_proficiency > 0 && (
-                            <div className="flex justify-between items-center">
-                              <span className="text-sm text-muted-foreground">{texts.avgProficiency}</span>
-                              {renderStars(Math.round(stat.avg_proficiency))}
+                            <div className="flex justify-between items-center gap-2">
+                              <span className="text-xs sm:text-sm text-muted-foreground">{texts.avgProficiency}</span>
+                              <div className="flex-shrink-0">
+                                {renderStars(Math.round(stat.avg_proficiency))}
+                              </div>
                             </div>
                           )}
                           {stat.latest_proficiency > 0 && (
-                            <div className="flex justify-between items-center">
-                              <span className="text-sm text-muted-foreground">{texts.currentProficiency}</span>
-                              {renderStars(stat.latest_proficiency)}
+                            <div className="flex justify-between items-center gap-2">
+                              <span className="text-xs sm:text-sm text-muted-foreground">{texts.currentProficiency}</span>
+                              <div className="flex-shrink-0">
+                                {renderStars(stat.latest_proficiency)}
+                              </div>
                             </div>
                           )}
                         </div>
@@ -637,50 +641,50 @@ const PracticeRecordsPage = () => {
 
             <TabsContent value="other">
               <Card>
-                <CardHeader>
-                  <CardTitle className="flex justify-between items-center">
-                    <span>{texts.otherPracticeTab}</span>
-                    <Button onClick={() => openDialog()}>
-                      <Plus className="h-4 w-4 mr-2" />
-                      {texts.addRecord}
+                <CardHeader className="p-3 sm:p-6">
+                  <CardTitle className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-4">
+                    <span className="text-base sm:text-lg">{texts.otherPracticeTab}</span>
+                    <Button onClick={() => openDialog()} size="sm" className="w-full sm:w-auto">
+                      <Plus className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                      <span className="text-xs sm:text-sm">{texts.addRecord}</span>
                     </Button>
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
+                <CardContent className="p-3 sm:p-6">
+                  <div className="space-y-3 sm:space-y-4">
                     {records.filter((r) => !r.technique_id && !r.user_video_id).length === 0 ? (
-                      <p className="text-center text-muted-foreground py-8">{texts.noRecords}</p>
+                      <p className="text-center text-muted-foreground py-8 text-sm">{texts.noRecords}</p>
                     ) : (
                       records
                         .filter((r) => !r.technique_id && !r.user_video_id)
                         .map((record) => (
                           <Card key={record.id}>
-                            <CardContent className="p-4">
-                              <div className="flex justify-between items-start mb-4">
-                                <div>
-                                  <p className="text-sm text-muted-foreground mb-1">
+                            <CardContent className="p-3 sm:p-4">
+                              <div className="flex justify-between items-start gap-2 mb-3 sm:mb-4">
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-xs sm:text-sm text-muted-foreground mb-1">
                                     {format(new Date(record.practice_date), "yyyy年MM月dd日")}
                                   </p>
-                                  <h3 className="font-semibold text-lg">{texts.other}</h3>
+                                  <h3 className="font-semibold text-base sm:text-lg">{texts.other}</h3>
                                 </div>
-                                <div className="flex gap-2">
-                                  <Button size="icon" variant="ghost" onClick={() => openDialog(undefined, record)}>
-                                    <Edit2 className="h-4 w-4" />
+                                <div className="flex gap-1 sm:gap-2 flex-shrink-0">
+                                  <Button size="icon" variant="ghost" onClick={() => openDialog(undefined, record)} className="h-8 w-8 sm:h-10 sm:w-10">
+                                    <Edit2 className="h-3 w-3 sm:h-4 sm:w-4" />
                                   </Button>
                                   <Button
                                     size="icon"
                                     variant="ghost"
-                                    className="text-destructive"
+                                    className="text-destructive h-8 w-8 sm:h-10 sm:w-10"
                                     onClick={() => handleDelete(record.id)}
                                   >
-                                    <Trash2 className="h-4 w-4" />
+                                    <Trash2 className="h-3 w-3 sm:h-4 sm:w-4" />
                                   </Button>
                                 </div>
                               </div>
-                              <div className="grid grid-cols-2 gap-4 mb-4">
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-3 sm:mb-4">
                                 {record.duration_minutes && (
                                   <div className="flex items-center gap-2 text-sm">
-                                    <Clock className="h-4 w-4 text-muted-foreground" />
+                                    <Clock className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                                     <span>
                                       {record.duration_minutes} {language === "ja" ? "分" : "min"}
                                     </span>
@@ -712,7 +716,7 @@ const PracticeRecordsPage = () => {
                                 )}
                               </div>
                               {record.notes && (
-                                <p className="text-sm text-muted-foreground whitespace-pre-wrap">{record.notes}</p>
+                                <p className="text-xs sm:text-sm text-muted-foreground whitespace-pre-wrap break-words">{record.notes}</p>
                               )}
                             </CardContent>
                           </Card>
