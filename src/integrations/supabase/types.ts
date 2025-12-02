@@ -991,6 +991,7 @@ export type Database = {
           home_dojo: string | null
           hometown: string | null
           id: string
+          is_public: boolean
           marital_status: string | null
           organization_id: string | null
           social_links: Json | null
@@ -1017,6 +1018,7 @@ export type Database = {
           home_dojo?: string | null
           hometown?: string | null
           id: string
+          is_public?: boolean
           marital_status?: string | null
           organization_id?: string | null
           social_links?: Json | null
@@ -1043,6 +1045,7 @@ export type Database = {
           home_dojo?: string | null
           hometown?: string | null
           id?: string
+          is_public?: boolean
           marital_status?: string | null
           organization_id?: string | null
           social_links?: Json | null
