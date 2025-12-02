@@ -81,11 +81,8 @@ const PracticeRecordsPage = () => {
   const [selectedVideo, setSelectedVideo] = useState<VideoView | null>(null);
   const [formData, setFormData] = useState({
     practice_date: new Date(),
-    duration_minutes: "",
-    difficulty_rating: "",
-    success_rating: "",
     proficiency_level: "",
-    repetition_count: "",
+    repetition_count: "1",
     notes: "",
   });
 
@@ -328,9 +325,6 @@ const PracticeRecordsPage = () => {
     setEditingRecord(record || null);
     setFormData({
       practice_date: record ? new Date(record.practice_date) : new Date(),
-      duration_minutes: record?.duration_minutes?.toString() || "",
-      difficulty_rating: record?.difficulty_rating?.toString() || "",
-      success_rating: record?.success_rating?.toString() || "",
       proficiency_level: record?.proficiency_level?.toString() || "",
       repetition_count: record?.repetition_count?.toString() || "1",
       notes: record?.notes || "",
@@ -344,11 +338,8 @@ const PracticeRecordsPage = () => {
     setSelectedVideo(null);
     setFormData({
       practice_date: new Date(),
-      duration_minutes: "",
-      difficulty_rating: "",
-      success_rating: "",
       proficiency_level: "",
-      repetition_count: "",
+      repetition_count: "1",
       notes: "",
     });
   };
@@ -356,18 +347,24 @@ const PracticeRecordsPage = () => {
   const handleSubmit = async () => {
     if (!user) return;
 
+    // Validation
+    if (!formData.proficiency_level) {
+      toast.error(language === "ja" ? "熟練度を選択してください" : language === "pt" ? "Selecione o nível de proficiência" : "Please select proficiency level");
+      return;
+    }
+
     try {
       const recordData = {
         user_id: user.id,
         technique_id: selectedVideo?.video_id || editingRecord?.technique_id || null,
         user_video_id: null,
         practice_date: format(formData.practice_date, "yyyy-MM-dd"),
-        duration_minutes: formData.duration_minutes ? parseInt(formData.duration_minutes) : null,
-        difficulty_rating: formData.difficulty_rating ? parseInt(formData.difficulty_rating) : null,
-        success_rating: formData.success_rating ? parseInt(formData.success_rating) : null,
-        proficiency_level: formData.proficiency_level ? parseInt(formData.proficiency_level) : null,
-        repetition_count: formData.repetition_count ? parseInt(formData.repetition_count) : null,
-        notes: formData.notes || null,
+        duration_minutes: null,
+        difficulty_rating: null,
+        success_rating: null,
+        proficiency_level: parseInt(formData.proficiency_level),
+        repetition_count: parseInt(formData.repetition_count) || 1,
+        notes: formData.notes.trim() || null,
       };
 
       if (editingRecord) {
@@ -951,11 +948,12 @@ const PracticeRecordsPage = () => {
                 <p className="text-xs text-muted-foreground">{selectedVideo.video.category}</p>
               </div>
             )}
+            
             <div>
-              <Label>{texts.practiceDate}</Label>
+              <Label className="text-sm font-medium">{texts.practiceDate}</Label>
               <Popover>
                 <PopoverTrigger asChild>
-                  <Button variant="outline" className="w-full justify-start text-left font-normal">
+                  <Button variant="outline" className="w-full justify-start text-left font-normal mt-1">
                     <CalendarIcon className="mr-2 h-4 w-4" />
                     {format(formData.practice_date, "yyyy年MM月dd日")}
                   </Button>
@@ -969,22 +967,14 @@ const PracticeRecordsPage = () => {
                 </PopoverContent>
               </Popover>
             </div>
+
             <div>
-              <Label>{texts.duration}</Label>
-              <Input
-                type="number"
-                placeholder="30"
-                value={formData.duration_minutes}
-                onChange={(e) => setFormData({ ...formData, duration_minutes: e.target.value })}
-              />
-            </div>
-            <div>
-              <Label>{texts.proficiency}</Label>
+              <Label className="text-sm font-medium">{texts.proficiency} *</Label>
               <Select
                 value={formData.proficiency_level}
                 onValueChange={(value) => setFormData({ ...formData, proficiency_level: value })}
               >
-                <SelectTrigger>
+                <SelectTrigger className="mt-1">
                   <SelectValue placeholder={language === "ja" ? "選択してください" : "Select"} />
                 </SelectTrigger>
                 <SelectContent>
@@ -996,62 +986,33 @@ const PracticeRecordsPage = () => {
                 </SelectContent>
               </Select>
             </div>
+
             <div>
-              <Label>{texts.repetitions}</Label>
+              <Label className="text-sm font-medium">{texts.repetitions}</Label>
               <Input
                 type="number"
-                placeholder="10"
+                placeholder="1"
                 value={formData.repetition_count}
                 onChange={(e) => setFormData({ ...formData, repetition_count: e.target.value })}
                 min="1"
+                max="999"
+                className="mt-1"
               />
             </div>
+
             <div>
-              <Label>{texts.difficulty}</Label>
-              <Select
-                value={formData.difficulty_rating}
-                onValueChange={(value) => setFormData({ ...formData, difficulty_rating: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={language === "ja" ? "選択してください" : "Select"} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="1">⭐</SelectItem>
-                  <SelectItem value="2">⭐⭐</SelectItem>
-                  <SelectItem value="3">⭐⭐⭐</SelectItem>
-                  <SelectItem value="4">⭐⭐⭐⭐</SelectItem>
-                  <SelectItem value="5">⭐⭐⭐⭐⭐</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label>{texts.success}</Label>
-              <Select
-                value={formData.success_rating}
-                onValueChange={(value) => setFormData({ ...formData, success_rating: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={language === "ja" ? "選択してください" : "Select"} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="1">⭐</SelectItem>
-                  <SelectItem value="2">⭐⭐</SelectItem>
-                  <SelectItem value="3">⭐⭐⭐</SelectItem>
-                  <SelectItem value="4">⭐⭐⭐⭐</SelectItem>
-                  <SelectItem value="5">⭐⭐⭐⭐⭐</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label>{texts.notes}</Label>
+              <Label className="text-sm font-medium">{texts.notes}</Label>
               <Textarea
                 placeholder={language === "ja" ? "メモを入力..." : "Add notes..."}
                 value={formData.notes}
                 onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                rows={4}
+                rows={3}
+                maxLength={500}
+                className="mt-1"
               />
             </div>
-            <div className="flex gap-2">
+
+            <div className="flex gap-2 pt-2">
               <Button onClick={handleSubmit} className="flex-1">
                 {texts.save}
               </Button>
