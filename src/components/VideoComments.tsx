@@ -15,9 +15,7 @@ interface Comment {
   user_id: string;
   comment: string;
   created_at: string;
-  profiles: {
-    email: string;
-  };
+  user_email?: string;
 }
 
 interface VideoCommentsProps {
@@ -82,22 +80,33 @@ export const VideoComments = ({ videoId, userId }: VideoCommentsProps) => {
 
   const loadComments = async () => {
     try {
-      const { data, error } = await supabase
+      const { data: commentsData, error: commentsError } = await supabase
         .from("video_comments")
-        .select(`
-          id,
-          user_id,
-          comment,
-          created_at,
-          profiles:user_id (
-            email
-          )
-        `)
+        .select("id, user_id, comment, created_at")
         .eq("video_id", videoId)
         .order("created_at", { ascending: false });
 
-      if (error) throw error;
-      setComments(data as any || []);
+      if (commentsError) throw commentsError;
+
+      // Get user emails separately
+      if (commentsData && commentsData.length > 0) {
+        const userIds = [...new Set(commentsData.map(c => c.user_id))];
+        const { data: profilesData } = await supabase
+          .from("profiles")
+          .select("id, email")
+          .in("id", userIds);
+
+        const profilesMap = new Map(profilesData?.map(p => [p.id, p.email]) || []);
+
+        const commentsWithEmails = commentsData.map(comment => ({
+          ...comment,
+          user_email: profilesMap.get(comment.user_id) || null
+        }));
+
+        setComments(commentsWithEmails);
+      } else {
+        setComments([]);
+      }
     } catch (error) {
       console.error("Error loading comments:", error);
     }
@@ -480,7 +489,7 @@ export const VideoComments = ({ videoId, userId }: VideoCommentsProps) => {
                 <div className="flex-1 space-y-2">
                   <div className="flex items-center gap-2">
                     <span className="font-medium text-sm">
-                      {comment.profiles?.email?.split("@")[0] || "User"}
+                      {comment.user_email?.split("@")[0] || "User"}
                     </span>
                     <span className="text-xs text-muted-foreground">
                       {getTimeAgo(comment.created_at)}
