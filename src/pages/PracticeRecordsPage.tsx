@@ -110,7 +110,8 @@ const PracticeRecordsPage = () => {
   };
 
   const getSeriesLabel = (technique: Technique) => {
-    return technique.series_name || technique.series_prefix || technique.category;
+    // series_prefix (B1など) を優先表示
+    return technique.series_prefix || technique.series_name || technique.category;
   };
 
   const getViewCount = (techniqueId: string) => {
