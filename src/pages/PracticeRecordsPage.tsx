@@ -13,11 +13,12 @@ import { Label } from "@/components/ui/label";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { CalendarIcon, Plus, Edit2, Trash2, Clock, Star } from "lucide-react";
+import { CalendarIcon, Plus, Edit2, Trash2, Clock, Star, ExternalLink } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Link } from "react-router-dom";
 
 interface PracticeRecord {
   id: string;
@@ -584,7 +585,12 @@ const PracticeRecordsPage = () => {
                               )}
                             </div>
                             <div className="flex-1 min-w-0">
-                              <h3 className="font-semibold mb-1 text-sm sm:text-base line-clamp-2">{getTechniqueName(video.video)}</h3>
+                              <Link to={`/video/${video.video_id}`} className="group">
+                                <h3 className="font-semibold mb-1 text-sm sm:text-base line-clamp-2 group-hover:text-primary transition-colors flex items-center gap-1">
+                                  {getTechniqueName(video.video)}
+                                  <ExternalLink className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
+                                </h3>
+                              </Link>
                               <p className="text-xs sm:text-sm text-muted-foreground mb-2">{video.video.category}</p>
                               
                               {stats.totalSessions > 0 ? (
@@ -668,7 +674,12 @@ const PracticeRecordsPage = () => {
                               {format(new Date(record.practice_date), "yyyy年MM月dd日")}
                             </p>
                             {record.technique && (
-                              <h3 className="font-semibold text-base sm:text-lg break-words">{getTechniqueName(record.technique)}</h3>
+                              <Link to={`/video/${record.technique_id}`} className="group">
+                                <h3 className="font-semibold text-base sm:text-lg break-words group-hover:text-primary transition-colors flex items-center gap-1">
+                                  {getTechniqueName(record.technique)}
+                                  <ExternalLink className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
+                                </h3>
+                              </Link>
                             )}
                             {record.user_video && (
                               <h3 className="font-semibold text-base sm:text-lg break-words">{record.user_video.title}</h3>
@@ -757,7 +768,12 @@ const PracticeRecordsPage = () => {
                         <div className={`h-2 bg-gradient-to-r ${level.color}`} />
                         <CardContent className="p-3 sm:p-4">
                           <div className="flex items-start justify-between mb-3">
-                            <h3 className="font-semibold text-base sm:text-lg break-words flex-1 line-clamp-2">{stat.technique_name}</h3>
+                            <Link to={`/video/${stat.technique_id}`} className="group flex-1">
+                              <h3 className="font-semibold text-base sm:text-lg break-words line-clamp-2 group-hover:text-primary transition-colors flex items-center gap-1">
+                                {stat.technique_name}
+                                <ExternalLink className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
+                              </h3>
+                            </Link>
                             <div className="flex-shrink-0 ml-2">
                               <div className={`text-2xl bg-gradient-to-br ${level.color} rounded-full w-10 h-10 flex items-center justify-center shadow-lg`}>
                                 {level.emoji}
