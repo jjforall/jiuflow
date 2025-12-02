@@ -711,7 +711,7 @@ const PracticeRecordsPage = () => {
                               </span>
                             </div>
                           )}
-                          {record.repetition_count && (
+                          {typeof record.repetition_count === 'number' && (
                             <div className="text-xs sm:text-sm">
                               <span className="text-muted-foreground">{texts.repetitions}: </span>
                               <span className="font-semibold">{record.repetition_count}{texts.reps}</span>
@@ -912,7 +912,7 @@ const PracticeRecordsPage = () => {
                                     </span>
                                   </div>
                                 )}
-                                {record.repetition_count && (
+                                {typeof record.repetition_count === 'number' && (
                                   <div className="text-xs sm:text-sm">
                                     <span className="text-muted-foreground">{texts.repetitions}: </span>
                                     <span className="font-semibold">{record.repetition_count}{texts.reps}</span>
