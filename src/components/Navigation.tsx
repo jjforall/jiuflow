@@ -28,7 +28,7 @@ const Navigation = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [user, setUser] = useState<SupabaseUser | null>(null);
   const [canAccessAdmin, setCanAccessAdmin] = useState(false);
-  const { subscribed } = useSubscription();
+  const { subscribed, loading: subscriptionLoading } = useSubscription();
 
   useEffect(() => {
     // Set up auth state listener
@@ -88,7 +88,8 @@ const Navigation = () => {
     { to: "/", label: t.nav.home, icon: Home },
     { to: "/map", label: t.nav.map, icon: Map },
     { to: "/about", label: t.nav.about, icon: Info },
-    ...(!subscribed ? [{ to: "/join", label: t.nav.join, icon: UserPlus }] : []),
+    // Only show Join link when subscription check is complete and user is not subscribed
+    ...(!subscriptionLoading && !subscribed ? [{ to: "/join", label: t.nav.join, icon: UserPlus }] : []),
   ];
 
   const languages: Array<{ code: "ja" | "en" | "pt" | "es" | "fr" | "de" | "zh" | "ko" | "it" | "ru" | "ar" | "hi"; label: string; name: string }> = [
