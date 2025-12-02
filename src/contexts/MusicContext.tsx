@@ -84,6 +84,11 @@ export const MusicProvider = ({ children }: { children: ReactNode }) => {
 
       if (error) throw error;
       setPlaylist(data || []);
+      
+      // 最初の曲を自動選択
+      if (data && data.length > 0 && !currentTrack) {
+        setCurrentTrack(data[0]);
+      }
     } catch (error) {
       console.error("Failed to load playlist:", error);
     } finally {
