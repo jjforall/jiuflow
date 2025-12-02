@@ -1333,27 +1333,32 @@ export const TechniquesManagement = () => {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <h2 className="text-2xl font-semibold">技術管理</h2>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2 w-full sm:w-auto">
           <Button 
             onClick={handleBulkUpdate}
             variant="outline"
             disabled={isBulkUpdating}
+            className="text-xs sm:text-sm flex-1 sm:flex-none"
           >
-            {isBulkUpdating ? '一括更新中...' : '名前・タグ一括更新'}
+            <span className="hidden sm:inline">{isBulkUpdating ? '一括更新中...' : '名前・タグ一括更新'}</span>
+            <span className="sm:hidden">{isBulkUpdating ? '更新中...' : '一括更新'}</span>
           </Button>
           <Button 
             onClick={handleGenerateMissingThumbnails}
             variant="outline"
             disabled={isGeneratingThumbnails}
+            className="text-xs sm:text-sm flex-1 sm:flex-none"
           >
-            {isGeneratingThumbnails ? 'サムネイル生成中...' : 'サムネイル一括生成'}
+            <span className="hidden sm:inline">{isGeneratingThumbnails ? 'サムネイル生成中...' : 'サムネイル一括生成'}</span>
+            <span className="sm:hidden">{isGeneratingThumbnails ? '生成中...' : 'サムネイル'}</span>
           </Button>
           {isAdmin && (
-            <Button onClick={() => setShowEditDialog(true)}>
-              <Upload className="h-4 w-4 mr-2" />
-              新規技術追加
+            <Button onClick={() => setShowEditDialog(true)} className="flex-1 sm:flex-none">
+              <Upload className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">新規技術追加</span>
+              <span className="sm:hidden">追加</span>
             </Button>
           )}
         </div>
@@ -1426,7 +1431,7 @@ export const TechniquesManagement = () => {
       )}
 
       {/* Search and Filter Controls */}
-      <div className="flex gap-4 mb-6">
+      <div className="flex flex-col sm:flex-row gap-3 mb-6">
         <div className="flex-1 relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
           <Input
@@ -1435,58 +1440,60 @@ export const TechniquesManagement = () => {
             value={searchQuery}
             onChange={(e) => {
               setSearchQuery(e.target.value);
-              setPage(1); // Reset to first page on search
+              setPage(1);
             }}
             className="pl-10"
           />
         </div>
-        <Select value={categoryFilter} onValueChange={(value) => {
-          setCategoryFilter(value);
-          setPage(1); // Reset to first page on filter change
-        }}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="カテゴリー" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">すべて</SelectItem>
-            {availableCategories.map((category) => (
-              <SelectItem key={category} value={category}>
-                {category}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select value={seriesFilter} onValueChange={(value) => {
-          setSeriesFilter(value);
-          setPage(1);
-        }}>
-          <SelectTrigger className="w-[200px]">
-            <SelectValue placeholder="シリーズ" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">すべて</SelectItem>
-            {seriesMapping.map((mapping) => (
-              <SelectItem key={mapping.series_prefix} value={mapping.series_prefix}>
-                {mapping.series_prefix}. {mapping.series_name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="並び順" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="order">表示順</SelectItem>
-            <SelectItem value="name">名前順</SelectItem>
-            <SelectItem value="category">カテゴリー順</SelectItem>
-            <SelectItem value="series">シリーズ順</SelectItem>
-          </SelectContent>
-        </Select>
+        <div className="flex gap-2">
+          <Select value={categoryFilter} onValueChange={(value) => {
+            setCategoryFilter(value);
+            setPage(1);
+          }}>
+            <SelectTrigger className="w-full sm:w-[140px]">
+              <SelectValue placeholder="カテゴリー" />
+            </SelectTrigger>
+            <SelectContent className="bg-background z-50">
+              <SelectItem value="all">すべて</SelectItem>
+              {availableCategories.map((category) => (
+                <SelectItem key={category} value={category}>
+                  {category}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={seriesFilter} onValueChange={(value) => {
+            setSeriesFilter(value);
+            setPage(1);
+          }}>
+            <SelectTrigger className="w-full sm:w-[160px]">
+              <SelectValue placeholder="シリーズ" />
+            </SelectTrigger>
+            <SelectContent className="bg-background z-50">
+              <SelectItem value="all">すべて</SelectItem>
+              {seriesMapping.map((mapping) => (
+                <SelectItem key={mapping.series_prefix} value={mapping.series_prefix}>
+                  {mapping.series_prefix}. {mapping.series_name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
+            <SelectTrigger className="w-full sm:w-[140px]">
+              <SelectValue placeholder="並び順" />
+            </SelectTrigger>
+            <SelectContent className="bg-background z-50">
+              <SelectItem value="order">表示順</SelectItem>
+              <SelectItem value="name">名前順</SelectItem>
+              <SelectItem value="category">カテゴリー順</SelectItem>
+              <SelectItem value="series">シリーズ順</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
-      {/* Techniques Table */}
-      <div className="border rounded-lg overflow-hidden">
+      {/* Techniques Table - Desktop */}
+      <div className="hidden md:block border rounded-lg overflow-x-auto">
         <table className="w-full">
           <thead className="bg-muted">
             <tr>
@@ -1714,6 +1721,177 @@ export const TechniquesManagement = () => {
             )}
           </tbody>
         </table>
+      </div>
+
+      {/* Techniques Cards - Mobile */}
+      <div className="md:hidden space-y-4">
+        {isLoading ? (
+          Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="border rounded-lg p-4 space-y-3">
+              <Skeleton className="h-6 w-3/4" />
+              <Skeleton className="h-20 w-full" />
+              <Skeleton className="h-4 w-1/2" />
+            </div>
+          ))
+        ) : data?.data.length === 0 ? (
+          <div className="text-center py-8 text-muted-foreground">
+            技術が見つかりませんでした
+          </div>
+        ) : (
+          data?.data.map((technique) => (
+            <Collapsible 
+              key={technique.id} 
+              open={expandedRows.has(technique.id)} 
+              onOpenChange={() => toggleRow(technique.id)}
+            >
+              <div className="border rounded-lg overflow-hidden bg-card">
+                <div className="p-4 space-y-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1 space-y-1">
+                      <p className="font-medium text-sm leading-tight">{technique.name}</p>
+                      <p className="text-xs text-muted-foreground">{technique.name_ja}</p>
+                    </div>
+                    <CollapsibleTrigger asChild>
+                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0 shrink-0">
+                        <ChevronDown className={`h-4 w-4 transition-transform ${expandedRows.has(technique.id) ? "rotate-180" : ""}`} />
+                      </Button>
+                    </CollapsibleTrigger>
+                  </div>
+                  
+                  <div className="flex items-center gap-2">
+                    <span className="px-2 py-0.5 text-xs rounded-full bg-primary/10 text-primary">
+                      {technique.category}
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      {getTranslationCount(technique as any)}言語
+                    </span>
+                  </div>
+
+                  {technique.thumbnail_url && (
+                    <div className="relative aspect-video rounded overflow-hidden bg-muted">
+                      <img
+                        src={technique.thumbnail_url}
+                        className="w-full h-full object-cover cursor-pointer"
+                        loading="lazy"
+                        alt={technique.name}
+                        onClick={() => {
+                          if (technique.video_url) {
+                            setPreviewVideoUrl(technique.video_url);
+                            setShowVideoPreview(true);
+                          }
+                        }}
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="96" height="64"%3E%3Crect fill="%23ddd" width="96" height="64"/%3E%3Ctext fill="%23999" x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle"%3ENo Image%3C/text%3E%3C/svg%3E';
+                        }}
+                      />
+                    </div>
+                  )}
+
+                  {isAdmin && (
+                    <div className="flex gap-2 pt-2">
+                      {technique.video_url && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="flex-1"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setTranslatingTechnique(technique as any);
+                            setShowTranslateDialog(true);
+                          }}
+                        >
+                          <Languages className="h-4 w-4 mr-1" />
+                          <span className="text-xs">翻訳</span>
+                        </Button>
+                      )}
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="flex-1"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openEditDialog(technique as any);
+                        }}
+                      >
+                        <span className="text-xs">編集</span>
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDelete(technique.id);
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </div>
+                  )}
+                </div>
+
+                <CollapsibleContent>
+                  <div className="border-t p-4 bg-muted/30 space-y-3">
+                    <div className="space-y-2 text-sm">
+                      <div>
+                        <span className="font-medium text-xs text-muted-foreground">Português:</span>
+                        <p className="mt-0.5">{technique.name_pt}</p>
+                      </div>
+                      {(technique as Technique).series_name && (
+                        <div>
+                          <span className="font-medium text-xs text-muted-foreground">シリーズ:</span>
+                          <div className="flex items-center gap-2 mt-1">
+                            {(technique as Technique).series_prefix && (
+                              <div className="flex items-center justify-center w-6 h-6 rounded-full bg-primary/10 text-primary font-bold text-xs">
+                                {(technique as Technique).series_prefix}
+                              </div>
+                            )}
+                            <span>{(technique as Technique).series_name}</span>
+                            {(technique as Technique).series_order && (
+                              <span className="text-xs text-muted-foreground">#{(technique as Technique).series_order}</span>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                      {technique.hashtags && technique.hashtags.length > 0 && (
+                        <div>
+                          <span className="font-medium text-xs text-muted-foreground">タグ:</span>
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {technique.hashtags.map((tag) => (
+                              <span key={tag} className="px-2 py-0.5 bg-primary/10 text-primary rounded text-xs">
+                                #{tag}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    
+                    {getAvailableTranslations(technique as any).length > 0 && (
+                      <div>
+                        <span className="font-medium text-xs text-muted-foreground mb-2 block">翻訳:</span>
+                        <div className="flex flex-wrap gap-2">
+                          {getAvailableTranslations(technique as any).map((trans) => (
+                            <a
+                              key={trans.code}
+                              href={trans.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-1 px-2 py-1 rounded border hover:bg-accent text-xs"
+                            >
+                              {trans.name}
+                              <ExternalLink className="h-3 w-3" />
+                            </a>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </CollapsibleContent>
+              </div>
+            </Collapsible>
+          ))
+        )}
       </div>
 
       {/* Pagination */}
