@@ -10,6 +10,8 @@ interface MusicTrack {
   duration_seconds: number | null;
 }
 
+type RepeatMode = "off" | "all" | "one";
+
 interface MusicContextType {
   currentTrack: MusicTrack | null;
   playlist: MusicTrack[];
@@ -18,6 +20,8 @@ interface MusicContextType {
   currentTime: number;
   duration: number;
   isLoading: boolean;
+  isShuffle: boolean;
+  repeatMode: RepeatMode;
   play: (track?: MusicTrack) => void;
   pause: () => void;
   togglePlay: () => void;
@@ -26,6 +30,8 @@ interface MusicContextType {
   setVolume: (volume: number) => void;
   seek: (time: number) => void;
   loadPlaylist: () => Promise<void>;
+  toggleShuffle: () => void;
+  toggleRepeat: () => void;
 }
 
 const MusicContext = createContext<MusicContextType | undefined>(undefined);
@@ -38,6 +44,8 @@ export const MusicProvider = ({ children }: { children: ReactNode }) => {
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
+  const [isShuffle, setIsShuffle] = useState(false);
+  const [repeatMode, setRepeatMode] = useState<RepeatMode>("off");
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
@@ -54,9 +62,7 @@ export const MusicProvider = ({ children }: { children: ReactNode }) => {
       setDuration(audio.duration);
     });
 
-    audio.addEventListener("ended", () => {
-      next();
-    });
+    audio.addEventListener("ended", handleTrackEnd);
 
     audio.addEventListener("play", () => setIsPlaying(true));
     audio.addEventListener("pause", () => setIsPlaying(false));
@@ -113,18 +119,84 @@ export const MusicProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const next = () => {
-    if (!currentTrack || playlist.length === 0) return;
+  const handleTrackEnd = () => {
+    if (repeatMode === "one") {
+      if (audioRef.current) {
+        audioRef.current.currentTime = 0;
+        audioRef.current.play();
+      }
+    } else {
+      next();
+    }
+  };
+
+  const getNextTrack = (): MusicTrack | null => {
+    if (playlist.length === 0) return null;
+    if (!currentTrack) return playlist[0];
+
+    if (isShuffle) {
+      const otherTracks = playlist.filter((t) => t.id !== currentTrack.id);
+      if (otherTracks.length === 0) return currentTrack;
+      return otherTracks[Math.floor(Math.random() * otherTracks.length)];
+    }
+
     const currentIndex = playlist.findIndex((t) => t.id === currentTrack.id);
     const nextIndex = (currentIndex + 1) % playlist.length;
-    play(playlist[nextIndex]);
+    
+    // If we've looped and repeat is off, stop
+    if (nextIndex === 0 && repeatMode === "off") {
+      return null;
+    }
+    
+    return playlist[nextIndex];
+  };
+
+  const getPreviousTrack = (): MusicTrack | null => {
+    if (playlist.length === 0) return null;
+    if (!currentTrack) return playlist[0];
+
+    if (isShuffle) {
+      const otherTracks = playlist.filter((t) => t.id !== currentTrack.id);
+      if (otherTracks.length === 0) return currentTrack;
+      return otherTracks[Math.floor(Math.random() * otherTracks.length)];
+    }
+
+    const currentIndex = playlist.findIndex((t) => t.id === currentTrack.id);
+    const prevIndex = (currentIndex - 1 + playlist.length) % playlist.length;
+    return playlist[prevIndex];
+  };
+
+  const next = () => {
+    const nextTrack = getNextTrack();
+    if (nextTrack) {
+      play(nextTrack);
+    } else {
+      pause();
+    }
   };
 
   const previous = () => {
-    if (!currentTrack || playlist.length === 0) return;
-    const currentIndex = playlist.findIndex((t) => t.id === currentTrack.id);
-    const prevIndex = (currentIndex - 1 + playlist.length) % playlist.length;
-    play(playlist[prevIndex]);
+    // If more than 3 seconds in, restart current track
+    if (currentTime > 3) {
+      seek(0);
+      return;
+    }
+    const prevTrack = getPreviousTrack();
+    if (prevTrack) {
+      play(prevTrack);
+    }
+  };
+
+  const toggleShuffle = () => {
+    setIsShuffle((prev) => !prev);
+  };
+
+  const toggleRepeat = () => {
+    setRepeatMode((prev) => {
+      if (prev === "off") return "all";
+      if (prev === "all") return "one";
+      return "off";
+    });
   };
 
   const setVolume = (newVolume: number) => {
@@ -150,6 +222,8 @@ export const MusicProvider = ({ children }: { children: ReactNode }) => {
         currentTime,
         duration,
         isLoading,
+        isShuffle,
+        repeatMode,
         play,
         pause,
         togglePlay,
@@ -158,6 +232,8 @@ export const MusicProvider = ({ children }: { children: ReactNode }) => {
         setVolume,
         seek,
         loadPlaylist,
+        toggleShuffle,
+        toggleRepeat,
       }}
     >
       {children}
