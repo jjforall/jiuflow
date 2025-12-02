@@ -44,7 +44,7 @@ const AdminDashboard = () => {
     loading: true,
   });
   const [showMembersChart, setShowMembersChart] = useState(false);
-  const [chartData, setChartData] = useState<Array<{date: string; totalMembers: number; paidMembers: number}>>([]);
+  const [chartData, setChartData] = useState<Array<{date: string; totalMembers: number; paidMembers: number; trialMembers: number}>>([]);
 
   useEffect(() => {
     fetchStats();
@@ -119,7 +119,7 @@ const AdminDashboard = () => {
       const subscriptions = subscriptionsData?.subscriptions || [];
 
       // 日付ごとにデータを集計
-      const dateMap = new Map<string, { total: number; paid: number }>();
+      const dateMap = new Map<string, { total: number; paid: number; trial: number }>();
       
       // 過去30日分のデータを準備
       const today = new Date();
@@ -127,7 +127,7 @@ const AdminDashboard = () => {
         const date = new Date(today);
         date.setDate(date.getDate() - i);
         const dateStr = date.toISOString().split('T')[0];
-        dateMap.set(dateStr, { total: 0, paid: 0 });
+        dateMap.set(dateStr, { total: 0, paid: 0, trial: 0 });
       }
 
       // 各日付までの累計会員数を計算
@@ -141,14 +141,18 @@ const AdminDashboard = () => {
         });
       });
 
-      // 各日付までの累計有料会員数を計算
+      // 各日付までの累計有料会員数とトライアル会員数を計算
       subscriptions.forEach((sub: any) => {
         if (sub.created_at) {
           const createdDate = new Date(sub.created_at);
           dateMap.forEach((value, dateStr) => {
             const targetDate = new Date(dateStr);
-            if (createdDate <= targetDate && (sub.status === 'active' || sub.status === 'trialing')) {
-              value.paid++;
+            if (createdDate <= targetDate) {
+              if (sub.status === 'active' && !sub.is_trialing) {
+                value.paid++;
+              } else if (sub.is_trialing) {
+                value.trial++;
+              }
             }
           });
         }
@@ -159,6 +163,7 @@ const AdminDashboard = () => {
         date: new Date(date).toLocaleDateString('ja-JP', { month: 'short', day: 'numeric' }),
         totalMembers: counts.total,
         paidMembers: counts.paid,
+        trialMembers: counts.trial,
       }));
 
       setChartData(chartArray);
@@ -228,7 +233,10 @@ const AdminDashboard = () => {
               </CardContent>
             </Card>
 
-            <Card>
+            <Card 
+              className="cursor-pointer hover:bg-accent/50 transition-colors"
+              onClick={handleMembersCardClick}
+            >
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">トライアル会員数</CardTitle>
                 <UserCheck className="h-4 w-4 text-secondary" />
@@ -237,7 +245,7 @@ const AdminDashboard = () => {
                 <div className="text-2xl font-bold">
                   {stats.loading ? "..." : stats.trialMembers.toLocaleString()}
                 </div>
-                <p className="text-xs text-muted-foreground mt-1">無料トライアル中</p>
+                <p className="text-xs text-muted-foreground mt-1">無料トライアル中（クリックでグラフ表示）</p>
               </CardContent>
             </Card>
 
@@ -317,6 +325,13 @@ const AdminDashboard = () => {
                   dataKey="paidMembers" 
                   stroke="hsl(var(--chart-2))" 
                   name="有料会員数"
+                  strokeWidth={2}
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="trialMembers" 
+                  stroke="hsl(var(--secondary))" 
+                  name="トライアル会員数"
                   strokeWidth={2}
                 />
               </LineChart>
