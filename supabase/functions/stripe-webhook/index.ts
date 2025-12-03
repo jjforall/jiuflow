@@ -59,8 +59,38 @@ serve(async (req) => {
         logStep("Checkout session completed", { 
           sessionId: session.id,
           mode: session.mode,
-          paymentStatus: session.payment_status
+          paymentStatus: session.payment_status,
+          metadata: session.metadata
         });
+
+        // Handle video tip payments
+        if (session.mode === "payment" && session.metadata?.videoId && session.metadata?.userId) {
+          logStep("Processing video tip", {
+            videoId: session.metadata.videoId,
+            userId: session.metadata.userId,
+            amount: session.amount_total
+          });
+
+          const { error: tipError } = await supabase
+            .from("video_tips")
+            .insert({
+              video_id: session.metadata.videoId,
+              from_user_id: session.metadata.userId,
+              amount: session.amount_total || 0,
+              message: session.metadata.message || null,
+              stripe_payment_id: session.payment_intent as string,
+            });
+
+          if (tipError) {
+            logStep("ERROR saving video tip", { error: tipError.message });
+          } else {
+            logStep("Video tip saved successfully", {
+              videoId: session.metadata.videoId,
+              amount: session.amount_total
+            });
+          }
+          break;
+        }
         
         // Get customer email from session
         const customerEmail = session.customer_email || session.customer_details?.email;
