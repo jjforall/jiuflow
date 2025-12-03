@@ -1323,13 +1323,20 @@ export function PrintfulManagement() {
                       const selectedProduct = catalogProducts.find(
                         p => p.id.toString() === selectedCatalogProduct
                       );
-                      if (selectedProduct?.image) {
+                      // Use selected variant's image if available, otherwise use base product image
+                      const selectedVariant = selectedVariants.length > 0 
+                        ? catalogVariants.find(v => v.id === selectedVariants[0])
+                        : null;
+                      const previewImage = selectedVariant?.image || selectedProduct?.image;
+                      const previewTitle = selectedVariant?.name || selectedProduct?.title || '';
+                      
+                      if (previewImage) {
                         return (
                           <div className="relative w-full h-[260px]">
                             {/* Base product image */}
                             <img
-                              src={selectedProduct.image}
-                              alt={selectedProduct.title}
+                              src={previewImage}
+                              alt={previewTitle}
                               className="absolute inset-0 w-full h-full object-contain"
                             />
                             {/* Print area indicator */}
