@@ -462,10 +462,14 @@ export function PrintfulManagement() {
         ]
       }));
 
+      // Use generated mockup as thumbnail if available
+      const thumbnailUrl = generatedMockupUrl || undefined;
+
       const { data, error } = await supabase.functions.invoke("create-printful-product", {
         body: {
           sync_product: {
             name: newProductName,
+            thumbnail: thumbnailUrl,
           },
           sync_variants: syncVariants,
         }
