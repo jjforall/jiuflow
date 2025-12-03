@@ -133,7 +133,12 @@ const Join = () => {
   const [referralCode, setReferralCode] = useState("");
   const [isValidReferralCode, setIsValidReferralCode] = useState(false);
   const [isCheckingCode, setIsCheckingCode] = useState(false);
-  const [referralPlanType, setReferralPlanType] = useState<'founder' | 'muratabros' | 'referral'>('referral');
+  const [referralPlanType, setReferralPlanType] = useState<'founder' | 'muratabros' | 'referral' | 'teammurata'>('referral');
+  const [teamSignupDialogOpen, setTeamSignupDialogOpen] = useState(false);
+  const [teamSignupEmail, setTeamSignupEmail] = useState("");
+  const [teamSignupPassword, setTeamSignupPassword] = useState("");
+  const [teamSignupDisplayName, setTeamSignupDisplayName] = useState("");
+  const [isTeamSigningUp, setIsTeamSigningUp] = useState(false);
   const [viewCount, setViewCount] = useState(0);
   const [isComposing, setIsComposing] = useState(false);
   const [signupDialogOpen, setSignupDialogOpen] = useState(false);
@@ -168,6 +173,12 @@ const Join = () => {
       if (trimmedCode === 'MURATABROS') {
         setIsValidReferralCode(true);
         setReferralPlanType('muratabros');
+        return;
+      }
+      
+      if (trimmedCode === 'TEAMMURATA') {
+        setIsValidReferralCode(true);
+        setReferralPlanType('teammurata');
         return;
       }
       
@@ -355,6 +366,75 @@ const Join = () => {
       );
     } finally {
       setIsSigningUp(false);
+    }
+  };
+
+  const handleTeamSignUp = async () => {
+    if (!teamSignupEmail || !teamSignupPassword) {
+      toast.error(
+        language === "ja" ? "入力エラー" : "Input Error",
+        {
+          description: language === "ja" 
+            ? "メールアドレスとパスワードを入力してください" 
+            : "Please enter email and password"
+        }
+      );
+      return;
+    }
+
+    if (teamSignupPassword.length < 6) {
+      toast.error(
+        language === "ja" ? "パスワードエラー" : "Password Error",
+        {
+          description: language === "ja" 
+            ? "パスワードは6文字以上で入力してください" 
+            : "Password must be at least 6 characters"
+        }
+      );
+      return;
+    }
+
+    setIsTeamSigningUp(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("create-team-member", {
+        body: {
+          email: teamSignupEmail,
+          password: teamSignupPassword,
+          displayName: teamSignupDisplayName || teamSignupEmail.split("@")[0],
+          referralCode: referralCode.trim(),
+        },
+      });
+
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      toast.success(
+        language === "ja" ? "チームメンバー登録完了！" : "Team member registration complete!",
+        {
+          description: language === "ja" 
+            ? "ログインページに移動します..." 
+            : "Redirecting to login..."
+        }
+      );
+      
+      setTeamSignupDialogOpen(false);
+      
+      // Redirect to login page
+      setTimeout(() => {
+        navigate("/login");
+      }, 1500);
+    } catch (error: any) {
+      console.error("Team signup error:", error);
+      toast.error(
+        language === "ja" ? "登録エラー" : "Registration Error",
+        {
+          description: error.message || (language === "ja" 
+            ? "登録に失敗しました" 
+            : "Registration failed")
+        }
+      );
+    } finally {
+      setIsTeamSigningUp(false);
     }
   };
 
@@ -709,6 +789,54 @@ const Join = () => {
                 </div>
               )}
               
+              {/* TeamMurata - Staff Plan (Free Forever) */}
+              {isValidReferralCode && referralPlanType === 'teammurata' && (
+                <div className="relative rounded-2xl group hover:shadow-2xl transition-all">
+                  <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/20 via-teal-500/10 to-cyan-500/10 rounded-2xl" />
+                  <div className="relative border-2 border-emerald-500 p-10 rounded-2xl backdrop-blur-sm">
+                    <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-emerald-500 text-white px-6 py-2 text-sm font-medium rounded-full shadow-lg z-10">
+                      {language === "ja" ? "🌟 チームメンバー" : "🌟 Team Member"}
+                    </div>
+                    <h3 className="text-3xl font-light mb-6 mt-2">
+                      Team Murata
+                    </h3>
+                    <div className="mb-8">
+                      <div className="text-5xl font-light mb-3 bg-gradient-to-r from-emerald-500 to-teal-500 bg-clip-text text-transparent">
+                        {language === "ja" ? "永年無料" : "Free Forever"}
+                      </div>
+                      <div className="text-base text-muted-foreground font-light">
+                        {language === "ja" ? "クレジットカード不要" : "No credit card required"}
+                      </div>
+                    </div>
+                    <ul className="space-y-4 mb-8 text-base font-light">
+                      <li className="flex items-start">
+                        <span className="mr-3 text-emerald-500 text-xl">✓</span>
+                        <span className="font-medium text-emerald-500">{language === "ja" ? "永久無料アクセス" : "Lifetime free access"}</span>
+                      </li>
+                      <li className="flex items-start">
+                        <span className="mr-3 text-emerald-500 text-xl">✓</span>
+                        <span className="font-medium text-emerald-500">{language === "ja" ? "スタッフ権限付与" : "Staff permissions granted"}</span>
+                      </li>
+                      <li className="flex items-start">
+                        <span className="mr-3 text-xl">✓</span>
+                        <span>{language === "ja" ? "全技術動画へのアクセス" : "Access to all technique videos"}</span>
+                      </li>
+                      <li className="flex items-start">
+                        <span className="mr-3 text-xl">✓</span>
+                        <span>{language === "ja" ? "管理画面の閲覧" : "Admin dashboard view access"}</span>
+                      </li>
+                    </ul>
+                    <Button
+                      className="w-full h-14 text-lg bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-500/90 hover:to-teal-500/90 shadow-lg transition-all text-white"
+                      onClick={() => setTeamSignupDialogOpen(true)}
+                      disabled={isLoading}
+                    >
+                      {language === "ja" ? "チームメンバーとして登録" : "Register as Team Member"}
+                    </Button>
+                  </div>
+                </div>
+              )}
+              
               {/* Regular Referral Plan - 1900 yen */}
               {isValidReferralCode && referralPlanType === 'referral' && (
                 <div className="relative rounded-2xl group hover:shadow-2xl transition-all">
@@ -1000,6 +1128,92 @@ const Join = () => {
               {language === "ja" ? "ログイン" : "Log in"}
             </button>
           </p>
+        </DialogContent>
+      </Dialog>
+
+      {/* Team Signup Dialog */}
+      <Dialog open={teamSignupDialogOpen} onOpenChange={setTeamSignupDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-2xl">
+              {language === "ja" ? "🌟 チームメンバー登録" : "🌟 Team Member Registration"}
+            </DialogTitle>
+            <DialogDescription>
+              {language === "ja" 
+                ? "TeamMurataコードで永年無料・スタッフ権限が付与されます" 
+                : "Register with TeamMurata code for lifetime free access with staff permissions"}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="team-signup-displayname">
+                {language === "ja" ? "表示名（任意）" : "Display Name (optional)"}
+              </Label>
+              <Input
+                id="team-signup-displayname"
+                type="text"
+                placeholder={language === "ja" ? "村田太郎" : "Your Name"}
+                value={teamSignupDisplayName}
+                onChange={(e) => setTeamSignupDisplayName(e.target.value)}
+                disabled={isTeamSigningUp}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="team-signup-email">
+                {language === "ja" ? "メールアドレス" : "Email"} *
+              </Label>
+              <Input
+                id="team-signup-email"
+                type="email"
+                placeholder="you@example.com"
+                value={teamSignupEmail}
+                onChange={(e) => setTeamSignupEmail(e.target.value)}
+                disabled={isTeamSigningUp}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="team-signup-password">
+                {language === "ja" ? "パスワード" : "Password"} *
+              </Label>
+              <Input
+                id="team-signup-password"
+                type="password"
+                placeholder={language === "ja" ? "6文字以上" : "At least 6 characters"}
+                value={teamSignupPassword}
+                onChange={(e) => setTeamSignupPassword(e.target.value)}
+                disabled={isTeamSigningUp}
+              />
+            </div>
+            
+            <div className="p-3 bg-emerald-500/10 rounded-lg border border-emerald-500/30">
+              <p className="text-sm text-emerald-700 dark:text-emerald-300">
+                {language === "ja" 
+                  ? "✓ 永年無料・クレジットカード不要・スタッフ権限付与" 
+                  : "✓ Free forever • No credit card • Staff permissions"}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex gap-3">
+            <Button
+              variant="outline"
+              onClick={() => setTeamSignupDialogOpen(false)}
+              disabled={isTeamSigningUp}
+              className="flex-1"
+            >
+              {language === "ja" ? "キャンセル" : "Cancel"}
+            </Button>
+            <Button
+              onClick={handleTeamSignUp}
+              disabled={isTeamSigningUp}
+              className="flex-1 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-500/90 hover:to-teal-500/90 text-white"
+            >
+              {isTeamSigningUp 
+                ? (language === "ja" ? "登録中..." : "Registering...") 
+                : (language === "ja" ? "登録する" : "Register")}
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
 
