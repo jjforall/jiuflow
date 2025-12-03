@@ -89,29 +89,10 @@ serve(async (req) => {
     const data = await response.json();
     console.log("[GET-PRINTFUL-CATALOG] Fetched catalog products:", data.result?.length || 0);
 
-    // Filter to commonly used products
-    const popularCategories = [
-      "t-shirt", "hoodie", "tank", "long sleeve", "sweatshirt", "jacket",
-      "hat", "cap", "beanie",
-      "mug", "tumbler", "bottle",
-      "poster", "canvas", "framed",
-      "sticker",
-      "tote", "bag", "backpack",
-      "phone case", "iphone", "samsung",
-      "pillow", "blanket",
-      "socks", "leggings",
-      "all-over", "shorts", "joggers"
-    ];
+    // Return all products from Printful catalog
+    const allProducts = data.result || [];
 
-    const filteredProducts = (data.result || []).filter((product: any) => {
-      const typeName = (product.type_name || "").toLowerCase();
-      const title = (product.title || "").toLowerCase();
-      return popularCategories.some(cat => 
-        typeName.includes(cat) || title.includes(cat)
-      );
-    }).slice(0, 100);
-
-    return new Response(JSON.stringify({ products: filteredProducts }), {
+    return new Response(JSON.stringify({ products: allProducts }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });
