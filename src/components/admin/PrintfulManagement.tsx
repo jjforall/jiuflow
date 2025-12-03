@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { toast } from "sonner";
-import { Loader2, Package, RefreshCw, ExternalLink, Image as ImageIcon, Plus, Upload, RotateCcw } from "lucide-react";
+import { Loader2, Package, RefreshCw, ExternalLink, Image as ImageIcon, Plus, Upload, RotateCcw, Sparkles } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -853,8 +853,45 @@ export function PrintfulManagement() {
                     </div>
                   )}
                   
+                  {/* Mockup Generation Button */}
+                  {logoUrl && selectedVariants.length > 0 && (
+                    <div className="mt-4">
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        className="w-full"
+                        onClick={handleGenerateMockup}
+                        disabled={generatingMockup}
+                      >
+                        {generatingMockup ? (
+                          <>
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            モックアップ生成中...
+                          </>
+                        ) : (
+                          <>
+                            <Sparkles className="h-4 w-4 mr-2" />
+                            Printful APIでモックアップ生成
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  )}
+                  
+                  {/* Generated Mockup Display */}
+                  {generatedMockupUrl && (
+                    <div className="mt-4 p-3 border rounded-lg bg-background">
+                      <p className="text-sm font-medium mb-2 text-foreground">APIモックアップ:</p>
+                      <img
+                        src={generatedMockupUrl}
+                        alt="Generated mockup"
+                        className="w-full rounded-lg"
+                      />
+                    </div>
+                  )}
+                  
                   <p className="text-xs text-muted-foreground mt-3 text-center">
-                    {logoUrl ? "※ 実際の印刷位置とは異なる場合があります" : "ロゴ画像を追加するとプレビューが表示されます"}
+                    {logoUrl ? "※ APIモックアップを生成すると実際の印刷イメージを確認できます" : "ロゴ画像を追加するとプレビューが表示されます"}
                   </p>
                 </div>
               )}
