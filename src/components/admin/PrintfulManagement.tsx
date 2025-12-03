@@ -259,6 +259,12 @@ export function PrintfulManagement() {
   const handleCatalogProductChange = (productId: string) => {
     setSelectedCatalogProduct(productId);
     fetchCatalogVariants(productId);
+    
+    // Set default product name based on selected base product
+    const selectedProduct = catalogProducts.find(p => p.id.toString() === productId);
+    if (selectedProduct) {
+      setNewProductName(`jiuFlow ${selectedProduct.title}`);
+    }
   };
 
   const toggleVariant = (variantId: number) => {
@@ -586,20 +592,9 @@ export function PrintfulManagement() {
           </DialogHeader>
           
           <div className="space-y-6">
-            {/* Product Name */}
-            <div className="space-y-2">
-              <Label htmlFor="productName">商品名</Label>
-              <Input
-                id="productName"
-                value={newProductName}
-                onChange={(e) => setNewProductName(e.target.value)}
-                placeholder="例: jiuFlow Tシャツ"
-              />
-            </div>
-
             {/* Base Product Selection */}
             <div className="space-y-2">
-              <Label>ベース商品</Label>
+              <Label>1. ベース商品を選択</Label>
               {loadingCatalog ? (
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -633,7 +628,7 @@ export function PrintfulManagement() {
             {/* Variants Selection */}
             {selectedCatalogProduct && (
               <div className="space-y-2">
-                <Label>バリエーション選択</Label>
+                <Label>2. バリエーションを選択</Label>
                 {loadingVariants ? (
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <Loader2 className="h-4 w-4 animate-spin" />
@@ -685,6 +680,22 @@ export function PrintfulManagement() {
                     {selectedVariants.length}個のバリエーションを選択中
                   </p>
                 )}
+              </div>
+            )}
+
+            {/* Product Name - shown after base product and variants are selected */}
+            {selectedCatalogProduct && selectedVariants.length > 0 && (
+              <div className="space-y-2">
+                <Label htmlFor="productName">3. 商品名を編集</Label>
+                <Input
+                  id="productName"
+                  value={newProductName}
+                  onChange={(e) => setNewProductName(e.target.value)}
+                  placeholder="例: jiuFlow Tシャツ"
+                />
+                <p className="text-xs text-muted-foreground">
+                  ベース商品名をもとに自動設定されています。必要に応じて編集してください。
+                </p>
               </div>
             )}
 
