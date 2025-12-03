@@ -18,6 +18,7 @@ serve(async (req) => {
 
     const url = new URL(req.url);
     const productId = url.searchParams.get("product_id");
+    const getPrintfiles = url.searchParams.get("printfiles") === "true";
 
     // If product_id is provided, get variants for that product
     if (productId) {
@@ -38,9 +39,32 @@ serve(async (req) => {
       const data = await response.json();
       console.log("[GET-PRINTFUL-CATALOG] Fetched product variants:", data.result?.variants?.length || 0);
 
+      // Also fetch printfiles info if requested or by default for variants
+      let printfilesData = null;
+      try {
+        const printfilesResponse = await fetch(
+          `https://api.printful.com/mockup-generator/printfiles/${productId}`,
+          {
+            headers: {
+              "Authorization": `Bearer ${PRINTFUL_API_KEY}`,
+            },
+          }
+        );
+        
+        if (printfilesResponse.ok) {
+          const pfData = await printfilesResponse.json();
+          printfilesData = pfData.result;
+          console.log("[GET-PRINTFUL-CATALOG] Fetched printfiles, placements:", 
+            Object.keys(printfilesData?.available_placements || {}).length);
+        }
+      } catch (pfError) {
+        console.log("[GET-PRINTFUL-CATALOG] Could not fetch printfiles:", pfError);
+      }
+
       return new Response(JSON.stringify({ 
         product: data.result?.product,
-        variants: data.result?.variants || [] 
+        variants: data.result?.variants || [],
+        printfiles: printfilesData,
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200,

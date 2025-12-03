@@ -138,6 +138,10 @@ export function PrintfulManagement() {
   const [showThumbnailDialog, setShowThumbnailDialog] = useState(false);
   const [selectedMockupForThumbnail, setSelectedMockupForThumbnail] = useState<string | null>(null);
   
+  // Placement selection state
+  const [availablePlacements, setAvailablePlacements] = useState<Record<string, string>>({});
+  const [selectedPlacement, setSelectedPlacement] = useState<string>("front");
+  
   // Print area info for accurate preview
   const [printAreaInfo, setPrintAreaInfo] = useState<{
     placement: string;
@@ -355,6 +359,21 @@ export function PrintfulManagement() {
       if (response.data?.variants) {
         setCatalogVariants(response.data.variants);
       }
+      
+      // Set available placements from printfiles data
+      if (response.data?.printfiles?.available_placements) {
+        setAvailablePlacements(response.data.printfiles.available_placements);
+        const placementKeys = Object.keys(response.data.printfiles.available_placements);
+        // Default to front if available, otherwise first placement
+        if (placementKeys.includes("front")) {
+          setSelectedPlacement("front");
+        } else if (placementKeys.length > 0) {
+          setSelectedPlacement(placementKeys[0]);
+        }
+      } else {
+        setAvailablePlacements({});
+        setSelectedPlacement("front");
+      }
     } catch (error) {
       console.error("Error fetching variants:", error);
       toast.error("バリエーションの取得に失敗しました");
@@ -457,7 +476,7 @@ export function PrintfulManagement() {
         files: [
           {
             url: logoUrl,
-            type: "default",
+            type: selectedPlacement,
           }
         ]
       }));
@@ -517,7 +536,7 @@ export function PrintfulManagement() {
           save_to_storage: false,
           product_name: newProductName || `product_${selectedCatalogProduct}`,
           files: [{
-            placement: "front",
+            placement: selectedPlacement,
             image_url: logoUrl,
             position: {
               area_width: areaWidth,
@@ -1281,6 +1300,32 @@ export function PrintfulManagement() {
                     {selectedVariants.length}個のバリエーションを選択中
                   </p>
                 )}
+              </div>
+            )}
+
+            {/* Placement Selection - shown when placements are available */}
+            {selectedCatalogProduct && Object.keys(availablePlacements).length > 1 && (
+              <div className="space-y-2">
+                <Label>印刷位置を選択</Label>
+                <div className="flex flex-wrap gap-2">
+                  {Object.entries(availablePlacements).map(([key, label]) => (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => setSelectedPlacement(key)}
+                      className={`px-3 py-2 rounded-lg border text-sm transition-all ${
+                        selectedPlacement === key
+                          ? "border-primary ring-2 ring-primary/20 bg-primary/5 font-medium"
+                          : "border-border hover:border-primary/50"
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  選択: {availablePlacements[selectedPlacement] || selectedPlacement}
+                </p>
               </div>
             )}
 
