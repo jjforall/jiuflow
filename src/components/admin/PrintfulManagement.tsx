@@ -166,7 +166,7 @@ export function PrintfulManagement() {
       
       if (data) {
         const logos = data
-          .filter(file => file.name !== ".emptyFolderPlaceholder")
+          .filter(file => file.name !== ".emptyFolderPlaceholder" && file.name !== "mockups")
           .map(file => ({
             name: file.name,
             url: `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/product-logos/${file.name}`,
