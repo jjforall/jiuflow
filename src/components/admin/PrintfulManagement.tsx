@@ -645,25 +645,63 @@ export function PrintfulManagement() {
                 </div>
               )}
 
-              {/* Preview selected logo */}
-              {logoUrl && (
+              {/* Mockup Preview */}
+              {(logoUrl || selectedCatalogProduct) && (
                 <div className="mt-3 p-4 border rounded-lg bg-muted/30">
-                  <p className="text-sm font-medium text-foreground mb-3">ロゴプレビュー</p>
-                  <div className="flex items-center justify-center bg-white rounded-lg p-6 border">
-                    <img
-                      src={logoUrl}
-                      alt="Selected logo"
-                      className="max-h-40 max-w-full object-contain"
-                      onError={(e) => {
-                        const target = e.target as HTMLImageElement;
-                        target.style.display = "none";
-                        target.nextElementSibling?.classList.remove("hidden");
-                      }}
-                    />
-                    <p className="hidden text-sm text-destructive">画像を読み込めませんでした</p>
+                  <p className="text-sm font-medium text-foreground mb-3">商品プレビュー</p>
+                  <div className="flex items-center justify-center bg-white rounded-lg p-4 border min-h-[200px]">
+                    {(() => {
+                      const selectedProduct = catalogProducts.find(
+                        p => p.id.toString() === selectedCatalogProduct
+                      );
+                      if (selectedProduct?.image) {
+                        return (
+                          <div className="relative">
+                            {/* Base product image */}
+                            <img
+                              src={selectedProduct.image}
+                              alt={selectedProduct.title}
+                              className="max-h-48 object-contain"
+                            />
+                            {/* Logo overlay */}
+                            {logoUrl && (
+                              <div className="absolute inset-0 flex items-center justify-center">
+                                <img
+                                  src={logoUrl}
+                                  alt="Logo overlay"
+                                  className="max-h-20 max-w-[60%] object-contain drop-shadow-lg"
+                                  style={{ 
+                                    marginTop: selectedProduct.type_name?.toLowerCase().includes('sticker') ? '0' : '-10%'
+                                  }}
+                                  onError={(e) => {
+                                    (e.target as HTMLImageElement).style.display = "none";
+                                  }}
+                                />
+                              </div>
+                            )}
+                          </div>
+                        );
+                      } else if (logoUrl) {
+                        return (
+                          <img
+                            src={logoUrl}
+                            alt="Selected logo"
+                            className="max-h-40 max-w-full object-contain"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).style.display = "none";
+                            }}
+                          />
+                        );
+                      }
+                      return (
+                        <p className="text-sm text-muted-foreground">
+                          ベース商品を選択してください
+                        </p>
+                      );
+                    })()}
                   </div>
                   <p className="text-xs text-muted-foreground mt-2 text-center">
-                    この画像が商品にプリントされます
+                    {logoUrl ? "※ 実際の印刷位置とは異なる場合があります" : "ロゴ画像を追加するとプレビューが表示されます"}
                   </p>
                 </div>
               )}
