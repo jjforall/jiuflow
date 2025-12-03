@@ -374,25 +374,17 @@ export function PrintfulManagement() {
     setLoadingPrintArea(true);
     setPrintAreaInfo(null);
     try {
-      // Use the generate-printful-mockup function to get printfiles info
-      const response = await fetch(
-        `https://api.printful.com/mockup-generator/printfiles/${productId}`,
-        {
-          headers: {
-            // Note: This won't work client-side due to CORS, so we'll use default values
-          },
-        }
-      );
       // Since we can't call Printful API directly from client, use sensible defaults
+      // These values are calibrated for standard T-shirt product images
       // The actual positioning will be handled by the mockup generation API
       setPrintAreaInfo({
         placement: "front",
         width: 4050,
         height: 2700,
-        areaTop: 15,    // Print area starts at 15% from top
-        areaLeft: 20,   // Print area starts at 20% from left  
-        areaWidth: 60,  // Print area is 60% of product width
-        areaHeight: 50, // Print area is 50% of product height
+        areaTop: 28,    // Print area starts at 28% from top (below collar)
+        areaLeft: 28,   // Print area starts at 28% from left (centered on chest)
+        areaWidth: 44,  // Print area is 44% of product width
+        areaHeight: 38, // Print area is 38% of product height
       });
     } catch (error) {
       console.log("Using default print area settings");
@@ -401,10 +393,10 @@ export function PrintfulManagement() {
         placement: "front",
         width: 4050,
         height: 2700,
-        areaTop: 15,
-        areaLeft: 20,
-        areaWidth: 60,
-        areaHeight: 50,
+        areaTop: 28,
+        areaLeft: 28,
+        areaWidth: 44,
+        areaHeight: 38,
       });
     } finally {
       setLoadingPrintArea(false);
