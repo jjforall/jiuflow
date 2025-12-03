@@ -176,7 +176,7 @@ const Join = () => {
         return;
       }
       
-      if (trimmedCode === 'TEAMMURATA') {
+      if (trimmedCode === 'TEAMRYOZO') {
         setIsValidReferralCode(true);
         setReferralPlanType('teammurata');
         return;
@@ -789,7 +789,7 @@ const Join = () => {
                 </div>
               )}
               
-              {/* TeamMurata - Staff Plan (Free Forever) */}
+              {/* TeamRyozo - Staff Plan (Free Forever) */}
               {isValidReferralCode && referralPlanType === 'teammurata' && (
                 <div className="relative rounded-2xl group hover:shadow-2xl transition-all">
                   <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/20 via-teal-500/10 to-cyan-500/10 rounded-2xl" />
@@ -798,7 +798,7 @@ const Join = () => {
                       {language === "ja" ? "🌟 チームメンバー" : "🌟 Team Member"}
                     </div>
                     <h3 className="text-3xl font-light mb-6 mt-2">
-                      Team Murata
+                      Team Ryozo
                     </h3>
                     <div className="mb-8">
                       <div className="text-5xl font-light mb-3 bg-gradient-to-r from-emerald-500 to-teal-500 bg-clip-text text-transparent">
@@ -1140,8 +1140,8 @@ const Join = () => {
             </DialogTitle>
             <DialogDescription>
               {language === "ja" 
-                ? "TeamMurataコードで永年無料・スタッフ権限が付与されます" 
-                : "Register with TeamMurata code for lifetime free access with staff permissions"}
+                ? "TeamRyozoコードで永年無料・スタッフ権限が付与されます" 
+                : "Register with TeamRyozo code for lifetime free access with staff permissions"}
             </DialogDescription>
           </DialogHeader>
           
