@@ -90,18 +90,27 @@ serve(async (req) => {
         if (isEmbroidery) {
           const existingOptions = variant.options || [];
           const hasThreadColors = existingOptions.some(opt => 
-            opt.id === "thread_colors" || opt.id === "thread_colors_3d"
+            opt.id.includes("thread_colors")
           );
           
           if (!hasThreadColors) {
+            // Add multiple thread color options to cover different placements
+            // Printful expects specific option IDs based on placement
+            const threadColorOptions = [
+              { id: "thread_colors", value: threadColors },
+              { id: "thread_colors_3d", value: threadColors },
+              { id: "thread_colors_front_large", value: threadColors },
+              { id: "thread_colors_front", value: threadColors },
+              { id: "thread_colors_back", value: threadColors },
+              { id: "thread_colors_left", value: threadColors },
+              { id: "stitch_color", value: threadColors[0] }, // Some products use stitch_color
+            ];
+            
             return {
               ...variant,
               options: [
                 ...existingOptions,
-                {
-                  id: "thread_colors",
-                  value: threadColors
-                }
+                ...threadColorOptions
               ]
             };
           }
