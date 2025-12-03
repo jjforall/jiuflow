@@ -202,22 +202,50 @@ const AdminDashboard = () => {
                     <Menu className="h-5 w-5" />
                   </Button>
                 </SheetTrigger>
-                <SheetContent side="left" className="w-64 p-0 bg-background">
+                <SheetContent side="left" className="w-72 p-0 bg-background overflow-y-auto">
                   <div className="p-4 border-b">
                     <Link to="/" className="flex items-center gap-2 text-foreground hover:text-primary">
                       <Home className="h-5 w-5" />
                       <span>ホームに戻る</span>
                     </Link>
                   </div>
-                  <div className="p-4 border-b">
-                    <Link to="/map" className="flex items-center gap-2 text-foreground hover:text-primary">
-                      <span>テクニックマップ</span>
-                    </Link>
-                  </div>
-                  <div className="p-4 border-b">
-                    <Link to="/mypage" className="flex items-center gap-2 text-foreground hover:text-primary">
-                      <span>マイページ</span>
-                    </Link>
+                  <div className="p-3 border-b">
+                    <p className="text-xs text-muted-foreground mb-2">管理メニュー</p>
+                    <div className="space-y-1">
+                      {[
+                        { id: "techniques", label: "テクニック管理" },
+                        { id: "users", label: "会員管理" },
+                        { id: "dojos", label: "道場管理" },
+                        { id: "subscriptions", label: "サブスク管理" },
+                        { id: "plans", label: "プラン管理" },
+                        { id: "points", label: "ポイント管理" },
+                        { id: "belts", label: "帯管理" },
+                        { id: "celebrities", label: "有名選手" },
+                        { id: "lineage", label: "系統管理" },
+                        { id: "edit-requests", label: "編集リクエスト" },
+                        { id: "celebrity", label: "有名人申請" },
+                        { id: "events", label: "イベント管理" },
+                        { id: "user-videos", label: "ユーザー動画" },
+                        { id: "brothers", label: "Brothers申請" },
+                        { id: "contacts", label: "お問い合わせ" },
+                        { id: "logs", label: "ログ" },
+                        { id: "tips", label: "投げ銭" },
+                        { id: "music", label: "音楽管理" },
+                        { id: "settings", label: "設定" },
+                      ].map((item) => (
+                        <button
+                          key={item.id}
+                          onClick={() => setActiveTab(item.id)}
+                          className={`w-full text-left px-3 py-2 rounded text-sm ${
+                            activeTab === item.id
+                              ? "bg-primary/10 text-primary font-medium"
+                              : "text-foreground hover:bg-muted"
+                          }`}
+                        >
+                          {item.label}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                   <div className="p-4">
                     <Button variant="outline" onClick={handleLogout} className="w-full">
