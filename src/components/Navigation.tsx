@@ -5,7 +5,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { translations } from "@/lib/translations";
 import { prefetchRoute } from "@/utils/routePrefetch";
 import { Button } from "@/components/ui/button";
-import { Menu, LogIn, User, LogOut, ShieldCheck, Moon, Sun, Home, Map, Info, UserPlus, X, ClipboardList, ShoppingBag } from "lucide-react";
+import { Menu, LogIn, User, LogOut, ShieldCheck, Moon, Sun, Home, Map, Info, UserPlus, X, ClipboardList } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { supabase } from "@/integrations/supabase/client";
 import { User as SupabaseUser } from "@supabase/supabase-js";
@@ -87,7 +87,6 @@ const Navigation = () => {
   const links = [
     { to: "/", label: t.nav.home, icon: Home },
     { to: "/map", label: t.nav.map, icon: Map },
-    { to: "/shop", label: language === "ja" ? "ショップ" : language === "pt" ? "Loja" : "Shop", icon: ShoppingBag },
     { to: "/about", label: t.nav.about, icon: Info },
     // Only show Join link when subscription check is complete and user is not subscribed
     ...(!subscriptionLoading && !subscribed ? [{ to: "/join", label: t.nav.join, icon: UserPlus }] : []),
