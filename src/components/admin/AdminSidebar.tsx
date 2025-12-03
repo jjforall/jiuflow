@@ -28,7 +28,6 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
-import jiuflowLogo from "@/assets/jiuflow-logo-black.png";
 
 interface AdminSidebarProps {
   activeTab: string;
@@ -67,7 +66,9 @@ export function AdminSidebar({ activeTab, onTabChange }: AdminSidebarProps) {
     <Sidebar collapsible="icon" className="bg-background border-r">
       {!isCollapsed && (
         <div className="p-4 border-b flex items-center justify-center bg-background animate-fade-in">
-          <img src={jiuflowLogo} alt="JiuFlow" className="h-8" />
+          <span className="text-xl font-light tracking-tight">
+            JiuF<span className="text-red-500">l</span>ow
+          </span>
         </div>
       )}
 
