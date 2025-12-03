@@ -46,13 +46,15 @@ serve(async (req) => {
           
           if (detailResponse.ok) {
             const detailData = await detailResponse.json();
+            const syncProduct = detailData.result?.sync_product;
             return {
               id: product.id,
               external_id: product.external_id,
               name: product.name,
-              thumbnail_url: product.thumbnail_url,
+              thumbnail_url: syncProduct?.thumbnail_url || product.thumbnail_url,
               variants: detailData.result?.sync_variants || [],
-              sync_product: detailData.result?.sync_product,
+              sync_product: syncProduct,
+              is_ignored: syncProduct?.is_ignored || false,
             };
           }
           return {

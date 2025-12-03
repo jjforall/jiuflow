@@ -14,6 +14,7 @@ interface UpdateProductRequest {
     id: number;
     retail_price?: string;
   }>;
+  is_ignored?: boolean;
 }
 
 serve(async (req) => {
@@ -34,9 +35,22 @@ serve(async (req) => {
       throw new Error("product_id is required");
     }
 
-    // Update product name if provided
-    if (body.sync_product?.name) {
-      console.log("[UPDATE-PRINTFUL-PRODUCT] Updating product name to:", body.sync_product.name);
+    // Update product name or is_ignored if provided
+    if (body.sync_product?.name || body.is_ignored !== undefined) {
+      const updateData: Record<string, unknown> = { sync_product: {} };
+      
+      if (body.sync_product?.name) {
+        console.log("[UPDATE-PRINTFUL-PRODUCT] Updating product name to:", body.sync_product.name);
+        updateData.sync_product = { name: body.sync_product.name };
+      }
+      
+      if (body.is_ignored !== undefined) {
+        console.log("[UPDATE-PRINTFUL-PRODUCT] Updating is_ignored to:", body.is_ignored);
+        updateData.sync_product = { 
+          ...(updateData.sync_product as object), 
+          is_ignored: body.is_ignored 
+        };
+      }
       
       const productResponse = await fetch(
         `https://api.printful.com/store/products/${body.product_id}`,
@@ -46,11 +60,7 @@ serve(async (req) => {
             "Authorization": `Bearer ${PRINTFUL_API_KEY}`,
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({
-            sync_product: {
-              name: body.sync_product.name,
-            },
-          }),
+          body: JSON.stringify(updateData),
         }
       );
 
