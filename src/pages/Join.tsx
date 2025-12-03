@@ -408,8 +408,12 @@ const Join = () => {
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
 
+      const isUpgraded = data?.upgraded;
+      
       toast.success(
-        language === "ja" ? "スタッフ登録完了！" : "Staff registration complete!",
+        language === "ja" 
+          ? (isUpgraded ? "スタッフ権限を付与しました！" : "スタッフ登録完了！")
+          : (isUpgraded ? "Staff privileges granted!" : "Staff registration complete!"),
         {
           description: language === "ja" 
             ? "ログインページに移動します..." 
