@@ -647,16 +647,24 @@ export function PrintfulManagement() {
 
               {/* Preview selected logo */}
               {logoUrl && (
-                <div className="mt-2 p-2 border rounded bg-muted/50">
-                  <p className="text-xs text-muted-foreground mb-1">プレビュー:</p>
-                  <img
-                    src={logoUrl}
-                    alt="Selected logo"
-                    className="h-16 object-contain"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).style.display = "none";
-                    }}
-                  />
+                <div className="mt-3 p-4 border rounded-lg bg-muted/30">
+                  <p className="text-sm font-medium text-foreground mb-3">ロゴプレビュー</p>
+                  <div className="flex items-center justify-center bg-white rounded-lg p-6 border">
+                    <img
+                      src={logoUrl}
+                      alt="Selected logo"
+                      className="max-h-40 max-w-full object-contain"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.style.display = "none";
+                        target.nextElementSibling?.classList.remove("hidden");
+                      }}
+                    />
+                    <p className="hidden text-sm text-destructive">画像を読み込めませんでした</p>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-2 text-center">
+                    この画像が商品にプリントされます
+                  </p>
                 </div>
               )}
             </div>
