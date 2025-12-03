@@ -73,6 +73,9 @@ const Video = () => {
   const [viewCount, setViewCount] = useState<number>(0);
   const [isVideoPlaying, setIsVideoPlaying] = useState(false);
   const [practiceDialogOpen, setPracticeDialogOpen] = useState(false);
+  const [translationStatus, setTranslationStatus] = useState<"none" | "pending" | "translating" | "completed">("none");
+  const [translationProjectId, setTranslationProjectId] = useState<string | null>(null);
+  const [isTranslating, setIsTranslating] = useState(false);
   const [formData, setFormData] = useState({
     practice_date: new Date(),
     proficiency_level: "1",
@@ -371,6 +374,20 @@ const Video = () => {
     }
   };
 
+  // 翻訳済み動画が存在するかチェック
+  const hasTranslatedVideo = (tech: Technique, lang: string): boolean => {
+    // video_metadataをチェック
+    if (tech.video_metadata?.[lang]?.video_url) {
+      return true;
+    }
+    // 従来のフィールドをチェック
+    if (lang === "ja" && tech.video_url_ja) return true;
+    if (lang === "pt" && tech.video_url_pt) return true;
+    // 英語は元動画なので常に存在
+    if (lang === "en" && tech.video_url) return true;
+    return false;
+  };
+
   const getTechniqueVideoUrl = (tech: Technique) => {
     // まずvideo_metadataをチェック
     if (tech.video_metadata) {
@@ -387,9 +404,11 @@ const Video = () => {
       case "pt":
         return tech.video_url_pt || tech.video_url;
       default:
-        return tech.video_url;
+        // 他の言語の場合は元の動画（日本語）を返す
+        return tech.video_url_ja || tech.video_url;
     }
   };
+
   const getTechniqueThumbnailUrl = (tech: Technique) => {
     switch (language) {
       case "ja":
@@ -400,6 +419,136 @@ const Video = () => {
       return tech.thumbnail_url;
     }
   };
+
+  // 翻訳を開始
+  const startTranslation = async () => {
+    if (!technique || !user) return;
+    
+    const sourceVideoUrl = technique.video_url_ja || technique.video_url;
+    if (!sourceVideoUrl) {
+      toast.error(language === "ja" ? "元の動画がありません" : "No source video available");
+      return;
+    }
+
+    setIsTranslating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("translate-video", {
+        body: {
+          videoUrl: sourceVideoUrl,
+          sourceLanguage: "ja",
+          targetLanguage: language,
+          techniqueId: technique.id,
+        },
+      });
+
+      if (error) throw error;
+
+      if (data.projectId) {
+        setTranslationProjectId(data.projectId);
+        setTranslationStatus("translating");
+        
+        // video_metadataに翻訳プロジェクトIDを保存
+        const currentMetadata = technique.video_metadata || {};
+        const updatedMetadata = {
+          ...currentMetadata,
+          [language]: {
+            ...currentMetadata[language],
+            translation_project_id: data.projectId,
+            translation_status: "translating",
+          },
+        };
+
+        await supabase
+          .from("techniques")
+          .update({ video_metadata: updatedMetadata })
+          .eq("id", technique.id);
+
+        toast.success(
+          language === "ja" 
+            ? "翻訳を開始しました。完了までしばらくお待ちください。" 
+            : "Translation started. Please wait for completion."
+        );
+        
+        // 翻訳状況のポーリング開始
+        checkTranslationStatus(data.projectId);
+      }
+    } catch (error: any) {
+      console.error("Translation error:", error);
+      toast.error(
+        language === "ja" 
+          ? "翻訳の開始に失敗しました" 
+          : "Failed to start translation"
+      );
+    } finally {
+      setIsTranslating(false);
+    }
+  };
+
+  // 翻訳状況をチェック
+  const checkTranslationStatus = async (projectId: string) => {
+    try {
+      const { data, error } = await supabase.functions.invoke("check-translation-status", {
+        body: { projectId },
+      });
+
+      if (error) throw error;
+
+      if (data.status === "completed" || data.status === "done" || data.status === "merging_done") {
+        if (data.videoUrl) {
+          // 翻訳完了、video_metadataを更新
+          const currentMetadata = technique?.video_metadata || {};
+          const updatedMetadata = {
+            ...currentMetadata,
+            [language]: {
+              ...currentMetadata[language],
+              video_url: data.videoUrl,
+              translation_status: "completed",
+            },
+          };
+
+          await supabase
+            .from("techniques")
+            .update({ video_metadata: updatedMetadata })
+            .eq("id", technique?.id);
+
+          setTranslationStatus("completed");
+          
+          // techniqueを更新してリロード
+          setTechnique(prev => prev ? {
+            ...prev,
+            video_metadata: updatedMetadata,
+          } : null);
+
+          toast.success(
+            language === "ja" 
+              ? "翻訳が完了しました！" 
+              : "Translation completed!"
+          );
+        }
+      } else {
+        // まだ翻訳中、5秒後に再チェック
+        setTimeout(() => checkTranslationStatus(projectId), 5000);
+      }
+    } catch (error) {
+      console.error("Status check error:", error);
+    }
+  };
+
+  // 翻訳状況の初期チェック
+  useEffect(() => {
+    if (technique && language !== "ja") {
+      const metadata = technique.video_metadata?.[language];
+      if (metadata?.translation_project_id && metadata?.translation_status === "translating") {
+        setTranslationProjectId(metadata.translation_project_id);
+        setTranslationStatus("translating");
+        checkTranslationStatus(metadata.translation_project_id);
+      } else if (hasTranslatedVideo(technique, language)) {
+        setTranslationStatus("completed");
+      } else {
+        setTranslationStatus("none");
+      }
+    }
+  }, [technique, language]);
 
   const handlePracticeSubmit = async () => {
     if (!user || !technique) return;
@@ -620,6 +769,77 @@ const Video = () => {
                   </div>
                 )}
               </div>
+
+              {/* Translation Status Banner */}
+              {language !== "ja" && (
+                <div className="mt-3">
+                  {translationStatus === "none" && !hasTranslatedVideo(technique, language) && (
+                    <Card className="p-4 bg-gradient-to-r from-primary/10 to-transparent border-primary/20">
+                      <div className="flex items-center justify-between gap-4">
+                        <div className="flex-1">
+                          <p className="text-sm font-medium">
+                            {language === "pt" 
+                              ? "Esta lição está em japonês. Deseja traduzir para o seu idioma?" 
+                              : "This lesson is in Japanese. Would you like to translate it to your language?"}
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {language === "pt" 
+                              ? "A tradução automática de áudio pode levar alguns minutos" 
+                              : "Automatic audio translation may take a few minutes"}
+                          </p>
+                        </div>
+                        <Button 
+                          onClick={startTranslation} 
+                          disabled={isTranslating}
+                          size="sm"
+                        >
+                          {isTranslating ? (
+                            <>
+                              <span className="animate-spin mr-2">⏳</span>
+                              {language === "pt" ? "Iniciando..." : "Starting..."}
+                            </>
+                          ) : (
+                            language === "pt" ? "Traduzir" : "Translate"
+                          )}
+                        </Button>
+                      </div>
+                    </Card>
+                  )}
+
+                  {translationStatus === "translating" && (
+                    <Card className="p-4 bg-gradient-to-r from-yellow-500/10 to-transparent border-yellow-500/20">
+                      <div className="flex items-center gap-3">
+                        <span className="animate-spin text-xl">⏳</span>
+                        <div>
+                          <p className="text-sm font-medium">
+                            {language === "pt" 
+                              ? "Traduzindo o vídeo..." 
+                              : "Translating video..."}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {language === "pt" 
+                              ? "Isso pode levar alguns minutos. Você pode continuar assistindo enquanto isso." 
+                              : "This may take a few minutes. You can continue watching in the meantime."}
+                          </p>
+                        </div>
+                      </div>
+                    </Card>
+                  )}
+
+                  {translationStatus === "completed" && hasTranslatedVideo(technique, language) && (
+                    <Card className="p-3 bg-gradient-to-r from-green-500/10 to-transparent border-green-500/20">
+                      <div className="flex items-center gap-2">
+                        <span className="text-green-500">✓</span>
+                        <p className="text-sm">
+                          {language === "pt" 
+                            ? "Reproduzindo versão traduzida" 
+                            : "Playing translated version"}
+                        </p>
+                      </div>
+                    </Card>
+                  )}
+                </div>
+              )}
 
               {/* Technique Info */}
               <div className="mt-6 animate-fade-up space-y-4">
