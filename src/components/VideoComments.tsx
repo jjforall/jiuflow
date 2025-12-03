@@ -16,6 +16,7 @@ interface Comment {
   comment: string;
   created_at: string;
   user_email?: string;
+  tip_amount?: number;
 }
 
 interface VideoCommentsProps {
@@ -88,6 +89,12 @@ export const VideoComments = ({ videoId, userId }: VideoCommentsProps) => {
 
       if (commentsError) throw commentsError;
 
+      // Get tips for this video to match with comments
+      const { data: tipsData } = await supabase
+        .from("video_tips")
+        .select("from_user_id, amount, message, created_at")
+        .eq("video_id", videoId);
+
       // Get user emails separately
       if (commentsData && commentsData.length > 0) {
         const userIds = [...new Set(commentsData.map(c => c.user_id))];
@@ -98,10 +105,19 @@ export const VideoComments = ({ videoId, userId }: VideoCommentsProps) => {
 
         const profilesMap = new Map(profilesData?.map(p => [p.id, p.email]) || []);
 
-        const commentsWithEmails = commentsData.map(comment => ({
-          ...comment,
-          user_email: profilesMap.get(comment.user_id) || null
-        }));
+        const commentsWithEmails = commentsData.map(comment => {
+          // Find matching tip by user_id and message content
+          const matchingTip = tipsData?.find(tip => 
+            tip.from_user_id === comment.user_id && 
+            tip.message === comment.comment
+          );
+          
+          return {
+            ...comment,
+            user_email: profilesMap.get(comment.user_id) || null,
+            tip_amount: matchingTip?.amount || undefined
+          };
+        });
 
         setComments(commentsWithEmails);
       } else {
@@ -367,6 +383,33 @@ export const VideoComments = ({ videoId, userId }: VideoCommentsProps) => {
     return formatDistanceToNow(new Date(dateString), { addSuffix: true, locale });
   };
 
+  const getTipIcon = (amount: number | undefined) => {
+    if (!amount) return null;
+    
+    if (amount >= 100000) return <Gem className="w-4 h-4 text-violet-500" />;
+    if (amount >= 60000) return <Pizza className="w-4 h-4 text-red-500" />;
+    if (amount >= 40000) return <Pizza className="w-4 h-4 text-orange-500" />;
+    if (amount >= 30000) return <Wine className="w-4 h-4 text-amber-500" />;
+    if (amount >= 500) return <Droplet className="w-4 h-4 text-blue-500" />;
+    if (amount >= 300) return <Coffee className="w-4 h-4 text-amber-700" />;
+    return <Medal className="w-4 h-4 text-yellow-500" />;
+  };
+
+  const getTipLabel = (amount: number | undefined) => {
+    if (!amount) return null;
+    
+    const item = tipItems.find(t => t.amount === amount) || 
+      (amount >= 100000 ? tipItems.find(t => t.amount === 100000) :
+       amount >= 60000 ? tipItems.find(t => t.amount === 60000) :
+       amount >= 40000 ? tipItems.find(t => t.amount === 40000) :
+       amount >= 30000 ? tipItems.find(t => t.amount === 30000) :
+       amount >= 500 ? tipItems.find(t => t.amount === 500) :
+       amount >= 300 ? tipItems.find(t => t.amount === 300) :
+       tipItems.find(t => t.amount === 0));
+    
+    return item?.label[language as keyof typeof item.label] || `¥${amount.toLocaleString()}`;
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-2">
@@ -484,13 +527,21 @@ export const VideoComments = ({ videoId, userId }: VideoCommentsProps) => {
           </p>
         ) : (
           comments.map((comment) => (
-            <Card key={comment.id} className="p-4">
+            <Card key={comment.id} className={`p-4 ${comment.tip_amount ? 'border-primary/30 bg-primary/5' : ''}`}>
               <div className="flex justify-between items-start gap-3">
                 <div className="flex-1 space-y-2">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <span className="font-medium text-sm">
                       {comment.user_email?.split("@")[0] || "User"}
                     </span>
+                    {comment.tip_amount && (
+                      <div className="flex items-center gap-1 px-2 py-0.5 bg-primary/10 rounded-full text-xs">
+                        {getTipIcon(comment.tip_amount)}
+                        <span className="font-medium text-primary">
+                          {getTipLabel(comment.tip_amount)}
+                        </span>
+                      </div>
+                    )}
                     <span className="text-xs text-muted-foreground">
                       {getTimeAgo(comment.created_at)}
                     </span>
