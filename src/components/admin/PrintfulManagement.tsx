@@ -4,11 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Loader2, Package, RefreshCw, ExternalLink, Image as ImageIcon, Plus, Upload, RotateCcw, Sparkles, Pencil, Trash2, ImagePlus, Save } from "lucide-react";
+import { DraggableLogoPreview } from "./DraggableLogoPreview";
 import {
   Table,
   TableBody,
@@ -1370,51 +1370,10 @@ export function PrintfulManagement() {
                         </div>
                       </div>
 
-                      {/* Size and position controls */}
+                      {/* Size and position info */}
                       {getPlacementConfig(activePlacement).logoUrl && (
-                        <div className="space-y-3">
-                          <div className="space-y-2">
-                            <div className="flex items-center justify-between">
-                              <Label className="text-xs">サイズ</Label>
-                              <span className="text-xs text-muted-foreground">{getPlacementConfig(activePlacement).logoSize}%</span>
-                            </div>
-                            <Slider
-                              value={[getPlacementConfig(activePlacement).logoSize]}
-                              onValueChange={([value]) => updatePlacementConfig(activePlacement, { logoSize: value })}
-                              min={10}
-                              max={100}
-                              step={5}
-                              className="w-full"
-                            />
-                          </div>
-                          <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                              <div className="flex items-center justify-between">
-                                <Label className="text-xs">横位置</Label>
-                                <span className="text-xs text-muted-foreground">{getPlacementConfig(activePlacement).logoPositionX}%</span>
-                              </div>
-                              <Slider
-                                value={[getPlacementConfig(activePlacement).logoPositionX]}
-                                onValueChange={([value]) => updatePlacementConfig(activePlacement, { logoPositionX: value })}
-                                min={0}
-                                max={100}
-                                step={5}
-                              />
-                            </div>
-                            <div className="space-y-2">
-                              <div className="flex items-center justify-between">
-                                <Label className="text-xs">縦位置</Label>
-                                <span className="text-xs text-muted-foreground">{getPlacementConfig(activePlacement).logoPositionY}%</span>
-                              </div>
-                              <Slider
-                                value={[getPlacementConfig(activePlacement).logoPositionY]}
-                                onValueChange={([value]) => updatePlacementConfig(activePlacement, { logoPositionY: value })}
-                                min={0}
-                                max={100}
-                                step={5}
-                              />
-                            </div>
-                          </div>
+                        <div className="flex items-center justify-between text-xs text-muted-foreground">
+                          <span>サイズ: {getPlacementConfig(activePlacement).logoSize}% • 位置: X{getPlacementConfig(activePlacement).logoPositionX}% Y{getPlacementConfig(activePlacement).logoPositionY}%</span>
                           <Button
                             type="button"
                             variant="ghost"
@@ -1422,7 +1381,7 @@ export function PrintfulManagement() {
                             onClick={() => updatePlacementConfig(activePlacement, { logoSize: 50, logoPositionX: 50, logoPositionY: 50 })}
                           >
                             <RotateCcw className="h-3 w-3 mr-1" />
-                            位置リセット
+                            リセット
                           </Button>
                         </div>
                       )}
@@ -1466,44 +1425,37 @@ export function PrintfulManagement() {
               <div className="p-4 border rounded-lg bg-muted/30">
                 <div className="flex items-center justify-between mb-3">
                   <p className="text-sm font-medium">プレビュー ({availablePlacements[activePlacement]})</p>
+                  <p className="text-xs text-muted-foreground">ドラッグで移動 • ボタンでサイズ変更</p>
                 </div>
                 
-                <div className="flex items-center justify-center bg-white rounded-lg p-4 border min-h-[200px]">
-                  {(() => {
-                    const selectedProduct = catalogProducts.find(p => p.id.toString() === selectedCatalogProduct);
-                    const selectedVariant = selectedVariants.length > 0 
-                      ? catalogVariants.find(v => v.id === selectedVariants[0])
-                      : null;
-                    const previewImage = selectedVariant?.image || selectedProduct?.image;
-                    const activeConfig = getPlacementConfig(activePlacement);
-                    
-                    if (previewImage) {
-                      return (
-                        <div className="relative w-full h-[180px]">
-                          <img
-                            src={previewImage}
-                            alt="Product"
-                            className="absolute inset-0 w-full h-full object-contain"
-                          />
-                          {printAreaInfo && activeConfig.logoUrl && (
-                            <img
-                              src={activeConfig.logoUrl}
-                              alt="Logo"
-                              className="absolute object-contain drop-shadow-lg pointer-events-none"
-                              style={{
-                                width: `${(activeConfig.logoSize / 100) * printAreaInfo.areaWidth}%`,
-                                left: `${printAreaInfo.areaLeft + (activeConfig.logoPositionX / 100) * printAreaInfo.areaWidth}%`,
-                                top: `${printAreaInfo.areaTop + (activeConfig.logoPositionY / 100) * printAreaInfo.areaHeight}%`,
-                                transform: 'translate(-50%, -50%)',
-                              }}
-                            />
-                          )}
-                        </div>
-                      );
-                    }
-                    return <p className="text-sm text-muted-foreground">プレビューを表示できません</p>;
-                  })()}
-                </div>
+                {(() => {
+                  const selectedProduct = catalogProducts.find(p => p.id.toString() === selectedCatalogProduct);
+                  const selectedVariant = selectedVariants.length > 0 
+                    ? catalogVariants.find(v => v.id === selectedVariants[0])
+                    : null;
+                  const previewImage = selectedVariant?.image || selectedProduct?.image;
+                  const activeConfig = getPlacementConfig(activePlacement);
+                  
+                  if (previewImage && printAreaInfo) {
+                    return (
+                      <DraggableLogoPreview
+                        productImage={previewImage}
+                        logoUrl={activeConfig.logoUrl}
+                        logoSize={activeConfig.logoSize}
+                        logoPositionX={activeConfig.logoPositionX}
+                        logoPositionY={activeConfig.logoPositionY}
+                        printAreaInfo={printAreaInfo}
+                        onPositionChange={(x, y) => updatePlacementConfig(activePlacement, { logoPositionX: x, logoPositionY: y })}
+                        onSizeChange={(size) => updatePlacementConfig(activePlacement, { logoSize: size })}
+                      />
+                    );
+                  }
+                  return (
+                    <div className="flex items-center justify-center bg-white rounded-lg p-4 border min-h-[200px]">
+                      <p className="text-sm text-muted-foreground">プレビューを表示できません</p>
+                    </div>
+                  );
+                })()}
                 
                 {/* Mockup Generation Button */}
                 {selectedVariants.length > 0 && (
