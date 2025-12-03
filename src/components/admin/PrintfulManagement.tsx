@@ -108,6 +108,10 @@ export function PrintfulManagement() {
   const [logoSize, setLogoSize] = useState(50); // percentage
   const [logoPositionX, setLogoPositionX] = useState(50); // percentage from left
   const [logoPositionY, setLogoPositionY] = useState(50); // percentage from top
+  
+  // Mockup generation state
+  const [generatingMockup, setGeneratingMockup] = useState(false);
+  const [generatedMockupUrl, setGeneratedMockupUrl] = useState<string | null>(null);
 
   // Fetch uploaded logos on mount
   useEffect(() => {
@@ -316,6 +320,49 @@ export function PrintfulManagement() {
       toast.error("商品の作成に失敗しました");
     } finally {
       setCreating(false);
+    }
+  };
+
+  const handleGenerateMockup = async () => {
+    if (!selectedVariants.length || !logoUrl) {
+      toast.error("バリエーションとロゴを選択してください");
+      return;
+    }
+    
+    setGeneratingMockup(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-printful-mockup", {
+        body: {
+          variant_ids: selectedVariants,
+          format: "jpg",
+          files: [{
+            placement: "default",
+            image_url: logoUrl,
+            position: {
+              area_width: 1800,
+              area_height: 2400,
+              width: Math.round(1800 * (logoSize / 100)),
+              height: Math.round(1800 * (logoSize / 100)),
+              top: Math.round(2400 * (logoPositionY / 100)),
+              left: Math.round(1800 * (logoPositionX / 100)),
+            }
+          }]
+        }
+      });
+
+      if (error) throw error;
+      
+      if (data?.mockups?.[0]?.mockup_url) {
+        setGeneratedMockupUrl(data.mockups[0].mockup_url);
+        toast.success("モックアップを生成しました");
+      } else {
+        toast.info("モックアップ生成中です。しばらくお待ちください");
+      }
+    } catch (error) {
+      console.error("Mockup error:", error);
+      toast.error("モックアップ生成に失敗しました");
+    } finally {
+      setGeneratingMockup(false);
     }
   };
 
