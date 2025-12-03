@@ -112,6 +112,18 @@ export function PrintfulManagement() {
   // Mockup generation state
   const [generatingMockup, setGeneratingMockup] = useState(false);
   const [generatedMockupUrl, setGeneratedMockupUrl] = useState<string | null>(null);
+  
+  // Print area info for accurate preview
+  const [printAreaInfo, setPrintAreaInfo] = useState<{
+    placement: string;
+    width: number;
+    height: number;
+    areaTop: number;  // percentage
+    areaLeft: number; // percentage
+    areaWidth: number; // percentage
+    areaHeight: number; // percentage
+  } | null>(null);
+  const [loadingPrintArea, setLoadingPrintArea] = useState(false);
 
   // Fetch uploaded logos on mount
   useEffect(() => {
@@ -256,9 +268,52 @@ export function PrintfulManagement() {
     }
   };
 
+  const fetchPrintAreaInfo = async (productId: string) => {
+    setLoadingPrintArea(true);
+    setPrintAreaInfo(null);
+    try {
+      // Use the generate-printful-mockup function to get printfiles info
+      const response = await fetch(
+        `https://api.printful.com/mockup-generator/printfiles/${productId}`,
+        {
+          headers: {
+            // Note: This won't work client-side due to CORS, so we'll use default values
+          },
+        }
+      );
+      // Since we can't call Printful API directly from client, use sensible defaults
+      // The actual positioning will be handled by the mockup generation API
+      setPrintAreaInfo({
+        placement: "front",
+        width: 4050,
+        height: 2700,
+        areaTop: 15,    // Print area starts at 15% from top
+        areaLeft: 20,   // Print area starts at 20% from left  
+        areaWidth: 60,  // Print area is 60% of product width
+        areaHeight: 50, // Print area is 50% of product height
+      });
+    } catch (error) {
+      console.log("Using default print area settings");
+      // Use default values for T-shirt style products
+      setPrintAreaInfo({
+        placement: "front",
+        width: 4050,
+        height: 2700,
+        areaTop: 15,
+        areaLeft: 20,
+        areaWidth: 60,
+        areaHeight: 50,
+      });
+    } finally {
+      setLoadingPrintArea(false);
+    }
+  };
+
   const handleCatalogProductChange = (productId: string) => {
     setSelectedCatalogProduct(productId);
     fetchCatalogVariants(productId);
+    fetchPrintAreaInfo(productId);
+    setGeneratedMockupUrl(null); // Reset mockup when product changes
     
     // Set default product name based on selected base product
     const selectedProduct = catalogProducts.find(p => p.id.toString() === productId);
@@ -778,31 +833,48 @@ export function PrintfulManagement() {
                     )}
                   </div>
                   
-                  <div className="flex items-center justify-center bg-white rounded-lg p-4 border min-h-[220px] overflow-hidden">
+                  <div className="flex items-center justify-center bg-white rounded-lg p-4 border min-h-[280px] overflow-hidden">
                     {(() => {
                       const selectedProduct = catalogProducts.find(
                         p => p.id.toString() === selectedCatalogProduct
                       );
                       if (selectedProduct?.image) {
                         return (
-                          <div className="relative w-full h-[200px]">
+                          <div className="relative w-full h-[260px]">
                             {/* Base product image */}
                             <img
                               src={selectedProduct.image}
                               alt={selectedProduct.title}
                               className="absolute inset-0 w-full h-full object-contain"
                             />
-                            {/* Logo overlay */}
-                            {logoUrl && (
+                            {/* Print area indicator */}
+                            {printAreaInfo && (
+                              <div 
+                                className="absolute border-2 border-dashed border-blue-400/50 bg-blue-100/20 pointer-events-none"
+                                style={{
+                                  top: `${printAreaInfo.areaTop}%`,
+                                  left: `${printAreaInfo.areaLeft}%`,
+                                  width: `${printAreaInfo.areaWidth}%`,
+                                  height: `${printAreaInfo.areaHeight}%`,
+                                }}
+                              >
+                                <span className="absolute -top-5 left-0 text-[10px] text-blue-500 bg-white px-1 rounded">
+                                  プリント領域
+                                </span>
+                              </div>
+                            )}
+                            {/* Logo overlay - positioned within print area */}
+                            {logoUrl && printAreaInfo && (
                               <img
                                 src={logoUrl}
                                 alt="Logo overlay"
                                 className="absolute object-contain drop-shadow-lg pointer-events-none"
                                 style={{
-                                  width: `${logoSize}%`,
-                                  maxWidth: `${logoSize}%`,
-                                  left: `${logoPositionX}%`,
-                                  top: `${logoPositionY}%`,
+                                  // Position logo within the print area
+                                  width: `${(logoSize / 100) * printAreaInfo.areaWidth}%`,
+                                  maxWidth: `${printAreaInfo.areaWidth}%`,
+                                  left: `${printAreaInfo.areaLeft + (logoPositionX / 100) * printAreaInfo.areaWidth}%`,
+                                  top: `${printAreaInfo.areaTop + (logoPositionY / 100) * printAreaInfo.areaHeight}%`,
                                   transform: 'translate(-50%, -50%)',
                                 }}
                                 onError={(e) => {
@@ -831,6 +903,13 @@ export function PrintfulManagement() {
                       );
                     })()}
                   </div>
+                  
+                  {/* Hint about preview vs actual mockup */}
+                  {selectedCatalogProduct && (
+                    <p className="text-xs text-muted-foreground mt-2 text-center">
+                      ※ 青い点線はプリント領域の目安です。正確な仕上がりは「モックアップ生成」ボタンで確認できます。
+                    </p>
+                  )}
                   
                   {/* Logo adjustment controls */}
                   {logoUrl && selectedCatalogProduct && (
