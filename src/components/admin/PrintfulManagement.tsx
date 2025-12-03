@@ -114,6 +114,40 @@ export function PrintfulManagement() {
   const [uploading, setUploading] = useState(false);
   const [uploadedLogos, setUploadedLogos] = useState<{ name: string; url: string }[]>([]);
   
+  // Embroidery settings
+  const [isEmbroidery, setIsEmbroidery] = useState(false);
+  const [threadColors, setThreadColors] = useState<string[]>(["#FFFFFF"]);
+  const [embroideryPlacement, setEmbroideryPlacement] = useState("embroidery_front_large");
+  
+  // Available thread colors for embroidery (Printful allowed colors)
+  const ALLOWED_THREAD_COLORS = [
+    { code: "#FFFFFF", name: "白" },
+    { code: "#000000", name: "黒" },
+    { code: "#96A1A8", name: "グレー" },
+    { code: "#A67843", name: "ゴールド" },
+    { code: "#FFCC00", name: "イエロー" },
+    { code: "#E25C27", name: "オレンジ" },
+    { code: "#CC3366", name: "ピンク" },
+    { code: "#CC3333", name: "レッド" },
+    { code: "#660000", name: "マルーン" },
+    { code: "#333366", name: "ネイビー" },
+    { code: "#005397", name: "ロイヤルブルー" },
+    { code: "#3399FF", name: "スカイブルー" },
+    { code: "#6B5294", name: "パープル" },
+    { code: "#01784E", name: "グリーン" },
+    { code: "#7BA35A", name: "ライトグリーン" },
+  ];
+  
+  // Embroidery placements
+  const EMBROIDERY_PLACEMENTS = [
+    { id: "embroidery_front_large", name: "フロント（大）" },
+    { id: "embroidery_front", name: "フロント" },
+    { id: "embroidery_front_left", name: "フロント左" },
+    { id: "embroidery_left_chest", name: "左胸" },
+    { id: "embroidery_right_chest", name: "右胸" },
+    { id: "embroidery_back", name: "バック" },
+  ];
+  
   // Per-placement design configuration
   interface PlacementConfig {
     logoUrl: string;
@@ -530,6 +564,9 @@ export function PrintfulManagement() {
             thumbnail: thumbnailUrl,
           },
           sync_variants: syncVariants,
+          is_embroidery: isEmbroidery,
+          thread_colors: isEmbroidery ? threadColors : undefined,
+          embroidery_placement: isEmbroidery ? embroideryPlacement : undefined,
         }
       });
 
@@ -545,6 +582,9 @@ export function PrintfulManagement() {
       setSelectedCatalogProduct("");
       setSelectedVariants([]);
       setPlacementConfigs({});
+      setIsEmbroidery(false);
+      setThreadColors(["#FFFFFF"]);
+      setEmbroideryPlacement("embroidery_front_large");
       fetchProducts();
     } catch (error) {
       console.error("Error creating product:", error);
@@ -1406,6 +1446,89 @@ export function PrintfulManagement() {
               className="hidden"
               onChange={handleLogoUpload}
             />
+
+            {/* Embroidery Settings */}
+            {selectedCatalogProduct && (
+              <div className="space-y-4 border rounded-lg p-4 bg-muted/20">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label className="text-sm font-medium">刺繍商品として登録</Label>
+                    <p className="text-xs text-muted-foreground">帽子やキャップなど刺繍商品の場合はオンにしてください</p>
+                  </div>
+                  <Switch
+                    checked={isEmbroidery}
+                    onCheckedChange={setIsEmbroidery}
+                  />
+                </div>
+
+                {isEmbroidery && (
+                  <div className="space-y-4 pt-2 border-t">
+                    {/* Embroidery Placement */}
+                    <div className="space-y-2">
+                      <Label className="text-xs">刺繍位置</Label>
+                      <Select value={embroideryPlacement} onValueChange={setEmbroideryPlacement}>
+                        <SelectTrigger className="w-full">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {EMBROIDERY_PLACEMENTS.map((placement) => (
+                            <SelectItem key={placement.id} value={placement.id}>
+                              {placement.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Thread Colors */}
+                    <div className="space-y-2">
+                      <Label className="text-xs">スレッドカラー（糸の色）</Label>
+                      <p className="text-xs text-muted-foreground">刺繍に使用する糸の色を選択してください</p>
+                      <div className="grid grid-cols-5 gap-2">
+                        {ALLOWED_THREAD_COLORS.map((color) => {
+                          const isSelected = threadColors.includes(color.code);
+                          return (
+                            <button
+                              key={color.code}
+                              type="button"
+                              onClick={() => {
+                                if (isSelected) {
+                                  if (threadColors.length > 1) {
+                                    setThreadColors(prev => prev.filter(c => c !== color.code));
+                                  }
+                                } else {
+                                  setThreadColors(prev => [...prev, color.code]);
+                                }
+                              }}
+                              className={`flex flex-col items-center p-2 rounded-lg border transition-all ${
+                                isSelected
+                                  ? "border-primary ring-2 ring-primary/20 bg-primary/5"
+                                  : "border-border hover:border-primary/50"
+                              }`}
+                              title={color.name}
+                            >
+                              <div
+                                className="w-6 h-6 rounded-full border border-border"
+                                style={{ backgroundColor: color.code }}
+                              />
+                              <span className="text-[10px] mt-1 truncate w-full text-center">{color.name}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        選択中: {threadColors.length}色
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Transparency note */}
+                <div className="text-xs text-muted-foreground bg-background/50 p-2 rounded border">
+                  💡 <strong>透過画像について：</strong>PNG形式で透過背景の画像をアップロードすると、商品に透過が反映されます
+                </div>
+              </div>
+            )}
 
             {/* Product Name */}
             {selectedCatalogProduct && selectedVariants.length > 0 && (
