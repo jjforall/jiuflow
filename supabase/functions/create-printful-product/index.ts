@@ -26,6 +26,7 @@ interface CreateProductRequest {
   sync_variants: SyncVariant[];
   thread_colors?: string[];
   is_embroidery?: boolean;
+  embroidery_placement?: string;
 }
 
 // Default thread color for embroidery products
@@ -36,9 +37,8 @@ const ALLOWED_THREAD_COLORS = [
   "#005397", "#3399FF", "#6B5294", "#01784E", "#7BA35A"
 ];
 
-// Product IDs that typically require embroidery thread colors
-// This list includes common embroidery products like hats, caps, etc.
-const EMBROIDERY_PRODUCT_PREFIXES = ["embroidery", "emb_"];
+// Default embroidery placement
+const DEFAULT_EMBROIDERY_PLACEMENT = "embroidery_front_large";
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -54,6 +54,7 @@ serve(async (req) => {
     const body: CreateProductRequest = await req.json();
     console.log("[CREATE-PRINTFUL-PRODUCT] Creating product:", body.sync_product.name);
     console.log("[CREATE-PRINTFUL-PRODUCT] Is embroidery flag:", body.is_embroidery);
+    console.log("[CREATE-PRINTFUL-PRODUCT] Embroidery placement:", body.embroidery_placement);
 
     // Determine thread colors to use
     let threadColors = body.thread_colors || [DEFAULT_THREAD_COLOR];
@@ -76,8 +77,12 @@ serve(async (req) => {
       body.sync_product.name.toLowerCase().includes("embroidery") ||
       body.sync_product.name.toLowerCase().includes("emb");
 
+    // Get the embroidery placement
+    const embroideryPlacement = body.embroidery_placement || DEFAULT_EMBROIDERY_PLACEMENT;
+
     console.log("[CREATE-PRINTFUL-PRODUCT] Detected embroidery product:", isEmbroidery);
     console.log("[CREATE-PRINTFUL-PRODUCT] Thread colors:", threadColors);
+    console.log("[CREATE-PRINTFUL-PRODUCT] Using placement:", embroideryPlacement);
 
     // Prepare the request body
     const requestBody: {
@@ -86,36 +91,38 @@ serve(async (req) => {
     } = {
       sync_product: body.sync_product,
       sync_variants: body.sync_variants.map(variant => {
-        // If embroidery product, add thread_colors option to each variant
+        let updatedVariant = { ...variant };
+        
         if (isEmbroidery) {
+          // Update file type to match embroidery placement
+          updatedVariant.files = variant.files.map(file => ({
+            ...file,
+            type: file.type === "default" ? embroideryPlacement : file.type
+          }));
+          
+          // Add thread_colors options
           const existingOptions = variant.options || [];
           const hasThreadColors = existingOptions.some(opt => 
             opt.id.includes("thread_colors")
           );
           
           if (!hasThreadColors) {
-            // Add multiple thread color options to cover different placements
-            // Printful expects specific option IDs based on placement
-            const threadColorOptions = [
-              { id: "thread_colors", value: threadColors },
-              { id: "thread_colors_3d", value: threadColors },
-              { id: "thread_colors_front_large", value: threadColors },
-              { id: "thread_colors_front", value: threadColors },
-              { id: "thread_colors_back", value: threadColors },
-              { id: "thread_colors_left", value: threadColors },
-              { id: "stitch_color", value: threadColors[0] }, // Some products use stitch_color
-            ];
+            // Extract placement suffix (e.g., "front_large" from "embroidery_front_large")
+            const placementSuffix = embroideryPlacement.replace("embroidery_", "");
             
-            return {
-              ...variant,
-              options: [
-                ...existingOptions,
-                ...threadColorOptions
-              ]
-            };
+            // Build the thread_colors option ID based on placement
+            const threadColorsOptionId = `thread_colors_${placementSuffix}`;
+            
+            console.log("[CREATE-PRINTFUL-PRODUCT] Thread colors option ID:", threadColorsOptionId);
+            
+            updatedVariant.options = [
+              ...existingOptions,
+              { id: threadColorsOptionId, value: threadColors }
+            ];
           }
         }
-        return variant;
+        
+        return updatedVariant;
       })
     };
 
