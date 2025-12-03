@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { toast } from "sonner";
-import { Loader2, Package, RefreshCw, ExternalLink, Image as ImageIcon, Plus, Upload, RotateCcw, Sparkles } from "lucide-react";
+import { Loader2, Package, RefreshCw, ExternalLink, Image as ImageIcon, Plus, Upload, RotateCcw, Sparkles, Pencil, Trash2 } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -87,6 +87,13 @@ export function PrintfulManagement() {
   const [products, setProducts] = useState<PrintfulProduct[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<PrintfulProduct | null>(null);
+  
+  // Edit product state
+  const [editingProduct, setEditingProduct] = useState<PrintfulProduct | null>(null);
+  const [editProductName, setEditProductName] = useState("");
+  const [editVariantPrices, setEditVariantPrices] = useState<Record<number, string>>({});
+  const [updating, setUpdating] = useState(false);
+  const [deleting, setDeleting] = useState<number | null>(null);
   
   // Create product state
   const [showCreateDialog, setShowCreateDialog] = useState(false);
@@ -449,6 +456,70 @@ export function PrintfulManagement() {
     }
   };
 
+  const handleEditProduct = (product: PrintfulProduct) => {
+    setEditingProduct(product);
+    setEditProductName(product.name);
+    const prices: Record<number, string> = {};
+    product.variants?.forEach(v => {
+      prices[v.id] = v.retail_price || "";
+    });
+    setEditVariantPrices(prices);
+  };
+
+  const handleUpdateProduct = async () => {
+    if (!editingProduct) return;
+    
+    setUpdating(true);
+    try {
+      const variantsToUpdate = Object.entries(editVariantPrices)
+        .filter(([_, price]) => price)
+        .map(([id, price]) => ({
+          id: parseInt(id),
+          retail_price: price,
+        }));
+
+      const { error } = await supabase.functions.invoke("update-printful-product", {
+        body: {
+          product_id: editingProduct.id,
+          sync_product: editProductName !== editingProduct.name ? { name: editProductName } : undefined,
+          sync_variants: variantsToUpdate.length > 0 ? variantsToUpdate : undefined,
+        },
+      });
+
+      if (error) throw error;
+
+      toast.success("商品を更新しました");
+      setEditingProduct(null);
+      fetchProducts();
+    } catch (error) {
+      console.error("Error updating product:", error);
+      toast.error("商品の更新に失敗しました");
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const handleDeleteProduct = async (productId: number) => {
+    if (!confirm("この商品を削除してもよろしいですか？")) return;
+    
+    setDeleting(productId);
+    try {
+      const { error } = await supabase.functions.invoke("delete-printful-product", {
+        body: { product_id: productId },
+      });
+
+      if (error) throw error;
+
+      toast.success("商品を削除しました");
+      fetchProducts();
+    } catch (error) {
+      console.error("Error deleting product:", error);
+      toast.error("商品の削除に失敗しました");
+    } finally {
+      setDeleting(null);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -551,13 +622,34 @@ export function PrintfulManagement() {
                     <TableCell className="font-medium">{product.name}</TableCell>
                     <TableCell>{product.variants?.length || 0}</TableCell>
                     <TableCell>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => setSelectedProduct(product)}
-                      >
-                        詳細
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => setSelectedProduct(product)}
+                        >
+                          詳細
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleEditProduct(product)}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleDeleteProduct(product.id)}
+                          disabled={deleting === product.id}
+                        >
+                          {deleting === product.id ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          )}
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -1041,6 +1133,71 @@ export function PrintfulManagement() {
               </Button>
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Product Dialog */}
+      <Dialog open={!!editingProduct} onOpenChange={() => setEditingProduct(null)}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>商品を編集</DialogTitle>
+          </DialogHeader>
+          
+          {editingProduct && (
+            <div className="space-y-6">
+              {/* Product Name */}
+              <div className="space-y-2">
+                <Label htmlFor="editProductName">商品名</Label>
+                <Input
+                  id="editProductName"
+                  value={editProductName}
+                  onChange={(e) => setEditProductName(e.target.value)}
+                />
+              </div>
+
+              {/* Variant Prices */}
+              {editingProduct.variants && editingProduct.variants.length > 0 && (
+                <div className="space-y-2">
+                  <Label>バリエーション価格</Label>
+                  <div className="space-y-2 max-h-64 overflow-y-auto border rounded-md p-2">
+                    {editingProduct.variants.map((variant) => (
+                      <div key={variant.id} className="flex items-center gap-2">
+                        <span className="text-sm flex-1 truncate">{variant.name}</span>
+                        <Input
+                          type="number"
+                          className="w-32"
+                          value={editVariantPrices[variant.id] || ""}
+                          onChange={(e) => setEditVariantPrices(prev => ({
+                            ...prev,
+                            [variant.id]: e.target.value,
+                          }))}
+                          placeholder="価格"
+                        />
+                        <span className="text-sm text-muted-foreground">円</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Actions */}
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setEditingProduct(null)}>
+                  キャンセル
+                </Button>
+                <Button onClick={handleUpdateProduct} disabled={updating}>
+                  {updating ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      更新中...
+                    </>
+                  ) : (
+                    "更新"
+                  )}
+                </Button>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>
