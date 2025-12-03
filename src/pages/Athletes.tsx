@@ -251,14 +251,14 @@ const Athletes = () => {
     <div className="min-h-screen bg-background">
       <Navigation />
       
-      <main className="pt-20 md:pt-24 pb-16 px-4 md:px-8 lg:px-12">
+      <main className="pt-16 md:pt-24 pb-12 md:pb-16 px-3 md:px-8 lg:px-12">
         <div className="max-w-7xl mx-auto">
-          {/* Header - Always show immediately */}
-          <div className="mb-12 text-center animate-fade-in">
-            <h1 className="text-4xl md:text-6xl font-light tracking-tight mb-4">
+          {/* Header */}
+          <div className="mb-6 md:mb-12 text-center animate-fade-in">
+            <h1 className="text-2xl sm:text-3xl md:text-6xl font-light tracking-tight mb-2 md:mb-4">
               {language === "ja" ? "有名選手" : language === "pt" ? "Atletas Famosos" : "Famous Athletes"}
             </h1>
-            <p className="text-lg md:text-xl text-muted-foreground mb-6">
+            <p className="text-sm sm:text-base md:text-xl text-muted-foreground mb-4 md:mb-6">
               {language === "ja" 
                 ? "世界で活躍するトップ選手たち" 
                 : language === "pt" 
@@ -268,9 +268,10 @@ const Athletes = () => {
             <Button
               onClick={() => navigate('/lineage-tree')}
               variant="outline"
-              className="gap-2"
+              size="sm"
+              className="gap-2 text-xs md:text-sm"
             >
-              <GitBranch className="h-4 w-4" />
+              <GitBranch className="h-3 w-3 md:h-4 md:w-4" />
               {language === "ja" ? "系統図を見る" : language === "pt" ? "Ver Linhagem" : "View Lineage Tree"}
             </Button>
           </div>
@@ -279,19 +280,19 @@ const Athletes = () => {
           <div className="w-full">
               {/* Loading State */}
               {isLoading ? (
-                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 animate-fade-in">
-                  {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-6 animate-fade-in">
+                  {[1, 2, 3, 4, 5, 6].map((i) => (
                     <Card key={i} className="overflow-hidden">
-                      <CardHeader>
-                        <div className="flex items-center gap-4">
-                          <Skeleton className="h-20 w-20 rounded-full" />
+                      <CardHeader className="p-3 md:p-6">
+                        <div className="flex items-center gap-3">
+                          <Skeleton className="h-14 w-14 md:h-20 md:w-20 rounded-full" />
                           <div className="flex-1 space-y-2">
-                            <Skeleton className="h-6 w-32" />
-                            <Skeleton className="h-4 w-24" />
+                            <Skeleton className="h-5 w-28" />
+                            <Skeleton className="h-4 w-20" />
                           </div>
                         </div>
                       </CardHeader>
-                      <CardContent>
+                      <CardContent className="p-3 pt-0 md:p-6 md:pt-0">
                         <Skeleton className="h-4 w-full mb-2" />
                         <Skeleton className="h-4 w-3/4" />
                       </CardContent>
@@ -299,8 +300,8 @@ const Athletes = () => {
                   ))}
                 </div>
               ) : celebrities.length === 0 ? (
-                <div className="text-center py-16">
-                  <p className="text-lg text-muted-foreground">
+                <div className="text-center py-12 md:py-16">
+                  <p className="text-base md:text-lg text-muted-foreground">
                     {language === "ja" 
                       ? "選手が登録されていません" 
                       : language === "pt" 
@@ -309,38 +310,38 @@ const Athletes = () => {
                   </p>
                 </div>
               ) : (
-                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 animate-fade-in">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-6 animate-fade-in">
               {sortedCelebrities.map((celebrity) => (
                 <div key={celebrity.id} className="group">
                   <Link
                     to={`/athlete/${celebrity.user_id || celebrity.id}`}
                     className="block h-full"
                   >
-                  <Card className="overflow-hidden transition-all duration-300 hover:shadow-xl hover:scale-[1.02] h-full flex flex-col">
-                    <CardHeader className="pb-4">
-                      <div className="flex items-start gap-4">
-                        <Avatar className="h-24 w-24 border-2 border-border group-hover:border-primary transition-colors flex-shrink-0">
+                  <Card className="overflow-hidden transition-all duration-300 hover:shadow-xl active:scale-[0.98] md:hover:scale-[1.02] h-full flex flex-col">
+                    <CardHeader className="p-3 md:p-6 pb-2 md:pb-4">
+                      <div className="flex items-start gap-3 md:gap-4">
+                        <Avatar className="h-14 w-14 md:h-20 md:w-20 border-2 border-border group-hover:border-primary transition-colors flex-shrink-0">
                           <AvatarImage src={celebrity.avatar_url || undefined} />
-                          <AvatarFallback className="text-2xl">
+                          <AvatarFallback className="text-lg md:text-2xl">
                             {celebrity.display_name[0]}
                           </AvatarFallback>
                         </Avatar>
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-start gap-2 mb-2">
-                            <h3 className="text-xl font-semibold line-clamp-1 group-hover:text-primary transition-colors flex-1">
+                          <div className="flex items-start gap-1 md:gap-2 mb-1 md:mb-2">
+                            <h3 className="text-base md:text-xl font-semibold line-clamp-1 group-hover:text-primary transition-colors flex-1">
                               {celebrity.display_name}
                             </h3>
                             {celebrity.featured && (
-                              <Star className="h-5 w-5 text-yellow-500 fill-yellow-500 flex-shrink-0 mt-1" />
+                              <Star className="h-4 w-4 md:h-5 md:w-5 text-yellow-500 fill-yellow-500 flex-shrink-0" />
                             )}
                           </div>
                           {getBeltName(celebrity.belt_history) && (
-                            <Badge variant="secondary" className="mb-2 text-xs">
+                            <Badge variant="secondary" className="mb-1 md:mb-2 text-[10px] md:text-xs px-1.5 md:px-2 py-0">
                               {getBeltName(celebrity.belt_history)}
                             </Badge>
                           )}
                           {getOrganizationName(celebrity.organization) && (
-                            <p className="text-sm text-muted-foreground line-clamp-1">
+                            <p className="text-xs md:text-sm text-muted-foreground line-clamp-1">
                               {getOrganizationName(celebrity.organization)}
                             </p>
                           )}
@@ -352,10 +353,10 @@ const Athletes = () => {
                             e.preventDefault();
                             handleToggleFollow(celebrity.id);
                           }}
-                          className="p-2 h-9 w-9 flex-shrink-0"
+                          className="p-1.5 md:p-2 h-8 w-8 md:h-9 md:w-9 flex-shrink-0"
                         >
                           <Heart 
-                            className={`h-5 w-5 transition-colors ${
+                            className={`h-4 w-4 md:h-5 md:w-5 transition-colors ${
                               followedCelebrities.has(celebrity.id)
                                 ? 'fill-red-500 text-red-500'
                                 : 'text-muted-foreground hover:text-red-500'
@@ -365,18 +366,18 @@ const Athletes = () => {
                       </div>
                     </CardHeader>
                     
-                    <CardContent className="flex-1 flex flex-col space-y-3 pt-0">
+                    <CardContent className="flex-1 flex flex-col space-y-2 md:space-y-3 p-3 pt-0 md:p-6 md:pt-0">
                       {getBioText(celebrity) && (
                         <div className="flex-1">
-                          <p className="text-sm text-muted-foreground line-clamp-3">
+                          <p className="text-xs md:text-sm text-muted-foreground line-clamp-2 md:line-clamp-3">
                             {getBioText(celebrity)}
                           </p>
                         </div>
                       )}
                       
-                      <div className="space-y-2 pt-2 border-t border-border/50">
+                      <div className="space-y-1 md:space-y-2 pt-2 border-t border-border/50">
                         {celebrity.instructors && celebrity.instructors.length > 0 && (
-                          <div className="flex items-center gap-2 text-sm">
+                          <div className="flex items-center gap-1 md:gap-2 text-xs md:text-sm">
                             <span className="text-muted-foreground">
                               {language === "ja" ? "師匠:" : language === "pt" ? "Mestre:" : "Instructor:"}
                             </span>
