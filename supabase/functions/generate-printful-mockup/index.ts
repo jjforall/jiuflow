@@ -61,7 +61,7 @@ serve(async (req) => {
     const printfilesData = await printfilesResponse.json();
     console.log("[GENERATE-MOCKUP] Printfiles data:", JSON.stringify(printfilesData.result?.printfiles?.[0]));
 
-    // Step 2: Create mockup generation task
+    // Step 2: Create mockup generation task with retry logic
     const mockupBody = {
       variant_ids: body.variant_ids,
       format: body.format || "jpg",
@@ -70,14 +70,38 @@ serve(async (req) => {
 
     console.log("[GENERATE-MOCKUP] Mockup request body:", JSON.stringify(mockupBody));
 
-    const response = await fetch(`https://api.printful.com/mockup-generator/create-task/${productId}`, {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${PRINTFUL_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(mockupBody),
-    });
+    // Retry function for rate limiting
+    const fetchWithRetry = async (url: string, options: RequestInit, maxRetries = 3): Promise<Response> => {
+      for (let attempt = 0; attempt < maxRetries; attempt++) {
+        const response = await fetch(url, options);
+        
+        if (response.status === 429) {
+          const retryData = await response.json();
+          const waitTime = retryData.error?.message?.match(/(\d+) seconds/)?.[1] || 30;
+          console.log(`[GENERATE-MOCKUP] Rate limited, waiting ${waitTime} seconds (attempt ${attempt + 1}/${maxRetries})`);
+          
+          if (attempt < maxRetries - 1) {
+            await new Promise(resolve => setTimeout(resolve, (parseInt(waitTime) + 5) * 1000));
+            continue;
+          }
+        }
+        
+        return response;
+      }
+      throw new Error("Max retries exceeded");
+    };
+
+    const response = await fetchWithRetry(
+      `https://api.printful.com/mockup-generator/create-task/${productId}`,
+      {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${PRINTFUL_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(mockupBody),
+      }
+    );
 
     const responseText = await response.text();
     console.log("[GENERATE-MOCKUP] Printful response status:", response.status);
@@ -85,12 +109,16 @@ serve(async (req) => {
 
     if (!response.ok) {
       console.error("[GENERATE-MOCKUP] Printful API error:", response.status, responseText);
+      const errorMessage = response.status === 429 
+        ? "Printful APIのレート制限に達しました。30秒後に再試行してください。"
+        : `Printful API error: ${response.status}`;
       return new Response(JSON.stringify({ 
-        error: `Printful API error: ${response.status}`,
-        details: responseText 
+        error: errorMessage,
+        details: responseText,
+        retryAfter: response.status === 429 ? 35 : null
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 400,
+        status: response.status === 429 ? 429 : 400,
       });
     }
 
