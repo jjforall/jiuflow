@@ -262,11 +262,25 @@ export function PrintfulManagement() {
   };
 
   const toggleVariant = (variantId: number) => {
-    setSelectedVariants(prev => 
-      prev.includes(variantId) 
+    setSelectedVariants(prev => {
+      const newSelection = prev.includes(variantId) 
         ? prev.filter(id => id !== variantId)
-        : [...prev, variantId]
-    );
+        : [...prev, variantId];
+      
+      // Calculate 30% markup on highest base price of selected variants
+      if (newSelection.length > 0) {
+        const selectedVariantPrices = catalogVariants
+          .filter(v => newSelection.includes(v.id))
+          .map(v => parseFloat(v.price));
+        const maxBasePrice = Math.max(...selectedVariantPrices);
+        const markupPrice = Math.ceil(maxBasePrice * 1.3);
+        // Ensure never below base price
+        const finalPrice = Math.max(markupPrice, maxBasePrice);
+        setRetailPrice(finalPrice.toString());
+      }
+      
+      return newSelection;
+    });
   };
 
   const handleCreateProduct = async () => {
