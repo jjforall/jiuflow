@@ -62,22 +62,22 @@ export function AdminSidebar({ activeTab, onTabChange }: AdminSidebarProps) {
   const isCollapsed = state === "collapsed";
 
   return (
-    <Sidebar collapsible="icon">
-      <div className="p-4 border-b flex items-center justify-end">
+    <Sidebar collapsible="icon" className="bg-background border-r">
+      <div className="p-4 border-b flex items-center justify-end bg-background">
         <SidebarTrigger />
       </div>
 
-      <SidebarContent>
+      <SidebarContent className="bg-background">
         <SidebarGroup>
-          <SidebarGroupLabel className="flex items-center justify-between">
+          <SidebarGroupLabel className="flex items-center justify-between text-foreground/70">
             <span>管理メニュー</span>
             {!isCollapsed && (
               <button
                 onClick={() => setIsExpanded(!isExpanded)}
-                className="hover:bg-muted/50 rounded p-1"
+                className="hover:bg-muted rounded p-1"
               >
                 <ChevronDown
-                  className={`h-4 w-4 transition-transform ${isExpanded ? "" : "-rotate-90"}`}
+                  className={`h-4 w-4 transition-transform text-foreground ${isExpanded ? "" : "-rotate-90"}`}
                 />
               </button>
             )}
@@ -90,10 +90,10 @@ export function AdminSidebar({ activeTab, onTabChange }: AdminSidebarProps) {
                   <SidebarMenuItem key={item.id}>
                     <SidebarMenuButton
                       onClick={() => onTabChange(item.id)}
-                      className={`hover:bg-muted/50 ${
+                      className={`hover:bg-muted text-foreground ${
                         activeTab === item.id
-                          ? "bg-muted text-primary font-medium"
-                          : ""
+                          ? "bg-primary/10 text-primary font-medium border-l-2 border-primary"
+                          : "hover:text-foreground"
                       }`}
                     >
                       <item.icon className="h-4 w-4" />

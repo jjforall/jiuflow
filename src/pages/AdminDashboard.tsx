@@ -1,17 +1,17 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import Navigation from "@/components/Navigation";
 import { toast } from "sonner";
-import { Users, DollarSign, UserCheck } from "lucide-react";
+import { Users, DollarSign, UserCheck, Home, Menu } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
-
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 // Import tab components
 import { TechniquesManagement } from "@/components/admin/TechniquesManagement";
 import { UsersTab } from "@/components/admin/UsersTab";
@@ -192,14 +192,53 @@ const AdminDashboard = () => {
         <AdminSidebar activeTab={activeTab} onTabChange={setActiveTab} />
 
         <div className="flex-1 flex flex-col">
-          <header className="h-16 border-b flex items-center px-6 justify-between sticky top-0 bg-background z-10">
-            <div className="flex items-center gap-4">
-              <SidebarTrigger />
-              <h1 className="text-2xl font-light">Admin Dashboard</h1>
+          <header className="h-16 border-b flex items-center px-4 md:px-6 justify-between sticky top-0 bg-background z-10">
+            <div className="flex items-center gap-2 md:gap-4">
+              <SidebarTrigger className="hidden md:flex" />
+              {/* Mobile Navigation Menu */}
+              <Sheet>
+                <SheetTrigger asChild>
+                  <Button variant="ghost" size="icon" className="md:hidden">
+                    <Menu className="h-5 w-5" />
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="left" className="w-64 p-0 bg-background">
+                  <div className="p-4 border-b">
+                    <Link to="/" className="flex items-center gap-2 text-foreground hover:text-primary">
+                      <Home className="h-5 w-5" />
+                      <span>ホームに戻る</span>
+                    </Link>
+                  </div>
+                  <div className="p-4 border-b">
+                    <Link to="/map" className="flex items-center gap-2 text-foreground hover:text-primary">
+                      <span>テクニックマップ</span>
+                    </Link>
+                  </div>
+                  <div className="p-4 border-b">
+                    <Link to="/mypage" className="flex items-center gap-2 text-foreground hover:text-primary">
+                      <span>マイページ</span>
+                    </Link>
+                  </div>
+                  <div className="p-4">
+                    <Button variant="outline" onClick={handleLogout} className="w-full">
+                      ログアウト
+                    </Button>
+                  </div>
+                </SheetContent>
+              </Sheet>
+              <h1 className="text-lg md:text-2xl font-light">Admin Dashboard</h1>
             </div>
-            <Button variant="outline" onClick={handleLogout}>
-              Logout
-            </Button>
+            <div className="flex items-center gap-2">
+              <Link to="/" className="hidden md:flex">
+                <Button variant="ghost" size="sm">
+                  <Home className="h-4 w-4 mr-2" />
+                  ホーム
+                </Button>
+              </Link>
+              <Button variant="outline" onClick={handleLogout} className="hidden md:flex">
+                Logout
+              </Button>
+            </div>
           </header>
 
           <main className="flex-1 px-6 py-8 overflow-auto">
