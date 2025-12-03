@@ -5,6 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
+import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Loader2, Package, RefreshCw, ExternalLink, Image as ImageIcon, Plus, Upload, RotateCcw, Sparkles, Pencil, Trash2 } from "lucide-react";
 import {
@@ -73,6 +75,7 @@ interface PrintfulProduct {
   name: string;
   thumbnail_url: string;
   variants: PrintfulVariant[];
+  is_ignored?: boolean;
   sync_product?: {
     id: number;
     external_id: string;
@@ -80,6 +83,7 @@ interface PrintfulProduct {
     variants: number;
     synced: number;
     thumbnail_url: string;
+    is_ignored?: boolean;
   };
 }
 
@@ -94,6 +98,7 @@ export function PrintfulManagement() {
   const [editVariantPrices, setEditVariantPrices] = useState<Record<number, string>>({});
   const [updating, setUpdating] = useState(false);
   const [deleting, setDeleting] = useState<number | null>(null);
+  const [togglingStatus, setTogglingStatus] = useState<number | null>(null);
   
   // Create product state
   const [showCreateDialog, setShowCreateDialog] = useState(false);
@@ -520,6 +525,29 @@ export function PrintfulManagement() {
     }
   };
 
+  const handleToggleStatus = async (product: PrintfulProduct) => {
+    const newIsIgnored = !product.is_ignored;
+    setTogglingStatus(product.id);
+    try {
+      const { error } = await supabase.functions.invoke("update-printful-product", {
+        body: {
+          product_id: product.id,
+          is_ignored: newIsIgnored,
+        },
+      });
+
+      if (error) throw error;
+
+      toast.success(newIsIgnored ? "商品を非公開にしました" : "商品を販売中にしました");
+      fetchProducts();
+    } catch (error) {
+      console.error("Error toggling status:", error);
+      toast.error("ステータスの更新に失敗しました");
+    } finally {
+      setTogglingStatus(null);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -597,10 +625,11 @@ export function PrintfulManagement() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>画像</TableHead>
+                  <TableHead className="w-24">画像</TableHead>
                   <TableHead>商品名</TableHead>
-                  <TableHead>バリエーション数</TableHead>
-                  <TableHead>操作</TableHead>
+                  <TableHead className="w-24">バリエーション</TableHead>
+                  <TableHead className="w-32">ステータス</TableHead>
+                  <TableHead className="w-40">操作</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -611,16 +640,34 @@ export function PrintfulManagement() {
                         <img 
                           src={product.thumbnail_url} 
                           alt={product.name}
-                          className="h-16 w-16 object-cover rounded"
+                          className="h-20 w-20 object-cover rounded-lg border"
                         />
                       ) : (
-                        <div className="h-16 w-16 bg-muted rounded flex items-center justify-center">
+                        <div className="h-20 w-20 bg-muted rounded-lg flex items-center justify-center">
                           <Package className="h-8 w-8 text-muted-foreground" />
                         </div>
                       )}
                     </TableCell>
                     <TableCell className="font-medium">{product.name}</TableCell>
                     <TableCell>{product.variants?.length || 0}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        {togglingStatus === product.id ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <>
+                            <Switch
+                              checked={!product.is_ignored}
+                              onCheckedChange={() => handleToggleStatus(product)}
+                              disabled={togglingStatus !== null}
+                            />
+                            <Badge variant={product.is_ignored ? "secondary" : "default"}>
+                              {product.is_ignored ? "非公開" : "販売中"}
+                            </Badge>
+                          </>
+                        )}
+                      </div>
+                    </TableCell>
                     <TableCell>
                       <div className="flex gap-2">
                         <Button 
