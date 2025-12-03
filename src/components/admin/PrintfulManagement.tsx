@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -123,6 +123,8 @@ export function PrintfulManagement() {
   // Mockup generation state
   const [generatingMockup, setGeneratingMockup] = useState(false);
   const [deletingLogo, setDeletingLogo] = useState<string | null>(null);
+  const [uploadingNewLogo, setUploadingNewLogo] = useState(false);
+  const logoInputRef = useRef<HTMLInputElement>(null);
   const [generatedMockupUrl, setGeneratedMockupUrl] = useState<string | null>(null);
   const [savingMockup, setSavingMockup] = useState(false);
   
@@ -611,6 +613,36 @@ export function PrintfulManagement() {
     }
   };
 
+  const handleUploadNewLogo = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    setUploadingNewLogo(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}_${file.name.replace(/\s+/g, '_')}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('product-logos')
+        .upload(fileName, file, {
+          cacheControl: '3600',
+        });
+      
+      if (uploadError) throw uploadError;
+      
+      toast.success("ロゴをアップロードしました");
+      fetchUploadedLogos();
+    } catch (error) {
+      console.error("Error uploading logo:", error);
+      toast.error("ロゴのアップロードに失敗しました");
+    } finally {
+      setUploadingNewLogo(false);
+      if (logoInputRef.current) {
+        logoInputRef.current.value = '';
+      }
+    }
+  };
+
   const handleEditProduct = (product: PrintfulProduct) => {
     setEditingProduct(product);
     setEditProductName(product.name);
@@ -729,18 +761,52 @@ export function PrintfulManagement() {
               <ImageIcon className="h-5 w-5" />
               保存済みロゴ
             </CardTitle>
-            <Button variant="outline" size="sm" onClick={fetchUploadedLogos}>
-              <RefreshCw className="h-4 w-4 mr-2" />
-              更新
-            </Button>
+            <div className="flex gap-2">
+              <input
+                type="file"
+                ref={logoInputRef}
+                onChange={handleUploadNewLogo}
+                accept="image/*"
+                className="hidden"
+              />
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => logoInputRef.current?.click()}
+                disabled={uploadingNewLogo}
+              >
+                {uploadingNewLogo ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <Upload className="h-4 w-4 mr-2" />
+                )}
+                ロゴ追加
+              </Button>
+              <Button variant="outline" size="sm" onClick={fetchUploadedLogos}>
+                <RefreshCw className="h-4 w-4 mr-2" />
+                更新
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
-          {uploadedLogos.length === 0 ? (
+          {uploadedLogos.filter(l => !l.name.startsWith('mockups/')).length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               <ImageIcon className="h-12 w-12 mx-auto mb-2 opacity-50" />
               <p>保存済みロゴはありません</p>
-              <p className="text-sm">商品作成時にロゴをアップロードしてください</p>
+              <Button 
+                variant="outline" 
+                className="mt-4"
+                onClick={() => logoInputRef.current?.click()}
+                disabled={uploadingNewLogo}
+              >
+                {uploadingNewLogo ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <Upload className="h-4 w-4 mr-2" />
+                )}
+                ロゴをアップロード
+              </Button>
             </div>
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
