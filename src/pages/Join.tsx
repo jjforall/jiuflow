@@ -642,9 +642,12 @@ const Join = () => {
 
             {/* Referral Code Section */}
             <div className="relative overflow-hidden rounded-xl mb-12 animate-fade-up">
-              <div className="absolute inset-0 bg-gradient-to-r from-muted/50 to-background" />
-              <div className="relative p-8 border border-border/50 rounded-xl backdrop-blur-sm">
-                <h3 className="text-xl font-light mb-4 text-center">
+              <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-secondary/20 to-accent/10" />
+              <div className="relative p-8 border-2 border-primary/30 rounded-xl backdrop-blur-sm">
+                <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-primary text-primary-foreground px-4 py-1 text-sm font-medium rounded-full">
+                  {language === "ja" ? "🎁 特典あり" : "🎁 Benefits"}
+                </div>
+                <h3 className="text-xl font-light mb-4 text-center mt-2">
                   {language === "ja" ? "紹介コードをお持ちの方" : "Have a referral code?"}
                 </h3>
                 <div className="flex flex-col gap-3 max-w-md mx-auto">
@@ -667,7 +670,7 @@ const Join = () => {
                       const value = e.target.value;
                       setReferralCode(isComposing ? value : value.toUpperCase());
                     }}
-                    className="h-12 text-base bg-background/50 backdrop-blur-sm border-border/50 focus:border-primary transition-all"
+                    className="h-12 text-base bg-background/80 backdrop-blur-sm border-2 border-primary/40 focus:border-primary transition-all"
                   />
                   {referralCode.trim() && !isCheckingCode && (
                     <p className={`text-sm text-center font-medium ${isValidReferralCode ? 'text-green-600' : 'text-red-600'}`}>
