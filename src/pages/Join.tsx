@@ -409,7 +409,7 @@ const Join = () => {
       if (data?.error) throw new Error(data.error);
 
       toast.success(
-        language === "ja" ? "チームメンバー登録完了！" : "Team member registration complete!",
+        language === "ja" ? "スタッフ登録完了！" : "Staff registration complete!",
         {
           description: language === "ja" 
             ? "ログインページに移動します..." 
@@ -795,7 +795,7 @@ const Join = () => {
                   <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/20 via-teal-500/10 to-cyan-500/10 rounded-2xl" />
                   <div className="relative border-2 border-emerald-500 p-10 rounded-2xl backdrop-blur-sm">
                     <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-emerald-500 text-white px-6 py-2 text-sm font-medium rounded-full shadow-lg z-10">
-                      {language === "ja" ? "🌟 チームメンバー" : "🌟 Team Member"}
+                      {language === "ja" ? "🌟 スタッフ" : "🌟 Staff"}
                     </div>
                     <h3 className="text-3xl font-light mb-6 mt-2">
                       Team Ryozo
@@ -831,7 +831,7 @@ const Join = () => {
                       onClick={() => setTeamSignupDialogOpen(true)}
                       disabled={isLoading}
                     >
-                      {language === "ja" ? "チームメンバーとして登録" : "Register as Team Member"}
+                      {language === "ja" ? "スタッフとして登録" : "Register as Staff"}
                     </Button>
                   </div>
                 </div>
@@ -1136,7 +1136,7 @@ const Join = () => {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="text-2xl">
-              {language === "ja" ? "🌟 チームメンバー登録" : "🌟 Team Member Registration"}
+              {language === "ja" ? "🌟 スタッフ登録" : "🌟 Staff Registration"}
             </DialogTitle>
             <DialogDescription>
               {language === "ja" 
