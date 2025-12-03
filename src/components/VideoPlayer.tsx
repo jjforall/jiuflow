@@ -75,48 +75,36 @@ export const VideoPlayer = ({ videoUrl, autoPlay = true, thumbnailUrl, onPlay }:
     const isHLS = videoUrl.includes('.m3u8');
 
     if (isHLS && Hls.isSupported()) {
-      // Initialize HLS.js with aggressive mobile optimizations
+      // Initialize HLS.js optimized for single high-quality video
+      // Since we only have one quality level, focus on buffering stability
       const hls = new Hls({
         enableWorker: true,
         lowLatencyMode: false,
-        // Aggressive buffer reduction for mobile - key for smooth playback
-        backBufferLength: 15, // Reduced from 30 - less memory usage
-        maxBufferLength: 15, // Reduced from 30 - faster initial playback
-        maxBufferSize: 30 * 1000 * 1000, // 30MB max (reduced from 60MB)
-        maxMaxBufferLength: 30, // Reduced from 60
-        // Conservative bandwidth estimation for mobile networks
-        abrEwmaDefaultEstimate: 300000, // Lower initial estimate (300kbps)
-        abrEwmaFastLive: 3.0,
-        abrEwmaSlowLive: 9.0,
-        abrEwmaFastVoD: 3.0,
-        abrEwmaSlowVoD: 9.0,
-        abrBandWidthFactor: 0.8, // More conservative (was 0.95)
-        abrBandWidthUpFactor: 0.5, // Slower quality upgrades (was 0.7)
-        // Fragment loading optimizations
-        fragLoadingTimeOut: 20000, // 20s timeout
-        fragLoadingMaxRetry: 4,
-        fragLoadingRetryDelay: 1000,
-        manifestLoadingTimeOut: 10000,
-        manifestLoadingMaxRetry: 3,
-        levelLoadingTimeOut: 10000,
-        levelLoadingMaxRetry: 3,
-        // Start with lowest quality for fast initial playback
-        startLevel: 0, // Start at lowest quality instead of auto
+        // LARGER buffers for single-quality video - prevents stuttering
+        backBufferLength: 60, // Keep more played content in memory
+        maxBufferLength: 60, // Buffer 60 seconds ahead
+        maxBufferSize: 120 * 1000 * 1000, // 120MB - allow large buffer for HD
+        maxMaxBufferLength: 120, // Up to 2 minutes buffer
+        // Fragment loading - generous timeouts for mobile
+        fragLoadingTimeOut: 30000, // 30s timeout
+        fragLoadingMaxRetry: 6, // More retries
+        fragLoadingRetryDelay: 500, // Faster retry
+        manifestLoadingTimeOut: 15000,
+        manifestLoadingMaxRetry: 4,
+        levelLoadingTimeOut: 15000,
+        levelLoadingMaxRetry: 4,
+        // Auto start loading immediately
+        startLevel: -1, // Auto (only one level anyway)
         autoStartLoad: true,
-        // Mobile-specific optimizations
-        capLevelToPlayerSize: true,
-        capLevelOnFPSDrop: true, // Drop quality if FPS drops
-        fpsDroppedMonitoringPeriod: 5000,
-        fpsDroppedMonitoringThreshold: 0.2,
+        // Stall recovery - critical for smooth playback
+        nudgeMaxRetry: 10, // More aggressive stall recovery
+        nudgeOffset: 0.2,
+        // Progressive loading - start playback faster
+        progressive: true,
         // Reduce CPU overhead
         enableCEA708Captions: false,
         enableWebVTT: false,
         enableIMSC1: false,
-        // Progressive loading - don't wait for full segment
-        progressive: true,
-        // Stall recovery
-        nudgeMaxRetry: 5,
-        nudgeOffset: 0.1,
       });
 
       hlsRef.current = hls;
