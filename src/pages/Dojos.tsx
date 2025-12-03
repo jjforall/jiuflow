@@ -222,14 +222,14 @@ export default function Dojos() {
   return (
     <div className="min-h-screen flex flex-col">
       <Navigation />
-      <main className="flex-grow pt-20 pb-16">
-        <div className="container mx-auto px-4 md:px-6 max-w-7xl">
-          {/* Header - Always show immediately */}
-          <div className="mb-12 text-center animate-fade-in">
-            <h1 className="text-4xl md:text-5xl font-light mb-4">
+      <main className="flex-grow pt-16 sm:pt-20 pb-12 sm:pb-16">
+        <div className="container mx-auto px-3 sm:px-4 md:px-6 max-w-7xl">
+          {/* Header */}
+          <div className="mb-6 sm:mb-10 md:mb-12 text-center animate-fade-in">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-light mb-2 sm:mb-4">
               {language === "ja" ? "道場一覧" : language === "pt" ? "Lista de Dojos" : "Dojos"}
             </h1>
-            <p className="text-muted-foreground text-lg">
+            <p className="text-muted-foreground text-sm sm:text-base md:text-lg">
               {language === "ja" 
                 ? "全国の柔術道場を探す" 
                 : language === "pt"
@@ -238,23 +238,23 @@ export default function Dojos() {
             </p>
           </div>
 
-          {/* Search and Add - Always show immediately */}
-          <div className="flex gap-4 mb-8 flex-col md:flex-row animate-fade-in">
+          {/* Search and Add */}
+          <div className="flex gap-2 sm:gap-4 mb-4 sm:mb-6 md:mb-8 flex-col sm:flex-row animate-fade-in">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-5 h-5" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4 sm:w-5 sm:h-5" />
               <Input
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder={language === "ja" ? "道場名、場所で検索..." : "Search by name, location..."}
-                className="pl-10"
+                className="pl-9 sm:pl-10 h-10 sm:h-11 text-sm sm:text-base"
                 disabled={loading}
               />
             </div>
             {isAuthenticated && (
               <Link to="/dojos/new">
-                <Button className="gap-2 w-full md:w-auto">
+                <Button className="gap-1.5 sm:gap-2 w-full sm:w-auto h-10 sm:h-11 text-sm active:scale-[0.98]">
                   <Plus className="w-4 h-4" />
-                  {language === "ja" ? "道場を登録" : language === "pt" ? "Adicionar Dojo" : "Add Dojo"}
+                  {language === "ja" ? "道場を登録" : language === "pt" ? "Adicionar" : "Add Dojo"}
                 </Button>
               </Link>
             )}
@@ -262,53 +262,53 @@ export default function Dojos() {
 
           {/* Dojos Grid */}
           {loading ? (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 animate-fade-in">
-              {[...Array(9)].map((_, i) => (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 md:gap-6 animate-fade-in">
+              {[...Array(6)].map((_, i) => (
                 <Card key={i} className="overflow-hidden">
-                  <div className="h-48 bg-muted animate-pulse" />
-                  <CardContent className="p-6 space-y-3">
-                    <div className="h-6 bg-muted rounded animate-pulse" />
-                    <div className="h-4 bg-muted rounded w-2/3 animate-pulse" />
-                    <div className="h-4 bg-muted rounded w-1/2 animate-pulse" />
+                  <div className="h-32 sm:h-40 md:h-48 bg-muted animate-pulse" />
+                  <CardContent className="p-3 sm:p-4 md:p-6 space-y-2 sm:space-y-3">
+                    <div className="h-5 sm:h-6 bg-muted rounded animate-pulse" />
+                    <div className="h-3 sm:h-4 bg-muted rounded w-2/3 animate-pulse" />
+                    <div className="h-3 sm:h-4 bg-muted rounded w-1/2 animate-pulse" />
                   </CardContent>
                 </Card>
               ))}
             </div>
           ) : filteredDojos.length === 0 ? (
             <Card>
-              <CardContent className="p-12 text-center">
-                <p className="text-muted-foreground">
+              <CardContent className="p-8 sm:p-12 text-center">
+                <p className="text-muted-foreground text-sm sm:text-base">
                   {language === "ja" ? "道場が見つかりませんでした" : "No dojos found"}
                 </p>
               </CardContent>
             </Card>
           ) : (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 md:gap-6">
               {filteredDojos.map((dojo) => (
                 <Link key={dojo.id} to={`/dojo/${dojo.id}`}>
-                  <Card className="h-full hover:shadow-lg transition-shadow relative">
+                  <Card className="h-full hover:shadow-lg transition-shadow relative active:scale-[0.99]">
                     {/* Favorite button */}
                     {isAuthenticated && (
                       <button
                         onClick={(e) => toggleFavorite(dojo.id, e)}
-                        className="absolute top-4 right-4 z-10 p-2 bg-background/80 backdrop-blur-sm rounded-full border border-border hover:bg-background transition-colors"
+                        className="absolute top-2 sm:top-3 md:top-4 right-2 sm:right-3 md:right-4 z-10 p-1.5 sm:p-2 bg-background/80 backdrop-blur-sm rounded-full border border-border hover:bg-background active:scale-95 transition-all"
                       >
                         <Heart 
-                          className={`w-5 h-5 ${favorites.has(dojo.id) ? 'fill-red-500 text-red-500' : 'text-muted-foreground'}`}
+                          className={`w-4 h-4 sm:w-5 sm:h-5 ${favorites.has(dojo.id) ? 'fill-red-500 text-red-500' : 'text-muted-foreground'}`}
                         />
                       </button>
                     )}
                     <CardContent className="p-0">
-                      {/* Cover Image - Only show if exists */}
+                      {/* Cover Image */}
                       {dojo.cover_image_url && (
-                        <div className="h-48 bg-gradient-to-br from-primary/20 to-primary/5 relative overflow-hidden">
+                        <div className="h-32 sm:h-40 md:h-48 bg-gradient-to-br from-primary/20 to-primary/5 relative overflow-hidden">
                           <img
                             src={dojo.cover_image_url}
                             alt={getDojoName(dojo)}
                             className="w-full h-full object-cover"
                           />
                           {dojo.is_verified && (
-                            <div className="absolute bottom-2 left-2 bg-muted/80 text-muted-foreground px-2 py-0.5 rounded text-xs">
+                            <div className="absolute bottom-1.5 sm:bottom-2 left-1.5 sm:left-2 bg-muted/80 text-muted-foreground px-1.5 sm:px-2 py-0.5 rounded text-[10px] sm:text-xs">
                               PR
                             </div>
                           )}
@@ -316,41 +316,41 @@ export default function Dojos() {
                       )}
 
                       {/* Content */}
-                      <div className="p-6">
+                      <div className="p-3 sm:p-4 md:p-6">
                         {!dojo.cover_image_url && dojo.is_verified && (
-                          <div className="mb-3">
-                            <Badge variant="secondary" className="text-xs opacity-60">
+                          <div className="mb-2 sm:mb-3">
+                            <Badge variant="secondary" className="text-[10px] sm:text-xs opacity-60">
                               PR
                             </Badge>
                           </div>
                         )}
-                        <h3 className="text-xl font-bold mb-2">{getDojoName(dojo)}</h3>
+                        <h3 className="text-base sm:text-lg md:text-xl font-bold mb-1.5 sm:mb-2 line-clamp-1">{getDojoName(dojo)}</h3>
                         
                         {dojo.location && (
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground mb-3">
-                            <MapPin className="w-4 h-4" />
-                            {dojo.location}
+                          <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-muted-foreground mb-2 sm:mb-3">
+                            <MapPin className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
+                            <span className="line-clamp-1">{dojo.location}</span>
                           </div>
                         )}
 
                         {getDojoDescription(dojo) && (
-                          <p className="text-sm text-muted-foreground line-clamp-2 mb-4">
+                          <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2 mb-3 sm:mb-4">
                             {getDojoDescription(dojo)}
                           </p>
                         )}
 
                         {/* Social Links */}
-                        <div className="flex gap-2 flex-wrap">
+                        <div className="flex gap-1.5 sm:gap-2 flex-wrap">
                           {dojo.website && (
                             <a
                               href={dojo.website}
                               target="_blank"
                               rel="noopener noreferrer"
                               onClick={(e) => e.stopPropagation()}
-                              className="p-2 bg-muted/50 rounded hover:bg-muted transition-colors"
+                              className="p-1.5 sm:p-2 bg-muted/50 rounded hover:bg-muted active:scale-95 transition-all"
                               title={language === "ja" ? "ウェブサイト" : "Website"}
                             >
-                              <Globe className="w-4 h-4 text-muted-foreground" />
+                              <Globe className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-muted-foreground" />
                             </a>
                           )}
                           {dojo.instagram && (
@@ -359,10 +359,10 @@ export default function Dojos() {
                               target="_blank"
                               rel="noopener noreferrer"
                               onClick={(e) => e.stopPropagation()}
-                              className="p-2 bg-muted/50 rounded hover:bg-muted transition-colors"
+                              className="p-1.5 sm:p-2 bg-muted/50 rounded hover:bg-muted active:scale-95 transition-all"
                               title="Instagram"
                             >
-                              <Instagram className="w-4 h-4 text-muted-foreground" />
+                              <Instagram className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-muted-foreground" />
                             </a>
                           )}
                           {dojo.facebook && (
@@ -371,30 +371,30 @@ export default function Dojos() {
                               target="_blank"
                               rel="noopener noreferrer"
                               onClick={(e) => e.stopPropagation()}
-                              className="p-2 bg-muted/50 rounded hover:bg-muted transition-colors"
+                              className="p-1.5 sm:p-2 bg-muted/50 rounded hover:bg-muted active:scale-95 transition-all"
                               title="Facebook"
                             >
-                              <Facebook className="w-4 h-4 text-muted-foreground" />
+                              <Facebook className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-muted-foreground" />
                             </a>
                           )}
                           {dojo.phone && (
                             <a
                               href={`tel:${dojo.phone}`}
                               onClick={(e) => e.stopPropagation()}
-                              className="p-2 bg-muted/50 rounded hover:bg-muted transition-colors"
+                              className="p-1.5 sm:p-2 bg-muted/50 rounded hover:bg-muted active:scale-95 transition-all"
                               title={language === "ja" ? "電話" : "Phone"}
                             >
-                              <Phone className="w-4 h-4 text-muted-foreground" />
+                              <Phone className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-muted-foreground" />
                             </a>
                           )}
                           {dojo.email && (
                             <a
                               href={`mailto:${dojo.email}`}
                               onClick={(e) => e.stopPropagation()}
-                              className="p-2 bg-muted/50 rounded hover:bg-muted transition-colors"
+                              className="p-1.5 sm:p-2 bg-muted/50 rounded hover:bg-muted active:scale-95 transition-all"
                               title={language === "ja" ? "メール" : "Email"}
                             >
-                              <Mail className="w-4 h-4 text-muted-foreground" />
+                              <Mail className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-muted-foreground" />
                             </a>
                           )}
                         </div>
