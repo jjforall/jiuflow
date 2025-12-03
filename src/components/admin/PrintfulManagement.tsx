@@ -1116,43 +1116,116 @@ export function PrintfulManagement() {
           </DialogHeader>
           
           <div className="space-y-6">
-            {/* Base Product Selection */}
+            {/* Step 1: Logo Selection */}
             <div className="space-y-2">
-              <Label>1. ベース商品を選択</Label>
-              {loadingCatalog ? (
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  カタログを読み込み中...
-                </div>
-              ) : (
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-64 overflow-y-auto border rounded-md p-2">
-                  {catalogProducts.map((product) => (
+              <Label>1. ロゴを選択</Label>
+              {uploadedLogos.filter(l => !l.name.startsWith('mockups/')).length > 0 ? (
+                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 max-h-48 overflow-y-auto border rounded-md p-2">
+                  {uploadedLogos.filter(l => !l.name.startsWith('mockups/')).map((logo) => (
                     <button
-                      key={product.id}
+                      key={logo.name}
                       type="button"
-                      onClick={() => handleCatalogProductChange(product.id.toString())}
-                      className={`flex flex-col items-center p-2 rounded-lg border transition-all ${
-                        selectedCatalogProduct === product.id.toString()
-                          ? "border-primary ring-2 ring-primary/20 bg-primary/5"
+                      onClick={() => setLogoUrl(logo.url)}
+                      className={`relative p-2 rounded-lg border transition-all ${
+                        logoUrl === logo.url 
+                          ? "border-primary ring-2 ring-primary/20 bg-primary/5" 
                           : "border-border hover:border-primary/50"
                       }`}
                     >
                       <img
-                        src={product.image}
-                        alt={product.title}
-                        className="w-16 h-16 object-contain mb-1"
+                        src={logo.url}
+                        alt={logo.name}
+                        className="w-full aspect-square object-contain"
                       />
-                      <span className="text-xs text-center line-clamp-2">{product.title}</span>
                     </button>
                   ))}
+                </div>
+              ) : (
+                <div className="text-center py-4 border rounded-md text-muted-foreground">
+                  <ImageIcon className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                  <p className="text-sm">保存済みロゴがありません</p>
+                </div>
+              )}
+              
+              {/* URL input or upload option */}
+              <div className="flex gap-2 mt-2">
+                <Input
+                  value={logoUrl}
+                  onChange={(e) => setLogoUrl(e.target.value)}
+                  placeholder="または画像URLを入力..."
+                  className="flex-1 text-sm"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={uploading}
+                  onClick={() => document.getElementById("logo-upload")?.click()}
+                >
+                  {uploading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Upload className="h-4 w-4" />
+                  )}
+                </Button>
+                <input
+                  id="logo-upload"
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleLogoUpload}
+                />
+              </div>
+              {logoUrl && (
+                <div className="flex items-center gap-2 p-2 bg-muted/30 rounded-md">
+                  <img src={logoUrl} alt="Selected" className="h-10 w-10 object-contain" />
+                  <span className="text-xs text-muted-foreground flex-1 truncate">{logoUrl}</span>
+                  <Button variant="ghost" size="sm" onClick={() => setLogoUrl("")}>
+                    <Trash2 className="h-3 w-3" />
+                  </Button>
                 </div>
               )}
             </div>
 
+            {/* Step 2: Base Product Selection */}
+            {logoUrl && (
+              <div className="space-y-2">
+                <Label>2. ベース商品を選択</Label>
+                {loadingCatalog ? (
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    カタログを読み込み中...
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-64 overflow-y-auto border rounded-md p-2">
+                    {catalogProducts.map((product) => (
+                      <button
+                        key={product.id}
+                        type="button"
+                        onClick={() => handleCatalogProductChange(product.id.toString())}
+                        className={`flex flex-col items-center p-2 rounded-lg border transition-all ${
+                          selectedCatalogProduct === product.id.toString()
+                            ? "border-primary ring-2 ring-primary/20 bg-primary/5"
+                            : "border-border hover:border-primary/50"
+                        }`}
+                      >
+                        <img
+                          src={product.image}
+                          alt={product.title}
+                          className="w-16 h-16 object-contain mb-1"
+                        />
+                        <span className="text-xs text-center line-clamp-2">{product.title}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Variants Selection */}
             {selectedCatalogProduct && (
               <div className="space-y-2">
-                <Label>2. バリエーションを選択</Label>
+                <Label>3. バリエーションを選択</Label>
                 {loadingVariants ? (
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <Loader2 className="h-4 w-4 animate-spin" />
@@ -1210,7 +1283,7 @@ export function PrintfulManagement() {
             {/* Product Name - shown after base product and variants are selected */}
             {selectedCatalogProduct && selectedVariants.length > 0 && (
               <div className="space-y-2">
-                <Label htmlFor="productName">3. 商品名を編集</Label>
+                <Label htmlFor="productName">4. 商品名を編集</Label>
                 <Input
                   id="productName"
                   value={newProductName}
@@ -1223,64 +1296,7 @@ export function PrintfulManagement() {
               </div>
             )}
 
-            {/* Logo URL */}
-            <div className="space-y-2">
-              <Label htmlFor="logoUrl">ロゴ画像</Label>
-              <div className="flex gap-2">
-                <Input
-                  id="logoUrl"
-                  value={logoUrl}
-                  onChange={(e) => setLogoUrl(e.target.value)}
-                  placeholder="https://example.com/logo.png"
-                  className="flex-1"
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  disabled={uploading}
-                  onClick={() => document.getElementById("logo-upload")?.click()}
-                >
-                  {uploading ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Upload className="h-4 w-4" />
-                  )}
-                </Button>
-                <input
-                  id="logo-upload"
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={handleLogoUpload}
-                />
-              </div>
-              
-              {/* Uploaded logos */}
-              {uploadedLogos.length > 0 && (
-                <div className="space-y-2">
-                  <p className="text-xs text-muted-foreground">アップロード済みロゴ:</p>
-                  <div className="flex flex-wrap gap-2">
-                    {uploadedLogos.map((logo) => (
-                      <button
-                        key={logo.name}
-                        type="button"
-                        onClick={() => setLogoUrl(logo.url)}
-                        className={`relative p-1 border rounded hover:border-primary transition-colors ${
-                          logoUrl === logo.url ? "border-primary ring-2 ring-primary/20" : "border-border"
-                        }`}
-                      >
-                        <img
-                          src={logo.url}
-                          alt={logo.name}
-                          className="h-12 w-12 object-contain"
-                        />
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Mockup Preview */}
+            {/* Mockup Preview */}
               {(logoUrl || selectedCatalogProduct) && (
                 <div className="mt-3 p-4 border rounded-lg bg-muted/30">
                   <div className="flex items-center justify-between mb-3">
@@ -1492,7 +1508,6 @@ export function PrintfulManagement() {
                   </p>
                 </div>
               )}
-            </div>
 
             {/* Retail Price */}
             <div className="space-y-2">
