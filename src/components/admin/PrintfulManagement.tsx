@@ -284,7 +284,7 @@ export function PrintfulManagement() {
       const publicUrl = `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/product-logos/${fileName}`;
       setLogoUrl(publicUrl);
       setUploadedLogos(prev => [...prev, { name: fileName, url: publicUrl }]);
-      toast.success("ロゴをアップロードしました");
+      toast.success("イメージをアップロードしました");
     } catch (error) {
       console.error("Error uploading logo:", error);
       toast.error("アップロードに失敗しました");
@@ -445,7 +445,7 @@ export function PrintfulManagement() {
     }
 
     if (!logoUrl) {
-      toast.error("ロゴURLを入力してください");
+      toast.error("イメージURLを入力してください");
       return;
     }
 
@@ -494,7 +494,7 @@ export function PrintfulManagement() {
 
   const handleGenerateMockup = async () => {
     if (!selectedVariants.length || !logoUrl || !selectedCatalogProduct) {
-      toast.error("ベース商品、バリエーション、ロゴを選択してください");
+      toast.error("ベース商品、バリエーション、イメージを選択してください");
       return;
     }
     
@@ -585,7 +585,7 @@ export function PrintfulManagement() {
   };
 
   const handleDeleteLogo = async (logoName: string) => {
-    if (!confirm('このロゴを削除しますか？')) return;
+    if (!confirm('このイメージを削除しますか？')) return;
     
     setDeletingLogo(logoName);
     try {
@@ -595,11 +595,11 @@ export function PrintfulManagement() {
       
       if (error) throw error;
       
-      toast.success("ロゴを削除しました");
+      toast.success("イメージを削除しました");
       fetchUploadedLogos();
     } catch (error) {
       console.error("Error deleting logo:", error);
-      toast.error("ロゴの削除に失敗しました");
+      toast.error("イメージの削除に失敗しました");
     } finally {
       setDeletingLogo(null);
     }
@@ -622,11 +622,11 @@ export function PrintfulManagement() {
       
       if (uploadError) throw uploadError;
       
-      toast.success("ロゴをアップロードしました");
+      toast.success("イメージをアップロードしました");
       fetchUploadedLogos();
     } catch (error) {
       console.error("Error uploading logo:", error);
-      toast.error("ロゴのアップロードに失敗しました");
+      toast.error("イメージのアップロードに失敗しました");
     } finally {
       setUploadingNewLogo(false);
       if (logoInputRef.current) {
@@ -772,7 +772,7 @@ export function PrintfulManagement() {
                 ) : (
                   <Upload className="h-4 w-4 mr-2" />
                 )}
-                ロゴ追加
+                イメージ追加
               </Button>
               <Button variant="outline" size="sm" onClick={fetchUploadedLogos}>
                 <RefreshCw className="h-4 w-4 mr-2" />
@@ -797,7 +797,7 @@ export function PrintfulManagement() {
                 ) : (
                   <Upload className="h-4 w-4 mr-2" />
                 )}
-                ロゴをアップロード
+                イメージをアップロード
               </Button>
             </div>
           ) : (
@@ -1118,7 +1118,7 @@ export function PrintfulManagement() {
           <div className="space-y-6">
             {/* Step 1: Logo Selection */}
             <div className="space-y-2">
-              <Label>1. ロゴを選択</Label>
+              <Label>1. イメージを選択</Label>
               {uploadedLogos.filter(l => !l.name.startsWith('mockups/')).length > 0 ? (
                 <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 max-h-48 overflow-y-auto border rounded-md p-2">
                   {uploadedLogos.filter(l => !l.name.startsWith('mockups/')).map((logo) => (
@@ -1504,7 +1504,7 @@ export function PrintfulManagement() {
                   )}
                   
                   <p className="text-xs text-muted-foreground mt-3 text-center">
-                    {logoUrl ? "※ APIモックアップを生成すると実際の印刷イメージを確認できます" : "ロゴ画像を追加するとプレビューが表示されます"}
+                    {logoUrl ? "※ APIモックアップを生成すると実際の印刷イメージを確認できます" : "イメージを追加するとプレビューが表示されます"}
                   </p>
                 </div>
               )}
