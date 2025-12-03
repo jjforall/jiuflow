@@ -16,6 +16,8 @@ import {
   Settings,
   Music,
   ShoppingBag,
+  PanelLeftClose,
+  PanelLeft,
 } from "lucide-react";
 import {
   Sidebar,
@@ -58,19 +60,29 @@ const menuItems = [
 ];
 
 export function AdminSidebar({ activeTab, onTabChange }: AdminSidebarProps) {
-  const { state } = useSidebar();
+  const { state, toggleSidebar } = useSidebar();
   const [isExpanded, setIsExpanded] = useState(true);
   const isCollapsed = state === "collapsed";
 
   return (
     <Sidebar collapsible="icon" className="bg-background border-r">
-      {!isCollapsed && (
-        <div className="p-4 border-b flex items-center justify-center bg-background animate-fade-in">
-          <span className="text-xl font-light tracking-tight">
+      <div className="p-4 border-b flex items-center justify-between bg-background">
+        {!isCollapsed && (
+          <span className="text-xl font-light tracking-tight animate-fade-in">
             JiuF<span className="text-red-500">l</span>ow
           </span>
-        </div>
-      )}
+        )}
+        <button
+          onClick={toggleSidebar}
+          className="hover:bg-muted rounded p-1 transition-colors"
+        >
+          {isCollapsed ? (
+            <PanelLeft className="h-5 w-5 text-foreground" />
+          ) : (
+            <PanelLeftClose className="h-5 w-5 text-foreground" />
+          )}
+        </button>
+      </div>
 
       <SidebarContent className="bg-background">
         <SidebarGroup>
