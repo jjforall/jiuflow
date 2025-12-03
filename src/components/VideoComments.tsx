@@ -384,7 +384,7 @@ export const VideoComments = ({ videoId, userId }: VideoCommentsProps) => {
   };
 
   const getTipIcon = (amount: number | undefined) => {
-    if (!amount) return null;
+    if (amount === undefined || amount === null) return <Medal className="w-4 h-4 text-yellow-500" />;
     
     if (amount >= 100000) return <Gem className="w-4 h-4 text-violet-500" />;
     if (amount >= 60000) return <Pizza className="w-4 h-4 text-red-500" />;
@@ -534,14 +534,14 @@ export const VideoComments = ({ videoId, userId }: VideoCommentsProps) => {
                     <span className="font-medium text-sm">
                       {comment.user_email?.split("@")[0] || "User"}
                     </span>
-                    {comment.tip_amount && (
-                      <div className="flex items-center gap-1 px-2 py-0.5 bg-primary/10 rounded-full text-xs">
-                        {getTipIcon(comment.tip_amount)}
+                    <div className="flex items-center gap-1 px-2 py-0.5 bg-primary/10 rounded-full text-xs">
+                      {getTipIcon(comment.tip_amount)}
+                      {comment.tip_amount && comment.tip_amount > 0 && (
                         <span className="font-medium text-primary">
                           {getTipLabel(comment.tip_amount)}
                         </span>
-                      </div>
-                    )}
+                      )}
+                    </div>
                     <span className="text-xs text-muted-foreground">
                       {getTimeAgo(comment.created_at)}
                     </span>
