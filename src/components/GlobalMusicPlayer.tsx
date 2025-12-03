@@ -53,7 +53,7 @@ const GlobalMusicPlayer = () => {
   const [isVisible, setIsVisible] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [previousVolume, setPreviousVolume] = useState(0.5);
-  const [isMinimal, setIsMinimal] = useState(false);
+  const [isMinimal, setIsMinimal] = useState(true);
 
   useEffect(() => {
     loadPlaylist();
