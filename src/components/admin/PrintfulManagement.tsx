@@ -8,7 +8,7 @@ import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Loader2, Package, RefreshCw, ExternalLink, Image as ImageIcon, Plus, Upload, RotateCcw, Sparkles, Pencil, Trash2 } from "lucide-react";
+import { Loader2, Package, RefreshCw, ExternalLink, Image as ImageIcon, Plus, Upload, RotateCcw, Sparkles, Pencil, Trash2, ImagePlus } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -130,6 +130,11 @@ export function PrintfulManagement() {
   const [loadingMockups, setLoadingMockups] = useState(false);
   const [deletingMockup, setDeletingMockup] = useState<string | null>(null);
   
+  // Set thumbnail state
+  const [settingThumbnail, setSettingThumbnail] = useState<string | null>(null);
+  const [showThumbnailDialog, setShowThumbnailDialog] = useState(false);
+  const [selectedMockupForThumbnail, setSelectedMockupForThumbnail] = useState<string | null>(null);
+  
   // Print area info for accurate preview
   const [printAreaInfo, setPrintAreaInfo] = useState<{
     placement: string;
@@ -213,6 +218,37 @@ export function PrintfulManagement() {
     } finally {
       setDeletingMockup(null);
     }
+  };
+
+  const handleSetThumbnail = async (productId: number) => {
+    if (!selectedMockupForThumbnail) return;
+    
+    setSettingThumbnail(selectedMockupForThumbnail);
+    try {
+      const { error } = await supabase.functions.invoke("update-printful-product", {
+        body: {
+          product_id: productId,
+          sync_product: { thumbnail: selectedMockupForThumbnail },
+        },
+      });
+
+      if (error) throw error;
+
+      toast.success("サムネイルを設定しました");
+      setShowThumbnailDialog(false);
+      setSelectedMockupForThumbnail(null);
+      fetchProducts();
+    } catch (error) {
+      console.error("Error setting thumbnail:", error);
+      toast.error("サムネイルの設定に失敗しました");
+    } finally {
+      setSettingThumbnail(null);
+    }
+  };
+
+  const openThumbnailDialog = (mockupUrl: string) => {
+    setSelectedMockupForThumbnail(mockupUrl);
+    setShowThumbnailDialog(true);
   };
 
   const handleLogoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -798,11 +834,19 @@ export function PrintfulManagement() {
                     alt={mockup.name}
                     className="w-full aspect-square object-cover"
                   />
-                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2">
+                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2">
                     <p className="text-white text-xs px-2 text-center truncate max-w-full">
                       {mockup.name.replace(/^mockups\//, "")}
                     </p>
                     <div className="flex gap-2">
+                      <Button 
+                        size="sm" 
+                        variant="default"
+                        onClick={() => openThumbnailDialog(mockup.url)}
+                        title="商品サムネイルに設定"
+                      >
+                        <ImagePlus className="h-3 w-3" />
+                      </Button>
                       <a href={mockup.url} target="_blank" rel="noopener noreferrer">
                         <Button size="sm" variant="secondary">
                           <ExternalLink className="h-3 w-3" />
@@ -1368,6 +1412,57 @@ export function PrintfulManagement() {
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Set Thumbnail Dialog */}
+      <Dialog open={showThumbnailDialog} onOpenChange={setShowThumbnailDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>サムネイルを設定する商品を選択</DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            {selectedMockupForThumbnail && (
+              <div className="border rounded-lg p-2">
+                <img 
+                  src={selectedMockupForThumbnail} 
+                  alt="Selected mockup"
+                  className="w-full aspect-square object-cover rounded"
+                />
+              </div>
+            )}
+            
+            <div className="space-y-2 max-h-64 overflow-y-auto">
+              {products.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  商品がありません
+                </p>
+              ) : (
+                products.map((product) => (
+                  <Button
+                    key={product.id}
+                    variant="outline"
+                    className="w-full justify-start gap-3"
+                    onClick={() => handleSetThumbnail(product.id)}
+                    disabled={settingThumbnail !== null}
+                  >
+                    {product.thumbnail_url && (
+                      <img 
+                        src={product.thumbnail_url} 
+                        alt={product.name}
+                        className="h-10 w-10 object-cover rounded"
+                      />
+                    )}
+                    <span className="truncate">{product.name}</span>
+                    {settingThumbnail === selectedMockupForThumbnail && (
+                      <Loader2 className="h-4 w-4 animate-spin ml-auto" />
+                    )}
+                  </Button>
+                ))
+              )}
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
