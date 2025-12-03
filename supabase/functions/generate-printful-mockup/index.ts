@@ -59,13 +59,53 @@ serve(async (req) => {
     }
 
     const printfilesData = await printfilesResponse.json();
-    console.log("[GENERATE-MOCKUP] Printfiles data:", JSON.stringify(printfilesData.result?.printfiles?.[0]));
+    console.log("[GENERATE-MOCKUP] Printfiles data:", JSON.stringify(printfilesData.result));
+
+    // Get available placements from printfiles
+    const availablePlacements = printfilesData.result?.available_placements || [];
+    const printfiles = printfilesData.result?.printfiles || [];
+    console.log("[GENERATE-MOCKUP] Available placements:", availablePlacements);
+    console.log("[GENERATE-MOCKUP] Printfiles:", JSON.stringify(printfiles));
+
+    // Find the correct placement - use the first available one if "default" is not allowed
+    let validPlacement = body.files?.[0]?.placement || "default";
+    if (availablePlacements.length > 0 && !availablePlacements.includes(validPlacement)) {
+      validPlacement = availablePlacements[0];
+      console.log("[GENERATE-MOCKUP] Using placement:", validPlacement);
+    }
+
+    // Find printfile info for the placement to get correct dimensions
+    const printfileInfo = printfiles.find((pf: { placement: string }) => pf.placement === validPlacement) || printfiles[0];
+    console.log("[GENERATE-MOCKUP] Printfile info for placement:", JSON.stringify(printfileInfo));
 
     // Step 2: Create mockup generation task with retry logic
+    // Update files with correct placement and position based on printfile dimensions
+    const updatedFiles = body.files.map((file: { placement: string; image_url: string; position: { area_width: number; area_height: number; width: number; height: number; top: number; left: number } }) => {
+      const areaWidth = printfileInfo?.width || file.position.area_width;
+      const areaHeight = printfileInfo?.height || file.position.area_height;
+      
+      // Scale the position proportionally
+      const scaleX = areaWidth / file.position.area_width;
+      const scaleY = areaHeight / file.position.area_height;
+      
+      return {
+        ...file,
+        placement: validPlacement,
+        position: {
+          area_width: areaWidth,
+          area_height: areaHeight,
+          width: Math.round(file.position.width * scaleX),
+          height: Math.round(file.position.height * scaleY),
+          top: Math.round(file.position.top * scaleY),
+          left: Math.round(file.position.left * scaleX),
+        }
+      };
+    });
+
     const mockupBody = {
       variant_ids: body.variant_ids,
       format: body.format || "jpg",
-      files: body.files,
+      files: updatedFiles,
     };
 
     console.log("[GENERATE-MOCKUP] Mockup request body:", JSON.stringify(mockupBody));
