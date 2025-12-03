@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Home, Menu, BarChart3 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { SidebarProvider } from "@/components/ui/sidebar";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 // Import tab components
@@ -44,7 +44,6 @@ const AdminDashboard = () => {
         <div className="flex-1 flex flex-col">
           <header className="h-16 border-b flex items-center px-4 md:px-6 justify-between sticky top-0 bg-background z-10">
             <div className="flex items-center gap-2 md:gap-4">
-              <SidebarTrigger className="hidden md:flex" />
               {/* Mobile Navigation Menu */}
               <Sheet>
                 <SheetTrigger asChild>
