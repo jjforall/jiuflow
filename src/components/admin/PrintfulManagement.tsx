@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Loader2, Package, RefreshCw, ExternalLink, Image as ImageIcon } from "lucide-react";
+import { Loader2, Package, RefreshCw, ExternalLink, Image as ImageIcon, Plus, ChevronDown } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -20,7 +20,33 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import jiuflowLogoBlack from "@/assets/jiuflow-logo-black.png";
+
+interface CatalogProduct {
+  id: number;
+  title: string;
+  type_name: string;
+  image: string;
+}
+
+interface CatalogVariant {
+  id: number;
+  product_id: number;
+  name: string;
+  size: string;
+  color: string;
+  color_code: string;
+  price: string;
+  in_stock: boolean;
+}
 
 interface PrintfulVariant {
   id: number;
@@ -59,6 +85,20 @@ export function PrintfulManagement() {
   const [products, setProducts] = useState<PrintfulProduct[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<PrintfulProduct | null>(null);
+  
+  // Create product state
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [catalogProducts, setCatalogProducts] = useState<CatalogProduct[]>([]);
+  const [catalogVariants, setCatalogVariants] = useState<CatalogVariant[]>([]);
+  const [loadingCatalog, setLoadingCatalog] = useState(false);
+  const [loadingVariants, setLoadingVariants] = useState(false);
+  const [creating, setCreating] = useState(false);
+  
+  const [newProductName, setNewProductName] = useState("");
+  const [selectedCatalogProduct, setSelectedCatalogProduct] = useState<string>("");
+  const [selectedVariants, setSelectedVariants] = useState<number[]>([]);
+  const [retailPrice, setRetailPrice] = useState("3500");
+  const [logoUrl, setLogoUrl] = useState("");
 
   useEffect(() => {
     fetchProducts();
@@ -92,6 +132,118 @@ export function PrintfulManagement() {
     return `${currency} ${num.toFixed(2)}`;
   };
 
+  const fetchCatalogProducts = async () => {
+    setLoadingCatalog(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("get-printful-catalog");
+      if (error) throw error;
+      if (data?.products) {
+        setCatalogProducts(data.products);
+      }
+    } catch (error) {
+      console.error("Error fetching catalog:", error);
+      toast.error("カタログの取得に失敗しました");
+    } finally {
+      setLoadingCatalog(false);
+    }
+  };
+
+  const fetchCatalogVariants = async (productId: string) => {
+    setLoadingVariants(true);
+    setSelectedVariants([]);
+    try {
+      const { data, error } = await supabase.functions.invoke("get-printful-catalog", {
+        body: null,
+      });
+      
+      // Fetch variants directly with query param
+      const response = await supabase.functions.invoke(`get-printful-catalog?product_id=${productId}`);
+      if (response.error) throw response.error;
+      if (response.data?.variants) {
+        setCatalogVariants(response.data.variants);
+      }
+    } catch (error) {
+      console.error("Error fetching variants:", error);
+      toast.error("バリエーションの取得に失敗しました");
+    } finally {
+      setLoadingVariants(false);
+    }
+  };
+
+  const handleOpenCreateDialog = async () => {
+    setShowCreateDialog(true);
+    if (catalogProducts.length === 0) {
+      await fetchCatalogProducts();
+    }
+  };
+
+  const handleCatalogProductChange = (productId: string) => {
+    setSelectedCatalogProduct(productId);
+    fetchCatalogVariants(productId);
+  };
+
+  const toggleVariant = (variantId: number) => {
+    setSelectedVariants(prev => 
+      prev.includes(variantId) 
+        ? prev.filter(id => id !== variantId)
+        : [...prev, variantId]
+    );
+  };
+
+  const handleCreateProduct = async () => {
+    if (!newProductName || !selectedCatalogProduct || selectedVariants.length === 0) {
+      toast.error("商品名、ベース商品、バリエーションを選択してください");
+      return;
+    }
+
+    if (!logoUrl) {
+      toast.error("ロゴURLを入力してください");
+      return;
+    }
+
+    setCreating(true);
+    try {
+      const syncVariants = selectedVariants.map(variantId => ({
+        variant_id: variantId,
+        retail_price: retailPrice,
+        files: [
+          {
+            url: logoUrl,
+            type: "front",
+          }
+        ]
+      }));
+
+      const { data, error } = await supabase.functions.invoke("create-printful-product", {
+        body: {
+          sync_product: {
+            name: newProductName,
+          },
+          sync_variants: syncVariants,
+        }
+      });
+
+      if (error) throw error;
+      
+      if (data?.error) {
+        throw new Error(data.error);
+      }
+
+      toast.success("商品を作成しました");
+      setShowCreateDialog(false);
+      setNewProductName("");
+      setSelectedCatalogProduct("");
+      setSelectedVariants([]);
+      setLogoUrl("");
+      fetchProducts();
+    } catch (error) {
+      console.error("Error creating product:", error);
+      toast.error("商品の作成に失敗しました");
+    } finally {
+      setCreating(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -99,14 +251,20 @@ export function PrintfulManagement() {
           <h2 className="text-2xl font-bold">Printful 商品管理</h2>
           <p className="text-muted-foreground">Printfulの商品を管理します</p>
         </div>
-        <Button onClick={fetchProducts} disabled={loading}>
-          {loading ? (
-            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-          ) : (
-            <RefreshCw className="h-4 w-4 mr-2" />
-          )}
-          更新
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={handleOpenCreateDialog}>
+            <Plus className="h-4 w-4 mr-2" />
+            商品を作成
+          </Button>
+          <Button variant="outline" onClick={fetchProducts} disabled={loading}>
+            {loading ? (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <RefreshCw className="h-4 w-4 mr-2" />
+            )}
+            更新
+          </Button>
+        </div>
       </div>
 
       {/* Logo Preview */}
@@ -209,9 +367,9 @@ export function PrintfulManagement() {
         <CardContent className="pt-6">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="font-medium">Printful で商品を追加</h3>
+              <h3 className="font-medium">Printful Dashboard</h3>
               <p className="text-sm text-muted-foreground">
-                新しい商品はPrintfulダッシュボードから追加できます
+                詳細設定はPrintfulダッシュボードで管理できます
               </p>
             </div>
             <a 
@@ -277,6 +435,137 @@ export function PrintfulManagement() {
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Create Product Dialog */}
+      <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>新規商品を作成</DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-6">
+            {/* Product Name */}
+            <div className="space-y-2">
+              <Label htmlFor="productName">商品名</Label>
+              <Input
+                id="productName"
+                value={newProductName}
+                onChange={(e) => setNewProductName(e.target.value)}
+                placeholder="例: jiuFlow Tシャツ"
+              />
+            </div>
+
+            {/* Base Product Selection */}
+            <div className="space-y-2">
+              <Label>ベース商品</Label>
+              {loadingCatalog ? (
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  カタログを読み込み中...
+                </div>
+              ) : (
+                <Select value={selectedCatalogProduct} onValueChange={handleCatalogProductChange}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="ベース商品を選択" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {catalogProducts.map((product) => (
+                      <SelectItem key={product.id} value={product.id.toString()}>
+                        {product.title}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            </div>
+
+            {/* Variants Selection */}
+            {selectedCatalogProduct && (
+              <div className="space-y-2">
+                <Label>バリエーション選択</Label>
+                {loadingVariants ? (
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    バリエーションを読み込み中...
+                  </div>
+                ) : catalogVariants.length > 0 ? (
+                  <div className="max-h-48 overflow-y-auto border rounded-md p-2 space-y-2">
+                    {catalogVariants.map((variant) => (
+                      <div key={variant.id} className="flex items-center gap-2">
+                        <Checkbox
+                          id={`variant-${variant.id}`}
+                          checked={selectedVariants.includes(variant.id)}
+                          onCheckedChange={() => toggleVariant(variant.id)}
+                        />
+                        <label 
+                          htmlFor={`variant-${variant.id}`}
+                          className="text-sm cursor-pointer flex-1"
+                        >
+                          {variant.name} - {variant.size} / {variant.color}
+                          {variant.in_stock ? "" : " (在庫切れ)"}
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">バリエーションがありません</p>
+                )}
+                {selectedVariants.length > 0 && (
+                  <p className="text-sm text-muted-foreground">
+                    {selectedVariants.length}個のバリエーションを選択中
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* Logo URL */}
+            <div className="space-y-2">
+              <Label htmlFor="logoUrl">ロゴURL</Label>
+              <Input
+                id="logoUrl"
+                value={logoUrl}
+                onChange={(e) => setLogoUrl(e.target.value)}
+                placeholder="https://example.com/logo.png"
+              />
+              <p className="text-xs text-muted-foreground">
+                公開アクセス可能なロゴ画像のURLを入力してください
+              </p>
+            </div>
+
+            {/* Retail Price */}
+            <div className="space-y-2">
+              <Label htmlFor="retailPrice">販売価格 (円)</Label>
+              <Input
+                id="retailPrice"
+                type="number"
+                value={retailPrice}
+                onChange={(e) => setRetailPrice(e.target.value)}
+                placeholder="3500"
+              />
+            </div>
+
+            {/* Actions */}
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setShowCreateDialog(false)}>
+                キャンセル
+              </Button>
+              <Button 
+                onClick={handleCreateProduct}
+                disabled={creating || !newProductName || !selectedCatalogProduct || selectedVariants.length === 0}
+              >
+                {creating ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    作成中...
+                  </>
+                ) : (
+                  "作成"
+                )}
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
