@@ -6,6 +6,7 @@ const corsHeaders = {
 };
 
 interface MockupRequest {
+  product_id: number;
   variant_ids: number[];
   format: string;
   files: Array<{
@@ -36,10 +37,14 @@ serve(async (req) => {
     const body: MockupRequest = await req.json();
     console.log("[GENERATE-MOCKUP] Creating mockup task:", JSON.stringify(body));
 
-    // Step 1: Get printfiles info for the variant to know placement dimensions
-    const variantId = body.variant_ids[0];
+    const productId = body.product_id;
+    if (!productId) {
+      throw new Error("product_id is required");
+    }
+
+    // Step 1: Get printfiles info for the product to know placement dimensions
     const printfilesResponse = await fetch(
-      `https://api.printful.com/mockup-generator/printfiles/${variantId}`,
+      `https://api.printful.com/mockup-generator/printfiles/${productId}`,
       {
         headers: {
           "Authorization": `Bearer ${PRINTFUL_API_KEY}`,
@@ -65,7 +70,7 @@ serve(async (req) => {
 
     console.log("[GENERATE-MOCKUP] Mockup request body:", JSON.stringify(mockupBody));
 
-    const response = await fetch("https://api.printful.com/mockup-generator/create-task/" + variantId, {
+    const response = await fetch(`https://api.printful.com/mockup-generator/create-task/${productId}`, {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${PRINTFUL_API_KEY}`,

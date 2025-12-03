@@ -324,15 +324,17 @@ export function PrintfulManagement() {
   };
 
   const handleGenerateMockup = async () => {
-    if (!selectedVariants.length || !logoUrl) {
-      toast.error("バリエーションとロゴを選択してください");
+    if (!selectedVariants.length || !logoUrl || !selectedCatalogProduct) {
+      toast.error("ベース商品、バリエーション、ロゴを選択してください");
       return;
     }
     
     setGeneratingMockup(true);
+    setGeneratedMockupUrl(null);
     try {
       const { data, error } = await supabase.functions.invoke("generate-printful-mockup", {
         body: {
+          product_id: parseInt(selectedCatalogProduct),
           variant_ids: selectedVariants,
           format: "jpg",
           files: [{
@@ -355,8 +357,10 @@ export function PrintfulManagement() {
       if (data?.mockups?.[0]?.mockup_url) {
         setGeneratedMockupUrl(data.mockups[0].mockup_url);
         toast.success("モックアップを生成しました");
-      } else {
+      } else if (data?.task_key) {
         toast.info("モックアップ生成中です。しばらくお待ちください");
+      } else {
+        toast.warning("モックアップの取得に失敗しました");
       }
     } catch (error) {
       console.error("Mockup error:", error);
