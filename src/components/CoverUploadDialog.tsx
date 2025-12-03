@@ -123,7 +123,7 @@ export function CoverUploadDialog({
       const { error: uploadError } = await supabase.storage
         .from('avatars')
         .upload(filePath, croppedFile, {
-          cacheControl: '3600',
+          cacheControl: '86400', // 24 hours cache for avatars/covers
           upsert: true,
         });
 

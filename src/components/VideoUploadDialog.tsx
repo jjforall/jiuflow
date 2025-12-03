@@ -85,7 +85,7 @@ export function VideoUploadDialog({ open, onOpenChange }: VideoUploadDialogProps
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('user-videos')
         .upload(fileName, videoFile, {
-          cacheControl: '3600',
+          cacheControl: '604800', // 7 days cache for videos
           upsert: false
         });
 
