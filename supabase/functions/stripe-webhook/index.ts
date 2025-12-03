@@ -8,7 +8,7 @@ const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
 
 const cryptoProvider = Stripe.createSubtleCryptoProvider();
 
-const logStep = (step: string, details?: any) => {
+const logStep = (step: string, details?: unknown) => {
   const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
   console.log(`[STRIPE-WEBHOOK] ${step}${detailsStr}`);
 };
@@ -17,15 +17,15 @@ const logStep = (step: string, details?: any) => {
 async function createPrintfulOrder(
   session: Stripe.Checkout.Session,
   cartItems: { variantId: number; quantity: number }[]
-) {
+): Promise<{ success: boolean; orderId?: string; error?: string }> {
   const PRINTFUL_API_KEY = Deno.env.get("PRINTFUL_API_KEY");
   if (!PRINTFUL_API_KEY) {
-    throw new Error("PRINTFUL_API_KEY is not set");
+    return { success: false, error: "PRINTFUL_API_KEY is not set" };
   }
 
   const shippingDetails = session.shipping_details;
   if (!shippingDetails?.address) {
-    throw new Error("No shipping address in session");
+    return { success: false, error: "No shipping address in session" };
   }
 
   logStep("Creating Printful order", { 
@@ -54,6 +54,7 @@ async function createPrintfulOrder(
   };
 
   const orderData = {
+    external_id: session.id,
     recipient,
     items: orderItems,
     retail_costs: {
@@ -65,31 +66,83 @@ async function createPrintfulOrder(
 
   logStep("Sending order to Printful", { orderData });
 
-  const response = await fetch("https://api.printful.com/orders", {
-    method: "POST",
-    headers: {
-      "Authorization": `Bearer ${PRINTFUL_API_KEY}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(orderData),
-  });
-
-  const result = await response.json();
-
-  if (!response.ok) {
-    logStep("ERROR creating Printful order", { 
-      status: response.status,
-      result 
+  try {
+    const response = await fetch("https://api.printful.com/orders", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${PRINTFUL_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(orderData),
     });
-    throw new Error(`Printful API error: ${result.error?.message || JSON.stringify(result)}`);
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      logStep("ERROR creating Printful order", { 
+        status: response.status,
+        result 
+      });
+      return { 
+        success: false, 
+        error: result.error?.message || result.result || JSON.stringify(result) 
+      };
+    }
+
+    logStep("Printful order created successfully", { 
+      orderId: result.result?.id,
+      status: result.result?.status 
+    });
+
+    return { success: true, orderId: String(result.result?.id) };
+  } catch (error) {
+    logStep("ERROR calling Printful API", { error: String(error) });
+    return { success: false, error: String(error) };
   }
+}
 
-  logStep("Printful order created successfully", { 
-    orderId: result.result?.id,
-    status: result.result?.status 
-  });
+// Save order to database using raw insert
+async function saveOrderToDatabase(
+  supabaseUrl: string,
+  supabaseKey: string,
+  stripeSessionId: string,
+  session: Stripe.Checkout.Session,
+  cartItems: { variantId: number; quantity: number }[],
+  printfulResult: { success: boolean; orderId?: string; error?: string }
+) {
+  try {
+    const orderData = {
+      stripe_session_id: stripeSessionId,
+      printful_order_id: printfulResult.orderId || null,
+      status: printfulResult.success ? "sent_to_printful" : "error",
+      customer_email: session.customer_details?.email || session.customer_email || null,
+      shipping_name: session.shipping_details?.name || null,
+      shipping_address: session.shipping_details?.address || null,
+      cart_items: cartItems,
+      total_amount: session.amount_total || 0,
+      error_message: printfulResult.error || null,
+    };
 
-  return result;
+    const response = await fetch(`${supabaseUrl}/rest/v1/printful_orders`, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${supabaseKey}`,
+        "apikey": supabaseKey,
+        "Content-Type": "application/json",
+        "Prefer": "resolution=merge-duplicates",
+      },
+      body: JSON.stringify(orderData),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      logStep("ERROR saving order to database", { status: response.status, error: errorText });
+    } else {
+      logStep("Order saved to database", { stripeSessionId });
+    }
+  } catch (err) {
+    logStep("ERROR saving order to database", { error: String(err) });
+  }
 }
 
 serve(async (req) => {
@@ -126,10 +179,10 @@ serve(async (req) => {
 
   logStep("Processing event", { type: event.type });
 
-  const supabase = createClient(
-    Deno.env.get("SUPABASE_URL") ?? "",
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-  );
+  const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
+  const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+  
+  const supabase = createClient(supabaseUrl, supabaseKey);
 
   try {
     switch (event.type) {
@@ -157,17 +210,39 @@ serve(async (req) => {
               expand: ['shipping_details', 'customer_details'],
             });
 
+            // Create order in Printful
             const printfulResult = await createPrintfulOrder(fullSession, cartItems);
-            logStep("Printful order created", { 
-              orderId: printfulResult.result?.id,
-              sessionId: session.id 
-            });
+            
+            // Save to database regardless of success/failure
+            await saveOrderToDatabase(supabaseUrl, supabaseKey, session.id, fullSession, cartItems, printfulResult);
+
+            if (printfulResult.success) {
+              logStep("Printful order created and saved", { 
+                orderId: printfulResult.orderId,
+                sessionId: session.id 
+              });
+            } else {
+              logStep("Printful order failed, saved to DB for retry", { 
+                error: printfulResult.error,
+                sessionId: session.id 
+              });
+            }
           } catch (printfulError) {
-            logStep("ERROR creating Printful order", { 
+            logStep("ERROR processing Printful order", { 
               error: printfulError instanceof Error ? printfulError.message : String(printfulError),
               sessionId: session.id
             });
-            // Don't throw - we still want to acknowledge the webhook
+            
+            // Save failed order to database
+            try {
+              const cartItems = JSON.parse(session.metadata.cart_items);
+              await saveOrderToDatabase(supabaseUrl, supabaseKey, session.id, session, cartItems, {
+                success: false,
+                error: printfulError instanceof Error ? printfulError.message : String(printfulError)
+              });
+            } catch {
+              // Ignore save error
+            }
           }
           break;
         }
@@ -233,7 +308,7 @@ serve(async (req) => {
           const { data: newUser, error: createError } = await supabase.auth.admin.createUser({
             email: customerEmail.toLowerCase().trim(),
             password: randomPassword,
-            email_confirm: true, // Auto-confirm email
+            email_confirm: true,
           });
 
           if (createError) {
@@ -286,8 +361,7 @@ serve(async (req) => {
           }
         }
 
-        // Get or create customer ID
-        let customerId = session.customer as string;
+        // Process subscription
         logStep("Processing subscription", { 
           mode: session.mode,
           hasSubscription: !!session.subscription
@@ -317,6 +391,7 @@ serve(async (req) => {
           });
           
           if (user) {
+            const subscriptionMetadata = subscription.metadata as Record<string, string> | undefined;
             const { error: subError } = await supabase
               .from("subscriptions")
               .upsert({
@@ -326,7 +401,7 @@ serve(async (req) => {
                 status: subscription.status,
                 current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
                 plan_type: "founder",
-                referral_code_id: (subscription.metadata as any)?.referral_code_id || null,
+                referral_code_id: subscriptionMetadata?.referral_code_id || null,
                 trial_start: subscription.trial_start ? new Date(subscription.trial_start * 1000).toISOString() : null,
                 trial_end: subscription.trial_end ? new Date(subscription.trial_end * 1000).toISOString() : null,
               });

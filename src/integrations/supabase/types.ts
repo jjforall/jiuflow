@@ -974,6 +974,51 @@ export type Database = {
           },
         ]
       }
+      printful_orders: {
+        Row: {
+          cart_items: Json
+          created_at: string
+          customer_email: string | null
+          error_message: string | null
+          id: string
+          printful_order_id: string | null
+          shipping_address: Json | null
+          shipping_name: string | null
+          status: string
+          stripe_session_id: string
+          total_amount: number | null
+          updated_at: string
+        }
+        Insert: {
+          cart_items: Json
+          created_at?: string
+          customer_email?: string | null
+          error_message?: string | null
+          id?: string
+          printful_order_id?: string | null
+          shipping_address?: Json | null
+          shipping_name?: string | null
+          status?: string
+          stripe_session_id: string
+          total_amount?: number | null
+          updated_at?: string
+        }
+        Update: {
+          cart_items?: Json
+          created_at?: string
+          customer_email?: string | null
+          error_message?: string | null
+          id?: string
+          printful_order_id?: string | null
+          shipping_address?: Json | null
+          shipping_name?: string | null
+          status?: string
+          stripe_session_id?: string
+          total_amount?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
