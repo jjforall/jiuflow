@@ -125,6 +125,11 @@ export function PrintfulManagement() {
   const [generatingMockup, setGeneratingMockup] = useState(false);
   const [generatedMockupUrl, setGeneratedMockupUrl] = useState<string | null>(null);
   
+  // Saved mockups state
+  const [savedMockups, setSavedMockups] = useState<{ name: string; url: string; created: string }[]>([]);
+  const [loadingMockups, setLoadingMockups] = useState(false);
+  const [deletingMockup, setDeletingMockup] = useState<string | null>(null);
+  
   // Print area info for accurate preview
   const [printAreaInfo, setPrintAreaInfo] = useState<{
     placement: string;
@@ -137,9 +142,10 @@ export function PrintfulManagement() {
   } | null>(null);
   const [loadingPrintArea, setLoadingPrintArea] = useState(false);
 
-  // Fetch uploaded logos on mount
+  // Fetch uploaded logos and mockups on mount
   useEffect(() => {
     fetchUploadedLogos();
+    fetchSavedMockups();
   }, []);
 
   const fetchUploadedLogos = async () => {
@@ -161,6 +167,51 @@ export function PrintfulManagement() {
       }
     } catch (error) {
       console.error("Error fetching logos:", error);
+    }
+  };
+
+  const fetchSavedMockups = async () => {
+    setLoadingMockups(true);
+    try {
+      const { data, error } = await supabase.storage
+        .from("product-logos")
+        .list("mockups", { limit: 100, sortBy: { column: "created_at", order: "desc" } });
+      
+      if (error) throw error;
+      
+      if (data) {
+        const mockups = data
+          .filter(file => file.name !== ".emptyFolderPlaceholder")
+          .map(file => ({
+            name: file.name,
+            url: `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/product-logos/mockups/${file.name}`,
+            created: file.created_at || "",
+          }));
+        setSavedMockups(mockups);
+      }
+    } catch (error) {
+      console.error("Error fetching mockups:", error);
+    } finally {
+      setLoadingMockups(false);
+    }
+  };
+
+  const handleDeleteMockup = async (fileName: string) => {
+    setDeletingMockup(fileName);
+    try {
+      const { error } = await supabase.storage
+        .from("product-logos")
+        .remove([`mockups/${fileName}`]);
+      
+      if (error) throw error;
+      
+      setSavedMockups(prev => prev.filter(m => m.name !== fileName));
+      toast.success("モックアップを削除しました");
+    } catch (error) {
+      console.error("Error deleting mockup:", error);
+      toast.error("削除に失敗しました");
+    } finally {
+      setDeletingMockup(null);
     }
   };
 
@@ -451,6 +502,7 @@ export function PrintfulManagement() {
       if (data?.saved_mockups?.[0]?.storage_url) {
         setGeneratedMockupUrl(data.saved_mockups[0].storage_url);
         toast.success("モックアップを生成・保存しました");
+        fetchSavedMockups(); // Refresh mockups list
       } else if (data?.mockups?.[0]?.mockup_url) {
         setGeneratedMockupUrl(data.mockups[0].mockup_url);
         toast.success("モックアップを生成しました（保存に失敗）");
@@ -708,6 +760,71 @@ export function PrintfulManagement() {
                 ))}
               </TableBody>
             </Table>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Saved Mockups Gallery */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <ImageIcon className="h-5 w-5" />
+              保存済みモックアップ
+            </CardTitle>
+            <Button variant="outline" size="sm" onClick={fetchSavedMockups} disabled={loadingMockups}>
+              <RefreshCw className={`h-4 w-4 mr-2 ${loadingMockups ? "animate-spin" : ""}`} />
+              更新
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {loadingMockups ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-8 w-8 animate-spin" />
+            </div>
+          ) : savedMockups.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <ImageIcon className="h-12 w-12 mx-auto mb-2 opacity-50" />
+              <p>保存済みモックアップはありません</p>
+              <p className="text-sm">商品作成時にモックアップを生成すると自動で保存されます</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {savedMockups.map((mockup) => (
+                <div key={mockup.name} className="relative group border rounded-lg overflow-hidden">
+                  <img 
+                    src={mockup.url} 
+                    alt={mockup.name}
+                    className="w-full aspect-square object-cover"
+                  />
+                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2">
+                    <p className="text-white text-xs px-2 text-center truncate max-w-full">
+                      {mockup.name.replace(/^mockups\//, "")}
+                    </p>
+                    <div className="flex gap-2">
+                      <a href={mockup.url} target="_blank" rel="noopener noreferrer">
+                        <Button size="sm" variant="secondary">
+                          <ExternalLink className="h-3 w-3" />
+                        </Button>
+                      </a>
+                      <Button 
+                        size="sm" 
+                        variant="destructive"
+                        onClick={() => handleDeleteMockup(mockup.name)}
+                        disabled={deletingMockup === mockup.name}
+                      >
+                        {deletingMockup === mockup.name ? (
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                        ) : (
+                          <Trash2 className="h-3 w-3" />
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
           )}
         </CardContent>
       </Card>
