@@ -73,6 +73,7 @@ export default function Shop() {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [selectedVariants, setSelectedVariants] = useState<Record<number, number>>({});
+  const [cartAnimation, setCartAnimation] = useState(false);
 
   useEffect(() => {
     if (searchParams.get("success") === "true") {
@@ -136,6 +137,10 @@ export default function Shop() {
     }
     
     toast.success(language === "ja" ? "カートに追加しました" : "Added to cart");
+    
+    // Trigger cart animation
+    setCartAnimation(true);
+    setTimeout(() => setCartAnimation(false), 600);
   };
 
   const updateQuantity = (variantId: number, delta: number) => {
@@ -205,10 +210,21 @@ export default function Shop() {
 
             <Sheet>
               <SheetTrigger asChild>
-                <Button variant="outline" className="relative">
-                  <ShoppingCart className="h-5 w-5" />
+                <Button 
+                  variant="outline" 
+                  className={`relative transition-all duration-300 ${
+                    cartAnimation 
+                      ? "scale-125 ring-2 ring-primary ring-offset-2 bg-primary text-primary-foreground" 
+                      : ""
+                  }`}
+                >
+                  <ShoppingCart className={`h-5 w-5 transition-transform ${cartAnimation ? "animate-bounce" : ""}`} />
                   {getTotalItems() > 0 && (
-                    <Badge className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 text-xs">
+                    <Badge 
+                      className={`absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 text-xs transition-transform ${
+                        cartAnimation ? "scale-125" : ""
+                      }`}
+                    >
                       {getTotalItems()}
                     </Badge>
                   )}
