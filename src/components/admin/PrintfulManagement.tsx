@@ -8,7 +8,7 @@ import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Loader2, Package, RefreshCw, ExternalLink, Image as ImageIcon, Plus, Upload, RotateCcw, Sparkles, Pencil, Trash2, ImagePlus } from "lucide-react";
+import { Loader2, Package, RefreshCw, ExternalLink, Image as ImageIcon, Plus, Upload, RotateCcw, Sparkles, Pencil, Trash2, ImagePlus, Save } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -123,6 +123,7 @@ export function PrintfulManagement() {
   // Mockup generation state
   const [generatingMockup, setGeneratingMockup] = useState(false);
   const [generatedMockupUrl, setGeneratedMockupUrl] = useState<string | null>(null);
+  const [savingMockup, setSavingMockup] = useState(false);
   
   // Saved mockups state
   const [savedMockups, setSavedMockups] = useState<{ name: string; url: string; created: string }[]>([]);
@@ -551,6 +552,40 @@ export function PrintfulManagement() {
       toast.error("モックアップ生成に失敗しました");
     } finally {
       setGeneratingMockup(false);
+    }
+  };
+
+  const handleSaveMockup = async () => {
+    if (!generatedMockupUrl) return;
+    
+    setSavingMockup(true);
+    try {
+      // Fetch the image
+      const response = await fetch(generatedMockupUrl);
+      const blob = await response.blob();
+      
+      // Generate filename
+      const timestamp = Date.now();
+      const productName = newProductName || `product_${selectedCatalogProduct}`;
+      const fileName = `mockups/${productName.replace(/\s+/g, '_')}_${timestamp}.jpg`;
+      
+      // Upload to storage
+      const { error: uploadError } = await supabase.storage
+        .from('product-logos')
+        .upload(fileName, blob, {
+          contentType: 'image/jpeg',
+          cacheControl: '3600',
+        });
+      
+      if (uploadError) throw uploadError;
+      
+      toast.success("モックアップを保存しました");
+      fetchSavedMockups();
+    } catch (error) {
+      console.error("Error saving mockup:", error);
+      toast.error("モックアップの保存に失敗しました");
+    } finally {
+      setSavingMockup(false);
     }
   };
 
@@ -1329,7 +1364,27 @@ export function PrintfulManagement() {
                   {/* Generated Mockup Display */}
                   {generatedMockupUrl && (
                     <div className="mt-4 p-3 border rounded-lg bg-background">
-                      <p className="text-sm font-medium mb-2 text-foreground">APIモックアップ:</p>
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="text-sm font-medium text-foreground">APIモックアップ:</p>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={handleSaveMockup}
+                          disabled={savingMockup}
+                        >
+                          {savingMockup ? (
+                            <>
+                              <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                              保存中...
+                            </>
+                          ) : (
+                            <>
+                              <Save className="h-3 w-3 mr-1" />
+                              保存
+                            </>
+                          )}
+                        </Button>
+                      </div>
                       <img
                         src={generatedMockupUrl}
                         alt="Generated mockup"
