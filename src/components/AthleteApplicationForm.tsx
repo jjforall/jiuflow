@@ -149,13 +149,18 @@ export const AthleteApplicationForm = () => {
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button onClick={handleOpen} className="gap-2">
+        <Button onClick={handleOpen} className="gap-2 text-xs sm:text-sm" size="sm">
           <Star className="h-4 w-4" />
-          {language === "ja"
-            ? "有名選手として申請"
-            : language === "pt"
-            ? "Aplicar como Atleta"
-            : "Apply as Athlete"}
+          <span className="hidden sm:inline">
+            {language === "ja"
+              ? "有名選手として申請"
+              : language === "pt"
+              ? "Aplicar como Atleta"
+              : "Apply as Athlete"}
+          </span>
+          <span className="sm:hidden">
+            {language === "ja" ? "申請" : "Apply"}
+          </span>
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">

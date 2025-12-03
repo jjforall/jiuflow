@@ -1212,8 +1212,8 @@ const MyPage = () => {
                 </>
               )}
               
-              {/* Edit Buttons */}
-              <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300">
+              {/* Edit Buttons - Hidden on mobile */}
+              <div className="absolute top-4 right-4 hidden sm:flex gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300">
                 <Button
                   size="sm"
                   variant="secondary"
@@ -1254,7 +1254,7 @@ const MyPage = () => {
                     <Upload className="w-4 h-4" />
                   </Button>
                 </div>
-                <div className="flex gap-2 mb-4">
+                <div className="flex flex-col sm:flex-row gap-2 mb-4">
                   <Button 
                     variant="outline"
                     onClick={() => {
@@ -1265,11 +1265,13 @@ const MyPage = () => {
                       }
                       window.open(`/${profileUrl}`, '_blank');
                     }}
-                    className="gap-2"
+                    className="gap-2 text-xs sm:text-sm"
+                    size="sm"
                     disabled={!user?.id}
                   >
                     <ExternalLink className="w-4 h-4" />
-                    {language === "ja" ? "公開プロフィール" : "View Profile"}
+                    <span className="hidden sm:inline">{language === "ja" ? "公開プロフィール" : "View Profile"}</span>
+                    <span className="sm:hidden">{language === "ja" ? "公開" : "Profile"}</span>
                   </Button>
                   <AthleteApplicationForm />
                 </div>
