@@ -31,6 +31,7 @@ const PaymentError = lazy(() => import("./pages/PaymentError"));
 const MyPage = lazy(() => import("./pages/MyPage"));
 const VideoUploadInfo = lazy(() => import("./pages/VideoUploadInfo"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
+const AdminStats = lazy(() => import("./pages/AdminStats"));
 const AdminLogin = lazy(() => import("./pages/AdminLogin"));
 const UserProfile = lazy(() => import("./pages/UserProfile"));
 const Dojos = lazy(() => import("./pages/Dojos"));
@@ -123,10 +124,15 @@ const App = () => (
                   <Route path="/admin" element={<SuspenseWrapper variant="admin"><AdminLogin /></SuspenseWrapper>} />
                   <Route path="/admin-dashboard" element={
                     <ProtectedRoute requireAdmin>
-                      <SuspenseWrapper variant="admin"><AdminDashboard /></SuspenseWrapper>
+                      <SuspenseWrapper variant="admin"><AdminStats /></SuspenseWrapper>
                     </ProtectedRoute>
                   } />
                   <Route path="/admin/dashboard" element={
+                    <ProtectedRoute requireAdmin>
+                      <SuspenseWrapper variant="admin"><AdminStats /></SuspenseWrapper>
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/admin/techniques" element={
                     <ProtectedRoute requireAdmin>
                       <SuspenseWrapper variant="admin"><AdminDashboard /></SuspenseWrapper>
                     </ProtectedRoute>
