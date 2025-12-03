@@ -66,31 +66,70 @@ serve(async (req) => {
     const availablePlacementKeys = Object.keys(availablePlacementsObj);
     const printfiles = printfilesData.result?.printfiles || [];
     const variantPrintfiles = printfilesData.result?.variant_printfiles || [];
+    
+    console.log("[GENERATE-MOCKUP] Available placements object:", JSON.stringify(availablePlacementsObj));
     console.log("[GENERATE-MOCKUP] Available placement keys:", availablePlacementKeys);
-    console.log("[GENERATE-MOCKUP] Printfiles:", JSON.stringify(printfiles));
+    console.log("[GENERATE-MOCKUP] Printfiles count:", printfiles.length);
+    console.log("[GENERATE-MOCKUP] Variant printfiles count:", variantPrintfiles.length);
 
-    // Find the correct placement - prefer "front", then first available one
-    let validPlacement = body.files?.[0]?.placement || "default";
-    if (availablePlacementKeys.length > 0 && !availablePlacementKeys.includes(validPlacement)) {
-      // Prefer "front" placement if available, otherwise use first available
-      validPlacement = availablePlacementKeys.includes("front") ? "front" : availablePlacementKeys[0];
-      console.log("[GENERATE-MOCKUP] Using placement:", validPlacement);
+    // Find the correct placement - MUST use a valid placement from available_placements
+    let validPlacement: string;
+    const requestedPlacement = body.files?.[0]?.placement;
+    
+    if (availablePlacementKeys.length > 0) {
+      // Check if requested placement is valid
+      if (requestedPlacement && availablePlacementKeys.includes(requestedPlacement)) {
+        validPlacement = requestedPlacement;
+      } else {
+        // Prefer common placements in order: front, default, back, then first available
+        const preferredPlacements = ["front", "default", "back", "left", "right"];
+        validPlacement = preferredPlacements.find(p => availablePlacementKeys.includes(p)) || availablePlacementKeys[0];
+      }
+    } else {
+      // No placements available, try to get from printfiles
+      if (printfiles.length > 0 && printfiles[0].placements) {
+        const printfilePlacements = Object.keys(printfiles[0].placements);
+        validPlacement = printfilePlacements.includes("front") ? "front" : printfilePlacements[0] || "default";
+      } else {
+        validPlacement = "front"; // Last resort fallback
+      }
     }
+    
+    console.log("[GENERATE-MOCKUP] Requested placement:", requestedPlacement);
+    console.log("[GENERATE-MOCKUP] Using valid placement:", validPlacement);
 
     // Find printfile info for the placement using variant_printfiles
     let printfileId: number | null = null;
+    let printfileInfo = null;
+    
     if (variantPrintfiles.length > 0 && body.variant_ids.length > 0) {
       const variantPrintfile = variantPrintfiles.find((vp: { variant_id: number }) => vp.variant_id === body.variant_ids[0]);
+      console.log("[GENERATE-MOCKUP] Variant printfile:", JSON.stringify(variantPrintfile));
+      
       if (variantPrintfile?.placements?.[validPlacement]) {
         printfileId = variantPrintfile.placements[validPlacement];
+        console.log("[GENERATE-MOCKUP] Found printfile_id:", printfileId);
       }
     }
     
     // Find printfile dimensions by printfile_id
-    const printfileInfo = printfileId 
-      ? printfiles.find((pf: { printfile_id: number }) => pf.printfile_id === printfileId)
-      : printfiles[0];
-    console.log("[GENERATE-MOCKUP] Printfile info for placement:", JSON.stringify(printfileInfo));
+    if (printfileId) {
+      printfileInfo = printfiles.find((pf: { printfile_id: number }) => pf.printfile_id === printfileId);
+    }
+    
+    // Fallback: try to find printfile by placement name
+    if (!printfileInfo) {
+      printfileInfo = printfiles.find((pf: { placements?: Record<string, string> }) => 
+        pf.placements && Object.keys(pf.placements).includes(validPlacement)
+      );
+    }
+    
+    // Last fallback: use first printfile
+    if (!printfileInfo && printfiles.length > 0) {
+      printfileInfo = printfiles[0];
+    }
+    
+    console.log("[GENERATE-MOCKUP] Printfile info:", JSON.stringify(printfileInfo));
 
     // Step 2: Create mockup generation task with retry logic
     // Update files with correct placement and position based on printfile dimensions
