@@ -1185,11 +1185,11 @@ const MyPage = () => {
     <div className="min-h-screen">
       <Navigation />
       
-      <main className="pt-32 pb-20 px-6">
+      <main className="pt-20 sm:pt-32 pb-12 sm:pb-20 px-3 sm:px-6">
         <div className="max-w-4xl mx-auto relative">
-          <div className="relative mb-16 animate-fade-up">
+          <div className="relative mb-8 sm:mb-16 animate-fade-up">
             {/* Cover Image Area */}
-            <div className="h-40 sm:h-48 md:h-56 bg-gradient-to-r from-primary/30 via-primary/20 to-accent/30 rounded-t-2xl shadow-lg relative overflow-hidden group">
+            <div className="h-28 sm:h-40 md:h-56 bg-gradient-to-r from-primary/30 via-primary/20 to-accent/30 rounded-t-xl sm:rounded-t-2xl shadow-lg relative overflow-hidden group">
               {profile?.cover_image_url ? (
                 <>
                   <img 
@@ -1212,49 +1212,49 @@ const MyPage = () => {
                 </>
               )}
               
-              {/* Edit Buttons - Hidden on mobile */}
-              <div className="absolute top-4 right-4 hidden sm:flex gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300">
+              {/* Edit Buttons - Always visible on mobile, hover on desktop */}
+              <div className="absolute top-2 right-2 sm:top-4 sm:right-4 flex gap-1.5 sm:gap-2 sm:opacity-0 sm:group-hover:opacity-100 transition-all duration-300">
                 <Button
                   size="sm"
                   variant="secondary"
-                  className="backdrop-blur-md bg-background/80 hover:bg-background/90 border border-border/50 shadow-lg gap-2"
+                  className="backdrop-blur-md bg-background/80 hover:bg-background/90 border border-border/50 shadow-lg gap-1 sm:gap-2 h-8 sm:h-9 px-2 sm:px-3 text-xs sm:text-sm active:scale-[0.98]"
                   onClick={() => setCoverGalleryOpen(true)}
                 >
-                  <Image className="w-4 h-4" />
-                  {language === "ja" ? "ギャラリー" : "Gallery"}
+                  <Image className="w-3 h-3 sm:w-4 sm:h-4" />
+                  <span className="hidden sm:inline">{language === "ja" ? "ギャラリー" : "Gallery"}</span>
                 </Button>
                 <Button
                   size="sm"
                   variant="secondary"
-                  className="backdrop-blur-md bg-background/80 hover:bg-background/90 border border-border/50 shadow-lg gap-2"
+                  className="backdrop-blur-md bg-background/80 hover:bg-background/90 border border-border/50 shadow-lg gap-1 sm:gap-2 h-8 sm:h-9 px-2 sm:px-3 text-xs sm:text-sm active:scale-[0.98]"
                   onClick={() => setCoverUploadOpen(true)}
                 >
-                  <Camera className="w-4 h-4" />
-                  {language === "ja" ? "アップロード" : "Upload"}
+                  <Camera className="w-3 h-3 sm:w-4 sm:h-4" />
+                  <span className="hidden sm:inline">{language === "ja" ? "アップロード" : "Upload"}</span>
                 </Button>
               </div>
             </div>
             
             {/* Profile Header */}
-            <div className="px-6 -mt-16">
-              <div className="flex items-end justify-between">
+            <div className="px-3 sm:px-6 -mt-10 sm:-mt-16">
+              <div className="flex items-end justify-between gap-2">
                 <div className="relative group">
-                  <Avatar className="h-32 w-32 border-4 border-background shadow-xl">
+                  <Avatar className="h-20 w-20 sm:h-32 sm:w-32 border-3 sm:border-4 border-background shadow-xl">
                     <AvatarImage src={profile?.avatar_url || undefined} />
-                    <AvatarFallback className="text-3xl">
+                    <AvatarFallback className="text-xl sm:text-3xl">
                       {profile?.display_name?.[0] || profile?.username?.[0] || user?.email?.[0]?.toUpperCase() || "U"}
                     </AvatarFallback>
                   </Avatar>
                   <Button
                     size="sm"
                     variant="secondary"
-                    className="absolute bottom-0 right-0 rounded-full w-10 h-10 p-0 shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="absolute bottom-0 right-0 rounded-full w-7 h-7 sm:w-10 sm:h-10 p-0 shadow-lg sm:opacity-0 sm:group-hover:opacity-100 transition-opacity active:scale-[0.98]"
                     onClick={() => setAvatarDialogOpen(true)}
                   >
-                    <Upload className="w-4 h-4" />
+                    <Upload className="w-3 h-3 sm:w-4 sm:h-4" />
                   </Button>
                 </div>
-                <div className="flex flex-col sm:flex-row gap-2 mb-4">
+                <div className="flex flex-col gap-1.5 sm:flex-row sm:gap-2 mb-2 sm:mb-4">
                   <Button 
                     variant="outline"
                     onClick={() => {
@@ -1265,42 +1265,42 @@ const MyPage = () => {
                       }
                       window.open(`/${profileUrl}`, '_blank');
                     }}
-                    className="gap-2 text-xs sm:text-sm"
+                    className="gap-1.5 sm:gap-2 text-xs h-8 sm:h-9 px-2 sm:px-3 active:scale-[0.98]"
                     size="sm"
                     disabled={!user?.id}
                   >
-                    <ExternalLink className="w-4 h-4" />
+                    <ExternalLink className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                     <span className="hidden sm:inline">{language === "ja" ? "公開プロフィール" : "View Profile"}</span>
-                    <span className="sm:hidden">{language === "ja" ? "公開" : "Profile"}</span>
+                    <span className="sm:hidden">{language === "ja" ? "公開" : "View"}</span>
                   </Button>
                   <AthleteApplicationForm />
                 </div>
               </div>
               
-              <div className="mt-4">
+              <div className="mt-3 sm:mt-4">
                 {editingField === 'display_name' ? (
                   <div className="flex items-center gap-2 mb-1">
                     <Input
                       value={editValues.display_name || ''}
                       onChange={(e) => setEditValues({ ...editValues, display_name: e.target.value })}
                       placeholder={language === "ja" ? "表示名" : "Display name"}
-                      className="text-3xl font-bold h-12"
+                      className="text-xl sm:text-3xl font-bold h-10 sm:h-12"
                     />
-                    <Button size="sm" onClick={() => saveField('display_name')}><Check className="w-4 h-4" /></Button>
-                    <Button size="sm" variant="outline" onClick={cancelEditing}><X className="w-4 h-4" /></Button>
+                    <Button size="sm" onClick={() => saveField('display_name')} className="h-8 sm:h-9 active:scale-[0.98]"><Check className="w-4 h-4" /></Button>
+                    <Button size="sm" variant="outline" onClick={cancelEditing} className="h-8 sm:h-9 active:scale-[0.98]"><X className="w-4 h-4" /></Button>
                   </div>
                 ) : (
                   <div className="flex items-center gap-2 group mb-1">
-                    <h1 className="text-3xl font-bold">
+                    <h1 className="text-xl sm:text-3xl font-bold line-clamp-1">
                       {profile?.display_name || profile?.username || user?.email?.split('@')[0] || "ユーザー"}
                     </h1>
                     <Button 
                       size="sm" 
                       variant="ghost" 
-                      className="opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="sm:opacity-0 sm:group-hover:opacity-100 transition-opacity h-8 w-8 p-0 active:scale-[0.98]"
                       onClick={() => startEditing('display_name', profile?.display_name)}
                     >
-                      <Edit2 className="w-4 h-4" />
+                      <Edit2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                     </Button>
                   </div>
                 )}
@@ -1312,47 +1312,47 @@ const MyPage = () => {
                       onChange={(e) => setEditValues({ ...editValues, bio: e.target.value })}
                       placeholder={language === "ja" ? "自己紹介" : "Bio"}
                       rows={2}
-                      className="text-muted-foreground"
+                      className="text-muted-foreground text-sm sm:text-base"
                     />
-                    <div className="flex flex-col gap-2">
-                      <Button size="sm" onClick={() => saveField('bio')}><Check className="w-4 h-4" /></Button>
-                      <Button size="sm" variant="outline" onClick={cancelEditing}><X className="w-4 h-4" /></Button>
+                    <div className="flex flex-col gap-1.5 sm:gap-2">
+                      <Button size="sm" onClick={() => saveField('bio')} className="h-8 sm:h-9 active:scale-[0.98]"><Check className="w-4 h-4" /></Button>
+                      <Button size="sm" variant="outline" onClick={cancelEditing} className="h-8 sm:h-9 active:scale-[0.98]"><X className="w-4 h-4" /></Button>
                     </div>
                   </div>
                 ) : (
                   <div className="flex items-start gap-2 group mb-3">
-                    <p className="text-muted-foreground flex-1">
+                    <p className="text-muted-foreground text-sm sm:text-base flex-1 line-clamp-2 sm:line-clamp-none">
                       {profile?.bio || (language === "ja" ? "自己紹介を追加してください" : "Add your bio")}
                     </p>
                     <Button 
                       size="sm" 
                       variant="ghost"
-                      className="opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="sm:opacity-0 sm:group-hover:opacity-100 transition-opacity h-8 w-8 p-0 active:scale-[0.98]"
                       onClick={() => startEditing('bio', profile?.bio)}
                     >
-                      <Edit2 className="w-4 h-4" />
+                      <Edit2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                     </Button>
                   </div>
                 )}
                 
                 {/* Stats */}
-                <div className="flex gap-6 text-sm">
+                <div className="flex flex-wrap gap-3 sm:gap-6 text-xs sm:text-sm">
                   <button 
                     onClick={() => {
                       setShowFollowList('following');
                       loadFollowList('following');
                     }}
-                    className="hover:opacity-70 transition-opacity"
+                    className="hover:opacity-70 transition-opacity active:scale-[0.98]"
                   >
                     <span className="font-bold">{followingCount}</span>
-                    <span className="text-muted-foreground ml-1">{language === "ja" ? "フォロー中" : "Following"}</span>
+                    <span className="text-muted-foreground ml-1">{language === "ja" ? "フォロー" : "Following"}</span>
                   </button>
                   <button 
                     onClick={() => {
                       setShowFollowList('followers');
                       loadFollowList('followers');
                     }}
-                    className="hover:opacity-70 transition-opacity"
+                    className="hover:opacity-70 transition-opacity active:scale-[0.98]"
                   >
                     <span className="font-bold">{followersCount}</span>
                     <span className="text-muted-foreground ml-1">{language === "ja" ? "フォロワー" : "Followers"}</span>
@@ -1362,14 +1362,14 @@ const MyPage = () => {
                     <span className="text-muted-foreground ml-1">{language === "ja" ? "動画" : "Videos"}</span>
                   </div>
                   {profile?.titles && profile.titles.length > 0 && (
-                    <div>
+                    <div className="hidden sm:block">
                       <span className="font-bold">{profile.titles.length}</span>
                       <span className="text-muted-foreground ml-1">{language === "ja" ? "タイトル" : "Titles"}</span>
                     </div>
                   )}
                   {createdAt && (
-                    <div>
-                      <span className="text-muted-foreground">{language === "ja" ? "登録日: " : "Joined: "}</span>
+                    <div className="hidden sm:block">
+                      <span className="text-muted-foreground">{language === "ja" ? "登録: " : "Joined: "}</span>
                       <span className="font-medium">{new Date(createdAt).toLocaleDateString(language === "ja" ? "ja-JP" : "en-US", { year: 'numeric', month: 'short' })}</span>
                     </div>
                   )}
@@ -1395,25 +1395,25 @@ const MyPage = () => {
           ) : (
             <>
               {/* Profile Visibility Toggle - Top */}
-              <div className="mb-6 animate-fade-in">
-                <div className="flex items-center justify-between p-4 rounded-xl bg-gradient-to-r from-muted/80 to-muted/40 border border-border/50 shadow-sm">
-                  <div className="flex items-center gap-3">
+              <div className="mb-4 sm:mb-6 animate-fade-in">
+                <div className="flex items-center justify-between p-3 sm:p-4 rounded-lg sm:rounded-xl bg-gradient-to-r from-muted/80 to-muted/40 border border-border/50 shadow-sm">
+                  <div className="flex items-center gap-2 sm:gap-3">
                     {profile?.is_public ? (
-                      <div className="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center">
-                        <Globe className="h-5 w-5 text-green-500" />
+                      <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-green-500/20 flex items-center justify-center">
+                        <Globe className="h-4 w-4 sm:h-5 sm:w-5 text-green-500" />
                       </div>
                     ) : (
-                      <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
-                        <Lock className="h-5 w-5 text-muted-foreground" />
+                      <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-muted flex items-center justify-center">
+                        <Lock className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground" />
                       </div>
                     )}
                     <div>
-                      <p className="font-medium">
+                      <p className="font-medium text-xs sm:text-sm">
                         {profile?.is_public 
                           ? (language === "ja" ? "🌐 公開中" : "🌐 Public")
                           : (language === "ja" ? "🔒 非公開" : "🔒 Private")}
                       </p>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-[10px] sm:text-xs text-muted-foreground hidden sm:block">
                         {profile?.is_public
                           ? (language === "ja" ? "他のユーザーからプロフィールが見えます" : "Your profile is visible to others")
                           : (language === "ja" ? "プロフィールは非公開です" : "Your profile is hidden from others")}
@@ -1448,17 +1448,17 @@ const MyPage = () => {
               </div>
 
               {/* Unified Profile Card */}
-              <Card className="mb-8 animate-fade-up border-border/50 shadow-lg overflow-hidden">
-                <CardHeader className="bg-gradient-to-r from-accent/10 via-primary/5 to-accent/10 border-b border-border/50">
-                  <CardTitle className="flex items-center gap-3 text-2xl">
-                    <div className="w-10 h-10 rounded-xl bg-accent/20 flex items-center justify-center text-xl">
+              <Card className="mb-6 sm:mb-8 animate-fade-up border-border/50 shadow-lg overflow-hidden">
+                <CardHeader className="bg-gradient-to-r from-accent/10 via-primary/5 to-accent/10 border-b border-border/50 p-4 sm:p-6">
+                  <CardTitle className="flex items-center gap-2 sm:gap-3 text-lg sm:text-2xl">
+                    <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-accent/20 flex items-center justify-center text-base sm:text-xl">
                       🥋
                     </div>
                     {language === "ja" ? "プロフィール" : "Profile"}
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="p-6 md:p-8">
-                  <div className="grid gap-6">
+                <CardContent className="p-3 sm:p-6 md:p-8">
+                  <div className="grid gap-4 sm:gap-6">
 
                      {/* Belt History Section */}
                     <div className="mb-6 p-4 bg-muted/30 rounded-lg border border-border/50">
@@ -2739,81 +2739,81 @@ const MyPage = () => {
 
 
           {/* Tabs Section */}
-          <div className="mt-12 animate-fade-up">
+          <div className="mt-6 sm:mt-12 animate-fade-up">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-5">
-                <TabsTrigger value="videos">
+              <TabsList className="grid w-full grid-cols-5 h-auto p-1">
+                <TabsTrigger value="videos" className="text-[10px] sm:text-sm px-1 sm:px-3 py-1.5 sm:py-2">
                   {language === "ja" ? "動画" : "Videos"}
                 </TabsTrigger>
-                <TabsTrigger value="practice">
-                  {language === "ja" ? "練習記録" : "Practice"}
+                <TabsTrigger value="practice" className="text-[10px] sm:text-sm px-1 sm:px-3 py-1.5 sm:py-2">
+                  {language === "ja" ? "練習" : "Practice"}
                 </TabsTrigger>
-                <TabsTrigger value="history">
-                  {language === "ja" ? "視聴履歴" : "History"}
+                <TabsTrigger value="history" className="text-[10px] sm:text-sm px-1 sm:px-3 py-1.5 sm:py-2">
+                  {language === "ja" ? "履歴" : "History"}
                 </TabsTrigger>
-                <TabsTrigger value="athletes">
-                  {language === "ja" ? "フォロー中" : "Following"}
+                <TabsTrigger value="athletes" className="text-[10px] sm:text-sm px-1 sm:px-3 py-1.5 sm:py-2">
+                  {language === "ja" ? "フォロー" : "Following"}
                 </TabsTrigger>
-                <TabsTrigger value="settings">
+                <TabsTrigger value="settings" className="text-[10px] sm:text-sm px-1 sm:px-3 py-1.5 sm:py-2">
                   {language === "ja" ? "設定" : "Settings"}
                 </TabsTrigger>
               </TabsList>
 
-              <TabsContent value="videos" className="mt-6">
-                <div className="flex items-center justify-between mb-6">
+              <TabsContent value="videos" className="mt-4 sm:mt-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 sm:mb-6 gap-3">
               <div>
-                <div className="flex items-center gap-3 mb-2">
-                  <h2 className="text-3xl font-light">
+                <div className="flex items-center gap-2 sm:gap-3 mb-1 sm:mb-2">
+                  <h2 className="text-xl sm:text-3xl font-light">
                     {language === "ja" ? "あなたの動画" : language === "pt" ? "Seus vídeos" : "Your Videos"}
                   </h2>
-                  <Badge variant="secondary" className="gap-1">
-                    <Globe className="w-3 h-3" />
-                    {language === "ja" ? "公開/非公開設定可能" : "Public/Private"}
+                  <Badge variant="secondary" className="gap-1 text-[10px] sm:text-xs">
+                    <Globe className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+                    <span className="hidden sm:inline">{language === "ja" ? "公開/非公開設定可能" : "Public/Private"}</span>
                   </Badge>
                 </div>
-                <Button variant="link" onClick={copyProfileUrl} className="px-0 h-auto">
+                <Button variant="link" onClick={copyProfileUrl} className="px-0 h-auto text-xs sm:text-sm">
                   {language === "ja" ? "プロフィールページを共有" : "Share your profile"}
                 </Button>
               </div>
-                  <div className="flex gap-3">
-                    <Button variant="outline" onClick={() => navigate("/video-upload-info")}>
-                      {language === "ja" ? "詳細を見る" : language === "pt" ? "Ver detalhes" : "Learn More"}
+                  <div className="flex gap-2 sm:gap-3">
+                    <Button variant="outline" onClick={() => navigate("/video-upload-info")} className="text-xs sm:text-sm h-8 sm:h-10 px-2 sm:px-4 active:scale-[0.98]">
+                      {language === "ja" ? "詳細" : "Info"}
                     </Button>
-                    <Button onClick={() => setUploadDialogOpen(true)} className="gap-2">
-                      <Upload className="w-4 h-4" />
-                      {language === "ja" ? "動画をアップロード" : language === "pt" ? "Enviar vídeo" : "Upload Video"}
+                    <Button onClick={() => setUploadDialogOpen(true)} className="gap-1.5 sm:gap-2 text-xs sm:text-sm h-8 sm:h-10 px-2 sm:px-4 active:scale-[0.98]">
+                      <Upload className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                      {language === "ja" ? "アップロード" : "Upload"}
                     </Button>
                   </div>
                 </div>
 
                 {videosLoading ? (
-                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
                     {[1, 2, 3].map((i) => (
-                      <div key={i} className="space-y-4 border border-border rounded-lg p-6 animate-pulse">
+                      <div key={i} className="space-y-3 sm:space-y-4 border border-border rounded-lg p-3 sm:p-6 animate-pulse">
                         <div className="aspect-video bg-muted rounded" />
-                        <div className="h-6 bg-muted rounded" />
-                        <div className="h-4 bg-muted rounded w-3/4" />
+                        <div className="h-5 sm:h-6 bg-muted rounded" />
+                        <div className="h-3 sm:h-4 bg-muted rounded w-3/4" />
                       </div>
                     ))}
                   </div>
                 ) : userVideos.length === 0 ? (
-                  <div className="text-center py-12 border border-dashed border-border rounded-lg">
-                    <Video className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-                    <p className="text-muted-foreground mb-4">
+                  <div className="text-center py-8 sm:py-12 border border-dashed border-border rounded-lg">
+                    <Video className="w-10 h-10 sm:w-12 sm:h-12 mx-auto mb-3 sm:mb-4 text-muted-foreground" />
+                    <p className="text-muted-foreground mb-3 sm:mb-4 text-sm sm:text-base">
                       {language === "ja" 
                         ? "まだ動画をアップロードしていません" 
                         : language === "pt" 
                         ? "Você ainda não enviou nenhum vídeo" 
                         : "You haven't uploaded any videos yet"}
                     </p>
-                    <Button onClick={() => setUploadDialogOpen(true)} variant="outline" className="gap-2">
-                      <Upload className="w-4 h-4" />
-                      {language === "ja" ? "最初の動画をアップロード" : language === "pt" ? "Enviar primeiro vídeo" : "Upload First Video"}
+                    <Button onClick={() => setUploadDialogOpen(true)} variant="outline" className="gap-1.5 sm:gap-2 text-xs sm:text-sm h-8 sm:h-10 active:scale-[0.98]">
+                      <Upload className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                      {language === "ja" ? "最初の動画をアップロード" : "Upload First Video"}
                     </Button>
                   </div>
                 ) : (
                   <>
-                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
                       {userVideos.slice(0, displayedVideosCount).map((video) => (
                         <UserVideoCard
                           key={video.id}
@@ -2825,12 +2825,13 @@ const MyPage = () => {
                       ))}
                     </div>
                     {userVideos.length > displayedVideosCount && (
-                      <div className="text-center mt-8">
+                      <div className="text-center mt-6 sm:mt-8">
                         <Button
                           variant="outline"
                           onClick={() => setDisplayedVideosCount(prev => prev + 9)}
+                          className="text-xs sm:text-sm h-8 sm:h-10 active:scale-[0.98]"
                         >
-                          {language === "ja" ? "もっと見る" : language === "pt" ? "Ver mais" : "Load More"}
+                          {language === "ja" ? "もっと見る" : "Load More"}
                           ({userVideos.length - displayedVideosCount} {language === "ja" ? "件" : ""})
                         </Button>
                       </div>
@@ -2839,45 +2840,45 @@ const MyPage = () => {
                 )}
               </TabsContent>
 
-              <TabsContent value="practice" className="mt-6">
+              <TabsContent value="practice" className="mt-4 sm:mt-6">
                 <PracticeRecords />
               </TabsContent>
 
-              <TabsContent value="history" className="mt-6">
+              <TabsContent value="history" className="mt-4 sm:mt-6">
                 <WatchHistory />
               </TabsContent>
 
-              <TabsContent value="athletes" className="mt-6">
+              <TabsContent value="athletes" className="mt-4 sm:mt-6">
                 <FollowedCelebrities userId={user?.id || ''} />
               </TabsContent>
 
-              <TabsContent value="settings" className="mt-6 space-y-6">
-                <h2 className="text-2xl font-light mb-6">
+              <TabsContent value="settings" className="mt-4 sm:mt-6 space-y-4 sm:space-y-6">
+                <h2 className="text-lg sm:text-2xl font-light mb-4 sm:mb-6">
                   {language === "ja" ? "設定・管理" : "Settings & Management"}
                 </h2>
 
                 {/* Account Information Card */}
                 <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 font-light">
-                      <User className="h-5 w-5" />
+                  <CardHeader className="p-4 sm:p-6">
+                    <CardTitle className="flex items-center gap-2 font-light text-base sm:text-lg">
+                      <User className="h-4 w-4 sm:h-5 sm:w-5" />
                       {language === "ja" ? "アカウント情報" : "Account Information"}
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-6">
+                  <CardContent className="space-y-4 sm:space-y-6 p-4 sm:p-6 pt-0 sm:pt-0">
                     {/* Profile Visibility Toggle */}
-                    <div className="flex items-center justify-between p-4 rounded-lg bg-muted/50">
-                      <div className="flex items-center gap-3">
+                    <div className="flex items-center justify-between p-3 sm:p-4 rounded-lg bg-muted/50">
+                      <div className="flex items-center gap-2 sm:gap-3">
                         {profile?.is_public ? (
-                          <Globe className="h-5 w-5 text-green-500" />
+                          <Globe className="h-4 w-4 sm:h-5 sm:w-5 text-green-500" />
                         ) : (
-                          <Lock className="h-5 w-5 text-muted-foreground" />
+                          <Lock className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground" />
                         )}
                         <div>
-                          <p className="font-medium">
+                          <p className="font-medium text-xs sm:text-sm">
                             {language === "ja" ? "プロフィール公開" : "Profile Visibility"}
                           </p>
-                          <p className="text-xs text-muted-foreground">
+                          <p className="text-[10px] sm:text-xs text-muted-foreground hidden sm:block">
                             {profile?.is_public
                               ? (language === "ja" ? "他のユーザーからプロフィールが見えます" : "Your profile is visible to others")
                               : (language === "ja" ? "プロフィールは非公開です" : "Your profile is private")}
@@ -2957,20 +2958,20 @@ const MyPage = () => {
                       )}
                     </div>
 
-                    <div className="flex items-center gap-3">
-                      <Mail className="h-4 w-4 text-muted-foreground" />
+                    <div className="flex items-center gap-2 sm:gap-3">
+                      <Mail className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground" />
                       <div>
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-[10px] sm:text-xs text-muted-foreground">
                           {language === "ja" ? "メールアドレス" : "Email"}
                         </p>
-                        <p className="font-light">{user?.email}</p>
+                        <p className="font-light text-sm sm:text-base truncate max-w-[200px] sm:max-w-none">{user?.email}</p>
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-3">
-                      <Calendar className="h-4 w-4 text-muted-foreground" />
+                    <div className="flex items-center gap-2 sm:gap-3">
+                      <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground" />
                       <div>
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-[10px] sm:text-xs text-muted-foreground">
                           {language === "ja" ? "ユーザーID" : "User ID"}
                         </p>
                         <p className="font-light text-xs">{user?.id.slice(0, 8)}...</p>
@@ -2981,13 +2982,13 @@ const MyPage = () => {
 
                 {/* Subscription Card */}
                 <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 font-light">
-                      <CreditCard className="h-5 w-5" />
+                  <CardHeader className="p-4 sm:p-6">
+                    <CardTitle className="flex items-center gap-2 font-light text-base sm:text-lg">
+                      <CreditCard className="h-4 w-4 sm:h-5 sm:w-5" />
                       {language === "ja" ? "プラン情報" : "Plan Information"}
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-4">
+                  <CardContent className="space-y-3 sm:space-y-4 p-4 sm:p-6 pt-0 sm:pt-0">
                     <div>
                       <p className="text-xs text-muted-foreground mb-1">
                         {language === "ja" ? "現在のプラン" : "Current Plan"}
@@ -3030,77 +3031,79 @@ const MyPage = () => {
 
                 {/* Referral Code Card (Simplified) */}
                 <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 font-light">
-                      <User className="h-5 w-5" />
+                  <CardHeader className="p-4 sm:p-6">
+                    <CardTitle className="flex items-center gap-2 font-light text-base sm:text-lg">
+                      <User className="h-4 w-4 sm:h-5 sm:w-5" />
                       {language === "ja" ? "紹介プログラム" : "Referral Program"}
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-6">
+                  <CardContent className="space-y-4 sm:space-y-6 p-4 sm:p-6 pt-0 sm:pt-0">
                     {/* Dojo Friends Code */}
                     <div>
-                      <div className="flex items-center gap-2 mb-2">
-                        <h4 className="font-semibold text-sm">
+                      <div className="flex items-center gap-2 mb-1.5 sm:mb-2 flex-wrap">
+                        <h4 className="font-semibold text-xs sm:text-sm">
                           {language === "ja" ? "道場仲間用コード" : "Dojo Friends Code"}
                         </h4>
-                        <Badge variant="outline" className="text-xs">
+                        <Badge variant="outline" className="text-[10px] sm:text-xs">
                           {language === "ja" ? `${dojoFriendsUses}人利用` : `${dojoFriendsUses} uses`}
                         </Badge>
                       </div>
-                      <p className="text-xs text-muted-foreground mb-3">
+                      <p className="text-[10px] sm:text-xs text-muted-foreground mb-2 sm:mb-3 hidden sm:block">
                         {language === "ja" 
                           ? "同じ道場のメンバーがこのコードで登録すると、お互いに特典があります" 
                           : "Members from your dojo get benefits when they use this code"}
                       </p>
-                      <div className="flex gap-2">
+                      <div className="flex gap-1.5 sm:gap-2">
                         <Input
                           value={`${window.location.origin}/join?referral=${dojoFriendsCode}`}
                           readOnly
-                          className="flex-1 text-sm"
+                          className="flex-1 text-xs sm:text-sm h-8 sm:h-10"
                         />
                         <Button
                           size="sm"
                           variant="outline"
+                          className="h-8 sm:h-10 w-8 sm:w-10 p-0 active:scale-[0.98]"
                           onClick={() => {
                             navigator.clipboard.writeText(`${window.location.origin}/join?referral=${dojoFriendsCode}`);
                             toast.success(language === "ja" ? "リンクをコピーしました" : "Link copied!");
                           }}
                         >
-                          <Copy className="w-4 h-4" />
+                          <Copy className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                         </Button>
                       </div>
                     </div>
 
                     {/* Regular Referral Code */}
                     <div>
-                      <div className="flex items-center gap-2 mb-2">
-                        <h4 className="font-semibold text-sm">
+                      <div className="flex items-center gap-2 mb-1.5 sm:mb-2 flex-wrap">
+                        <h4 className="font-semibold text-xs sm:text-sm">
                           {language === "ja" ? "一般紹介コード" : "General Referral Code"}
                         </h4>
-                        <Badge variant="outline" className="text-xs">
+                        <Badge variant="outline" className="text-[10px] sm:text-xs">
                           {language === "ja" ? `${otherFriendsUses}人利用` : `${otherFriendsUses} uses`}
                         </Badge>
                       </div>
-                      <p className="text-xs text-muted-foreground mb-3">
+                      <p className="text-[10px] sm:text-xs text-muted-foreground mb-2 sm:mb-3 hidden sm:block">
                         {language === "ja" 
                           ? "誰でも使える紹介コード。登録時に割引が適用されます" 
                           : "Anyone can use this code to get a discount on signup"}
                       </p>
-                      <div className="flex gap-2">
+                      <div className="flex gap-1.5 sm:gap-2">
                         <Input
                           value={`${window.location.origin}/join?referral=${otherFriendsCode}`}
                           readOnly
-                          className="flex-1 text-sm"
+                          className="flex-1 text-xs sm:text-sm h-8 sm:h-10"
                         />
                         <Button
                           size="sm"
                           variant="outline"
+                          className="h-8 sm:h-10 w-8 sm:w-10 p-0 active:scale-[0.98]"
                           onClick={() => {
                             navigator.clipboard.writeText(`${window.location.origin}/join?referral=${otherFriendsCode}`);
                             toast.success(language === "ja" ? "リンクをコピーしました" : "Link copied!");
                           }}
                         >
-                          <Copy className="w-4 h-4" />
+                          <Copy className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                         </Button>
                       </div>
                     </div>
