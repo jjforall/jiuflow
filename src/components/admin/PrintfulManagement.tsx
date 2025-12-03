@@ -122,6 +122,7 @@ export function PrintfulManagement() {
   
   // Mockup generation state
   const [generatingMockup, setGeneratingMockup] = useState(false);
+  const [deletingLogo, setDeletingLogo] = useState<string | null>(null);
   const [generatedMockupUrl, setGeneratedMockupUrl] = useState<string | null>(null);
   const [savingMockup, setSavingMockup] = useState(false);
   
@@ -589,6 +590,27 @@ export function PrintfulManagement() {
     }
   };
 
+  const handleDeleteLogo = async (logoName: string) => {
+    if (!confirm('このロゴを削除しますか？')) return;
+    
+    setDeletingLogo(logoName);
+    try {
+      const { error } = await supabase.storage
+        .from('product-logos')
+        .remove([logoName]);
+      
+      if (error) throw error;
+      
+      toast.success("ロゴを削除しました");
+      fetchUploadedLogos();
+    } catch (error) {
+      console.error("Error deleting logo:", error);
+      toast.error("ロゴの削除に失敗しました");
+    } finally {
+      setDeletingLogo(null);
+    }
+  };
+
   const handleEditProduct = (product: PrintfulProduct) => {
     setEditingProduct(product);
     setEditProductName(product.name);
@@ -733,17 +755,31 @@ export function PrintfulManagement() {
                     <p className="text-white text-xs px-2 text-center truncate max-w-full">
                       {logo.name}
                     </p>
-                    <Button 
-                      size="sm" 
-                      variant="default"
-                      onClick={() => {
-                        setLogoUrl(logo.url);
-                        handleOpenCreateDialog();
-                      }}
-                    >
-                      <Plus className="h-3 w-3 mr-1" />
-                      商品作成
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button 
+                        size="sm" 
+                        variant="default"
+                        onClick={() => {
+                          setLogoUrl(logo.url);
+                          handleOpenCreateDialog();
+                        }}
+                      >
+                        <Plus className="h-3 w-3 mr-1" />
+                        商品作成
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="destructive"
+                        onClick={() => handleDeleteLogo(logo.name)}
+                        disabled={deletingLogo === logo.name}
+                      >
+                        {deletingLogo === logo.name ? (
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                        ) : (
+                          <Trash2 className="h-3 w-3" />
+                        )}
+                      </Button>
+                    </div>
                   </div>
                 </div>
               ))}
