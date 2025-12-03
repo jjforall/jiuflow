@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import {
   Grid3X3,
   Users,
@@ -68,9 +69,9 @@ export function AdminSidebar({ activeTab, onTabChange }: AdminSidebarProps) {
     <Sidebar collapsible="icon" className="bg-background border-r">
       <div className="p-4 border-b flex items-center justify-between bg-background">
         {!isCollapsed && (
-          <span className="text-xl font-light tracking-tight animate-fade-in">
+          <Link to="/admin/stats" className="text-xl font-light tracking-tight animate-fade-in hover:opacity-80 transition-opacity">
             JiuF<span className="text-red-500">l</span>ow
-          </span>
+          </Link>
         )}
         <button
           onClick={toggleSidebar}
