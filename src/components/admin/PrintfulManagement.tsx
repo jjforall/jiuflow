@@ -428,8 +428,10 @@ export function PrintfulManagement() {
           product_id: parseInt(selectedCatalogProduct),
           variant_ids: selectedVariants,
           format: "jpg",
+          save_to_storage: true,
+          product_name: newProductName || `product_${selectedCatalogProduct}`,
           files: [{
-            placement: "front", // Use "front" as default, edge function will validate
+            placement: "front",
             image_url: logoUrl,
             position: {
               area_width: areaWidth,
@@ -445,9 +447,13 @@ export function PrintfulManagement() {
 
       if (error) throw error;
       
-      if (data?.mockups?.[0]?.mockup_url) {
+      // Prefer saved storage URL over original Printful URL
+      if (data?.saved_mockups?.[0]?.storage_url) {
+        setGeneratedMockupUrl(data.saved_mockups[0].storage_url);
+        toast.success("モックアップを生成・保存しました");
+      } else if (data?.mockups?.[0]?.mockup_url) {
         setGeneratedMockupUrl(data.mockups[0].mockup_url);
-        toast.success("モックアップを生成しました");
+        toast.success("モックアップを生成しました（保存に失敗）");
       } else if (data?.task_key) {
         toast.info("モックアップ生成中です。しばらくお待ちください");
       } else {
