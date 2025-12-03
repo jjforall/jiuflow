@@ -98,3 +98,6 @@ verify_jwt = false
 [functions.create-printful-checkout]
 verify_jwt = false
 
+[functions.generate-music-cover]
+verify_jwt = false
+
