@@ -83,7 +83,7 @@ const GlobalMusicPlayer = () => {
   // Minimal Mode - Stylish floating button
   if (isMinimal) {
     return (
-      <div className="fixed bottom-6 right-6 z-50 animate-fade-in">
+      <div className="fixed bottom-6 right-6 z-50 animate-scale-in">
         <div className="relative group">
           {/* Glow effect */}
           {isPlaying && (
@@ -164,7 +164,7 @@ const GlobalMusicPlayer = () => {
 
   return (
     <div
-      className={`fixed bottom-0 left-0 right-0 z-50 transition-all duration-500 ease-out ${
+      className={`fixed bottom-0 left-0 right-0 z-50 transition-all duration-500 ease-out animate-slide-up ${
         isExpanded ? "h-72" : "h-20"
       }`}
     >
