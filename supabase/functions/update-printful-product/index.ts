@@ -9,6 +9,7 @@ interface UpdateProductRequest {
   product_id: number;
   sync_product?: {
     name?: string;
+    thumbnail?: string;
   };
   sync_variants?: Array<{
     id: number;
@@ -35,13 +36,21 @@ serve(async (req) => {
       throw new Error("product_id is required");
     }
 
-    // Update product name or is_ignored if provided
-    if (body.sync_product?.name || body.is_ignored !== undefined) {
+    // Update product name, thumbnail, or is_ignored if provided
+    if (body.sync_product?.name || body.sync_product?.thumbnail || body.is_ignored !== undefined) {
       const updateData: Record<string, unknown> = { sync_product: {} };
       
       if (body.sync_product?.name) {
         console.log("[UPDATE-PRINTFUL-PRODUCT] Updating product name to:", body.sync_product.name);
         updateData.sync_product = { name: body.sync_product.name };
+      }
+      
+      if (body.sync_product?.thumbnail) {
+        console.log("[UPDATE-PRINTFUL-PRODUCT] Updating thumbnail to:", body.sync_product.thumbnail);
+        updateData.sync_product = { 
+          ...(updateData.sync_product as object), 
+          thumbnail: body.sync_product.thumbnail 
+        };
       }
       
       if (body.is_ignored !== undefined) {
