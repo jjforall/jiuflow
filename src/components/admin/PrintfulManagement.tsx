@@ -407,21 +407,25 @@ export function PrintfulManagement() {
     setGeneratingMockup(true);
     setGeneratedMockupUrl(null);
     try {
+      // Use print area info if available, otherwise use defaults
+      const areaWidth = printAreaInfo?.areaWidth || 1800;
+      const areaHeight = printAreaInfo?.areaHeight || 2400;
+      
       const { data, error } = await supabase.functions.invoke("generate-printful-mockup", {
         body: {
           product_id: parseInt(selectedCatalogProduct),
           variant_ids: selectedVariants,
           format: "jpg",
           files: [{
-            placement: "default",
+            placement: "front", // Use "front" as default, edge function will validate
             image_url: logoUrl,
             position: {
-              area_width: 1800,
-              area_height: 2400,
-              width: Math.round(1800 * (logoSize / 100)),
-              height: Math.round(1800 * (logoSize / 100)),
-              top: Math.round(2400 * (logoPositionY / 100)),
-              left: Math.round(1800 * (logoPositionX / 100)),
+              area_width: areaWidth,
+              area_height: areaHeight,
+              width: Math.round(areaWidth * (logoSize / 100)),
+              height: Math.round(areaWidth * (logoSize / 100)),
+              top: Math.round(areaHeight * (logoPositionY / 100)),
+              left: Math.round(areaWidth * (logoPositionX / 100)),
             }
           }]
         }
