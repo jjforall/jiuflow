@@ -15,6 +15,7 @@ import {
   Video,
   Settings,
   Music,
+  ShoppingBag,
 } from "lucide-react";
 import {
   Sidebar,
@@ -49,6 +50,7 @@ const menuItems = [
   { id: "events", label: "イベント管理", icon: Calendar },
   { id: "user-videos", label: "ユーザー動画", icon: Video },
   { id: "brothers", label: "Brothers申請", icon: Award },
+  { id: "printful", label: "商品管理", icon: ShoppingBag },
   { id: "contacts", label: "お問い合わせ", icon: Mail },
   { id: "logs", label: "ログ", icon: FileText },
   { id: "tips", label: "投げ銭", icon: Gift },

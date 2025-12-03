@@ -32,6 +32,7 @@ import { UserVideosManagement } from "@/components/admin/UserVideosManagement";
 import { BrothersApplicationsManagement } from "@/components/admin/BrothersApplicationsManagement";
 import { SettingsManagement } from "@/components/admin/SettingsManagement";
 import MusicManagement from "@/components/admin/MusicManagement";
+import { PrintfulManagement } from "@/components/admin/PrintfulManagement";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -227,6 +228,7 @@ const AdminDashboard = () => {
                         { id: "events", label: "イベント管理" },
                         { id: "user-videos", label: "ユーザー動画" },
                         { id: "brothers", label: "Brothers申請" },
+                        { id: "printful", label: "商品管理" },
                         { id: "contacts", label: "お問い合わせ" },
                         { id: "logs", label: "ログ" },
                         { id: "tips", label: "投げ銭" },
@@ -360,6 +362,7 @@ const AdminDashboard = () => {
                 {activeTab === "events" && <EventsManagement />}
                 {activeTab === "user-videos" && <UserVideosManagement />}
                 {activeTab === "brothers" && <BrothersApplicationsManagement />}
+                {activeTab === "printful" && <PrintfulManagement />}
                 {activeTab === "contacts" && <ContactsManagement />}
                 {activeTab === "logs" && <LogsTab />}
                 {activeTab === "tips" && <TipsManagement />}
