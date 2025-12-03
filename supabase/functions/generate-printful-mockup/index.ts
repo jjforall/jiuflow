@@ -61,21 +61,35 @@ serve(async (req) => {
     const printfilesData = await printfilesResponse.json();
     console.log("[GENERATE-MOCKUP] Printfiles data:", JSON.stringify(printfilesData.result));
 
-    // Get available placements from printfiles
-    const availablePlacements = printfilesData.result?.available_placements || [];
+    // Get available placements from printfiles (it's an object, not array)
+    const availablePlacementsObj = printfilesData.result?.available_placements || {};
+    const availablePlacementKeys = Object.keys(availablePlacementsObj);
     const printfiles = printfilesData.result?.printfiles || [];
-    console.log("[GENERATE-MOCKUP] Available placements:", availablePlacements);
+    const variantPrintfiles = printfilesData.result?.variant_printfiles || [];
+    console.log("[GENERATE-MOCKUP] Available placement keys:", availablePlacementKeys);
     console.log("[GENERATE-MOCKUP] Printfiles:", JSON.stringify(printfiles));
 
-    // Find the correct placement - use the first available one if "default" is not allowed
+    // Find the correct placement - prefer "front", then first available one
     let validPlacement = body.files?.[0]?.placement || "default";
-    if (availablePlacements.length > 0 && !availablePlacements.includes(validPlacement)) {
-      validPlacement = availablePlacements[0];
+    if (availablePlacementKeys.length > 0 && !availablePlacementKeys.includes(validPlacement)) {
+      // Prefer "front" placement if available, otherwise use first available
+      validPlacement = availablePlacementKeys.includes("front") ? "front" : availablePlacementKeys[0];
       console.log("[GENERATE-MOCKUP] Using placement:", validPlacement);
     }
 
-    // Find printfile info for the placement to get correct dimensions
-    const printfileInfo = printfiles.find((pf: { placement: string }) => pf.placement === validPlacement) || printfiles[0];
+    // Find printfile info for the placement using variant_printfiles
+    let printfileId: number | null = null;
+    if (variantPrintfiles.length > 0 && body.variant_ids.length > 0) {
+      const variantPrintfile = variantPrintfiles.find((vp: { variant_id: number }) => vp.variant_id === body.variant_ids[0]);
+      if (variantPrintfile?.placements?.[validPlacement]) {
+        printfileId = variantPrintfile.placements[validPlacement];
+      }
+    }
+    
+    // Find printfile dimensions by printfile_id
+    const printfileInfo = printfileId 
+      ? printfiles.find((pf: { printfile_id: number }) => pf.printfile_id === printfileId)
+      : printfiles[0];
     console.log("[GENERATE-MOCKUP] Printfile info for placement:", JSON.stringify(printfileInfo));
 
     // Step 2: Create mockup generation task with retry logic
