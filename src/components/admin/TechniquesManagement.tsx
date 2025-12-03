@@ -622,7 +622,10 @@ export const TechniquesManagement = () => {
     
     const { error: uploadError } = await supabase.storage
       .from('technique-videos')
-      .upload(`thumbnails/${filePath}`, thumbnailBlob, { upsert: true });
+      .upload(`thumbnails/${filePath}`, thumbnailBlob, { 
+        upsert: true,
+        cacheControl: '86400', // 24 hours cache for thumbnails
+      });
 
     if (uploadError) throw uploadError;
 
@@ -677,7 +680,10 @@ export const TechniquesManagement = () => {
 
       const { error: uploadError } = await supabase.storage
         .from('technique-videos')
-        .upload(filePath, file, { upsert: false });
+        .upload(filePath, file, { 
+          upsert: false,
+          cacheControl: '604800', // 7 days cache for videos (longer since they rarely change)
+        });
 
       clearInterval(progressInterval);
 
