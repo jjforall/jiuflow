@@ -153,18 +153,20 @@ const Home = () => {
                   </p>
                 </div>
                 
-                <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
-                  <Link to="/join" className="w-full sm:w-auto">
-                    <Button size="lg" className="w-full sm:min-w-[240px] text-lg font-medium bg-primary hover:bg-primary/90 shadow-lg hover:shadow-xl transition-all">
-                      {t.home.hero.freeTrial}
-                    </Button>
-                  </Link>
-                  <Link to="/login" className="w-full sm:w-auto">
-                    <Button variant="outline" size="lg" className="w-full sm:min-w-[200px] bg-transparent border-white/30 text-white hover:bg-white/10 backdrop-blur-sm">
-                      {t.nav.login}
-                    </Button>
-                  </Link>
-                </div>
+                {!user && (
+                  <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
+                    <Link to="/join" className="w-full sm:w-auto">
+                      <Button size="lg" className="w-full sm:min-w-[240px] text-lg font-medium bg-primary hover:bg-primary/90 shadow-lg hover:shadow-xl transition-all">
+                        {t.home.hero.freeTrial}
+                      </Button>
+                    </Link>
+                    <Link to="/login" className="w-full sm:w-auto">
+                      <Button variant="outline" size="lg" className="w-full sm:min-w-[200px] bg-transparent border-white/30 text-white hover:bg-white/10 backdrop-blur-sm">
+                        {t.nav.login}
+                      </Button>
+                    </Link>
+                  </div>
+                )}
               </div>
             </section>
 
