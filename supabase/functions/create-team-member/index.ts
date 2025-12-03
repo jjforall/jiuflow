@@ -13,7 +13,7 @@ serve(async (req) => {
     const { email, password, displayName, referralCode } = await req.json();
 
     // Validate referral code
-    if (!referralCode || referralCode.toUpperCase() !== "TEAMMURATA") {
+    if (!referralCode || referralCode.toUpperCase() !== "TEAMRYOZO") {
       return new Response(
         JSON.stringify({ error: "Invalid referral code" }),
         {
