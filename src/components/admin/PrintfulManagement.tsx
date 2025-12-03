@@ -31,7 +31,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import jiuflowLogoBlack from "@/assets/jiuflow-logo-black.png";
 
 interface CatalogProduct {
   id: number;
@@ -515,7 +514,7 @@ export function PrintfulManagement() {
           product_id: parseInt(selectedCatalogProduct),
           variant_ids: selectedVariants,
           format: "jpg",
-          save_to_storage: true,
+          save_to_storage: false,
           product_name: newProductName || `product_${selectedCatalogProduct}`,
           files: [{
             placement: "front",
@@ -534,14 +533,14 @@ export function PrintfulManagement() {
 
       if (error) throw error;
       
-      // Prefer saved storage URL over original Printful URL
+      // Show the mockup URL
       if (data?.saved_mockups?.[0]?.storage_url) {
         setGeneratedMockupUrl(data.saved_mockups[0].storage_url);
         toast.success("モックアップを生成・保存しました");
-        fetchSavedMockups(); // Refresh mockups list
+        fetchSavedMockups();
       } else if (data?.mockups?.[0]?.mockup_url) {
         setGeneratedMockupUrl(data.mockups[0].mockup_url);
-        toast.success("モックアップを生成しました（保存に失敗）");
+        toast.success("モックアップを生成しました");
       } else if (data?.task_key) {
         toast.info("モックアップ生成中です。しばらくお待ちください");
       } else {
@@ -665,25 +664,56 @@ export function PrintfulManagement() {
         </div>
       </div>
 
-      {/* Logo Preview */}
+      {/* Uploaded Logos */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg flex items-center gap-2">
-            <ImageIcon className="h-5 w-5" />
-            利用可能なロゴ
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <ImageIcon className="h-5 w-5" />
+              保存済みロゴ
+            </CardTitle>
+            <Button variant="outline" size="sm" onClick={fetchUploadedLogos}>
+              <RefreshCw className="h-4 w-4 mr-2" />
+              更新
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center gap-6">
-            <div className="bg-background border rounded-lg p-4">
-              <img 
-                src={jiuflowLogoBlack} 
-                alt="jiuFlow Logo (Black)" 
-                className="h-16 object-contain"
-              />
-              <p className="text-xs text-muted-foreground mt-2 text-center">黒背景バージョン</p>
+          {uploadedLogos.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <ImageIcon className="h-12 w-12 mx-auto mb-2 opacity-50" />
+              <p>保存済みロゴはありません</p>
+              <p className="text-sm">商品作成時にロゴをアップロードしてください</p>
             </div>
-          </div>
+          ) : (
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+              {uploadedLogos.filter(l => !l.name.startsWith('mockups/')).map((logo) => (
+                <div key={logo.name} className="relative group border rounded-lg overflow-hidden bg-muted/30">
+                  <img 
+                    src={logo.url} 
+                    alt={logo.name}
+                    className="w-full aspect-square object-contain p-2"
+                  />
+                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2">
+                    <p className="text-white text-xs px-2 text-center truncate max-w-full">
+                      {logo.name}
+                    </p>
+                    <Button 
+                      size="sm" 
+                      variant="default"
+                      onClick={() => {
+                        setLogoUrl(logo.url);
+                        handleOpenCreateDialog();
+                      }}
+                    >
+                      <Plus className="h-3 w-3 mr-1" />
+                      商品作成
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
 
