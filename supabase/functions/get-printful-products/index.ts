@@ -77,7 +77,11 @@ serve(async (req) => {
       })
     );
 
-    return new Response(JSON.stringify({ products: productsWithDetails }), {
+    // Filter out ignored/unpublished products
+    const activeProducts = productsWithDetails.filter((p: any) => !p.is_ignored);
+    console.log("[GET-PRINTFUL-PRODUCTS] Active products after filtering:", activeProducts.length);
+
+    return new Response(JSON.stringify({ products: activeProducts }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });
