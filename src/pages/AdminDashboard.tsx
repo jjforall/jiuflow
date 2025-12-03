@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import Navigation from "@/components/Navigation";
 import { toast } from "sonner";
-import { Users, DollarSign, UserCheck, Home, Menu } from "lucide-react";
+import { Users, DollarSign, UserCheck, Home, Menu, Eye, EyeOff } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
@@ -48,6 +48,7 @@ const AdminDashboard = () => {
   });
   const [showMembersChart, setShowMembersChart] = useState(false);
   const [chartData, setChartData] = useState<Array<{date: string; totalMembers: number; paidMembers: number; trialMembers: number}>>([]);
+  const [hideNumbers, setHideNumbers] = useState(false);
 
   useEffect(() => {
     fetchStats();
@@ -274,6 +275,17 @@ const AdminDashboard = () => {
           <main className="flex-1 px-6 py-8 overflow-auto">
             <div className="max-w-7xl mx-auto">
 
+          <div className="flex justify-end mb-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setHideNumbers(!hideNumbers)}
+              className="text-muted-foreground"
+            >
+              {hideNumbers ? <EyeOff className="h-4 w-4 mr-2" /> : <Eye className="h-4 w-4 mr-2" />}
+              {hideNumbers ? "表示" : "非表示"}
+            </Button>
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
             <Card 
               className="cursor-pointer hover:bg-accent/50 transition-colors"
@@ -285,7 +297,7 @@ const AdminDashboard = () => {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  {stats.loading ? "..." : stats.totalMembers.toLocaleString()}
+                  {stats.loading ? "..." : hideNumbers ? "***" : stats.totalMembers.toLocaleString()}
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">登録ユーザー総数（クリックでグラフ表示）</p>
               </CardContent>
@@ -298,7 +310,7 @@ const AdminDashboard = () => {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  {stats.loading ? "..." : stats.paidMembers.toLocaleString()}
+                  {stats.loading ? "..." : hideNumbers ? "***" : stats.paidMembers.toLocaleString()}
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">アクティブなサブスク</p>
               </CardContent>
@@ -314,7 +326,7 @@ const AdminDashboard = () => {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  {stats.loading ? "..." : stats.trialMembers.toLocaleString()}
+                  {stats.loading ? "..." : hideNumbers ? "***" : stats.trialMembers.toLocaleString()}
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">無料トライアル中（クリックでグラフ表示）</p>
               </CardContent>
@@ -327,7 +339,7 @@ const AdminDashboard = () => {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  {stats.loading ? "..." : `¥${stats.monthlyRevenue.toLocaleString()}`}
+                  {stats.loading ? "..." : hideNumbers ? "¥***" : `¥${stats.monthlyRevenue.toLocaleString()}`}
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">有料会員の月額合計</p>
               </CardContent>
@@ -340,7 +352,7 @@ const AdminDashboard = () => {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  {stats.loading ? "..." : `¥${stats.trialRevenue.toLocaleString()}`}
+                  {stats.loading ? "..." : hideNumbers ? "¥***" : `¥${stats.trialRevenue.toLocaleString()}`}
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">トライアル終了後の見込み</p>
               </CardContent>
