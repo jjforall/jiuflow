@@ -464,11 +464,11 @@ const Athlete = () => {
     return (
       <div className="min-h-screen bg-background">
         <Navigation />
-        <main className="pt-20 md:pt-24 pb-16 px-4 md:px-8 lg:px-12">
-          <div className="max-w-5xl mx-auto space-y-8">
-            <Skeleton className="h-64 w-full" />
-            <Skeleton className="h-10 w-1/2" />
-            <Skeleton className="h-32 w-full" />
+        <main className="pt-16 pb-12 px-3 sm:px-4 md:px-8">
+          <div className="max-w-5xl mx-auto space-y-4 sm:space-y-6">
+            <Skeleton className="h-32 sm:h-48 md:h-64 w-full rounded-lg" />
+            <Skeleton className="h-8 sm:h-10 w-2/3" />
+            <Skeleton className="h-24 sm:h-32 w-full" />
           </div>
         </main>
         <Footer />
@@ -480,12 +480,12 @@ const Athlete = () => {
     return (
       <div className="min-h-screen bg-background">
         <Navigation />
-        <main className="pt-20 md:pt-24 pb-16 px-4 md:px-8 lg:px-12">
-          <div className="max-w-5xl mx-auto text-center py-16">
-            <h2 className="text-2xl font-semibold mb-4">
+        <main className="pt-16 pb-12 px-3 sm:px-4 md:px-8">
+          <div className="max-w-5xl mx-auto text-center py-12 sm:py-16">
+            <h2 className="text-xl sm:text-2xl font-semibold mb-4">
               {language === "ja" ? "選手が見つかりません" : language === "pt" ? "Atleta não encontrado" : "Athlete not found"}
             </h2>
-            <Button asChild>
+            <Button asChild size="lg" className="active:scale-[0.98]">
               <Link to="/athletes">
                 {language === "ja" ? "選手一覧に戻る" : language === "pt" ? "Voltar para atletas" : "Back to Athletes"}
               </Link>
@@ -505,25 +505,25 @@ const Athlete = () => {
     <div className="min-h-screen bg-background">
       <Navigation />
       
-      <main className="pt-16 md:pt-20 pb-16">
+      <main className="pt-14 sm:pt-16 md:pt-20 pb-12 sm:pb-16">
         {/* Cover Image */}
-        <div className="relative h-40 sm:h-56 md:h-72 lg:h-80 w-full overflow-hidden">
+        <div className="relative h-32 sm:h-48 md:h-64 lg:h-80 w-full overflow-hidden">
           <img 
             src={coverImageUrl}
             alt="Cover" 
             className="w-full h-full object-cover"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-background/90 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent" />
         </div>
 
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 md:px-8 lg:px-12 -mt-12 sm:-mt-16 md:-mt-20 relative z-10">
+        <div className="max-w-6xl mx-auto px-3 sm:px-4 md:px-6 lg:px-12 -mt-10 sm:-mt-14 md:-mt-20 relative z-10">
           {/* Profile Header */}
-          <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 mb-6 sm:mb-8">
-            <div className="flex flex-col items-center justify-center sm:justify-start gap-2">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-6 mb-4 sm:mb-8">
+            <div className="flex flex-col items-center sm:items-start gap-2">
               <div className="relative">
-                <Avatar className="h-24 w-24 sm:h-32 sm:w-32 md:h-40 md:w-40 border-4 border-background shadow-xl">
+                <Avatar className="h-20 w-20 sm:h-28 sm:w-28 md:h-36 md:w-36 border-3 sm:border-4 border-background shadow-xl">
                   <AvatarImage src={celebrity.avatar_url || undefined} />
-                  <AvatarFallback className="text-3xl sm:text-4xl md:text-5xl bg-primary/10">
+                  <AvatarFallback className="text-2xl sm:text-3xl md:text-4xl bg-primary/10">
                     {celebrity.display_name[0]}
                   </AvatarFallback>
                 </Avatar>
@@ -533,43 +533,45 @@ const Athlete = () => {
                   variant="outline"
                   size="sm"
                   onClick={() => setIsAvatarUploadOpen(true)}
-                  className="gap-2 text-xs"
+                  className="gap-1.5 text-[10px] sm:text-xs h-7 sm:h-8 px-2 sm:px-3 active:scale-[0.98]"
                 >
                   <Camera className="h-3 w-3" />
-                  画像変更
+                  {language === "ja" ? "画像変更" : "Change"}
                 </Button>
               )}
             </div>
 
-            <div className="flex-1 space-y-3 sm:space-y-4">
-              <div className="flex flex-col gap-3 sm:gap-4">
+            <div className="flex-1 space-y-2 sm:space-y-4">
+              <div className="flex flex-col gap-2 sm:gap-4">
                 <div className="text-center sm:text-left">
-                  <div className="flex items-center justify-center sm:justify-start gap-2 sm:gap-3 mb-2">
-                    <h1 className="text-2xl sm:text-3xl md:text-4xl font-light tracking-tight">
+                  <div className="flex items-center justify-center sm:justify-start gap-1.5 sm:gap-3 mb-1.5 sm:mb-2">
+                    <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-light tracking-tight">
                       {celebrity.display_name}
                     </h1>
                     {celebrity.featured && (
-                      <Star className="h-5 w-5 sm:h-6 sm:w-6 text-yellow-500 fill-yellow-500" />
+                      <Star className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-500 fill-yellow-500" />
                     )}
                   </div>
                   
-                  <div className="flex flex-wrap justify-center sm:justify-start gap-2 mb-3">
-                    {currentBelt && <BeltBadge belt={currentBelt} />}
+                  <div className="flex flex-wrap justify-center sm:justify-start gap-1.5 sm:gap-2 mb-2 sm:mb-3">
+                    {currentBelt && <BeltBadge belt={currentBelt} className="text-[10px] sm:text-xs" />}
                     {orgName && (
-                      <Badge variant="outline" className="text-xs sm:text-sm">
+                      <Badge variant="outline" className="text-[10px] sm:text-xs">
                         {orgName}
                       </Badge>
                     )}
                   </div>
 
-                  <div className="flex items-center justify-center sm:justify-start gap-4 sm:gap-6 text-xs sm:text-sm text-muted-foreground">
-                    <div className="flex items-center gap-1 sm:gap-2">
+                  <div className="flex items-center justify-center sm:justify-start gap-3 sm:gap-6 text-[11px] sm:text-sm text-muted-foreground">
+                    <div className="flex items-center gap-1">
                       <User className="h-3 w-3 sm:h-4 sm:w-4" />
-                      <span>{followersCount} {language === "ja" ? "フォロワー" : language === "pt" ? "Seguidores" : "Followers"}</span>
+                      <span className="font-medium">{followersCount}</span>
+                      <span className="hidden xs:inline">{language === "ja" ? "フォロワー" : language === "pt" ? "Seguidores" : "Followers"}</span>
                     </div>
-                    <div className="flex items-center gap-1 sm:gap-2">
+                    <div className="flex items-center gap-1">
                       <User className="h-3 w-3 sm:h-4 sm:w-4" />
-                      <span>{followingCount} {language === "ja" ? "フォロー中" : language === "pt" ? "Seguindo" : "Following"}</span>
+                      <span className="font-medium">{followingCount}</span>
+                      <span className="hidden xs:inline">{language === "ja" ? "フォロー中" : language === "pt" ? "Seguindo" : "Following"}</span>
                     </div>
                   </div>
                 </div>
@@ -578,14 +580,14 @@ const Athlete = () => {
                   {isOwner ? (
                     <>
                       {celebrity.user_id ? (
-                        <Button onClick={() => navigate('/mypage')} className="gap-2">
-                          <Edit className="h-4 w-4" />
+                        <Button onClick={() => navigate('/mypage')} className="gap-1.5 sm:gap-2 h-9 sm:h-10 text-sm active:scale-[0.98]">
+                          <Edit className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                           {language === "ja" ? "編集" : language === "pt" ? "Editar" : "Edit"}
                         </Button>
                       ) : (
-                        <Button onClick={() => setIsEditDialogOpen(true)} className="gap-2">
-                          <Edit className="h-4 w-4" />
-                          {language === "ja" ? "編集リクエスト" : language === "pt" ? "Solicitar Edição" : "Request Edit"}
+                        <Button onClick={() => setIsEditDialogOpen(true)} className="gap-1.5 sm:gap-2 h-9 sm:h-10 text-sm active:scale-[0.98]">
+                          <Edit className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                          {language === "ja" ? "編集リクエスト" : language === "pt" ? "Solicitar" : "Request Edit"}
                         </Button>
                       )}
                     </>
@@ -593,16 +595,16 @@ const Athlete = () => {
                     <Button 
                       onClick={isFollowing ? handleUnfollow : handleFollow}
                       variant={isFollowing ? "outline" : "default"}
-                      className="gap-2"
+                      className="gap-1.5 sm:gap-2 h-9 sm:h-10 text-sm active:scale-[0.98]"
                     >
                       {isFollowing ? (
                         <>
-                          <UserMinus className="h-4 w-4" />
-                          {language === "ja" ? "フォロー解除" : language === "pt" ? "Deixar de seguir" : "Unfollow"}
+                          <UserMinus className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                          {language === "ja" ? "フォロー解除" : language === "pt" ? "Deixar" : "Unfollow"}
                         </>
                       ) : (
                         <>
-                          <UserPlus className="h-4 w-4" />
+                          <UserPlus className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                           {language === "ja" ? "フォロー" : language === "pt" ? "Seguir" : "Follow"}
                         </>
                       )}
@@ -612,27 +614,27 @@ const Athlete = () => {
               </div>
 
               {celebrity.bio && (
-                <Card className="mt-4">
-                  <CardContent className="pt-4 sm:pt-6">
-                    <div className="prose prose-sm sm:prose-base dark:prose-invert max-w-none text-sm sm:text-base text-muted-foreground">
+                <Card className="mt-3 sm:mt-4">
+                  <CardContent className="p-3 sm:p-4 md:pt-6">
+                    <div className="prose prose-sm dark:prose-invert max-w-none text-xs sm:text-sm md:text-base text-muted-foreground">
                       <ReactMarkdown 
                         remarkPlugins={[remarkGfm]}
                         components={{
-                          h1: ({node, ...props}) => <h1 className="text-xl sm:text-2xl font-bold mt-4 mb-2" {...props} />,
-                          h2: ({node, ...props}) => <h2 className="text-lg sm:text-xl font-bold mt-3 mb-2" {...props} />,
-                          h3: ({node, ...props}) => <h3 className="text-base sm:text-lg font-semibold mt-2 mb-1" {...props} />,
-                          p: ({node, ...props}) => <p className="mb-3 leading-relaxed" {...props} />,
-                          ul: ({node, ...props}) => <ul className="list-disc list-inside mb-3 space-y-1" {...props} />,
-                          ol: ({node, ...props}) => <ol className="list-decimal list-inside mb-3 space-y-1" {...props} />,
-                          li: ({node, ...props}) => <li className="ml-2" {...props} />,
+                          h1: ({node, ...props}) => <h1 className="text-lg sm:text-xl md:text-2xl font-bold mt-3 sm:mt-4 mb-1.5 sm:mb-2" {...props} />,
+                          h2: ({node, ...props}) => <h2 className="text-base sm:text-lg md:text-xl font-bold mt-2 sm:mt-3 mb-1.5 sm:mb-2" {...props} />,
+                          h3: ({node, ...props}) => <h3 className="text-sm sm:text-base md:text-lg font-semibold mt-1.5 sm:mt-2 mb-1" {...props} />,
+                          p: ({node, ...props}) => <p className="mb-2 sm:mb-3 leading-relaxed" {...props} />,
+                          ul: ({node, ...props}) => <ul className="list-disc list-inside mb-2 sm:mb-3 space-y-0.5 sm:space-y-1" {...props} />,
+                          ol: ({node, ...props}) => <ol className="list-decimal list-inside mb-2 sm:mb-3 space-y-0.5 sm:space-y-1" {...props} />,
+                          li: ({node, ...props}) => <li className="ml-1 sm:ml-2" {...props} />,
                           a: ({node, ...props}) => <a className="text-primary hover:underline" {...props} />,
                           strong: ({node, ...props}) => <strong className="font-semibold" {...props} />,
                           em: ({node, ...props}) => <em className="italic" {...props} />,
-                          blockquote: ({node, ...props}) => <blockquote className="border-l-4 border-primary/30 pl-4 italic my-3" {...props} />,
+                          blockquote: ({node, ...props}) => <blockquote className="border-l-2 sm:border-l-4 border-primary/30 pl-2 sm:pl-4 italic my-2 sm:my-3" {...props} />,
                           code: ({node, inline, ...props}: any) => 
                             inline 
-                              ? <code className="bg-muted px-1 py-0.5 rounded text-sm" {...props} />
-                              : <code className="block bg-muted p-3 rounded my-2 overflow-x-auto text-sm" {...props} />
+                              ? <code className="bg-muted px-1 py-0.5 rounded text-xs sm:text-sm" {...props} />
+                              : <code className="block bg-muted p-2 sm:p-3 rounded my-2 overflow-x-auto text-xs sm:text-sm" {...props} />
                         }}
                       >
                         {translatedBio || celebrity.bio}
@@ -644,9 +646,9 @@ const Athlete = () => {
                         size="sm"
                         onClick={handleTranslateBio}
                         disabled={isTranslating}
-                        className="mt-3"
+                        className="mt-2 sm:mt-3 h-8 text-xs sm:text-sm active:scale-[0.98]"
                       >
-                        <Languages className="h-4 w-4 mr-2" />
+                        <Languages className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
                         {isTranslating 
                           ? (language === 'ja' ? '翻訳中...' : 'Traduzindo...') 
                           : translatedBio
@@ -661,37 +663,37 @@ const Athlete = () => {
           </div>
 
           {/* Content Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 mt-6 sm:mt-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4 md:gap-6 mt-4 sm:mt-6 md:mt-8">
             {/* Left Column - Info Cards */}
-            <div className="lg:col-span-1 space-y-4 sm:space-y-6">
+            <div className="lg:col-span-1 space-y-3 sm:space-y-4 md:space-y-6">
               {celebrity.home_dojo && (
                 <Card>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
-                      <MapPin className="h-4 w-4 sm:h-5 sm:w-5" />
+                  <CardHeader className="p-3 sm:p-4 md:p-6 pb-2 sm:pb-3">
+                    <CardTitle className="flex items-center gap-1.5 sm:gap-2 text-sm sm:text-base md:text-lg">
+                      <MapPin className="h-3.5 w-3.5 sm:h-4 sm:w-4 md:h-5 md:w-5" />
                       {language === "ja" ? "所属道場" : language === "pt" ? "Academia" : "Home Gym"}
                     </CardTitle>
                   </CardHeader>
-                  <CardContent>
-                    <p className="text-sm sm:text-base">{celebrity.home_dojo}</p>
+                  <CardContent className="p-3 sm:p-4 md:p-6 pt-0">
+                    <p className="text-xs sm:text-sm md:text-base">{celebrity.home_dojo}</p>
                   </CardContent>
                 </Card>
               )}
 
               {celebrity.titles && celebrity.titles.length > 0 && (
                 <Card>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
-                      <Trophy className="h-4 w-4 sm:h-5 sm:w-5" />
+                  <CardHeader className="p-3 sm:p-4 md:p-6 pb-2 sm:pb-3">
+                    <CardTitle className="flex items-center gap-1.5 sm:gap-2 text-sm sm:text-base md:text-lg">
+                      <Trophy className="h-3.5 w-3.5 sm:h-4 sm:w-4 md:h-5 md:w-5" />
                       {language === "ja" ? "タイトル" : language === "pt" ? "Títulos" : "Titles"}
                     </CardTitle>
                   </CardHeader>
-                  <CardContent>
-                    <ul className="space-y-2">
+                  <CardContent className="p-3 sm:p-4 md:p-6 pt-0">
+                    <ul className="space-y-1.5 sm:space-y-2">
                       {celebrity.titles.map((title: any, index: number) => (
-                        <li key={index} className="flex items-start gap-2">
-                          <span className="text-primary">•</span>
-                          <span className="text-xs sm:text-sm leading-relaxed">{title.title || title}</span>
+                        <li key={index} className="flex items-start gap-1.5 sm:gap-2">
+                          <span className="text-primary text-xs sm:text-sm">•</span>
+                          <span className="text-[11px] sm:text-xs md:text-sm leading-relaxed">{title.title || title}</span>
                         </li>
                       ))}
                     </ul>
@@ -701,23 +703,23 @@ const Athlete = () => {
 
               {celebrity.belt_history && celebrity.belt_history.length > 0 && (
                 <Card>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-base sm:text-lg">
+                  <CardHeader className="p-3 sm:p-4 md:p-6 pb-2 sm:pb-3">
+                    <CardTitle className="text-sm sm:text-base md:text-lg">
                       {language === "ja" ? "帯の履歴" : language === "pt" ? "Histórico de Faixas" : "Belt History"}
                     </CardTitle>
                   </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2 sm:space-y-3">
+                  <CardContent className="p-3 sm:p-4 md:p-6 pt-0">
+                    <div className="space-y-1.5 sm:space-y-2 md:space-y-3">
                       {celebrity.belt_history.map((item: any, index: number) => (
-                        <div key={index} className="flex flex-wrap items-center gap-2 sm:gap-3">
-                          <BeltBadge belt={item.belt} />
+                        <div key={index} className="flex flex-wrap items-center gap-1.5 sm:gap-2 md:gap-3">
+                          <BeltBadge belt={item.belt} className="text-[10px] sm:text-xs" />
                           {item.date && (
-                            <span className="text-xs text-muted-foreground">
+                            <span className="text-[10px] sm:text-xs text-muted-foreground">
                               {new Date(item.date).getFullYear()}
                             </span>
                           )}
                           {item.instructor && (
-                            <span className="text-xs text-muted-foreground break-words">
+                            <span className="text-[10px] sm:text-xs text-muted-foreground break-words">
                               {item.instructor}
                             </span>
                           )}
@@ -730,12 +732,12 @@ const Athlete = () => {
 
               {celebrity.social_links && Object.keys(celebrity.social_links).length > 0 && (
                 <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg">
-                      {language === "ja" ? "ソーシャルメディア" : language === "pt" ? "Redes Sociais" : "Social Media"}
+                  <CardHeader className="p-3 sm:p-4 md:p-6 pb-2 sm:pb-3">
+                    <CardTitle className="text-sm sm:text-base md:text-lg">
+                      {language === "ja" ? "SNS" : language === "pt" ? "Redes Sociais" : "Social Media"}
                     </CardTitle>
                   </CardHeader>
-                  <CardContent>
+                  <CardContent className="p-3 sm:p-4 md:p-6 pt-0">
                     <div className="flex flex-wrap gap-2">
 ...
                     </div>
@@ -751,13 +753,13 @@ const Athlete = () => {
             <div className="lg:col-span-2">
               {videos.length > 0 && (
                 <Card>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-base sm:text-lg">
+                  <CardHeader className="p-3 sm:p-4 md:p-6 pb-2 sm:pb-3">
+                    <CardTitle className="text-sm sm:text-base md:text-lg">
                       {language === "ja" ? "投稿動画" : language === "pt" ? "Vídeos" : "Videos"}
                     </CardTitle>
                   </CardHeader>
-                  <CardContent>
-                    <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2">
+                  <CardContent className="p-3 sm:p-4 md:p-6 pt-0">
+                    <div className="grid gap-3 sm:gap-4 md:gap-6 grid-cols-1 sm:grid-cols-2">
                       {videos.map((video) => (
                         <UserVideoCard
                           key={video.id}
