@@ -75,23 +75,48 @@ export const VideoPlayer = ({ videoUrl, autoPlay = true, thumbnailUrl, onPlay }:
     const isHLS = videoUrl.includes('.m3u8');
 
     if (isHLS && Hls.isSupported()) {
-      // Initialize HLS.js with mobile-optimized settings
+      // Initialize HLS.js with aggressive mobile optimizations
       const hls = new Hls({
         enableWorker: true,
         lowLatencyMode: false,
-        backBufferLength: 30, // Reduced for mobile memory optimization
-        maxBufferLength: 30, // Limit buffer size for mobile
-        maxBufferSize: 60 * 1000 * 1000, // 60MB max buffer
-        // Adaptive bitrate streaming settings optimized for mobile
-        abrEwmaDefaultEstimate: 500000,
-        abrBandWidthFactor: 0.95,
-        abrBandWidthUpFactor: 0.7,
-        // Additional mobile optimizations
-        maxMaxBufferLength: 60,
-        startLevel: -1, // Auto start quality
+        // Aggressive buffer reduction for mobile - key for smooth playback
+        backBufferLength: 15, // Reduced from 30 - less memory usage
+        maxBufferLength: 15, // Reduced from 30 - faster initial playback
+        maxBufferSize: 30 * 1000 * 1000, // 30MB max (reduced from 60MB)
+        maxMaxBufferLength: 30, // Reduced from 60
+        // Conservative bandwidth estimation for mobile networks
+        abrEwmaDefaultEstimate: 300000, // Lower initial estimate (300kbps)
+        abrEwmaFastLive: 3.0,
+        abrEwmaSlowLive: 9.0,
+        abrEwmaFastVoD: 3.0,
+        abrEwmaSlowVoD: 9.0,
+        abrBandWidthFactor: 0.8, // More conservative (was 0.95)
+        abrBandWidthUpFactor: 0.5, // Slower quality upgrades (was 0.7)
+        // Fragment loading optimizations
+        fragLoadingTimeOut: 20000, // 20s timeout
+        fragLoadingMaxRetry: 4,
+        fragLoadingRetryDelay: 1000,
+        manifestLoadingTimeOut: 10000,
+        manifestLoadingMaxRetry: 3,
+        levelLoadingTimeOut: 10000,
+        levelLoadingMaxRetry: 3,
+        // Start with lowest quality for fast initial playback
+        startLevel: 0, // Start at lowest quality instead of auto
         autoStartLoad: true,
-        // Reduce overhead on mobile
-        capLevelToPlayerSize: true, // Don't load higher quality than needed
+        // Mobile-specific optimizations
+        capLevelToPlayerSize: true,
+        capLevelOnFPSDrop: true, // Drop quality if FPS drops
+        fpsDroppedMonitoringPeriod: 5000,
+        fpsDroppedMonitoringThreshold: 0.2,
+        // Reduce CPU overhead
+        enableCEA708Captions: false,
+        enableWebVTT: false,
+        enableIMSC1: false,
+        // Progressive loading - don't wait for full segment
+        progressive: true,
+        // Stall recovery
+        nudgeMaxRetry: 5,
+        nudgeOffset: 0.1,
       });
 
       hlsRef.current = hls;
@@ -363,7 +388,7 @@ export const VideoPlayer = ({ videoUrl, autoPlay = true, thumbnailUrl, onPlay }:
         controlsList="nodownload"
         className="w-full h-full"
         playsInline
-        preload="auto"
+        preload="metadata"
         poster={thumbnailUrl || undefined}
         onContextMenu={(e) => e.preventDefault()}
         disablePictureInPicture

@@ -22,11 +22,21 @@ export const FloatingVideoPlayer = () => {
       const hls = new Hls({
         enableWorker: true,
         lowLatencyMode: false,
-        backBufferLength: 20, // Smaller buffer for floating player
-        maxBufferLength: 20,
-        maxBufferSize: 40 * 1000 * 1000, // 40MB max
-        capLevelToPlayerSize: true, // Match quality to small player size
-        startLevel: -1,
+        // Minimal buffer for floating player
+        backBufferLength: 10,
+        maxBufferLength: 10,
+        maxBufferSize: 15 * 1000 * 1000, // 15MB max
+        maxMaxBufferLength: 15,
+        // Start at lowest quality for small player
+        startLevel: 0,
+        capLevelToPlayerSize: true,
+        capLevelOnFPSDrop: true,
+        // Conservative bandwidth for background playback
+        abrEwmaDefaultEstimate: 200000,
+        abrBandWidthFactor: 0.7,
+        // Reduce overhead
+        enableCEA708Captions: false,
+        progressive: true,
       });
       hlsRef.current = hls;
       hls.loadSource(floatingVideo.videoUrl);
