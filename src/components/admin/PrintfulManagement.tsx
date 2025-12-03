@@ -47,6 +47,7 @@ interface CatalogVariant {
   color_code: string;
   price: string;
   in_stock: boolean;
+  image?: string;
 }
 
 interface PrintfulVariant {
@@ -540,18 +541,27 @@ export function PrintfulManagement() {
                   カタログを読み込み中...
                 </div>
               ) : (
-                <Select value={selectedCatalogProduct} onValueChange={handleCatalogProductChange}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="ベース商品を選択" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {catalogProducts.map((product) => (
-                      <SelectItem key={product.id} value={product.id.toString()}>
-                        {product.title}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-64 overflow-y-auto border rounded-md p-2">
+                  {catalogProducts.map((product) => (
+                    <button
+                      key={product.id}
+                      type="button"
+                      onClick={() => handleCatalogProductChange(product.id.toString())}
+                      className={`flex flex-col items-center p-2 rounded-lg border transition-all ${
+                        selectedCatalogProduct === product.id.toString()
+                          ? "border-primary ring-2 ring-primary/20 bg-primary/5"
+                          : "border-border hover:border-primary/50"
+                      }`}
+                    >
+                      <img
+                        src={product.image}
+                        alt={product.title}
+                        className="w-16 h-16 object-contain mb-1"
+                      />
+                      <span className="text-xs text-center line-clamp-2">{product.title}</span>
+                    </button>
+                  ))}
+                </div>
               )}
             </div>
 
@@ -565,22 +575,41 @@ export function PrintfulManagement() {
                     バリエーションを読み込み中...
                   </div>
                 ) : catalogVariants.length > 0 ? (
-                  <div className="max-h-48 overflow-y-auto border rounded-md p-2 space-y-2">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-64 overflow-y-auto border rounded-md p-2">
                     {catalogVariants.map((variant) => (
-                      <div key={variant.id} className="flex items-center gap-2">
-                        <Checkbox
-                          id={`variant-${variant.id}`}
-                          checked={selectedVariants.includes(variant.id)}
-                          onCheckedChange={() => toggleVariant(variant.id)}
-                        />
-                        <label 
-                          htmlFor={`variant-${variant.id}`}
-                          className="text-sm cursor-pointer flex-1"
-                        >
-                          {variant.name} - {variant.size} / {variant.color}
-                          {variant.in_stock ? "" : " (在庫切れ)"}
-                        </label>
-                      </div>
+                      <button
+                        key={variant.id}
+                        type="button"
+                        onClick={() => toggleVariant(variant.id)}
+                        disabled={!variant.in_stock}
+                        className={`flex flex-col items-center p-2 rounded-lg border transition-all ${
+                          selectedVariants.includes(variant.id)
+                            ? "border-primary ring-2 ring-primary/20 bg-primary/5"
+                            : variant.in_stock 
+                              ? "border-border hover:border-primary/50"
+                              : "border-border opacity-50 cursor-not-allowed"
+                        }`}
+                      >
+                        {variant.image ? (
+                          <img
+                            src={variant.image}
+                            alt={variant.name}
+                            className="w-14 h-14 object-contain mb-1"
+                          />
+                        ) : (
+                          <div 
+                            className="w-14 h-14 rounded mb-1 flex items-center justify-center border"
+                            style={{ backgroundColor: variant.color_code || '#f0f0f0' }}
+                          >
+                            <span className="text-[10px] text-center px-1">{variant.size}</span>
+                          </div>
+                        )}
+                        <span className="text-xs text-center line-clamp-1">{variant.size}</span>
+                        <span className="text-[10px] text-muted-foreground">{variant.color}</span>
+                        {!variant.in_stock && (
+                          <span className="text-[10px] text-destructive">在庫切れ</span>
+                        )}
+                      </button>
                     ))}
                   </div>
                 ) : (
