@@ -277,7 +277,7 @@ export function PrintfulManagement() {
         files: [
           {
             url: logoUrl,
-            type: "front",
+            type: "default",
           }
         ]
       }));
