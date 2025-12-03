@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -9,6 +10,8 @@ interface MockupRequest {
   product_id: number;
   variant_ids: number[];
   format: string;
+  save_to_storage?: boolean;
+  product_name?: string;
   files: Array<{
     placement: string;
     image_url: string;
@@ -275,9 +278,75 @@ serve(async (req) => {
 
     console.log("[GENERATE-MOCKUP] Mockup completed:", JSON.stringify(mockupResult.mockups));
 
+    // Step 4: Save mockups to Supabase Storage if requested
+    let savedMockups: Array<{ original_url: string; storage_url: string; placement: string }> = [];
+    
+    if (body.save_to_storage && mockupResult.mockups && mockupResult.mockups.length > 0) {
+      const supabaseUrl = Deno.env.get("SUPABASE_URL");
+      const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+      
+      if (supabaseUrl && supabaseServiceKey) {
+        const supabase = createClient(supabaseUrl, supabaseServiceKey);
+        
+        for (const mockup of mockupResult.mockups) {
+          if (mockup.mockup_url) {
+            try {
+              // Download the mockup image
+              const imageResponse = await fetch(mockup.mockup_url);
+              if (!imageResponse.ok) {
+                console.error("[GENERATE-MOCKUP] Failed to download mockup:", mockup.mockup_url);
+                continue;
+              }
+              
+              const imageBlob = await imageResponse.blob();
+              const arrayBuffer = await imageBlob.arrayBuffer();
+              const uint8Array = new Uint8Array(arrayBuffer);
+              
+              // Generate filename
+              const timestamp = Date.now();
+              const productName = body.product_name?.replace(/[^a-zA-Z0-9-_]/g, "_") || `product_${productId}`;
+              const placement = mockup.placement || "front";
+              const fileName = `mockups/${productName}_${placement}_${timestamp}.jpg`;
+              
+              console.log("[GENERATE-MOCKUP] Saving mockup to storage:", fileName);
+              
+              // Upload to Supabase Storage
+              const { data: uploadData, error: uploadError } = await supabase.storage
+                .from("product-logos")
+                .upload(fileName, uint8Array, {
+                  contentType: "image/jpeg",
+                  upsert: false,
+                });
+              
+              if (uploadError) {
+                console.error("[GENERATE-MOCKUP] Upload error:", uploadError);
+                continue;
+              }
+              
+              // Get public URL
+              const { data: publicUrlData } = supabase.storage
+                .from("product-logos")
+                .getPublicUrl(fileName);
+              
+              savedMockups.push({
+                original_url: mockup.mockup_url,
+                storage_url: publicUrlData.publicUrl,
+                placement: placement,
+              });
+              
+              console.log("[GENERATE-MOCKUP] Saved mockup:", publicUrlData.publicUrl);
+            } catch (saveError) {
+              console.error("[GENERATE-MOCKUP] Error saving mockup:", saveError);
+            }
+          }
+        }
+      }
+    }
+
     return new Response(JSON.stringify({ 
       success: true, 
       mockups: mockupResult.mockups,
+      saved_mockups: savedMockups.length > 0 ? savedMockups : undefined,
       printfiles: printfilesData.result
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
