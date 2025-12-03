@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Loader2, Package, RefreshCw, ExternalLink, Image as ImageIcon, Plus, ChevronDown } from "lucide-react";
+import { Loader2, Package, RefreshCw, ExternalLink, Image as ImageIcon, Plus, Upload } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -99,6 +99,74 @@ export function PrintfulManagement() {
   const [selectedVariants, setSelectedVariants] = useState<number[]>([]);
   const [retailPrice, setRetailPrice] = useState("3500");
   const [logoUrl, setLogoUrl] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const [uploadedLogos, setUploadedLogos] = useState<{ name: string; url: string }[]>([]);
+
+  // Fetch uploaded logos on mount
+  useEffect(() => {
+    fetchUploadedLogos();
+  }, []);
+
+  const fetchUploadedLogos = async () => {
+    try {
+      const { data, error } = await supabase.storage
+        .from("product-logos")
+        .list("", { limit: 100 });
+      
+      if (error) throw error;
+      
+      if (data) {
+        const logos = data
+          .filter(file => file.name !== ".emptyFolderPlaceholder")
+          .map(file => ({
+            name: file.name,
+            url: `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/product-logos/${file.name}`,
+          }));
+        setUploadedLogos(logos);
+      }
+    } catch (error) {
+      console.error("Error fetching logos:", error);
+    }
+  };
+
+  const handleLogoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      toast.error("画像ファイルのみアップロードできます");
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("ファイルサイズは5MB以下にしてください");
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const fileExt = file.name.split(".").pop();
+      const fileName = `logo-${Date.now()}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("product-logos")
+        .upload(fileName, file);
+
+      if (uploadError) throw uploadError;
+
+      const publicUrl = `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/product-logos/${fileName}`;
+      setLogoUrl(publicUrl);
+      setUploadedLogos(prev => [...prev, { name: fileName, url: publicUrl }]);
+      toast.success("ロゴをアップロードしました");
+    } catch (error) {
+      console.error("Error uploading logo:", error);
+      toast.error("アップロードに失敗しました");
+    } finally {
+      setUploading(false);
+    }
+  };
 
   useEffect(() => {
     fetchProducts();
@@ -522,16 +590,75 @@ export function PrintfulManagement() {
 
             {/* Logo URL */}
             <div className="space-y-2">
-              <Label htmlFor="logoUrl">ロゴURL</Label>
-              <Input
-                id="logoUrl"
-                value={logoUrl}
-                onChange={(e) => setLogoUrl(e.target.value)}
-                placeholder="https://example.com/logo.png"
-              />
-              <p className="text-xs text-muted-foreground">
-                公開アクセス可能なロゴ画像のURLを入力してください
-              </p>
+              <Label htmlFor="logoUrl">ロゴ画像</Label>
+              <div className="flex gap-2">
+                <Input
+                  id="logoUrl"
+                  value={logoUrl}
+                  onChange={(e) => setLogoUrl(e.target.value)}
+                  placeholder="https://example.com/logo.png"
+                  className="flex-1"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={uploading}
+                  onClick={() => document.getElementById("logo-upload")?.click()}
+                >
+                  {uploading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Upload className="h-4 w-4" />
+                  )}
+                </Button>
+                <input
+                  id="logo-upload"
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleLogoUpload}
+                />
+              </div>
+              
+              {/* Uploaded logos */}
+              {uploadedLogos.length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-xs text-muted-foreground">アップロード済みロゴ:</p>
+                  <div className="flex flex-wrap gap-2">
+                    {uploadedLogos.map((logo) => (
+                      <button
+                        key={logo.name}
+                        type="button"
+                        onClick={() => setLogoUrl(logo.url)}
+                        className={`relative p-1 border rounded hover:border-primary transition-colors ${
+                          logoUrl === logo.url ? "border-primary ring-2 ring-primary/20" : "border-border"
+                        }`}
+                      >
+                        <img
+                          src={logo.url}
+                          alt={logo.name}
+                          className="h-12 w-12 object-contain"
+                        />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Preview selected logo */}
+              {logoUrl && (
+                <div className="mt-2 p-2 border rounded bg-muted/50">
+                  <p className="text-xs text-muted-foreground mb-1">プレビュー:</p>
+                  <img
+                    src={logoUrl}
+                    alt="Selected logo"
+                    className="h-16 object-contain"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).style.display = "none";
+                    }}
+                  />
+                </div>
+              )}
             </div>
 
             {/* Retail Price */}
