@@ -4,8 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Slider } from "@/components/ui/slider";
 import { toast } from "sonner";
-import { Loader2, Package, RefreshCw, ExternalLink, Image as ImageIcon, Plus, Upload } from "lucide-react";
+import { Loader2, Package, RefreshCw, ExternalLink, Image as ImageIcon, Plus, Upload, RotateCcw } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -101,6 +102,11 @@ export function PrintfulManagement() {
   const [logoUrl, setLogoUrl] = useState("");
   const [uploading, setUploading] = useState(false);
   const [uploadedLogos, setUploadedLogos] = useState<{ name: string; url: string }[]>([]);
+  
+  // Logo adjustment state
+  const [logoSize, setLogoSize] = useState(50); // percentage
+  const [logoPositionX, setLogoPositionX] = useState(50); // percentage from left
+  const [logoPositionY, setLogoPositionY] = useState(50); // percentage from top
 
   // Fetch uploaded logos on mount
   useEffect(() => {
@@ -648,36 +654,56 @@ export function PrintfulManagement() {
               {/* Mockup Preview */}
               {(logoUrl || selectedCatalogProduct) && (
                 <div className="mt-3 p-4 border rounded-lg bg-muted/30">
-                  <p className="text-sm font-medium text-foreground mb-3">商品プレビュー</p>
-                  <div className="flex items-center justify-center bg-white rounded-lg p-4 border min-h-[200px]">
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-sm font-medium text-foreground">商品プレビュー</p>
+                    {logoUrl && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setLogoSize(50);
+                          setLogoPositionX(50);
+                          setLogoPositionY(50);
+                        }}
+                      >
+                        <RotateCcw className="h-3 w-3 mr-1" />
+                        リセット
+                      </Button>
+                    )}
+                  </div>
+                  
+                  <div className="flex items-center justify-center bg-white rounded-lg p-4 border min-h-[220px] overflow-hidden">
                     {(() => {
                       const selectedProduct = catalogProducts.find(
                         p => p.id.toString() === selectedCatalogProduct
                       );
                       if (selectedProduct?.image) {
                         return (
-                          <div className="relative">
+                          <div className="relative w-full h-[200px]">
                             {/* Base product image */}
                             <img
                               src={selectedProduct.image}
                               alt={selectedProduct.title}
-                              className="max-h-48 object-contain"
+                              className="absolute inset-0 w-full h-full object-contain"
                             />
                             {/* Logo overlay */}
                             {logoUrl && (
-                              <div className="absolute inset-0 flex items-center justify-center">
-                                <img
-                                  src={logoUrl}
-                                  alt="Logo overlay"
-                                  className="max-h-20 max-w-[60%] object-contain drop-shadow-lg"
-                                  style={{ 
-                                    marginTop: selectedProduct.type_name?.toLowerCase().includes('sticker') ? '0' : '-10%'
-                                  }}
-                                  onError={(e) => {
-                                    (e.target as HTMLImageElement).style.display = "none";
-                                  }}
-                                />
-                              </div>
+                              <img
+                                src={logoUrl}
+                                alt="Logo overlay"
+                                className="absolute object-contain drop-shadow-lg pointer-events-none"
+                                style={{
+                                  width: `${logoSize}%`,
+                                  maxWidth: `${logoSize}%`,
+                                  left: `${logoPositionX}%`,
+                                  top: `${logoPositionY}%`,
+                                  transform: 'translate(-50%, -50%)',
+                                }}
+                                onError={(e) => {
+                                  (e.target as HTMLImageElement).style.display = "none";
+                                }}
+                              />
                             )}
                           </div>
                         );
@@ -700,7 +726,58 @@ export function PrintfulManagement() {
                       );
                     })()}
                   </div>
-                  <p className="text-xs text-muted-foreground mt-2 text-center">
+                  
+                  {/* Logo adjustment controls */}
+                  {logoUrl && selectedCatalogProduct && (
+                    <div className="mt-4 space-y-4">
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <Label className="text-xs">サイズ</Label>
+                          <span className="text-xs text-muted-foreground">{logoSize}%</span>
+                        </div>
+                        <Slider
+                          value={[logoSize]}
+                          onValueChange={([value]) => setLogoSize(value)}
+                          min={10}
+                          max={100}
+                          step={5}
+                          className="w-full"
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <Label className="text-xs">横位置</Label>
+                            <span className="text-xs text-muted-foreground">{logoPositionX}%</span>
+                          </div>
+                          <Slider
+                            value={[logoPositionX]}
+                            onValueChange={([value]) => setLogoPositionX(value)}
+                            min={0}
+                            max={100}
+                            step={5}
+                            className="w-full"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <Label className="text-xs">縦位置</Label>
+                            <span className="text-xs text-muted-foreground">{logoPositionY}%</span>
+                          </div>
+                          <Slider
+                            value={[logoPositionY]}
+                            onValueChange={([value]) => setLogoPositionY(value)}
+                            min={0}
+                            max={100}
+                            step={5}
+                            className="w-full"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  <p className="text-xs text-muted-foreground mt-3 text-center">
                     {logoUrl ? "※ 実際の印刷位置とは異なる場合があります" : "ロゴ画像を追加するとプレビューが表示されます"}
                   </p>
                 </div>
