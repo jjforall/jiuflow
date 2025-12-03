@@ -1110,12 +1110,12 @@ export function PrintfulManagement() {
 
       {/* Create Product Dialog */}
       <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto overflow-x-hidden">
           <DialogHeader>
             <DialogTitle>新規商品を作成</DialogTitle>
           </DialogHeader>
           
-          <div className="space-y-6">
+          <div className="space-y-6 w-full overflow-hidden">
             {/* Step 1: Logo Selection */}
             <div className="space-y-2">
               <Label>1. イメージを選択</Label>
