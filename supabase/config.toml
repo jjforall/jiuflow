@@ -89,3 +89,6 @@ verify_jwt = true
 [functions.create-founder-trial-link]
 verify_jwt = false
 
+[functions.create-team-member]
+verify_jwt = false
+
