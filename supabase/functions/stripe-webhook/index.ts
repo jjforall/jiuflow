@@ -13,6 +13,85 @@ const logStep = (step: string, details?: any) => {
   console.log(`[STRIPE-WEBHOOK] ${step}${detailsStr}`);
 };
 
+// Function to create Printful order
+async function createPrintfulOrder(
+  session: Stripe.Checkout.Session,
+  cartItems: { variantId: number; quantity: number }[]
+) {
+  const PRINTFUL_API_KEY = Deno.env.get("PRINTFUL_API_KEY");
+  if (!PRINTFUL_API_KEY) {
+    throw new Error("PRINTFUL_API_KEY is not set");
+  }
+
+  const shippingDetails = session.shipping_details;
+  if (!shippingDetails?.address) {
+    throw new Error("No shipping address in session");
+  }
+
+  logStep("Creating Printful order", { 
+    cartItems,
+    shippingName: shippingDetails.name,
+    shippingAddress: shippingDetails.address
+  });
+
+  // Build order items
+  const orderItems = cartItems.map(item => ({
+    sync_variant_id: item.variantId,
+    quantity: item.quantity,
+  }));
+
+  // Build recipient info
+  const recipient = {
+    name: shippingDetails.name || session.customer_details?.name || "Customer",
+    address1: shippingDetails.address.line1 || "",
+    address2: shippingDetails.address.line2 || "",
+    city: shippingDetails.address.city || "",
+    state_code: shippingDetails.address.state || "",
+    country_code: shippingDetails.address.country || "JP",
+    zip: shippingDetails.address.postal_code || "",
+    email: session.customer_details?.email || session.customer_email || "",
+    phone: session.customer_details?.phone || "",
+  };
+
+  const orderData = {
+    recipient,
+    items: orderItems,
+    retail_costs: {
+      currency: "JPY",
+      subtotal: session.amount_subtotal ? (session.amount_subtotal / 100).toString() : "0",
+      total: session.amount_total ? (session.amount_total / 100).toString() : "0",
+    },
+  };
+
+  logStep("Sending order to Printful", { orderData });
+
+  const response = await fetch("https://api.printful.com/orders", {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${PRINTFUL_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(orderData),
+  });
+
+  const result = await response.json();
+
+  if (!response.ok) {
+    logStep("ERROR creating Printful order", { 
+      status: response.status,
+      result 
+    });
+    throw new Error(`Printful API error: ${result.error?.message || JSON.stringify(result)}`);
+  }
+
+  logStep("Printful order created successfully", { 
+    orderId: result.result?.id,
+    status: result.result?.status 
+  });
+
+  return result;
+}
+
 serve(async (req) => {
   logStep("Webhook received", { 
     method: req.method,
@@ -62,6 +141,36 @@ serve(async (req) => {
           paymentStatus: session.payment_status,
           metadata: session.metadata
         });
+
+        // Handle Printful orders (cart_items in metadata)
+        if (session.mode === "payment" && session.metadata?.cart_items) {
+          logStep("Processing Printful order", {
+            sessionId: session.id,
+            cartItems: session.metadata.cart_items
+          });
+
+          try {
+            const cartItems = JSON.parse(session.metadata.cart_items);
+            
+            // Retrieve the full session with shipping details
+            const fullSession = await stripe.checkout.sessions.retrieve(session.id, {
+              expand: ['shipping_details', 'customer_details'],
+            });
+
+            const printfulResult = await createPrintfulOrder(fullSession, cartItems);
+            logStep("Printful order created", { 
+              orderId: printfulResult.result?.id,
+              sessionId: session.id 
+            });
+          } catch (printfulError) {
+            logStep("ERROR creating Printful order", { 
+              error: printfulError instanceof Error ? printfulError.message : String(printfulError),
+              sessionId: session.id
+            });
+            // Don't throw - we still want to acknowledge the webhook
+          }
+          break;
+        }
 
         // Handle video tip payments
         if (session.mode === "payment" && session.metadata?.videoId && session.metadata?.userId) {
