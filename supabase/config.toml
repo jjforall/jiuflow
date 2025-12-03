@@ -92,3 +92,9 @@ verify_jwt = false
 [functions.create-team-member]
 verify_jwt = false
 
+[functions.get-printful-products]
+verify_jwt = false
+
+[functions.create-printful-checkout]
+verify_jwt = false
+
