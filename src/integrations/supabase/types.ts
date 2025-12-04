@@ -420,6 +420,138 @@ export type Database = {
           },
         ]
       }
+      community_categories: {
+        Row: {
+          created_at: string
+          description: string | null
+          description_ja: string | null
+          description_pt: string | null
+          icon: string | null
+          id: string
+          name: string
+          name_ja: string
+          name_pt: string
+          sort_order: number | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          description_ja?: string | null
+          description_pt?: string | null
+          icon?: string | null
+          id?: string
+          name: string
+          name_ja: string
+          name_pt: string
+          sort_order?: number | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          description_ja?: string | null
+          description_pt?: string | null
+          icon?: string | null
+          id?: string
+          name?: string
+          name_ja?: string
+          name_pt?: string
+          sort_order?: number | null
+        }
+        Relationships: []
+      }
+      community_posts: {
+        Row: {
+          author_id: string
+          content: string
+          created_at: string
+          id: string
+          thread_id: string
+          updated_at: string
+        }
+        Insert: {
+          author_id: string
+          content: string
+          created_at?: string
+          id?: string
+          thread_id: string
+          updated_at?: string
+        }
+        Update: {
+          author_id?: string
+          content?: string
+          created_at?: string
+          id?: string
+          thread_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "community_posts_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "community_posts_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "community_threads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      community_threads: {
+        Row: {
+          author_id: string
+          category_id: string
+          content: string
+          created_at: string
+          id: string
+          is_pinned: boolean | null
+          title: string
+          updated_at: string
+          view_count: number | null
+        }
+        Insert: {
+          author_id: string
+          category_id: string
+          content: string
+          created_at?: string
+          id?: string
+          is_pinned?: boolean | null
+          title: string
+          updated_at?: string
+          view_count?: number | null
+        }
+        Update: {
+          author_id?: string
+          category_id?: string
+          content?: string
+          created_at?: string
+          id?: string
+          is_pinned?: boolean | null
+          title?: string
+          updated_at?: string
+          view_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "community_threads_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "community_threads_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "community_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contact_messages: {
         Row: {
           created_at: string
