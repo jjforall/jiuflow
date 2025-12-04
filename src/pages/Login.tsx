@@ -73,12 +73,29 @@ const Login = () => {
       }
 
       if (data.session) {
-        toast.success(
-          language === "ja" 
-            ? "ログインしました" 
-            : "Logged in successfully"
-        );
-        navigate("/map");
+        // Wait for session to be persisted (important for Safari)
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        // Verify session was actually stored
+        const { data: { session: verifiedSession } } = await supabase.auth.getSession();
+        
+        if (verifiedSession) {
+          toast.success(
+            language === "ja" 
+              ? "ログインしました" 
+              : "Logged in successfully"
+          );
+          // Use window.location for more reliable navigation on Safari
+          window.location.href = "/map";
+        } else {
+          // Session wasn't stored properly, try again
+          toast.error(
+            language === "ja" 
+              ? "セッションの保存に失敗しました。もう一度お試しください。" 
+              : "Failed to save session. Please try again."
+          );
+          setIsLoading(false);
+        }
       }
     } catch (error) {
       if (error instanceof z.ZodError) {
