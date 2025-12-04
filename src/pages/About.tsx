@@ -680,7 +680,7 @@ const About = () => {
                     </Button>
                   ) : (
                     <Button onClick={() => navigate("/join")} size="lg" className="text-lg px-8 py-6">
-                      {language === "ja" ? "プランを見る" : language === "pt" ? "Ver Planos" : "View Plans"}
+                      {language === "ja" ? "メンバーになる" : language === "pt" ? "Torne-se Membro" : "Become a Member"}
                       <ArrowRight className="ml-2 w-5 h-5" />
                     </Button>
                   )}
