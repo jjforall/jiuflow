@@ -103,6 +103,10 @@ export default {
           from: { transform: "scale(0.8)", opacity: "0" },
           to: { transform: "scale(1)", opacity: "1" },
         },
+        "shimmer": {
+          "0%": { transform: "translateX(-100%)" },
+          "100%": { transform: "translateX(100%)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
