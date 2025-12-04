@@ -11,13 +11,16 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { Loader2 } from 'lucide-react';
 
 const Logout = () => {
   const { signOut } = useAuth();
   const navigate = useNavigate();
   const [open, setOpen] = useState(true);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const handleLogout = async () => {
+    setIsLoggingOut(true);
     await signOut();
   };
 
@@ -27,7 +30,7 @@ const Logout = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background flex items-center justify-center">
       <AlertDialog open={open} onOpenChange={setOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -37,8 +40,19 @@ const Logout = () => {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={handleCancel}>キャンセル</AlertDialogCancel>
-            <AlertDialogAction onClick={handleLogout}>ログアウト</AlertDialogAction>
+            <AlertDialogCancel onClick={handleCancel} disabled={isLoggingOut}>
+              キャンセル
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={handleLogout} disabled={isLoggingOut}>
+              {isLoggingOut ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ログアウト中...
+                </>
+              ) : (
+                'ログアウト'
+              )}
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
