@@ -20,6 +20,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { MapLoadingState } from "@/components/MapLoadingState";
 import mapBackground from "@/assets/jiuflow-map-background.png";
 
 interface Technique {
@@ -71,6 +72,7 @@ const Map = () => {
   const [seriesTechniques, setSeriesTechniques] = useState<SeriesTechniques>({});
   const [videoViews, setVideoViews] = useState<Record<string, number>>({});
   const [searchQuery, setSearchQuery] = useState("");
+  const [loadingStartTime] = useState(() => Date.now()); // Track when loading started
   const observerTarget = useRef<HTMLDivElement>(null);
   const PAGE_SIZE = 50;
 
@@ -356,17 +358,7 @@ const Map = () => {
           </div>
 
           {authLoading || isLoading || subscriptionLoading || (user && !hasFetched) ? (
-            <div className="animate-fade-in">
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-4">
-                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((i) => (
-                  <div key={i} className="space-y-2">
-                    <div className="aspect-video w-full bg-muted rounded-lg animate-pulse" />
-                    <div className="h-4 w-3/4 bg-muted rounded animate-pulse" />
-                    <div className="h-3 w-1/2 bg-muted rounded animate-pulse" />
-                  </div>
-                ))}
-              </div>
-            </div>
+            <MapLoadingState startTime={loadingStartTime} />
           ) : !user ? (
             <div className="text-center py-12 animate-fade-up">
               <div className="max-w-2xl mx-auto space-y-8">
