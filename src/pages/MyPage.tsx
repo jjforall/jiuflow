@@ -97,12 +97,14 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
 interface SubscriptionStatus {
   subscribed: boolean;
   product_id?: string;
   price_id?: string;
+  stripe_subscription_id?: string;
   subscription_end?: string;
   is_trialing?: boolean;
 }
@@ -195,6 +197,43 @@ const MyPage = () => {
   const [selectedRelationshipType, setSelectedRelationshipType] = useState<"home" | "training">("home");
   const [coverGalleryOpen, setCoverGalleryOpen] = useState(false);
   const [coverUploadOpen, setCoverUploadOpen] = useState(false);
+  const [showCancelSubscriptionDialog, setShowCancelSubscriptionDialog] = useState(false);
+  const [isCancellingSubscription, setIsCancellingSubscription] = useState(false);
+
+  const handleCancelSubscription = async () => {
+    if (!subscription?.stripe_subscription_id) {
+      toast.error(language === "ja" ? "サブスクリプション情報が見つかりません" : "Subscription not found");
+      return;
+    }
+
+    setIsCancellingSubscription(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error(language === "ja" ? "ログインが必要です" : "Please log in");
+        return;
+      }
+
+      const { data, error } = await supabase.functions.invoke('cancel-subscription', {
+        body: { subscriptionId: subscription.stripe_subscription_id }
+      });
+
+      if (error) throw error;
+
+      toast.success(
+        language === "ja" 
+          ? "プランを解約しました。現在の請求期間終了までご利用いただけます。" 
+          : "Subscription cancelled. You can continue using the service until the end of your billing period."
+      );
+      setShowCancelSubscriptionDialog(false);
+      await checkSubscription();
+    } catch (error) {
+      console.error('Error cancelling subscription:', error);
+      toast.error(language === "ja" ? "解約に失敗しました" : "Failed to cancel subscription");
+    } finally {
+      setIsCancellingSubscription(false);
+    }
+  };
 
   const loadUserVideos = useCallback(async () => {
     if (!user) return;
@@ -1115,7 +1154,10 @@ const MyPage = () => {
       });
       
       if (error) throw error;
-      setSubscription(data);
+      setSubscription({
+        ...data,
+        stripe_subscription_id: data.subscription_id,
+      });
     } catch (error: unknown) {
       console.error("Subscription check error:", error);
       toast.error(language === "ja" ? "サブスクリプション情報の取得に失敗しました" : "Failed to fetch subscription");
@@ -3012,11 +3054,50 @@ const MyPage = () => {
                         <p className="font-light">{formatDate(subscription.subscription_end)}</p>
                       </div>
                     )}
-                    <div className="pt-4">
+                    <div className="pt-4 space-y-3">
                       {subscription?.subscribed ? (
-                        <p className="text-sm text-green-600 dark:text-green-400">
-                          ✓ {language === "ja" ? "有効なプラン" : "Active Plan"}
-                        </p>
+                        <>
+                          <p className="text-sm text-green-600 dark:text-green-400">
+                            ✓ {language === "ja" ? "有効なプラン" : "Active Plan"}
+                          </p>
+                          <AlertDialog open={showCancelSubscriptionDialog} onOpenChange={setShowCancelSubscriptionDialog}>
+                            <AlertDialogTrigger asChild>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="text-destructive border-destructive/50 hover:bg-destructive/10"
+                              >
+                                {language === "ja" ? "プランを解約する" : "Cancel Subscription"}
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>
+                                  {language === "ja" ? "プランの解約" : "Cancel Subscription"}
+                                </AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  {language === "ja" 
+                                    ? "本当にプランを解約しますか？解約後も現在の請求期間終了までは引き続きご利用いただけます。" 
+                                    : "Are you sure you want to cancel your subscription? You will still have access until the end of your current billing period."}
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>
+                                  {language === "ja" ? "キャンセル" : "Cancel"}
+                                </AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={handleCancelSubscription}
+                                  disabled={isCancellingSubscription}
+                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                >
+                                  {isCancellingSubscription 
+                                    ? (language === "ja" ? "処理中..." : "Processing...") 
+                                    : (language === "ja" ? "解約する" : "Confirm Cancel")}
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </>
                       ) : (
                         <Button
                           onClick={() => navigate("/join")}

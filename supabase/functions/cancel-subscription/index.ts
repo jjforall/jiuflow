@@ -33,19 +33,15 @@ serve(async (req) => {
     const token = authHeader.replace('Bearer ', '');
     logStep("Authorization header found");
     
-    // Create Supabase client with anon key for user authentication
-    const supabaseClient = createClient(
+    // Create Supabase client with service role for database operations
+    const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_ANON_KEY") ?? "",
-      {
-        global: {
-          headers: { Authorization: authHeader }
-        }
-      }
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+      { auth: { persistSession: false } }
     );
 
-    // Verify user identity using the anon client
-    const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
+    // Verify user identity
+    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
     if (authError || !user) {
       logStep("Authentication failed", { error: authError?.message });
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
@@ -55,29 +51,16 @@ serve(async (req) => {
     }
     logStep("User authenticated", { userId: user.id, email: user.email });
 
-    // Use service role client for admin check
-    const supabaseAdmin = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
-      { auth: { persistSession: false } }
-    );
-
-    // Verify admin role using service role client
-    const { data: adminRole, error: roleError } = await supabaseAdmin
+    // Check if user is admin
+    const { data: adminRole } = await supabaseAdmin
       .from('user_roles')
       .select('role')
       .eq('user_id', user.id)
       .eq('role', 'admin')
       .maybeSingle();
 
-    if (roleError || !adminRole) {
-      logStep("Admin check failed", { error: roleError?.message });
-      return new Response(JSON.stringify({ error: 'Forbidden: Admin access required' }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 403,
-      });
-    }
-    logStep("Admin verified");
+    const isAdmin = !!adminRole;
+    logStep("Admin check", { isAdmin });
 
     // Get subscription ID from request body
     const { subscriptionId } = await req.json();
@@ -104,21 +87,56 @@ serve(async (req) => {
     });
     logStep("Stripe initialized");
 
-    // Cancel the subscription
-    const canceledSubscription = await stripe.subscriptions.cancel(subscriptionId);
-    logStep("Subscription canceled", { id: canceledSubscription.id, status: canceledSubscription.status });
+    // If not admin, verify the user owns this subscription
+    if (!isAdmin) {
+      // Get the subscription from Stripe to verify ownership
+      const stripeSubscription = await stripe.subscriptions.retrieve(subscriptionId);
+      const customerId = stripeSubscription.customer as string;
+      
+      // Get customer email from Stripe
+      const customer = await stripe.customers.retrieve(customerId);
+      if (customer.deleted) {
+        return new Response(JSON.stringify({ error: 'Customer not found' }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 404,
+        });
+      }
+
+      const customerEmail = (customer as Stripe.Customer).email;
+      
+      // Verify user email matches customer email
+      if (customerEmail?.toLowerCase() !== user.email?.toLowerCase()) {
+        logStep("User does not own this subscription", { userEmail: user.email, customerEmail });
+        return new Response(JSON.stringify({ error: 'You can only cancel your own subscription' }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 403,
+        });
+      }
+      logStep("User ownership verified", { email: user.email });
+    }
+
+    // Cancel the subscription at period end (user-friendly approach)
+    const canceledSubscription = await stripe.subscriptions.update(subscriptionId, {
+      cancel_at_period_end: true,
+    });
+    logStep("Subscription set to cancel at period end", { 
+      id: canceledSubscription.id, 
+      status: canceledSubscription.status,
+      cancel_at_period_end: canceledSubscription.cancel_at_period_end 
+    });
 
     // Update the local subscriptions table
     await supabaseAdmin
       .from('subscriptions')
-      .update({ status: 'canceled' })
+      .update({ status: 'canceling' })
       .eq('stripe_subscription_id', subscriptionId);
 
     return new Response(JSON.stringify({ 
       success: true,
       subscription: {
         id: canceledSubscription.id,
-        status: canceledSubscription.status
+        status: canceledSubscription.status,
+        cancel_at_period_end: canceledSubscription.cancel_at_period_end
       }
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
