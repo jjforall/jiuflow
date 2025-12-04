@@ -1,13 +1,74 @@
 import { useState } from "react";
-import { ChevronDown, ChevronRight, Circle } from "lucide-react";
+import { ChevronDown, ChevronRight, Circle, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 interface TechniqueNode {
   id: string;
   name: { ja: string; en: string; pt: string };
+  isTransition?: boolean;
   children?: TechniqueNode[];
 }
+
+// Define positions as reusable building blocks
+const closedGuardTechniques: TechniqueNode[] = [
+  { id: "armbar-cg", name: { ja: "腕十字", en: "Armbar", pt: "Armlock" } },
+  { id: "triangle-cg", name: { ja: "三角絞め", en: "Triangle Choke", pt: "Triângulo" } },
+  { id: "omoplata-cg", name: { ja: "オモプラッタ", en: "Omoplata", pt: "Omoplata" } },
+  { id: "kimura-cg", name: { ja: "キムラ", en: "Kimura", pt: "Kimura" } },
+  { id: "hip-bump-sweep", name: { ja: "ヒップバンプスイープ", en: "Hip Bump Sweep", pt: "Hip Bump Sweep" } },
+  { id: "scissor-sweep", name: { ja: "シザースイープ", en: "Scissor Sweep", pt: "Tesoura" } },
+];
+
+const halfGuardTechniques: TechniqueNode[] = [
+  { id: "sweep-hg", name: { ja: "スイープ", en: "Sweep", pt: "Raspagem" } },
+  { id: "underhook-hg", name: { ja: "アンダーフック", en: "Underhook", pt: "Underhook" } },
+  { id: "deep-half", name: { ja: "ディープハーフ", en: "Deep Half", pt: "Meia Profunda" } },
+  { id: "lockdown", name: { ja: "ロックダウン", en: "Lockdown", pt: "Lockdown" } },
+];
+
+const spiderGuardTechniques: TechniqueNode[] = [
+  { id: "triangle-spider", name: { ja: "三角絞め", en: "Triangle", pt: "Triângulo" } },
+  { id: "omoplata-spider", name: { ja: "オモプラッタ", en: "Omoplata", pt: "Omoplata" } },
+  { id: "spider-sweep", name: { ja: "スパイダースイープ", en: "Spider Sweep", pt: "Raspagem Aranha" } },
+];
+
+const dlrTechniques: TechniqueNode[] = [
+  { id: "berimbolo", name: { ja: "ベリンボロ", en: "Berimbolo", pt: "Berimbolo" } },
+  { id: "dlr-sweep", name: { ja: "DLRスイープ", en: "DLR Sweep", pt: "Raspagem DLR" } },
+  { id: "back-take-dlr", name: { ja: "バックテイク", en: "Back Take", pt: "Pegada de Costas" } },
+];
+
+const lassoTechniques: TechniqueNode[] = [
+  { id: "omoplata-lasso", name: { ja: "オモプラッタ", en: "Omoplata", pt: "Omoplata" } },
+  { id: "triangle-lasso", name: { ja: "三角絞め", en: "Triangle", pt: "Triângulo" } },
+  { id: "lasso-sweep", name: { ja: "ラッソースイープ", en: "Lasso Sweep", pt: "Raspagem Laço" } },
+];
+
+const xGuardTechniques: TechniqueNode[] = [
+  { id: "x-sweep", name: { ja: "Xスイープ", en: "X Sweep", pt: "Raspagem X" } },
+  { id: "slx", name: { ja: "シングルレッグX", en: "Single Leg X", pt: "X de Uma Perna" } },
+  { id: "tech-standup", name: { ja: "テクニカルスタンドアップ", en: "Technical Stand-up", pt: "Levantada Técnica" } },
+];
+
+const mountTechniques: TechniqueNode[] = [
+  { id: "armbar-mount", name: { ja: "腕十字", en: "Armbar", pt: "Armlock" } },
+  { id: "cross-collar", name: { ja: "十字絞め", en: "Cross Collar Choke", pt: "Estrangulamento Cruzado" } },
+  { id: "ezekiel", name: { ja: "エゼキエル", en: "Ezekiel Choke", pt: "Ezequiel" } },
+  { id: "americana-mount", name: { ja: "アメリカーナ", en: "Americana", pt: "Americana" } },
+];
+
+const backControlTechniques: TechniqueNode[] = [
+  { id: "rnc", name: { ja: "リアネイキッドチョーク", en: "Rear Naked Choke", pt: "Mata Leão" } },
+  { id: "bow-arrow", name: { ja: "ボウ＆アロー", en: "Bow and Arrow", pt: "Arco e Flecha" } },
+  { id: "armbar-back", name: { ja: "腕十字", en: "Armbar", pt: "Armlock" } },
+];
+
+const sideControlTechniques: TechniqueNode[] = [
+  { id: "americana", name: { ja: "アメリカーナ", en: "Americana", pt: "Americana" } },
+  { id: "kimura-sc", name: { ja: "キムラ", en: "Kimura", pt: "Kimura" } },
+  { id: "arm-triangle", name: { ja: "アームトライアングル", en: "Arm Triangle", pt: "Kata Gatame" } },
+];
 
 const techniqueTree: TechniqueNode[] = [
   {
@@ -18,19 +79,34 @@ const techniqueTree: TechniqueNode[] = [
         id: "closed-guard",
         name: { ja: "クローズドガード", en: "Closed Guard", pt: "Guarda Fechada" },
         children: [
-          { id: "armbar-cg", name: { ja: "腕十字", en: "Armbar", pt: "Armlock" } },
-          { id: "triangle-cg", name: { ja: "三角絞め", en: "Triangle Choke", pt: "Triângulo" } },
-          { id: "omoplata-cg", name: { ja: "オモプラッタ", en: "Omoplata", pt: "Omoplata" } },
-          { id: "kimura-cg", name: { ja: "キムラ", en: "Kimura", pt: "Kimura" } },
-          { id: "hip-bump-sweep", name: { ja: "ヒップバンプスイープ", en: "Hip Bump Sweep", pt: "Hip Bump Sweep" } },
-          { id: "scissor-sweep", name: { ja: "シザースイープ", en: "Scissor Sweep", pt: "Tesoura" } },
+          ...closedGuardTechniques,
           {
             id: "cg-transitions",
             name: { ja: "→ ポジション移行", en: "→ Position Transitions", pt: "→ Transições" },
+            isTransition: true,
             children: [
-              { id: "cg-to-open", name: { ja: "→ オープンガードへ", en: "→ Open Guard", pt: "→ Guarda Aberta" } },
-              { id: "cg-to-half", name: { ja: "→ ハーフガードへ", en: "→ Half Guard", pt: "→ Meia Guarda" } },
-              { id: "cg-to-mount", name: { ja: "→ マウント（スイープ成功時）", en: "→ Mount (on sweep)", pt: "→ Montada" } },
+              { 
+                id: "cg-to-open", 
+                name: { ja: "→ オープンガードへ", en: "→ Open Guard", pt: "→ Guarda Aberta" },
+                isTransition: true,
+                children: [
+                  { id: "og-spider-from-cg", name: { ja: "スパイダーガード", en: "Spider Guard", pt: "Guarda Aranha" }, children: spiderGuardTechniques },
+                  { id: "og-dlr-from-cg", name: { ja: "デラヒーバ", en: "De La Riva", pt: "De La Riva" }, children: dlrTechniques },
+                  { id: "og-lasso-from-cg", name: { ja: "ラッソーガード", en: "Lasso Guard", pt: "Guarda Laço" }, children: lassoTechniques },
+                ],
+              },
+              { 
+                id: "cg-to-half", 
+                name: { ja: "→ ハーフガードへ", en: "→ Half Guard", pt: "→ Meia Guarda" },
+                isTransition: true,
+                children: halfGuardTechniques,
+              },
+              { 
+                id: "cg-to-mount", 
+                name: { ja: "→ マウント（スイープ成功時）", en: "→ Mount (on sweep)", pt: "→ Montada" },
+                isTransition: true,
+                children: mountTechniques,
+              },
             ],
           },
         ],
@@ -42,37 +118,41 @@ const techniqueTree: TechniqueNode[] = [
           {
             id: "spider-guard",
             name: { ja: "スパイダーガード", en: "Spider Guard", pt: "Guarda Aranha" },
-            children: [
-              { id: "triangle-spider", name: { ja: "三角絞め", en: "Triangle", pt: "Triângulo" } },
-              { id: "omoplata-spider", name: { ja: "オモプラッタ", en: "Omoplata", pt: "Omoplata" } },
-              { id: "spider-sweep", name: { ja: "スパイダースイープ", en: "Spider Sweep", pt: "Raspagem Aranha" } },
-            ],
+            children: spiderGuardTechniques,
           },
           {
             id: "de-la-riva",
             name: { ja: "デラヒーバ", en: "De La Riva", pt: "De La Riva" },
-            children: [
-              { id: "berimbolo", name: { ja: "ベリンボロ", en: "Berimbolo", pt: "Berimbolo" } },
-              { id: "dlr-sweep", name: { ja: "DLRスイープ", en: "DLR Sweep", pt: "Raspagem DLR" } },
-              { id: "back-take-dlr", name: { ja: "バックテイク", en: "Back Take", pt: "Pegada de Costas" } },
-            ],
+            children: dlrTechniques,
           },
           {
             id: "lasso-guard",
             name: { ja: "ラッソーガード", en: "Lasso Guard", pt: "Guarda Laço" },
-            children: [
-              { id: "omoplata-lasso", name: { ja: "オモプラッタ", en: "Omoplata", pt: "Omoplata" } },
-              { id: "triangle-lasso", name: { ja: "三角絞め", en: "Triangle", pt: "Triângulo" } },
-              { id: "lasso-sweep", name: { ja: "ラッソースイープ", en: "Lasso Sweep", pt: "Raspagem Laço" } },
-            ],
+            children: lassoTechniques,
           },
           {
             id: "og-transitions",
             name: { ja: "→ ポジション移行", en: "→ Position Transitions", pt: "→ Transições" },
+            isTransition: true,
             children: [
-              { id: "og-to-closed", name: { ja: "→ クローズドガードへ", en: "→ Closed Guard", pt: "→ Guarda Fechada" } },
-              { id: "og-to-half", name: { ja: "→ ハーフガードへ", en: "→ Half Guard", pt: "→ Meia Guarda" } },
-              { id: "og-to-xguard", name: { ja: "→ Xガードへ", en: "→ X Guard", pt: "→ Guarda X" } },
+              { 
+                id: "og-to-closed", 
+                name: { ja: "→ クローズドガードへ", en: "→ Closed Guard", pt: "→ Guarda Fechada" },
+                isTransition: true,
+                children: closedGuardTechniques,
+              },
+              { 
+                id: "og-to-half", 
+                name: { ja: "→ ハーフガードへ", en: "→ Half Guard", pt: "→ Meia Guarda" },
+                isTransition: true,
+                children: halfGuardTechniques,
+              },
+              { 
+                id: "og-to-xguard", 
+                name: { ja: "→ Xガードへ", en: "→ X Guard", pt: "→ Guarda X" },
+                isTransition: true,
+                children: xGuardTechniques,
+              },
             ],
           },
         ],
@@ -81,18 +161,39 @@ const techniqueTree: TechniqueNode[] = [
         id: "half-guard",
         name: { ja: "ハーフガード", en: "Half Guard", pt: "Meia Guarda" },
         children: [
-          { id: "sweep-hg", name: { ja: "スイープ", en: "Sweep", pt: "Raspagem" } },
-          { id: "underhook-hg", name: { ja: "アンダーフック", en: "Underhook", pt: "Underhook" } },
-          { id: "deep-half", name: { ja: "ディープハーフ", en: "Deep Half", pt: "Meia Profunda" } },
-          { id: "lockdown", name: { ja: "ロックダウン", en: "Lockdown", pt: "Lockdown" } },
+          ...halfGuardTechniques,
           {
             id: "hg-transitions",
             name: { ja: "→ ポジション移行", en: "→ Position Transitions", pt: "→ Transições" },
+            isTransition: true,
             children: [
-              { id: "hg-to-closed", name: { ja: "→ クローズドガードへ", en: "→ Closed Guard", pt: "→ Guarda Fechada" } },
-              { id: "hg-to-open", name: { ja: "→ オープンガードへ", en: "→ Open Guard", pt: "→ Guarda Aberta" } },
-              { id: "hg-to-back", name: { ja: "→ バックテイク", en: "→ Back Take", pt: "→ Pegada de Costas" } },
-              { id: "hg-to-mount", name: { ja: "→ マウント（スイープ成功時）", en: "→ Mount (on sweep)", pt: "→ Montada" } },
+              { 
+                id: "hg-to-closed", 
+                name: { ja: "→ クローズドガードへ", en: "→ Closed Guard", pt: "→ Guarda Fechada" },
+                isTransition: true,
+                children: closedGuardTechniques,
+              },
+              { 
+                id: "hg-to-open", 
+                name: { ja: "→ オープンガードへ", en: "→ Open Guard", pt: "→ Guarda Aberta" },
+                isTransition: true,
+                children: [
+                  { id: "og-spider-from-hg", name: { ja: "スパイダーガード", en: "Spider Guard", pt: "Guarda Aranha" }, children: spiderGuardTechniques },
+                  { id: "og-dlr-from-hg", name: { ja: "デラヒーバ", en: "De La Riva", pt: "De La Riva" }, children: dlrTechniques },
+                ],
+              },
+              { 
+                id: "hg-to-back", 
+                name: { ja: "→ バックテイク", en: "→ Back Take", pt: "→ Pegada de Costas" },
+                isTransition: true,
+                children: backControlTechniques,
+              },
+              { 
+                id: "hg-to-mount", 
+                name: { ja: "→ マウント（スイープ成功時）", en: "→ Mount (on sweep)", pt: "→ Montada" },
+                isTransition: true,
+                children: mountTechniques,
+              },
             ],
           },
         ],
@@ -130,37 +231,46 @@ const techniqueTree: TechniqueNode[] = [
         ],
       },
       {
-        id: "top-control",
-        name: { ja: "トップコントロール", en: "Top Control", pt: "Controle de Cima" },
+        id: "td-transitions",
+        name: { ja: "→ トップコントロールへ", en: "→ Top Control", pt: "→ Controle de Cima" },
+        isTransition: true,
         children: [
           {
             id: "side-control",
             name: { ja: "サイドコントロール", en: "Side Control", pt: "100 Kilos" },
             children: [
-              { id: "americana", name: { ja: "アメリカーナ", en: "Americana", pt: "Americana" } },
-              { id: "kimura-sc", name: { ja: "キムラ", en: "Kimura", pt: "Kimura" } },
-              { id: "arm-triangle", name: { ja: "アームトライアングル", en: "Arm Triangle", pt: "Kata Gatame" } },
-              { id: "mount-trans", name: { ja: "マウントへ移行", en: "Mount Transition", pt: "Passagem para Montada" } },
+              ...sideControlTechniques,
+              { 
+                id: "sc-to-mount", 
+                name: { ja: "→ マウントへ", en: "→ Mount", pt: "→ Montada" },
+                isTransition: true,
+                children: mountTechniques,
+              },
+              { 
+                id: "sc-to-back", 
+                name: { ja: "→ バックへ", en: "→ Back", pt: "→ Costas" },
+                isTransition: true,
+                children: backControlTechniques,
+              },
             ],
           },
           {
             id: "mount",
             name: { ja: "マウント", en: "Mount", pt: "Montada" },
             children: [
-              { id: "armbar-mount", name: { ja: "腕十字", en: "Armbar", pt: "Armlock" } },
-              { id: "cross-collar", name: { ja: "十字絞め", en: "Cross Collar Choke", pt: "Estrangulamento Cruzado" } },
-              { id: "ezekiel", name: { ja: "エゼキエル", en: "Ezekiel Choke", pt: "Ezequiel" } },
-              { id: "back-take-mount", name: { ja: "バックテイク", en: "Back Take", pt: "Pegada de Costas" } },
+              ...mountTechniques,
+              { 
+                id: "mount-to-back", 
+                name: { ja: "→ バックへ", en: "→ Back", pt: "→ Costas" },
+                isTransition: true,
+                children: backControlTechniques,
+              },
             ],
           },
           {
             id: "back-control",
             name: { ja: "バックコントロール", en: "Back Control", pt: "Controle de Costas" },
-            children: [
-              { id: "rnc", name: { ja: "リアネイキッドチョーク", en: "Rear Naked Choke", pt: "Mata Leão" } },
-              { id: "bow-arrow", name: { ja: "ボウ＆アロー", en: "Bow and Arrow", pt: "Arco e Flecha" } },
-              { id: "armbar-back", name: { ja: "腕十字", en: "Armbar", pt: "Armlock" } },
-            ],
+            children: backControlTechniques,
           },
         ],
       },
@@ -187,6 +297,7 @@ const CollapsibleNode = ({
   };
 
   const getBgColor = () => {
+    if (node.isTransition) return "bg-accent/20 border-accent/40 hover:bg-accent/30";
     if (depth === 0) return "bg-primary/10 border-primary/30 hover:bg-primary/20";
     if (depth === 1) return "bg-secondary/50 border-border hover:bg-secondary/70";
     if (depth === 2) return "bg-muted/50 border-border/50 hover:bg-muted/70";
@@ -214,11 +325,13 @@ const CollapsibleNode = ({
         ) : (
           <Circle className="w-2 h-2 flex-shrink-0 text-muted-foreground fill-current" />
         )}
+        {node.isTransition && <ArrowRight className="w-3 h-3 flex-shrink-0 text-accent-foreground" />}
         <span className={cn(
           "text-sm md:text-base",
           depth === 0 && "font-semibold text-primary",
           depth === 1 && "font-medium",
-          depth > 1 && "text-muted-foreground"
+          node.isTransition && "text-accent-foreground italic",
+          depth > 1 && !node.isTransition && "text-muted-foreground"
         )}>
           {getName()}
         </span>
@@ -230,7 +343,10 @@ const CollapsibleNode = ({
       </button>
 
       {hasChildren && isOpen && (
-        <div className="mt-1 space-y-1 border-l-2 border-primary/20 ml-2 pl-2">
+        <div className={cn(
+          "mt-1 space-y-1 ml-2 pl-2",
+          node.isTransition ? "border-l-2 border-accent/30" : "border-l-2 border-primary/20"
+        )}>
           {node.children?.map((child) => (
             <CollapsibleNode
               key={child.id}
@@ -255,9 +371,9 @@ export const TechniqueFlowchart = () => {
   };
 
   const descriptions = {
-    ja: "柔術の技は大きく「引き込み」と「テイクダウン」に分岐します。各項目をクリックして詳細を展開できます。",
-    en: "BJJ techniques branch into 'Guard Pull' and 'Takedown'. Click each item to expand details.",
-    pt: "As técnicas de BJJ se dividem em 'Puxada de Guarda' e 'Takedown'. Clique em cada item para expandir.",
+    ja: "柔術の技は大きく「引き込み」と「テイクダウン」に分岐します。各項目をクリックして展開し、ポジション移行から次の技を選べます。",
+    en: "BJJ techniques branch into 'Guard Pull' and 'Takedown'. Click to expand and explore transitions between positions.",
+    pt: "As técnicas de BJJ se dividem em 'Puxada de Guarda' e 'Takedown'. Clique para expandir e explorar transições.",
   };
 
   return (
