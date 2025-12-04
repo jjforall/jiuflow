@@ -377,6 +377,7 @@ export const VideoPlayer = ({ videoUrl, autoPlay = true, thumbnailUrl, onPlay }:
         className="w-full h-full"
         playsInline
         preload="metadata"
+        loop
         poster={thumbnailUrl || undefined}
         onContextMenu={(e) => e.preventDefault()}
         disablePictureInPicture
