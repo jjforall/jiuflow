@@ -2,8 +2,9 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useMusic } from "@/contexts/MusicContext";
+import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { Music, Headphones, AlertTriangle, BookOpen, Users, Map, Clock, MessageCircle } from "lucide-react";
+import { Music, Headphones, AlertTriangle, BookOpen, Users, Map, Clock, MessageCircle, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface MapLoadingStateProps {
@@ -13,6 +14,7 @@ interface MapLoadingStateProps {
 export const MapLoadingState = ({ startTime }: MapLoadingStateProps) => {
   const { language } = useLanguage();
   const { isPlaying, play, loadPlaylist, playlist } = useMusic();
+  const { user } = useAuth();
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [showTimeout, setShowTimeout] = useState(false);
 
@@ -96,6 +98,25 @@ export const MapLoadingState = ({ startTime }: MapLoadingStateProps) => {
                 : "Some users are experiencing connection issues. We're aware and working on it."}
             </p>
           </div>
+
+          {/* ログインユーザー向けログアウト案内 */}
+          {user && (
+            <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 max-w-md mx-auto">
+              <p className="text-sm text-amber-600 dark:text-amber-400 mb-3">
+                {language === "ja" 
+                  ? "セッションの問題の可能性があります。一度ログアウトして再度ログインをお試しください。" 
+                  : language === "pt" 
+                  ? "Pode ser um problema de sessão. Tente fazer logout e login novamente." 
+                  : "This may be a session issue. Try logging out and back in."}
+              </p>
+              <Link to="/logout">
+                <Button variant="outline" className="gap-2 w-full border-amber-500/50 hover:bg-amber-500/10">
+                  <LogOut className="w-4 h-4" />
+                  {language === "ja" ? "ログアウトする" : language === "pt" ? "Fazer logout" : "Log Out"}
+                </Button>
+              </Link>
+            </div>
+          )}
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button 
