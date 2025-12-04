@@ -47,6 +47,18 @@ export const MusicProvider = ({ children }: { children: ReactNode }) => {
   const [isShuffle, setIsShuffle] = useState(false);
   const [repeatMode, setRepeatMode] = useState<RepeatMode>("all");
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  
+  // Refs to avoid stale closures in event listeners
+  const playlistRef = useRef<MusicTrack[]>([]);
+  const currentTrackRef = useRef<MusicTrack | null>(null);
+  const repeatModeRef = useRef<RepeatMode>("all");
+  const isShuffleRef = useRef(false);
+
+  // Keep refs in sync with state
+  useEffect(() => { playlistRef.current = playlist; }, [playlist]);
+  useEffect(() => { currentTrackRef.current = currentTrack; }, [currentTrack]);
+  useEffect(() => { repeatModeRef.current = repeatMode; }, [repeatMode]);
+  useEffect(() => { isShuffleRef.current = isShuffle; }, [isShuffle]);
 
   useEffect(() => {
     audioRef.current = new Audio();
@@ -62,12 +74,57 @@ export const MusicProvider = ({ children }: { children: ReactNode }) => {
       setDuration(audio.duration);
     });
 
-    audio.addEventListener("ended", handleTrackEnd);
+    const handleEnded = () => {
+      if (repeatModeRef.current === "one") {
+        if (audioRef.current) {
+          audioRef.current.currentTime = 0;
+          audioRef.current.play();
+        }
+      } else {
+        // Get next track using refs
+        const pl = playlistRef.current;
+        const ct = currentTrackRef.current;
+        const shuffle = isShuffleRef.current;
+        const repeat = repeatModeRef.current;
+        
+        if (pl.length === 0) return;
+        
+        let nextTrack: MusicTrack | null = null;
+        
+        if (!ct) {
+          nextTrack = pl[0];
+        } else if (shuffle) {
+          const otherTracks = pl.filter((t) => t.id !== ct.id);
+          if (otherTracks.length === 0) {
+            nextTrack = ct;
+          } else {
+            nextTrack = otherTracks[Math.floor(Math.random() * otherTracks.length)];
+          }
+        } else {
+          const currentIndex = pl.findIndex((t) => t.id === ct.id);
+          const nextIndex = (currentIndex + 1) % pl.length;
+          
+          if (nextIndex === 0 && repeat === "off") {
+            nextTrack = null;
+          } else {
+            nextTrack = pl[nextIndex];
+          }
+        }
+        
+        if (nextTrack && audioRef.current) {
+          audioRef.current.src = nextTrack.audio_url;
+          setCurrentTrack(nextTrack);
+          audioRef.current.play();
+        }
+      }
+    };
 
+    audio.addEventListener("ended", handleEnded);
     audio.addEventListener("play", () => setIsPlaying(true));
     audio.addEventListener("pause", () => setIsPlaying(false));
 
     return () => {
+      audio.removeEventListener("ended", handleEnded);
       audio.pause();
       audio.src = "";
     };
@@ -129,16 +186,6 @@ export const MusicProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const handleTrackEnd = () => {
-    if (repeatMode === "one") {
-      if (audioRef.current) {
-        audioRef.current.currentTime = 0;
-        audioRef.current.play();
-      }
-    } else {
-      next();
-    }
-  };
 
   const getNextTrack = (): MusicTrack | null => {
     if (playlist.length === 0) return null;
