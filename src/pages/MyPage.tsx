@@ -32,6 +32,7 @@ import { CoverImageGalleryDialog } from "@/components/CoverImageGalleryDialog";
 import { FollowedCelebrities } from "@/components/FollowedCelebrities";
 import { PracticeRecords } from "@/components/PracticeRecords";
 import { WatchHistory } from "@/components/WatchHistory";
+import { GDPRSettings } from "@/components/GDPRSettings";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
@@ -3190,6 +3191,9 @@ const MyPage = () => {
                     </div>
                   </CardContent>
                 </Card>
+
+                {/* GDPR Privacy Settings */}
+                <GDPRSettings userEmail={user?.email} />
               </TabsContent>
             </Tabs>
           </div>

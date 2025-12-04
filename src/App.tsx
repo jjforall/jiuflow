@@ -15,6 +15,7 @@ import { MusicProvider } from "./contexts/MusicContext";
 import GlobalMusicPlayer from "./components/GlobalMusicPlayer";
 import PageLoadingSkeleton from "@/components/PageLoadingSkeleton";
 import { SuspenseWrapper } from "@/components/SuspenseWrapper";
+import CookieConsentBanner from "./components/CookieConsentBanner";
 
 // Lazy load route components for better performance
 const Home = lazy(() => import("./pages/Home"));
@@ -150,6 +151,7 @@ const App = () => (
                 </Routes>
               <FloatingVideoPlayer />
               <GlobalMusicPlayer />
+              <CookieConsentBanner />
             </MusicProvider>
             </FloatingVideoProvider>
           </AuthProvider>
