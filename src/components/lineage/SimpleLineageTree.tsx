@@ -4,6 +4,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ChevronDown, ChevronRight, Users } from "lucide-react";
 import { useTranslation } from "@/hooks/useTranslation";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { cn } from "@/lib/utils";
 
 interface Celebrity {
@@ -43,10 +44,25 @@ const getBeltStyle = (belt: string): string => {
   return styles[belt] || "bg-gray-400 border-gray-500";
 };
 
-function LineageNodeCard({ node, depth = 0 }: { node: LineageNode; depth?: number }) {
+const getBeltTranslation = (belt: string, language: string): string => {
+  const translations: Record<string, Record<string, string>> = {
+    White: { ja: "白帯", en: "White", pt: "Branca" },
+    Blue: { ja: "青帯", en: "Blue", pt: "Azul" },
+    Purple: { ja: "紫帯", en: "Purple", pt: "Roxa" },
+    Brown: { ja: "茶帯", en: "Brown", pt: "Marrom" },
+    Black: { ja: "黒帯", en: "Black", pt: "Preta" },
+    Coral: { ja: "コーラル帯", en: "Coral", pt: "Coral" },
+    Red: { ja: "赤帯", en: "Red", pt: "Vermelha" },
+    Unknown: { ja: "不明", en: "Unknown", pt: "Desconhecido" },
+  };
+  return translations[belt]?.[language] || belt;
+};
+
+function LineageNodeCard({ node, depth = 0, language }: { node: LineageNode; depth?: number; language: string }) {
   const [isExpanded, setIsExpanded] = useState(depth < 2);
   const belt = getBeltName(node.celebrity.belt_history);
   const beltStyle = getBeltStyle(belt);
+  const beltLabel = getBeltTranslation(belt, language);
   const hasStudents = node.students.length > 0;
 
   return (
@@ -121,7 +137,7 @@ function LineageNodeCard({ node, depth = 0 }: { node: LineageNode; depth?: numbe
               {node.celebrity.display_name}
             </Link>
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <span>{belt}</span>
+              <span>{beltLabel}</span>
               {node.celebrity.featured && <span className="text-amber-500">★</span>}
             </div>
           </div>
@@ -142,7 +158,8 @@ function LineageNodeCard({ node, depth = 0 }: { node: LineageNode; depth?: numbe
               <LineageNodeCard 
                 key={student.celebrity.id} 
                 node={student} 
-                depth={depth + 1} 
+                depth={depth + 1}
+                language={language}
               />
             ))}
           </div>
@@ -154,6 +171,16 @@ function LineageNodeCard({ node, depth = 0 }: { node: LineageNode; depth?: numbe
 
 export function SimpleLineageTree({ roots, isLoading }: SimpleLineageTreeProps) {
   const { t } = useTranslation();
+  const { language } = useLanguage();
+
+  const getInstructions = () => {
+    const instructions: Record<string, string> = {
+      ja: "タップして弟子を表示 • 名前をタップでプロフィールへ",
+      en: "Tap to show students • Tap name for profile",
+      pt: "Toque para mostrar alunos • Toque no nome para perfil"
+    };
+    return instructions[language] || instructions.en;
+  };
 
   if (isLoading) {
     return (
@@ -190,7 +217,7 @@ export function SimpleLineageTree({ roots, isLoading }: SimpleLineageTreeProps) 
         {["White", "Blue", "Purple", "Brown", "Black", "Coral", "Red"].map((belt) => (
           <div key={belt} className="flex items-center gap-1.5">
             <div className={cn("w-4 h-1.5 rounded-full border", getBeltStyle(belt))} />
-            <span className="text-muted-foreground">{belt}</span>
+            <span className="text-muted-foreground">{getBeltTranslation(belt, language)}</span>
           </div>
         ))}
       </div>
@@ -198,13 +225,13 @@ export function SimpleLineageTree({ roots, isLoading }: SimpleLineageTreeProps) 
       {/* Tree */}
       <div className="space-y-4">
         {roots.map((root) => (
-          <LineageNodeCard key={root.celebrity.id} node={root} />
+          <LineageNodeCard key={root.celebrity.id} node={root} language={language} />
         ))}
       </div>
 
       {/* Instructions */}
       <p className="text-xs text-muted-foreground text-center">
-        {t("lineageTree.simpleInstructions", "タップして弟子を表示 • 名前をタップでプロフィールへ")}
+        {getInstructions()}
       </p>
     </div>
   );
