@@ -136,7 +136,7 @@ export const translations = {
           career2: "元 株式会社メルカリ 取締役CINO",
         },
         nojima: {
-          role: "Engineering / Instructor",
+          role: "Co-Founder / Engineer",
           name: "野島 繁昭（Shigeaki Nojima）",
           position: "システム開発・テクニカルサポート",
           quote: "「論理をシステムに、そして強さに。世界王者になったエンジニア。」",
@@ -360,7 +360,7 @@ export const translations = {
           career2: "Former Mercari Inc. Executive Officer CINO",
         },
         nojima: {
-          role: "Engineering / Instructor",
+          role: "Co-Founder / Engineer",
           name: "Shigeaki Nojima",
           position: "System Development & Technical Support",
           quote: "\"Logic into systems, and into strength. An engineer who became a world champion.\"",
@@ -604,7 +604,7 @@ export const translations = {
           career2: "Ex-Diretor Executivo CINO Mercari Inc.",
         },
         nojima: {
-          role: "Engenharia / Instrutor",
+          role: "Co-Fundador / Engenheiro",
           name: "Shigeaki Nojima",
           position: "Desenvolvimento de Sistemas & Suporte Técnico",
           quote: "\"Lógica em sistemas, e em força. Um engenheiro que se tornou campeão mundial.\"",
