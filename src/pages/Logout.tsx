@@ -1,21 +1,14 @@
 import { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 
 const Logout = () => {
   const { signOut, isLoading } = useAuth();
-  const navigate = useNavigate();
 
   useEffect(() => {
-    const performLogout = async () => {
-      await signOut();
-      navigate('/login');
-    };
-    
     if (!isLoading) {
-      performLogout();
+      signOut();
     }
-  }, [signOut, navigate, isLoading]);
+  }, [signOut, isLoading]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">
