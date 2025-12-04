@@ -53,7 +53,7 @@ const Login = () => {
     try {
       const validated = authSchema.parse({ email, password });
       
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email: validated.email,
         password: validated.password,
       });
@@ -68,14 +68,18 @@ const Login = () => {
         } else {
           toast.error(error.message);
         }
+        setIsLoading(false);
         return;
       }
 
-      toast.success(
-        language === "ja" 
-          ? "ログインしました" 
-          : "Logged in successfully"
-      );
+      if (data.session) {
+        toast.success(
+          language === "ja" 
+            ? "ログインしました" 
+            : "Logged in successfully"
+        );
+        navigate("/map");
+      }
     } catch (error) {
       if (error instanceof z.ZodError) {
         toast.error(error.errors[0].message);
@@ -86,7 +90,6 @@ const Login = () => {
             : "Login failed"
         );
       }
-    } finally {
       setIsLoading(false);
     }
   };
