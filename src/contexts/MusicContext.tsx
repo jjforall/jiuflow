@@ -40,13 +40,22 @@ export const MusicProvider = ({ children }: { children: ReactNode }) => {
   const [playlist, setPlaylist] = useState<MusicTrack[]>([]);
   const [currentTrack, setCurrentTrack] = useState<MusicTrack | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [volume, setVolumeState] = useState(0.5);
+  const [volume, setVolumeState] = useState(() => {
+    const saved = localStorage.getItem("music_volume");
+    return saved ? parseFloat(saved) : 0.5;
+  });
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
-  const [isShuffle, setIsShuffle] = useState(false);
-  const [repeatMode, setRepeatMode] = useState<RepeatMode>("all");
+  const [isShuffle, setIsShuffle] = useState(() => {
+    return localStorage.getItem("music_shuffle") === "true";
+  });
+  const [repeatMode, setRepeatMode] = useState<RepeatMode>(() => {
+    const saved = localStorage.getItem("music_repeat");
+    return (saved as RepeatMode) || "all";
+  });
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const hasRestoredRef = useRef(false);
   
   // Refs to avoid stale closures in event listeners
   const playlistRef = useRef<MusicTrack[]>([]);
@@ -59,6 +68,35 @@ export const MusicProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => { currentTrackRef.current = currentTrack; }, [currentTrack]);
   useEffect(() => { repeatModeRef.current = repeatMode; }, [repeatMode]);
   useEffect(() => { isShuffleRef.current = isShuffle; }, [isShuffle]);
+
+  // Save state to localStorage
+  useEffect(() => {
+    if (currentTrack) {
+      localStorage.setItem("music_track_id", currentTrack.id);
+    }
+  }, [currentTrack]);
+
+  useEffect(() => {
+    localStorage.setItem("music_volume", volume.toString());
+  }, [volume]);
+
+  useEffect(() => {
+    localStorage.setItem("music_shuffle", isShuffle.toString());
+  }, [isShuffle]);
+
+  useEffect(() => {
+    localStorage.setItem("music_repeat", repeatMode);
+  }, [repeatMode]);
+
+  // Save current time periodically
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (audioRef.current && !audioRef.current.paused) {
+        localStorage.setItem("music_time", audioRef.current.currentTime.toString());
+      }
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     audioRef.current = new Audio();
@@ -142,9 +180,25 @@ export const MusicProvider = ({ children }: { children: ReactNode }) => {
       if (error) throw error;
       setPlaylist(data || []);
       
-      // 最初の曲を自動選択
-      if (data && data.length > 0 && !currentTrack) {
-        setCurrentTrack(data[0]);
+      // Restore saved track and position
+      if (data && data.length > 0 && !hasRestoredRef.current) {
+        hasRestoredRef.current = true;
+        const savedTrackId = localStorage.getItem("music_track_id");
+        const savedTime = localStorage.getItem("music_time");
+        
+        const trackToRestore = savedTrackId 
+          ? data.find(t => t.id === savedTrackId) 
+          : data[0];
+        
+        if (trackToRestore) {
+          setCurrentTrack(trackToRestore);
+          if (audioRef.current) {
+            audioRef.current.src = trackToRestore.audio_url;
+            if (savedTime && savedTrackId === trackToRestore.id) {
+              audioRef.current.currentTime = parseFloat(savedTime);
+            }
+          }
+        }
       }
     } catch (error) {
       console.error("Failed to load playlist:", error);
