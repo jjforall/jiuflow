@@ -11,6 +11,8 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowRight, Lock, PlayCircle, UserX, Trophy, Users, BookOpen, Instagram } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import { useAuth } from "@/hooks/useAuth";
+import { useSubscription } from "@/hooks/useSubscription";
 import murataImage from "@/assets/murata-ryozo.jpg";
 import teamArt5Image from "@/assets/team-art5-cebu.jpg";
 
@@ -24,6 +26,8 @@ const About = () => {
   const { t } = useTranslation();
   const { language } = useLanguage();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const { subscribed } = useSubscription();
   const [isLoading, setIsLoading] = useState(true);
   const [techniqueStats, setTechniqueStats] = useState<TechniqueStats[]>([]);
 
@@ -661,6 +665,26 @@ const About = () => {
                   <p>{t("about.team.message.body2", "私たちが世界で勝つために実践し、結果を出してきた「最短距離の強さ」がここにあります。さあ、次はあなたの番です。")}</p>
                 </div>
                 <p className="text-primary font-medium mt-6">{t("about.team.message.signature", "by Team JiuFlow")}</p>
+                
+                {/* CTA Button based on user status */}
+                <div className="mt-8">
+                  {!user ? (
+                    <Button onClick={() => navigate("/join")} size="lg" className="text-lg px-8 py-6">
+                      {language === "ja" ? "今すぐ始める" : language === "pt" ? "Comece Agora" : "Start Now"}
+                      <ArrowRight className="ml-2 w-5 h-5" />
+                    </Button>
+                  ) : subscribed ? (
+                    <Button onClick={() => navigate("/map")} size="lg" className="text-lg px-8 py-6">
+                      {language === "ja" ? "技マップを見る" : language === "pt" ? "Ver Mapa de Técnicas" : "View Technique Map"}
+                      <ArrowRight className="ml-2 w-5 h-5" />
+                    </Button>
+                  ) : (
+                    <Button onClick={() => navigate("/join")} size="lg" className="text-lg px-8 py-6">
+                      {language === "ja" ? "プランを見る" : language === "pt" ? "Ver Planos" : "View Plans"}
+                      <ArrowRight className="ml-2 w-5 h-5" />
+                    </Button>
+                  )}
+                </div>
               </div>
             </div>
           </section>
