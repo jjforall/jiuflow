@@ -48,6 +48,8 @@ const LineageTree = lazy(() => import("./pages/LineageTree"));
 const Athlete = lazy(() => import("./pages/Athlete"));
 const PracticeRecordsPage = lazy(() => import("./pages/PracticeRecordsPage"));
 const Shop = lazy(() => import("./pages/Shop"));
+const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
+const Terms = lazy(() => import("./pages/Terms"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
@@ -79,6 +81,8 @@ const App = () => (
                   <Route path="/payment-error" element={<SuspenseWrapper><PaymentError /></SuspenseWrapper>} />
                   <Route path="/founder-trial" element={<SuspenseWrapper><FounderTrial /></SuspenseWrapper>} />
                   <Route path="/shop" element={<SuspenseWrapper><Shop /></SuspenseWrapper>} />
+                  <Route path="/privacy" element={<SuspenseWrapper><PrivacyPolicy /></SuspenseWrapper>} />
+                  <Route path="/terms" element={<SuspenseWrapper><Terms /></SuspenseWrapper>} />
 
                   {/* Map/Video grid pages */}
                   <Route path="/map" element={

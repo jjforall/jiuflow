@@ -93,6 +93,22 @@ const Footer = () => {
           </div>
           
           <div>
+            <h4 className="font-light mb-4 text-sm">{language === "ja" ? "法的情報" : "Legal"}</h4>
+            <ul className="space-y-2 text-sm">
+              <li>
+                <Link to="/privacy" className="text-muted-foreground hover:text-foreground transition-smooth">
+                  {language === "ja" ? "プライバシーポリシー" : language === "pt" ? "Política de Privacidade" : "Privacy Policy"}
+                </Link>
+              </li>
+              <li>
+                <Link to="/terms" className="text-muted-foreground hover:text-foreground transition-smooth">
+                  {language === "ja" ? "利用規約" : language === "pt" ? "Termos de Serviço" : "Terms of Service"}
+                </Link>
+              </li>
+            </ul>
+          </div>
+
+          <div>
             <h4 className="font-light mb-4 text-sm">Social</h4>
             <ul className="space-y-2 text-sm">
               <li>
