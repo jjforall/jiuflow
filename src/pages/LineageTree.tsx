@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
-import { InteractiveLineageTree } from "@/components/lineage/InteractiveLineageTree";
+import { SimpleLineageTree } from "@/components/lineage/SimpleLineageTree";
 import { LineageFilters } from "@/components/lineage/LineageFilters";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
@@ -229,7 +229,7 @@ export default function LineageTree() {
           />
         </div>
 
-        <InteractiveLineageTree
+        <SimpleLineageTree
           roots={filteredRoots}
           isLoading={isLoading}
         />
