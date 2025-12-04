@@ -8,6 +8,7 @@ import { useHeroImages } from "@/hooks/useHeroImages";
 import { useAuth } from "@/hooks/useAuth";
 import Footer from "@/components/Footer";
 import { Skeleton } from "@/components/ui/skeleton";
+import TechniqueFlowchart from "@/components/TechniqueFlowchart";
 
 const Home = () => {
   const navigate = useNavigate();
@@ -231,6 +232,21 @@ const Home = () => {
                     </p>
                   </div>
                 </div>
+              </div>
+            </section>
+
+            {/* Technique Flowchart Section */}
+            <section className="py-24 px-6 bg-muted/30">
+              <div className="max-w-7xl mx-auto">
+                <div className="text-center mb-12">
+                  <h2 className="text-4xl md:text-5xl font-light mb-4">
+                    {language === 'ja' ? '技術マップ' : language === 'pt' ? 'Mapa de Técnicas' : 'Technique Map'}
+                  </h2>
+                  <p className="text-lg text-muted-foreground font-light">
+                    {language === 'ja' ? '柔術の技術体系を視覚的に理解する' : language === 'pt' ? 'Visualize a estrutura do Jiu-Jitsu' : 'Visualize the structure of Jiu-Jitsu'}
+                  </p>
+                </div>
+                <TechniqueFlowchart />
               </div>
             </section>
           </>
