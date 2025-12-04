@@ -62,7 +62,8 @@ const Map = () => {
   const { subscribed, loading: subscriptionLoading } = useSubscription();
   const { isAdmin, user, isLoading: authLoading } = useAuth();
   const [techniques, setTechniques] = useState<Technique[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
+  const [hasFetched, setHasFetched] = useState(false); // Track if we've attempted to fetch
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
@@ -237,8 +238,9 @@ const Map = () => {
     } finally {
       setIsLoading(false);
       setIsLoadingMore(false);
+      setHasFetched(true);
     }
-  }, [language, hashtagFilter]);
+  }, [language, hashtagFilter, categoryFilter]);
 
   // Fetch video views for the logged-in user
   const fetchVideoViews = useCallback(async () => {
@@ -353,7 +355,7 @@ const Map = () => {
             )}
           </div>
 
-          {authLoading || isLoading || subscriptionLoading ? (
+          {authLoading || isLoading || subscriptionLoading || (user && !hasFetched) ? (
             <div className="animate-fade-in">
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-4">
                 {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((i) => (
