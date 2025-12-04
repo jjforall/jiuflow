@@ -15,6 +15,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
 import murataImage from "@/assets/murata-ryozo.jpg";
 import teamArt5Image from "@/assets/team-art5-cebu.jpg";
+import TechniqueFlowchart from "@/components/TechniqueFlowchart";
 
 interface TechniqueStats {
   category: string;
@@ -688,6 +689,9 @@ const About = () => {
               </div>
             </div>
           </section>
+
+          {/* Technique Flowchart Section */}
+          <TechniqueFlowchart />
 
         </div>
       </main>
