@@ -77,6 +77,10 @@ export const MusicProvider = ({ children }: { children: ReactNode }) => {
   }, [currentTrack]);
 
   useEffect(() => {
+    localStorage.setItem("music_playing", isPlaying.toString());
+  }, [isPlaying]);
+
+  useEffect(() => {
     localStorage.setItem("music_volume", volume.toString());
   }, [volume]);
 
@@ -185,6 +189,7 @@ export const MusicProvider = ({ children }: { children: ReactNode }) => {
         hasRestoredRef.current = true;
         const savedTrackId = localStorage.getItem("music_track_id");
         const savedTime = localStorage.getItem("music_time");
+        const wasPlaying = localStorage.getItem("music_playing") === "true";
         
         const trackToRestore = savedTrackId 
           ? data.find(t => t.id === savedTrackId) 
@@ -196,6 +201,12 @@ export const MusicProvider = ({ children }: { children: ReactNode }) => {
             audioRef.current.src = trackToRestore.audio_url;
             if (savedTime && savedTrackId === trackToRestore.id) {
               audioRef.current.currentTime = parseFloat(savedTime);
+            }
+            // Auto-resume if was playing
+            if (wasPlaying) {
+              audioRef.current.play().catch(() => {
+                // Browser may block autoplay, ignore error
+              });
             }
           }
         }
