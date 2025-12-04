@@ -19,6 +19,7 @@ import { SuspenseWrapper } from "@/components/SuspenseWrapper";
 // Lazy load route components for better performance
 const Home = lazy(() => import("./pages/Home"));
 const Login = lazy(() => import("./pages/Login"));
+const Logout = lazy(() => import("./pages/Logout"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const UpdatePassword = lazy(() => import("./pages/UpdatePassword"));
 const Map = lazy(() => import("./pages/Map"));
@@ -66,6 +67,7 @@ const App = () => (
                   {/* Default pages */}
                   <Route path="/" element={<SuspenseWrapper><Home /></SuspenseWrapper>} />
                   <Route path="/login" element={<SuspenseWrapper><Login /></SuspenseWrapper>} />
+                  <Route path="/logout" element={<SuspenseWrapper><Logout /></SuspenseWrapper>} />
                   <Route path="/reset-password" element={<SuspenseWrapper><ResetPassword /></SuspenseWrapper>} />
                   <Route path="/update-password" element={<SuspenseWrapper><UpdatePassword /></SuspenseWrapper>} />
                   <Route path="/about" element={<SuspenseWrapper><About /></SuspenseWrapper>} />
