@@ -669,17 +669,17 @@ const About = () => {
                 {/* CTA Button based on user status */}
                 <div className="mt-8">
                   {!user ? (
-                    <Button onClick={() => navigate("/join")} size="lg" className="text-lg px-8 py-6">
+                    <Button onClick={() => navigate("/join")} size="lg" className="text-lg px-8 py-6 bg-gradient-to-r from-primary via-primary/80 to-accent hover:from-primary/90 hover:via-primary/70 hover:to-accent/90 shadow-lg hover:shadow-xl animate-pulse hover:animate-none transition-all duration-300">
                       {language === "ja" ? "今すぐ始める" : language === "pt" ? "Comece Agora" : "Start Now"}
                       <ArrowRight className="ml-2 w-5 h-5" />
                     </Button>
                   ) : subscribed ? (
-                    <Button onClick={() => navigate("/map")} size="lg" className="text-lg px-8 py-6">
+                    <Button onClick={() => navigate("/map")} size="lg" className="text-lg px-8 py-6 bg-gradient-to-r from-primary via-primary/80 to-accent hover:from-primary/90 hover:via-primary/70 hover:to-accent/90 shadow-lg hover:shadow-xl transition-all duration-300">
                       {language === "ja" ? "技マップを見る" : language === "pt" ? "Ver Mapa de Técnicas" : "View Technique Map"}
                       <ArrowRight className="ml-2 w-5 h-5" />
                     </Button>
                   ) : (
-                    <Button onClick={() => navigate("/join")} size="lg" className="text-lg px-8 py-6 animate-pulse hover:animate-none">
+                    <Button onClick={() => navigate("/join")} size="lg" className="text-lg px-8 py-6 bg-gradient-to-r from-primary via-primary/80 to-accent hover:from-primary/90 hover:via-primary/70 hover:to-accent/90 shadow-lg hover:shadow-xl animate-pulse hover:animate-none transition-all duration-300">
                       {language === "ja" ? "メンバーになる" : language === "pt" ? "Torne-se Membro" : "Become a Member"}
                       <ArrowRight className="ml-2 w-5 h-5" />
                     </Button>
