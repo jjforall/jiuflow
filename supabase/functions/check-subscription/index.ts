@@ -124,12 +124,14 @@ serve(async (req) => {
     const hasActiveSub = activeOrTrialingSubs.length > 0;
     let productId = null;
     let priceId = null;
+    let subscriptionId = null;
     let subscriptionEnd = null;
     let isTrialing = false;
 
     if (hasActiveSub) {
       const subscription = activeOrTrialingSubs[0];
       isTrialing = subscription.status === "trialing";
+      subscriptionId = subscription.id;
       
       logStep("Subscription found", { 
         subscriptionId: subscription.id,
@@ -172,6 +174,7 @@ serve(async (req) => {
       subscribed: hasActiveSub,
       product_id: productId,
       price_id: priceId,
+      subscription_id: subscriptionId,
       subscription_end: subscriptionEnd,
       is_trialing: isTrialing
     }), {
