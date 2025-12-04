@@ -14,8 +14,9 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { 
   BookOpen, GraduationCap, MessageCircle, Trophy, HelpCircle, Calendar,
-  Plus, ArrowLeft, Send, Eye, MessageSquare, Pin, ChevronRight
+  Plus, ArrowLeft, Send, Eye, MessageSquare, Pin, ChevronRight, Trash2
 } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 interface Category {
   id: string;
@@ -262,6 +263,44 @@ export const OpenMat = () => {
     }
   };
 
+  const deletePost = async (postId: string) => {
+    try {
+      const { error } = await supabase
+        .from('community_posts')
+        .delete()
+        .eq('id', postId);
+
+      if (error) throw error;
+
+      toast.success(language === "ja" ? "コメントを削除しました" : "Comment deleted");
+      loadPosts(selectedThread!.id);
+    } catch (error) {
+      console.error('Error deleting post:', error);
+      toast.error(language === "ja" ? "コメントの削除に失敗しました" : "Failed to delete comment");
+    }
+  };
+
+  const deleteThread = async (threadId: string) => {
+    try {
+      const { error } = await supabase
+        .from('community_threads')
+        .delete()
+        .eq('id', threadId);
+
+      if (error) throw error;
+
+      toast.success(language === "ja" ? "スレッドを削除しました" : "Thread deleted");
+      setSelectedThread(null);
+      setPosts([]);
+      if (selectedCategory) {
+        loadThreads(selectedCategory.id);
+      }
+    } catch (error) {
+      console.error('Error deleting thread:', error);
+      toast.error(language === "ja" ? "スレッドの削除に失敗しました" : "Failed to delete thread");
+    }
+  };
+
   const getCategoryName = (cat: Category) => {
     if (language === "ja") return cat.name_ja;
     if (language === "pt") return cat.name_pt;
@@ -481,6 +520,35 @@ export const OpenMat = () => {
             {selectedThread.author?.display_name} • {format(new Date(selectedThread.created_at), 'yyyy/MM/dd HH:mm')}
           </p>
         </div>
+        {user?.id === selectedThread.author_id && (
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive">
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>
+                  {language === "ja" ? "スレッドを削除しますか？" : "Delete thread?"}
+                </AlertDialogTitle>
+                <AlertDialogDescription>
+                  {language === "ja" 
+                    ? "この操作は取り消せません。スレッドと全てのコメントが削除されます。" 
+                    : "This action cannot be undone. The thread and all comments will be deleted."}
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>
+                  {language === "ja" ? "キャンセル" : "Cancel"}
+                </AlertDialogCancel>
+                <AlertDialogAction onClick={() => deleteThread(selectedThread.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                  {language === "ja" ? "削除" : "Delete"}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        )}
       </div>
 
       {/* Original Post */}
@@ -523,11 +591,42 @@ export const OpenMat = () => {
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex-1">
-                    <div className="flex items-center gap-2 text-sm">
-                      <span className="font-medium">{post.author?.display_name}</span>
-                      <span className="text-muted-foreground text-xs">
-                        {format(new Date(post.created_at), 'yyyy/MM/dd HH:mm')}
-                      </span>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 text-sm">
+                        <span className="font-medium">{post.author?.display_name}</span>
+                        <span className="text-muted-foreground text-xs">
+                          {format(new Date(post.created_at), 'yyyy/MM/dd HH:mm')}
+                        </span>
+                      </div>
+                      {user?.id === post.author_id && (
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-destructive">
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>
+                                {language === "ja" ? "コメントを削除しますか？" : "Delete comment?"}
+                              </AlertDialogTitle>
+                              <AlertDialogDescription>
+                                {language === "ja" 
+                                  ? "この操作は取り消せません。" 
+                                  : "This action cannot be undone."}
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>
+                                {language === "ja" ? "キャンセル" : "Cancel"}
+                              </AlertDialogCancel>
+                              <AlertDialogAction onClick={() => deletePost(post.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                                {language === "ja" ? "削除" : "Delete"}
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      )}
                     </div>
                     <div className="mt-1 text-sm whitespace-pre-wrap">{post.content}</div>
                   </div>
