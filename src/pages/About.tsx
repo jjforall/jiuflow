@@ -12,6 +12,7 @@ import { ArrowRight, Lock, PlayCircle, UserX, Trophy, Users, BookOpen, Instagram
 import { useLanguage } from "@/contexts/LanguageContext";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import murataImage from "@/assets/murata-ryozo.jpg";
+import teamArt5Image from "@/assets/team-art5-cebu.jpg";
 
 interface TechniqueStats {
   category: string;
@@ -644,6 +645,17 @@ const About = () => {
                 <p className="text-xl font-medium text-primary mb-6">
                   {t("about.team.message.headline", "「正しいメソッドがあれば、あなたはもっと強くなれる。」")}
                 </p>
+                
+                {/* Team Photo */}
+                <div className="my-8">
+                  <img 
+                    src={teamArt5Image} 
+                    alt="Team JiuFlow at ART 5 CEBU"
+                    className="w-full max-w-2xl mx-auto rounded-lg shadow-xl"
+                  />
+                  <p className="text-sm text-muted-foreground mt-3">ART 5 CEBU - フィリピン・セブ島</p>
+                </div>
+                
                 <div className="space-y-4 text-muted-foreground leading-relaxed max-w-2xl mx-auto">
                   <p>{t("about.team.message.body1", "私たち3人は、運営メンバーである以前に、ひとつの「チーム」です。先日もフィリピン・セブ島で開催されたプロ興行「ART 5 CEBU」へ全員で乗り込み、世界を相手に戦ってきました。")}</p>
                   <p>{t("about.team.message.body2", "私たちが世界で勝つために実践し、結果を出してきた「最短距離の強さ」がここにあります。さあ、次はあなたの番です。")}</p>
