@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { RefreshCw, X, DollarSign } from "lucide-react";
+import { RefreshCw, X, DollarSign, Calendar } from "lucide-react";
 import { toast } from "sonner";
 import {
   AlertDialog,
@@ -46,6 +46,7 @@ interface Subscription {
   current_period_start: string;
   current_period_end: string;
   created: string;
+  trial_end?: string;
 }
 
 export const SubscriptionsTab = () => {
@@ -58,6 +59,9 @@ export const SubscriptionsTab = () => {
   const [refundAmount, setRefundAmount] = useState("");
   const [refundReason, setRefundReason] = useState<string>("");
   const [isRefunding, setIsRefunding] = useState(false);
+  const [showTrialDialog, setShowTrialDialog] = useState(false);
+  const [trialEndDate, setTrialEndDate] = useState("");
+  const [isUpdatingTrial, setIsUpdatingTrial] = useState(false);
 
   const fetchSubscriptions = async () => {
     try {
@@ -103,6 +107,55 @@ export const SubscriptionsTab = () => {
     setRefundAmount("");
     setRefundReason("");
     setShowRefundDialog(true);
+  };
+
+  const handleTrialExtendClick = (subscription: Subscription) => {
+    setSelectedSubscription(subscription);
+    // Default to 90 days from now
+    const defaultDate = new Date();
+    defaultDate.setDate(defaultDate.getDate() + 90);
+    setTrialEndDate(defaultDate.toISOString().split('T')[0]);
+    setShowTrialDialog(true);
+  };
+
+  const handleTrialExtendConfirm = async () => {
+    if (!selectedSubscription || !trialEndDate) return;
+
+    try {
+      setIsUpdatingTrial(true);
+
+      const { data, error } = await supabase.functions.invoke("update-subscription-trial", {
+        body: { 
+          subscriptionId: selectedSubscription.id,
+          trialEndDate: trialEndDate
+        }
+      });
+
+      if (error) {
+        console.error("Function invocation error:", error);
+        throw error;
+      }
+
+      if (data?.error) {
+        console.error("Function returned error:", data.error);
+        throw new Error(data.error);
+      }
+
+      toast.success("トライアル期間を延長しました", {
+        description: `${new Date(trialEndDate).toLocaleDateString('ja-JP')}まで延長しました`
+      });
+      setShowTrialDialog(false);
+      setSelectedSubscription(null);
+      fetchSubscriptions();
+    } catch (error) {
+      console.error("Error updating trial:", error);
+      const errorMessage = error instanceof Error ? error.message : "トライアル期間の更新に失敗しました";
+      toast.error("エラー", {
+        description: errorMessage,
+      });
+    } finally {
+      setIsUpdatingTrial(false);
+    }
   };
 
   const handleRefundConfirm = async () => {
@@ -278,7 +331,17 @@ export const SubscriptionsTab = () => {
                       {formatDate(sub.created)}
                     </TableCell>
                     <TableCell className="text-right">
-                      <div className="flex gap-2 justify-end">
+                      <div className="flex gap-2 justify-end flex-wrap">
+                        {(sub.status === 'active' || sub.status === 'trialing') && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleTrialExtendClick(sub)}
+                          >
+                            <Calendar className="h-4 w-4 mr-1" />
+                            トライアル延長
+                          </Button>
+                        )}
                         {(sub.status === 'active' || sub.status === 'canceled') && (
                           <Button
                             variant="outline"
@@ -342,7 +405,18 @@ export const SubscriptionsTab = () => {
                   </div>
                 </div>
 
-                <div className="flex gap-2 pt-2 border-t">
+                <div className="flex gap-2 pt-2 border-t flex-wrap">
+                  {(sub.status === 'active' || sub.status === 'trialing') && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1"
+                      onClick={() => handleTrialExtendClick(sub)}
+                    >
+                      <Calendar className="h-4 w-4 mr-1" />
+                      トライアル延長
+                    </Button>
+                  )}
                   {(sub.status === 'active' || sub.status === 'canceled') && (
                     <Button
                       variant="outline"
@@ -456,6 +530,83 @@ export const SubscriptionsTab = () => {
             </Button>
             <Button onClick={handleRefundConfirm} disabled={isRefunding}>
               {isRefunding ? "処理中..." : "返金実行"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showTrialDialog} onOpenChange={setShowTrialDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>トライアル期間延長</DialogTitle>
+            <DialogDescription>
+              {selectedSubscription && (
+                <>
+                  <div className="mt-2">
+                    <p className="font-medium">{selectedSubscription.customer_name} ({selectedSubscription.customer_email})</p>
+                    <p className="text-sm mt-1">プラン: {selectedSubscription.product_name}</p>
+                    <p className="text-sm">ステータス: {selectedSubscription.status}</p>
+                  </div>
+                </>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="trial-end-date">トライアル終了日</Label>
+              <Input
+                id="trial-end-date"
+                type="date"
+                value={trialEndDate}
+                onChange={(e) => setTrialEndDate(e.target.value)}
+                disabled={isUpdatingTrial}
+              />
+              <div className="flex gap-2 flex-wrap">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => {
+                    const date = new Date();
+                    date.setDate(date.getDate() + 30);
+                    setTrialEndDate(date.toISOString().split('T')[0]);
+                  }}
+                  disabled={isUpdatingTrial}
+                >
+                  +30日
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => {
+                    const date = new Date();
+                    date.setDate(date.getDate() + 60);
+                    setTrialEndDate(date.toISOString().split('T')[0]);
+                  }}
+                  disabled={isUpdatingTrial}
+                >
+                  +60日
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => {
+                    const date = new Date();
+                    date.setDate(date.getDate() + 90);
+                    setTrialEndDate(date.toISOString().split('T')[0]);
+                  }}
+                  disabled={isUpdatingTrial}
+                >
+                  +90日
+                </Button>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowTrialDialog(false)} disabled={isUpdatingTrial}>
+              キャンセル
+            </Button>
+            <Button onClick={handleTrialExtendConfirm} disabled={isUpdatingTrial || !trialEndDate}>
+              {isUpdatingTrial ? "更新中..." : "延長実行"}
             </Button>
           </DialogFooter>
         </DialogContent>
