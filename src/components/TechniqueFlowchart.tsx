@@ -24,6 +24,15 @@ const techniqueTree: TechniqueNode[] = [
           { id: "kimura-cg", name: { ja: "キムラ", en: "Kimura", pt: "Kimura" } },
           { id: "hip-bump-sweep", name: { ja: "ヒップバンプスイープ", en: "Hip Bump Sweep", pt: "Hip Bump Sweep" } },
           { id: "scissor-sweep", name: { ja: "シザースイープ", en: "Scissor Sweep", pt: "Tesoura" } },
+          {
+            id: "cg-transitions",
+            name: { ja: "→ ポジション移行", en: "→ Position Transitions", pt: "→ Transições" },
+            children: [
+              { id: "cg-to-open", name: { ja: "→ オープンガードへ", en: "→ Open Guard", pt: "→ Guarda Aberta" } },
+              { id: "cg-to-half", name: { ja: "→ ハーフガードへ", en: "→ Half Guard", pt: "→ Meia Guarda" } },
+              { id: "cg-to-mount", name: { ja: "→ マウント（スイープ成功時）", en: "→ Mount (on sweep)", pt: "→ Montada" } },
+            ],
+          },
         ],
       },
       {
@@ -57,6 +66,15 @@ const techniqueTree: TechniqueNode[] = [
               { id: "lasso-sweep", name: { ja: "ラッソースイープ", en: "Lasso Sweep", pt: "Raspagem Laço" } },
             ],
           },
+          {
+            id: "og-transitions",
+            name: { ja: "→ ポジション移行", en: "→ Position Transitions", pt: "→ Transições" },
+            children: [
+              { id: "og-to-closed", name: { ja: "→ クローズドガードへ", en: "→ Closed Guard", pt: "→ Guarda Fechada" } },
+              { id: "og-to-half", name: { ja: "→ ハーフガードへ", en: "→ Half Guard", pt: "→ Meia Guarda" } },
+              { id: "og-to-xguard", name: { ja: "→ Xガードへ", en: "→ X Guard", pt: "→ Guarda X" } },
+            ],
+          },
         ],
       },
       {
@@ -67,6 +85,16 @@ const techniqueTree: TechniqueNode[] = [
           { id: "underhook-hg", name: { ja: "アンダーフック", en: "Underhook", pt: "Underhook" } },
           { id: "deep-half", name: { ja: "ディープハーフ", en: "Deep Half", pt: "Meia Profunda" } },
           { id: "lockdown", name: { ja: "ロックダウン", en: "Lockdown", pt: "Lockdown" } },
+          {
+            id: "hg-transitions",
+            name: { ja: "→ ポジション移行", en: "→ Position Transitions", pt: "→ Transições" },
+            children: [
+              { id: "hg-to-closed", name: { ja: "→ クローズドガードへ", en: "→ Closed Guard", pt: "→ Guarda Fechada" } },
+              { id: "hg-to-open", name: { ja: "→ オープンガードへ", en: "→ Open Guard", pt: "→ Guarda Aberta" } },
+              { id: "hg-to-back", name: { ja: "→ バックテイク", en: "→ Back Take", pt: "→ Pegada de Costas" } },
+              { id: "hg-to-mount", name: { ja: "→ マウント（スイープ成功時）", en: "→ Mount (on sweep)", pt: "→ Montada" } },
+            ],
+          },
         ],
       },
     ],
