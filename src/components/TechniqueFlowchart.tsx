@@ -70,6 +70,41 @@ const sideControlTechniques: TechniqueNode[] = [
   { id: "arm-triangle", name: { ja: "アームトライアングル", en: "Arm Triangle", pt: "Kata Gatame" } },
 ];
 
+// Guard Pass Techniques
+const closedGuardPassTechniques: TechniqueNode[] = [
+  { id: "standing-pass", name: { ja: "スタンディングパス", en: "Standing Pass", pt: "Passagem em Pé" } },
+  { id: "knee-slice-cg", name: { ja: "ニースライス", en: "Knee Slice", pt: "Passagem de Joelho" } },
+  { id: "double-under", name: { ja: "ダブルアンダー", en: "Double Under", pt: "Passagem por Baixo" } },
+  { id: "sao-paulo-pass", name: { ja: "サンパウロパス", en: "Sao Paulo Pass", pt: "Passagem São Paulo" } },
+];
+
+const openGuardPassTechniques: TechniqueNode[] = [
+  { id: "torreando", name: { ja: "トレアンド", en: "Toreando", pt: "Toreando" } },
+  { id: "leg-drag", name: { ja: "レッグドラッグ", en: "Leg Drag", pt: "Leg Drag" } },
+  { id: "knee-slice-og", name: { ja: "ニースライス", en: "Knee Slice", pt: "Passagem de Joelho" } },
+  { id: "x-pass", name: { ja: "Xパス", en: "X Pass", pt: "X Pass" } },
+  { id: "stack-pass", name: { ja: "スタックパス", en: "Stack Pass", pt: "Passagem Empilhada" } },
+];
+
+const halfGuardPassTechniques: TechniqueNode[] = [
+  { id: "knee-slide", name: { ja: "ニースライド", en: "Knee Slide", pt: "Deslize de Joelho" } },
+  { id: "hip-switch", name: { ja: "ヒップスイッチ", en: "Hip Switch", pt: "Troca de Quadril" } },
+  { id: "backstep", name: { ja: "バックステップ", en: "Backstep", pt: "Passo Atrás" } },
+  { id: "smash-pass", name: { ja: "スマッシュパス", en: "Smash Pass", pt: "Passagem Esmagada" } },
+];
+
+const dlrPassTechniques: TechniqueNode[] = [
+  { id: "knee-cut-dlr", name: { ja: "ニーカット", en: "Knee Cut", pt: "Corte de Joelho" } },
+  { id: "leg-weave", name: { ja: "レッグウィーブ", en: "Leg Weave", pt: "Entrelaçamento" } },
+  { id: "dlr-smash", name: { ja: "DLRスマッシュ", en: "DLR Smash", pt: "Esmagar DLR" } },
+];
+
+const spiderPassTechniques: TechniqueNode[] = [
+  { id: "grip-break", name: { ja: "グリップブレイク", en: "Grip Break", pt: "Quebra de Pegada" } },
+  { id: "bull-fighter", name: { ja: "ブルファイター", en: "Bull Fighter", pt: "Toureiro" } },
+  { id: "spider-stack", name: { ja: "スタックパス", en: "Stack Pass", pt: "Passagem Empilhada" } },
+];
+
 const techniqueTree: TechniqueNode[] = [
   {
     id: "pull",
@@ -276,6 +311,92 @@ const techniqueTree: TechniqueNode[] = [
       },
     ],
   },
+  {
+    id: "guard-pass",
+    name: { ja: "ガードパス", en: "Guard Pass", pt: "Passagem de Guarda" },
+    children: [
+      {
+        id: "pass-closed-guard",
+        name: { ja: "クローズドガードパス", en: "Closed Guard Pass", pt: "Passagem de Guarda Fechada" },
+        children: [
+          ...closedGuardPassTechniques,
+          {
+            id: "cg-pass-result",
+            name: { ja: "→ パス成功後", en: "→ After Pass", pt: "→ Após Passar" },
+            isTransition: true,
+            children: [
+              { id: "cg-pass-to-side", name: { ja: "サイドコントロール", en: "Side Control", pt: "100 Kilos" }, children: sideControlTechniques },
+              { id: "cg-pass-to-mount", name: { ja: "マウント", en: "Mount", pt: "Montada" }, children: mountTechniques },
+            ],
+          },
+        ],
+      },
+      {
+        id: "pass-open-guard",
+        name: { ja: "オープンガードパス", en: "Open Guard Pass", pt: "Passagem de Guarda Aberta" },
+        children: [
+          ...openGuardPassTechniques,
+          {
+            id: "og-pass-result",
+            name: { ja: "→ パス成功後", en: "→ After Pass", pt: "→ Após Passar" },
+            isTransition: true,
+            children: [
+              { id: "og-pass-to-side", name: { ja: "サイドコントロール", en: "Side Control", pt: "100 Kilos" }, children: sideControlTechniques },
+              { id: "og-pass-to-mount", name: { ja: "マウント", en: "Mount", pt: "Montada" }, children: mountTechniques },
+              { id: "og-pass-to-back", name: { ja: "バック（レッグドラッグから）", en: "Back (from Leg Drag)", pt: "Costas" }, children: backControlTechniques },
+            ],
+          },
+        ],
+      },
+      {
+        id: "pass-half-guard",
+        name: { ja: "ハーフガードパス", en: "Half Guard Pass", pt: "Passagem de Meia Guarda" },
+        children: [
+          ...halfGuardPassTechniques,
+          {
+            id: "hg-pass-result",
+            name: { ja: "→ パス成功後", en: "→ After Pass", pt: "→ Após Passar" },
+            isTransition: true,
+            children: [
+              { id: "hg-pass-to-side", name: { ja: "サイドコントロール", en: "Side Control", pt: "100 Kilos" }, children: sideControlTechniques },
+              { id: "hg-pass-to-mount", name: { ja: "マウント", en: "Mount", pt: "Montada" }, children: mountTechniques },
+            ],
+          },
+        ],
+      },
+      {
+        id: "pass-dlr",
+        name: { ja: "デラヒーバパス", en: "De La Riva Pass", pt: "Passagem de DLR" },
+        children: [
+          ...dlrPassTechniques,
+          {
+            id: "dlr-pass-result",
+            name: { ja: "→ パス成功後", en: "→ After Pass", pt: "→ Após Passar" },
+            isTransition: true,
+            children: [
+              { id: "dlr-pass-to-side", name: { ja: "サイドコントロール", en: "Side Control", pt: "100 Kilos" }, children: sideControlTechniques },
+              { id: "dlr-pass-to-back", name: { ja: "バック", en: "Back", pt: "Costas" }, children: backControlTechniques },
+            ],
+          },
+        ],
+      },
+      {
+        id: "pass-spider",
+        name: { ja: "スパイダーガードパス", en: "Spider Guard Pass", pt: "Passagem de Guarda Aranha" },
+        children: [
+          ...spiderPassTechniques,
+          {
+            id: "spider-pass-result",
+            name: { ja: "→ パス成功後", en: "→ After Pass", pt: "→ Após Passar" },
+            isTransition: true,
+            children: [
+              { id: "spider-pass-to-side", name: { ja: "サイドコントロール", en: "Side Control", pt: "100 Kilos" }, children: sideControlTechniques },
+            ],
+          },
+        ],
+      },
+    ],
+  },
 ];
 
 const CollapsibleNode = ({ 
@@ -371,13 +492,13 @@ export const TechniqueFlowchart = () => {
   };
 
   const descriptions = {
-    ja: "柔術の技は大きく「引き込み」と「テイクダウン」に分岐します。各項目をクリックして展開し、ポジション移行から次の技を選べます。",
-    en: "BJJ techniques branch into 'Guard Pull' and 'Takedown'. Click to expand and explore transitions between positions.",
-    pt: "As técnicas de BJJ se dividem em 'Puxada de Guarda' e 'Takedown'. Clique para expandir e explorar transições.",
+    ja: "柔術の技は「引き込み」「テイクダウン」「ガードパス」に分岐します。各項目をクリックして展開し、ポジション移行から次の技を選べます。",
+    en: "BJJ techniques branch into 'Guard Pull', 'Takedown', and 'Guard Pass'. Click to expand and explore transitions.",
+    pt: "As técnicas de BJJ se dividem em 'Puxada', 'Takedown' e 'Passagem'. Clique para expandir e explorar.",
   };
 
   return (
-    <section className="py-16 max-w-4xl mx-auto">
+    <section className="py-16 max-w-5xl mx-auto">
       <h2 className="text-4xl font-light mb-4 text-center">
         {titles[language as keyof typeof titles] || titles.ja}
       </h2>
@@ -385,7 +506,7 @@ export const TechniqueFlowchart = () => {
         {descriptions[language as keyof typeof descriptions] || descriptions.ja}
       </p>
 
-      <div className="grid md:grid-cols-2 gap-6">
+      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
         {techniqueTree.map((node) => (
           <div key={node.id} className="space-y-2">
             <CollapsibleNode node={node} language={language} />
