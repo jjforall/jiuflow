@@ -466,118 +466,221 @@ const About = () => {
           {/* Team Section */}
           <section className="py-16 bg-muted/30">
             <div className="max-w-4xl mx-auto px-6">
-              <h2 className="text-4xl font-light mb-6">Team</h2>
-              <p className="text-lg text-muted-foreground mb-12 leading-relaxed">
-                JiuFlowは、柔術家、クリエイター、エンジニアが連携し、<br />
-                「最高の学習体験」を作るために活動しています。
+              <h2 className="text-4xl font-light mb-4 text-center">Team JiuFlow</h2>
+              <p className="text-xl text-center font-medium text-primary mb-6">
+                「私たちが作り、私たちが証明する。」
               </p>
+              <div className="text-lg text-muted-foreground mb-12 leading-relaxed text-center max-w-3xl mx-auto space-y-4">
+                <p>
+                  JiuFlowを運営するのは、ビジネスの最前線で戦いながら、<br className="hidden md:block" />
+                  柔術家としても世界の表彰台に立ち続ける私たち自身です。
+                </p>
+                <p>
+                  私たちが提供するのは、机上の空論ではありません。<br className="hidden md:block" />
+                  それぞれの分野で培った知見と、実際にマットの上で勝利するために辿り着いた「本物の技術」です。
+                </p>
+              </div>
               
-              <div className="space-y-8">
+              <div className="space-y-12">
                 {/* 村田 良蔵 */}
-                <div className="border-l-2 border-primary pl-6 hover:bg-muted/20 p-4 -ml-4 transition-colors rounded-r-lg">
-                  <h3 className="text-2xl font-light mb-1">村田 良蔵 (Ryozo Murata)</h3>
-                  <p className="text-primary font-medium mb-2">Founder / Head Instructor</p>
-                  <p className="text-muted-foreground mb-3">メソッド開発・技術監修</p>
-                  <div className="flex gap-4 text-sm">
-                    <a 
-                      href="https://www.ryozo-murata.com" 
-                      target="_blank" 
-                      rel="noopener noreferrer" 
-                      className="text-primary hover:underline flex items-center gap-1"
-                    >
-                      Website
+                <div className="border-l-4 border-primary pl-6 py-6 hover:bg-muted/20 transition-colors rounded-r-lg">
+                  <div className="flex items-center gap-2 text-sm text-primary font-medium mb-2">
+                    <Trophy className="w-4 h-4" />
+                    Founder / Head Instructor
+                  </div>
+                  <h3 className="text-2xl font-light mb-1">村田 良蔵（Ryozo Murata）</h3>
+                  <p className="text-muted-foreground mb-4">メソッド開発・技術監修</p>
+                  
+                  <p className="text-xl font-light italic text-primary border-l-2 border-primary/30 pl-4 py-2 mb-6">
+                    「『理』を極めれば、力は要らない。私がそれを証明し続けます。」
+                  </p>
+                  
+                  <div className="space-y-4 text-muted-foreground leading-relaxed mb-6">
+                    <p>
+                      北海道初のグレイシー直系黒帯として、私は常に「なぜ今の動きで勝てたのか？」「なぜ負けたのか？」を問い続けてきました。
+                      その答えが、フィジカルに依存せず、身体構造と物理法則を味方につける<strong className="text-foreground">「理（ことわり）の柔術」</strong>です。
+                    </p>
+                    <p>
+                      40代を迎えた今も、私は進化しています。日本人初のSJJIF世界王者（連覇）となり、2025年のIBJJF世界マスターでも銅メダルを獲得。さらにプロ柔術「ART 5 CEBU」にも参戦し、世界の強豪と肌を合わせ続けています。
+                      私が開発したこのメソッドは、年齢や体格を言い訳にしません。「安全で、長く、そして強い」。その真髄を、あなたに直接手渡します。
+                    </p>
+                  </div>
+                  
+                  <div className="grid md:grid-cols-2 gap-6 mb-4">
+                    <div>
+                      <h4 className="font-medium mb-2 flex items-center gap-2">
+                        <Trophy className="w-4 h-4 text-primary" />
+                        主な戦績
+                      </h4>
+                      <ul className="space-y-1 text-sm text-muted-foreground">
+                        <li>• 2018・2019年 SJJIF世界選手権 マスター2黒帯フェザー級 優勝（日本人初・連覇）</li>
+                        <li>• 2025年 IBJJF世界マスター選手権 フェザー級黒帯マスター3 銅メダル</li>
+                        <li>• ART 5 CEBU 参戦（海外プロ柔術マッチ）</li>
+                      </ul>
+                    </div>
+                    <div>
+                      <h4 className="font-medium mb-2 flex items-center gap-2">
+                        <Users className="w-4 h-4 text-primary" />
+                        キャリア
+                      </h4>
+                      <ul className="space-y-1 text-sm text-muted-foreground">
+                        <li>• Over Limit 札幌 / YAWARA JIU-JITSU ACADEMY 代表</li>
+                        <li>• NPO法人スポーツ柔術日本連盟（SJJJF）代表理事</li>
+                      </ul>
+                    </div>
+                  </div>
+                  
+                  <div className="flex gap-4 text-sm mt-4">
+                    <a href="https://www.ryozo-murata.com" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Website</a>
+                    <a href="https://www.instagram.com/ryozomurata/" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline flex items-center gap-1">
+                      <Instagram className="w-4 h-4" />Instagram
                     </a>
-                    <a 
-                      href="https://www.instagram.com/ryozomurata/" 
-                      target="_blank" 
-                      rel="noopener noreferrer" 
-                      className="text-primary hover:underline flex items-center gap-1"
-                    >
-                      <Instagram className="w-4 h-4" />
-                      Instagram
-                    </a>
-                    <a 
-                      href="https://x.com/ryozomurata" 
-                      target="_blank" 
-                      rel="noopener noreferrer" 
-                      className="text-primary hover:underline flex items-center gap-1"
-                    >
-                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-                      </svg>
-                      X (Twitter)
+                    <a href="https://x.com/ryozomurata" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline flex items-center gap-1">
+                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+                      X
                     </a>
                   </div>
                 </div>
 
                 {/* 濱田 優貴 */}
-                <div className="border-l-2 border-primary pl-6 hover:bg-muted/20 p-4 -ml-4 transition-colors rounded-r-lg">
-                  <h3 className="text-2xl font-light mb-1">濱田 優貴 (Yuki Hamada)</h3>
-                  <p className="text-primary font-medium mb-2">Co-Founder / Creative</p>
-                  <p className="text-muted-foreground leading-relaxed">
-                    株式会社サイブリッジ創業者、元株式会社メルカリ取締役CINO。<br />
-                    JiuFlowではクリエイティブディレクションを担当。<br />
-                    デザイン、情報設計、AI開発を通じ、村田良蔵の技術を「見やすく、分かりやすい」形に落とし込んでいる。
+                <div className="border-l-4 border-primary pl-6 py-6 hover:bg-muted/20 transition-colors rounded-r-lg">
+                  <div className="flex items-center gap-2 text-sm text-primary font-medium mb-2">
+                    <BookOpen className="w-4 h-4" />
+                    Co-Founder / Creative Director
+                  </div>
+                  <h3 className="text-2xl font-light mb-1">濱田 優貴（Yuki Hamada）</h3>
+                  <p className="text-muted-foreground mb-4">クリエイティブ・情報設計</p>
+                  
+                  <p className="text-xl font-light italic text-primary border-l-2 border-primary/30 pl-4 py-2 mb-6">
+                    「開始からわずか1年半で世界3位へ。『超効率的』な学習が、常識を覆す。」
                   </p>
-                  <div className="flex gap-4 text-sm mt-3">
-                    <Link 
-                      to="/yuki" 
-                      className="text-primary hover:underline flex items-center gap-1"
-                    >
-                      <Users className="w-4 h-4" />
-                      JiuFlow Profile
+                  
+                  <div className="space-y-4 text-muted-foreground leading-relaxed mb-6">
+                    <p>
+                      私が柔術を始めたのは、昨年の2月のことです。
+                      それからわずか1年半後、今年の9月に行われた世界最大規模の大会「IBJJF世界マスター選手権（青帯）」で、私は表彰台（3位・銅メダル）に立ちました。さらに、フィリピンで開催された「ART 5 CEBU」にもチームの一員として参戦しました。
+                    </p>
+                    <p>
+                      特別な運動能力があったわけでも、生活のすべてを練習に捧げたわけでもありません。
+                      ただ、村田良蔵のメソッドがあまりに合理的で、効率的だったからです。
+                      サイブリッジの創業やメルカリでの経験から、私は常に「最短距離で最大の結果を出す」ことを追求してきましたが、JiuFlowこそが柔術におけるその答えでした。
+                      ビジネスパーソンでも、短期間で世界と戦えるレベルになれる。私自身のこの結果が、何よりの証明です。
+                    </p>
+                  </div>
+                  
+                  <div className="grid md:grid-cols-2 gap-6 mb-4">
+                    <div>
+                      <h4 className="font-medium mb-2 flex items-center gap-2">
+                        <Trophy className="w-4 h-4 text-primary" />
+                        主な戦績
+                      </h4>
+                      <ul className="space-y-1 text-sm text-muted-foreground">
+                        <li>• IBJJF世界マスター選手権 青帯 3位（柔術開始から約1年半で獲得）</li>
+                        <li>• ART 5 CEBU 参戦（海外プロ柔術マッチ）</li>
+                      </ul>
+                    </div>
+                    <div>
+                      <h4 className="font-medium mb-2 flex items-center gap-2">
+                        <Users className="w-4 h-4 text-primary" />
+                        キャリア
+                      </h4>
+                      <ul className="space-y-1 text-sm text-muted-foreground">
+                        <li>• 株式会社サイブリッジ 創業者</li>
+                        <li>• 元 株式会社メルカリ 取締役CINO</li>
+                      </ul>
+                    </div>
+                  </div>
+                  
+                  <div className="flex gap-4 text-sm mt-4">
+                    <Link to="/yuki" className="text-primary hover:underline flex items-center gap-1">
+                      <Users className="w-4 h-4" />JiuFlow Profile
                     </Link>
-                    <a 
-                      href="https://www.instagram.com/yukihamada/" 
-                      target="_blank" 
-                      rel="noopener noreferrer" 
-                      className="text-primary hover:underline flex items-center gap-1"
-                    >
-                      <Instagram className="w-4 h-4" />
-                      Instagram
+                    <a href="https://www.instagram.com/yukihamada/" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline flex items-center gap-1">
+                      <Instagram className="w-4 h-4" />Instagram
                     </a>
-                    <a 
-                      href="https://x.com/yukihamada" 
-                      target="_blank" 
-                      rel="noopener noreferrer" 
-                      className="text-primary hover:underline flex items-center gap-1"
-                    >
-                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-                      </svg>
-                      X (Twitter)
+                    <a href="https://x.com/yukihamada" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline flex items-center gap-1">
+                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+                      X
                     </a>
                   </div>
                 </div>
 
-                {/* 野島 */}
-                <div className="border-l-2 border-primary pl-6 hover:bg-muted/20 p-4 -ml-4 transition-colors rounded-r-lg">
-                  <h3 className="text-2xl font-light mb-1">野島 (Nojima)</h3>
-                  <p className="text-primary font-medium mb-2">Engineering / Member</p>
-                  <p className="text-muted-foreground mb-3">システム開発・テクニカルサポート</p>
-                  <div className="flex gap-4 text-sm">
-                    <a 
-                      href="https://www.instagram.com/nojisgk/" 
-                      target="_blank" 
-                      rel="noopener noreferrer" 
-                      className="text-primary hover:underline flex items-center gap-1"
-                    >
-                      <Instagram className="w-4 h-4" />
-                      Instagram
+                {/* 野島 繁昭 */}
+                <div className="border-l-4 border-primary pl-6 py-6 hover:bg-muted/20 transition-colors rounded-r-lg">
+                  <div className="flex items-center gap-2 text-sm text-primary font-medium mb-2">
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" /></svg>
+                    Engineering / Instructor
+                  </div>
+                  <h3 className="text-2xl font-light mb-1">野島 繁昭（Shigeaki Nojima）</h3>
+                  <p className="text-muted-foreground mb-4">システム開発・テクニカルサポート</p>
+                  
+                  <p className="text-xl font-light italic text-primary border-l-2 border-primary/30 pl-4 py-2 mb-6">
+                    「論理をシステムに、そして強さに。世界王者になったエンジニア。」
+                  </p>
+                  
+                  <div className="space-y-4 text-muted-foreground leading-relaxed mb-6">
+                    <p>
+                      JiuFlowのシステム開発を一手に担っているのが私です。早稲田理工で培った論理的思考で、村田のメソッドを「学習システム」へと落とし込んでいます。
+                    </p>
+                    <p>
+                      私は、このJiuFlowのメソッドを徹底的に実践することで、2025年のSJJIF世界選手権（紫帯）で優勝を果たしました。さらに、チーム全員で挑んだプロ興行「ART 5 CEBU」では、完全アウェイの中で勝利を掴み取りました。
+                      システム開発も、自身の格闘技人生も、すべては「理」に基づいています。
+                      「仕事も柔術もトップレベル」を体現するロールモデルとして、あなたの技術習得をシステムと実体験の両面からサポートします。
+                    </p>
+                  </div>
+                  
+                  <div className="grid md:grid-cols-2 gap-6 mb-4">
+                    <div>
+                      <h4 className="font-medium mb-2 flex items-center gap-2">
+                        <Trophy className="w-4 h-4 text-primary" />
+                        主な戦績
+                      </h4>
+                      <ul className="space-y-1 text-sm text-muted-foreground">
+                        <li>• 2025年 SJJIF世界選手権 マスター紫帯 優勝</li>
+                        <li>• ART 5 CEBU 勝利（海外プロ柔術マッチ）</li>
+                      </ul>
+                    </div>
+                    <div>
+                      <h4 className="font-medium mb-2 flex items-center gap-2">
+                        <Users className="w-4 h-4 text-primary" />
+                        キャリア
+                      </h4>
+                      <ul className="space-y-1 text-sm text-muted-foreground">
+                        <li>• 早稲田大学理工学部 卒業</li>
+                        <li>• スタートアップ企業にて事業責任者・エンジニアリングマネージャーを歴任</li>
+                      </ul>
+                    </div>
+                  </div>
+                  
+                  <div className="flex gap-4 text-sm mt-4">
+                    <a href="https://www.instagram.com/nojisgk/" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline flex items-center gap-1">
+                      <Instagram className="w-4 h-4" />Instagram
                     </a>
-                    <a 
-                      href="https://x.com/ShigeakiNojima" 
-                      target="_blank" 
-                      rel="noopener noreferrer" 
-                      className="text-primary hover:underline flex items-center gap-1"
-                    >
-                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-                      </svg>
-                      X (Twitter)
+                    <a href="https://x.com/ShigeakiNojima" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline flex items-center gap-1">
+                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+                      X
                     </a>
                   </div>
                 </div>
+              </div>
+              
+              {/* Message from Team */}
+              <div className="mt-16 bg-gradient-to-br from-primary/10 to-transparent border border-primary/20 rounded-xl p-8 text-center">
+                <h3 className="text-2xl font-light mb-4">Message from Team</h3>
+                <p className="text-xl font-medium text-primary mb-6">
+                  「正しいメソッドがあれば、あなたはもっと強くなれる。」
+                </p>
+                <div className="space-y-4 text-muted-foreground leading-relaxed max-w-2xl mx-auto">
+                  <p>
+                    私たち3人は、運営メンバーである以前に、ひとつの「チーム」です。<br />
+                    先日もフィリピン・セブ島で開催されたプロ興行「ART 5 CEBU」へ全員で乗り込み、世界を相手に戦ってきました。
+                  </p>
+                  <p>
+                    私たちが世界で勝つために実践し、結果を出してきた<strong className="text-foreground">「最短距離の強さ」</strong>がここにあります。<br />
+                    さあ、次はあなたの番です。
+                  </p>
+                </div>
+                <p className="text-primary font-medium mt-6">by Team JiuFlow</p>
               </div>
             </div>
           </section>
