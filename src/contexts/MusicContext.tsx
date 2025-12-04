@@ -45,7 +45,7 @@ export const MusicProvider = ({ children }: { children: ReactNode }) => {
   const [duration, setDuration] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [isShuffle, setIsShuffle] = useState(false);
-  const [repeatMode, setRepeatMode] = useState<RepeatMode>("off");
+  const [repeatMode, setRepeatMode] = useState<RepeatMode>("all");
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
