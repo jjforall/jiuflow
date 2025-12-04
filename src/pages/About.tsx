@@ -466,19 +466,13 @@ const About = () => {
           {/* Team Section */}
           <section className="py-16 bg-muted/30">
             <div className="max-w-4xl mx-auto px-6">
-              <h2 className="text-4xl font-light mb-4 text-center">Team JiuFlow</h2>
+              <h2 className="text-4xl font-light mb-4 text-center">{t("about.team.title", "Team JiuFlow")}</h2>
               <p className="text-xl text-center font-medium text-primary mb-6">
-                「私たちが作り、私たちが証明する。」
+                {t("about.team.slogan", "「私たちが作り、私たちが証明する。」")}
               </p>
               <div className="text-lg text-muted-foreground mb-12 leading-relaxed text-center max-w-3xl mx-auto space-y-4">
-                <p>
-                  JiuFlowを運営するのは、ビジネスの最前線で戦いながら、<br className="hidden md:block" />
-                  柔術家としても世界の表彰台に立ち続ける私たち自身です。
-                </p>
-                <p>
-                  私たちが提供するのは、机上の空論ではありません。<br className="hidden md:block" />
-                  それぞれの分野で培った知見と、実際にマットの上で勝利するために辿り着いた「本物の技術」です。
-                </p>
+                <p>{t("about.team.intro1", "JiuFlowを運営するのは、ビジネスの最前線で戦いながら、柔術家としても世界の表彰台に立ち続ける私たち自身です。")}</p>
+                <p>{t("about.team.intro2", "私たちが提供するのは、机上の空論ではありません。それぞれの分野で培った知見と、実際にマットの上で勝利するために辿り着いた「本物の技術」です。")}</p>
               </div>
               
               <div className="space-y-12">
@@ -486,46 +480,40 @@ const About = () => {
                 <div className="border-l-4 border-primary pl-6 py-6 hover:bg-muted/20 transition-colors rounded-r-lg">
                   <div className="flex items-center gap-2 text-sm text-primary font-medium mb-2">
                     <Trophy className="w-4 h-4" />
-                    Founder / Head Instructor
+                    {t("about.team.murata.role", "Founder / Head Instructor")}
                   </div>
-                  <h3 className="text-2xl font-light mb-1">村田 良蔵（Ryozo Murata）</h3>
-                  <p className="text-muted-foreground mb-4">メソッド開発・技術監修</p>
+                  <h3 className="text-2xl font-light mb-1">{t("about.team.murata.name", "村田 良蔵（Ryozo Murata）")}</h3>
+                  <p className="text-muted-foreground mb-4">{t("about.team.murata.position", "メソッド開発・技術監修")}</p>
                   
                   <p className="text-xl font-light italic text-primary border-l-2 border-primary/30 pl-4 py-2 mb-6">
-                    「『理』を極めれば、力は要らない。私がそれを証明し続けます。」
+                    {t("about.team.murata.quote", "「『理』を極めれば、力は要らない。私がそれを証明し続けます。」")}
                   </p>
                   
                   <div className="space-y-4 text-muted-foreground leading-relaxed mb-6">
-                    <p>
-                      北海道初のグレイシー直系黒帯として、私は常に「なぜ今の動きで勝てたのか？」「なぜ負けたのか？」を問い続けてきました。
-                      その答えが、フィジカルに依存せず、身体構造と物理法則を味方につける<strong className="text-foreground">「理（ことわり）の柔術」</strong>です。
-                    </p>
-                    <p>
-                      40代を迎えた今も、私は進化しています。日本人初のSJJIF世界王者（連覇）となり、2025年のIBJJF世界マスターでも銅メダルを獲得。さらにプロ柔術「ART 5 CEBU」にも参戦し、世界の強豪と肌を合わせ続けています。
-                      私が開発したこのメソッドは、年齢や体格を言い訳にしません。「安全で、長く、そして強い」。その真髄を、あなたに直接手渡します。
-                    </p>
+                    <p>{t("about.team.murata.bio1", "北海道初のグレイシー直系黒帯として、私は常に「なぜ今の動きで勝てたのか？」「なぜ負けたのか？」を問い続けてきました。その答えが、フィジカルに依存せず、身体構造と物理法則を味方につける「理（ことわり）の柔術」です。")}</p>
+                    <p>{t("about.team.murata.bio2", "40代を迎えた今も、私は進化しています。日本人初のSJJIF世界王者（連覇）となり、2025年のIBJJF世界マスターでも銅メダルを獲得。さらにプロ柔術「ART 5 CEBU」にも参戦し、世界の強豪と肌を合わせ続けています。私が開発したこのメソッドは、年齢や体格を言い訳にしません。「安全で、長く、そして強い」。その真髄を、あなたに直接手渡します。")}</p>
                   </div>
                   
                   <div className="grid md:grid-cols-2 gap-6 mb-4">
                     <div>
                       <h4 className="font-medium mb-2 flex items-center gap-2">
                         <Trophy className="w-4 h-4 text-primary" />
-                        主な戦績
+                        {t("about.team.achievements", "主な戦績")}
                       </h4>
                       <ul className="space-y-1 text-sm text-muted-foreground">
-                        <li>• 2018・2019年 SJJIF世界選手権 マスター2黒帯フェザー級 優勝（日本人初・連覇）</li>
-                        <li>• 2025年 IBJJF世界マスター選手権 フェザー級黒帯マスター3 銅メダル</li>
-                        <li>• ART 5 CEBU 参戦（海外プロ柔術マッチ）</li>
+                        <li>• {t("about.team.murata.achievement1", "2018・2019年 SJJIF世界選手権 マスター2黒帯フェザー級 優勝（日本人初・連覇）")}</li>
+                        <li>• {t("about.team.murata.achievement2", "2025年 IBJJF世界マスター選手権 フェザー級黒帯マスター3 銅メダル")}</li>
+                        <li>• {t("about.team.murata.achievement3", "ART 5 CEBU 参戦（海外プロ柔術マッチ）")}</li>
                       </ul>
                     </div>
                     <div>
                       <h4 className="font-medium mb-2 flex items-center gap-2">
                         <Users className="w-4 h-4 text-primary" />
-                        キャリア
+                        {t("about.team.career", "キャリア")}
                       </h4>
                       <ul className="space-y-1 text-sm text-muted-foreground">
-                        <li>• Over Limit 札幌 / YAWARA JIU-JITSU ACADEMY 代表</li>
-                        <li>• NPO法人スポーツ柔術日本連盟（SJJJF）代表理事</li>
+                        <li>• {t("about.team.murata.career1", "Over Limit 札幌 / YAWARA JIU-JITSU ACADEMY 代表")}</li>
+                        <li>• {t("about.team.murata.career2", "NPO法人スポーツ柔術日本連盟（SJJJF）代表理事")}</li>
                       </ul>
                     </div>
                   </div>
@@ -546,47 +534,39 @@ const About = () => {
                 <div className="border-l-4 border-primary pl-6 py-6 hover:bg-muted/20 transition-colors rounded-r-lg">
                   <div className="flex items-center gap-2 text-sm text-primary font-medium mb-2">
                     <BookOpen className="w-4 h-4" />
-                    Co-Founder / Creative Director
+                    {t("about.team.hamada.role", "Co-Founder / Creative Director")}
                   </div>
-                  <h3 className="text-2xl font-light mb-1">濱田 優貴（Yuki Hamada）</h3>
-                  <p className="text-muted-foreground mb-4">クリエイティブ・情報設計</p>
+                  <h3 className="text-2xl font-light mb-1">{t("about.team.hamada.name", "濱田 優貴（Yuki Hamada）")}</h3>
+                  <p className="text-muted-foreground mb-4">{t("about.team.hamada.position", "クリエイティブ・情報設計")}</p>
                   
                   <p className="text-xl font-light italic text-primary border-l-2 border-primary/30 pl-4 py-2 mb-6">
-                    「開始からわずか1年半で世界3位へ。『超効率的』な学習が、常識を覆す。」
+                    {t("about.team.hamada.quote", "「開始からわずか1年半で世界3位へ。『超効率的』な学習が、常識を覆す。」")}
                   </p>
                   
                   <div className="space-y-4 text-muted-foreground leading-relaxed mb-6">
-                    <p>
-                      私が柔術を始めたのは、昨年の2月のことです。
-                      それからわずか1年半後、今年の9月に行われた世界最大規模の大会「IBJJF世界マスター選手権（青帯）」で、私は表彰台（3位・銅メダル）に立ちました。さらに、フィリピンで開催された「ART 5 CEBU」にもチームの一員として参戦しました。
-                    </p>
-                    <p>
-                      特別な運動能力があったわけでも、生活のすべてを練習に捧げたわけでもありません。
-                      ただ、村田良蔵のメソッドがあまりに合理的で、効率的だったからです。
-                      サイブリッジの創業やメルカリでの経験から、私は常に「最短距離で最大の結果を出す」ことを追求してきましたが、JiuFlowこそが柔術におけるその答えでした。
-                      ビジネスパーソンでも、短期間で世界と戦えるレベルになれる。私自身のこの結果が、何よりの証明です。
-                    </p>
+                    <p>{t("about.team.hamada.bio1", "私が柔術を始めたのは、昨年の2月のことです。それからわずか1年半後、今年の9月に行われた世界最大規模の大会「IBJJF世界マスター選手権（青帯）」で、私は表彰台（3位・銅メダル）に立ちました。さらに、フィリピンで開催された「ART 5 CEBU」にもチームの一員として参戦しました。")}</p>
+                    <p>{t("about.team.hamada.bio2", "特別な運動能力があったわけでも、生活のすべてを練習に捧げたわけでもありません。ただ、村田良蔵のメソッドがあまりに合理的で、効率的だったからです。サイブリッジの創業やメルカリでの経験から、私は常に「最短距離で最大の結果を出す」ことを追求してきましたが、JiuFlowこそが柔術におけるその答えでした。ビジネスパーソンでも、短期間で世界と戦えるレベルになれる。私自身のこの結果が、何よりの証明です。")}</p>
                   </div>
                   
                   <div className="grid md:grid-cols-2 gap-6 mb-4">
                     <div>
                       <h4 className="font-medium mb-2 flex items-center gap-2">
                         <Trophy className="w-4 h-4 text-primary" />
-                        主な戦績
+                        {t("about.team.achievements", "主な戦績")}
                       </h4>
                       <ul className="space-y-1 text-sm text-muted-foreground">
-                        <li>• IBJJF世界マスター選手権 青帯 3位（柔術開始から約1年半で獲得）</li>
-                        <li>• ART 5 CEBU 参戦（海外プロ柔術マッチ）</li>
+                        <li>• {t("about.team.hamada.achievement1", "IBJJF世界マスター選手権 青帯 3位（柔術開始から約1年半で獲得）")}</li>
+                        <li>• {t("about.team.hamada.achievement2", "ART 5 CEBU 参戦（海外プロ柔術マッチ）")}</li>
                       </ul>
                     </div>
                     <div>
                       <h4 className="font-medium mb-2 flex items-center gap-2">
                         <Users className="w-4 h-4 text-primary" />
-                        キャリア
+                        {t("about.team.career", "キャリア")}
                       </h4>
                       <ul className="space-y-1 text-sm text-muted-foreground">
-                        <li>• 株式会社サイブリッジ 創業者</li>
-                        <li>• 元 株式会社メルカリ 取締役CINO</li>
+                        <li>• {t("about.team.hamada.career1", "株式会社サイブリッジ 創業者")}</li>
+                        <li>• {t("about.team.hamada.career2", "元 株式会社メルカリ 取締役CINO")}</li>
                       </ul>
                     </div>
                   </div>
@@ -609,45 +589,39 @@ const About = () => {
                 <div className="border-l-4 border-primary pl-6 py-6 hover:bg-muted/20 transition-colors rounded-r-lg">
                   <div className="flex items-center gap-2 text-sm text-primary font-medium mb-2">
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" /></svg>
-                    Engineering / Instructor
+                    {t("about.team.nojima.role", "Engineering / Instructor")}
                   </div>
-                  <h3 className="text-2xl font-light mb-1">野島 繁昭（Shigeaki Nojima）</h3>
-                  <p className="text-muted-foreground mb-4">システム開発・テクニカルサポート</p>
+                  <h3 className="text-2xl font-light mb-1">{t("about.team.nojima.name", "野島 繁昭（Shigeaki Nojima）")}</h3>
+                  <p className="text-muted-foreground mb-4">{t("about.team.nojima.position", "システム開発・テクニカルサポート")}</p>
                   
                   <p className="text-xl font-light italic text-primary border-l-2 border-primary/30 pl-4 py-2 mb-6">
-                    「論理をシステムに、そして強さに。世界王者になったエンジニア。」
+                    {t("about.team.nojima.quote", "「論理をシステムに、そして強さに。世界王者になったエンジニア。」")}
                   </p>
                   
                   <div className="space-y-4 text-muted-foreground leading-relaxed mb-6">
-                    <p>
-                      JiuFlowのシステム開発を一手に担っているのが私です。早稲田理工で培った論理的思考で、村田のメソッドを「学習システム」へと落とし込んでいます。
-                    </p>
-                    <p>
-                      私は、このJiuFlowのメソッドを徹底的に実践することで、2025年のSJJIF世界選手権（紫帯）で優勝を果たしました。さらに、チーム全員で挑んだプロ興行「ART 5 CEBU」では、完全アウェイの中で勝利を掴み取りました。
-                      システム開発も、自身の格闘技人生も、すべては「理」に基づいています。
-                      「仕事も柔術もトップレベル」を体現するロールモデルとして、あなたの技術習得をシステムと実体験の両面からサポートします。
-                    </p>
+                    <p>{t("about.team.nojima.bio1", "JiuFlowのシステム開発を一手に担っているのが私です。早稲田理工で培った論理的思考で、村田のメソッドを「学習システム」へと落とし込んでいます。")}</p>
+                    <p>{t("about.team.nojima.bio2", "私は、このJiuFlowのメソッドを徹底的に実践することで、2025年のSJJIF世界選手権（紫帯）で優勝を果たしました。さらに、チーム全員で挑んだプロ興行「ART 5 CEBU」では、完全アウェイの中で勝利を掴み取りました。システム開発も、自身の格闘技人生も、すべては「理」に基づいています。「仕事も柔術もトップレベル」を体現するロールモデルとして、あなたの技術習得をシステムと実体験の両面からサポートします。")}</p>
                   </div>
                   
                   <div className="grid md:grid-cols-2 gap-6 mb-4">
                     <div>
                       <h4 className="font-medium mb-2 flex items-center gap-2">
                         <Trophy className="w-4 h-4 text-primary" />
-                        主な戦績
+                        {t("about.team.achievements", "主な戦績")}
                       </h4>
                       <ul className="space-y-1 text-sm text-muted-foreground">
-                        <li>• 2025年 SJJIF世界選手権 マスター紫帯 優勝</li>
-                        <li>• ART 5 CEBU 勝利（海外プロ柔術マッチ）</li>
+                        <li>• {t("about.team.nojima.achievement1", "2025年 SJJIF世界選手権 マスター紫帯 優勝")}</li>
+                        <li>• {t("about.team.nojima.achievement2", "ART 5 CEBU 勝利（海外プロ柔術マッチ）")}</li>
                       </ul>
                     </div>
                     <div>
                       <h4 className="font-medium mb-2 flex items-center gap-2">
                         <Users className="w-4 h-4 text-primary" />
-                        キャリア
+                        {t("about.team.career", "キャリア")}
                       </h4>
                       <ul className="space-y-1 text-sm text-muted-foreground">
-                        <li>• 早稲田大学理工学部 卒業</li>
-                        <li>• スタートアップ企業にて事業責任者・エンジニアリングマネージャーを歴任</li>
+                        <li>• {t("about.team.nojima.career1", "早稲田大学理工学部 卒業")}</li>
+                        <li>• {t("about.team.nojima.career2", "スタートアップ企業にて事業責任者・エンジニアリングマネージャーを歴任")}</li>
                       </ul>
                     </div>
                   </div>
@@ -666,21 +640,15 @@ const About = () => {
               
               {/* Message from Team */}
               <div className="mt-16 bg-gradient-to-br from-primary/10 to-transparent border border-primary/20 rounded-xl p-8 text-center">
-                <h3 className="text-2xl font-light mb-4">Message from Team</h3>
+                <h3 className="text-2xl font-light mb-4">{t("about.team.message.title", "Message from Team")}</h3>
                 <p className="text-xl font-medium text-primary mb-6">
-                  「正しいメソッドがあれば、あなたはもっと強くなれる。」
+                  {t("about.team.message.headline", "「正しいメソッドがあれば、あなたはもっと強くなれる。」")}
                 </p>
                 <div className="space-y-4 text-muted-foreground leading-relaxed max-w-2xl mx-auto">
-                  <p>
-                    私たち3人は、運営メンバーである以前に、ひとつの「チーム」です。<br />
-                    先日もフィリピン・セブ島で開催されたプロ興行「ART 5 CEBU」へ全員で乗り込み、世界を相手に戦ってきました。
-                  </p>
-                  <p>
-                    私たちが世界で勝つために実践し、結果を出してきた<strong className="text-foreground">「最短距離の強さ」</strong>がここにあります。<br />
-                    さあ、次はあなたの番です。
-                  </p>
+                  <p>{t("about.team.message.body1", "私たち3人は、運営メンバーである以前に、ひとつの「チーム」です。先日もフィリピン・セブ島で開催されたプロ興行「ART 5 CEBU」へ全員で乗り込み、世界を相手に戦ってきました。")}</p>
+                  <p>{t("about.team.message.body2", "私たちが世界で勝つために実践し、結果を出してきた「最短距離の強さ」がここにあります。さあ、次はあなたの番です。")}</p>
                 </div>
-                <p className="text-primary font-medium mt-6">by Team JiuFlow</p>
+                <p className="text-primary font-medium mt-6">{t("about.team.message.signature", "by Team JiuFlow")}</p>
               </div>
             </div>
           </section>
