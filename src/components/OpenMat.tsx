@@ -98,6 +98,27 @@ export const OpenMat = () => {
     if (selectedThread) {
       loadPosts(selectedThread.id);
       incrementViewCount(selectedThread.id);
+
+      // Real-time subscription for new posts
+      const channel = supabase
+        .channel(`posts-${selectedThread.id}`)
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'community_posts',
+            filter: `thread_id=eq.${selectedThread.id}`
+          },
+          () => {
+            loadPosts(selectedThread.id);
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
     }
   }, [selectedThread]);
 
