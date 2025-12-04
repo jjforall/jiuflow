@@ -60,10 +60,9 @@ const Map = () => {
   const hashtagFilter = searchParams.get('hashtag');
   const categoryFilter = searchParams.get('category');
   const { subscribed, loading: subscriptionLoading } = useSubscription();
-  const { isAdmin, user } = useAuth();
+  const { isAdmin, user, isLoading: authLoading } = useAuth();
   const [techniques, setTechniques] = useState<Technique[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
@@ -159,18 +158,12 @@ const Map = () => {
     "guard-pass": "bg-pink-500/10 border-pink-500",
   };
 
-  // Check authentication
+  // Check authentication - wait for auth to be ready before redirecting
   useEffect(() => {
-    const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      setIsCheckingAuth(false);
-      
-      if (!session && !isAdmin) {
-        navigate("/login");
-      }
-    };
-    checkAuth();
-  }, [navigate, isAdmin]);
+    if (!authLoading && !user) {
+      navigate("/login");
+    }
+  }, [authLoading, user, navigate]);
 
   // Fetch and group techniques
   const fetchTechniques = useCallback(async (pageNum: number) => {
@@ -273,11 +266,11 @@ const Map = () => {
 
   // Initial load
   useEffect(() => {
-    if (!isCheckingAuth && user) {
+    if (!authLoading && user) {
       fetchTechniques(0);
       fetchVideoViews();
     }
-  }, [isCheckingAuth, user, fetchTechniques, fetchVideoViews]);
+  }, [authLoading, user, fetchTechniques, fetchVideoViews]);
 
   // Infinite scroll
   useEffect(() => {
@@ -360,7 +353,7 @@ const Map = () => {
             )}
           </div>
 
-          {isCheckingAuth || isLoading || subscriptionLoading ? (
+          {authLoading || isLoading || subscriptionLoading ? (
             <div className="animate-fade-in">
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-4">
                 {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((i) => (
