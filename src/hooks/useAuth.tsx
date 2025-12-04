@@ -25,22 +25,34 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     // Check active sessions and sets the user
     const initializeAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        await checkUserRoles(session.user.id);
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        setUser(session?.user ?? null);
+        if (session?.user) {
+          // Defer role check to prevent deadlock
+          setTimeout(() => {
+            checkUserRoles(session.user.id);
+          }, 0);
+        }
+      } catch (error) {
+        console.error('Error initializing auth:', error);
+      } finally {
+        setIsLoading(false);
       }
-      setIsLoading(false);
     };
     
     initializeAuth();
 
     // Listen for changes on auth state (sign in, sign out, etc.)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      // Only synchronous state updates here to prevent Safari issues
       setUser(session?.user ?? null);
       
       if (session?.user) {
-        await checkUserRoles(session.user.id);
+        // Defer Supabase calls with setTimeout to prevent deadlock
+        setTimeout(() => {
+          checkUserRoles(session.user.id);
+        }, 0);
       } else {
         setIsAdmin(false);
         setIsStaff(false);
