@@ -631,22 +631,31 @@ const Video = () => {
     }
   };
 
-  // 統合ローディング - 1つのスケルトンのみ表示
+  // 統合ローディング - 実際のレイアウトと同じ構造のスケルトン
   if (!isReady || subscriptionLoading) {
     return (
       <div className="min-h-screen">
         <Navigation />
-        <main className="pt-32 pb-20 px-6">
-          <div className="max-w-4xl mx-auto space-y-8">
-            <div className="space-y-4">
-              <Skeleton className="h-10 w-1/3" />
-              <Skeleton className="h-6 w-1/2" />
-            </div>
-            <Skeleton className="aspect-video w-full rounded-lg" />
-            <div className="space-y-3">
-              <Skeleton className="h-4 w-full" />
-              <Skeleton className="h-4 w-5/6" />
-              <Skeleton className="h-4 w-4/6" />
+        <main className="pt-24 pb-20">
+          <div className="max-w-7xl mx-auto px-4 md:px-6">
+            <div className="flex flex-col lg:flex-row gap-6">
+              {/* Main Video Section Skeleton */}
+              <div className="flex-1">
+                <Skeleton className="aspect-video w-full rounded-lg" />
+                <div className="mt-6 space-y-4">
+                  <Skeleton className="h-7 w-2/3" />
+                  <Skeleton className="h-5 w-20" />
+                </div>
+              </div>
+              {/* Sidebar Skeleton */}
+              <div className="lg:w-80 space-y-4">
+                <Skeleton className="h-6 w-32" />
+                <div className="space-y-3">
+                  <Skeleton className="h-20 w-full rounded-lg" />
+                  <Skeleton className="h-20 w-full rounded-lg" />
+                  <Skeleton className="h-20 w-full rounded-lg" />
+                </div>
+              </div>
             </div>
           </div>
         </main>
