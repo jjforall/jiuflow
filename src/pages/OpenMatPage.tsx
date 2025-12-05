@@ -6,7 +6,7 @@ const OpenMatPage = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
-      <main className="pt-20">
+      <main className="pt-20 pb-16">
         <OpenMat />
       </main>
       <Footer />
