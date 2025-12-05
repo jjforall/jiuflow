@@ -67,8 +67,7 @@ const Video = () => {
   const { play, isPlaying, volume, setVolume, playlist, loadPlaylist } = useMusic();
   const [technique, setTechnique] = useState<Technique | null>(null);
   const [seriesVideos, setSeriesVideos] = useState<Technique[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+  const [isReady, setIsReady] = useState(false); // 統合ローディング状態
   const [seriesLetter, setSeriesLetter] = useState<string>("");
   const [viewCount, setViewCount] = useState<number>(0);
   const [isVideoPlaying, setIsVideoPlaying] = useState(false);
@@ -218,7 +217,6 @@ const Video = () => {
   };
 
   const loadTechniqueFromServer = useCallback(async (videoId: string, userId: string, cacheKey: string) => {
-    setIsLoading(true);
     const { data, error } = await supabase
       .from("techniques")
       .select("*")
@@ -229,30 +227,37 @@ const Video = () => {
       toast.error("Error loading technique", {
         description: error.message,
       });
-      setIsLoading(false);
-      return;
+      return null;
     }
 
     const techniqueData = data as Technique;
     setTechnique(techniqueData);
 
-    // Load view count first, then record new view
-    await loadViewCount(videoId, userId);
-    await recordVideoView(videoId, userId);
+    // Load view count and record new view in parallel
+    const viewPromise = loadViewCount(videoId, userId).then(() => recordVideoView(videoId, userId));
 
     // Get all series to calculate letter index
     let letterValue = "";
     let seriesVids: Technique[] = [];
     
     if (techniqueData?.series_name) {
-      const { data: allSeries } = await supabase
-        .from("techniques")
-        .select("series_name")
-        .not("series_name", "is", null)
-        .order("series_name", { ascending: true });
+      // Load series data in parallel
+      const [allSeriesResult, seriesDataResult] = await Promise.all([
+        supabase
+          .from("techniques")
+          .select("series_name")
+          .not("series_name", "is", null)
+          .order("series_name", { ascending: true }),
+        supabase
+          .from("techniques")
+          .select("*")
+          .eq("series_name", techniqueData.series_name)
+          .neq("id", videoId)
+          .order("series_order", { ascending: true })
+      ]);
 
-      if (allSeries) {
-        const uniqueSeries = [...new Set(allSeries.map(s => s.series_name))].filter(Boolean) as string[];
+      if (allSeriesResult.data) {
+        const uniqueSeries = [...new Set(allSeriesResult.data.map(s => s.series_name))].filter(Boolean) as string[];
         const seriesIndex = uniqueSeries.indexOf(techniqueData.series_name);
         if (seriesIndex !== -1) {
           letterValue = String.fromCharCode(65 + seriesIndex);
@@ -260,19 +265,14 @@ const Video = () => {
         }
       }
 
-      // Load other videos in the same series
-      const { data: seriesData } = await supabase
-        .from("techniques")
-        .select("*")
-        .eq("series_name", techniqueData.series_name)
-        .neq("id", videoId)
-        .order("series_order", { ascending: true });
-
-      if (seriesData) {
-        seriesVids = seriesData as Technique[];
+      if (seriesDataResult.data) {
+        seriesVids = seriesDataResult.data as Technique[];
         setSeriesVideos(seriesVids);
       }
     }
+
+    // Wait for view operations to complete
+    await viewPromise;
 
     // Cache the result with updated_at as part of the key
     const cacheData = {
@@ -281,15 +281,15 @@ const Video = () => {
       seriesLetter: letterValue,
       viewCount: viewCount,
       timestamp: Date.now(),
-      updated_at: techniqueData.updated_at // Track when the technique was last updated
+      updated_at: techniqueData.updated_at
     };
     sessionStorage.setItem(cacheKey, JSON.stringify(cacheData));
 
-    setIsLoading(false);
+    return techniqueData;
   }, [viewCount]);
 
-  const loadTechnique = useCallback(async () => {
-    if (!id || !user) return;
+  const loadTechnique = useCallback(async (userId: string): Promise<Technique | null> => {
+    if (!id) return null;
     
     // Try to restore from cache first
     const cacheKey = `technique:${id}`;
@@ -315,10 +315,8 @@ const Video = () => {
             setSeriesVideos(cachedData.seriesVideos || []);
             setSeriesLetter(cachedData.seriesLetter || "");
             setViewCount(cachedData.viewCount || 0);
-            setIsLoading(false);
-            return;
+            return cachedData.technique;
           }
-          // If updated_at doesn't match, cache is stale, reload from server
         }
       } catch (e) {
         console.error('Cache parse error:', e);
@@ -326,29 +324,38 @@ const Video = () => {
     }
     
     // No valid cache, load from server
-    await loadTechniqueFromServer(id, user.id, cacheKey);
-  }, [id, user, loadTechniqueFromServer]);
+    return await loadTechniqueFromServer(id, userId, cacheKey);
+  }, [id, loadTechniqueFromServer]);
 
+  // 統合初期化 - 認証、サブスク、テクニックを並列で読み込み
   useEffect(() => {
-    const checkAuthAndLoadTechnique = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session) {
-        navigate("/login", { 
-          state: { from: { pathname: `/video/${id}` } },
-          replace: true 
-        });
-        return;
-      }
+    const initializeAll = async () => {
+      try {
+        // セッションを取得
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (!session) {
+          navigate("/login", { 
+            state: { from: { pathname: `/video/${id}` } },
+            replace: true 
+          });
+          return;
+        }
 
-      setIsCheckingAuth(false);
-      
-      if (id) {
-        loadTechnique();
+        // テクニックデータを読み込み（サブスクはuseSubscriptionで並列処理される）
+        if (id) {
+          await loadTechnique(session.user.id);
+        }
+
+        // 全ての準備が完了
+        setIsReady(true);
+      } catch (error) {
+        console.error('Initialization error:', error);
+        setIsReady(true); // エラーでも表示を許可
       }
     };
 
-    checkAuthAndLoadTechnique();
+    initializeAll();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, navigate]);
 
@@ -592,11 +599,12 @@ const Video = () => {
     }
   };
 
-  if (isCheckingAuth || isLoading || subscriptionLoading) {
+  // 統合ローディング - 1つのスケルトンのみ表示
+  if (!isReady || subscriptionLoading) {
     return (
       <div className="min-h-screen">
         <Navigation />
-        <main className="pt-32 pb-20 px-6 animate-fade-in">
+        <main className="pt-32 pb-20 px-6">
           <div className="max-w-4xl mx-auto space-y-8">
             <div className="space-y-4">
               <Skeleton className="h-10 w-1/3" />
