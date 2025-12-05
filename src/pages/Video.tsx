@@ -288,10 +288,10 @@ const Video = () => {
     return techniqueData;
   }, [viewCount]);
 
-  const loadTechnique = useCallback(async (userId: string): Promise<Technique | null> => {
+  // キャッシュから即座に復元（ネットワーク不要）
+  const restoreFromCache = useCallback((): { technique: Technique; seriesVideos: Technique[]; seriesLetter: string; viewCount: number } | null => {
     if (!id) return null;
     
-    // Try to restore from cache first
     const cacheKey = `technique:${id}`;
     const cached = sessionStorage.getItem(cacheKey);
     
@@ -300,34 +300,51 @@ const Video = () => {
         const cachedData = JSON.parse(cached);
         const cacheAge = Date.now() - (cachedData.timestamp || 0);
         
-        // Check if cache is still valid (less than 5 minutes old)
-        if (cacheAge < 5 * 60 * 1000) {
-          // Verify if the data has been updated by checking updated_at
-          const { data: currentData } = await supabase
-            .from("techniques")
-            .select("updated_at")
-            .eq("id", id)
-            .maybeSingle();
-          
-          // If updated_at matches cache, use cache
-          if (currentData && currentData.updated_at === cachedData.updated_at) {
-            setTechnique(cachedData.technique);
-            setSeriesVideos(cachedData.seriesVideos || []);
-            setSeriesLetter(cachedData.seriesLetter || "");
-            setViewCount(cachedData.viewCount || 0);
-            return cachedData.technique;
-          }
+        // キャッシュが10分以内なら使用
+        if (cacheAge < 10 * 60 * 1000 && cachedData.technique) {
+          return {
+            technique: cachedData.technique,
+            seriesVideos: cachedData.seriesVideos || [],
+            seriesLetter: cachedData.seriesLetter || "",
+            viewCount: cachedData.viewCount || 0
+          };
         }
       } catch (e) {
         console.error('Cache parse error:', e);
       }
     }
+    return null;
+  }, [id]);
+
+  // バックグラウンドでキャッシュを更新
+  const backgroundRefresh = useCallback(async (userId: string) => {
+    if (!id) return;
     
-    // No valid cache, load from server
-    return await loadTechniqueFromServer(id, userId, cacheKey);
+    const cacheKey = `technique:${id}`;
+    const cached = sessionStorage.getItem(cacheKey);
+    
+    if (cached) {
+      try {
+        const cachedData = JSON.parse(cached);
+        
+        // updated_atをチェックして変更があれば更新
+        const { data: currentData } = await supabase
+          .from("techniques")
+          .select("updated_at")
+          .eq("id", id)
+          .maybeSingle();
+        
+        if (currentData && currentData.updated_at !== cachedData.updated_at) {
+          // データが更新されているのでリロード
+          await loadTechniqueFromServer(id, userId, cacheKey);
+        }
+      } catch (e) {
+        console.error('Background refresh error:', e);
+      }
+    }
   }, [id, loadTechniqueFromServer]);
 
-  // 統合初期化 - 認証、サブスク、テクニックを並列で読み込み
+  // 統合初期化 - キャッシュがあれば即座表示、なければサーバーから取得
   useEffect(() => {
     const initializeAll = async () => {
       try {
@@ -342,16 +359,31 @@ const Video = () => {
           return;
         }
 
-        // テクニックデータを読み込み（サブスクはuseSubscriptionで並列処理される）
-        if (id) {
-          await loadTechnique(session.user.id);
-        }
+        const userId = session.user.id;
 
-        // 全ての準備が完了
-        setIsReady(true);
+        // キャッシュから即座に復元を試みる
+        const cachedData = restoreFromCache();
+        
+        if (cachedData) {
+          // キャッシュがあれば即座に表示
+          setTechnique(cachedData.technique);
+          setSeriesVideos(cachedData.seriesVideos);
+          setSeriesLetter(cachedData.seriesLetter);
+          setViewCount(cachedData.viewCount);
+          setIsReady(true);
+          
+          // バックグラウンドで更新チェック
+          backgroundRefresh(userId);
+        } else {
+          // キャッシュがない場合はサーバーから取得
+          if (id) {
+            await loadTechniqueFromServer(id, userId, `technique:${id}`);
+          }
+          setIsReady(true);
+        }
       } catch (error) {
         console.error('Initialization error:', error);
-        setIsReady(true); // エラーでも表示を許可
+        setIsReady(true);
       }
     };
 
