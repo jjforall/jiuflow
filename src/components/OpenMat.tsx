@@ -18,7 +18,7 @@ import remarkGfm from "remark-gfm";
 import { 
   BookOpen, GraduationCap, MessageCircle, Trophy, HelpCircle, Calendar,
   Plus, ArrowLeft, Send, Eye, MessageSquare, Pin, ChevronRight, Trash2, 
-  Video, Pencil, X, Upload
+  Video, Pencil, X, Upload, Heart
 } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
@@ -65,6 +65,13 @@ interface Post {
   };
 }
 
+interface Reaction {
+  id: string;
+  user_id: string;
+  thread_id: string | null;
+  post_id: string | null;
+}
+
 const iconMap: Record<string, React.ElementType> = {
   BookOpen,
   GraduationCap,
@@ -98,6 +105,8 @@ export const OpenMat = () => {
   const [uploading, setUploading] = useState(false);
   const videoInputRef = useRef<HTMLInputElement>(null);
   const postVideoInputRef = useRef<HTMLInputElement>(null);
+  const [threadReactions, setThreadReactions] = useState<Reaction[]>([]);
+  const [postReactions, setPostReactions] = useState<Record<string, Reaction[]>>({});
 
   useEffect(() => {
     loadCategories();
@@ -112,6 +121,7 @@ export const OpenMat = () => {
   useEffect(() => {
     if (selectedThread) {
       loadPosts(selectedThread.id);
+      loadReactions(selectedThread.id);
       incrementViewCount(selectedThread.id);
 
       // Real-time subscription for new posts
@@ -209,6 +219,99 @@ export const OpenMat = () => {
       .from('community_threads')
       .update({ view_count: (selectedThread?.view_count || 0) + 1 })
       .eq('id', threadId);
+  };
+
+  const loadReactions = async (threadId: string) => {
+    try {
+      // Load thread reactions
+      const { data: threadData } = await supabase
+        .from('community_reactions')
+        .select('*')
+        .eq('thread_id', threadId);
+      
+      setThreadReactions(threadData || []);
+
+      // Load post reactions for this thread
+      const { data: postsData } = await supabase
+        .from('community_posts')
+        .select('id')
+        .eq('thread_id', threadId);
+
+      if (postsData && postsData.length > 0) {
+        const postIds = postsData.map(p => p.id);
+        const { data: postReactionsData } = await supabase
+          .from('community_reactions')
+          .select('*')
+          .in('post_id', postIds);
+
+        // Group by post_id
+        const grouped: Record<string, Reaction[]> = {};
+        (postReactionsData || []).forEach(r => {
+          if (r.post_id) {
+            if (!grouped[r.post_id]) grouped[r.post_id] = [];
+            grouped[r.post_id].push(r);
+          }
+        });
+        setPostReactions(grouped);
+      }
+    } catch (error) {
+      console.error('Error loading reactions:', error);
+    }
+  };
+
+  const toggleThreadReaction = async () => {
+    if (!user || !selectedThread) {
+      toast.error(language === "ja" ? "ログインしてください" : "Please log in");
+      return;
+    }
+
+    const existing = threadReactions.find(r => r.user_id === user.id);
+    
+    if (existing) {
+      await supabase.from('community_reactions').delete().eq('id', existing.id);
+      setThreadReactions(prev => prev.filter(r => r.id !== existing.id));
+    } else {
+      const { data, error } = await supabase
+        .from('community_reactions')
+        .insert({ user_id: user.id, thread_id: selectedThread.id })
+        .select()
+        .single();
+      
+      if (!error && data) {
+        setThreadReactions(prev => [...prev, data]);
+      }
+    }
+  };
+
+  const togglePostReaction = async (postId: string) => {
+    if (!user) {
+      toast.error(language === "ja" ? "ログインしてください" : "Please log in");
+      return;
+    }
+
+    const reactions = postReactions[postId] || [];
+    const existing = reactions.find(r => r.user_id === user.id);
+    
+    if (existing) {
+      await supabase.from('community_reactions').delete().eq('id', existing.id);
+      setPostReactions(prev => ({
+        ...prev,
+        [postId]: prev[postId]?.filter(r => r.id !== existing.id) || []
+      }));
+    } else {
+      const { data, error } = await supabase
+        .from('community_reactions')
+        .insert({ user_id: user.id, post_id: postId })
+        .select()
+        .single();
+      
+      if (!error && data) {
+        setPostReactions(prev => ({
+          ...prev,
+          [postId]: [...(prev[postId] || []), data]
+        }));
+      }
+    }
   };
 
   const createThread = async () => {
@@ -851,6 +954,19 @@ export const OpenMat = () => {
               <div className="mt-2 prose prose-sm dark:prose-invert max-w-none">
                 {renderContent(selectedThread.content)}
               </div>
+              <div className="mt-3 flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 px-2 gap-1"
+                  onClick={toggleThreadReaction}
+                >
+                  <Heart 
+                    className={`h-4 w-4 ${threadReactions.some(r => r.user_id === user?.id) ? 'fill-red-500 text-red-500' : ''}`} 
+                  />
+                  <span className="text-xs">{threadReactions.length}</span>
+                </Button>
+              </div>
             </div>
           </div>
         </CardContent>
@@ -925,6 +1041,19 @@ export const OpenMat = () => {
                     </div>
                     <div className="mt-1 text-sm prose prose-sm dark:prose-invert max-w-none">
                       {renderContent(post.content)}
+                    </div>
+                    <div className="mt-2 flex items-center gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 px-2 gap-1"
+                        onClick={() => togglePostReaction(post.id)}
+                      >
+                        <Heart 
+                          className={`h-3.5 w-3.5 ${(postReactions[post.id] || []).some(r => r.user_id === user?.id) ? 'fill-red-500 text-red-500' : ''}`} 
+                        />
+                        <span className="text-xs">{(postReactions[post.id] || []).length}</span>
+                      </Button>
                     </div>
                   </div>
                 </div>
