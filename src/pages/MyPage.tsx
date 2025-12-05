@@ -1020,9 +1020,11 @@ const MyPage = () => {
   };
 
   const updateTitle = (index: number, field: string, value: string) => {
-    const newTitles = [...(editValues.titles || [])];
-    newTitles[index] = { ...newTitles[index], [field]: value };
-    setEditValues({ ...editValues, titles: newTitles });
+    setEditValues(prev => {
+      const newTitles = [...(prev.titles || [])];
+      newTitles[index] = { ...newTitles[index], [field]: value };
+      return { ...prev, titles: newTitles };
+    });
   };
 
   const removeTitle = (index: number) => {
