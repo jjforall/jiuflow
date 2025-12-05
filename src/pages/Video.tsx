@@ -884,7 +884,7 @@ const Video = () => {
               {/* Technique Info */}
               <div className="mt-6 animate-fade-up space-y-4">
                 <div className="flex flex-col gap-3">
-                  <h1 className="text-3xl md:text-4xl font-light">{getTechniqueName(technique)}</h1>
+                  <h1 className="text-xl md:text-2xl font-light">{getTechniqueName(technique)}</h1>
                   <span className="inline-block px-3 py-1 text-xs border border-border w-fit">
                     {technique.category}
                   </span>
