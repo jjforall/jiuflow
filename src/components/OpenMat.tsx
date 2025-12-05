@@ -141,7 +141,6 @@ export const OpenMat = () => {
   };
 
   const loadThreads = async (categoryId: string) => {
-    setLoading(true);
     try {
       const { data, error } = await supabase
         .from('community_threads')
@@ -170,8 +169,6 @@ export const OpenMat = () => {
     } catch (error) {
       console.error('Error loading threads:', error);
       toast.error(language === "ja" ? "スレッドの読み込みに失敗しました" : "Failed to load threads");
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -321,7 +318,7 @@ export const OpenMat = () => {
   // Category List View
   if (!selectedCategory) {
     return (
-      <div className="space-y-4">
+      <div className="space-y-4 px-4 sm:px-6 max-w-4xl mx-auto">
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-xl sm:text-2xl font-light">Open Mat</h2>
@@ -368,7 +365,7 @@ export const OpenMat = () => {
   // Thread List View
   if (!selectedThread) {
     return (
-      <div className="space-y-4">
+      <div className="space-y-4 px-4 sm:px-6 max-w-4xl mx-auto">
         <div className="flex items-center gap-3">
           <Button 
             variant="ghost" 
@@ -502,7 +499,7 @@ export const OpenMat = () => {
 
   // Thread Detail View
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 px-4 sm:px-6 max-w-4xl mx-auto">
       <div className="flex items-center gap-3">
         <Button 
           variant="ghost" 
