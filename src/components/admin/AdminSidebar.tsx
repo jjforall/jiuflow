@@ -19,6 +19,7 @@ import {
   ShoppingBag,
   PanelLeftClose,
   PanelLeft,
+  MessageSquare,
 } from "lucide-react";
 import {
   Sidebar,
@@ -57,6 +58,7 @@ const menuItems = [
   { id: "logs", label: "ログ", icon: FileText },
   { id: "tips", label: "投げ銭", icon: Gift },
   { id: "music", label: "音楽管理", icon: Music },
+  { id: "community", label: "オープンマット", icon: MessageSquare },
   { id: "settings", label: "設定", icon: Settings },
 ];
 
