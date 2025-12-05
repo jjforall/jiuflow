@@ -463,9 +463,18 @@ export type Database = {
         Row: {
           author_id: string
           content: string
+          content_ar: string | null
+          content_de: string | null
           content_en: string | null
+          content_es: string | null
+          content_fr: string | null
+          content_hi: string | null
+          content_it: string | null
           content_ja: string | null
+          content_ko: string | null
           content_pt: string | null
+          content_ru: string | null
+          content_zh: string | null
           created_at: string
           id: string
           thread_id: string
@@ -474,9 +483,18 @@ export type Database = {
         Insert: {
           author_id: string
           content: string
+          content_ar?: string | null
+          content_de?: string | null
           content_en?: string | null
+          content_es?: string | null
+          content_fr?: string | null
+          content_hi?: string | null
+          content_it?: string | null
           content_ja?: string | null
+          content_ko?: string | null
           content_pt?: string | null
+          content_ru?: string | null
+          content_zh?: string | null
           created_at?: string
           id?: string
           thread_id: string
@@ -485,9 +503,18 @@ export type Database = {
         Update: {
           author_id?: string
           content?: string
+          content_ar?: string | null
+          content_de?: string | null
           content_en?: string | null
+          content_es?: string | null
+          content_fr?: string | null
+          content_hi?: string | null
+          content_it?: string | null
           content_ja?: string | null
+          content_ko?: string | null
           content_pt?: string | null
+          content_ru?: string | null
+          content_zh?: string | null
           created_at?: string
           id?: string
           thread_id?: string
@@ -557,16 +584,34 @@ export type Database = {
           author_id: string
           category_id: string
           content: string
+          content_ar: string | null
+          content_de: string | null
           content_en: string | null
+          content_es: string | null
+          content_fr: string | null
+          content_hi: string | null
+          content_it: string | null
           content_ja: string | null
+          content_ko: string | null
           content_pt: string | null
+          content_ru: string | null
+          content_zh: string | null
           created_at: string
           id: string
           is_pinned: boolean | null
           title: string
+          title_ar: string | null
+          title_de: string | null
           title_en: string | null
+          title_es: string | null
+          title_fr: string | null
+          title_hi: string | null
+          title_it: string | null
           title_ja: string | null
+          title_ko: string | null
           title_pt: string | null
+          title_ru: string | null
+          title_zh: string | null
           updated_at: string
           view_count: number | null
         }
@@ -574,16 +619,34 @@ export type Database = {
           author_id: string
           category_id: string
           content: string
+          content_ar?: string | null
+          content_de?: string | null
           content_en?: string | null
+          content_es?: string | null
+          content_fr?: string | null
+          content_hi?: string | null
+          content_it?: string | null
           content_ja?: string | null
+          content_ko?: string | null
           content_pt?: string | null
+          content_ru?: string | null
+          content_zh?: string | null
           created_at?: string
           id?: string
           is_pinned?: boolean | null
           title: string
+          title_ar?: string | null
+          title_de?: string | null
           title_en?: string | null
+          title_es?: string | null
+          title_fr?: string | null
+          title_hi?: string | null
+          title_it?: string | null
           title_ja?: string | null
+          title_ko?: string | null
           title_pt?: string | null
+          title_ru?: string | null
+          title_zh?: string | null
           updated_at?: string
           view_count?: number | null
         }
@@ -591,16 +654,34 @@ export type Database = {
           author_id?: string
           category_id?: string
           content?: string
+          content_ar?: string | null
+          content_de?: string | null
           content_en?: string | null
+          content_es?: string | null
+          content_fr?: string | null
+          content_hi?: string | null
+          content_it?: string | null
           content_ja?: string | null
+          content_ko?: string | null
           content_pt?: string | null
+          content_ru?: string | null
+          content_zh?: string | null
           created_at?: string
           id?: string
           is_pinned?: boolean | null
           title?: string
+          title_ar?: string | null
+          title_de?: string | null
           title_en?: string | null
+          title_es?: string | null
+          title_fr?: string | null
+          title_hi?: string | null
+          title_it?: string | null
           title_ja?: string | null
+          title_ko?: string | null
           title_pt?: string | null
+          title_ru?: string | null
+          title_zh?: string | null
           updated_at?: string
           view_count?: number | null
         }
