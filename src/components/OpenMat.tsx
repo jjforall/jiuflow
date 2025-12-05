@@ -40,6 +40,12 @@ interface Thread {
   author_id: string;
   title: string;
   content: string;
+  title_en?: string | null;
+  title_ja?: string | null;
+  title_pt?: string | null;
+  content_en?: string | null;
+  content_ja?: string | null;
+  content_pt?: string | null;
   is_pinned: boolean;
   view_count: number;
   created_at: string;
@@ -57,6 +63,9 @@ interface Post {
   thread_id: string;
   author_id: string;
   content: string;
+  content_en?: string | null;
+  content_ja?: string | null;
+  content_pt?: string | null;
   created_at: string;
   author?: {
     display_name: string | null;
@@ -115,6 +124,7 @@ export const OpenMat = () => {
   useEffect(() => {
     if (selectedCategory) {
       loadThreads(selectedCategory.id);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   }, [selectedCategory]);
 
@@ -123,6 +133,7 @@ export const OpenMat = () => {
       loadPosts(selectedThread.id);
       loadReactions(selectedThread.id);
       incrementViewCount(selectedThread.id);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
 
       // Real-time subscription for new posts
       const channel = supabase
@@ -323,16 +334,29 @@ export const OpenMat = () => {
 
     setSubmitting(true);
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('community_threads')
         .insert({
           category_id: selectedCategory.id,
           author_id: user.id,
           title: newThreadTitle.trim(),
           content: newThreadContent.trim(),
-        });
+        })
+        .select()
+        .single();
 
       if (error) throw error;
+
+      // Translate in background
+      supabase.functions.invoke('translate-community-content', {
+        body: {
+          type: 'thread',
+          id: data.id,
+          title: newThreadTitle.trim(),
+          content: newThreadContent.trim(),
+          source_lang: language
+        }
+      }).catch(err => console.error('Translation error:', err));
 
       toast.success(language === "ja" ? "スレッドを作成しました" : "Thread created");
       setNewThreadOpen(false);
@@ -356,15 +380,27 @@ export const OpenMat = () => {
 
     setSubmitting(true);
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('community_posts')
         .insert({
           thread_id: selectedThread.id,
           author_id: user.id,
           content: newPostContent.trim(),
-        });
+        })
+        .select()
+        .single();
 
       if (error) throw error;
+
+      // Translate in background
+      supabase.functions.invoke('translate-community-content', {
+        body: {
+          type: 'post',
+          id: data.id,
+          content: newPostContent.trim(),
+          source_lang: language
+        }
+      }).catch(err => console.error('Translation error:', err));
 
       toast.success(language === "ja" ? "コメントを投稿しました" : "Comment posted");
       setNewPostContent("");
@@ -489,6 +525,17 @@ export const OpenMat = () => {
 
       if (error) throw error;
 
+      // Translate in background
+      supabase.functions.invoke('translate-community-content', {
+        body: {
+          type: 'thread',
+          id: editingThread.id,
+          title: editTitle.trim(),
+          content: editContent.trim(),
+          source_lang: language
+        }
+      }).catch(err => console.error('Translation error:', err));
+
       toast.success(language === "ja" ? "更新しました" : "Updated");
       setEditingThread(null);
       setSelectedThread(prev => prev ? { ...prev, title: editTitle.trim(), content: editContent.trim() } : null);
@@ -515,6 +562,16 @@ export const OpenMat = () => {
 
       if (error) throw error;
 
+      // Translate in background
+      supabase.functions.invoke('translate-community-content', {
+        body: {
+          type: 'post',
+          id: editingPost.id,
+          content: editContent.trim(),
+          source_lang: language
+        }
+      }).catch(err => console.error('Translation error:', err));
+
       toast.success(language === "ja" ? "更新しました" : "Updated");
       setEditingPost(null);
       loadPosts(selectedThread!.id);
@@ -529,6 +586,14 @@ export const OpenMat = () => {
   const getProfileLink = (author?: { username: string | null; display_name: string | null }) => {
     if (author?.username) return `/${author.username}`;
     return null;
+  };
+
+  const getTranslatedContent = (item: Thread | Post, field: 'content' | 'title' = 'content'): string => {
+    const langKey = `${field}_${language}` as keyof typeof item;
+    const translated = item[langKey] as string | null | undefined;
+    if (translated) return translated;
+    // Fallback to original
+    return field === 'title' ? (item as Thread).title : item.content;
   };
 
   const renderContent = (content: string) => (
@@ -778,10 +843,10 @@ export const OpenMat = () => {
                         {thread.is_pinned && (
                           <Pin className="h-3.5 w-3.5 text-primary" />
                         )}
-                        <h3 className="font-medium truncate">{thread.title}</h3>
+                        <h3 className="font-medium truncate">{getTranslatedContent(thread, 'title')}</h3>
                       </div>
                       <p className="text-sm text-muted-foreground line-clamp-1 mt-0.5">
-                        {thread.content}
+                        {getTranslatedContent(thread)}
                       </p>
                       <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
                         <span>{thread.author?.display_name || "Unknown"}</span>
@@ -824,7 +889,7 @@ export const OpenMat = () => {
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <div className="flex-1 min-w-0">
-          <h2 className="text-lg font-medium truncate">{selectedThread.title}</h2>
+          <h2 className="text-lg font-medium truncate">{getTranslatedContent(selectedThread, 'title')}</h2>
           <p className="text-sm text-muted-foreground">
             {getProfileLink(selectedThread.author) ? (
               <Link to={getProfileLink(selectedThread.author)!} className="hover:text-primary hover:underline">
@@ -952,7 +1017,7 @@ export const OpenMat = () => {
                 </span>
               </div>
               <div className="mt-2 prose prose-sm dark:prose-invert max-w-none">
-                {renderContent(selectedThread.content)}
+                {renderContent(getTranslatedContent(selectedThread))}
               </div>
               <div className="mt-3 flex items-center gap-2">
                 <Button
@@ -1040,7 +1105,7 @@ export const OpenMat = () => {
                       )}
                     </div>
                     <div className="mt-1 text-sm prose prose-sm dark:prose-invert max-w-none">
-                      {renderContent(post.content)}
+                      {renderContent(getTranslatedContent(post))}
                     </div>
                     <div className="mt-2 flex items-center gap-2">
                       <Button
