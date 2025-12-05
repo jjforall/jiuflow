@@ -774,9 +774,7 @@ export const OpenMat = () => {
                           ? announcement.content_pt
                           : announcement.content}
                       </p>
-                      <div className="text-xs text-muted-foreground flex items-center gap-2">
-                        <span>{announcement.author_email}</span>
-                        <span>•</span>
+                      <div className="text-xs text-muted-foreground">
                         <span>{format(new Date(announcement.created_at), 'yyyy/MM/dd')}</span>
                       </div>
                     </CardContent>

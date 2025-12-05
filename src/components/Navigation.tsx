@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useTheme } from "next-themes";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { translations } from "@/lib/translations";
@@ -29,6 +29,20 @@ const Navigation = () => {
   const [user, setUser] = useState<SupabaseUser | null>(null);
   const [canAccessAdmin, setCanAccessAdmin] = useState(false);
   const { subscribed, loading: subscriptionLoading } = useSubscription();
+  const [showOpenMatBadge, setShowOpenMatBadge] = useState(false);
+
+  // Check if user has seen the Open Mat notification
+  useEffect(() => {
+    const hasSeenOpenMat = localStorage.getItem('hasSeenOpenMatNotification');
+    if (!hasSeenOpenMat) {
+      setShowOpenMatBadge(true);
+    }
+  }, []);
+
+  const handleOpenMatClick = useCallback(() => {
+    localStorage.setItem('hasSeenOpenMatNotification', 'true');
+    setShowOpenMatBadge(false);
+  }, []);
 
   useEffect(() => {
     // Set up auth state listener FIRST
@@ -187,9 +201,15 @@ const Navigation = () => {
                   <ClipboardList className="h-4 w-4" />
                   {language === "ja" ? "練習記録" : language === "pt" ? "Registros de Prática" : "Practice Records"}
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate("/open-mat")} className="gap-2 cursor-pointer">
+                <DropdownMenuItem onClick={() => { navigate("/open-mat"); handleOpenMatClick(); }} className="gap-2 cursor-pointer relative">
                   <Users className="h-4 w-4" />
                   {language === "ja" ? "オープンマット" : language === "pt" ? "Open Mat" : "Open Mat"}
+                  {showOpenMatBadge && (
+                    <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                    </span>
+                  )}
                 </DropdownMenuItem>
                   {canAccessAdmin && (
                     <DropdownMenuItem onClick={() => navigate("/admin/dashboard")} className="gap-2 cursor-pointer">
@@ -364,9 +384,10 @@ const Navigation = () => {
                       </Button>
                       <Button 
                         variant="ghost" 
-                        className="w-full justify-start gap-3 h-12 hover:bg-muted/50 active:bg-muted"
+                        className="w-full justify-start gap-3 h-12 hover:bg-muted/50 active:bg-muted relative"
                         onClick={() => {
                           navigate("/open-mat");
+                          handleOpenMatClick();
                           setIsOpen(false);
                         }}
                       >
@@ -374,6 +395,12 @@ const Navigation = () => {
                         <span className="text-base">
                           {language === "ja" ? "オープンマット" : language === "pt" ? "Open Mat" : "Open Mat"}
                         </span>
+                        {showOpenMatBadge && (
+                          <span className="absolute top-2 left-2 flex h-3 w-3">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                          </span>
+                        )}
                       </Button>
                       {canAccessAdmin && (
                         <Link to="/admin/dashboard" onClick={() => setIsOpen(false)}>
