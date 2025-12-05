@@ -420,6 +420,48 @@ export type Database = {
           },
         ]
       }
+      community_announcements: {
+        Row: {
+          author_email: string | null
+          content: string
+          content_ja: string | null
+          content_pt: string | null
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          title: string
+          title_ja: string | null
+          title_pt: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          author_email?: string | null
+          content: string
+          content_ja?: string | null
+          content_pt?: string | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          title: string
+          title_ja?: string | null
+          title_pt?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          author_email?: string | null
+          content?: string
+          content_ja?: string | null
+          content_pt?: string | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          title?: string
+          title_ja?: string | null
+          title_pt?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       community_categories: {
         Row: {
           created_at: string

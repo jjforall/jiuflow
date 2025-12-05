@@ -125,6 +125,17 @@ export const OpenMat = () => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [threads, setThreads] = useState<Thread[]>([]);
   const [posts, setPosts] = useState<Post[]>([]);
+  const [announcements, setAnnouncements] = useState<Array<{
+    id: string;
+    title: string;
+    title_ja: string | null;
+    title_pt: string | null;
+    content: string;
+    content_ja: string | null;
+    content_pt: string | null;
+    author_email: string | null;
+    created_at: string;
+  }>>([]);
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [selectedThread, setSelectedThread] = useState<Thread | null>(null);
   const [loading, setLoading] = useState(true);
@@ -147,6 +158,7 @@ export const OpenMat = () => {
 
   useEffect(() => {
     loadCategories();
+    loadAnnouncements();
   }, []);
 
   useEffect(() => {
@@ -200,6 +212,21 @@ export const OpenMat = () => {
       toast.error(language === "ja" ? "カテゴリの読み込みに失敗しました" : "Failed to load categories");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadAnnouncements = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('community_announcements')
+        .select('*')
+        .eq('is_active', true)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setAnnouncements(data || []);
+    } catch (error) {
+      console.error('Error loading announcements:', error);
     }
   };
 
@@ -722,13 +749,50 @@ export const OpenMat = () => {
             ))}
           </div>
         ) : (
-          <div className="grid gap-3">
-            {categories.map((category) => (
-              <Card 
-                key={category.id} 
-                className="cursor-pointer hover:bg-accent/50 transition-colors"
-                onClick={() => setSelectedCategory(category)}
-              >
+          <>
+            {/* Announcements */}
+            {announcements.length > 0 && (
+              <div className="space-y-3 mb-6">
+                <h3 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                  <MessageCircle className="h-4 w-4" />
+                  {language === "ja" ? "お知らせ" : "Announcements"}
+                </h3>
+                {announcements.map((announcement) => (
+                  <Card key={announcement.id} className="border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
+                    <CardContent className="p-4">
+                      <h4 className="font-medium mb-2">
+                        {language === "ja" && announcement.title_ja
+                          ? announcement.title_ja
+                          : language === "pt" && announcement.title_pt
+                          ? announcement.title_pt
+                          : announcement.title}
+                      </h4>
+                      <p className="text-sm text-muted-foreground mb-3">
+                        {language === "ja" && announcement.content_ja
+                          ? announcement.content_ja
+                          : language === "pt" && announcement.content_pt
+                          ? announcement.content_pt
+                          : announcement.content}
+                      </p>
+                      <div className="text-xs text-muted-foreground flex items-center gap-2">
+                        <span>{announcement.author_email}</span>
+                        <span>•</span>
+                        <span>{format(new Date(announcement.created_at), 'yyyy/MM/dd')}</span>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+
+            {/* Categories */}
+            <div className="grid gap-3">
+              {categories.map((category) => (
+                <Card 
+                  key={category.id} 
+                  className="cursor-pointer hover:bg-accent/50 transition-colors"
+                  onClick={() => setSelectedCategory(category)}
+                >
                 <CardContent className="p-4 flex items-center gap-4">
                   <div className="p-3 rounded-lg bg-primary/10 text-primary">
                     {getIcon(category.icon)}
@@ -743,7 +807,8 @@ export const OpenMat = () => {
                 </CardContent>
               </Card>
             ))}
-          </div>
+            </div>
+          </>
         )}
       </div>
     );
