@@ -506,6 +506,16 @@ const Athlete = () => {
       <Navigation />
       
       <main className="pt-14 sm:pt-16 md:pt-20 pb-12 sm:pb-16">
+        {/* Back to List */}
+        <div className="max-w-6xl mx-auto px-3 sm:px-4 md:px-6 lg:px-12 py-2 sm:py-3">
+          <Link 
+            to="/athletes" 
+            className="inline-flex items-center gap-1 text-xs sm:text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            ← {language === "ja" ? "一覧に戻る" : language === "pt" ? "Voltar" : "Back to List"}
+          </Link>
+        </div>
+
         {/* Cover Image */}
         <div className="relative h-32 sm:h-48 md:h-64 lg:h-80 w-full overflow-hidden">
           <img 
