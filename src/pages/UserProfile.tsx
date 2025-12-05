@@ -659,24 +659,12 @@ export default function UserProfile() {
           <div className="relative mb-16 animate-fade-up">
             {/* Cover Image with Overlay */}
             <div className="h-72 md:h-96 bg-gradient-to-br from-primary/40 via-accent/30 to-primary/20 rounded-3xl relative overflow-hidden group shadow-2xl">
-              {profile?.cover_image_url ? (
-                <>
-                  <img 
-                    src={profile.cover_image_url} 
-                    alt="Cover" 
-                    className="w-full h-full object-cover"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-background/20 to-transparent" />
-                </>
-              ) : (
-                <>
-                  <div 
-                    className="absolute inset-0 bg-cover bg-center" 
-                    style={{ backgroundImage: `url(${getCoverImageUrl(profile?.cover_image_url || null, actualUserId)})` }}
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/40 to-transparent" />
-                </>
-              )}
+              <img 
+                src={getCoverImageUrl(profile?.cover_image_url || null, actualUserId)} 
+                alt="Cover" 
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-background/20 to-transparent" />
               
               {/* Decorative Elements */}
               <div className="absolute top-0 right-0 w-72 h-72 bg-primary/10 rounded-full blur-3xl animate-pulse" />
