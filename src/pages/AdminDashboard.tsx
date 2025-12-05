@@ -27,6 +27,7 @@ import { BrothersApplicationsManagement } from "@/components/admin/BrothersAppli
 import { SettingsManagement } from "@/components/admin/SettingsManagement";
 import MusicManagement from "@/components/admin/MusicManagement";
 import { PrintfulManagement } from "@/components/admin/PrintfulManagement";
+import { CommunityManagement } from "@/components/admin/CommunityManagement";
 
 const AdminDashboard = () => {
   const { signOut } = useAuth();
@@ -87,6 +88,7 @@ const AdminDashboard = () => {
                         { id: "logs", label: "ログ" },
                         { id: "tips", label: "投げ銭" },
                         { id: "music", label: "音楽管理" },
+                        { id: "community", label: "オープンマット" },
                         { id: "settings", label: "設定" },
                       ].map((item) => (
                         <button
@@ -153,6 +155,7 @@ const AdminDashboard = () => {
                 {activeTab === "logs" && <LogsTab />}
                 {activeTab === "tips" && <TipsManagement />}
                 {activeTab === "music" && <MusicManagement />}
+                {activeTab === "community" && <CommunityManagement />}
                 {activeTab === "settings" && <SettingsManagement />}
               </div>
             </div>
