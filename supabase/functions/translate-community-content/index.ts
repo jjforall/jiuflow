@@ -6,7 +6,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const LANGUAGES = ["en", "ja", "pt"];
+const LANGUAGES = ["en", "ja", "pt", "es", "fr", "de", "zh", "ko", "it", "ru", "ar", "hi"];
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -34,7 +34,16 @@ serve(async (req) => {
       const langNames: Record<string, string> = {
         en: "English",
         ja: "Japanese",
-        pt: "Portuguese"
+        pt: "Portuguese",
+        es: "Spanish",
+        fr: "French",
+        de: "German",
+        zh: "Chinese",
+        ko: "Korean",
+        it: "Italian",
+        ru: "Russian",
+        ar: "Arabic",
+        hi: "Hindi"
       };
 
       const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
