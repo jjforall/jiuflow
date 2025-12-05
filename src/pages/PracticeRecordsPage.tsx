@@ -355,30 +355,22 @@ const PracticeRecordsPage = () => {
     );
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-background">
-        <Navigation />
-        <main className="pt-20 pb-16">
-          <div className="container mx-auto px-4">
-            <Skeleton className="h-10 w-64 mb-8" />
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-              {Array.from({ length: 8 }).map((_, i) => (
-                <Skeleton key={i} className="aspect-video rounded-lg" />
-              ))}
-            </div>
-          </div>
-        </main>
-        <Footer />
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
       <main className="pt-20 pb-16">
         <div className="container mx-auto px-3 sm:px-4 max-w-6xl">
+          {loading ? (
+            <>
+              <Skeleton className="h-10 w-64 mb-8" />
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                {Array.from({ length: 8 }).map((_, i) => (
+                  <Skeleton key={i} className="aspect-video rounded-lg" />
+                ))}
+              </div>
+            </>
+          ) : (
+            <>
           <div className="mb-4 sm:mb-8">
             <h1 className="text-xl sm:text-3xl lg:text-4xl font-bold mb-2">{texts.title}</h1>
           </div>
@@ -577,6 +569,8 @@ const PracticeRecordsPage = () => {
               </Card>
             </TabsContent>
           </Tabs>
+          </>
+          )}
         </div>
       </main>
       <Footer />
