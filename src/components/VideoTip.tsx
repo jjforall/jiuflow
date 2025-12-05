@@ -56,6 +56,11 @@ export const VideoTip = ({ videoId }: VideoTipProps) => {
       label: { ja: "焼肉", en: "BBQ", pt: "Churrasco" } 
     },
     { 
+      amount: 10000, 
+      icon: <Medal className="w-4 h-4" />, 
+      label: { ja: "黒帯エナジー", en: "Black Belt Energy", pt: "Energia Faixa Preta" } 
+    },
+    { 
       amount: 30000, 
       icon: <Wine className="w-4 h-4" />, 
       label: { ja: "シャンパン", en: "Champagne", pt: "Champanhe" } 
@@ -103,6 +108,30 @@ export const VideoTip = ({ videoId }: VideoTipProps) => {
             origin: { y: 0.7 },
             colors: ['#fbbf24', '#f59e0b', '#d97706']
           });
+        } else if (tipAmount <= 10000) {
+          // 黒帯エナジー: 黒と金の紙吹雪
+          confetti({
+            particleCount: 80,
+            spread: 80,
+            origin: { y: 0.6 },
+            colors: ['#000000', '#1a1a1a', '#ffd700', '#ffcc00']
+          });
+          setTimeout(() => {
+            confetti({
+              particleCount: 40,
+              angle: 60,
+              spread: 55,
+              origin: { x: 0 },
+              colors: ['#000000', '#ffd700']
+            });
+            confetti({
+              particleCount: 40,
+              angle: 120,
+              spread: 55,
+              origin: { x: 1 },
+              colors: ['#000000', '#ffd700']
+            });
+          }, 150);
         } else if (tipAmount <= 30000) {
           // シャンパン: 中規模の紙吹雪（金色）
           confetti({
