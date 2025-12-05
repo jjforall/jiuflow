@@ -1235,27 +1235,12 @@ const MyPage = () => {
           <div className="relative mb-8 sm:mb-16 animate-fade-up">
             {/* Cover Image Area */}
             <div className="h-28 sm:h-40 md:h-56 bg-gradient-to-r from-primary/30 via-primary/20 to-accent/30 rounded-t-xl sm:rounded-t-2xl shadow-lg relative overflow-hidden group">
-              {profile?.cover_image_url ? (
-                <>
-                  <img 
-                    src={profile.cover_image_url.startsWith("default-") 
-                      ? getCoverImageUrl(profile.cover_image_url, user?.id || null)
-                      : profile.cover_image_url
-                    } 
-                    alt="Cover" 
-                    className="w-full h-full object-cover"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-background/60 via-transparent to-transparent" />
-                </>
-              ) : (
-                <>
-                  <div 
-                    className="absolute inset-0 bg-cover bg-center" 
-                    style={{ backgroundImage: `url(${getCoverImageUrl(null, user?.id || null)})` }}
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-background/70 via-transparent to-transparent" />
-                </>
-              )}
+              <img 
+                src={getCoverImageUrl(profile?.cover_image_url || null, user?.id || null)} 
+                alt="Cover" 
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-background/60 via-transparent to-transparent" />
               
               {/* Edit Buttons - Always visible on mobile, hover on desktop */}
               <div className="absolute top-2 right-2 sm:top-4 sm:right-4 flex gap-1.5 sm:gap-2 sm:opacity-0 sm:group-hover:opacity-100 transition-all duration-300">
