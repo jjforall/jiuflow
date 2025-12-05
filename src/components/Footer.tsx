@@ -76,7 +76,7 @@ const Footer = () => {
               </li>
               <li>
                 <Link to="/shop" className="text-muted-foreground hover:text-foreground transition-smooth">
-                  {t("nav.shop", "Shop")}
+                  {language === "ja" ? "ショップ" : language === "pt" ? "Loja" : "Shop"}
                 </Link>
               </li>
               <li>
