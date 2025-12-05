@@ -1,20 +1,23 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/hooks/useAuth";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { 
   BookOpen, GraduationCap, MessageCircle, Trophy, HelpCircle, Calendar,
-  Plus, ArrowLeft, Send, Eye, MessageSquare, Pin, ChevronRight, Trash2
+  Plus, ArrowLeft, Send, Eye, MessageSquare, Pin, ChevronRight, Trash2, 
+  Video, Pencil, X, Upload
 } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
@@ -84,6 +87,14 @@ export const OpenMat = () => {
   const [newThreadContent, setNewThreadContent] = useState("");
   const [newPostContent, setNewPostContent] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [editingThread, setEditingThread] = useState<Thread | null>(null);
+  const [editingPost, setEditingPost] = useState<Post | null>(null);
+  const [editContent, setEditContent] = useState("");
+  const [editTitle, setEditTitle] = useState("");
+  const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const videoInputRef = useRef<HTMLInputElement>(null);
+  const postVideoInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     loadCategories();
@@ -298,6 +309,141 @@ export const OpenMat = () => {
     }
   };
 
+  const uploadVideo = async (file: File): Promise<string | null> => {
+    try {
+      setUploading(true);
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user?.id}/${Date.now()}.${fileExt}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('user-videos')
+        .upload(fileName, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('user-videos')
+        .getPublicUrl(fileName);
+
+      return publicUrl;
+    } catch (error) {
+      console.error('Error uploading video:', error);
+      toast.error(language === "ja" ? "動画のアップロードに失敗しました" : "Failed to upload video");
+      return null;
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleVideoSelect = async (e: React.ChangeEvent<HTMLInputElement>, isPost = false) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 100 * 1024 * 1024) {
+      toast.error(language === "ja" ? "動画は100MB以下にしてください" : "Video must be under 100MB");
+      return;
+    }
+
+    const url = await uploadVideo(file);
+    if (url) {
+      const videoMarkdown = `\n\n<video src="${url}" controls style="max-width:100%;border-radius:8px;"></video>\n`;
+      if (isPost) {
+        setNewPostContent(prev => prev + videoMarkdown);
+      } else {
+        setNewThreadContent(prev => prev + videoMarkdown);
+      }
+      toast.success(language === "ja" ? "動画を追加しました" : "Video added");
+    }
+    e.target.value = '';
+  };
+
+  const startEditThread = (thread: Thread) => {
+    setEditingThread(thread);
+    setEditTitle(thread.title);
+    setEditContent(thread.content);
+  };
+
+  const startEditPost = (post: Post) => {
+    setEditingPost(post);
+    setEditContent(post.content);
+  };
+
+  const saveEditThread = async () => {
+    if (!editingThread) return;
+    setSubmitting(true);
+    try {
+      const { error } = await supabase
+        .from('community_threads')
+        .update({ 
+          title: editTitle.trim(),
+          content: editContent.trim(),
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', editingThread.id);
+
+      if (error) throw error;
+
+      toast.success(language === "ja" ? "更新しました" : "Updated");
+      setEditingThread(null);
+      setSelectedThread(prev => prev ? { ...prev, title: editTitle.trim(), content: editContent.trim() } : null);
+      if (selectedCategory) loadThreads(selectedCategory.id);
+    } catch (error) {
+      console.error('Error updating thread:', error);
+      toast.error(language === "ja" ? "更新に失敗しました" : "Failed to update");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const saveEditPost = async () => {
+    if (!editingPost) return;
+    setSubmitting(true);
+    try {
+      const { error } = await supabase
+        .from('community_posts')
+        .update({ 
+          content: editContent.trim(),
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', editingPost.id);
+
+      if (error) throw error;
+
+      toast.success(language === "ja" ? "更新しました" : "Updated");
+      setEditingPost(null);
+      loadPosts(selectedThread!.id);
+    } catch (error) {
+      console.error('Error updating post:', error);
+      toast.error(language === "ja" ? "更新に失敗しました" : "Failed to update");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const getProfileLink = (author?: { username: string | null; display_name: string | null }) => {
+    if (author?.username) return `/${author.username}`;
+    return null;
+  };
+
+  const renderContent = (content: string) => (
+    <ReactMarkdown 
+      remarkPlugins={[remarkGfm]}
+      components={{
+        a: ({ href, children }) => (
+          <a href={href} target="_blank" rel="noopener noreferrer" className="text-primary underline">
+            {children}
+          </a>
+        ),
+        video: ({ src, ...props }) => (
+          <video src={src} controls className="max-w-full rounded-lg my-2" {...props} />
+        ),
+      }}
+      allowedElements={['p', 'strong', 'em', 'a', 'ul', 'ol', 'li', 'code', 'pre', 'blockquote', 'h1', 'h2', 'h3', 'br', 'video']}
+    >
+      {content}
+    </ReactMarkdown>
+  );
+
   const getCategoryName = (cat: Category) => {
     if (language === "ja") return cat.name_ja;
     if (language === "pt") return cat.name_pt;
@@ -404,15 +550,34 @@ export const OpenMat = () => {
                   </div>
                   <div>
                     <Textarea
-                      placeholder={language === "ja" ? "内容を入力..." : "Enter content..."}
+                      placeholder={language === "ja" ? "内容を入力... (Markdown対応)" : "Enter content... (Markdown supported)"}
                       value={newThreadContent}
                       onChange={(e) => setNewThreadContent(e.target.value)}
                       rows={5}
                     />
                   </div>
+                  <div className="flex gap-2">
+                    <input
+                      type="file"
+                      accept="video/*"
+                      ref={videoInputRef}
+                      className="hidden"
+                      onChange={(e) => handleVideoSelect(e, false)}
+                    />
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      type="button"
+                      onClick={() => videoInputRef.current?.click()}
+                      disabled={uploading}
+                    >
+                      <Video className="h-4 w-4 mr-1" />
+                      {uploading ? (language === "ja" ? "アップロード中..." : "Uploading...") : (language === "ja" ? "動画を追加" : "Add Video")}
+                    </Button>
+                  </div>
                   <Button 
                     onClick={createThread} 
-                    disabled={submitting}
+                    disabled={submitting || uploading}
                     className="w-full"
                   >
                     {submitting 
@@ -507,6 +672,8 @@ export const OpenMat = () => {
           onClick={() => {
             setSelectedThread(null);
             setPosts([]);
+            setEditingThread(null);
+            setEditingPost(null);
           }}
         >
           <ArrowLeft className="h-5 w-5" />
@@ -514,58 +681,134 @@ export const OpenMat = () => {
         <div className="flex-1 min-w-0">
           <h2 className="text-lg font-medium truncate">{selectedThread.title}</h2>
           <p className="text-sm text-muted-foreground">
-            {selectedThread.author?.display_name} • {format(new Date(selectedThread.created_at), 'yyyy/MM/dd HH:mm')}
+            {getProfileLink(selectedThread.author) ? (
+              <Link to={getProfileLink(selectedThread.author)!} className="hover:text-primary hover:underline">
+                {selectedThread.author?.display_name}
+              </Link>
+            ) : (
+              selectedThread.author?.display_name
+            )}
+            {" • "}
+            {format(new Date(selectedThread.created_at), 'yyyy/MM/dd HH:mm')}
           </p>
         </div>
         {user?.id === selectedThread.author_id && (
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive">
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>
-                  {language === "ja" ? "スレッドを削除しますか？" : "Delete thread?"}
-                </AlertDialogTitle>
-                <AlertDialogDescription>
-                  {language === "ja" 
-                    ? "この操作は取り消せません。スレッドと全てのコメントが削除されます。" 
-                    : "This action cannot be undone. The thread and all comments will be deleted."}
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>
-                  {language === "ja" ? "キャンセル" : "Cancel"}
-                </AlertDialogCancel>
-                <AlertDialogAction onClick={() => deleteThread(selectedThread.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                  {language === "ja" ? "削除" : "Delete"}
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+          <div className="flex gap-1">
+            <Button variant="ghost" size="icon" onClick={() => startEditThread(selectedThread)}>
+              <Pencil className="h-4 w-4" />
+            </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive">
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>
+                    {language === "ja" ? "スレッドを削除しますか？" : "Delete thread?"}
+                  </AlertDialogTitle>
+                  <AlertDialogDescription>
+                    {language === "ja" 
+                      ? "この操作は取り消せません。スレッドと全てのコメントが削除されます。" 
+                      : "This action cannot be undone. The thread and all comments will be deleted."}
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>
+                    {language === "ja" ? "キャンセル" : "Cancel"}
+                  </AlertDialogCancel>
+                  <AlertDialogAction onClick={() => deleteThread(selectedThread.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                    {language === "ja" ? "削除" : "Delete"}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
         )}
       </div>
+
+      {/* Edit Thread Dialog */}
+      <Dialog open={!!editingThread} onOpenChange={(open) => !open && setEditingThread(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{language === "ja" ? "スレッドを編集" : "Edit Thread"}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <Input
+              value={editTitle}
+              onChange={(e) => setEditTitle(e.target.value)}
+              placeholder={language === "ja" ? "タイトル" : "Title"}
+            />
+            <Textarea
+              value={editContent}
+              onChange={(e) => setEditContent(e.target.value)}
+              rows={6}
+            />
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setEditingThread(null)}>
+                {language === "ja" ? "キャンセル" : "Cancel"}
+              </Button>
+              <Button onClick={saveEditThread} disabled={submitting}>
+                {language === "ja" ? "保存" : "Save"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Post Dialog */}
+      <Dialog open={!!editingPost} onOpenChange={(open) => !open && setEditingPost(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{language === "ja" ? "コメントを編集" : "Edit Comment"}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <Textarea
+              value={editContent}
+              onChange={(e) => setEditContent(e.target.value)}
+              rows={4}
+            />
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setEditingPost(null)}>
+                {language === "ja" ? "キャンセル" : "Cancel"}
+              </Button>
+              <Button onClick={saveEditPost} disabled={submitting}>
+                {language === "ja" ? "保存" : "Save"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Original Post */}
       <Card>
         <CardContent className="p-4">
           <div className="flex gap-3">
-            <Avatar className="h-10 w-10">
-              <AvatarImage src={selectedThread.author?.avatar_url || undefined} />
-              <AvatarFallback>
-                {selectedThread.author?.display_name?.charAt(0) || "?"}
-              </AvatarFallback>
-            </Avatar>
+            <Link to={getProfileLink(selectedThread.author) || "#"}>
+              <Avatar className="h-10 w-10 cursor-pointer hover:ring-2 hover:ring-primary transition-all">
+                <AvatarImage src={selectedThread.author?.avatar_url || undefined} />
+                <AvatarFallback>
+                  {selectedThread.author?.display_name?.charAt(0) || "?"}
+                </AvatarFallback>
+              </Avatar>
+            </Link>
             <div className="flex-1">
               <div className="flex items-center gap-2 text-sm">
-                <span className="font-medium">{selectedThread.author?.display_name}</span>
+                {getProfileLink(selectedThread.author) ? (
+                  <Link to={getProfileLink(selectedThread.author)!} className="font-medium hover:text-primary hover:underline">
+                    {selectedThread.author?.display_name}
+                  </Link>
+                ) : (
+                  <span className="font-medium">{selectedThread.author?.display_name}</span>
+                )}
                 <span className="text-muted-foreground">
                   {format(new Date(selectedThread.created_at), 'yyyy/MM/dd HH:mm')}
                 </span>
               </div>
-              <div className="mt-2 whitespace-pre-wrap">{selectedThread.content}</div>
+              <div className="mt-2 prose prose-sm dark:prose-invert max-w-none">
+                {renderContent(selectedThread.content)}
+              </div>
             </div>
           </div>
         </CardContent>
@@ -581,51 +824,66 @@ export const OpenMat = () => {
             <Card key={post.id}>
               <CardContent className="p-4">
                 <div className="flex gap-3">
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage src={post.author?.avatar_url || undefined} />
-                    <AvatarFallback>
-                      {post.author?.display_name?.charAt(0) || "?"}
-                    </AvatarFallback>
-                  </Avatar>
+                  <Link to={getProfileLink(post.author) || "#"}>
+                    <Avatar className="h-8 w-8 cursor-pointer hover:ring-2 hover:ring-primary transition-all">
+                      <AvatarImage src={post.author?.avatar_url || undefined} />
+                      <AvatarFallback>
+                        {post.author?.display_name?.charAt(0) || "?"}
+                      </AvatarFallback>
+                    </Avatar>
+                  </Link>
                   <div className="flex-1">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2 text-sm">
-                        <span className="font-medium">{post.author?.display_name}</span>
+                        {getProfileLink(post.author) ? (
+                          <Link to={getProfileLink(post.author)!} className="font-medium hover:text-primary hover:underline">
+                            {post.author?.display_name}
+                          </Link>
+                        ) : (
+                          <span className="font-medium">{post.author?.display_name}</span>
+                        )}
                         <span className="text-muted-foreground text-xs">
                           {format(new Date(post.created_at), 'yyyy/MM/dd HH:mm')}
                         </span>
                       </div>
                       {user?.id === post.author_id && (
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-destructive">
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>
-                                {language === "ja" ? "コメントを削除しますか？" : "Delete comment?"}
-                              </AlertDialogTitle>
-                              <AlertDialogDescription>
-                                {language === "ja" 
-                                  ? "この操作は取り消せません。" 
-                                  : "This action cannot be undone."}
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>
-                                {language === "ja" ? "キャンセル" : "Cancel"}
-                              </AlertDialogCancel>
-                              <AlertDialogAction onClick={() => deletePost(post.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                                {language === "ja" ? "削除" : "Delete"}
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
+                        <div className="flex gap-1">
+                          <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => startEditPost(post)}>
+                            <Pencil className="h-3 w-3" />
+                          </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-destructive">
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>
+                                  {language === "ja" ? "コメントを削除しますか？" : "Delete comment?"}
+                                </AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  {language === "ja" 
+                                    ? "この操作は取り消せません。" 
+                                    : "This action cannot be undone."}
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>
+                                  {language === "ja" ? "キャンセル" : "Cancel"}
+                                </AlertDialogCancel>
+                                <AlertDialogAction onClick={() => deletePost(post.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                                  {language === "ja" ? "削除" : "Delete"}
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
                       )}
                     </div>
-                    <div className="mt-1 text-sm whitespace-pre-wrap">{post.content}</div>
+                    <div className="mt-1 text-sm prose prose-sm dark:prose-invert max-w-none">
+                      {renderContent(post.content)}
+                    </div>
                   </div>
                 </div>
               </CardContent>
@@ -638,22 +896,41 @@ export const OpenMat = () => {
       {user && (
         <Card>
           <CardContent className="p-4">
-            <div className="flex gap-3">
+            <div className="space-y-2">
               <Textarea
-                placeholder={language === "ja" ? "コメントを入力..." : "Write a comment..."}
+                placeholder={language === "ja" ? "コメントを入力... (Markdown対応)" : "Write a comment... (Markdown supported)"}
                 value={newPostContent}
                 onChange={(e) => setNewPostContent(e.target.value)}
                 rows={3}
-                className="flex-1"
               />
-              <Button 
-                onClick={createPost} 
-                disabled={submitting || !newPostContent.trim()}
-                size="icon"
-                className="self-end"
-              >
-                <Send className="h-4 w-4" />
-              </Button>
+              <div className="flex justify-between items-center">
+                <div className="flex gap-2">
+                  <input
+                    type="file"
+                    accept="video/*"
+                    ref={postVideoInputRef}
+                    className="hidden"
+                    onChange={(e) => handleVideoSelect(e, true)}
+                  />
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => postVideoInputRef.current?.click()}
+                    disabled={uploading}
+                  >
+                    <Video className="h-4 w-4 mr-1" />
+                    {uploading ? (language === "ja" ? "アップロード中..." : "Uploading...") : (language === "ja" ? "動画" : "Video")}
+                  </Button>
+                </div>
+                <Button 
+                  onClick={createPost} 
+                  disabled={submitting || !newPostContent.trim()}
+                  size="sm"
+                >
+                  <Send className="h-4 w-4 mr-1" />
+                  {language === "ja" ? "送信" : "Send"}
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>
