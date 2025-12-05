@@ -463,6 +463,9 @@ export type Database = {
         Row: {
           author_id: string
           content: string
+          content_en: string | null
+          content_ja: string | null
+          content_pt: string | null
           created_at: string
           id: string
           thread_id: string
@@ -471,6 +474,9 @@ export type Database = {
         Insert: {
           author_id: string
           content: string
+          content_en?: string | null
+          content_ja?: string | null
+          content_pt?: string | null
           created_at?: string
           id?: string
           thread_id: string
@@ -479,6 +485,9 @@ export type Database = {
         Update: {
           author_id?: string
           content?: string
+          content_en?: string | null
+          content_ja?: string | null
+          content_pt?: string | null
           created_at?: string
           id?: string
           thread_id?: string
@@ -548,10 +557,16 @@ export type Database = {
           author_id: string
           category_id: string
           content: string
+          content_en: string | null
+          content_ja: string | null
+          content_pt: string | null
           created_at: string
           id: string
           is_pinned: boolean | null
           title: string
+          title_en: string | null
+          title_ja: string | null
+          title_pt: string | null
           updated_at: string
           view_count: number | null
         }
@@ -559,10 +574,16 @@ export type Database = {
           author_id: string
           category_id: string
           content: string
+          content_en?: string | null
+          content_ja?: string | null
+          content_pt?: string | null
           created_at?: string
           id?: string
           is_pinned?: boolean | null
           title: string
+          title_en?: string | null
+          title_ja?: string | null
+          title_pt?: string | null
           updated_at?: string
           view_count?: number | null
         }
@@ -570,10 +591,16 @@ export type Database = {
           author_id?: string
           category_id?: string
           content?: string
+          content_en?: string | null
+          content_ja?: string | null
+          content_pt?: string | null
           created_at?: string
           id?: string
           is_pinned?: boolean | null
           title?: string
+          title_en?: string | null
+          title_ja?: string | null
+          title_pt?: string | null
           updated_at?: string
           view_count?: number | null
         }
