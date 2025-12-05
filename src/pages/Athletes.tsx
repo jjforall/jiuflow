@@ -6,7 +6,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { useTranslation } from "@/hooks/useTranslation";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
+import { BeltBadge } from "@/components/ui/belt-badge";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
@@ -128,7 +128,18 @@ const Athletes = () => {
   const getBeltName = (beltHistory: any[]) => {
     if (!beltHistory || beltHistory.length === 0) return null;
     const latestBelt = beltHistory[beltHistory.length - 1];
-    return latestBelt?.belt;
+    const belt = latestBelt?.belt;
+    if (!belt) return null;
+    // 帯名を標準化（色のみを返す）
+    const beltLower = belt.toLowerCase();
+    if (beltLower.includes('white') || beltLower.includes('白')) return 'White';
+    if (beltLower.includes('blue') || beltLower.includes('青')) return 'Blue';
+    if (beltLower.includes('purple') || beltLower.includes('紫')) return 'Purple';
+    if (beltLower.includes('brown') || beltLower.includes('茶')) return 'Brown';
+    if (beltLower.includes('coral') || beltLower.includes('珊瑚')) return 'Coral';
+    if (beltLower.includes('red') || beltLower.includes('赤')) return 'Red';
+    if (beltLower.includes('black') || beltLower.includes('黒')) return 'Black';
+    return belt;
   };
 
   const getOrganizationName = (org: Celebrity['organization']) => {
@@ -328,7 +339,7 @@ const Athletes = () => {
                         </Avatar>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-start gap-1 md:gap-2 mb-1 md:mb-2">
-                            <h3 className="text-base md:text-xl font-semibold line-clamp-1 group-hover:text-primary transition-colors flex-1">
+                            <h3 className="text-base md:text-xl font-semibold group-hover:text-primary transition-colors flex-1 break-words">
                               {celebrity.display_name}
                             </h3>
                             {celebrity.featured && (
@@ -336,9 +347,7 @@ const Athletes = () => {
                             )}
                           </div>
                           {getBeltName(celebrity.belt_history) && (
-                            <Badge variant="secondary" className="mb-1 md:mb-2 text-[10px] md:text-xs px-1.5 md:px-2 py-0">
-                              {getBeltName(celebrity.belt_history)}
-                            </Badge>
+                            <BeltBadge belt={getBeltName(celebrity.belt_history)!} className="mb-1 md:mb-2 text-[10px] md:text-xs px-1.5 md:px-2 py-0.5" />
                           )}
                           {getOrganizationName(celebrity.organization) && (
                             <p className="text-xs md:text-sm text-muted-foreground line-clamp-1">
