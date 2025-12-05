@@ -275,13 +275,13 @@ const Map = () => {
     }
   }, [user]);
 
-  // Initial load
+  // Initial load - only fetch if not already fetched
   useEffect(() => {
-    if (!authLoading && user) {
+    if (!authLoading && user && !hasFetched) {
       fetchTechniques(0);
       fetchVideoViews();
     }
-  }, [authLoading, user, fetchTechniques, fetchVideoViews]);
+  }, [authLoading, user, hasFetched, fetchTechniques, fetchVideoViews]);
 
   // Infinite scroll
   useEffect(() => {
