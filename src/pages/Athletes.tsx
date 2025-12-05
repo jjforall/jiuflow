@@ -350,6 +350,23 @@ const Athletes = () => {
                             </p>
                           )}
                         </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            handleToggleFollow(celebrity.id);
+                          }}
+                          className="p-1.5 md:p-2 h-8 w-8 md:h-9 md:w-9 flex-shrink-0"
+                        >
+                          <Heart 
+                            className={`h-4 w-4 md:h-5 md:w-5 transition-colors ${
+                              followedCelebrities.has(celebrity.id)
+                                ? 'fill-red-500 text-red-500'
+                                : 'text-muted-foreground hover:text-red-500'
+                            }`}
+                          />
+                        </Button>
                       </div>
                     </CardHeader>
                     
