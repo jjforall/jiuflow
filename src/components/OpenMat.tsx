@@ -128,6 +128,7 @@ export const OpenMat = () => {
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [selectedThread, setSelectedThread] = useState<Thread | null>(null);
   const [loading, setLoading] = useState(true);
+  const [threadsLoading, setThreadsLoading] = useState(false);
   const [newThreadOpen, setNewThreadOpen] = useState(false);
   const [newThreadTitle, setNewThreadTitle] = useState("");
   const [newThreadContent, setNewThreadContent] = useState("");
@@ -203,6 +204,7 @@ export const OpenMat = () => {
   };
 
   const loadThreads = async (categoryId: string) => {
+    setThreadsLoading(true);
     try {
       const { data, error } = await supabase
         .from('community_threads')
@@ -231,6 +233,8 @@ export const OpenMat = () => {
     } catch (error) {
       console.error('Error loading threads:', error);
       toast.error(language === "ja" ? "スレッドの読み込みに失敗しました" : "Failed to load threads");
+    } finally {
+      setThreadsLoading(false);
     }
   };
 
@@ -827,7 +831,7 @@ export const OpenMat = () => {
           )}
         </div>
 
-        {loading ? (
+        {threadsLoading ? (
           <div className="space-y-3">
             {[1, 2, 3].map((i) => (
               <Skeleton key={i} className="h-24" />
