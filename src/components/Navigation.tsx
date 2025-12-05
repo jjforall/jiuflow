@@ -5,7 +5,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { translations } from "@/lib/translations";
 import { prefetchRoute } from "@/utils/routePrefetch";
 import { Button } from "@/components/ui/button";
-import { Menu, LogIn, User, LogOut, ShieldCheck, Moon, Sun, Home, Map, Info, UserPlus, X, ClipboardList } from "lucide-react";
+import { Menu, LogIn, User, LogOut, ShieldCheck, Moon, Sun, Home, Map, Info, UserPlus, X, ClipboardList, Users } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { supabase } from "@/integrations/supabase/client";
 import { User as SupabaseUser } from "@supabase/supabase-js";
@@ -187,6 +187,10 @@ const Navigation = () => {
                   <ClipboardList className="h-4 w-4" />
                   {language === "ja" ? "練習記録" : language === "pt" ? "Registros de Prática" : "Practice Records"}
                 </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate("/open-mat")} className="gap-2 cursor-pointer">
+                  <Users className="h-4 w-4" />
+                  {language === "ja" ? "オープンマット" : language === "pt" ? "Open Mat" : "Open Mat"}
+                </DropdownMenuItem>
                   {canAccessAdmin && (
                     <DropdownMenuItem onClick={() => navigate("/admin/dashboard")} className="gap-2 cursor-pointer">
                       <ShieldCheck className="h-4 w-4" />
@@ -356,6 +360,19 @@ const Navigation = () => {
                         <ClipboardList className="h-5 w-5" />
                         <span className="text-base">
                           {language === "ja" ? "練習記録" : language === "pt" ? "Registros de Prática" : "Practice Records"}
+                        </span>
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        className="w-full justify-start gap-3 h-12 hover:bg-muted/50 active:bg-muted"
+                        onClick={() => {
+                          navigate("/open-mat");
+                          setIsOpen(false);
+                        }}
+                      >
+                        <Users className="h-5 w-5" />
+                        <span className="text-base">
+                          {language === "ja" ? "オープンマット" : language === "pt" ? "Open Mat" : "Open Mat"}
                         </span>
                       </Button>
                       {canAccessAdmin && (

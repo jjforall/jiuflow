@@ -47,6 +47,7 @@ const Athletes = lazy(() => import("./pages/Athletes"));
 const LineageTree = lazy(() => import("./pages/LineageTree"));
 const Athlete = lazy(() => import("./pages/Athlete"));
 const PracticeRecordsPage = lazy(() => import("./pages/PracticeRecordsPage"));
+const OpenMatPage = lazy(() => import("./pages/OpenMatPage"));
 const Shop = lazy(() => import("./pages/Shop"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 const Terms = lazy(() => import("./pages/Terms"));
@@ -124,6 +125,11 @@ const App = () => (
                   <Route path="/practice-records" element={
                     <ProtectedRoute>
                       <SuspenseWrapper variant="profile"><PracticeRecordsPage /></SuspenseWrapper>
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/open-mat" element={
+                    <ProtectedRoute>
+                      <SuspenseWrapper variant="profile"><OpenMatPage /></SuspenseWrapper>
                     </ProtectedRoute>
                   } />
 
