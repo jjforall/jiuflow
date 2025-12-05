@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/hooks/useAuth";
+import { useSubscription } from "@/hooks/useSubscription";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -76,6 +77,8 @@ const iconMap: Record<string, React.ElementType> = {
 export const OpenMat = () => {
   const { language } = useLanguage();
   const { user } = useAuth();
+  const { subscribed, loading: subscriptionLoading } = useSubscription();
+  const navigate = useNavigate();
   const [categories, setCategories] = useState<Category[]>([]);
   const [threads, setThreads] = useState<Thread[]>([]);
   const [posts, setPosts] = useState<Post[]>([]);
@@ -460,6 +463,45 @@ export const OpenMat = () => {
     const Icon = iconMap[iconName] || MessageCircle;
     return <Icon className="h-5 w-5" />;
   };
+
+  // Subscription Gate
+  if (subscriptionLoading) {
+    return (
+      <div className="space-y-4 px-4 sm:px-6 max-w-4xl mx-auto">
+        <Skeleton className="h-8 w-48" />
+        <div className="grid gap-3">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <Skeleton key={i} className="h-20" />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (!subscribed) {
+    return (
+      <div className="space-y-6 px-4 sm:px-6 max-w-2xl mx-auto text-center py-12">
+        <div className="p-6 rounded-lg bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20">
+          <MessageCircle className="h-16 w-16 mx-auto text-primary mb-4" />
+          <h2 className="text-2xl font-semibold mb-2">
+            {language === "ja" ? "Open Mat は会員限定です" : "Open Mat is for Members Only"}
+          </h2>
+          <p className="text-muted-foreground mb-6">
+            {language === "ja" 
+              ? "サブスクリプションに登録して、柔術コミュニティに参加しましょう。仲間と情報交換したり、質問したりできます。"
+              : "Subscribe to join the BJJ community. Share information and ask questions with fellow practitioners."}
+          </p>
+          <Button 
+            size="lg" 
+            onClick={() => navigate("/join")}
+            className="px-8"
+          >
+            {language === "ja" ? "今すぐ登録する" : "Subscribe Now"}
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   // Category List View
   if (!selectedCategory) {
