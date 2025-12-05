@@ -22,7 +22,7 @@ export const MapLoadingState = ({ startTime }: MapLoadingStateProps) => {
     const interval = setInterval(() => {
       const elapsed = Math.floor((Date.now() - startTime) / 1000);
       setElapsedSeconds(elapsed);
-      if (elapsed >= 60) {
+      if (elapsed >= 30) {
         setShowTimeout(true);
       }
     }, 1000);
