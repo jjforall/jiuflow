@@ -338,14 +338,9 @@ const Athletes = () => {
                           </AvatarFallback>
                         </Avatar>
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-start gap-1 md:gap-2 mb-1 md:mb-2">
-                            <h3 className="text-base md:text-xl font-semibold group-hover:text-primary transition-colors flex-1 break-words">
-                              {celebrity.display_name}
-                            </h3>
-                            {celebrity.featured && (
-                              <Star className="h-4 w-4 md:h-5 md:w-5 text-yellow-500 fill-yellow-500 flex-shrink-0" />
-                            )}
-                          </div>
+                          <h3 className="text-base md:text-xl font-semibold group-hover:text-primary transition-colors break-words mb-1 md:mb-2">
+                            {celebrity.display_name}
+                          </h3>
                           {getBeltName(celebrity.belt_history) && (
                             <BeltBadge belt={getBeltName(celebrity.belt_history)!} className="mb-1 md:mb-2 text-[10px] md:text-xs px-1.5 md:px-2 py-0.5" />
                           )}
@@ -355,23 +350,6 @@ const Athletes = () => {
                             </p>
                           )}
                         </div>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            handleToggleFollow(celebrity.id);
-                          }}
-                          className="p-1.5 md:p-2 h-8 w-8 md:h-9 md:w-9 flex-shrink-0"
-                        >
-                          <Heart 
-                            className={`h-4 w-4 md:h-5 md:w-5 transition-colors ${
-                              followedCelebrities.has(celebrity.id)
-                                ? 'fill-red-500 text-red-500'
-                                : 'text-muted-foreground hover:text-red-500'
-                            }`}
-                          />
-                        </Button>
                       </div>
                     </CardHeader>
                     
