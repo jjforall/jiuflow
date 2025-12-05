@@ -357,7 +357,7 @@ const Map = () => {
             )}
           </div>
 
-          {authLoading || isLoading || subscriptionLoading || (user && !hasFetched) ? (
+          {authLoading || isLoading || (user && !hasFetched) ? (
             <MapLoadingState startTime={loadingStartTime} />
           ) : !user ? (
             <div className="text-center py-12 animate-fade-up">
