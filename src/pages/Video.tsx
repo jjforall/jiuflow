@@ -631,8 +631,9 @@ const Video = () => {
     }
   };
 
-  // 統合ローディング - 実際のレイアウトと同じ構造のスケルトン
-  if (!isReady || subscriptionLoading) {
+  // 統合ローディング - テクニックデータがない時のみスケルトン表示
+  // サブスクリプションはキャッシュされるので待たない
+  if (!isReady) {
     return (
       <div className="min-h-screen">
         <Navigation />
