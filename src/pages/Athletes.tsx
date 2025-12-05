@@ -46,6 +46,7 @@ interface Celebrity {
     instructor: {
       display_name: string;
       id: string;
+      avatar_url: string | null;
     };
   }>;
 }
@@ -98,7 +99,8 @@ const Athletes = () => {
           instructors:celebrity_lineage!celebrity_lineage_student_id_fkey(
             instructor:celebrities!celebrity_lineage_instructor_id_fkey(
               id,
-              display_name
+              display_name,
+              avatar_url
             )
           )
         `)
@@ -381,13 +383,31 @@ const Athletes = () => {
                       
                       <div className="space-y-1 md:space-y-2 pt-2 border-t border-border/50">
                         {celebrity.instructors && celebrity.instructors.length > 0 && (
-                          <div className="flex items-center gap-1 md:gap-2 text-xs md:text-sm">
-                            <span className="text-muted-foreground">
+                          <div className="flex items-center gap-2 text-xs md:text-sm">
+                            <span className="text-muted-foreground flex-shrink-0">
                               {language === "ja" ? "師匠:" : language === "pt" ? "Mestre:" : "Instructor:"}
                             </span>
-                            <span className="font-medium truncate">
-                              {celebrity.instructors.map(i => i.instructor.display_name).join(", ")}
-                            </span>
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              {celebrity.instructors.map((i, idx) => (
+                                <Link
+                                  key={i.instructor.id}
+                                  to={`/athlete/${i.instructor.id}`}
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="flex items-center gap-1 hover:text-primary transition-colors"
+                                >
+                                  <Avatar className="h-5 w-5 md:h-6 md:w-6 border border-border">
+                                    <AvatarImage src={i.instructor.avatar_url || undefined} />
+                                    <AvatarFallback className="text-[8px] md:text-[10px]">
+                                      {i.instructor.display_name[0]}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                  <span className="font-medium text-xs">
+                                    {i.instructor.display_name}
+                                  </span>
+                                  {idx < celebrity.instructors!.length - 1 && <span className="text-muted-foreground">,</span>}
+                                </Link>
+                              ))}
+                            </div>
                           </div>
                         )}
                       </div>
