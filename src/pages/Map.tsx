@@ -168,7 +168,7 @@ const Map = () => {
     }
   }, [authLoading, user, navigate]);
 
-  // Fetch and group techniques
+  // Fetch and group techniques with timeout
   const fetchTechniques = useCallback(async (pageNum: number) => {
     if (pageNum === 0) {
       setIsLoading(true);
@@ -177,12 +177,19 @@ const Map = () => {
     }
 
     try {
-      const { data, error } = await supabase
+      // Add timeout to prevent hanging forever
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Request timeout')), 15000)
+      );
+      
+      const queryPromise = supabase
         .from("techniques")
         .select("*")
         .order("series_prefix", { ascending: true, nullsFirst: false })
         .order("series_order", { ascending: true, nullsFirst: false })
         .order("display_order", { ascending: true });
+
+      const { data, error } = await Promise.race([queryPromise, timeoutPromise]) as any;
 
       if (error) throw error;
 

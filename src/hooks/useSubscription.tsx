@@ -22,7 +22,14 @@ export const useSubscription = () => {
 
   const checkSubscription = async () => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      // Add timeout to prevent hanging forever (10 seconds)
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Subscription check timeout')), 10000)
+      );
+      
+      const sessionPromise = supabase.auth.getSession();
+      const sessionResult = await Promise.race([sessionPromise, timeoutPromise]) as any;
+      const session = sessionResult?.data?.session;
       
       if (!session) {
         setStatus({
@@ -36,11 +43,13 @@ export const useSubscription = () => {
         return;
       }
 
-      const { data, error } = await supabase.functions.invoke("check-subscription", {
+      const functionPromise = supabase.functions.invoke("check-subscription", {
         headers: {
           Authorization: `Bearer ${session.access_token}`,
         },
       });
+      
+      const { data, error } = await Promise.race([functionPromise, timeoutPromise]) as any;
 
       if (error) {
         console.error("Error checking subscription:", error);
