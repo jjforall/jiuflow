@@ -625,6 +625,39 @@ export type Database = {
           },
         ]
       }
+      community_ranks: {
+        Row: {
+          created_at: string
+          id: string
+          likes_received: number
+          post_count: number
+          rank_level: string
+          thread_count: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          likes_received?: number
+          post_count?: number
+          rank_level?: string
+          thread_count?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          likes_received?: number
+          post_count?: number
+          rank_level?: string
+          thread_count?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       community_reactions: {
         Row: {
           created_at: string
@@ -2111,6 +2144,51 @@ export type Database = {
         }
         Relationships: []
       }
+      weekly_topics: {
+        Row: {
+          created_at: string
+          description: string | null
+          description_ja: string | null
+          description_pt: string | null
+          end_date: string
+          id: string
+          is_active: boolean
+          start_date: string
+          title: string
+          title_ja: string
+          title_pt: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          description_ja?: string | null
+          description_pt?: string | null
+          end_date: string
+          id?: string
+          is_active?: boolean
+          start_date: string
+          title: string
+          title_ja: string
+          title_pt: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          description_ja?: string | null
+          description_pt?: string | null
+          end_date?: string
+          id?: string
+          is_active?: boolean
+          start_date?: string
+          title?: string
+          title_ja?: string
+          title_pt?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       public_dojos: {
@@ -2368,6 +2446,14 @@ export type Database = {
           p_referred_user_id: string
         }
         Returns: undefined
+      }
+      calculate_community_rank: {
+        Args: {
+          likes_received: number
+          post_count: number
+          thread_count: number
+        }
+        Returns: string
       }
       can_apply_for_brothers: { Args: { user_uuid: string }; Returns: boolean }
       generate_referral_code: { Args: never; Returns: string }

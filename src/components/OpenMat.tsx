@@ -108,6 +108,27 @@ interface Reaction {
   post_id: string | null;
 }
 
+interface CommunityRank {
+  user_id: string;
+  thread_count: number;
+  post_count: number;
+  likes_received: number;
+  rank_level: string;
+}
+
+interface WeeklyTopic {
+  id: string;
+  title: string;
+  title_ja: string;
+  title_pt: string;
+  description: string | null;
+  description_ja: string | null;
+  description_pt: string | null;
+  start_date: string;
+  end_date: string;
+  is_active: boolean;
+}
+
 const iconMap: Record<string, React.ElementType> = {
   BookOpen,
   GraduationCap,
@@ -115,6 +136,29 @@ const iconMap: Record<string, React.ElementType> = {
   Trophy,
   HelpCircle,
   Calendar,
+};
+
+// ランクに基づく帯の色を取得
+const getRankBeltColor = (rank: string): string => {
+  switch (rank) {
+    case 'black': return 'bg-gray-900 text-white';
+    case 'brown': return 'bg-amber-700 text-white';
+    case 'purple': return 'bg-purple-600 text-white';
+    case 'blue': return 'bg-blue-600 text-white';
+    default: return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200';
+  }
+};
+
+const getRankLabel = (rank: string, language: string): string => {
+  const labels: Record<string, Record<string, string>> = {
+    white: { ja: '白帯', en: 'White Belt', pt: 'Faixa Branca' },
+    blue: { ja: '青帯', en: 'Blue Belt', pt: 'Faixa Azul' },
+    purple: { ja: '紫帯', en: 'Purple Belt', pt: 'Faixa Roxa' },
+    brown: { ja: '茶帯', en: 'Brown Belt', pt: 'Faixa Marrom' },
+    black: { ja: '黒帯', en: 'Black Belt', pt: 'Faixa Preta' },
+  };
+  const lang = language === 'ja' ? 'ja' : language === 'pt' ? 'pt' : 'en';
+  return labels[rank]?.[lang] || labels.white[lang];
 };
 
 export const OpenMat = () => {
@@ -155,11 +199,20 @@ export const OpenMat = () => {
   const postVideoInputRef = useRef<HTMLInputElement>(null);
   const [threadReactions, setThreadReactions] = useState<Reaction[]>([]);
   const [postReactions, setPostReactions] = useState<Record<string, Reaction[]>>({});
+  const [myRank, setMyRank] = useState<CommunityRank | null>(null);
+  const [weeklyTopic, setWeeklyTopic] = useState<WeeklyTopic | null>(null);
 
   useEffect(() => {
     loadCategories();
     loadAnnouncements();
+    loadWeeklyTopic();
   }, []);
+
+  useEffect(() => {
+    if (user) {
+      loadMyRank();
+    }
+  }, [user]);
 
   useEffect(() => {
     if (selectedCategory) {
@@ -227,6 +280,42 @@ export const OpenMat = () => {
       setAnnouncements(data || []);
     } catch (error) {
       console.error('Error loading announcements:', error);
+    }
+  };
+
+  const loadMyRank = async () => {
+    if (!user) return;
+    try {
+      const { data, error } = await supabase
+        .from('community_ranks')
+        .select('*')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (error) throw error;
+      setMyRank(data);
+    } catch (error) {
+      console.error('Error loading rank:', error);
+    }
+  };
+
+  const loadWeeklyTopic = async () => {
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const { data, error } = await supabase
+        .from('weekly_topics')
+        .select('*')
+        .eq('is_active', true)
+        .lte('start_date', today)
+        .gte('end_date', today)
+        .order('start_date', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (error) throw error;
+      setWeeklyTopic(data);
+    } catch (error) {
+      console.error('Error loading weekly topic:', error);
     }
   };
 
@@ -733,13 +822,22 @@ export const OpenMat = () => {
   if (!selectedCategory) {
     return (
       <div className="space-y-4 px-4 sm:px-6 max-w-4xl mx-auto w-full overflow-x-hidden box-border">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-2">
           <div>
             <h2 className="text-xl sm:text-2xl font-light">Open Mat</h2>
             <p className="text-sm text-muted-foreground mt-1">
               {language === "ja" ? "柔術仲間とつながろう" : "Connect with your BJJ community"}
             </p>
           </div>
+          {/* My Digital Belt Rank */}
+          {myRank && (
+            <div className={`px-3 py-1.5 rounded-full text-xs font-medium ${getRankBeltColor(myRank.rank_level)}`}>
+              {getRankLabel(myRank.rank_level, language)}
+              <span className="ml-1.5 opacity-75">
+                ({myRank.thread_count * 3 + myRank.post_count + myRank.likes_received * 2}pt)
+              </span>
+            </div>
+          )}
         </div>
 
         {loading ? (
@@ -750,6 +848,28 @@ export const OpenMat = () => {
           </div>
         ) : (
           <>
+            {/* Weekly Topic */}
+            {weeklyTopic && (
+              <Card className="border-accent/30 bg-gradient-to-br from-accent/10 to-accent/5">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Trophy className="h-4 w-4 text-accent" />
+                    <span className="text-xs font-medium text-accent">
+                      {language === "ja" ? "今週のお題" : language === "pt" ? "Tema da Semana" : "Weekly Topic"}
+                    </span>
+                  </div>
+                  <h4 className="font-medium mb-1">
+                    {language === "ja" ? weeklyTopic.title_ja : language === "pt" ? weeklyTopic.title_pt : weeklyTopic.title}
+                  </h4>
+                  {(weeklyTopic.description || weeklyTopic.description_ja || weeklyTopic.description_pt) && (
+                    <p className="text-sm text-muted-foreground">
+                      {language === "ja" ? weeklyTopic.description_ja : language === "pt" ? weeklyTopic.description_pt : weeklyTopic.description}
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
             {/* Announcements */}
             {announcements.length > 0 && (
               <div className="space-y-3 mb-6">
