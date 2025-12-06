@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { RefreshCw, X, DollarSign, Calendar } from "lucide-react";
+import { RefreshCw, X, DollarSign, Calendar, Download } from "lucide-react";
 import { toast } from "sonner";
 import {
   AlertDialog,
@@ -275,14 +275,58 @@ export const SubscriptionsTab = () => {
     );
   }
 
+  const downloadCSV = () => {
+    if (subscriptions.length === 0) {
+      toast.error("ダウンロードするデータがありません");
+      return;
+    }
+
+    const headers = ["名前", "メールアドレス", "プラン", "ステータス", "金額", "通貨", "期間", "開始日", "次回請求日", "作成日"];
+    const rows = subscriptions.map(sub => [
+      sub.customer_name,
+      sub.customer_email,
+      sub.product_name,
+      sub.status,
+      sub.amount.toString(),
+      sub.currency.toUpperCase(),
+      sub.interval === 'month' ? '月額' : '年額',
+      formatDate(sub.current_period_start),
+      formatDate(sub.current_period_end),
+      formatDate(sub.created)
+    ]);
+
+    const csvContent = [
+      headers.join(","),
+      ...rows.map(row => row.map(cell => `"${cell.replace(/"/g, '""')}"`).join(","))
+    ].join("\n");
+
+    const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `subscriptions_${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    
+    toast.success("CSVをダウンロードしました");
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
         <h2 className="text-2xl font-bold">サブスクリプション管理</h2>
-        <Button onClick={fetchSubscriptions} variant="outline" size="sm">
-          <RefreshCw className="h-4 w-4 mr-2" />
-          更新
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={downloadCSV} variant="outline" size="sm">
+            <Download className="h-4 w-4 mr-2" />
+            CSV
+          </Button>
+          <Button onClick={fetchSubscriptions} variant="outline" size="sm">
+            <RefreshCw className="h-4 w-4 mr-2" />
+            更新
+          </Button>
+        </div>
       </div>
 
       {subscriptions.length === 0 ? (
