@@ -1818,8 +1818,18 @@ const MyPage = () => {
                             const selectedOrgTitles = title.organization ? organizationTitles[title.organization] || [] : [];
 
                             return (
-                              <div key={index} className="flex items-start gap-2 p-3 bg-background rounded border">
-                                <div className="flex-1 space-y-2">
+                              <div key={index} className="p-4 bg-background rounded-lg border space-y-3">
+                                <div className="flex items-center justify-between">
+                                  <span className="text-sm font-medium text-muted-foreground">
+                                    {language === "ja" ? `タイトル ${index + 1}` : `Title ${index + 1}`}
+                                  </span>
+                                  <Button size="sm" variant="ghost" onClick={() => removeTitle(index)} className="h-8 w-8 p-0">
+                                    <X className="w-4 h-4" />
+                                  </Button>
+                                </div>
+                                
+                                {/* Row 1: Organization & Year */}
+                                <div className="grid grid-cols-3 gap-2">
                                   <Select
                                     value={title.organization || ''}
                                     onValueChange={(value) => {
@@ -1827,8 +1837,8 @@ const MyPage = () => {
                                       updateTitle(index, 'title', '');
                                     }}
                                   >
-                                    <SelectTrigger className="font-medium h-12">
-                                      <SelectValue placeholder={language === "ja" ? "団体を選択" : "Select Organization"} />
+                                    <SelectTrigger className="col-span-2 h-11">
+                                      <SelectValue placeholder={language === "ja" ? "団体" : "Organization"} />
                                     </SelectTrigger>
                                     <SelectContent className="bg-popover z-50">
                                       <SelectItem value="SJJJF">SJJJF</SelectItem>
@@ -1849,107 +1859,116 @@ const MyPage = () => {
                                     </SelectContent>
                                   </Select>
                                   
-                                  <div className="grid grid-cols-2 gap-2">
-                                    {title.organization && selectedOrgTitles.length > 0 ? (
-                                      <Select
-                                        value={title.title || ''}
-                                        onValueChange={(value) => updateTitle(index, 'title', value)}
-                                      >
-                                        <SelectTrigger className="h-12">
-                                          <SelectValue placeholder={language === "ja" ? "タイトルを選択" : "Select Title"} />
-                                        </SelectTrigger>
-                                        <SelectContent className="bg-popover z-50">
-                                          {selectedOrgTitles.map((t) => (
-                                            <SelectItem key={t} value={t}>
-                                              {t}
-                                            </SelectItem>
-                                          ))}
-                                          <SelectItem value="custom">{language === "ja" ? "カスタム" : "Custom"}</SelectItem>
-                                        </SelectContent>
-                                      </Select>
-                                    ) : (
-                                      <Input
-                                        value={title.customTitle || ''}
-                                        onChange={(e) => updateTitle(index, 'customTitle', e.target.value)}
-                                        placeholder={language === "ja" ? "カスタムタイトル" : "Custom Title"}
-                                        className="h-12"
-                                      />
-                                    )}
-                                    <Select
-                                      value={title.rank || ''}
-                                      onValueChange={(value) => updateTitle(index, 'rank', value)}
-                                    >
-                                      <SelectTrigger className="h-12">
-                                        <SelectValue placeholder={language === "ja" ? "順位" : "Rank"} />
-                                      </SelectTrigger>
-                                      <SelectContent className="bg-popover z-50">
-                                        <SelectItem value="優勝">{language === "ja" ? "優勝" : "Champion"}</SelectItem>
-                                        <SelectItem value="準優勝">{language === "ja" ? "準優勝" : "Runner-up"}</SelectItem>
-                                        <SelectItem value="3位">{language === "ja" ? "3位" : "3rd Place"}</SelectItem>
-                                        <SelectItem value="ベスト8">{language === "ja" ? "ベスト8" : "Quarter-finalist"}</SelectItem>
-                                        <SelectItem value="ベスト16">{language === "ja" ? "ベスト16" : "Round of 16"}</SelectItem>
-                                      </SelectContent>
-                                    </Select>
-                                  </div>
-
-                                  <div className="grid grid-cols-2 gap-2">
-                                    <Select
-                                      value={title.weight_class || ''}
-                                      onValueChange={(value) => updateTitle(index, 'weight_class', value)}
-                                    >
-                                      <SelectTrigger className="h-12">
-                                        <SelectValue placeholder={language === "ja" ? "階級を選択" : "Select Weight Class"} />
-                                      </SelectTrigger>
-                                      <SelectContent className="bg-popover z-50">
-                                        <SelectItem value="ルースター">{language === "ja" ? "ルースター" : "Rooster"}</SelectItem>
-                                        <SelectItem value="ライトフェザー">{language === "ja" ? "ライトフェザー" : "Light Feather"}</SelectItem>
-                                        <SelectItem value="フェザー">{language === "ja" ? "フェザー" : "Feather"}</SelectItem>
-                                        <SelectItem value="ライト">{language === "ja" ? "ライト" : "Light"}</SelectItem>
-                                        <SelectItem value="ミディアム">{language === "ja" ? "ミディアム" : "Medium"}</SelectItem>
-                                        <SelectItem value="ミディアムヘビー">{language === "ja" ? "ミディアムヘビー" : "Medium Heavy"}</SelectItem>
-                                        <SelectItem value="ヘビー">{language === "ja" ? "ヘビー" : "Heavy"}</SelectItem>
-                                        <SelectItem value="スーパーヘビー">{language === "ja" ? "スーパーヘビー" : "Super Heavy"}</SelectItem>
-                                        <SelectItem value="ウルトラヘビー">{language === "ja" ? "ウルトラヘビー" : "Ultra Heavy"}</SelectItem>
-                                        <SelectItem value="オープンクラス">{language === "ja" ? "オープンクラス" : "Absolute"}</SelectItem>
-                                      </SelectContent>
-                                    </Select>
-                                    
-                                    <Select
-                                      value={title.belt || ''}
-                                      onValueChange={(value) => updateTitle(index, 'belt', value)}
-                                    >
-                                      <SelectTrigger className="h-12">
-                                        <SelectValue placeholder={language === "ja" ? "帯色を選択" : "Select Belt"} />
-                                      </SelectTrigger>
-                                      <SelectContent className="bg-popover z-50">
-                                        <SelectItem value="白帯">{language === "ja" ? "白帯" : "White Belt"}</SelectItem>
-                                        <SelectItem value="青帯">{language === "ja" ? "青帯" : "Blue Belt"}</SelectItem>
-                                        <SelectItem value="紫帯">{language === "ja" ? "紫帯" : "Purple Belt"}</SelectItem>
-                                        <SelectItem value="茶帯">{language === "ja" ? "茶帯" : "Brown Belt"}</SelectItem>
-                                        <SelectItem value="黒帯">{language === "ja" ? "黒帯" : "Black Belt"}</SelectItem>
-                                      </SelectContent>
-                                    </Select>
-                                  </div>
-                                  
-                                  <Input
+                                  <Select
                                     value={title.year || ''}
-                                    onChange={(e) => updateTitle(index, 'year', e.target.value)}
-                                    placeholder={language === "ja" ? "年度（例: 2024）" : "Year (e.g., 2024)"}
-                                    className="h-12"
-                                  />
-                                  
-                                  {title.title === "custom" && (
+                                    onValueChange={(value) => updateTitle(index, 'year', value)}
+                                  >
+                                    <SelectTrigger className="h-11">
+                                      <SelectValue placeholder={language === "ja" ? "年度" : "Year"} />
+                                    </SelectTrigger>
+                                    <SelectContent className="bg-popover z-50 max-h-60">
+                                      {Array.from({ length: 30 }, (_, i) => new Date().getFullYear() - i).map((year) => (
+                                        <SelectItem key={year} value={year.toString()}>
+                                          {year}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                                
+                                {/* Row 2: Title & Rank */}
+                                <div className="grid grid-cols-2 gap-2">
+                                  {title.organization && selectedOrgTitles.length > 0 ? (
+                                    <Select
+                                      value={title.title || ''}
+                                      onValueChange={(value) => updateTitle(index, 'title', value)}
+                                    >
+                                      <SelectTrigger className="h-11">
+                                        <SelectValue placeholder={language === "ja" ? "大会名" : "Title"} />
+                                      </SelectTrigger>
+                                      <SelectContent className="bg-popover z-50">
+                                        {selectedOrgTitles.map((t) => (
+                                          <SelectItem key={t} value={t}>
+                                            {t}
+                                          </SelectItem>
+                                        ))}
+                                        <SelectItem value="custom">{language === "ja" ? "その他" : "Other"}</SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                  ) : (
                                     <Input
                                       value={title.customTitle || ''}
                                       onChange={(e) => updateTitle(index, 'customTitle', e.target.value)}
-                                      placeholder={language === "ja" ? "カスタムタイトル名" : "Custom Title"}
-                                      className="h-12"
+                                      placeholder={language === "ja" ? "大会名" : "Title"}
+                                      className="h-11"
                                     />
                                   )}
+                                  <Select
+                                    value={title.rank || ''}
+                                    onValueChange={(value) => updateTitle(index, 'rank', value)}
+                                  >
+                                    <SelectTrigger className="h-11">
+                                      <SelectValue placeholder={language === "ja" ? "順位" : "Rank"} />
+                                    </SelectTrigger>
+                                    <SelectContent className="bg-popover z-50">
+                                      <SelectItem value="優勝">{language === "ja" ? "優勝" : "Champion"}</SelectItem>
+                                      <SelectItem value="準優勝">{language === "ja" ? "準優勝" : "Runner-up"}</SelectItem>
+                                      <SelectItem value="3位">{language === "ja" ? "3位" : "3rd Place"}</SelectItem>
+                                      <SelectItem value="ベスト8">{language === "ja" ? "ベスト8" : "Quarter-finalist"}</SelectItem>
+                                      <SelectItem value="ベスト16">{language === "ja" ? "ベスト16" : "Round of 16"}</SelectItem>
+                                    </SelectContent>
+                                  </Select>
                                 </div>
-                                <Button size="sm" variant="ghost" onClick={() => removeTitle(index)}>
-                                  <X className="w-4 h-4" />
-                                </Button>
+                                
+                                {/* Custom title input */}
+                                {title.title === "custom" && (
+                                  <Input
+                                    value={title.customTitle || ''}
+                                    onChange={(e) => updateTitle(index, 'customTitle', e.target.value)}
+                                    placeholder={language === "ja" ? "大会名を入力" : "Enter title name"}
+                                    className="h-11"
+                                  />
+                                )}
+
+                                {/* Row 3: Weight Class & Belt */}
+                                <div className="grid grid-cols-2 gap-2">
+                                  <Select
+                                    value={title.weight_class || ''}
+                                    onValueChange={(value) => updateTitle(index, 'weight_class', value)}
+                                  >
+                                    <SelectTrigger className="h-11">
+                                      <SelectValue placeholder={language === "ja" ? "階級" : "Weight"} />
+                                    </SelectTrigger>
+                                    <SelectContent className="bg-popover z-50">
+                                      <SelectItem value="ルースター">{language === "ja" ? "ルースター" : "Rooster"}</SelectItem>
+                                      <SelectItem value="ライトフェザー">{language === "ja" ? "ライトフェザー" : "Light Feather"}</SelectItem>
+                                      <SelectItem value="フェザー">{language === "ja" ? "フェザー" : "Feather"}</SelectItem>
+                                      <SelectItem value="ライト">{language === "ja" ? "ライト" : "Light"}</SelectItem>
+                                      <SelectItem value="ミディアム">{language === "ja" ? "ミディアム" : "Medium"}</SelectItem>
+                                      <SelectItem value="ミディアムヘビー">{language === "ja" ? "ミディアムヘビー" : "Medium Heavy"}</SelectItem>
+                                      <SelectItem value="ヘビー">{language === "ja" ? "ヘビー" : "Heavy"}</SelectItem>
+                                      <SelectItem value="スーパーヘビー">{language === "ja" ? "スーパーヘビー" : "Super Heavy"}</SelectItem>
+                                      <SelectItem value="ウルトラヘビー">{language === "ja" ? "ウルトラヘビー" : "Ultra Heavy"}</SelectItem>
+                                      <SelectItem value="オープンクラス">{language === "ja" ? "オープンクラス" : "Absolute"}</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                  
+                                  <Select
+                                    value={title.belt || ''}
+                                    onValueChange={(value) => updateTitle(index, 'belt', value)}
+                                  >
+                                    <SelectTrigger className="h-11">
+                                      <SelectValue placeholder={language === "ja" ? "帯色" : "Belt"} />
+                                    </SelectTrigger>
+                                    <SelectContent className="bg-popover z-50">
+                                      <SelectItem value="白帯">{language === "ja" ? "白帯" : "White"}</SelectItem>
+                                      <SelectItem value="青帯">{language === "ja" ? "青帯" : "Blue"}</SelectItem>
+                                      <SelectItem value="紫帯">{language === "ja" ? "紫帯" : "Purple"}</SelectItem>
+                                      <SelectItem value="茶帯">{language === "ja" ? "茶帯" : "Brown"}</SelectItem>
+                                      <SelectItem value="黒帯">{language === "ja" ? "黒帯" : "Black"}</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                </div>
                               </div>
                             );
                           })}
