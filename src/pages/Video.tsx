@@ -31,6 +31,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CalendarIcon, Plus } from "lucide-react";
 import { format } from "date-fns";
+import { getSeriesPrefixColors } from "@/components/ui/series-badge";
 
 interface Technique {
   id: string;
@@ -1108,7 +1109,7 @@ const Video = () => {
                               showPlayButton
                             />
                             {video.series_order && seriesLetter && (
-                              <div className="absolute top-1 left-1 bg-background/90 text-foreground text-xs font-semibold px-2 py-0.5 rounded">
+                              <div className={`absolute top-1 left-1 text-xs font-semibold px-2 py-0.5 rounded ${getSeriesPrefixColors(seriesLetter)}`}>
                                 {seriesLetter}-{video.series_order}
                               </div>
                             )}

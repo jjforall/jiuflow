@@ -19,7 +19,7 @@ import {
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { VideoPlayer } from "@/components/VideoPlayer";
-import { Badge } from "@/components/ui/badge";
+import { SeriesBadge } from "@/components/ui/series-badge";
 
 interface Technique {
   id: string;
@@ -561,7 +561,7 @@ const PracticeRecordsPage = () => {
                                     <ExternalLink className="h-3 w-3" />
                                   </Link>
                                 </div>
-                                <Badge variant="secondary" className="text-[10px]">{getSeriesLabel(technique)}</Badge>
+                                <SeriesBadge prefix={technique.series_prefix || ''} order={technique.series_order || undefined} className="text-[10px] h-5 min-w-0 px-1.5" />
                               </div>
                               <div className="flex items-center gap-0.5 flex-shrink-0">
                                 <Button
@@ -656,7 +656,7 @@ const PracticeRecordsPage = () => {
                                   <ExternalLink className="h-3 w-3" />
                                 </Link>
                               </div>
-                              <Badge variant="secondary" className="text-[10px]">{getSeriesLabel(technique)}</Badge>
+                              <SeriesBadge prefix={technique.series_prefix || ''} order={technique.series_order || undefined} className="text-[10px] h-5 min-w-0 px-1.5" />
                             </div>
                             <div className="flex items-center gap-0.5 flex-shrink-0">
                               <Button
@@ -735,7 +735,7 @@ const PracticeRecordsPage = () => {
                                     <ExternalLink className="h-3 w-3" />
                                   </Link>
                                 </div>
-                                <Badge variant="secondary" className="text-[10px]">{getSeriesLabel(technique)}</Badge>
+                                <SeriesBadge prefix={technique.series_prefix || ''} order={technique.series_order || undefined} className="text-[10px] h-5 min-w-0 px-1.5" />
                               </div>
                               <div className="flex items-center gap-0.5 flex-shrink-0">
                                 <Button
@@ -803,7 +803,7 @@ const PracticeRecordsPage = () => {
               <div className="p-4 bg-background flex items-center justify-between gap-2">
                 <div className="min-w-0">
                   <h3 className="font-semibold truncate">{getTechniqueName(selectedTechnique)}</h3>
-                  <Badge variant="secondary" className="mt-1">{getSeriesLabel(selectedTechnique)}</Badge>
+                  <SeriesBadge prefix={selectedTechnique.series_prefix || ''} order={selectedTechnique.series_order || undefined} className="mt-1" />
                 </div>
                 <Link 
                   to={`/video/${selectedTechnique.id}`} 
