@@ -1,17 +1,24 @@
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { subDays, subWeeks, subMonths, startOfDay, startOfWeek, startOfMonth, endOfDay, endOfWeek, endOfMonth, eachDayOfInterval, eachWeekOfInterval, eachMonthOfInterval, format, differenceInDays } from "date-fns";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { 
+  startOfMonth, endOfMonth, eachDayOfInterval, format, isSameDay, 
+  addMonths, subMonths, isToday, isSameMonth, startOfWeek, endOfWeek
+} from "date-fns";
+import { ja, enUS, ptBR } from "date-fns/locale";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Link } from "react-router-dom";
-import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
-import { Eye, Repeat, Play, Clock, AlertTriangle, AlertCircle, CheckCircle } from "lucide-react";
+import { 
+  ChevronLeft, ChevronRight, Play, Plus, Minus, Eye, Repeat, Calendar 
+} from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { toast } from "sonner";
+import { Badge } from "@/components/ui/badge";
 
 interface Technique {
   id: string;
@@ -46,53 +53,51 @@ const PracticeRecordsPage = () => {
   const [videoViews, setVideoViews] = useState<VideoView[]>([]);
   const [practiceRecords, setPracticeRecords] = useState<PracticeRecord[]>([]);
   const [loading, setLoading] = useState(true);
-  const [chartPeriod, setChartPeriod] = useState<"day" | "week" | "month">("week");
+  const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
+
+  const locale = language === "ja" ? ja : language === "pt" ? ptBR : enUS;
 
   const t = {
     ja: {
       title: "練習記録",
-      recentTab: "最近見た",
-      unwatchedTab: "未視聴",
-      reviewTab: "復習タイミング",
-      chartTab: "グラフ",
-      noVideos: "動画がありません",
-      noReviewNeeded: "復習が必要な動画はありません",
-      views: "回視聴",
-      practices: "回練習",
-      urgent: "今すぐ復習",
-      soon: "もうすぐ",
-      ok: "定着中",
-      daysAgo: "日前",
+      noRecords: "この日の記録はありません",
+      watched: "視聴",
+      practiced: "練習",
+      addPractice: "練習回数を追加",
+      times: "回",
+      today: "今日",
+      monthlyStats: "今月の統計",
+      totalPractice: "総練習回数",
+      totalViews: "総視聴回数",
+      activeDays: "練習日数",
     },
     en: {
       title: "Practice Records",
-      recentTab: "Recent",
-      unwatchedTab: "Unwatched",
-      reviewTab: "Review Timing",
-      chartTab: "Graph",
-      noVideos: "No videos",
-      noReviewNeeded: "No videos need review",
-      views: "views",
-      practices: "practices",
-      urgent: "Review Now",
-      soon: "Soon",
-      ok: "Retaining",
-      daysAgo: "days ago",
+      noRecords: "No records for this day",
+      watched: "Watched",
+      practiced: "Practiced",
+      addPractice: "Add Practice",
+      times: "times",
+      today: "Today",
+      monthlyStats: "Monthly Stats",
+      totalPractice: "Total Practice",
+      totalViews: "Total Views",
+      activeDays: "Active Days",
     },
     pt: {
       title: "Registros de Prática",
-      recentTab: "Recentes",
-      unwatchedTab: "Não Assistidos",
-      reviewTab: "Revisão",
-      chartTab: "Gráfico",
-      noVideos: "Nenhum vídeo",
-      noReviewNeeded: "Nenhum vídeo precisa de revisão",
-      views: "visualizações",
-      practices: "práticas",
-      urgent: "Revisar Agora",
-      soon: "Em Breve",
-      ok: "Retendo",
-      daysAgo: "dias atrás",
+      noRecords: "Nenhum registro para este dia",
+      watched: "Assistido",
+      practiced: "Praticado",
+      addPractice: "Adicionar Prática",
+      times: "vezes",
+      today: "Hoje",
+      monthlyStats: "Estatísticas do Mês",
+      totalPractice: "Total de Práticas",
+      totalViews: "Total de Visualizações",
+      activeDays: "Dias Ativos",
     },
   };
 
@@ -129,231 +134,187 @@ const PracticeRecordsPage = () => {
   };
 
   const getSeriesLabel = (technique: Technique) => {
-    // series_prefix + series_order (B1-3など) を優先表示
     if (technique.series_prefix && technique.series_order) {
       return `${technique.series_prefix}-${technique.series_order}`;
     }
     return technique.series_prefix || technique.series_name || technique.category;
   };
 
-  const getViewCount = (techniqueId: string) => {
-    const view = videoViews.find(v => v.video_id === techniqueId);
-    return view?.view_count || 0;
-  };
-
-  const getPracticeCount = (techniqueId: string) => {
-    return practiceRecords.filter(r => r.technique_id === techniqueId).reduce((sum, r) => sum + (r.repetition_count || 1), 0);
-  };
-
-  // 最近見た動画（視聴履歴がある）
-  const recentVideos = techniques
-    .filter(t => videoViews.some(v => v.video_id === t.id))
-    .sort((a, b) => {
-      const viewA = videoViews.find(v => v.video_id === a.id);
-      const viewB = videoViews.find(v => v.video_id === b.id);
-      return new Date(viewB?.last_viewed_at || 0).getTime() - new Date(viewA?.last_viewed_at || 0).getTime();
-    });
-
-  // 未視聴の動画（視聴履歴がない）
-  const unwatchedVideos = techniques.filter(t => !videoViews.some(v => v.video_id === t.id));
-
-  // 忘却曲線に基づく復習タイミング計算
-  // エビングハウスの忘却曲線: 1日後, 3日後, 7日後, 14日後, 30日後に復習
-  type ReviewStatus = "urgent" | "soon" | "ok";
-  
-  const getReviewStatus = (lastViewedAt: string): { status: ReviewStatus; daysAgo: number } => {
-    const daysAgo = differenceInDays(new Date(), new Date(lastViewedAt));
+  // Generate calendar days
+  const calendarDays = useMemo(() => {
+    const monthStart = startOfMonth(currentMonth);
+    const monthEnd = endOfMonth(currentMonth);
+    const calendarStart = startOfWeek(monthStart, { weekStartsOn: 0 });
+    const calendarEnd = endOfWeek(monthEnd, { weekStartsOn: 0 });
     
-    // 復習間隔: 1, 3, 7, 14, 30日
-    // 次の復習ポイントを過ぎたらurgent、近づいたらsoon
-    if (daysAgo >= 7) return { status: "urgent", daysAgo };
-    if (daysAgo >= 3) return { status: "soon", daysAgo };
-    return { status: "ok", daysAgo };
-  };
+    return eachDayOfInterval({ start: calendarStart, end: calendarEnd });
+  }, [currentMonth]);
 
-  // 復習が必要な動画（視聴済みで復習タイミングに達している）
-  const reviewVideos = recentVideos
-    .map(technique => {
-      const view = videoViews.find(v => v.video_id === technique.id);
-      const reviewInfo = view ? getReviewStatus(view.last_viewed_at) : null;
-      return { technique, reviewInfo };
-    })
-    .filter(item => item.reviewInfo && item.reviewInfo.status !== "ok")
-    .sort((a, b) => {
-      // urgent を先に、次に soon、日数が多い順
-      if (a.reviewInfo!.status === "urgent" && b.reviewInfo!.status !== "urgent") return -1;
-      if (a.reviewInfo!.status !== "urgent" && b.reviewInfo!.status === "urgent") return 1;
-      return b.reviewInfo!.daysAgo - a.reviewInfo!.daysAgo;
-    });
-
-  // グラフデータ
-  const getChartData = () => {
-    const now = new Date();
-    let intervals: Date[] = [];
-    let formatString = "";
-
-    if (chartPeriod === "day") {
-      const start = subDays(now, 30);
-      intervals = eachDayOfInterval({ start, end: now });
-      formatString = "MM/dd";
-    } else if (chartPeriod === "week") {
-      const start = subWeeks(now, 12);
-      intervals = eachWeekOfInterval({ start, end: now });
-      formatString = "MM/dd";
-    } else {
-      const start = subMonths(now, 12);
-      intervals = eachMonthOfInterval({ start, end: now });
-      formatString = "yyyy/MM";
-    }
-
-    return intervals.map(date => {
-      let start: Date, end: Date;
-      
-      if (chartPeriod === "day") {
-        start = startOfDay(date);
-        end = endOfDay(date);
-      } else if (chartPeriod === "week") {
-        start = startOfWeek(date);
-        end = endOfWeek(date);
-      } else {
-        start = startOfMonth(date);
-        end = endOfMonth(date);
-      }
-
-      const periodRecords = practiceRecords.filter(record => {
-        const recordDate = new Date(record.practice_date);
-        return recordDate >= start && recordDate <= end;
-      });
-
-      const totalSessions = periodRecords.length;
-      const totalReps = periodRecords.reduce((sum, r) => sum + (r.repetition_count || 0), 0);
-
-      return {
-        date: format(date, formatString),
-        sessions: totalSessions,
-        reps: totalReps,
-      };
-    });
-  };
-
-  const VideoCard = ({ technique }: { technique: Technique }) => {
-    const viewCount = getViewCount(technique.id);
-    const practiceCount = getPracticeCount(technique.id);
-    const seriesLabel = getSeriesLabel(technique);
-
-    return (
-      <Link to={`/video/${technique.id}`} className="group">
-        <Card className="overflow-hidden hover:shadow-lg transition-all duration-300 h-full">
-          <div className="relative aspect-video bg-muted">
-            {technique.thumbnail_url ? (
-              <img
-                src={technique.thumbnail_url}
-                alt={getTechniqueName(technique)}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center">
-                <Play className="h-12 w-12 text-muted-foreground/50" />
-              </div>
-            )}
-            {/* シリーズラベル */}
-            <div className="absolute top-2 right-2 bg-primary/90 text-primary-foreground text-[10px] sm:text-xs px-2 py-0.5 rounded font-medium">
-              {seriesLabel}
-            </div>
-          </div>
-          <CardContent className="p-3">
-            <h3 className="font-medium text-sm line-clamp-2 mb-2 group-hover:text-primary transition-colors">
-              {getTechniqueName(technique)}
-            </h3>
-            <div className="flex items-center gap-3 text-xs text-muted-foreground">
-              <div className="flex items-center gap-1">
-                <Eye className="h-3 w-3" />
-                <span>{viewCount}{texts.views}</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <Repeat className="h-3 w-3" />
-                <span>{practiceCount}{texts.practices}</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </Link>
+  // Get data for a specific date
+  const getDateData = (date: Date) => {
+    const dateStr = format(date, "yyyy-MM-dd");
+    
+    // Views on this date
+    const dayViews = videoViews.filter(v => 
+      format(new Date(v.last_viewed_at), "yyyy-MM-dd") === dateStr
     );
-  };
-
-  const ReviewVideoCard = ({ technique, reviewInfo }: { technique: Technique; reviewInfo: { status: ReviewStatus; daysAgo: number } }) => {
-    const viewCount = getViewCount(technique.id);
-    const practiceCount = getPracticeCount(technique.id);
-    const seriesLabel = getSeriesLabel(technique);
-
-    const statusConfig = {
-      urgent: {
-        icon: AlertCircle,
-        bg: "bg-red-500/90",
-        text: texts.urgent,
-        border: "ring-2 ring-red-500/50",
-      },
-      soon: {
-        icon: AlertTriangle,
-        bg: "bg-yellow-500/90",
-        text: texts.soon,
-        border: "ring-2 ring-yellow-500/50",
-      },
-      ok: {
-        icon: CheckCircle,
-        bg: "bg-green-500/90",
-        text: texts.ok,
-        border: "",
-      },
+    
+    // Practice records on this date
+    const dayPractice = practiceRecords.filter(r => r.practice_date === dateStr);
+    
+    const viewedTechniqueIds = dayViews.map(v => v.video_id);
+    const practicedTechniqueIds = dayPractice.map(p => p.technique_id).filter(Boolean) as string[];
+    
+    const viewedTechniques = techniques.filter(t => viewedTechniqueIds.includes(t.id));
+    const practicedTechniques = techniques.filter(t => practicedTechniqueIds.includes(t.id));
+    
+    const totalPracticeCount = dayPractice.reduce((sum, r) => sum + (r.repetition_count || 1), 0);
+    
+    return {
+      views: dayViews,
+      practice: dayPractice,
+      viewedTechniques,
+      practicedTechniques,
+      totalPracticeCount,
+      hasActivity: dayViews.length > 0 || dayPractice.length > 0,
     };
-
-    const config = statusConfig[reviewInfo.status];
-    const StatusIcon = config.icon;
-
-    return (
-      <Link to={`/video/${technique.id}`} className="group">
-        <Card className={`overflow-hidden hover:shadow-lg transition-all duration-300 h-full ${config.border}`}>
-          <div className="relative aspect-video bg-muted">
-            {technique.thumbnail_url ? (
-              <img
-                src={technique.thumbnail_url}
-                alt={getTechniqueName(technique)}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center">
-                <Play className="h-12 w-12 text-muted-foreground/50" />
-              </div>
-            )}
-            {/* シリーズラベル */}
-            <div className="absolute top-2 right-2 bg-primary/90 text-primary-foreground text-[10px] sm:text-xs px-2 py-0.5 rounded font-medium">
-              {seriesLabel}
-            </div>
-            {/* 復習ステータスバッジ */}
-            <div className={`absolute top-2 left-2 ${config.bg} text-white text-[10px] sm:text-xs px-2 py-0.5 rounded font-medium flex items-center gap-1`}>
-              <StatusIcon className="h-3 w-3" />
-              {reviewInfo.daysAgo}{texts.daysAgo}
-            </div>
-          </div>
-          <CardContent className="p-3">
-            <h3 className="font-medium text-sm line-clamp-2 mb-2 group-hover:text-primary transition-colors">
-              {getTechniqueName(technique)}
-            </h3>
-            <div className="flex items-center gap-3 text-xs text-muted-foreground">
-              <div className="flex items-center gap-1">
-                <Eye className="h-3 w-3" />
-                <span>{viewCount}{texts.views}</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <Repeat className="h-3 w-3" />
-                <span>{practiceCount}{texts.practices}</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </Link>
-    );
   };
+
+  // Monthly stats
+  const monthlyStats = useMemo(() => {
+    const monthStart = startOfMonth(currentMonth);
+    const monthEnd = endOfMonth(currentMonth);
+    
+    const monthViews = videoViews.filter(v => {
+      const date = new Date(v.last_viewed_at);
+      return date >= monthStart && date <= monthEnd;
+    });
+    
+    const monthPractice = practiceRecords.filter(r => {
+      const date = new Date(r.practice_date);
+      return date >= monthStart && date <= monthEnd;
+    });
+    
+    const activeDays = new Set([
+      ...monthViews.map(v => format(new Date(v.last_viewed_at), "yyyy-MM-dd")),
+      ...monthPractice.map(r => r.practice_date),
+    ]).size;
+    
+    return {
+      totalViews: monthViews.reduce((sum, v) => sum + v.view_count, 0),
+      totalPractice: monthPractice.reduce((sum, r) => sum + (r.repetition_count || 1), 0),
+      activeDays,
+    };
+  }, [currentMonth, videoViews, practiceRecords]);
+
+  const handleDateClick = (date: Date) => {
+    setSelectedDate(date);
+    setDialogOpen(true);
+  };
+
+  const handleAddPractice = async (techniqueId: string, date: Date) => {
+    if (!user) return;
+    
+    const dateStr = format(date, "yyyy-MM-dd");
+    
+    // Check if practice record exists for this technique and date
+    const existingRecord = practiceRecords.find(
+      r => r.technique_id === techniqueId && r.practice_date === dateStr
+    );
+    
+    try {
+      if (existingRecord) {
+        // Update existing record
+        const { error } = await supabase
+          .from("practice_records")
+          .update({ repetition_count: (existingRecord.repetition_count || 1) + 1 })
+          .eq("id", existingRecord.id);
+        
+        if (error) throw error;
+        
+        setPracticeRecords(prev => prev.map(r => 
+          r.id === existingRecord.id 
+            ? { ...r, repetition_count: (r.repetition_count || 1) + 1 }
+            : r
+        ));
+      } else {
+        // Create new record
+        const { data, error } = await supabase
+          .from("practice_records")
+          .insert({
+            user_id: user.id,
+            technique_id: techniqueId,
+            practice_date: dateStr,
+            repetition_count: 1,
+          })
+          .select()
+          .single();
+        
+        if (error) throw error;
+        if (data) {
+          setPracticeRecords(prev => [...prev, data]);
+        }
+      }
+      
+      toast.success(language === "ja" ? "練習を記録しました" : "Practice recorded");
+    } catch (error) {
+      console.error("Error adding practice:", error);
+      toast.error(language === "ja" ? "エラーが発生しました" : "Error occurred");
+    }
+  };
+
+  const handleRemovePractice = async (techniqueId: string, date: Date) => {
+    if (!user) return;
+    
+    const dateStr = format(date, "yyyy-MM-dd");
+    const existingRecord = practiceRecords.find(
+      r => r.technique_id === techniqueId && r.practice_date === dateStr
+    );
+    
+    if (!existingRecord) return;
+    
+    try {
+      if ((existingRecord.repetition_count || 1) <= 1) {
+        // Delete the record
+        const { error } = await supabase
+          .from("practice_records")
+          .delete()
+          .eq("id", existingRecord.id);
+        
+        if (error) throw error;
+        setPracticeRecords(prev => prev.filter(r => r.id !== existingRecord.id));
+      } else {
+        // Decrease count
+        const { error } = await supabase
+          .from("practice_records")
+          .update({ repetition_count: (existingRecord.repetition_count || 1) - 1 })
+          .eq("id", existingRecord.id);
+        
+        if (error) throw error;
+        setPracticeRecords(prev => prev.map(r => 
+          r.id === existingRecord.id 
+            ? { ...r, repetition_count: (r.repetition_count || 1) - 1 }
+            : r
+        ));
+      }
+    } catch (error) {
+      console.error("Error removing practice:", error);
+    }
+  };
+
+  const getPracticeCount = (techniqueId: string, date: Date) => {
+    const dateStr = format(date, "yyyy-MM-dd");
+    const record = practiceRecords.find(
+      r => r.technique_id === techniqueId && r.practice_date === dateStr
+    );
+    return record?.repetition_count || 0;
+  };
+
+  const weekDays = language === "ja" 
+    ? ["日", "月", "火", "水", "木", "金", "土"]
+    : language === "pt"
+    ? ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"]
+    : ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
   return (
     <div className="min-h-screen bg-background">
@@ -363,217 +324,365 @@ const PracticeRecordsPage = () => {
           {loading ? (
             <>
               <Skeleton className="h-10 w-64 mb-8" />
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-                {Array.from({ length: 8 }).map((_, i) => (
-                  <Skeleton key={i} className="aspect-video rounded-lg" />
-                ))}
-              </div>
+              <Skeleton className="h-96 w-full rounded-lg" />
             </>
           ) : (
             <>
-          <div className="mb-4 sm:mb-8">
-            <h1 className="text-xl sm:text-3xl lg:text-4xl font-bold mb-2">{texts.title}</h1>
-          </div>
+              <div className="mb-6">
+                <h1 className="text-xl sm:text-3xl font-bold flex items-center gap-2">
+                  <Calendar className="h-6 w-6 sm:h-8 sm:w-8" />
+                  {texts.title}
+                </h1>
+              </div>
 
-          <Tabs defaultValue="review" className="space-y-4 sm:space-y-6">
-            <TabsList className="grid w-full grid-cols-4 gap-1 p-1.5 bg-muted/50 rounded-lg">
-              <TabsTrigger 
-                value="review" 
-                className="text-xs sm:text-sm font-medium rounded-md data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all"
-              >
-                {texts.reviewTab}
-              </TabsTrigger>
-              <TabsTrigger 
-                value="recent" 
-                className="text-xs sm:text-sm font-medium rounded-md data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all"
-              >
-                {texts.recentTab}
-              </TabsTrigger>
-              <TabsTrigger 
-                value="unwatched" 
-                className="text-xs sm:text-sm font-medium rounded-md data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all"
-              >
-                {texts.unwatchedTab}
-              </TabsTrigger>
-              <TabsTrigger 
-                value="chart" 
-                className="text-xs sm:text-sm font-medium rounded-md data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all"
-              >
-                {texts.chartTab}
-              </TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="review" className="space-y-4">
-              {reviewVideos.length === 0 ? (
-                <Card>
-                  <CardContent className="p-8 text-center text-muted-foreground">
-                    <CheckCircle className="h-12 w-12 mx-auto mb-3 text-green-500" />
-                    {texts.noReviewNeeded}
-                  </CardContent>
+              {/* Monthly Stats */}
+              <div className="grid grid-cols-3 gap-3 mb-6">
+                <Card className="p-3 sm:p-4 text-center">
+                  <div className="text-2xl sm:text-3xl font-bold text-primary">{monthlyStats.totalPractice}</div>
+                  <div className="text-xs sm:text-sm text-muted-foreground">{texts.totalPractice}</div>
                 </Card>
-              ) : (
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
-                  {reviewVideos.map(({ technique, reviewInfo }) => (
-                    <ReviewVideoCard key={technique.id} technique={technique} reviewInfo={reviewInfo!} />
-                  ))}
-                </div>
-              )}
-            </TabsContent>
-
-            <TabsContent value="recent" className="space-y-4">
-              {recentVideos.length === 0 ? (
-                <Card>
-                  <CardContent className="p-8 text-center text-muted-foreground">
-                    {texts.noVideos}
-                  </CardContent>
+                <Card className="p-3 sm:p-4 text-center">
+                  <div className="text-2xl sm:text-3xl font-bold text-primary">{monthlyStats.totalViews}</div>
+                  <div className="text-xs sm:text-sm text-muted-foreground">{texts.totalViews}</div>
                 </Card>
-              ) : (
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
-                  {recentVideos.map((technique) => (
-                    <VideoCard key={technique.id} technique={technique} />
-                  ))}
-                </div>
-              )}
-            </TabsContent>
-
-            <TabsContent value="unwatched" className="space-y-4">
-              {unwatchedVideos.length === 0 ? (
-                <Card>
-                  <CardContent className="p-8 text-center text-muted-foreground">
-                    {texts.noVideos}
-                  </CardContent>
+                <Card className="p-3 sm:p-4 text-center">
+                  <div className="text-2xl sm:text-3xl font-bold text-primary">{monthlyStats.activeDays}</div>
+                  <div className="text-xs sm:text-sm text-muted-foreground">{texts.activeDays}</div>
                 </Card>
-              ) : (
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
-                  {unwatchedVideos.map((technique) => (
-                    <VideoCard key={technique.id} technique={technique} />
-                  ))}
-                </div>
-              )}
-            </TabsContent>
+              </div>
 
-            <TabsContent value="chart" className="space-y-4">
+              {/* Calendar */}
               <Card>
-                <CardHeader className="p-4 sm:p-6">
-                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-                    <CardTitle className="text-base sm:text-xl">
-                      {language === "ja" ? "練習推移グラフ" : language === "pt" ? "Gráfico de Progresso" : "Progress Graph"}
+                <CardHeader className="p-4">
+                  <div className="flex items-center justify-between">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}
+                    >
+                      <ChevronLeft className="h-5 w-5" />
+                    </Button>
+                    <CardTitle className="text-lg sm:text-xl">
+                      {format(currentMonth, language === "ja" ? "yyyy年 M月" : "MMMM yyyy", { locale })}
                     </CardTitle>
-                    <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        variant={chartPeriod === "day" ? "default" : "outline"}
-                        onClick={() => setChartPeriod("day")}
-                        className="text-xs"
-                      >
-                        {language === "ja" ? "日別" : language === "pt" ? "Diário" : "Daily"}
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant={chartPeriod === "week" ? "default" : "outline"}
-                        onClick={() => setChartPeriod("week")}
-                        className="text-xs"
-                      >
-                        {language === "ja" ? "週別" : language === "pt" ? "Semanal" : "Weekly"}
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant={chartPeriod === "month" ? "default" : "outline"}
-                        onClick={() => setChartPeriod("month")}
-                        className="text-xs"
-                      >
-                        {language === "ja" ? "月別" : language === "pt" ? "Mensal" : "Monthly"}
-                      </Button>
-                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
+                    >
+                      <ChevronRight className="h-5 w-5" />
+                    </Button>
                   </div>
                 </CardHeader>
-                <CardContent className="p-2 sm:p-6">
-                  {practiceRecords.length === 0 ? (
-                    <div className="text-center py-12 text-muted-foreground">
-                      {language === "ja" ? "練習記録がありません" : language === "pt" ? "Nenhum registro" : "No records"}
-                    </div>
-                  ) : (
-                    <div className="space-y-6">
-                      <div>
-                        <h3 className="text-sm font-medium mb-3">
-                          {language === "ja" ? "練習回数（セッション数）" : language === "pt" ? "Sessões de Prática" : "Practice Sessions"}
-                        </h3>
-                        <ResponsiveContainer width="100%" height={250}>
-                          <LineChart data={getChartData()}>
-                            <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                            <XAxis 
-                              dataKey="date" 
-                              className="text-xs"
-                              tick={{ fill: 'hsl(var(--muted-foreground))' }}
-                            />
-                            <YAxis 
-                              className="text-xs"
-                              tick={{ fill: 'hsl(var(--muted-foreground))' }}
-                            />
-                            <Tooltip 
-                              contentStyle={{ 
-                                backgroundColor: 'hsl(var(--background))',
-                                border: '1px solid hsl(var(--border))',
-                                borderRadius: '6px'
-                              }}
-                            />
-                            <Legend />
-                            <Line 
-                              type="monotone" 
-                              dataKey="sessions" 
-                              stroke="hsl(var(--primary))" 
-                              strokeWidth={2}
-                              name={language === "ja" ? "練習回数" : language === "pt" ? "Sessões" : "Sessions"}
-                              dot={{ fill: 'hsl(var(--primary))' }}
-                            />
-                          </LineChart>
-                        </ResponsiveContainer>
+                <CardContent className="p-2 sm:p-4">
+                  {/* Week days header */}
+                  <div className="grid grid-cols-7 gap-1 mb-2">
+                    {weekDays.map((day, i) => (
+                      <div
+                        key={day}
+                        className={`text-center text-xs sm:text-sm font-medium py-2 ${
+                          i === 0 ? "text-red-500" : i === 6 ? "text-blue-500" : "text-muted-foreground"
+                        }`}
+                      >
+                        {day}
                       </div>
+                    ))}
+                  </div>
 
-                      <div>
-                        <h3 className="text-sm font-medium mb-3">
-                          {language === "ja" ? "累計練習回数（レップス）" : language === "pt" ? "Total de Repetições" : "Total Reps"}
-                        </h3>
-                        <ResponsiveContainer width="100%" height={250}>
-                          <BarChart data={getChartData()}>
-                            <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                            <XAxis 
-                              dataKey="date" 
-                              className="text-xs"
-                              tick={{ fill: 'hsl(var(--muted-foreground))' }}
-                            />
-                            <YAxis 
-                              className="text-xs"
-                              tick={{ fill: 'hsl(var(--muted-foreground))' }}
-                            />
-                            <Tooltip 
-                              contentStyle={{ 
-                                backgroundColor: 'hsl(var(--background))',
-                                border: '1px solid hsl(var(--border))',
-                                borderRadius: '6px'
-                              }}
-                            />
-                            <Legend />
-                            <Bar 
-                              dataKey="reps" 
-                              fill="hsl(var(--primary))"
-                              name={language === "ja" ? "累計回数" : language === "pt" ? "Repetições" : "Reps"}
-                              radius={[4, 4, 0, 0]}
-                            />
-                          </BarChart>
-                        </ResponsiveContainer>
-                      </div>
+                  {/* Calendar grid */}
+                  <div className="grid grid-cols-7 gap-1">
+                    {calendarDays.map((date) => {
+                      const dateData = getDateData(date);
+                      const isCurrentMonth = isSameMonth(date, currentMonth);
+                      const dayOfWeek = date.getDay();
+
+                      return (
+                        <button
+                          key={date.toISOString()}
+                          onClick={() => handleDateClick(date)}
+                          className={`
+                            relative aspect-square p-1 rounded-lg transition-all
+                            ${isCurrentMonth ? "hover:bg-accent" : "opacity-40"}
+                            ${isToday(date) ? "ring-2 ring-primary" : ""}
+                            ${dateData.hasActivity ? "bg-primary/10" : ""}
+                          `}
+                        >
+                          <div className={`text-xs sm:text-sm font-medium ${
+                            dayOfWeek === 0 ? "text-red-500" : dayOfWeek === 6 ? "text-blue-500" : ""
+                          }`}>
+                            {format(date, "d")}
+                          </div>
+                          
+                          {/* Activity indicators */}
+                          {dateData.hasActivity && (
+                            <div className="absolute bottom-1 left-1 right-1 flex justify-center gap-0.5">
+                              {dateData.views.length > 0 && (
+                                <div className="w-1.5 h-1.5 rounded-full bg-blue-500" title="視聴" />
+                              )}
+                              {dateData.practice.length > 0 && (
+                                <div className="w-1.5 h-1.5 rounded-full bg-green-500" title="練習" />
+                              )}
+                            </div>
+                          )}
+                          
+                          {/* Practice count badge */}
+                          {dateData.totalPracticeCount > 0 && (
+                            <div className="absolute top-0 right-0 bg-green-500 text-white text-[10px] min-w-[16px] h-4 rounded-full flex items-center justify-center font-bold">
+                              {dateData.totalPracticeCount}
+                            </div>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Legend */}
+                  <div className="flex items-center justify-center gap-4 mt-4 text-xs text-muted-foreground">
+                    <div className="flex items-center gap-1">
+                      <div className="w-2 h-2 rounded-full bg-blue-500" />
+                      <span>{texts.watched}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <div className="w-2 h-2 rounded-full bg-green-500" />
+                      <span>{texts.practiced}</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Today's quick action */}
+              <Card className="mt-6">
+                <CardHeader className="p-4">
+                  <CardTitle className="text-base sm:text-lg flex items-center gap-2">
+                    {texts.today}: {format(new Date(), language === "ja" ? "M月d日" : "MMM d", { locale })}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-4 pt-0">
+                  {techniques.length === 0 ? (
+                    <p className="text-muted-foreground text-sm">{texts.noRecords}</p>
+                  ) : (
+                    <div className="space-y-2 max-h-60 overflow-y-auto">
+                      {videoViews
+                        .filter(v => format(new Date(v.last_viewed_at), "yyyy-MM-dd") === format(new Date(), "yyyy-MM-dd"))
+                        .slice(0, 5)
+                        .map((view) => {
+                          const technique = techniques.find(t => t.id === view.video_id);
+                          if (!technique) return null;
+                          const practiceCount = getPracticeCount(technique.id, new Date());
+                          
+                          return (
+                            <div
+                              key={view.id}
+                              className="flex items-center gap-3 p-2 rounded-lg bg-muted/50"
+                            >
+                              <Link to={`/video/${technique.id}`} className="flex-shrink-0">
+                                <div className="w-16 h-10 rounded bg-muted overflow-hidden">
+                                  {technique.thumbnail_url ? (
+                                    <img
+                                      src={technique.thumbnail_url}
+                                      alt={getTechniqueName(technique)}
+                                      className="w-full h-full object-cover"
+                                    />
+                                  ) : (
+                                    <div className="w-full h-full flex items-center justify-center">
+                                      <Play className="h-4 w-4 text-muted-foreground" />
+                                    </div>
+                                  )}
+                                </div>
+                              </Link>
+                              <div className="flex-1 min-w-0">
+                                <Link to={`/video/${technique.id}`} className="hover:text-primary">
+                                  <div className="text-sm font-medium truncate">{getTechniqueName(technique)}</div>
+                                </Link>
+                                <Badge variant="secondary" className="text-[10px]">{getSeriesLabel(technique)}</Badge>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  className="h-8 w-8"
+                                  onClick={() => handleRemovePractice(technique.id, new Date())}
+                                  disabled={practiceCount === 0}
+                                >
+                                  <Minus className="h-4 w-4" />
+                                </Button>
+                                <span className="w-8 text-center font-bold text-lg">{practiceCount}</span>
+                                <Button
+                                  size="icon"
+                                  variant="default"
+                                  className="h-8 w-8"
+                                  onClick={() => handleAddPractice(technique.id, new Date())}
+                                >
+                                  <Plus className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </div>
+                          );
+                        })}
                     </div>
                   )}
                 </CardContent>
               </Card>
-            </TabsContent>
-          </Tabs>
-          </>
+            </>
           )}
         </div>
       </main>
       <Footer />
+
+      {/* Date Detail Dialog */}
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              {selectedDate && format(selectedDate, language === "ja" ? "yyyy年M月d日" : "MMMM d, yyyy", { locale })}
+            </DialogTitle>
+          </DialogHeader>
+          
+          {selectedDate && (() => {
+            const dateData = getDateData(selectedDate);
+            
+            return (
+              <div className="space-y-4">
+                {/* Viewed videos */}
+                {dateData.viewedTechniques.length > 0 && (
+                  <div>
+                    <h3 className="text-sm font-semibold mb-2 flex items-center gap-2">
+                      <Eye className="h-4 w-4 text-blue-500" />
+                      {texts.watched}
+                    </h3>
+                    <div className="space-y-2">
+                      {dateData.viewedTechniques.map((technique) => {
+                        const practiceCount = getPracticeCount(technique.id, selectedDate);
+                        
+                        return (
+                          <div
+                            key={technique.id}
+                            className="flex items-center gap-3 p-2 rounded-lg bg-muted/50"
+                          >
+                            <Link to={`/video/${technique.id}`} className="flex-shrink-0">
+                              <div className="w-20 h-12 rounded bg-muted overflow-hidden">
+                                {technique.thumbnail_url ? (
+                                  <img
+                                    src={technique.thumbnail_url}
+                                    alt={getTechniqueName(technique)}
+                                    className="w-full h-full object-cover"
+                                  />
+                                ) : (
+                                  <div className="w-full h-full flex items-center justify-center">
+                                    <Play className="h-5 w-5 text-muted-foreground" />
+                                  </div>
+                                )}
+                              </div>
+                            </Link>
+                            <div className="flex-1 min-w-0">
+                              <Link to={`/video/${technique.id}`} className="hover:text-primary">
+                                <div className="text-sm font-medium truncate">{getTechniqueName(technique)}</div>
+                              </Link>
+                              <Badge variant="secondary" className="text-[10px]">{getSeriesLabel(technique)}</Badge>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="h-8 w-8"
+                                onClick={() => handleRemovePractice(technique.id, selectedDate)}
+                                disabled={practiceCount === 0}
+                              >
+                                <Minus className="h-4 w-4" />
+                              </Button>
+                              <span className="w-8 text-center font-bold text-lg">{practiceCount}</span>
+                              <Button
+                                size="icon"
+                                variant="default"
+                                className="h-8 w-8"
+                                onClick={() => handleAddPractice(technique.id, selectedDate)}
+                              >
+                                <Plus className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Practiced only (not viewed that day) */}
+                {dateData.practicedTechniques.filter(
+                  t => !dateData.viewedTechniques.some(v => v.id === t.id)
+                ).length > 0 && (
+                  <div>
+                    <h3 className="text-sm font-semibold mb-2 flex items-center gap-2">
+                      <Repeat className="h-4 w-4 text-green-500" />
+                      {texts.practiced}
+                    </h3>
+                    <div className="space-y-2">
+                      {dateData.practicedTechniques
+                        .filter(t => !dateData.viewedTechniques.some(v => v.id === t.id))
+                        .map((technique) => {
+                          const practiceCount = getPracticeCount(technique.id, selectedDate);
+                          
+                          return (
+                            <div
+                              key={technique.id}
+                              className="flex items-center gap-3 p-2 rounded-lg bg-muted/50"
+                            >
+                              <Link to={`/video/${technique.id}`} className="flex-shrink-0">
+                                <div className="w-20 h-12 rounded bg-muted overflow-hidden">
+                                  {technique.thumbnail_url ? (
+                                    <img
+                                      src={technique.thumbnail_url}
+                                      alt={getTechniqueName(technique)}
+                                      className="w-full h-full object-cover"
+                                    />
+                                  ) : (
+                                    <div className="w-full h-full flex items-center justify-center">
+                                      <Play className="h-5 w-5 text-muted-foreground" />
+                                    </div>
+                                  )}
+                                </div>
+                              </Link>
+                              <div className="flex-1 min-w-0">
+                                <Link to={`/video/${technique.id}`} className="hover:text-primary">
+                                  <div className="text-sm font-medium truncate">{getTechniqueName(technique)}</div>
+                                </Link>
+                                <Badge variant="secondary" className="text-[10px]">{getSeriesLabel(technique)}</Badge>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  className="h-8 w-8"
+                                  onClick={() => handleRemovePractice(technique.id, selectedDate)}
+                                  disabled={practiceCount === 0}
+                                >
+                                  <Minus className="h-4 w-4" />
+                                </Button>
+                                <span className="w-8 text-center font-bold text-lg">{practiceCount}</span>
+                                <Button
+                                  size="icon"
+                                  variant="default"
+                                  className="h-8 w-8"
+                                  onClick={() => handleAddPractice(technique.id, selectedDate)}
+                                >
+                                  <Plus className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                    </div>
+                  </div>
+                )}
+
+                {!dateData.hasActivity && (
+                  <p className="text-center text-muted-foreground py-8">{texts.noRecords}</p>
+                )}
+              </div>
+            );
+          })()}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
