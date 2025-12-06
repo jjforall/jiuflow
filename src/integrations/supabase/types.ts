@@ -2009,6 +2009,7 @@ export type Database = {
         Args: { application_id: string; reason: string }
         Returns: undefined
       }
+      validate_referral_code: { Args: { code_to_check: string }; Returns: Json }
     }
     Enums: {
       app_role: "admin" | "user" | "staff" | "celebrity"
