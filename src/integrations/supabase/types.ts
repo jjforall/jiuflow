@@ -66,10 +66,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "brothers_applications_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "brothers_applications_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "brothers_applications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -180,6 +194,13 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "celebrities_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
         ]
       }
       celebrity_applications: {
@@ -244,6 +265,13 @@ export type Database = {
             columns: ["reviewed_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "celebrity_applications_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -329,10 +357,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "celebrity_edit_requests_requested_by_fkey"
+            columns: ["requested_by"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "celebrity_edit_requests_reviewed_by_fkey"
             columns: ["reviewed_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "celebrity_edit_requests_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -568,6 +610,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "community_posts_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "community_posts_thread_id_fkey"
             columns: ["thread_id"]
             isOneToOne: false
@@ -730,6 +779,13 @@ export type Database = {
             columns: ["author_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "community_threads_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
             referencedColumns: ["id"]
           },
           {
@@ -1058,6 +1114,13 @@ export type Database = {
             referencedRelation: "dojos"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "favorite_dojos_dojo_id_fkey"
+            columns: ["dojo_id"]
+            isOneToOne: false
+            referencedRelation: "public_dojos"
+            referencedColumns: ["id"]
+          },
         ]
       }
       founder_plan_count: {
@@ -1223,6 +1286,13 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "point_transactions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
         ]
       }
       practice_records: {
@@ -1284,6 +1354,13 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "practice_records_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
             referencedColumns: ["id"]
           },
           {
@@ -1469,6 +1546,13 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: true
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "referral_codes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "public_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -1662,10 +1746,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "user_dojos_dojo_id_fkey"
+            columns: ["dojo_id"]
+            isOneToOne: false
+            referencedRelation: "public_dojos"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "user_dojos_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_dojos_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -1721,6 +1819,13 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "user_nfts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
         ]
       }
       user_points: {
@@ -1750,6 +1855,13 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "user_points_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
         ]
       }
       user_roles: {
@@ -1777,6 +1889,13 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_roles_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -1893,6 +2012,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "video_purchases_buyer_id_fkey"
+            columns: ["buyer_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "video_purchases_video_id_fkey"
             columns: ["video_id"]
             isOneToOne: false
@@ -1987,7 +2113,251 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      public_dojos: {
+        Row: {
+          access_info: string | null
+          access_info_ja: string | null
+          access_info_pt: string | null
+          blog_url: string | null
+          classes: Json | null
+          cover_image_url: string | null
+          created_at: string | null
+          description: string | null
+          description_ja: string | null
+          description_pt: string | null
+          email: string | null
+          facebook: string | null
+          facilities: Json | null
+          faq: Json | null
+          features: Json | null
+          gallery: Json | null
+          id: string | null
+          instagram: string | null
+          instructors: Json | null
+          is_verified: boolean | null
+          line: string | null
+          location: string | null
+          logo_url: string | null
+          media_coverage: Json | null
+          mission: string | null
+          mission_ja: string | null
+          mission_pt: string | null
+          name: string | null
+          name_ja: string | null
+          name_pt: string | null
+          news: Json | null
+          online_resources: string | null
+          online_resources_ja: string | null
+          online_resources_pt: string | null
+          opening_hours: Json | null
+          perks: Json | null
+          phone: string | null
+          pricing: Json | null
+          rules: string | null
+          rules_ja: string | null
+          rules_pt: string | null
+          safety_measures: string | null
+          safety_measures_ja: string | null
+          safety_measures_pt: string | null
+          schedule: Json | null
+          slug: string | null
+          target_audience: string | null
+          target_audience_ja: string | null
+          target_audience_pt: string | null
+          testimonials: Json | null
+          trial_info: Json | null
+          twitter: string | null
+          updated_at: string | null
+          website: string | null
+          youtube: string | null
+        }
+        Insert: {
+          access_info?: string | null
+          access_info_ja?: string | null
+          access_info_pt?: string | null
+          blog_url?: string | null
+          classes?: Json | null
+          cover_image_url?: string | null
+          created_at?: string | null
+          description?: string | null
+          description_ja?: string | null
+          description_pt?: string | null
+          email?: never
+          facebook?: string | null
+          facilities?: Json | null
+          faq?: Json | null
+          features?: Json | null
+          gallery?: Json | null
+          id?: string | null
+          instagram?: string | null
+          instructors?: Json | null
+          is_verified?: boolean | null
+          line?: string | null
+          location?: string | null
+          logo_url?: string | null
+          media_coverage?: Json | null
+          mission?: string | null
+          mission_ja?: string | null
+          mission_pt?: string | null
+          name?: string | null
+          name_ja?: string | null
+          name_pt?: string | null
+          news?: Json | null
+          online_resources?: string | null
+          online_resources_ja?: string | null
+          online_resources_pt?: string | null
+          opening_hours?: Json | null
+          perks?: Json | null
+          phone?: never
+          pricing?: Json | null
+          rules?: string | null
+          rules_ja?: string | null
+          rules_pt?: string | null
+          safety_measures?: string | null
+          safety_measures_ja?: string | null
+          safety_measures_pt?: string | null
+          schedule?: Json | null
+          slug?: string | null
+          target_audience?: string | null
+          target_audience_ja?: string | null
+          target_audience_pt?: string | null
+          testimonials?: Json | null
+          trial_info?: Json | null
+          twitter?: string | null
+          updated_at?: string | null
+          website?: string | null
+          youtube?: string | null
+        }
+        Update: {
+          access_info?: string | null
+          access_info_ja?: string | null
+          access_info_pt?: string | null
+          blog_url?: string | null
+          classes?: Json | null
+          cover_image_url?: string | null
+          created_at?: string | null
+          description?: string | null
+          description_ja?: string | null
+          description_pt?: string | null
+          email?: never
+          facebook?: string | null
+          facilities?: Json | null
+          faq?: Json | null
+          features?: Json | null
+          gallery?: Json | null
+          id?: string | null
+          instagram?: string | null
+          instructors?: Json | null
+          is_verified?: boolean | null
+          line?: string | null
+          location?: string | null
+          logo_url?: string | null
+          media_coverage?: Json | null
+          mission?: string | null
+          mission_ja?: string | null
+          mission_pt?: string | null
+          name?: string | null
+          name_ja?: string | null
+          name_pt?: string | null
+          news?: Json | null
+          online_resources?: string | null
+          online_resources_ja?: string | null
+          online_resources_pt?: string | null
+          opening_hours?: Json | null
+          perks?: Json | null
+          phone?: never
+          pricing?: Json | null
+          rules?: string | null
+          rules_ja?: string | null
+          rules_pt?: string | null
+          safety_measures?: string | null
+          safety_measures_ja?: string | null
+          safety_measures_pt?: string | null
+          schedule?: Json | null
+          slug?: string | null
+          target_audience?: string | null
+          target_audience_ja?: string | null
+          target_audience_pt?: string | null
+          testimonials?: Json | null
+          trial_info?: Json | null
+          twitter?: string | null
+          updated_at?: string | null
+          website?: string | null
+          youtube?: string | null
+        }
+        Relationships: []
+      }
+      public_profiles: {
+        Row: {
+          avatar_url: string | null
+          belt_history: Json | null
+          bio: string | null
+          cover_image_url: string | null
+          created_at: string | null
+          display_name: string | null
+          favorite_fighters: Json | null
+          favorite_techniques: Json | null
+          hobbies: Json | null
+          home_dojo: string | null
+          hometown: string | null
+          id: string | null
+          is_public: boolean | null
+          organization_id: string | null
+          social_links: Json | null
+          titles: Json | null
+          training_locations: Json | null
+          username: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          belt_history?: Json | null
+          bio?: string | null
+          cover_image_url?: string | null
+          created_at?: string | null
+          display_name?: string | null
+          favorite_fighters?: Json | null
+          favorite_techniques?: Json | null
+          hobbies?: Json | null
+          home_dojo?: string | null
+          hometown?: string | null
+          id?: string | null
+          is_public?: boolean | null
+          organization_id?: string | null
+          social_links?: Json | null
+          titles?: Json | null
+          training_locations?: Json | null
+          username?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          belt_history?: Json | null
+          bio?: string | null
+          cover_image_url?: string | null
+          created_at?: string | null
+          display_name?: string | null
+          favorite_fighters?: Json | null
+          favorite_techniques?: Json | null
+          hobbies?: Json | null
+          home_dojo?: string | null
+          hometown?: string | null
+          id?: string | null
+          is_public?: boolean | null
+          organization_id?: string | null
+          social_links?: Json | null
+          titles?: Json | null
+          training_locations?: Json | null
+          username?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profiles_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       award_referral_points: {
