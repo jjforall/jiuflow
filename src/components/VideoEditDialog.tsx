@@ -5,7 +5,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
@@ -20,6 +19,7 @@ interface VideoEditDialogProps {
     video_type: string;
     price: number;
     is_public: boolean;
+    visibility?: string;
   } | null;
   onSuccess?: () => void;
 }
@@ -29,7 +29,7 @@ export function VideoEditDialog({ open, onOpenChange, video, onSuccess }: VideoE
   const [description, setDescription] = useState("");
   const [videoType, setVideoType] = useState<string>("other");
   const [price, setPrice] = useState(0);
-  const [isPublic, setIsPublic] = useState(true);
+  const [visibility, setVisibility] = useState<"public" | "unlisted" | "private">("public");
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -38,7 +38,7 @@ export function VideoEditDialog({ open, onOpenChange, video, onSuccess }: VideoE
       setDescription(video.description || "");
       setVideoType(video.video_type);
       setPrice(video.price);
-      setIsPublic(video.is_public);
+      setVisibility((video.visibility as "public" | "unlisted" | "private") || (video.is_public ? "public" : "private"));
     }
   }, [video]);
 
@@ -59,7 +59,8 @@ export function VideoEditDialog({ open, onOpenChange, video, onSuccess }: VideoE
           description: description || null,
           video_type: videoType,
           price,
-          is_public: isPublic
+          is_public: visibility === 'public',
+          visibility
         })
         .eq('id', video.id);
 
@@ -137,18 +138,33 @@ export function VideoEditDialog({ open, onOpenChange, video, onSuccess }: VideoE
             </p>
           </div>
 
-          <div className="flex items-center justify-between">
-            <div className="space-y-1">
-              <Label htmlFor="edit-public">公開設定</Label>
-              <p className="text-xs text-muted-foreground">
-                非公開にすると他のユーザーには表示されません
-              </p>
-            </div>
-            <Switch
-              id="edit-public"
-              checked={isPublic}
-              onCheckedChange={setIsPublic}
-            />
+          <div className="space-y-2">
+            <Label htmlFor="edit-visibility">公開設定</Label>
+            <Select value={visibility} onValueChange={(value: "public" | "unlisted" | "private") => setVisibility(value)}>
+              <SelectTrigger id="edit-visibility">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="public">
+                  <div className="flex flex-col items-start">
+                    <span>🌍 一般公開</span>
+                    <span className="text-xs text-muted-foreground">誰でも検索・閲覧可能</span>
+                  </div>
+                </SelectItem>
+                <SelectItem value="unlisted">
+                  <div className="flex flex-col items-start">
+                    <span>🔗 限定公開</span>
+                    <span className="text-xs text-muted-foreground">URLを知っている人のみ閲覧可能</span>
+                  </div>
+                </SelectItem>
+                <SelectItem value="private">
+                  <div className="flex flex-col items-start">
+                    <span>🔒 非公開</span>
+                    <span className="text-xs text-muted-foreground">自分のみ閲覧可能</span>
+                  </div>
+                </SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="flex justify-end gap-2 pt-4">
