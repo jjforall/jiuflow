@@ -20,6 +20,7 @@ import {
   PanelLeftClose,
   PanelLeft,
   MessageSquare,
+  Trophy,
 } from "lucide-react";
 import {
   Sidebar,
@@ -59,6 +60,7 @@ const menuItems = [
   { id: "tips", label: "投げ銭", icon: Gift },
   { id: "music", label: "音楽管理", icon: Music },
   { id: "community", label: "オープンマット", icon: MessageSquare },
+  { id: "weekly-topics", label: "週間お題", icon: Trophy },
   { id: "settings", label: "設定", icon: Settings },
 ];
 
