@@ -821,7 +821,7 @@ export const OpenMat = () => {
   // Category List View
   if (!selectedCategory) {
     return (
-      <div className="space-y-4 px-4 sm:px-6 max-w-4xl mx-auto w-full overflow-x-hidden box-border">
+      <div className="space-y-4 px-4 sm:px-6 max-w-4xl mx-auto w-full box-border">
         <div className="flex items-center justify-between flex-wrap gap-2">
           <div>
             <h2 className="text-xl sm:text-2xl font-light">Open Mat</h2>
@@ -904,7 +904,7 @@ export const OpenMat = () => {
             )}
 
             {/* Categories */}
-            <div className="grid gap-3">
+            <div className="grid gap-3 w-full">
               {categories.map((category) => (
                 <Card 
                   key={category.id} 
