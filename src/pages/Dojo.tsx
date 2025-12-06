@@ -170,10 +170,15 @@ export default function Dojo() {
     if (!identifier) return;
 
     try {
-      let query = supabase.from('dojos').select('*');
+      // First check if user is authenticated
+      const { data: { user } } = await supabase.auth.getUser();
+      setUserId(user?.id || null);
       
       // Check if identifier is a UUID (ID) or a slug
       const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(identifier);
+      
+      // Use public_dojos view which hides email/phone from unauthenticated users
+      let query = supabase.from('public_dojos' as any).select('*');
       
       if (isUUID) {
         query = query.eq('id', identifier);
@@ -183,11 +188,28 @@ export default function Dojo() {
 
       const { data, error } = await query.maybeSingle();
 
-      if (error) throw error;
-      if (!data) {
-        toast.error(language === "ja" ? "道場が見つかりませんでした" : "Dojo not found");
+      if (error) {
+        console.error('Error loading from public_dojos view:', error);
+        // Fallback to dojos table
+        let fallbackQuery = supabase.from('dojos').select('*');
+        if (isUUID) {
+          fallbackQuery = fallbackQuery.eq('id', identifier);
+        } else {
+          fallbackQuery = fallbackQuery.eq('slug', identifier);
+        }
+        const { data: fallbackData, error: fallbackError } = await fallbackQuery.maybeSingle();
+        
+        if (fallbackError) throw fallbackError;
+        if (!fallbackData) {
+          toast.error(language === "ja" ? "道場が見つかりませんでした" : "Dojo not found");
+        }
+        setDojo(fallbackData as Dojo | null);
+      } else {
+        if (!data) {
+          toast.error(language === "ja" ? "道場が見つかりませんでした" : "Dojo not found");
+        }
+        setDojo(data as unknown as Dojo | null);
       }
-      setDojo(data);
     } catch (error) {
       console.error('Error loading dojo:', error);
       toast.error(language === "ja" ? "道場の読み込みに失敗しました" : "Failed to load dojo");
