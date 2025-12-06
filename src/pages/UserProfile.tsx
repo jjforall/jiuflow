@@ -182,77 +182,91 @@ export default function UserProfile() {
     try {
       console.log('Resolving user with identifier:', identifier);
       
+      // Get current user to determine if viewing own profile
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      
       // Check if identifier looks like a UUID
       const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(identifier);
       console.log('Is UUID:', isUUID);
       
-      // Try to resolve as username first if not UUID, otherwise use ID
-      const { data: profileByUsername, error: profileError } = await supabase
-        .from('profiles')
-        .select('id, email, display_name, bio, avatar_url, username, education, work_experience, belt_history, home_dojo, training_locations, titles, created_at, cover_image_url, organization_id, favorite_fighters, favorite_techniques, hometown, hobbies, date_of_birth, social_links')
-        .eq(isUUID ? 'id' : 'username', identifier)
-        .maybeSingle();
+      // First, check if this is the current user's own profile
+      const isOwnProfile = authUser && (
+        (isUUID && authUser.id === identifier) ||
+        (!isUUID && authUser.id) // Will verify after fetching
+      );
       
-      console.log('Profile query result:', { profileByUsername, profileError });
-
-      if (profileError) {
-        console.error('Profile query error:', profileError);
-        throw profileError;
-      }
-
+      let profileData: any = null;
       let resolvedUserId: string;
       
-      if (profileByUsername) {
-        console.log('Profile found:', profileByUsername);
-        resolvedUserId = profileByUsername.id;
-        setProfile({
-          ...profileByUsername,
-          education: (profileByUsername.education as any) || [],
-          work_experience: (profileByUsername.work_experience as any) || [],
-          belt_history: (profileByUsername.belt_history as any) || [],
-          training_locations: (profileByUsername.training_locations as any) || [],
-          titles: (profileByUsername.titles as any) || [],
-          favorite_fighters: (profileByUsername.favorite_fighters as any) || [],
-          favorite_techniques: (profileByUsername.favorite_techniques as any) || [],
-          hobbies: (profileByUsername.hobbies as any) || [],
-          social_links: (profileByUsername.social_links as any) || {}
-        });
-      } else if (!isUUID) {
-        console.log('Profile not found by username, trying with UUID fallback');
-        // If identifier was not a UUID and not found by username, try as ID
-        const { data: profileById, error: fallbackError } = await supabase
+      if (isOwnProfile && isUUID) {
+        // Viewing own profile - fetch full data from profiles table
+        const { data, error } = await supabase
           .from('profiles')
           .select('id, email, display_name, bio, avatar_url, username, education, work_experience, belt_history, home_dojo, training_locations, titles, created_at, cover_image_url, organization_id, favorite_fighters, favorite_techniques, hometown, hobbies, date_of_birth, social_links')
           .eq('id', identifier)
           .maybeSingle();
         
-        if (fallbackError) {
-          console.error('Fallback query error:', fallbackError);
-          throw fallbackError;
+        if (error) throw error;
+        profileData = data;
+      } else {
+        // Try to find by username or ID using public_profiles view (excludes sensitive data)
+        const { data: publicProfile, error: publicError } = await supabase
+          .from('public_profiles' as any)
+          .select('*')
+          .eq(isUUID ? 'id' : 'username', identifier)
+          .maybeSingle();
+        
+        if (publicError) {
+          console.error('Public profile query error:', publicError);
+          // Fallback to profiles table if view doesn't work
+          const { data, error } = await supabase
+            .from('profiles')
+            .select('id, display_name, bio, avatar_url, username, belt_history, home_dojo, training_locations, titles, created_at, cover_image_url, organization_id, favorite_fighters, favorite_techniques, hometown, hobbies, social_links')
+            .eq(isUUID ? 'id' : 'username', identifier)
+            .maybeSingle();
+          
+          if (error) throw error;
+          profileData = data;
+        } else {
+          profileData = publicProfile;
         }
         
-        if (profileById) {
-          console.log('Profile found by ID fallback:', profileById);
-          resolvedUserId = profileById.id;
-          setProfile({
-            ...profileById,
-            education: (profileById.education as any) || [],
-            work_experience: (profileById.work_experience as any) || [],
-            belt_history: (profileById.belt_history as any) || [],
-            training_locations: (profileById.training_locations as any) || [],
-            titles: (profileById.titles as any) || [],
-            favorite_fighters: (profileById.favorite_fighters as any) || [],
-            favorite_techniques: (profileById.favorite_techniques as any) || [],
-            hobbies: (profileById.hobbies as any) || [],
-            social_links: (profileById.social_links as any) || {}
-          });
-        } else {
-          console.error('No profile found');
-          toast.error("ユーザーが見つかりませんでした");
-          return;
+        // If viewing own profile by username, fetch full data
+        if (profileData && authUser && profileData.id === authUser.id) {
+          const { data: fullProfile, error: fullError } = await supabase
+            .from('profiles')
+            .select('id, email, display_name, bio, avatar_url, username, education, work_experience, belt_history, home_dojo, training_locations, titles, created_at, cover_image_url, organization_id, favorite_fighters, favorite_techniques, hometown, hobbies, date_of_birth, social_links')
+            .eq('id', authUser.id)
+            .maybeSingle();
+          
+          if (!fullError && fullProfile) {
+            profileData = fullProfile;
+          }
         }
+      }
+      
+      console.log('Profile query result:', { profileData });
+
+      if (profileData) {
+        console.log('Profile found:', profileData);
+        resolvedUserId = profileData.id;
+        setProfile({
+          ...profileData,
+          // Ensure sensitive fields are null for other users' profiles
+          email: profileData.email || null,
+          date_of_birth: profileData.date_of_birth || null,
+          education: (profileData.education as any) || [],
+          work_experience: (profileData.work_experience as any) || [],
+          belt_history: (profileData.belt_history as any) || [],
+          training_locations: (profileData.training_locations as any) || [],
+          titles: (profileData.titles as any) || [],
+          favorite_fighters: (profileData.favorite_fighters as any) || [],
+          favorite_techniques: (profileData.favorite_techniques as any) || [],
+          hobbies: (profileData.hobbies as any) || [],
+          social_links: (profileData.social_links as any) || {}
+        });
       } else {
-        console.error('No profile found for UUID:', identifier);
+        console.error('No profile found for identifier:', identifier);
         toast.error("ユーザーが見つかりませんでした");
         return;
       }
