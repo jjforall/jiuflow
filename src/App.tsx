@@ -124,7 +124,7 @@ const App = () => (
                   <Route path="/:slugOrUsername" element={<SuspenseWrapper variant="profile"><DojoOrProfile /></SuspenseWrapper>} />
                   <Route path="/practice-records" element={
                     <ProtectedRoute>
-                      <SuspenseWrapper variant="profile"><PracticeRecordsPage /></SuspenseWrapper>
+                      <SuspenseWrapper variant="map"><PracticeRecordsPage /></SuspenseWrapper>
                     </ProtectedRoute>
                   } />
                   <Route path="/open-mat" element={
