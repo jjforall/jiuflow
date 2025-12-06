@@ -134,7 +134,7 @@ interface Profile {
   belt_history: Array<{belt: string; date?: string; instructor?: string}> | null;
   home_dojo: string | null;
   training_locations: Array<string> | null;
-  titles: Array<{title: string; rank?: string; organization?: string; customTitle?: string; weight_class?: string}> | null;
+  titles: Array<{title: string; rank?: string; organization?: string; customTitle?: string; weight_class?: string; belt?: string}> | null;
   favorite_fighters: Array<string> | null;
   favorite_techniques: Array<string> | null;
   hometown: string | null;
@@ -1892,26 +1892,44 @@ const MyPage = () => {
                                     </Select>
                                   </div>
 
-                                  <Select
-                                    value={title.weight_class || ''}
-                                    onValueChange={(value) => updateTitle(index, 'weight_class', value)}
-                                  >
-                                    <SelectTrigger className="h-12">
-                                      <SelectValue placeholder={language === "ja" ? "階級を選択" : "Select Weight Class"} />
-                                    </SelectTrigger>
-                                    <SelectContent className="bg-popover z-50">
-                                      <SelectItem value="ルースター">{language === "ja" ? "ルースター" : "Rooster"}</SelectItem>
-                                      <SelectItem value="ライトフェザー">{language === "ja" ? "ライトフェザー" : "Light Feather"}</SelectItem>
-                                      <SelectItem value="フェザー">{language === "ja" ? "フェザー" : "Feather"}</SelectItem>
-                                      <SelectItem value="ライト">{language === "ja" ? "ライト" : "Light"}</SelectItem>
-                                      <SelectItem value="ミディアム">{language === "ja" ? "ミディアム" : "Medium"}</SelectItem>
-                                      <SelectItem value="ミディアムヘビー">{language === "ja" ? "ミディアムヘビー" : "Medium Heavy"}</SelectItem>
-                                      <SelectItem value="ヘビー">{language === "ja" ? "ヘビー" : "Heavy"}</SelectItem>
-                                      <SelectItem value="スーパーヘビー">{language === "ja" ? "スーパーヘビー" : "Super Heavy"}</SelectItem>
-                                      <SelectItem value="ウルトラヘビー">{language === "ja" ? "ウルトラヘビー" : "Ultra Heavy"}</SelectItem>
-                                      <SelectItem value="オープンクラス">{language === "ja" ? "オープンクラス" : "Absolute"}</SelectItem>
-                                    </SelectContent>
-                                  </Select>
+                                  <div className="grid grid-cols-2 gap-2">
+                                    <Select
+                                      value={title.weight_class || ''}
+                                      onValueChange={(value) => updateTitle(index, 'weight_class', value)}
+                                    >
+                                      <SelectTrigger className="h-12">
+                                        <SelectValue placeholder={language === "ja" ? "階級を選択" : "Select Weight Class"} />
+                                      </SelectTrigger>
+                                      <SelectContent className="bg-popover z-50">
+                                        <SelectItem value="ルースター">{language === "ja" ? "ルースター" : "Rooster"}</SelectItem>
+                                        <SelectItem value="ライトフェザー">{language === "ja" ? "ライトフェザー" : "Light Feather"}</SelectItem>
+                                        <SelectItem value="フェザー">{language === "ja" ? "フェザー" : "Feather"}</SelectItem>
+                                        <SelectItem value="ライト">{language === "ja" ? "ライト" : "Light"}</SelectItem>
+                                        <SelectItem value="ミディアム">{language === "ja" ? "ミディアム" : "Medium"}</SelectItem>
+                                        <SelectItem value="ミディアムヘビー">{language === "ja" ? "ミディアムヘビー" : "Medium Heavy"}</SelectItem>
+                                        <SelectItem value="ヘビー">{language === "ja" ? "ヘビー" : "Heavy"}</SelectItem>
+                                        <SelectItem value="スーパーヘビー">{language === "ja" ? "スーパーヘビー" : "Super Heavy"}</SelectItem>
+                                        <SelectItem value="ウルトラヘビー">{language === "ja" ? "ウルトラヘビー" : "Ultra Heavy"}</SelectItem>
+                                        <SelectItem value="オープンクラス">{language === "ja" ? "オープンクラス" : "Absolute"}</SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                    
+                                    <Select
+                                      value={title.belt || ''}
+                                      onValueChange={(value) => updateTitle(index, 'belt', value)}
+                                    >
+                                      <SelectTrigger className="h-12">
+                                        <SelectValue placeholder={language === "ja" ? "帯色を選択" : "Select Belt"} />
+                                      </SelectTrigger>
+                                      <SelectContent className="bg-popover z-50">
+                                        <SelectItem value="白帯">{language === "ja" ? "白帯" : "White Belt"}</SelectItem>
+                                        <SelectItem value="青帯">{language === "ja" ? "青帯" : "Blue Belt"}</SelectItem>
+                                        <SelectItem value="紫帯">{language === "ja" ? "紫帯" : "Purple Belt"}</SelectItem>
+                                        <SelectItem value="茶帯">{language === "ja" ? "茶帯" : "Brown Belt"}</SelectItem>
+                                        <SelectItem value="黒帯">{language === "ja" ? "黒帯" : "Black Belt"}</SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
                                   
                                   {title.title === "custom" && (
                                     <Input
@@ -1952,7 +1970,10 @@ const MyPage = () => {
                                     {title.organization && (
                                       <div className="text-sm text-muted-foreground">{title.organization}</div>
                                     )}
-                                    <div className="flex gap-2 mt-1">
+                                    <div className="flex flex-wrap gap-2 mt-1">
+                                      {title.belt && (
+                                        <BeltBadge belt={title.belt} className="text-xs" />
+                                      )}
                                       {title.weight_class && (
                                         <Badge variant="secondary" className="text-xs">{title.weight_class}</Badge>
                                       )}
