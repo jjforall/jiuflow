@@ -14,6 +14,7 @@ import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
 import murataImage from "@/assets/murata-ryozo.jpg";
+import murataChampionImage from "@/assets/murata-world-champion.jpg";
 import teamArt5Image from "@/assets/team-art5-cebu.jpg";
 import TechniqueFlowchart from "@/components/TechniqueFlowchart";
 
@@ -374,6 +375,22 @@ const About = () => {
                 </div>
               </div>
               
+              {/* World Champion Photo */}
+              <div className="mb-8 sm:mb-12">
+                <div className="relative rounded-xl overflow-hidden shadow-2xl">
+                  <img 
+                    src={murataChampionImage} 
+                    alt={t("about.instructor.championAlt", "SJJIF世界選手権 優勝時の村田良蔵")}
+                    className="w-full max-w-lg mx-auto"
+                  />
+                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4 sm:p-6">
+                    <p className="text-white text-center text-sm sm:text-base font-light">
+                      SJJIF World Championship 2019 - Gold Medal
+                    </p>
+                  </div>
+                </div>
+              </div>
+
               {/* Achievements */}
               <div className="grid md:grid-cols-2 gap-6 sm:gap-8 mb-8 sm:mb-12">
                 <div className="space-y-3 sm:space-y-4">
