@@ -150,16 +150,30 @@ export default function Dojos() {
 
   const loadDojos = async () => {
     try {
+      // Use public_dojos view which hides email/phone from unauthenticated users
       const { data, error } = await supabase
-        .from('dojos')
+        .from('public_dojos' as any)
         .select('*')
         .order('is_verified', { ascending: false })
         .order('name');
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error loading from public_dojos view:', error);
+        // Fallback to dojos table if view doesn't work
+        const { data: fallbackData, error: fallbackError } = await supabase
+          .from('dojos')
+          .select('id, name, name_ja, name_pt, description, description_ja, description_pt, location, website, instagram, facebook, logo_url, cover_image_url, is_verified, created_at, email, phone')
+          .order('is_verified', { ascending: false })
+          .order('name');
+        
+        if (fallbackError) throw fallbackError;
+        setDojos((fallbackData || []) as Dojo[]);
+        setFilteredDojos((fallbackData || []) as Dojo[]);
+        return;
+      }
       
-      setDojos(data || []);
-      setFilteredDojos(data || []);
+      setDojos((data as unknown as Dojo[]) || []);
+      setFilteredDojos((data as unknown as Dojo[]) || []);
     } catch (error) {
       console.error('Error loading dojos:', error);
       toast.error(language === "ja" ? "道場の読み込みに失敗しました" : "Failed to load dojos");
