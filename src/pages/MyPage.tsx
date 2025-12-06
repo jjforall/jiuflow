@@ -134,7 +134,7 @@ interface Profile {
   belt_history: Array<{belt: string; date?: string; instructor?: string}> | null;
   home_dojo: string | null;
   training_locations: Array<string> | null;
-  titles: Array<{title: string; rank?: string; organization?: string; customTitle?: string; weight_class?: string; belt?: string}> | null;
+  titles: Array<{title: string; rank?: string; organization?: string; customTitle?: string; weight_class?: string; belt?: string; year?: string}> | null;
   favorite_fighters: Array<string> | null;
   favorite_techniques: Array<string> | null;
   hometown: string | null;
@@ -1931,6 +1931,13 @@ const MyPage = () => {
                                     </Select>
                                   </div>
                                   
+                                  <Input
+                                    value={title.year || ''}
+                                    onChange={(e) => updateTitle(index, 'year', e.target.value)}
+                                    placeholder={language === "ja" ? "年度（例: 2024）" : "Year (e.g., 2024)"}
+                                    className="h-12"
+                                  />
+                                  
                                   {title.title === "custom" && (
                                     <Input
                                       value={title.customTitle || ''}
@@ -1967,9 +1974,10 @@ const MyPage = () => {
                                     <div className="font-semibold text-primary">
                                       {title.title === "custom" ? title.customTitle : title.title}
                                     </div>
-                                    {title.organization && (
-                                      <div className="text-sm text-muted-foreground">{title.organization}</div>
-                                    )}
+                                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                      {title.organization && <span>{title.organization}</span>}
+                                      {title.year && <span className="text-xs">({title.year})</span>}
+                                    </div>
                                     <div className="flex flex-wrap gap-2 mt-1">
                                       {title.belt && (
                                         <BeltBadge belt={title.belt} className="text-xs" />
