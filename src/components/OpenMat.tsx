@@ -791,17 +791,17 @@ export const OpenMat = () => {
                   className="cursor-pointer hover:bg-accent/50 transition-colors"
                   onClick={() => setSelectedCategory(category)}
                 >
-                <CardContent className="p-4 flex items-center gap-4">
-                  <div className="p-3 rounded-lg bg-primary/10 text-primary">
+                <CardContent className="p-4 flex items-center gap-4 overflow-hidden">
+                  <div className="p-3 rounded-lg bg-primary/10 text-primary flex-shrink-0">
                     {getIcon(category.icon)}
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-medium">{getCategoryName(category)}</h3>
+                  <div className="flex-1 min-w-0 overflow-hidden">
+                    <h3 className="font-medium truncate">{getCategoryName(category)}</h3>
                     <p className="text-sm text-muted-foreground truncate">
                       {getCategoryDescription(category)}
                     </p>
                   </div>
-                  <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                  <ChevronRight className="h-5 w-5 text-muted-foreground flex-shrink-0" />
                 </CardContent>
               </Card>
             ))}
