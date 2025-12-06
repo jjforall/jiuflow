@@ -12,12 +12,13 @@ import {
 } from "date-fns";
 import { ja, enUS, ptBR } from "date-fns/locale";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Link } from "react-router-dom";
+
 import { 
-  ChevronLeft, ChevronRight, Play, Plus, Minus, Eye, Repeat, Calendar 
+  ChevronLeft, ChevronRight, Play, Plus, Minus, Eye, Repeat, Calendar, X 
 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import { VideoPlayer } from "@/components/VideoPlayer";
 import { Badge } from "@/components/ui/badge";
 
 interface Technique {
@@ -30,6 +31,9 @@ interface Technique {
   series_name: string | null;
   series_prefix: string | null;
   series_order: number | null;
+  video_url: string | null;
+  video_url_ja: string | null;
+  video_url_pt: string | null;
 }
 
 interface VideoView {
@@ -56,6 +60,8 @@ const PracticeRecordsPage = () => {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [videoModalOpen, setVideoModalOpen] = useState(false);
+  const [selectedTechnique, setSelectedTechnique] = useState<Technique | null>(null);
   
   // Pending changes for debounced saving
   const [pendingChanges, setPendingChanges] = useState<Map<string, { techniqueId: string; date: Date; count: number }>>(new Map());
@@ -118,7 +124,7 @@ const PracticeRecordsPage = () => {
     setLoading(true);
     try {
       const [techniquesRes, viewsRes, recordsRes] = await Promise.all([
-        supabase.from("techniques").select("id, name, name_ja, name_pt, category, thumbnail_url, series_name, series_prefix, series_order"),
+        supabase.from("techniques").select("id, name, name_ja, name_pt, category, thumbnail_url, series_name, series_prefix, series_order, video_url, video_url_ja, video_url_pt"),
         supabase.from("video_views").select("*").eq("user_id", user.id),
         supabase.from("practice_records").select("id, technique_id, practice_date, repetition_count").eq("user_id", user.id),
       ]);
@@ -142,6 +148,12 @@ const PracticeRecordsPage = () => {
       return `${technique.series_prefix}-${technique.series_order}`;
     }
     return technique.series_prefix || technique.series_name || technique.category;
+  };
+
+  const getVideoUrl = (technique: Technique) => {
+    if (language === "ja" && technique.video_url_ja) return technique.video_url_ja;
+    if (language === "pt" && technique.video_url_pt) return technique.video_url_pt;
+    return technique.video_url;
   };
 
   // Generate calendar days
@@ -349,6 +361,11 @@ const PracticeRecordsPage = () => {
     return getDisplayCount(techniqueId, date);
   };
 
+  const handleOpenVideo = (technique: Technique) => {
+    setSelectedTechnique(technique);
+    setVideoModalOpen(true);
+  };
+
   const weekDays = language === "ja" 
     ? ["日", "月", "火", "水", "木", "金", "土"]
     : language === "pt"
@@ -514,8 +531,11 @@ const PracticeRecordsPage = () => {
                               key={view.id}
                               className="flex items-center gap-3 p-2 rounded-lg bg-muted/50"
                             >
-                              <Link to={`/video/${technique.id}`} className="flex-shrink-0">
-                                <div className="w-16 h-10 rounded bg-muted overflow-hidden">
+                              <button 
+                                onClick={() => handleOpenVideo(technique)} 
+                                className="flex-shrink-0 group relative"
+                              >
+                                <div className="w-16 h-10 rounded bg-muted overflow-hidden group-hover:ring-2 ring-primary transition-all">
                                   {technique.thumbnail_url ? (
                                     <img
                                       src={technique.thumbnail_url}
@@ -527,12 +547,15 @@ const PracticeRecordsPage = () => {
                                       <Play className="h-4 w-4 text-muted-foreground" />
                                     </div>
                                   )}
+                                  <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <Play className="h-4 w-4 text-white" />
+                                  </div>
                                 </div>
-                              </Link>
+                              </button>
                               <div className="flex-1 min-w-0">
-                                <Link to={`/video/${technique.id}`} className="hover:text-primary">
+                                <button onClick={() => handleOpenVideo(technique)} className="hover:text-primary text-left">
                                   <div className="text-sm font-medium truncate">{getTechniqueName(technique)}</div>
-                                </Link>
+                                </button>
                                 <Badge variant="secondary" className="text-[10px]">{getSeriesLabel(technique)}</Badge>
                               </div>
                               <div className="flex items-center gap-1">
@@ -598,8 +621,11 @@ const PracticeRecordsPage = () => {
                             key={technique.id}
                             className="flex items-center gap-3 p-2 rounded-lg bg-muted/50"
                           >
-                            <Link to={`/video/${technique.id}`} className="flex-shrink-0">
-                              <div className="w-20 h-12 rounded bg-muted overflow-hidden">
+                            <button 
+                              onClick={() => handleOpenVideo(technique)} 
+                              className="flex-shrink-0 group relative"
+                            >
+                              <div className="w-20 h-12 rounded bg-muted overflow-hidden group-hover:ring-2 ring-primary transition-all">
                                 {technique.thumbnail_url ? (
                                   <img
                                     src={technique.thumbnail_url}
@@ -611,12 +637,15 @@ const PracticeRecordsPage = () => {
                                     <Play className="h-5 w-5 text-muted-foreground" />
                                   </div>
                                 )}
+                                <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity">
+                                  <Play className="h-5 w-5 text-white" />
+                                </div>
                               </div>
-                            </Link>
+                            </button>
                             <div className="flex-1 min-w-0">
-                              <Link to={`/video/${technique.id}`} className="hover:text-primary">
+                              <button onClick={() => handleOpenVideo(technique)} className="hover:text-primary text-left">
                                 <div className="text-sm font-medium truncate">{getTechniqueName(technique)}</div>
-                              </Link>
+                              </button>
                               <Badge variant="secondary" className="text-[10px]">{getSeriesLabel(technique)}</Badge>
                             </div>
                             <div className="flex items-center gap-1">
@@ -666,8 +695,11 @@ const PracticeRecordsPage = () => {
                               key={technique.id}
                               className="flex items-center gap-3 p-2 rounded-lg bg-muted/50"
                             >
-                              <Link to={`/video/${technique.id}`} className="flex-shrink-0">
-                                <div className="w-20 h-12 rounded bg-muted overflow-hidden">
+                              <button 
+                                onClick={() => handleOpenVideo(technique)} 
+                                className="flex-shrink-0 group relative"
+                              >
+                                <div className="w-20 h-12 rounded bg-muted overflow-hidden group-hover:ring-2 ring-primary transition-all">
                                   {technique.thumbnail_url ? (
                                     <img
                                       src={technique.thumbnail_url}
@@ -679,12 +711,15 @@ const PracticeRecordsPage = () => {
                                       <Play className="h-5 w-5 text-muted-foreground" />
                                     </div>
                                   )}
+                                  <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <Play className="h-5 w-5 text-white" />
+                                  </div>
                                 </div>
-                              </Link>
+                              </button>
                               <div className="flex-1 min-w-0">
-                                <Link to={`/video/${technique.id}`} className="hover:text-primary">
+                                <button onClick={() => handleOpenVideo(technique)} className="hover:text-primary text-left">
                                   <div className="text-sm font-medium truncate">{getTechniqueName(technique)}</div>
-                                </Link>
+                                </button>
                                 <Badge variant="secondary" className="text-[10px]">{getSeriesLabel(technique)}</Badge>
                               </div>
                               <div className="flex items-center gap-1">
@@ -720,6 +755,37 @@ const PracticeRecordsPage = () => {
               </div>
             );
           })()}
+        </DialogContent>
+      </Dialog>
+
+      {/* Video Modal */}
+      <Dialog open={videoModalOpen} onOpenChange={setVideoModalOpen}>
+        <DialogContent className="max-w-4xl p-0 overflow-hidden bg-black">
+          <div className="relative">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute top-2 right-2 z-10 text-white hover:bg-white/20"
+              onClick={() => setVideoModalOpen(false)}
+            >
+              <X className="h-5 w-5" />
+            </Button>
+            {selectedTechnique && getVideoUrl(selectedTechnique) && (
+              <div className="aspect-video">
+                <VideoPlayer
+                  videoUrl={getVideoUrl(selectedTechnique)!}
+                  autoPlay={true}
+                  thumbnailUrl={selectedTechnique.thumbnail_url}
+                />
+              </div>
+            )}
+            {selectedTechnique && (
+              <div className="p-4 bg-background">
+                <h3 className="font-semibold">{getTechniqueName(selectedTechnique)}</h3>
+                <Badge variant="secondary" className="mt-1">{getSeriesLabel(selectedTechnique)}</Badge>
+              </div>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
     </div>
