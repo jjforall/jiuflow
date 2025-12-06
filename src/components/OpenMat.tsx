@@ -693,7 +693,7 @@ export const OpenMat = () => {
   // Subscription Gate
   if (subscriptionLoading) {
     return (
-      <div className="space-y-4 px-4 sm:px-6 max-w-4xl mx-auto w-full overflow-hidden">
+      <div className="space-y-4 px-4 sm:px-6 max-w-4xl mx-auto w-full overflow-x-hidden box-border">
         <Skeleton className="h-8 w-48" />
         <div className="grid gap-3">
           {[1, 2, 3, 4, 5, 6].map((i) => (
@@ -706,7 +706,7 @@ export const OpenMat = () => {
 
   if (!subscribed) {
     return (
-      <div className="space-y-6 px-4 sm:px-6 max-w-2xl mx-auto text-center py-12 w-full overflow-hidden">
+      <div className="space-y-6 px-4 sm:px-6 max-w-2xl mx-auto text-center py-12 w-full overflow-x-hidden box-border">
         <div className="p-6 rounded-lg bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20">
           <MessageCircle className="h-16 w-16 mx-auto text-primary mb-4" />
           <h2 className="text-2xl font-semibold mb-2">
@@ -732,7 +732,7 @@ export const OpenMat = () => {
   // Category List View
   if (!selectedCategory) {
     return (
-      <div className="space-y-4 px-4 sm:px-6 max-w-4xl mx-auto w-full overflow-hidden">
+      <div className="space-y-4 px-4 sm:px-6 max-w-4xl mx-auto w-full overflow-x-hidden box-border">
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-xl sm:text-2xl font-light">Open Mat</h2>
@@ -815,7 +815,7 @@ export const OpenMat = () => {
   // Thread List View
   if (!selectedThread) {
     return (
-      <div className="space-y-4 px-4 sm:px-6 max-w-4xl mx-auto w-full overflow-hidden">
+      <div className="space-y-4 px-4 sm:px-6 max-w-4xl mx-auto w-full overflow-x-hidden box-border">
         <div className="flex items-center gap-3">
           <Button 
             variant="ghost" 
@@ -968,7 +968,7 @@ export const OpenMat = () => {
 
   // Thread Detail View
   return (
-    <div className="space-y-4 px-4 sm:px-6 max-w-4xl mx-auto w-full overflow-hidden">
+    <div className="space-y-4 px-4 sm:px-6 max-w-4xl mx-auto w-full overflow-x-hidden box-border">
       <div className="flex items-center gap-3">
         <Button 
           variant="ghost" 

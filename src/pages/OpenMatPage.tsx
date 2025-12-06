@@ -4,10 +4,12 @@ import { OpenMat } from "@/components/OpenMat";
 
 const OpenMatPage = () => {
   return (
-    <div className="min-h-screen bg-background overflow-x-hidden">
+    <div className="min-h-screen bg-background overflow-x-hidden max-w-[100vw]">
       <Navigation />
-      <main className="pt-20 pb-16 w-full overflow-hidden">
-        <OpenMat />
+      <main className="pt-20 pb-16 w-full overflow-x-hidden max-w-[100vw]">
+        <div className="w-full overflow-x-hidden">
+          <OpenMat />
+        </div>
       </main>
       <Footer />
     </div>
