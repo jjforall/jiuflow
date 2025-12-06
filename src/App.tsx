@@ -129,7 +129,7 @@ const App = () => (
                   } />
                   <Route path="/open-mat" element={
                     <ProtectedRoute>
-                      <SuspenseWrapper variant="profile"><OpenMatPage /></SuspenseWrapper>
+                      <SuspenseWrapper variant="map"><OpenMatPage /></SuspenseWrapper>
                     </ProtectedRoute>
                   } />
 
