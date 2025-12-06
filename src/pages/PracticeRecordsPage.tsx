@@ -1,7 +1,7 @@
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -56,6 +56,10 @@ const PracticeRecordsPage = () => {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  
+  // Pending changes for debounced saving
+  const [pendingChanges, setPendingChanges] = useState<Map<string, { techniqueId: string; date: Date; count: number }>>(new Map());
+  const saveTimeoutRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
 
   const locale = language === "ja" ? ja : language === "pt" ? ptBR : enUS;
 
@@ -212,29 +216,38 @@ const PracticeRecordsPage = () => {
     setDialogOpen(true);
   };
 
-  const handleAddPractice = async (techniqueId: string, date: Date) => {
+  // Save practice record to database
+  const savePracticeRecord = useCallback(async (techniqueId: string, date: Date, count: number) => {
     if (!user) return;
     
     const dateStr = format(date, "yyyy-MM-dd");
-    
-    // Check if practice record exists for this technique and date
     const existingRecord = practiceRecords.find(
       r => r.technique_id === techniqueId && r.practice_date === dateStr
     );
     
     try {
-      if (existingRecord) {
+      if (count <= 0) {
+        // Delete the record if count is 0 or less
+        if (existingRecord) {
+          const { error } = await supabase
+            .from("practice_records")
+            .delete()
+            .eq("id", existingRecord.id);
+          
+          if (error) throw error;
+          setPracticeRecords(prev => prev.filter(r => r.id !== existingRecord.id));
+        }
+      } else if (existingRecord) {
         // Update existing record
         const { error } = await supabase
           .from("practice_records")
-          .update({ repetition_count: (existingRecord.repetition_count || 1) + 1 })
+          .update({ repetition_count: count })
           .eq("id", existingRecord.id);
         
         if (error) throw error;
-        
         setPracticeRecords(prev => prev.map(r => 
           r.id === existingRecord.id 
-            ? { ...r, repetition_count: (r.repetition_count || 1) + 1 }
+            ? { ...r, repetition_count: count }
             : r
         ));
       } else {
@@ -245,7 +258,7 @@ const PracticeRecordsPage = () => {
             user_id: user.id,
             technique_id: techniqueId,
             practice_date: dateStr,
-            repetition_count: 1,
+            repetition_count: count,
           })
           .select()
           .single();
@@ -258,56 +271,82 @@ const PracticeRecordsPage = () => {
       
       toast.success(language === "ja" ? "練習を記録しました" : "Practice recorded");
     } catch (error) {
-      console.error("Error adding practice:", error);
+      console.error("Error saving practice:", error);
       toast.error(language === "ja" ? "エラーが発生しました" : "Error occurred");
     }
-  };
+  }, [user, practiceRecords, language]);
 
-  const handleRemovePractice = async (techniqueId: string, date: Date) => {
-    if (!user) return;
-    
+  // Get the current display count (including pending changes)
+  const getDisplayCount = useCallback((techniqueId: string, date: Date) => {
     const dateStr = format(date, "yyyy-MM-dd");
-    const existingRecord = practiceRecords.find(
-      r => r.technique_id === techniqueId && r.practice_date === dateStr
-    );
+    const key = `${techniqueId}-${dateStr}`;
     
-    if (!existingRecord) return;
-    
-    try {
-      if ((existingRecord.repetition_count || 1) <= 1) {
-        // Delete the record
-        const { error } = await supabase
-          .from("practice_records")
-          .delete()
-          .eq("id", existingRecord.id);
-        
-        if (error) throw error;
-        setPracticeRecords(prev => prev.filter(r => r.id !== existingRecord.id));
-      } else {
-        // Decrease count
-        const { error } = await supabase
-          .from("practice_records")
-          .update({ repetition_count: (existingRecord.repetition_count || 1) - 1 })
-          .eq("id", existingRecord.id);
-        
-        if (error) throw error;
-        setPracticeRecords(prev => prev.map(r => 
-          r.id === existingRecord.id 
-            ? { ...r, repetition_count: (r.repetition_count || 1) - 1 }
-            : r
-        ));
-      }
-    } catch (error) {
-      console.error("Error removing practice:", error);
+    // Check pending changes first
+    const pending = pendingChanges.get(key);
+    if (pending !== undefined) {
+      return pending.count;
     }
-  };
-
-  const getPracticeCount = (techniqueId: string, date: Date) => {
-    const dateStr = format(date, "yyyy-MM-dd");
+    
+    // Otherwise get from practice records
     const record = practiceRecords.find(
       r => r.technique_id === techniqueId && r.practice_date === dateStr
     );
     return record?.repetition_count || 0;
+  }, [pendingChanges, practiceRecords]);
+
+  // Handle practice count change with debounce
+  const handlePracticeChange = useCallback((techniqueId: string, date: Date, delta: number) => {
+    const dateStr = format(date, "yyyy-MM-dd");
+    const key = `${techniqueId}-${dateStr}`;
+    
+    // Get current count
+    const currentCount = getDisplayCount(techniqueId, date);
+    const newCount = Math.max(0, currentCount + delta);
+    
+    // Update pending changes immediately for UI
+    setPendingChanges(prev => {
+      const newMap = new Map(prev);
+      newMap.set(key, { techniqueId, date, count: newCount });
+      return newMap;
+    });
+    
+    // Clear existing timeout for this key
+    const existingTimeout = saveTimeoutRef.current.get(key);
+    if (existingTimeout) {
+      clearTimeout(existingTimeout);
+    }
+    
+    // Set new timeout to save after 2 seconds
+    const timeout = setTimeout(() => {
+      savePracticeRecord(techniqueId, date, newCount);
+      setPendingChanges(prev => {
+        const newMap = new Map(prev);
+        newMap.delete(key);
+        return newMap;
+      });
+      saveTimeoutRef.current.delete(key);
+    }, 2000);
+    
+    saveTimeoutRef.current.set(key, timeout);
+  }, [getDisplayCount, savePracticeRecord]);
+
+  // Cleanup timeouts on unmount
+  useEffect(() => {
+    return () => {
+      saveTimeoutRef.current.forEach((timeout) => clearTimeout(timeout));
+    };
+  }, []);
+
+  const handleAddPractice = (techniqueId: string, date: Date) => {
+    handlePracticeChange(techniqueId, date, 10);
+  };
+
+  const handleRemovePractice = (techniqueId: string, date: Date) => {
+    handlePracticeChange(techniqueId, date, -10);
+  };
+
+  const getPracticeCount = (techniqueId: string, date: Date) => {
+    return getDisplayCount(techniqueId, date);
   };
 
   const weekDays = language === "ja" 
