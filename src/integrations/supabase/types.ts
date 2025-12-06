@@ -192,7 +192,6 @@ export type Database = {
           home_dojo: string | null
           id: string
           organization_id: string | null
-          password: string | null
           reviewed_at: string | null
           reviewed_by: string | null
           status: string
@@ -209,7 +208,6 @@ export type Database = {
           home_dojo?: string | null
           id?: string
           organization_id?: string | null
-          password?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
           status?: string
@@ -226,7 +224,6 @@ export type Database = {
           home_dojo?: string | null
           id?: string
           organization_id?: string | null
-          password?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
           status?: string
