@@ -151,16 +151,18 @@ const About = () => {
 
       <Navigation />
       
-      <main className="pt-32 pb-20 px-6">
+      <main className="pt-24 sm:pt-32 pb-16 sm:pb-20 px-4 sm:px-6">
         <div className="max-w-6xl mx-auto">
           {/* Header Section */}
-          <section className="py-20 text-center">
-            <h1 className="text-5xl md:text-6xl font-light mb-6">{t("about.title", "About")}</h1>
-            <p className="text-2xl md:text-3xl font-light mb-4 max-w-3xl mx-auto">
-              {t("about.header.tagline", "安全で、長く続けられ、かつ試合でも強い。")}<br />
+          <section className="py-12 sm:py-20 text-center">
+            <h1 className="text-4xl sm:text-5xl md:text-6xl font-light mb-6">{t("about.title", "About")}</h1>
+            <p className="text-xl sm:text-2xl md:text-3xl font-light mb-4 max-w-3xl mx-auto leading-relaxed text-balance">
+              {t("about.header.tagline", "安全で、長く続けられ、かつ試合でも強い。")}
+              <br className="hidden sm:block" />
+              <span className="sm:hidden"> </span>
               {t("about.header.mission", "我々が考える「いい柔術」を広める")}
             </p>
-            <p className="text-xl text-muted-foreground font-light max-w-2xl mx-auto">
+            <p className="text-lg sm:text-xl text-muted-foreground font-light max-w-2xl mx-auto text-balance">
               {t("about.header.missionStatement", "それが、私たちのミッションです。")}
             </p>
           </section>
@@ -278,35 +280,47 @@ const About = () => {
 
 
           {/* Mission Section */}
-          <section className="py-16 max-w-4xl mx-auto">
-            <h2 className="text-4xl font-light mb-8 text-center">{t("about.mission.title", "我々が考える「いい柔術」とは。")}</h2>
-            <div className="space-y-6 text-lg leading-relaxed">
-              <p>
-                {t("about.mission.para1", "柔術は本来、力の弱い者が強い者を制するために生まれた技術です。")}<br />
+          <section className="py-12 sm:py-16 max-w-4xl mx-auto">
+            <h2 className="text-3xl sm:text-4xl font-light mb-6 sm:mb-8 text-center text-balance">
+              {t("about.mission.title", "我々が考える「いい柔術」とは。")}
+            </h2>
+            <div className="space-y-5 sm:space-y-6 text-base sm:text-lg leading-relaxed">
+              <p className="text-balance">
+                {t("about.mission.para1", "柔術は本来、力の弱い者が強い者を制するために生まれた技術です。")}
+                <br className="hidden sm:block" />
+                <span className="sm:hidden"> </span>
                 {t("about.mission.para1b", "しかし、練習で怪我をしてしまったり、年齢と共に体力が落ちて続けられなくなっては意味がありません。")}
               </p>
-              <p>
-                {t("about.mission.para2", "私たちのミッションは明確です。")}<br />
+              <p className="text-balance">
+                {t("about.mission.para2", "私たちのミッションは明確です。")}
+                <br className="hidden sm:block" />
+                <span className="sm:hidden"> </span>
                 <strong>{t("about.mission.para2b", "「安全で、長くできて、試合でも強い柔術」を広めること。")}</strong>
               </p>
-              <p>
-                {t("about.mission.para3", "無理な力に頼らず、身体の構造と理（ことわり）を使うこと。")}<br />
-                {t("about.mission.para3b", "それは怪我のリスクを最小限に抑えるだけでなく、")}<br />
+              <p className="text-balance">
+                {t("about.mission.para3", "無理な力に頼らず、身体の構造と理（ことわり）を使うこと。")}
+                <br className="hidden sm:block" />
+                <span className="sm:hidden"> </span>
+                {t("about.mission.para3b", "それは怪我のリスクを最小限に抑えるだけでなく、")}
+                <br className="hidden sm:block" />
+                <span className="sm:hidden"> </span>
                 {t("about.mission.para3c", "世界選手権という最高峰の舞台でも通用する「本当の強さ」に直結します。")}
               </p>
-              <p>
+              <p className="text-balance">
                 {t("about.mission.para4", "JiuFlowは、その技術体系を誰もが学べる形で提供します。")}
               </p>
             </div>
           </section>
 
           {/* Message Video Section */}
-          <section className="py-20 bg-gradient-to-br from-primary/5 to-transparent">
-            <div className="max-w-4xl mx-auto px-6">
-              <div className="text-center mb-10 animate-fade-in">
-                <h2 className="text-4xl font-light mb-4">{t("about.video.title", "創設者からのメッセージ")}</h2>
-                <p className="text-xl text-muted-foreground font-light">
-                  {t("about.video.subtitle1", "なぜこのサービスを作ったのか？")}<br />
+          <section className="py-12 sm:py-20 bg-gradient-to-br from-primary/5 to-transparent -mx-6 px-6">
+            <div className="max-w-4xl mx-auto">
+              <div className="text-center mb-8 sm:mb-10 animate-fade-in">
+                <h2 className="text-3xl sm:text-4xl font-light mb-4">{t("about.video.title", "創設者からのメッセージ")}</h2>
+                <p className="text-lg sm:text-xl text-muted-foreground font-light text-balance">
+                  {t("about.video.subtitle1", "なぜこのサービスを作ったのか？")}
+                  <br className="hidden sm:block" />
+                  <span className="sm:hidden"> </span>
                   {t("about.video.subtitle2", "村田良蔵が語る、JiuFlowに込めた想い")}
                 </p>
               </div>
@@ -324,11 +338,11 @@ const About = () => {
           </section>
 
           {/* Instructor Section */}
-          <section className="py-16">
-            <div className="max-w-4xl mx-auto px-6">
-              <h2 className="text-4xl font-light mb-12">{t("about.instructorTitle", "Instructor")}</h2>
+          <section className="py-12 sm:py-16">
+            <div className="max-w-4xl mx-auto">
+              <h2 className="text-3xl sm:text-4xl font-light mb-8 sm:mb-12">{t("about.instructorTitle", "Instructor")}</h2>
               
-              <div className="flex flex-col md:flex-row gap-8 items-start mb-12">
+              <div className="flex flex-col md:flex-row gap-6 sm:gap-8 items-start mb-8 sm:mb-12">
                 {/* Image */}
                 <div className="w-full md:w-1/3 flex-shrink-0">
                   <img 
@@ -339,69 +353,71 @@ const About = () => {
                 </div>
                 
                 {/* Profile Text */}
-                <div className="flex-1 space-y-6">
+                <div className="flex-1 space-y-4 sm:space-y-6">
                   <div>
-                    <h3 className="text-2xl font-light mb-2">{t("about.instructor.name", "村田 良蔵（Ryozo Murata）")}</h3>
-                    <p className="text-xl font-light italic text-primary border-l-4 border-primary pl-4 py-2">
+                    <h3 className="text-xl sm:text-2xl font-light mb-2">{t("about.instructor.name", "村田 良蔵（Ryozo Murata）")}</h3>
+                    <p className="text-lg sm:text-xl font-light italic text-primary border-l-4 border-primary pl-4 py-2 text-balance">
                       {t("about.instructor.motto", "「怪我なく勝つ。理詰めで動く。それが大人の柔術。」")}
                     </p>
                   </div>
                   
-                  <p className="text-lg leading-relaxed">
-                    {t("about.instructor.bio1", "1980年生まれ、北海道出身。")}<br />
+                  <p className="text-base sm:text-lg leading-relaxed text-balance">
+                    {t("about.instructor.bio1", "1980年生まれ、北海道出身。")}
+                    <br className="hidden sm:block" />
+                    <span className="sm:hidden"> </span>
                     {t("about.instructor.bio2", "北海道初のグレイシー直系黒帯として、40代を迎えた今なお世界の第一線で進化を続ける「実践する指導者」。")}
                   </p>
                   
-                  <p className="text-lg leading-relaxed">
+                  <p className="text-base sm:text-lg leading-relaxed text-balance">
                     {t("about.instructor.bio3", "彼の強さの秘密は、フィジカル（筋力）への依存を捨て、身体構造（骨格・重心）を最大限に活かす")}<strong>{t("about.instructor.bio3b", "「理（ことわり）の柔術」")}</strong>{t("about.instructor.bio3c", "にあります。ヨガやウェルネスの知見を融合させたそのメソッドは、怪我のリスクを最小限に抑えながら、確実な強さを手に入れるための最適解です。")}
                   </p>
                 </div>
               </div>
               
               {/* Achievements */}
-              <div className="grid md:grid-cols-2 gap-8 mb-12">
-                <div className="space-y-4">
-                  <div className="flex items-center gap-3 mb-4">
-                    <Trophy className="w-6 h-6 text-primary" />
-                    <h4 className="text-xl font-light">{t("about.instructor.strengthTitle", "主な戦績 - Strength")}</h4>
+              <div className="grid md:grid-cols-2 gap-6 sm:gap-8 mb-8 sm:mb-12">
+                <div className="space-y-3 sm:space-y-4">
+                  <div className="flex items-center gap-3 mb-3 sm:mb-4">
+                    <Trophy className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
+                    <h4 className="text-lg sm:text-xl font-light">{t("about.instructor.strengthTitle", "主な戦績 - Strength")}</h4>
                   </div>
-                  <ul className="space-y-3 text-lg leading-relaxed">
+                  <ul className="space-y-2 sm:space-y-3 text-base sm:text-lg leading-relaxed">
                     <li className="flex items-start gap-2">
-                      <span className="text-primary mt-1">•</span>
-                      <span><strong>{t("about.instructor.worldChamp", "世界王者:")}</strong> {t("about.instructor.achievement1", "2018・2019年 SJJIF世界選手権 マスター2黒帯フェザー級 優勝（日本人初・連覇）")}</span>
+                      <span className="text-primary mt-1 flex-shrink-0">•</span>
+                      <span className="text-balance"><strong>{t("about.instructor.worldChamp", "世界王者:")}</strong> {t("about.instructor.achievement1", "2018・2019年 SJJIF世界選手権 マスター2黒帯フェザー級 優勝（日本人初・連覇）")}</span>
                     </li>
                     <li className="flex items-start gap-2">
-                      <span className="text-primary mt-1">•</span>
-                      <span><strong>{t("about.instructor.worldChallenge", "世界への挑戦:")}</strong> {t("about.instructor.achievement2", "2025年 IBJJF世界マスター選手権 銅メダル（フェザー級黒帯マスター3）")}</span>
+                      <span className="text-primary mt-1 flex-shrink-0">•</span>
+                      <span className="text-balance"><strong>{t("about.instructor.worldChallenge", "世界への挑戦:")}</strong> {t("about.instructor.achievement2", "2025年 IBJJF世界マスター選手権 銅メダル（フェザー級黒帯マスター3）")}</span>
                     </li>
                   </ul>
                 </div>
                 
-                <div className="space-y-4">
-                  <div className="flex items-center gap-3 mb-4">
-                    <Users className="w-6 h-6 text-primary" />
-                    <h4 className="text-xl font-light">{t("about.instructor.leadershipTitle", "指導と普及 - Leadership")}</h4>
+                <div className="space-y-3 sm:space-y-4">
+                  <div className="flex items-center gap-3 mb-3 sm:mb-4">
+                    <Users className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
+                    <h4 className="text-lg sm:text-xl font-light">{t("about.instructor.leadershipTitle", "指導と普及 - Leadership")}</h4>
                   </div>
-                  <ul className="space-y-3 text-lg leading-relaxed">
+                  <ul className="space-y-2 sm:space-y-3 text-base sm:text-lg leading-relaxed">
                     <li className="flex items-start gap-2">
-                      <span className="text-primary mt-1">•</span>
-                      <span><strong>{t("about.instructor.dojoMgmt", "道場経営:")}</strong> {t("about.instructor.career1", "Over Limit 札幌、YAWARA JIU-JITSU ACADEMY、SWEEP JIU-JITSU ACADEMY 代表。特にYAWARAは設立から短期間で全日本選手権等の団体優勝を重ねる強豪へ成長。")}</span>
+                      <span className="text-primary mt-1 flex-shrink-0">•</span>
+                      <span className="text-balance"><strong>{t("about.instructor.dojoMgmt", "道場経営:")}</strong> {t("about.instructor.career1", "Over Limit 札幌、YAWARA JIU-JITSU ACADEMY、SWEEP JIU-JITSU ACADEMY 代表。特にYAWARAは設立から短期間で全日本選手権等の団体優勝を重ねる強豪へ成長。")}</span>
                     </li>
                     <li className="flex items-start gap-2">
-                      <span className="text-primary mt-1">•</span>
-                      <span><strong>{t("about.instructor.orgMgmt", "組織運営:")}</strong> {t("about.instructor.career2", "NPO法人スポーツ柔術日本連盟（SJJJF）代表理事として、柔術の社会的地位向上と普及に尽力。")}</span>
+                      <span className="text-primary mt-1 flex-shrink-0">•</span>
+                      <span className="text-balance"><strong>{t("about.instructor.orgMgmt", "組織運営:")}</strong> {t("about.instructor.career2", "NPO法人スポーツ柔術日本連盟（SJJJF）代表理事として、柔術の社会的地位向上と普及に尽力。")}</span>
                     </li>
                   </ul>
                 </div>
               </div>
               
               {/* Message */}
-              <div className="bg-gradient-to-br from-primary/5 to-transparent border-l-4 border-primary p-8 rounded-r-lg">
-                <div className="flex items-start gap-3 mb-4">
-                  <BookOpen className="w-6 h-6 text-primary mt-1 flex-shrink-0" />
-                  <h4 className="text-xl font-light">{t("about.instructor.messageTitle", "Message")}</h4>
+              <div className="bg-gradient-to-br from-primary/5 to-transparent border-l-4 border-primary p-5 sm:p-8 rounded-r-lg">
+                <div className="flex items-start gap-3 mb-3 sm:mb-4">
+                  <BookOpen className="w-5 h-5 sm:w-6 sm:h-6 text-primary mt-1 flex-shrink-0" />
+                  <h4 className="text-lg sm:text-xl font-light">{t("about.instructor.messageTitle", "Message")}</h4>
                 </div>
-                <p className="text-lg leading-relaxed italic">
+                <p className="text-base sm:text-lg leading-relaxed italic text-balance">
                   {t("about.instructor.message", "「柔術は、正しく学べば一生続けられるライフワークになります。痛みに耐えるのではなく、仕組みを理解する楽しさを。私が辿り着いた『安全で強い柔術』を、ぜひ体感してください。」")}
                 </p>
               </div>
@@ -409,43 +425,51 @@ const About = () => {
           </section>
 
           {/* Philosophy Section */}
-          <section className="py-16 max-w-4xl mx-auto">
-            <h2 className="text-4xl font-light mb-8">{t("about.philosophyTitle", "Philosophy")}</h2>
-            <div className="space-y-6 text-lg leading-relaxed">
-              <p>
+          <section className="py-12 sm:py-16 max-w-4xl mx-auto">
+            <h2 className="text-3xl sm:text-4xl font-light mb-6 sm:mb-8">{t("about.philosophyTitle", "Philosophy")}</h2>
+            <div className="space-y-4 sm:space-y-6 text-base sm:text-lg leading-relaxed">
+              <p className="text-balance">
                 {t("about.philosophy.para1", "柔術は、常にアップデートされる「生きた学問」です。")}
               </p>
-              <p>
-                {t("about.philosophy.para2", "私たちは現時点で「最も理にかなっている」と思える方法を提供していますが、")}<br />
+              <p className="text-balance">
+                {t("about.philosophy.para2", "私たちは現時点で「最も理にかなっている」と思える方法を提供していますが、")}
+                <br className="hidden sm:block" />
+                <span className="sm:hidden"> </span>
                 {t("about.philosophy.para2b", "それがゴールではありません。")}
               </p>
-              <p>
-                {t("about.philosophy.para3", "「安全に、長く、強く」。")}<br />
+              <p className="text-balance">
+                {t("about.philosophy.para3", "「安全に、長く、強く」。")}
+                <br className="hidden sm:block" />
+                <span className="sm:hidden"> </span>
                 {t("about.philosophy.para3b", "この基準を満たすより良い方法があれば、私たちは柔軟に取り入れ、進化し続けます。")}
               </p>
-              <p>
-                {t("about.philosophy.para4", "柔術を通じて、世界中の人々が健康的に、長くマットの上に立ち続けられるように。")}<br />
+              <p className="text-balance">
+                {t("about.philosophy.para4", "柔術を通じて、世界中の人々が健康的に、長くマットの上に立ち続けられるように。")}
+                <br className="hidden sm:block" />
+                <span className="sm:hidden"> </span>
                 {t("about.philosophy.para4b", "私たちと一緒に、柔術の深淵を探求していきましょう。")}
               </p>
             </div>
           </section>
 
           {/* Invitation Section */}
-          <section className="py-20 bg-gradient-to-br from-primary/5 to-transparent">
-            <div className="max-w-3xl mx-auto px-6 text-center">
-              <h2 className="text-4xl md:text-5xl font-light mb-6">
+          <section className="py-12 sm:py-20 bg-gradient-to-br from-primary/5 to-transparent -mx-6 px-6">
+            <div className="max-w-3xl mx-auto text-center">
+              <h2 className="text-3xl sm:text-4xl md:text-5xl font-light mb-6 text-balance">
                 {t("about.invitation.title", "静かに、深く。そして強く。")}
               </h2>
-              <div className="space-y-4 text-lg leading-relaxed mb-10">
-                <p>
-                  {t("about.invitation.para1", "あなたの柔術ライフを、より安全で、より豊かなものへ。")}<br />
+              <div className="space-y-4 text-base sm:text-lg leading-relaxed mb-8 sm:mb-10">
+                <p className="text-balance">
+                  {t("about.invitation.para1", "あなたの柔術ライフを、より安全で、より豊かなものへ。")}
+                  <br className="hidden sm:block" />
+                  <span className="sm:hidden"> </span>
                   {t("about.invitation.para1b", "試合で勝つための技術も、一生続けるための身体操作も、すべてここにあります。")}
                 </p>
-                <p className="text-xl font-light">
+                <p className="text-lg sm:text-xl font-light text-balance">
                   {t("about.invitation.cta", "その一歩を、ここから始めてみませんか？")}
                 </p>
               </div>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
                 <Button onClick={() => navigate("/join")} size="lg">
                   {t("about.invitation.viewPlans", "プランを見る")}
                 </Button>
@@ -457,10 +481,12 @@ const About = () => {
           </section>
 
           {/* Contact Form Section */}
-          <section className="py-16 max-w-4xl mx-auto">
-            <div className="space-y-6">
-              <p className="text-lg">
-                ✉️ {t("about.contact.intro", "お問い合わせ、新しい技の共有、ご提案などがございましたら、")}<br />
+          <section className="py-12 sm:py-16 max-w-4xl mx-auto">
+            <div className="space-y-4 sm:space-y-6">
+              <p className="text-base sm:text-lg text-balance">
+                ✉️ {t("about.contact.intro", "お問い合わせ、新しい技の共有、ご提案などがございましたら、")}
+                <br className="hidden sm:block" />
+                <span className="sm:hidden"> </span>
                 {t("about.contact.intro2", "お気軽にご連絡ください。")}
               </p>
               <div className="border border-border p-8 bg-muted/10 rounded-lg">
@@ -470,34 +496,34 @@ const About = () => {
           </section>
 
           {/* Team Section */}
-          <section className="py-16 bg-muted/30">
-            <div className="max-w-4xl mx-auto px-6">
-              <h2 className="text-4xl font-light mb-4 text-center">{t("about.team.title", "Team JiuFlow")}</h2>
-              <p className="text-xl text-center font-medium text-primary mb-6">
+          <section className="py-12 sm:py-16 bg-muted/30 -mx-4 sm:-mx-6 px-4 sm:px-6">
+            <div className="max-w-4xl mx-auto">
+              <h2 className="text-3xl sm:text-4xl font-light mb-4 text-center">{t("about.team.title", "Team JiuFlow")}</h2>
+              <p className="text-lg sm:text-xl text-center font-medium text-primary mb-4 sm:mb-6 text-balance">
                 {t("about.team.slogan", "「私たちが作り、私たちが証明する。」")}
               </p>
-              <div className="text-lg text-muted-foreground mb-12 leading-relaxed text-center max-w-3xl mx-auto space-y-4">
-                <p>{t("about.team.intro1", "JiuFlowを運営するのは、ビジネスの最前線で戦いながら、柔術家としても世界の表彰台に立ち続ける私たち自身です。")}</p>
-                <p>{t("about.team.intro2", "私たちが提供するのは、机上の空論ではありません。それぞれの分野で培った知見と、実際にマットの上で勝利するために辿り着いた「本物の技術」です。")}</p>
+              <div className="text-base sm:text-lg text-muted-foreground mb-8 sm:mb-12 leading-relaxed text-center max-w-3xl mx-auto space-y-3 sm:space-y-4">
+                <p className="text-balance">{t("about.team.intro1", "JiuFlowを運営するのは、ビジネスの最前線で戦いながら、柔術家としても世界の表彰台に立ち続ける私たち自身です。")}</p>
+                <p className="text-balance">{t("about.team.intro2", "私たちが提供するのは、机上の空論ではありません。それぞれの分野で培った知見と、実際にマットの上で勝利するために辿り着いた「本物の技術」です。")}</p>
               </div>
               
-              <div className="space-y-12">
+              <div className="space-y-8 sm:space-y-12">
                 {/* 村田 良蔵 */}
-                <div className="border-l-4 border-primary pl-6 py-6 hover:bg-muted/20 transition-colors rounded-r-lg">
+                <div className="border-l-4 border-primary pl-4 sm:pl-6 py-4 sm:py-6 hover:bg-muted/20 transition-colors rounded-r-lg">
                   <div className="flex items-center gap-2 text-sm text-primary font-medium mb-2">
                     <Trophy className="w-4 h-4" />
                     {t("about.team.murata.role", "Founder / Head Instructor")}
                   </div>
-                  <h3 className="text-2xl font-light mb-1">{t("about.team.murata.name", "村田 良蔵（Ryozo Murata）")}</h3>
-                  <p className="text-muted-foreground mb-4">{t("about.team.murata.position", "メソッド開発・技術監修")}</p>
+                  <h3 className="text-xl sm:text-2xl font-light mb-1">{t("about.team.murata.name", "村田 良蔵（Ryozo Murata）")}</h3>
+                  <p className="text-muted-foreground mb-3 sm:mb-4">{t("about.team.murata.position", "メソッド開発・技術監修")}</p>
                   
-                  <p className="text-xl font-light italic text-primary border-l-2 border-primary/30 pl-4 py-2 mb-6">
+                  <p className="text-lg sm:text-xl font-light italic text-primary border-l-2 border-primary/30 pl-4 py-2 mb-4 sm:mb-6 text-balance">
                     {t("about.team.murata.quote", "「『理』を極めれば、力は要らない。私がそれを証明し続けます。」")}
                   </p>
                   
-                  <div className="space-y-4 text-muted-foreground leading-relaxed mb-6">
-                    <p>{t("about.team.murata.bio1", "北海道初のグレイシー直系黒帯として、私は常に「なぜ今の動きで勝てたのか？」「なぜ負けたのか？」を問い続けてきました。その答えが、フィジカルに依存せず、身体構造と物理法則を味方につける「理（ことわり）の柔術」です。")}</p>
-                    <p>{t("about.team.murata.bio2", "40代を迎えた今も、私は進化しています。日本人初のSJJIF世界王者（連覇）となり、2025年のIBJJF世界マスターでも銅メダルを獲得。さらにプロ柔術「ART 5 CEBU」にも参戦し、世界の強豪と肌を合わせ続けています。私が開発したこのメソッドは、年齢や体格を言い訳にしません。「安全で、長く、そして強い」。その真髄を、あなたに直接手渡します。")}</p>
+                  <div className="space-y-3 sm:space-y-4 text-muted-foreground leading-relaxed mb-4 sm:mb-6 text-sm sm:text-base">
+                    <p className="text-balance">{t("about.team.murata.bio1", "北海道初のグレイシー直系黒帯として、私は常に「なぜ今の動きで勝てたのか？」「なぜ負けたのか？」を問い続けてきました。その答えが、フィジカルに依存せず、身体構造と物理法則を味方につける「理（ことわり）の柔術」です。")}</p>
+                    <p className="text-balance">{t("about.team.murata.bio2", "40代を迎えた今も、私は進化しています。日本人初のSJJIF世界王者（連覇）となり、2025年のIBJJF世界マスターでも銅メダルを獲得。さらにプロ柔術「ART 5 CEBU」にも参戦し、世界の強豪と肌を合わせ続けています。私が開発したこのメソッドは、年齢や体格を言い訳にしません。「安全で、長く、そして強い」。その真髄を、あなたに直接手渡します。")}</p>
                   </div>
                   
                   <div className="grid md:grid-cols-2 gap-6 mb-4">
