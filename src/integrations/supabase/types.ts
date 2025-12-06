@@ -1791,6 +1791,7 @@ export type Database = {
           id: string
           is_public: boolean | null
           price: number | null
+          share_token: string | null
           thumbnail_url: string | null
           title: string
           updated_at: string
@@ -1798,6 +1799,7 @@ export type Database = {
           video_type: string
           video_url: string
           view_count: number
+          visibility: string
         }
         Insert: {
           created_at?: string
@@ -1805,6 +1807,7 @@ export type Database = {
           id?: string
           is_public?: boolean | null
           price?: number | null
+          share_token?: string | null
           thumbnail_url?: string | null
           title: string
           updated_at?: string
@@ -1812,6 +1815,7 @@ export type Database = {
           video_type: string
           video_url: string
           view_count?: number
+          visibility?: string
         }
         Update: {
           created_at?: string
@@ -1819,6 +1823,7 @@ export type Database = {
           id?: string
           is_public?: boolean | null
           price?: number | null
+          share_token?: string | null
           thumbnail_url?: string | null
           title?: string
           updated_at?: string
@@ -1826,6 +1831,7 @@ export type Database = {
           video_type?: string
           video_url?: string
           view_count?: number
+          visibility?: string
         }
         Relationships: []
       }
