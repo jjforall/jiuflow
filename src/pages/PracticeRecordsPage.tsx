@@ -12,11 +12,11 @@ import {
 } from "date-fns";
 import { ja, enUS, ptBR } from "date-fns/locale";
 import { Skeleton } from "@/components/ui/skeleton";
-
+import { Link } from "react-router-dom";
 import { 
-  ChevronLeft, ChevronRight, Play, Plus, Minus, Eye, Repeat, Calendar, X 
+  ChevronLeft, ChevronRight, Play, Plus, Minus, Eye, Repeat, Calendar, X, ExternalLink 
 } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { VideoPlayer } from "@/components/VideoPlayer";
 import { Badge } from "@/components/ui/badge";
@@ -529,13 +529,13 @@ const PracticeRecordsPage = () => {
                           return (
                             <div
                               key={view.id}
-                              className="flex items-center gap-3 p-2 rounded-lg bg-muted/50"
+                              className="flex items-center gap-2 p-2 rounded-lg bg-muted/50 overflow-hidden"
                             >
                               <button 
                                 onClick={() => handleOpenVideo(technique)} 
                                 className="flex-shrink-0 group relative"
                               >
-                                <div className="w-16 h-10 rounded bg-muted overflow-hidden group-hover:ring-2 ring-primary transition-all">
+                                <div className="w-14 h-9 sm:w-16 sm:h-10 rounded bg-muted overflow-hidden group-hover:ring-2 ring-primary transition-all">
                                   {technique.thumbnail_url ? (
                                     <img
                                       src={technique.thumbnail_url}
@@ -552,30 +552,35 @@ const PracticeRecordsPage = () => {
                                   </div>
                                 </div>
                               </button>
-                              <div className="flex-1 min-w-0">
-                                <button onClick={() => handleOpenVideo(technique)} className="hover:text-primary text-left">
-                                  <div className="text-sm font-medium truncate">{getTechniqueName(technique)}</div>
-                                </button>
+                              <div className="flex-1 min-w-0 overflow-hidden">
+                                <div className="flex items-center gap-1">
+                                  <button onClick={() => handleOpenVideo(technique)} className="hover:text-primary text-left truncate">
+                                    <span className="text-xs sm:text-sm font-medium">{getTechniqueName(technique)}</span>
+                                  </button>
+                                  <Link to={`/video/${technique.id}`} className="flex-shrink-0 text-muted-foreground hover:text-primary">
+                                    <ExternalLink className="h-3 w-3" />
+                                  </Link>
+                                </div>
                                 <Badge variant="secondary" className="text-[10px]">{getSeriesLabel(technique)}</Badge>
                               </div>
-                              <div className="flex items-center gap-1">
+                              <div className="flex items-center gap-0.5 flex-shrink-0">
                                 <Button
                                   size="icon"
                                   variant="ghost"
-                                  className="h-8 w-8"
+                                  className="h-7 w-7 sm:h-8 sm:w-8"
                                   onClick={() => handleRemovePractice(technique.id, new Date())}
                                   disabled={practiceCount === 0}
                                 >
-                                  <Minus className="h-4 w-4" />
+                                  <Minus className="h-3 w-3 sm:h-4 sm:w-4" />
                                 </Button>
-                                <span className="w-8 text-center font-bold text-lg">{practiceCount}</span>
+                                <span className="w-6 sm:w-8 text-center font-bold text-sm sm:text-lg">{practiceCount}</span>
                                 <Button
                                   size="icon"
                                   variant="default"
-                                  className="h-8 w-8"
+                                  className="h-7 w-7 sm:h-8 sm:w-8"
                                   onClick={() => handleAddPractice(technique.id, new Date())}
                                 >
-                                  <Plus className="h-4 w-4" />
+                                  <Plus className="h-3 w-3 sm:h-4 sm:w-4" />
                                 </Button>
                               </div>
                             </div>
@@ -619,13 +624,13 @@ const PracticeRecordsPage = () => {
                         return (
                           <div
                             key={technique.id}
-                            className="flex items-center gap-3 p-2 rounded-lg bg-muted/50"
+                            className="flex items-center gap-2 p-2 rounded-lg bg-muted/50 overflow-hidden"
                           >
                             <button 
                               onClick={() => handleOpenVideo(technique)} 
                               className="flex-shrink-0 group relative"
                             >
-                              <div className="w-20 h-12 rounded bg-muted overflow-hidden group-hover:ring-2 ring-primary transition-all">
+                              <div className="w-14 h-9 sm:w-16 sm:h-10 rounded bg-muted overflow-hidden group-hover:ring-2 ring-primary transition-all">
                                 {technique.thumbnail_url ? (
                                   <img
                                     src={technique.thumbnail_url}
@@ -634,38 +639,43 @@ const PracticeRecordsPage = () => {
                                   />
                                 ) : (
                                   <div className="w-full h-full flex items-center justify-center">
-                                    <Play className="h-5 w-5 text-muted-foreground" />
+                                    <Play className="h-4 w-4 text-muted-foreground" />
                                   </div>
                                 )}
                                 <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity">
-                                  <Play className="h-5 w-5 text-white" />
+                                  <Play className="h-4 w-4 text-white" />
                                 </div>
                               </div>
                             </button>
-                            <div className="flex-1 min-w-0">
-                              <button onClick={() => handleOpenVideo(technique)} className="hover:text-primary text-left">
-                                <div className="text-sm font-medium truncate">{getTechniqueName(technique)}</div>
-                              </button>
+                            <div className="flex-1 min-w-0 overflow-hidden">
+                              <div className="flex items-center gap-1">
+                                <button onClick={() => handleOpenVideo(technique)} className="hover:text-primary text-left truncate">
+                                  <span className="text-xs sm:text-sm font-medium">{getTechniqueName(technique)}</span>
+                                </button>
+                                <Link to={`/video/${technique.id}`} className="flex-shrink-0 text-muted-foreground hover:text-primary">
+                                  <ExternalLink className="h-3 w-3" />
+                                </Link>
+                              </div>
                               <Badge variant="secondary" className="text-[10px]">{getSeriesLabel(technique)}</Badge>
                             </div>
-                            <div className="flex items-center gap-1">
+                            <div className="flex items-center gap-0.5 flex-shrink-0">
                               <Button
                                 size="icon"
                                 variant="ghost"
-                                className="h-8 w-8"
+                                className="h-7 w-7 sm:h-8 sm:w-8"
                                 onClick={() => handleRemovePractice(technique.id, selectedDate)}
                                 disabled={practiceCount === 0}
                               >
-                                <Minus className="h-4 w-4" />
+                                <Minus className="h-3 w-3 sm:h-4 sm:w-4" />
                               </Button>
-                              <span className="w-8 text-center font-bold text-lg">{practiceCount}</span>
+                              <span className="w-6 sm:w-8 text-center font-bold text-sm sm:text-lg">{practiceCount}</span>
                               <Button
                                 size="icon"
                                 variant="default"
-                                className="h-8 w-8"
+                                className="h-7 w-7 sm:h-8 sm:w-8"
                                 onClick={() => handleAddPractice(technique.id, selectedDate)}
                               >
-                                <Plus className="h-4 w-4" />
+                                <Plus className="h-3 w-3 sm:h-4 sm:w-4" />
                               </Button>
                             </div>
                           </div>
@@ -693,13 +703,13 @@ const PracticeRecordsPage = () => {
                           return (
                             <div
                               key={technique.id}
-                              className="flex items-center gap-3 p-2 rounded-lg bg-muted/50"
+                              className="flex items-center gap-2 p-2 rounded-lg bg-muted/50 overflow-hidden"
                             >
                               <button 
                                 onClick={() => handleOpenVideo(technique)} 
                                 className="flex-shrink-0 group relative"
                               >
-                                <div className="w-20 h-12 rounded bg-muted overflow-hidden group-hover:ring-2 ring-primary transition-all">
+                                <div className="w-14 h-9 sm:w-16 sm:h-10 rounded bg-muted overflow-hidden group-hover:ring-2 ring-primary transition-all">
                                   {technique.thumbnail_url ? (
                                     <img
                                       src={technique.thumbnail_url}
@@ -708,38 +718,43 @@ const PracticeRecordsPage = () => {
                                     />
                                   ) : (
                                     <div className="w-full h-full flex items-center justify-center">
-                                      <Play className="h-5 w-5 text-muted-foreground" />
+                                      <Play className="h-4 w-4 text-muted-foreground" />
                                     </div>
                                   )}
                                   <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <Play className="h-5 w-5 text-white" />
+                                    <Play className="h-4 w-4 text-white" />
                                   </div>
                                 </div>
                               </button>
-                              <div className="flex-1 min-w-0">
-                                <button onClick={() => handleOpenVideo(technique)} className="hover:text-primary text-left">
-                                  <div className="text-sm font-medium truncate">{getTechniqueName(technique)}</div>
-                                </button>
+                              <div className="flex-1 min-w-0 overflow-hidden">
+                                <div className="flex items-center gap-1">
+                                  <button onClick={() => handleOpenVideo(technique)} className="hover:text-primary text-left truncate">
+                                    <span className="text-xs sm:text-sm font-medium">{getTechniqueName(technique)}</span>
+                                  </button>
+                                  <Link to={`/video/${technique.id}`} className="flex-shrink-0 text-muted-foreground hover:text-primary">
+                                    <ExternalLink className="h-3 w-3" />
+                                  </Link>
+                                </div>
                                 <Badge variant="secondary" className="text-[10px]">{getSeriesLabel(technique)}</Badge>
                               </div>
-                              <div className="flex items-center gap-1">
+                              <div className="flex items-center gap-0.5 flex-shrink-0">
                                 <Button
                                   size="icon"
                                   variant="ghost"
-                                  className="h-8 w-8"
+                                  className="h-7 w-7 sm:h-8 sm:w-8"
                                   onClick={() => handleRemovePractice(technique.id, selectedDate)}
                                   disabled={practiceCount === 0}
                                 >
-                                  <Minus className="h-4 w-4" />
+                                  <Minus className="h-3 w-3 sm:h-4 sm:w-4" />
                                 </Button>
-                                <span className="w-8 text-center font-bold text-lg">{practiceCount}</span>
+                                <span className="w-6 sm:w-8 text-center font-bold text-sm sm:text-lg">{practiceCount}</span>
                                 <Button
                                   size="icon"
                                   variant="default"
-                                  className="h-8 w-8"
+                                  className="h-7 w-7 sm:h-8 sm:w-8"
                                   onClick={() => handleAddPractice(technique.id, selectedDate)}
                                 >
-                                  <Plus className="h-4 w-4" />
+                                  <Plus className="h-3 w-3 sm:h-4 sm:w-4" />
                                 </Button>
                               </div>
                             </div>
@@ -760,7 +775,12 @@ const PracticeRecordsPage = () => {
 
       {/* Video Modal */}
       <Dialog open={videoModalOpen} onOpenChange={setVideoModalOpen}>
-        <DialogContent className="max-w-4xl p-0 overflow-hidden bg-black">
+        <DialogContent className="max-w-4xl p-0 overflow-hidden bg-black" aria-describedby={undefined}>
+          <DialogHeader className="sr-only">
+            <DialogTitle>
+              {selectedTechnique ? getTechniqueName(selectedTechnique) : "Video"}
+            </DialogTitle>
+          </DialogHeader>
           <div className="relative">
             <Button
               variant="ghost"
@@ -780,9 +800,18 @@ const PracticeRecordsPage = () => {
               </div>
             )}
             {selectedTechnique && (
-              <div className="p-4 bg-background">
-                <h3 className="font-semibold">{getTechniqueName(selectedTechnique)}</h3>
-                <Badge variant="secondary" className="mt-1">{getSeriesLabel(selectedTechnique)}</Badge>
+              <div className="p-4 bg-background flex items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <h3 className="font-semibold truncate">{getTechniqueName(selectedTechnique)}</h3>
+                  <Badge variant="secondary" className="mt-1">{getSeriesLabel(selectedTechnique)}</Badge>
+                </div>
+                <Link 
+                  to={`/video/${selectedTechnique.id}`} 
+                  className="flex items-center gap-1 text-sm text-muted-foreground hover:text-primary flex-shrink-0"
+                >
+                  <ExternalLink className="h-4 w-4" />
+                  <span className="hidden sm:inline">{language === "ja" ? "動画ページへ" : "Open page"}</span>
+                </Link>
               </div>
             )}
           </div>
