@@ -39,6 +39,33 @@ export const translations = {
           desc: "「なぜそう動くのか」を論理的に解説。",
         },
       },
+      instructor: {
+        badge: "世界チャンピオン監修",
+        title: "誰から学ぶか、が全てを変える",
+        name: "村田 良蔵",
+        subtitle: "Ryozo Murata | 黒帯・世界王者",
+        credentials: [
+          "SJJIF世界選手権 2連覇（日本人初）",
+          "IBJJF世界マスター 銅メダル",
+          "北海道初のグレイシー直系黒帯"
+        ],
+        quote: "「怪我なく勝つ。理詰めで動く。それが大人の柔術。」",
+        cta: "指導者について詳しく見る",
+      },
+      demo: {
+        title: "技マップの使い方",
+        subtitle: "実際の指導風景と、JiuFlowでの学び方をご覧ください",
+        placeholder: "デモ動画を再生",
+      },
+      seo: {
+        title: "柔術を深く学ぶ",
+        blogTitle: "JiuFlow Blog",
+        blogDesc: "柔術の技術解説、練習のコツ、大会レポートなど",
+        blogCta: "ブログを読む",
+        glossaryTitle: "柔術用語集",
+        glossaryDesc: "初心者から上級者まで使える柔術用語辞典",
+        glossaryCta: "用語集を見る",
+      },
     },
     map: {
       title: "Technique Map",
@@ -315,6 +342,33 @@ export const translations = {
           title: "Verbalized Structure and Intent",
           desc: "Logical explanations of \"why you move this way.\"",
         },
+      },
+      instructor: {
+        badge: "World Champion Supervised",
+        title: "Who You Learn From Changes Everything",
+        name: "Ryozo Murata",
+        subtitle: "Black Belt | World Champion",
+        credentials: [
+          "SJJIF World Championship 2x Champion (First Japanese)",
+          "IBJJF World Master Bronze Medal",
+          "Hokkaido's First Gracie Lineage Black Belt"
+        ],
+        quote: "\"Win without injury. Move with logic. That's adult Jiu-Jitsu.\"",
+        cta: "Learn More About the Instructor",
+      },
+      demo: {
+        title: "How to Use the Technique Map",
+        subtitle: "Watch actual instruction and learn how to study with JiuFlow",
+        placeholder: "Play Demo Video",
+      },
+      seo: {
+        title: "Deepen Your Jiu-Jitsu",
+        blogTitle: "JiuFlow Blog",
+        blogDesc: "Technical breakdowns, training tips, competition reports",
+        blogCta: "Read Blog",
+        glossaryTitle: "Jiu-Jitsu Glossary",
+        glossaryDesc: "Comprehensive terminology guide for all levels",
+        glossaryCta: "View Glossary",
       },
     },
     map: {
@@ -612,6 +666,33 @@ export const translations = {
           title: "Estrutura e Intenção Verbalizadas",
           desc: "Explicações lógicas de \"por que você se move assim.\"",
         },
+      },
+      instructor: {
+        badge: "Supervisionado por Campeão Mundial",
+        title: "De Quem Você Aprende Muda Tudo",
+        name: "Ryozo Murata",
+        subtitle: "Faixa Preta | Campeão Mundial",
+        credentials: [
+          "SJJIF Campeonato Mundial 2x Campeão (Primeiro Japonês)",
+          "IBJJF World Master Medalha de Bronze",
+          "Primeira Faixa Preta Linhagem Gracie de Hokkaido"
+        ],
+        quote: "\"Vença sem lesões. Mova-se com lógica. Esse é o Jiu-Jitsu adulto.\"",
+        cta: "Saiba Mais Sobre o Instrutor",
+      },
+      demo: {
+        title: "Como Usar o Mapa de Técnicas",
+        subtitle: "Assista instrução real e aprenda como estudar com JiuFlow",
+        placeholder: "Reproduzir Vídeo Demo",
+      },
+      seo: {
+        title: "Aprofunde Seu Jiu-Jitsu",
+        blogTitle: "Blog JiuFlow",
+        blogDesc: "Análises técnicas, dicas de treino, relatórios de competição",
+        blogCta: "Ler Blog",
+        glossaryTitle: "Glossário de Jiu-Jitsu",
+        glossaryDesc: "Guia completo de terminologia para todos os níveis",
+        glossaryCta: "Ver Glossário",
       },
     },
     map: {
