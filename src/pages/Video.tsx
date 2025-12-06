@@ -9,7 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useAuth } from "@/hooks/useAuth";
-import { Lock, Eye, Target, Trophy, Flame } from "lucide-react";
+import { Lock, Eye, Target, Trophy, Flame, ArrowLeft } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { VideoPlayer } from "@/components/VideoPlayer";
 import { VideoThumbnail } from "@/components/ui/video-thumbnail";
@@ -347,20 +347,17 @@ const Video = () => {
 
   // 統合初期化 - キャッシュがあれば即座表示、なければサーバーから取得
   useEffect(() => {
+    if (!id) return;
+    
     const initializeAll = async () => {
       try {
-        // セッションを取得
-        const { data: { session } } = await supabase.auth.getSession();
-        
-        if (!session) {
-          navigate("/login", { 
-            state: { from: { pathname: `/video/${id}` } },
-            replace: true 
-          });
+        // useAuthからユーザー情報を使用（すでにロード済み）
+        if (!user) {
+          // ユーザーがまだロード中の場合は待機
           return;
         }
 
-        const userId = session.user.id;
+        const userId = user.id;
 
         // キャッシュから即座に復元を試みる
         const cachedData = restoreFromCache();
@@ -377,9 +374,7 @@ const Video = () => {
           backgroundRefresh(userId);
         } else {
           // キャッシュがない場合はサーバーから取得
-          if (id) {
-            await loadTechniqueFromServer(id, userId, `technique:${id}`);
-          }
+          await loadTechniqueFromServer(id, userId, `technique:${id}`);
           setIsReady(true);
         }
       } catch (error) {
@@ -390,7 +385,7 @@ const Video = () => {
 
     initializeAll();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id, navigate]);
+  }, [id, user]);
 
   const getTechniqueName = (tech: Technique) => {
     switch (language) {
@@ -892,8 +887,19 @@ const Video = () => {
                 </div>
               )}
 
-              {/* Technique Info */}
+              {/* Back Button and Technique Info */}
               <div className="mt-6 animate-fade-up space-y-4">
+                {/* Back to Map Button */}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => navigate(-1)}
+                  className="gap-2 -ml-2 text-muted-foreground hover:text-foreground"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                  {language === "ja" ? "戻る" : language === "pt" ? "Voltar" : "Back"}
+                </Button>
+                
                 <div className="flex flex-col gap-3">
                   <h1 className="text-xl md:text-2xl font-light">{getTechniqueName(technique)}</h1>
                   <span className="inline-block px-3 py-1 text-xs border border-border w-fit">
