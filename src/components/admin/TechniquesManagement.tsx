@@ -16,6 +16,7 @@ import { PaginationControls } from "@/components/ui/pagination-controls";
 import { Skeleton } from "@/components/ui/skeleton";
 import { VideoThumbnail } from "@/components/ui/video-thumbnail";
 import { Progress } from "@/components/ui/progress";
+import { SeriesBadge } from "@/components/ui/series-badge";
 import { 
   usePaginatedTechniques, 
   useUpdateTechnique, 
@@ -1647,9 +1648,11 @@ export const TechniquesManagement = () => {
                                     <span className="font-medium">シリーズ:</span>
                                     <div className="flex items-center gap-2 mt-1">
                                       {(technique as Technique).series_prefix && (
-                                        <div className="flex items-center justify-center w-6 h-6 rounded-full bg-primary/10 text-primary font-bold text-xs">
-                                          {(technique as Technique).series_prefix}
-                                        </div>
+                                        <SeriesBadge 
+                                          prefix={(technique as Technique).series_prefix || ''} 
+                                          order={(technique as Technique).series_order || undefined}
+                                          className="h-6"
+                                        />
                                       )}
                                       <span className="text-muted-foreground">{(technique as Technique).series_name}</span>
                                       {(technique as Technique).series_order && (
@@ -1834,9 +1837,11 @@ export const TechniquesManagement = () => {
                           <span className="font-medium text-xs text-muted-foreground">シリーズ:</span>
                           <div className="flex items-center gap-2 mt-1">
                             {(technique as Technique).series_prefix && (
-                              <div className="flex items-center justify-center w-6 h-6 rounded-full bg-primary/10 text-primary font-bold text-xs">
-                                {(technique as Technique).series_prefix}
-                              </div>
+                              <SeriesBadge 
+                                prefix={(technique as Technique).series_prefix || ''} 
+                                order={(technique as Technique).series_order || undefined}
+                                className="h-6"
+                              />
                             )}
                             <span>{(technique as Technique).series_name}</span>
                             {(technique as Technique).series_order && (

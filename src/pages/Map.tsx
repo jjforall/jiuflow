@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/accordion";
 import { MapLoadingState } from "@/components/MapLoadingState";
 import mapBackground from "@/assets/jiuflow-map-background.png";
+import { getSeriesPrefixColors, getSeriesPrefixColorsWatched, getSeriesPrefixColorsLight } from "@/components/ui/series-badge";
 
 interface Technique {
   id: string;
@@ -515,12 +516,12 @@ const Map = () => {
                       <AccordionTrigger className="px-4 md:px-6 py-4 hover:no-underline hover:bg-gradient-to-r hover:from-muted/30 hover:to-transparent transition-all [&[data-state=open]>svg]:rotate-180">
                         <div className="flex items-center justify-between w-full pr-4">
                           <div className="flex items-center gap-3 md:gap-4 text-left">
-                            <div className="flex items-center justify-center w-10 h-10 md:w-12 md:h-12 rounded-xl font-bold text-base md:text-lg flex-shrink-0 shadow-sm bg-primary/10 border border-primary/20">
-                              {maxSeriesOrder}
+                            <div className={`flex items-center justify-center w-10 h-10 md:w-12 md:h-12 rounded-xl font-bold text-base md:text-lg flex-shrink-0 shadow-sm border ${getSeriesPrefixColorsLight(seriesPrefix)}`}>
+                              {seriesPrefix}
                             </div>
                             <div>
                               <h3 className="text-base md:text-lg font-semibold text-foreground">
-                                {seriesPrefix}. {seriesName}
+                                {seriesName}
                               </h3>
                               <p className="text-xs md:text-sm text-muted-foreground mt-0.5">
                                 {language === "ja" 
@@ -549,8 +550,8 @@ const Map = () => {
                               >
                                 <div className={`flex items-center justify-center min-w-[2.5rem] h-8 md:h-10 px-2 rounded-lg font-semibold text-xs md:text-sm flex-shrink-0 transition-all shadow-sm ${
                                   isWatched 
-                                    ? "bg-primary text-primary-foreground shadow-primary/20" 
-                                    : "bg-muted text-muted-foreground group-hover:bg-primary group-hover:text-primary-foreground group-hover:shadow-primary/20"
+                                    ? getSeriesPrefixColorsWatched(seriesPrefix) + " shadow-lg"
+                                    : getSeriesPrefixColors(seriesPrefix) + " group-hover:shadow-lg"
                                 }`}>
                                   {seriesPrefix}-{tech.series_order || index + 1}
                                 </div>

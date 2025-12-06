@@ -732,7 +732,7 @@ export const OpenMat = () => {
   // Category List View
   if (!selectedCategory) {
     return (
-      <div className="space-y-4 px-4 sm:px-6 max-w-4xl mx-auto">
+      <div className="space-y-4 px-4 sm:px-6 max-w-4xl mx-auto w-full overflow-hidden">
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-xl sm:text-2xl font-light">Open Mat</h2>
@@ -815,7 +815,7 @@ export const OpenMat = () => {
   // Thread List View
   if (!selectedThread) {
     return (
-      <div className="space-y-4 px-4 sm:px-6 max-w-4xl mx-auto">
+      <div className="space-y-4 px-4 sm:px-6 max-w-4xl mx-auto w-full overflow-hidden">
         <div className="flex items-center gap-3">
           <Button 
             variant="ghost" 
