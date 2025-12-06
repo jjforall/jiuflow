@@ -391,6 +391,51 @@ const Home = () => {
                 </div>
               </div>
             </section>
+
+            {/* Closing CTA Section */}
+            <section className="py-24 px-6 bg-gradient-to-br from-primary/10 via-primary/5 to-background">
+              <div className="max-w-4xl mx-auto text-center">
+                <h2 className="text-4xl md:text-5xl font-light mb-6">
+                  {language === 'ja' ? '今日から始める、一生モノの柔術' : 
+                   language === 'pt' ? 'Comece Hoje, Jiu-Jitsu Para a Vida' : 
+                   'Start Today, Jiu-Jitsu for Life'}
+                </h2>
+                <p className="text-xl text-muted-foreground font-light mb-10 max-w-2xl mx-auto">
+                  {language === 'ja' ? '世界チャンピオンが体系化した技術を、4K映像で学ぶ。怪我なく、長く、強くなれる柔術がここにあります。' :
+                   language === 'pt' ? 'Aprenda técnicas sistematizadas por um campeão mundial em vídeo 4K. Jiu-Jitsu seguro, duradouro e forte está aqui.' :
+                   'Learn techniques systematized by a world champion in 4K video. Safe, lasting, and strong Jiu-Jitsu is here.'}
+                </p>
+                
+                {!user && (
+                  <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                    <Link to="/join">
+                      <Button size="lg" className="min-w-[280px] text-lg font-medium shadow-lg hover:shadow-xl transition-all">
+                        {language === 'ja' ? '1ヶ月無料で始める' : 
+                         language === 'pt' ? 'Começar 1 Mês Grátis' : 
+                         'Start 1 Month Free'}
+                      </Button>
+                    </Link>
+                    <Link to="/about">
+                      <Button variant="outline" size="lg" className="min-w-[200px]">
+                        {language === 'ja' ? '詳しく見る' : 
+                         language === 'pt' ? 'Saiba Mais' : 
+                         'Learn More'}
+                      </Button>
+                    </Link>
+                  </div>
+                )}
+                
+                {user && (
+                  <Link to="/my-page">
+                    <Button size="lg" className="min-w-[280px] text-lg font-medium">
+                      {language === 'ja' ? 'マイページへ' : 
+                       language === 'pt' ? 'Minha Página' : 
+                       'My Page'}
+                    </Button>
+                  </Link>
+                )}
+              </div>
+            </section>
           </>
         )}
       </main>
