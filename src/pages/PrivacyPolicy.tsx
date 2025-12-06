@@ -239,7 +239,7 @@ const PrivacyPolicy = () => {
     <div className="min-h-screen bg-background">
       <Navigation />
       
-      <main className="container mx-auto px-4 sm:px-6 py-12 max-w-4xl">
+      <main className="container mx-auto px-4 sm:px-6 pt-24 pb-12 max-w-4xl">
         <h1 className="text-3xl sm:text-4xl font-light mb-2">{t.title}</h1>
         <p className="text-sm text-muted-foreground mb-8">{t.lastUpdated}</p>
 
