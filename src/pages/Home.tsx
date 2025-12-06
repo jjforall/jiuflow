@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import Navigation from "@/components/Navigation";
@@ -9,12 +9,16 @@ import { useAuth } from "@/hooks/useAuth";
 import Footer from "@/components/Footer";
 import { Skeleton } from "@/components/ui/skeleton";
 import TechniqueFlowchart from "@/components/TechniqueFlowchart";
+import { Badge } from "@/components/ui/badge";
+import { Award, Play, BookOpen, FileText, CheckCircle } from "lucide-react";
+import murataImage from "@/assets/murata-ryozo-new.jpg";
 
 const Home = () => {
   const navigate = useNavigate();
   const { user, isLoading: authLoading } = useAuth();
   const { language } = useTranslation();
   const t = translations[language] || translations.ja; // Fallback to Japanese
+  const homeT = t.home as typeof translations.ja.home; // Type assertion for full home type
   const { images, isLoading, currentIndex, totalImages } = useHeroImages();
 
   useEffect(() => {
@@ -235,6 +239,99 @@ const Home = () => {
               </div>
             </section>
 
+            {/* Instructor Section - "Who You Learn From" */}
+            <section className="py-24 px-6 bg-gradient-to-br from-primary/5 via-background to-primary/10">
+              <div className="max-w-6xl mx-auto">
+                <div className="grid lg:grid-cols-2 gap-12 items-center">
+                  {/* Photo */}
+                  <div className="relative">
+                    <div className="absolute -top-4 -left-4 z-10">
+                      <Badge className="bg-primary text-primary-foreground px-4 py-2 text-sm font-medium flex items-center gap-2">
+                        <Award className="w-4 h-4" />
+                        {homeT.instructor?.badge || "世界チャンピオン監修"}
+                      </Badge>
+                    </div>
+                    <div className="relative rounded-2xl overflow-hidden shadow-2xl">
+                      <img 
+                        src={murataImage} 
+                        alt="村田良蔵 - Ryozo Murata"
+                        className="w-full h-auto object-cover"
+                        loading="lazy"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                      <div className="absolute bottom-6 left-6 right-6">
+                        <p className="text-white/90 text-lg italic font-light">
+                          {homeT.instructor?.quote || "「怪我なく勝つ。理詰めで動く。それが大人の柔術。」"}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Content */}
+                  <div className="space-y-6">
+                    <div>
+                      <h2 className="text-4xl md:text-5xl font-light mb-4">
+                        {homeT.instructor?.title || "誰から学ぶか、が全てを変える"}
+                      </h2>
+                      <div className="flex items-center gap-3 mb-6">
+                        <h3 className="text-2xl font-medium">{homeT.instructor?.name || "村田 良蔵"}</h3>
+                        <span className="text-muted-foreground">|</span>
+                        <span className="text-muted-foreground">{homeT.instructor?.subtitle || "Ryozo Murata | 黒帯・世界王者"}</span>
+                      </div>
+                    </div>
+
+                    {/* Credentials */}
+                    <div className="space-y-3">
+                      {(homeT.instructor?.credentials || [
+                        "SJJIF世界選手権 2連覇（日本人初）",
+                        "IBJJF世界マスター 銅メダル",
+                        "北海道初のグレイシー直系黒帯"
+                      ]).map((credential: string, index: number) => (
+                        <div key={index} className="flex items-center gap-3">
+                          <CheckCircle className="w-5 h-5 text-primary shrink-0" />
+                          <span className="text-lg">{credential}</span>
+                        </div>
+                      ))}
+                    </div>
+
+                    <Link to="/about">
+                      <Button variant="outline" size="lg" className="mt-6">
+                        {homeT.instructor?.cta || "指導者について詳しく見る"}
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            {/* Demo Video Section */}
+            <section className="py-24 px-6">
+              <div className="max-w-5xl mx-auto">
+                <div className="text-center mb-12">
+                  <h2 className="text-4xl md:text-5xl font-light mb-4">
+                    {homeT.demo?.title || "技マップの使い方"}
+                  </h2>
+                  <p className="text-lg text-muted-foreground font-light">
+                    {homeT.demo?.subtitle || "実際の指導風景と、JiuFlowでの学び方をご覧ください"}
+                  </p>
+                </div>
+
+                {/* Video Placeholder */}
+                <div className="relative aspect-video rounded-2xl overflow-hidden bg-muted border border-border shadow-xl">
+                  <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-muted to-muted/80">
+                    <div className="text-center space-y-4">
+                      <div className="w-20 h-20 mx-auto rounded-full bg-primary/10 flex items-center justify-center cursor-pointer hover:bg-primary/20 transition-colors group">
+                        <Play className="w-8 h-8 text-primary group-hover:scale-110 transition-transform" />
+                      </div>
+                      <p className="text-muted-foreground">
+                        {homeT.demo?.placeholder || "デモ動画を再生"}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+
             {/* Technique Flowchart Section */}
             <section className="py-24 px-6 bg-muted/30">
               <div className="max-w-7xl mx-auto">
@@ -247,6 +344,51 @@ const Home = () => {
                   </p>
                 </div>
                 <TechniqueFlowchart />
+              </div>
+            </section>
+
+            {/* SEO Section - Blog & Glossary */}
+            <section className="py-24 px-6">
+              <div className="max-w-5xl mx-auto">
+                <div className="text-center mb-16">
+                  <h2 className="text-4xl md:text-5xl font-light mb-4">
+                    {homeT.seo?.title || "柔術を深く学ぶ"}
+                  </h2>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-8">
+                  {/* Blog Card */}
+                  <div className="group relative bg-card rounded-2xl border border-border p-8 hover:border-primary/50 transition-colors">
+                    <div className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center mb-6 group-hover:bg-primary/20 transition-colors">
+                      <FileText className="w-7 h-7 text-primary" />
+                    </div>
+                    <h3 className="text-2xl font-medium mb-3">
+                      {homeT.seo?.blogTitle || "JiuFlow Blog"}
+                    </h3>
+                    <p className="text-muted-foreground mb-6">
+                      {homeT.seo?.blogDesc || "柔術の技術解説、練習のコツ、大会レポートなど"}
+                    </p>
+                    <Button variant="outline" className="group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                      {homeT.seo?.blogCta || "ブログを読む"}
+                    </Button>
+                  </div>
+
+                  {/* Glossary Card */}
+                  <div className="group relative bg-card rounded-2xl border border-border p-8 hover:border-primary/50 transition-colors">
+                    <div className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center mb-6 group-hover:bg-primary/20 transition-colors">
+                      <BookOpen className="w-7 h-7 text-primary" />
+                    </div>
+                    <h3 className="text-2xl font-medium mb-3">
+                      {homeT.seo?.glossaryTitle || "柔術用語集"}
+                    </h3>
+                    <p className="text-muted-foreground mb-6">
+                      {homeT.seo?.glossaryDesc || "初心者から上級者まで使える柔術用語辞典"}
+                    </p>
+                    <Button variant="outline" className="group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                      {homeT.seo?.glossaryCta || "用語集を見る"}
+                    </Button>
+                  </div>
+                </div>
               </div>
             </section>
           </>
