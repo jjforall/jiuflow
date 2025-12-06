@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -40,12 +41,62 @@ const ALLOWED_THREAD_COLORS = [
 // Default embroidery placement
 const DEFAULT_EMBROIDERY_PLACEMENT = "embroidery_front_large";
 
+// Admin role check helper
+async function checkAdminRole(supabase: any, userId: string): Promise<boolean> {
+  const { data, error } = await supabase
+    .from('user_roles')
+    .select('role')
+    .eq('user_id', userId)
+    .eq('role', 'admin')
+    .single();
+  
+  return !error && data !== null;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
+    // Auth check
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const authHeader = req.headers.get("Authorization");
+    
+    if (!authHeader) {
+      console.log("[CREATE-PRINTFUL-PRODUCT] No authorization header");
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 401,
+      });
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } }
+    });
+
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError || !user) {
+      console.log("[CREATE-PRINTFUL-PRODUCT] Invalid user:", userError);
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 401,
+      });
+    }
+
+    // Check admin role
+    const isAdmin = await checkAdminRole(supabase, user.id);
+    if (!isAdmin) {
+      console.log("[CREATE-PRINTFUL-PRODUCT] User is not admin:", user.id);
+      return new Response(JSON.stringify({ error: "Forbidden: Admin role required" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 403,
+      });
+    }
+
+    console.log("[CREATE-PRINTFUL-PRODUCT] Admin verified:", user.id);
+
     const PRINTFUL_API_KEY = Deno.env.get("PRINTFUL_API_KEY");
     if (!PRINTFUL_API_KEY) {
       throw new Error("PRINTFUL_API_KEY is not set");

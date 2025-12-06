@@ -102,7 +102,7 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.create-printful-product]
-verify_jwt = false
+verify_jwt = true
 
 [functions.get-printful-catalog]
 verify_jwt = false
@@ -111,10 +111,10 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.update-printful-product]
-verify_jwt = false
+verify_jwt = true
 
 [functions.delete-printful-product]
-verify_jwt = false
+verify_jwt = true
 
 [functions.translate-community-content]
 verify_jwt = false
