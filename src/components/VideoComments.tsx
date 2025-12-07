@@ -47,9 +47,9 @@ const tipItems: TipItem[] = [
     label: { ja: "コーラ", en: "Cola", pt: "Cola" } 
   },
   { 
-    amount: 60000, 
-    icon: <Pizza className="w-4 h-4" />, 
-    label: { ja: "寿司", en: "Sushi", pt: "Sushi" } 
+    amount: 30000, 
+    icon: <Wine className="w-4 h-4" />, 
+    label: { ja: "シャンパン", en: "Champagne", pt: "Champanhe" } 
   },
   { 
     amount: 40000, 
@@ -57,9 +57,9 @@ const tipItems: TipItem[] = [
     label: { ja: "焼肉", en: "BBQ", pt: "Churrasco" } 
   },
   { 
-    amount: 30000, 
-    icon: <Wine className="w-4 h-4" />, 
-    label: { ja: "シャンパン", en: "Champagne", pt: "Champanhe" } 
+    amount: 60000, 
+    icon: <Pizza className="w-4 h-4" />, 
+    label: { ja: "寿司", en: "Sushi", pt: "Sushi" } 
   },
   { 
     amount: 100000, 
