@@ -300,14 +300,31 @@ const MyPage = () => {
     if (!user) return;
     
     try {
-      // Load followers count
-      const { count: followersCount, error: followersError } = await supabase
+      // Load followers count (user_follows + celebrity_follows if user is a celebrity)
+      const { count: userFollowersCount, error: followersError } = await supabase
         .from('user_follows')
         .select('*', { count: 'exact', head: true })
         .eq('following_id', user.id);
 
       if (followersError) throw followersError;
-      setFollowersCount(followersCount || 0);
+
+      // Check if user is linked to a celebrity profile and get celebrity followers
+      let celebrityFollowersCount = 0;
+      const { data: celebrityData } = await supabase
+        .from('celebrities')
+        .select('id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (celebrityData) {
+        const { count: celFollowers } = await supabase
+          .from('celebrity_follows')
+          .select('*', { count: 'exact', head: true })
+          .eq('celebrity_id', celebrityData.id);
+        celebrityFollowersCount = celFollowers || 0;
+      }
+
+      setFollowersCount((userFollowersCount || 0) + celebrityFollowersCount);
 
       // Load following count (user_follows + celebrity_follows)
       const { count: userFollowingCount, error: followingError } = await supabase
