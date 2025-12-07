@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_audit_log: {
+        Row: {
+          accessed_at: string
+          action: string
+          admin_user_id: string
+          details: Json | null
+          id: string
+          ip_address: string | null
+          record_id: string | null
+          table_name: string
+          user_agent: string | null
+        }
+        Insert: {
+          accessed_at?: string
+          action: string
+          admin_user_id: string
+          details?: Json | null
+          id?: string
+          ip_address?: string | null
+          record_id?: string | null
+          table_name: string
+          user_agent?: string | null
+        }
+        Update: {
+          accessed_at?: string
+          action?: string
+          admin_user_id?: string
+          details?: Json | null
+          id?: string
+          ip_address?: string | null
+          record_id?: string | null
+          table_name?: string
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       brothers_applications: {
         Row: {
           application_year: number
@@ -2191,6 +2227,51 @@ export type Database = {
       }
     }
     Views: {
+      printful_orders_secure: {
+        Row: {
+          cart_items: Json | null
+          created_at: string | null
+          customer_email: string | null
+          error_message: string | null
+          id: string | null
+          printful_order_id: string | null
+          shipping_address: Json | null
+          shipping_name: string | null
+          status: string | null
+          stripe_session_id: string | null
+          total_amount: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          cart_items?: Json | null
+          created_at?: string | null
+          customer_email?: never
+          error_message?: string | null
+          id?: string | null
+          printful_order_id?: string | null
+          shipping_address?: never
+          shipping_name?: never
+          status?: string | null
+          stripe_session_id?: string | null
+          total_amount?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          cart_items?: Json | null
+          created_at?: string | null
+          customer_email?: never
+          error_message?: string | null
+          id?: string | null
+          printful_order_id?: string | null
+          shipping_address?: never
+          shipping_name?: never
+          status?: string | null
+          stripe_session_id?: string | null
+          total_amount?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       public_dojos: {
         Row: {
           access_info: string | null
@@ -2454,6 +2535,15 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      log_admin_access: {
+        Args: {
+          p_action: string
+          p_details?: Json
+          p_record_id?: string
+          p_table_name: string
+        }
+        Returns: undefined
       }
       reject_brothers_application: {
         Args: { application_id: string; reason: string }
