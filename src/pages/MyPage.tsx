@@ -2674,11 +2674,9 @@ const MyPage = () => {
                           <div className="space-y-3">
                             {(editValues.education || []).map((edu: any, index: number) => (
                               <div key={index} className="p-3 bg-background rounded border">
-                                <InputWithSuggestions
+                                <Input
                                   value={edu.school || ''}
                                   onChange={(e) => updateEducation(index, 'school', e.target.value)}
-                                  onSelectSuggestion={(value) => updateEducation(index, 'school', value)}
-                                  suggestions={schoolSuggestions}
                                   placeholder={language === "ja" ? "学校名" : "School name"}
                                 />
                                 <div className="grid grid-cols-2 gap-2 mt-2">
