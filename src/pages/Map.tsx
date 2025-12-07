@@ -538,21 +538,16 @@ const Map = () => {
                                   {seriesPrefix}-{tech.series_order || 1}
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                  <div className="flex items-center gap-2">
-                                    <h4 className="text-sm md:text-base font-medium text-foreground group-hover:text-primary transition-colors truncate">
+                                  <div className="flex items-start gap-2">
+                                    <h4 className="text-sm md:text-base font-medium text-foreground group-hover:text-primary transition-colors leading-snug">
                                       {getTechniqueName(tech)}
                                     </h4>
                                     {isWatched && (
-                                      <div className="flex items-center justify-center w-5 h-5 rounded-full bg-primary/10 flex-shrink-0">
+                                      <div className="flex items-center justify-center w-5 h-5 rounded-full bg-primary/10 flex-shrink-0 mt-0.5">
                                         <Check className="w-3 h-3 text-primary" />
                                       </div>
                                     )}
                                   </div>
-                                  {getTechniqueDescription(tech) && (
-                                    <p className="text-xs md:text-sm text-muted-foreground line-clamp-1 mt-0.5">
-                                      {getTechniqueDescription(tech)}
-                                    </p>
-                                  )}
                                 </div>
                               </Link>
                               <div className="flex items-center gap-2 flex-shrink-0">
@@ -660,21 +655,16 @@ const Map = () => {
                                     {seriesPrefix}-{tech.series_order || index + 1}
                                   </div>
                                   <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-2">
-                                      <h4 className="text-sm md:text-base font-medium text-foreground group-hover:text-primary transition-colors truncate">
+                                    <div className="flex items-start gap-2">
+                                      <h4 className="text-sm md:text-base font-medium text-foreground group-hover:text-primary transition-colors leading-snug">
                                         {getTechniqueName(tech)}
                                       </h4>
                                       {isWatched && (
-                                        <div className="flex items-center justify-center w-5 h-5 rounded-full bg-primary/10 flex-shrink-0">
+                                        <div className="flex items-center justify-center w-5 h-5 rounded-full bg-primary/10 flex-shrink-0 mt-0.5">
                                           <Check className="w-3 h-3 text-primary" />
                                         </div>
                                       )}
                                     </div>
-                                    {getTechniqueDescription(tech) && (
-                                      <p className="text-xs md:text-sm text-muted-foreground line-clamp-1 mt-0.5">
-                                        {getTechniqueDescription(tech)}
-                                      </p>
-                                    )}
                                   </div>
                                 </Link>
                                 <div className="flex items-center gap-2 flex-shrink-0">
