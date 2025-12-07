@@ -1689,6 +1689,7 @@ export type Database = {
           display_order: number | null
           hashtags: string[] | null
           id: string
+          is_sample: boolean
           name: string
           name_ja: string
           name_pt: string
@@ -1713,6 +1714,7 @@ export type Database = {
           display_order?: number | null
           hashtags?: string[] | null
           id?: string
+          is_sample?: boolean
           name: string
           name_ja: string
           name_pt: string
@@ -1737,6 +1739,7 @@ export type Database = {
           display_order?: number | null
           hashtags?: string[] | null
           id?: string
+          is_sample?: boolean
           name?: string
           name_ja?: string
           name_pt?: string
