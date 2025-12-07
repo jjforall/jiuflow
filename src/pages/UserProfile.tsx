@@ -909,23 +909,59 @@ export default function UserProfile() {
                         </h3>
                       </div>
                       <div className="space-y-2">
-                        {profile.titles.map((title, index) => (
+                        {profile.titles.map((title: any, index) => (
                           <div 
                             key={index} 
                             className="p-4 bg-accent/10 rounded-lg border border-accent/20 hover:border-accent/40 transition-colors"
                           >
+                            {/* 大会名 */}
                             <p className="font-semibold text-base">
                               {title.title === "custom" ? title.customTitle : title.title}
                             </p>
-                            {title.organization && (
-                              <p className="text-sm text-muted-foreground mt-1">{title.organization}</p>
-                            )}
-                            {title.date && (
-                              <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
-                                <Calendar className="w-3 h-3" />
-                                {title.date}
-                              </p>
-                            )}
+                            
+                            {/* 詳細情報 */}
+                            <div className="mt-2 space-y-1">
+                              {/* 団体 */}
+                              {title.organization && title.organization !== "custom_org" && (
+                                <p className="text-sm text-muted-foreground">
+                                  {language === "ja" ? "団体: " : "Org: "}{title.organization}
+                                </p>
+                              )}
+                              {title.organization === "custom_org" && title.customOrganization && (
+                                <p className="text-sm text-muted-foreground">
+                                  {language === "ja" ? "団体: " : "Org: "}{title.customOrganization}
+                                </p>
+                              )}
+                              
+                              {/* 順位 */}
+                              {title.rank && (
+                                <p className="text-sm text-muted-foreground">
+                                  {language === "ja" ? "順位: " : "Place: "}{title.rank}
+                                </p>
+                              )}
+                              
+                              {/* 階級 */}
+                              {title.weight_class && (
+                                <p className="text-sm text-muted-foreground">
+                                  {language === "ja" ? "階級: " : "Weight: "}{title.weight_class}
+                                </p>
+                              )}
+                              
+                              {/* 帯色 */}
+                              {title.belt && (
+                                <p className="text-sm text-muted-foreground">
+                                  {language === "ja" ? "帯: " : "Belt: "}{title.belt}
+                                </p>
+                              )}
+                              
+                              {/* 年度 */}
+                              {(title.year || title.date) && (
+                                <p className="text-xs text-muted-foreground flex items-center gap-1">
+                                  <Calendar className="w-3 h-3" />
+                                  {title.year || title.date}
+                                </p>
+                              )}
+                            </div>
                           </div>
                         ))}
                       </div>
