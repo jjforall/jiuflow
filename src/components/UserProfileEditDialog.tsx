@@ -24,7 +24,7 @@ export const UserProfileEditDialog = ({ open, onOpenChange, userId, onSuccess }:
   const [username, setUsername] = useState("");
   const [education, setEducation] = useState<Array<{school: string; degree?: string; period?: string}>>([]);
   const [workExperience, setWorkExperience] = useState<Array<{company: string; position: string; period?: string; description?: string}>>([]);
-  const [titles, setTitles] = useState<Array<{title: string; rank?: string; organization?: string; customTitle?: string; weight_class?: string}>>([]);
+  const [titles, setTitles] = useState<Array<{title: string; rank?: string; organization?: string; customTitle?: string; customOrganization?: string; weight_class?: string}>>([]);
   const [favoriteTechniques, setFavoriteTechniques] = useState<string[]>([]);
   const [organizationId, setOrganizationId] = useState<string>("");
   const [organizations, setOrganizations] = useState<Array<{id: string; name: string; name_ja: string}>>([]);
@@ -443,15 +443,39 @@ export const UserProfileEditDialog = ({ open, onOpenChange, userId, onSuccess }:
                   />
                 )}
 
-                <Input
-                  placeholder={language === "ja" ? "主催団体（任意、例：IBJJF）" : "Organization (optional, e.g. IBJJF)"}
+                <select
                   value={titleItem.organization || ""}
                   onChange={(e) => {
                     const newTitles = [...titles];
                     newTitles[index].organization = e.target.value;
+                    if (e.target.value !== "custom") {
+                      newTitles[index].customOrganization = undefined;
+                    }
                     setTitles(newTitles);
                   }}
-                />
+                  className="w-full h-10 px-3 py-2 text-sm rounded-md border border-input bg-background"
+                >
+                  <option value="">{language === "ja" ? "主催団体を選択（任意）" : "Select Organization (optional)"}</option>
+                  <option value="IBJJF">IBJJF</option>
+                  <option value="SJJIF">SJJIF</option>
+                  <option value="JBJJF">JBJJF</option>
+                  <option value="AJP">AJP (Abu Dhabi Pro)</option>
+                  <option value="ADCC">ADCC</option>
+                  <option value="UAEJJF">UAEJJF</option>
+                  <option value="custom">{language === "ja" ? "その他（カスタム入力）" : "Other (Custom)"}</option>
+                </select>
+
+                {titleItem.organization === "custom" && (
+                  <Input
+                    placeholder={language === "ja" ? "団体名を入力" : "Enter organization name"}
+                    value={titleItem.customOrganization || ""}
+                    onChange={(e) => {
+                      const newTitles = [...titles];
+                      newTitles[index].customOrganization = e.target.value;
+                      setTitles(newTitles);
+                    }}
+                  />
+                )}
 
                 <select
                   value={titleItem.rank || ""}
