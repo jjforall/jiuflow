@@ -2569,6 +2569,14 @@ export type Database = {
         Args: { application_id: string; reason: string }
         Returns: undefined
       }
+      user_has_purchased_video: {
+        Args: { p_user_id: string; p_video_id: string }
+        Returns: boolean
+      }
+      user_owns_video: {
+        Args: { p_user_id: string; p_video_id: string }
+        Returns: boolean
+      }
       validate_referral_code: { Args: { code_to_check: string }; Returns: Json }
     }
     Enums: {
