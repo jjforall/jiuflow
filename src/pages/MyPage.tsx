@@ -125,6 +125,7 @@ interface UserVideo {
 
 interface Profile {
   display_name: string | null;
+  display_name_reading: string | null;
   bio: string | null;
   avatar_url: string | null;
   cover_image_url: string | null;
@@ -572,7 +573,7 @@ const MyPage = () => {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('display_name, bio, avatar_url, username, education, work_experience, belt_history, home_dojo, training_locations, titles, created_at, cover_image_url, organization_id, favorite_fighters, favorite_techniques, hometown, hobbies, marital_status, date_of_birth, social_links, is_public')
+        .select('display_name, display_name_reading, bio, avatar_url, username, education, work_experience, belt_history, home_dojo, training_locations, titles, created_at, cover_image_url, organization_id, favorite_fighters, favorite_techniques, hometown, hobbies, marital_status, date_of_birth, social_links, is_public')
         .eq('id', user.id)
         .single();
 
@@ -580,6 +581,7 @@ const MyPage = () => {
       
       setProfile({
         ...data,
+        display_name_reading: data.display_name_reading || null,
         education: (data.education as any) || [],
         work_experience: (data.work_experience as any) || [],
         belt_history: (data.belt_history as any) || [],
@@ -852,6 +854,13 @@ const MyPage = () => {
       setEditValues({ ...editValues, [field]: [""] });
     } else if (field === 'hobbies' && (!currentValue || currentValue.length === 0)) {
       setEditValues({ ...editValues, [field]: [""] });
+    } else if (field === 'display_name') {
+      // Include reading when editing display_name
+      setEditValues({ 
+        ...editValues, 
+        display_name: currentValue,
+        display_name_reading: profile?.display_name_reading 
+      });
     } else {
       setEditValues({ ...editValues, [field]: currentValue });
     }
@@ -882,6 +891,7 @@ const MyPage = () => {
       
       if (field === 'display_name') {
         updateData.display_name = editValues.display_name?.trim() || null;
+        updateData.display_name_reading = editValues.display_name_reading?.trim() || null;
       } else if (field === 'bio') {
         updateData.bio = editValues.bio?.trim() || null;
       } else if (field === 'username') {
@@ -1336,15 +1346,25 @@ const MyPage = () => {
               
               <div className="mt-3 sm:mt-4">
                 {editingField === 'display_name' ? (
-                  <div className="flex items-center gap-2 mb-1">
-                    <Input
-                      value={editValues.display_name || ''}
-                      onChange={(e) => setEditValues({ ...editValues, display_name: e.target.value })}
-                      placeholder={language === "ja" ? "表示名" : "Display name"}
-                      className="text-xl sm:text-3xl font-bold h-10 sm:h-12"
-                    />
-                    <Button size="sm" onClick={() => saveField('display_name')} className="h-8 sm:h-9 active:scale-[0.98]"><Check className="w-4 h-4" /></Button>
-                    <Button size="sm" variant="outline" onClick={cancelEditing} className="h-8 sm:h-9 active:scale-[0.98]"><X className="w-4 h-4" /></Button>
+                  <div className="space-y-2 mb-1">
+                    <div className="flex items-center gap-2">
+                      <Input
+                        value={editValues.display_name || ''}
+                        onChange={(e) => setEditValues({ ...editValues, display_name: e.target.value })}
+                        placeholder={language === "ja" ? "表示名" : "Display name"}
+                        className="text-xl sm:text-3xl font-bold h-10 sm:h-12"
+                      />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        value={editValues.display_name_reading || ''}
+                        onChange={(e) => setEditValues({ ...editValues, display_name_reading: e.target.value })}
+                        placeholder={language === "ja" ? "読み仮名（ローマ字/ひらがな）" : "Reading (romaji/hiragana)"}
+                        className="text-sm h-9"
+                      />
+                      <Button size="sm" onClick={() => saveField('display_name')} className="h-8 sm:h-9 active:scale-[0.98]"><Check className="w-4 h-4" /></Button>
+                      <Button size="sm" variant="outline" onClick={cancelEditing} className="h-8 sm:h-9 active:scale-[0.98]"><X className="w-4 h-4" /></Button>
+                    </div>
                   </div>
                 ) : (
                   <div className="flex items-center gap-2 group mb-1">

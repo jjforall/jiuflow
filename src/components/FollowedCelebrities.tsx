@@ -135,12 +135,12 @@ export const FollowedCelebrities = ({ userId }: FollowedCelebritiesProps) => {
 
     setIsSearching(true);
     try {
-      // Search public profiles
+      // Search public profiles (display_name, display_name_reading, username)
       const { data, error } = await supabase
         .from('public_profiles')
-        .select('id, display_name, username, avatar_url, belt_history')
+        .select('id, display_name, display_name_reading, username, avatar_url, belt_history')
         .neq('id', userId)
-        .or(`display_name.ilike.%${query}%,username.ilike.%${query}%`)
+        .or(`display_name.ilike.%${query}%,display_name_reading.ilike.%${query}%,username.ilike.%${query}%`)
         .limit(20);
 
       if (error) throw error;
