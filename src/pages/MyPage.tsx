@@ -309,14 +309,22 @@ const MyPage = () => {
       if (followersError) throw followersError;
       setFollowersCount(followersCount || 0);
 
-      // Load following count
-      const { count: followingCount, error: followingError } = await supabase
+      // Load following count (user_follows + celebrity_follows)
+      const { count: userFollowingCount, error: followingError } = await supabase
         .from('user_follows')
         .select('*', { count: 'exact', head: true })
         .eq('follower_id', user.id);
 
       if (followingError) throw followingError;
-      setFollowingCount(followingCount || 0);
+
+      const { count: celebrityFollowingCount, error: celebrityFollowingError } = await supabase
+        .from('celebrity_follows')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id);
+
+      if (celebrityFollowingError) throw celebrityFollowingError;
+
+      setFollowingCount((userFollowingCount || 0) + (celebrityFollowingCount || 0));
     } catch (error) {
       console.error('Error loading follow stats:', error);
     }
