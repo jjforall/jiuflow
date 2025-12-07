@@ -375,13 +375,19 @@ const MyPage = () => {
         return;
       }
 
+      // Use public_profiles view to bypass RLS restrictions
       const { data: profiles, error: profilesError } = await supabase
-        .from('profiles')
+        .from('public_profiles')
         .select('id, display_name, username, avatar_url')
         .in('id', userIds);
 
       if (profilesError) throw profilesError;
-      setFollowList(profiles || []);
+      setFollowList((profiles || []).map(p => ({
+        id: p.id!,
+        display_name: p.display_name || '',
+        username: p.username || '',
+        avatar_url: p.avatar_url || ''
+      })));
     } catch (error) {
       console.error('Error loading follow list:', error);
     }
