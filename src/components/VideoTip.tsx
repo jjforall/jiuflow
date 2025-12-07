@@ -46,16 +46,6 @@ export const VideoTip = ({ videoId }: VideoTipProps) => {
       label: { ja: "コーラ", en: "Cola", pt: "Cola" } 
     },
     { 
-      amount: 60000, 
-      icon: <Pizza className="w-4 h-4" />, 
-      label: { ja: "寿司", en: "Sushi", pt: "Sushi" } 
-    },
-    { 
-      amount: 40000, 
-      icon: <Pizza className="w-4 h-4" />, 
-      label: { ja: "焼肉", en: "BBQ", pt: "Churrasco" } 
-    },
-    { 
       amount: 10000, 
       icon: <Medal className="w-4 h-4" />, 
       label: { ja: "黒帯エナジー", en: "Black Belt Energy", pt: "Energia Faixa Preta" } 
@@ -64,6 +54,16 @@ export const VideoTip = ({ videoId }: VideoTipProps) => {
       amount: 30000, 
       icon: <Wine className="w-4 h-4" />, 
       label: { ja: "シャンパン", en: "Champagne", pt: "Champanhe" } 
+    },
+    { 
+      amount: 40000, 
+      icon: <Pizza className="w-4 h-4" />, 
+      label: { ja: "焼肉", en: "BBQ", pt: "Churrasco" } 
+    },
+    { 
+      amount: 60000, 
+      icon: <Pizza className="w-4 h-4" />, 
+      label: { ja: "寿司", en: "Sushi", pt: "Sushi" } 
     },
     { 
       amount: 100000, 
