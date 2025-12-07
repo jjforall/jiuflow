@@ -14,22 +14,84 @@ serve(async (req) => {
   }
 
   try {
-    const body = await req.json();
-    console.log("[CREATE-TEAM-MEMBER] Received body:", JSON.stringify({ email: body.email, hasPassword: !!body.password, displayName: body.displayName, referralCode: body.referralCode }));
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY");
     
-    const { email, password, displayName, referralCode } = body;
-
-    // Validate referral code
-    if (!referralCode || referralCode.toUpperCase() !== "TEAMRYOZO") {
-      console.log("[CREATE-TEAM-MEMBER] Invalid referral code:", referralCode);
+    if (!supabaseUrl || !supabaseServiceKey || !supabaseAnonKey) {
+      console.error("[CREATE-TEAM-MEMBER] Missing environment variables");
       return new Response(
-        JSON.stringify({ error: "Invalid referral code" }),
+        JSON.stringify({ error: "Server configuration error" }),
         {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 400,
+          status: 500,
         }
       );
     }
+
+    // Verify admin authentication
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      console.log("[CREATE-TEAM-MEMBER] No authorization header");
+      return new Response(
+        JSON.stringify({ error: "認証が必要です" }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 401,
+        }
+      );
+    }
+
+    // Create client with user's JWT to verify their identity
+    const supabaseUser = createClient(supabaseUrl, supabaseAnonKey, {
+      global: {
+        headers: { Authorization: authHeader },
+      },
+    });
+
+    // Get the authenticated user
+    const { data: { user }, error: authError } = await supabaseUser.auth.getUser();
+    
+    if (authError || !user) {
+      console.log("[CREATE-TEAM-MEMBER] Authentication failed:", authError);
+      return new Response(
+        JSON.stringify({ error: "認証に失敗しました" }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 401,
+        }
+      );
+    }
+
+    console.log("[CREATE-TEAM-MEMBER] Authenticated user:", user.id);
+
+    // Use service role to check if user is admin
+    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+    
+    const { data: adminRole, error: roleError } = await supabaseAdmin
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", user.id)
+      .eq("role", "admin")
+      .maybeSingle();
+
+    if (roleError || !adminRole) {
+      console.log("[CREATE-TEAM-MEMBER] User is not admin:", user.id, roleError);
+      return new Response(
+        JSON.stringify({ error: "この操作には管理者権限が必要です" }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 403,
+        }
+      );
+    }
+
+    console.log("[CREATE-TEAM-MEMBER] Admin verified:", user.id);
+
+    const body = await req.json();
+    console.log("[CREATE-TEAM-MEMBER] Received body:", JSON.stringify({ email: body.email, hasPassword: !!body.password, displayName: body.displayName }));
+    
+    const { email, password, displayName } = body;
 
     if (!email || !password) {
       console.log("[CREATE-TEAM-MEMBER] Missing email or password");
@@ -54,23 +116,6 @@ serve(async (req) => {
     }
 
     console.log("[CREATE-TEAM-MEMBER] Processing team member with email:", email);
-
-    const supabaseUrl = Deno.env.get("SUPABASE_URL");
-    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-    
-    if (!supabaseUrl || !supabaseServiceKey) {
-      console.error("[CREATE-TEAM-MEMBER] Missing environment variables");
-      return new Response(
-        JSON.stringify({ error: "Server configuration error" }),
-        {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 500,
-        }
-      );
-    }
-
-    // Use service role key for admin operations
-    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
     // Check if user already exists
     const { data: existingProfile } = await supabaseAdmin
@@ -97,7 +142,7 @@ serve(async (req) => {
       if (existingRole) {
         console.log("[CREATE-TEAM-MEMBER] User already has staff role");
         return new Response(
-          JSON.stringify({ error: "このメールアドレスは既にスタッフとして登録されています。ログインページからログインしてください。" }),
+          JSON.stringify({ error: "このメールアドレスは既にスタッフとして登録されています。" }),
           {
             headers: { ...corsHeaders, "Content-Type": "application/json" },
             status: 400,
@@ -130,7 +175,7 @@ serve(async (req) => {
             console.log("[CREATE-TEAM-MEMBER] Found existing auth user:", userId);
           } else {
             return new Response(
-              JSON.stringify({ error: "このメールアドレスは既に登録されています。ログインページからログインしてください。" }),
+              JSON.stringify({ error: "このメールアドレスは既に登録されています。" }),
               {
                 headers: { ...corsHeaders, "Content-Type": "application/json" },
                 status: 400,
@@ -180,7 +225,7 @@ serve(async (req) => {
 
     // Assign staff role to the user
     console.log("[CREATE-TEAM-MEMBER] Assigning staff role to:", userId);
-    const { error: roleError } = await supabaseAdmin
+    const { error: staffRoleError } = await supabaseAdmin
       .from("user_roles")
       .upsert({
         user_id: userId,
@@ -189,10 +234,10 @@ serve(async (req) => {
         onConflict: "user_id,role"
       });
 
-    if (roleError) {
-      console.error("[CREATE-TEAM-MEMBER] Error assigning staff role:", roleError);
+    if (staffRoleError) {
+      console.error("[CREATE-TEAM-MEMBER] Error assigning staff role:", staffRoleError);
       return new Response(
-        JSON.stringify({ error: "Failed to assign staff role: " + roleError.message }),
+        JSON.stringify({ error: "Failed to assign staff role: " + staffRoleError.message }),
         {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
           status: 500,
@@ -218,7 +263,7 @@ serve(async (req) => {
       console.error("[CREATE-TEAM-MEMBER] Error creating subscription:", subscriptionError);
     }
 
-    console.log("[CREATE-TEAM-MEMBER] Team member created/upgraded successfully:", email);
+    console.log("[CREATE-TEAM-MEMBER] Team member created/upgraded successfully by admin:", user.id, "for:", email);
 
     return new Response(
       JSON.stringify({

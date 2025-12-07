@@ -90,7 +90,7 @@ verify_jwt = true
 verify_jwt = false
 
 [functions.create-team-member]
-verify_jwt = false
+verify_jwt = true
 
 [functions.get-printful-products]
 verify_jwt = false
