@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
+import { checkRateLimit, getClientIdentifier, rateLimitResponse } from "../_shared/rate-limit.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -8,13 +9,68 @@ const corsHeaders = {
 
 const LANGUAGES = ["en", "ja", "pt", "es", "fr", "de", "zh", "ko", "it", "ru", "ar", "hi"];
 
+// Rate limit: 10 translations per 10 minutes per IP
+const RATE_LIMIT_CONFIG = {
+  maxRequests: 10,
+  windowMs: 10 * 60 * 1000, // 10 minutes
+};
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // Check rate limit
+  const clientId = getClientIdentifier(req);
+  const rateLimitResult = checkRateLimit(`translate:${clientId}`, RATE_LIMIT_CONFIG);
+  
+  if (!rateLimitResult.allowed) {
+    console.log(`Rate limit exceeded for ${clientId}`);
+    return rateLimitResponse(rateLimitResult.resetInMs);
+  }
+
   try {
     const { type, id, content, title, source_lang } = await req.json();
+
+    // Input validation
+    if (!type || !["thread", "post"].includes(type)) {
+      return new Response(
+        JSON.stringify({ error: "Invalid type. Must be 'thread' or 'post'" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (!id || typeof id !== "string") {
+      return new Response(
+        JSON.stringify({ error: "Invalid id" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (!source_lang || !LANGUAGES.includes(source_lang)) {
+      return new Response(
+        JSON.stringify({ error: "Invalid source_lang" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Content length limits
+    const maxContentLength = 10000;
+    const maxTitleLength = 500;
+    
+    if (content && content.length > maxContentLength) {
+      return new Response(
+        JSON.stringify({ error: `Content too long. Maximum ${maxContentLength} characters` }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (title && title.length > maxTitleLength) {
+      return new Response(
+        JSON.stringify({ error: `Title too long. Maximum ${maxTitleLength} characters` }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
     
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {

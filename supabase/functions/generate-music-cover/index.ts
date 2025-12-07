@@ -1,14 +1,30 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import { checkRateLimit, getClientIdentifier, rateLimitResponse } from "../_shared/rate-limit.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Rate limit: 5 requests per hour per IP (AI image generation is expensive)
+const RATE_LIMIT_CONFIG = {
+  maxRequests: 5,
+  windowMs: 60 * 60 * 1000, // 1 hour
+};
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
+  }
+
+  // Check rate limit
+  const clientId = getClientIdentifier(req);
+  const rateLimitResult = checkRateLimit(`music-cover:${clientId}`, RATE_LIMIT_CONFIG);
+  
+  if (!rateLimitResult.allowed) {
+    console.log(`Rate limit exceeded for ${clientId}`);
+    return rateLimitResponse(rateLimitResult.resetInMs);
   }
 
   try {
@@ -23,6 +39,21 @@ serve(async (req) => {
 
     const { trackId, title, artist } = await req.json();
 
+    // Input validation
+    if (!trackId || typeof trackId !== "string") {
+      return new Response(
+        JSON.stringify({ error: "Invalid trackId" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
+      );
+    }
+
+    if (title && typeof title !== "string") {
+      return new Response(
+        JSON.stringify({ error: "Invalid title" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
+      );
+    }
+
     // Generate a unique prompt based on track info
     const prompts = [
       `Abstract music album cover art with flowing waves of sound, deep blues and purples, modern minimalist design, high quality digital art`,
@@ -33,9 +64,11 @@ serve(async (req) => {
     ];
 
     const randomPrompt = prompts[Math.floor(Math.random() * prompts.length)];
-    const finalPrompt = artist 
-      ? `${randomPrompt}. Style inspired by ${artist}. Title: ${title}`
-      : `${randomPrompt}. Title: ${title}`;
+    const safeTitle = (title || "").slice(0, 100); // Limit title length
+    const safeArtist = (artist || "").slice(0, 100); // Limit artist length
+    const finalPrompt = safeArtist 
+      ? `${randomPrompt}. Style inspired by ${safeArtist}. Title: ${safeTitle}`
+      : `${randomPrompt}. Title: ${safeTitle}`;
 
     console.log("Generating cover with prompt:", finalPrompt);
 
