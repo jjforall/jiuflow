@@ -1359,7 +1359,7 @@ const MyPage = () => {
                       <Input
                         value={editValues.display_name_reading || ''}
                         onChange={(e) => setEditValues({ ...editValues, display_name_reading: e.target.value })}
-                        placeholder={language === "ja" ? "読み仮名（ローマ字/ひらがな）" : "Reading (romaji/hiragana)"}
+                        placeholder={language === "ja" ? "検索時の読み仮名（ローマ字）" : "Reading for search (romaji)"}
                         className="text-sm h-9"
                       />
                       <Button size="sm" onClick={() => saveField('display_name')} className="h-8 sm:h-9 active:scale-[0.98]"><Check className="w-4 h-4" /></Button>
