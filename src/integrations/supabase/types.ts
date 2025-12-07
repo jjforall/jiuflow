@@ -2504,6 +2504,22 @@ export type Database = {
           updated_at: string
         }[]
       }
+      get_subscriptions_masked: {
+        Args: never
+        Returns: {
+          created_at: string
+          current_period_end: string
+          id: string
+          plan_type: string
+          status: string
+          stripe_price_id: string
+          stripe_subscription_id: string
+          trial_end: string
+          trial_start: string
+          updated_at: string
+          user_id: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
