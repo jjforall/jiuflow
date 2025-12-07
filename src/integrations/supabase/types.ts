@@ -1524,6 +1524,7 @@ export type Database = {
           created_at: string
           date_of_birth: string | null
           display_name: string | null
+          display_name_reading: string | null
           education: Json | null
           email: string | null
           favorite_fighters: Json | null
@@ -1551,6 +1552,7 @@ export type Database = {
           created_at?: string
           date_of_birth?: string | null
           display_name?: string | null
+          display_name_reading?: string | null
           education?: Json | null
           email?: string | null
           favorite_fighters?: Json | null
@@ -1578,6 +1580,7 @@ export type Database = {
           created_at?: string
           date_of_birth?: string | null
           display_name?: string | null
+          display_name_reading?: string | null
           education?: Json | null
           email?: string | null
           favorite_fighters?: Json | null
@@ -2432,6 +2435,7 @@ export type Database = {
           cover_image_url: string | null
           created_at: string | null
           display_name: string | null
+          display_name_reading: string | null
           favorite_fighters: Json | null
           favorite_techniques: Json | null
           hobbies: Json | null
@@ -2452,6 +2456,7 @@ export type Database = {
           cover_image_url?: string | null
           created_at?: string | null
           display_name?: string | null
+          display_name_reading?: string | null
           favorite_fighters?: Json | null
           favorite_techniques?: Json | null
           hobbies?: Json | null
@@ -2472,6 +2477,7 @@ export type Database = {
           cover_image_url?: string | null
           created_at?: string | null
           display_name?: string | null
+          display_name_reading?: string | null
           favorite_fighters?: Json | null
           favorite_techniques?: Json | null
           hobbies?: Json | null
