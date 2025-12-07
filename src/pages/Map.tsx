@@ -8,8 +8,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useAuth } from "@/hooks/useAuth";
+import { useFavoriteTechniques } from "@/hooks/useFavoriteTechniques";
 import { Button } from "@/components/ui/button";
-import { Lock, Loader2, Upload, X, ChevronDown, Eye, Check, Search } from "lucide-react";
+import { Lock, Loader2, Upload, X, ChevronDown, Eye, Check, Search, Star, Heart } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { VideoUploadDialog } from "@/components/VideoUploadDialog";
 import { Badge } from "@/components/ui/badge";
@@ -63,6 +64,7 @@ const Map = () => {
   const categoryFilter = searchParams.get('category');
   const { subscribed, loading: subscriptionLoading } = useSubscription();
   const { isAdmin, user, isLoading: authLoading } = useAuth();
+  const { favorites, isFavorite, toggleFavorite } = useFavoriteTechniques();
   const [techniques, setTechniques] = useState<Technique[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [hasFetched, setHasFetched] = useState(false); // Track if we've attempted to fetch
@@ -76,6 +78,9 @@ const Map = () => {
   const [loadingStartTime] = useState(() => Date.now()); // Track when loading started
   const observerTarget = useRef<HTMLDivElement>(null);
   const PAGE_SIZE = 50;
+
+  // Get favorite techniques data
+  const favoriteTechniques = techniques.filter(tech => favorites.includes(tech.id));
 
   useEffect(() => {
     const titles = {
@@ -481,6 +486,102 @@ const Map = () => {
                 </div>
               </div>
 
+              {/* Favorites Accordion */}
+              {favoriteTechniques.length > 0 && (
+                <Accordion type="multiple" defaultValue={["favorites"]} className="w-full space-y-2 mb-4">
+                  <AccordionItem 
+                    value="favorites"
+                    className="border rounded-xl bg-gradient-to-r from-amber-500/10 to-yellow-500/10 border-amber-500/30 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all overflow-hidden"
+                  >
+                    <AccordionTrigger className="px-4 md:px-6 py-4 hover:no-underline hover:bg-gradient-to-r hover:from-amber-500/20 hover:to-transparent transition-all [&[data-state=open]>svg]:rotate-180">
+                      <div className="flex items-center justify-between w-full pr-4">
+                        <div className="flex items-center gap-3 md:gap-4 text-left">
+                          <div className="flex items-center justify-center w-10 h-10 md:w-12 md:h-12 rounded-xl font-bold text-base md:text-lg flex-shrink-0 shadow-sm border bg-amber-500/20 border-amber-500 text-amber-600">
+                            <Star className="w-5 h-5 md:w-6 md:h-6 fill-current" />
+                          </div>
+                          <div>
+                            <h3 className="text-base md:text-lg font-semibold text-foreground">
+                              {language === "ja" ? "お気に入り" : language === "pt" ? "Favoritos" : "Favorites"}
+                            </h3>
+                            <p className="text-xs md:text-sm text-muted-foreground mt-0.5">
+                              {language === "ja" 
+                                ? `${favoriteTechniques.length}本の動画` 
+                                : language === "pt" 
+                                ? `${favoriteTechniques.length} vídeos` 
+                                : `${favoriteTechniques.length} videos`}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent className="px-0 pb-0">
+                      <div className="divide-y divide-border">
+                        {favoriteTechniques.map((tech) => {
+                          const viewCount = videoViews[tech.id];
+                          const isWatched = viewCount && viewCount > 0;
+                          const seriesPrefix = tech.series_prefix || "Z";
+                          
+                          return (
+                            <div
+                              key={tech.id}
+                              className="flex items-center gap-3 md:gap-4 p-3 md:p-4 hover:bg-gradient-to-r hover:from-muted/50 hover:to-transparent transition-all group"
+                            >
+                              <Link
+                                to={`/video/${tech.id}`}
+                                className="flex items-center gap-3 md:gap-4 flex-1 min-w-0"
+                              >
+                                <div className={`flex items-center justify-center min-w-[2.5rem] h-8 md:h-10 px-2 rounded-lg font-semibold text-xs md:text-sm flex-shrink-0 transition-all shadow-sm ${
+                                  isWatched 
+                                    ? getSeriesPrefixColorsWatched(seriesPrefix) + " shadow-lg"
+                                    : getSeriesPrefixColors(seriesPrefix) + " group-hover:shadow-lg"
+                                }`}>
+                                  {seriesPrefix}-{tech.series_order || 1}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2">
+                                    <h4 className="text-sm md:text-base font-medium text-foreground group-hover:text-primary transition-colors truncate">
+                                      {getTechniqueName(tech)}
+                                    </h4>
+                                    {isWatched && (
+                                      <div className="flex items-center justify-center w-5 h-5 rounded-full bg-primary/10 flex-shrink-0">
+                                        <Check className="w-3 h-3 text-primary" />
+                                      </div>
+                                    )}
+                                  </div>
+                                  {getTechniqueDescription(tech) && (
+                                    <p className="text-xs md:text-sm text-muted-foreground line-clamp-1 mt-0.5">
+                                      {getTechniqueDescription(tech)}
+                                    </p>
+                                  )}
+                                </div>
+                              </Link>
+                              <div className="flex items-center gap-2 flex-shrink-0">
+                                {isWatched && (
+                                  <Badge variant="secondary" className="flex items-center gap-1 text-xs shadow-sm">
+                                    <Eye className="w-3 h-3" />
+                                    {viewCount}
+                                  </Badge>
+                                )}
+                                <button
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    toggleFavorite(tech.id);
+                                  }}
+                                  className="p-1.5 rounded-full hover:bg-amber-500/20 transition-colors"
+                                >
+                                  <Heart className="w-4 h-4 text-amber-500 fill-amber-500" />
+                                </button>
+                                <ChevronDown className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors -rotate-90" />
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+                </Accordion>
+              )}
+
               {/* Series-based Accordion (alphabetically ordered) */}
               <Accordion type="multiple" className="w-full space-y-2">
                 {Object.entries(seriesTechniques)
@@ -543,35 +644,39 @@ const Map = () => {
                             const isWatched = viewCount && viewCount > 0;
                             
                             return (
-                              <Link
+                              <div
                                 key={tech.id}
-                                to={`/video/${tech.id}`}
                                 className="flex items-center gap-3 md:gap-4 p-3 md:p-4 hover:bg-gradient-to-r hover:from-muted/50 hover:to-transparent transition-all group"
                               >
-                                <div className={`flex items-center justify-center min-w-[2.5rem] h-8 md:h-10 px-2 rounded-lg font-semibold text-xs md:text-sm flex-shrink-0 transition-all shadow-sm ${
-                                  isWatched 
-                                    ? getSeriesPrefixColorsWatched(seriesPrefix) + " shadow-lg"
-                                    : getSeriesPrefixColors(seriesPrefix) + " group-hover:shadow-lg"
-                                }`}>
-                                  {seriesPrefix}-{tech.series_order || index + 1}
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                  <div className="flex items-center gap-2">
-                                    <h4 className="text-sm md:text-base font-medium text-foreground group-hover:text-primary transition-colors truncate">
-                                      {getTechniqueName(tech)}
-                                    </h4>
-                                    {isWatched && (
-                                      <div className="flex items-center justify-center w-5 h-5 rounded-full bg-primary/10 flex-shrink-0">
-                                        <Check className="w-3 h-3 text-primary" />
-                                      </div>
+                                <Link
+                                  to={`/video/${tech.id}`}
+                                  className="flex items-center gap-3 md:gap-4 flex-1 min-w-0"
+                                >
+                                  <div className={`flex items-center justify-center min-w-[2.5rem] h-8 md:h-10 px-2 rounded-lg font-semibold text-xs md:text-sm flex-shrink-0 transition-all shadow-sm ${
+                                    isWatched 
+                                      ? getSeriesPrefixColorsWatched(seriesPrefix) + " shadow-lg"
+                                      : getSeriesPrefixColors(seriesPrefix) + " group-hover:shadow-lg"
+                                  }`}>
+                                    {seriesPrefix}-{tech.series_order || index + 1}
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2">
+                                      <h4 className="text-sm md:text-base font-medium text-foreground group-hover:text-primary transition-colors truncate">
+                                        {getTechniqueName(tech)}
+                                      </h4>
+                                      {isWatched && (
+                                        <div className="flex items-center justify-center w-5 h-5 rounded-full bg-primary/10 flex-shrink-0">
+                                          <Check className="w-3 h-3 text-primary" />
+                                        </div>
+                                      )}
+                                    </div>
+                                    {getTechniqueDescription(tech) && (
+                                      <p className="text-xs md:text-sm text-muted-foreground line-clamp-1 mt-0.5">
+                                        {getTechniqueDescription(tech)}
+                                      </p>
                                     )}
                                   </div>
-                                  {getTechniqueDescription(tech) && (
-                                    <p className="text-xs md:text-sm text-muted-foreground line-clamp-1 mt-0.5">
-                                      {getTechniqueDescription(tech)}
-                                    </p>
-                                  )}
-                                </div>
+                                </Link>
                                 <div className="flex items-center gap-2 flex-shrink-0">
                                   {isWatched && (
                                     <Badge variant="secondary" className="flex items-center gap-1 text-xs shadow-sm">
@@ -579,9 +684,26 @@ const Map = () => {
                                       {viewCount}
                                     </Badge>
                                   )}
+                                  <button
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      toggleFavorite(tech.id);
+                                    }}
+                                    className={`p-1.5 rounded-full transition-colors ${
+                                      isFavorite(tech.id) 
+                                        ? "hover:bg-amber-500/20" 
+                                        : "hover:bg-muted"
+                                    }`}
+                                  >
+                                    <Heart className={`w-4 h-4 transition-colors ${
+                                      isFavorite(tech.id) 
+                                        ? "text-amber-500 fill-amber-500" 
+                                        : "text-muted-foreground group-hover:text-foreground"
+                                    }`} />
+                                  </button>
                                   <ChevronDown className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors -rotate-90" />
                                 </div>
-                              </Link>
+                              </div>
                             );
                           })}
                         </div>

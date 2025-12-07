@@ -9,7 +9,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useAuth } from "@/hooks/useAuth";
-import { Lock, Eye, Target, Trophy, Flame, ArrowLeft } from "lucide-react";
+import { useFavoriteTechniques } from "@/hooks/useFavoriteTechniques";
+import { Lock, Eye, Target, Trophy, Flame, ArrowLeft, Heart } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { VideoPlayer } from "@/components/VideoPlayer";
 import { VideoThumbnail } from "@/components/ui/video-thumbnail";
@@ -64,6 +65,7 @@ const Video = () => {
   const navigate = useNavigate();
   const { subscribed, loading: subscriptionLoading } = useSubscription();
   const { isAdmin, isStaff, user } = useAuth();
+  const { isFavorite, toggleFavorite } = useFavoriteTechniques();
   const { setFloatingVideo } = useFloatingVideo();
   const { play, isPlaying, volume, setVolume, playlist, loadPlaylist } = useMusic();
   const [technique, setTechnique] = useState<Technique | null>(null);
@@ -901,7 +903,27 @@ const Video = () => {
                 </Button>
                 
                 <div className="flex flex-col gap-3">
-                  <h1 className="text-xl md:text-2xl font-light">{getTechniqueName(technique)}</h1>
+                  <div className="flex items-center justify-between">
+                    <h1 className="text-xl md:text-2xl font-light">{getTechniqueName(technique)}</h1>
+                    <button
+                      onClick={() => toggleFavorite(technique.id)}
+                      className={`p-2 rounded-full transition-all ${
+                        isFavorite(technique.id) 
+                          ? "bg-amber-500/20 hover:bg-amber-500/30" 
+                          : "bg-muted hover:bg-muted/80"
+                      }`}
+                      title={isFavorite(technique.id) 
+                        ? (language === "ja" ? "お気に入りから削除" : language === "pt" ? "Remover dos favoritos" : "Remove from favorites")
+                        : (language === "ja" ? "お気に入りに追加" : language === "pt" ? "Adicionar aos favoritos" : "Add to favorites")
+                      }
+                    >
+                      <Heart className={`w-5 h-5 transition-colors ${
+                        isFavorite(technique.id) 
+                          ? "text-amber-500 fill-amber-500" 
+                          : "text-muted-foreground"
+                      }`} />
+                    </button>
+                  </div>
                   <span className="inline-block px-3 py-1 text-xs border border-border w-fit">
                     {technique.category}
                   </span>
