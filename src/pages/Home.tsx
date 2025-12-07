@@ -11,7 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import TechniqueFlowchart from "@/components/TechniqueFlowchart";
 import { Badge } from "@/components/ui/badge";
 import { Award, Play, BookOpen, FileText, CheckCircle } from "lucide-react";
-import murataImage from "@/assets/murata-ryozo-new.jpg";
+import murataImage from "@/assets/murata-world-champion.jpg";
 
 const Home = () => {
   const navigate = useNavigate();
