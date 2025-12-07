@@ -2521,6 +2521,14 @@ export type Database = {
         Returns: string
       }
       can_apply_for_brothers: { Args: { user_uuid: string }; Returns: boolean }
+      check_profile_exists_private: {
+        Args: { p_identifier: string; p_is_uuid?: boolean }
+        Returns: {
+          avatar_url: string
+          display_name: string
+          profile_exists: boolean
+        }[]
+      }
       generate_referral_code: { Args: never; Returns: string }
       get_printful_orders_masked: {
         Args: never
