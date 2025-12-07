@@ -2227,51 +2227,6 @@ export type Database = {
       }
     }
     Views: {
-      printful_orders_secure: {
-        Row: {
-          cart_items: Json | null
-          created_at: string | null
-          customer_email: string | null
-          error_message: string | null
-          id: string | null
-          printful_order_id: string | null
-          shipping_address: Json | null
-          shipping_name: string | null
-          status: string | null
-          stripe_session_id: string | null
-          total_amount: number | null
-          updated_at: string | null
-        }
-        Insert: {
-          cart_items?: Json | null
-          created_at?: string | null
-          customer_email?: never
-          error_message?: string | null
-          id?: string | null
-          printful_order_id?: string | null
-          shipping_address?: never
-          shipping_name?: never
-          status?: string | null
-          stripe_session_id?: string | null
-          total_amount?: number | null
-          updated_at?: string | null
-        }
-        Update: {
-          cart_items?: Json | null
-          created_at?: string | null
-          customer_email?: never
-          error_message?: string | null
-          id?: string | null
-          printful_order_id?: string | null
-          shipping_address?: never
-          shipping_name?: never
-          status?: string | null
-          stripe_session_id?: string | null
-          total_amount?: number | null
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
       public_dojos: {
         Row: {
           access_info: string | null
@@ -2529,6 +2484,23 @@ export type Database = {
       }
       can_apply_for_brothers: { Args: { user_uuid: string }; Returns: boolean }
       generate_referral_code: { Args: never; Returns: string }
+      get_printful_orders_masked: {
+        Args: never
+        Returns: {
+          cart_items: Json
+          created_at: string
+          customer_email: string
+          error_message: string
+          id: string
+          printful_order_id: string
+          shipping_address: Json
+          shipping_name: string
+          status: string
+          stripe_session_id: string
+          total_amount: number
+          updated_at: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
