@@ -1267,7 +1267,7 @@ const MyPage = () => {
             
             {/* Profile Header */}
             <div className="px-3 sm:px-6 -mt-10 sm:-mt-16">
-              <div className="flex items-end gap-2">
+              <div className="flex items-end justify-between gap-2">
                 <div className="relative group flex-shrink-0">
                   <Avatar className="h-20 w-20 sm:h-32 sm:w-32 border-3 sm:border-4 border-background shadow-xl">
                     <AvatarImage src={profile?.avatar_url || undefined} />
@@ -1284,29 +1284,29 @@ const MyPage = () => {
                     <Upload className="w-3 h-3 sm:w-4 sm:h-4" />
                   </Button>
                 </div>
-              </div>
-              
-              {/* Action buttons moved below avatar row */}
-              <div className="flex flex-wrap gap-2 mt-3 sm:mt-4">
-                <Button 
-                  variant="outline"
-                  onClick={() => {
-                    const profileUrl = profile?.username || user?.id;
-                    if (!profileUrl) {
-                      toast.error("プロフィールURLを取得できませんでした");
-                      return;
-                    }
-                    window.open(`/${profileUrl}`, '_blank');
-                  }}
-                  className="gap-1.5 sm:gap-2 text-xs h-8 sm:h-9 px-2 sm:px-3 active:scale-[0.98]"
-                  size="sm"
-                  disabled={!user?.id}
-                >
-                  <ExternalLink className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                  <span className="hidden sm:inline">{language === "ja" ? "公開プロフィール" : "View Profile"}</span>
-                  <span className="sm:hidden">{language === "ja" ? "公開" : "View"}</span>
-                </Button>
-                <AthleteApplicationForm />
+                
+                {/* Action buttons - right aligned in cover image bottom space */}
+                <div className="flex flex-wrap gap-2 mb-2 sm:mb-3">
+                  <Button 
+                    variant="outline"
+                    onClick={() => {
+                      const profileUrl = profile?.username || user?.id;
+                      if (!profileUrl) {
+                        toast.error("プロフィールURLを取得できませんでした");
+                        return;
+                      }
+                      window.open(`/${profileUrl}`, '_blank');
+                    }}
+                    className="gap-1.5 sm:gap-2 text-xs h-8 sm:h-9 px-2 sm:px-3 active:scale-[0.98]"
+                    size="sm"
+                    disabled={!user?.id}
+                  >
+                    <ExternalLink className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                    <span className="hidden sm:inline">{language === "ja" ? "公開プロフィール" : "View Profile"}</span>
+                    <span className="sm:hidden">{language === "ja" ? "公開" : "View"}</span>
+                  </Button>
+                  <AthleteApplicationForm />
+                </div>
               </div>
               
               <div className="mt-3 sm:mt-4">
