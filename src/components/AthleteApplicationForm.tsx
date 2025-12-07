@@ -149,8 +149,8 @@ export const AthleteApplicationForm = () => {
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button onClick={handleOpen} className="gap-2 text-xs sm:text-sm" size="sm">
-          <Star className="h-4 w-4" />
+        <Button onClick={handleOpen} variant="default" className="gap-1.5 sm:gap-2 text-xs h-8 sm:h-9 px-2 sm:px-3 active:scale-[0.98]" size="sm">
+          <Star className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           <span className="hidden sm:inline">
             {language === "ja"
               ? "有名選手として申請"
