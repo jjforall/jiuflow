@@ -1192,6 +1192,35 @@ export type Database = {
           },
         ]
       }
+      favorite_techniques: {
+        Row: {
+          created_at: string
+          id: string
+          technique_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          technique_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          technique_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "favorite_techniques_technique_id_fkey"
+            columns: ["technique_id"]
+            isOneToOne: false
+            referencedRelation: "techniques"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       founder_plan_count: {
         Row: {
           count: number
