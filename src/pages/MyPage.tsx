@@ -1286,7 +1286,7 @@ const MyPage = () => {
                 </div>
                 
                 {/* Action buttons - right aligned in cover image bottom space */}
-                <div className="flex flex-wrap gap-2 mb-2 sm:mb-3">
+                <div className="flex flex-wrap gap-2 items-end pb-0">
                   <Button 
                     variant="outline"
                     onClick={() => {
