@@ -1233,8 +1233,8 @@ const MyPage = () => {
       <main className="pt-20 sm:pt-32 pb-12 sm:pb-20 px-3 sm:px-6">
         <div className="max-w-4xl mx-auto relative">
           <div className="relative mb-8 sm:mb-16 animate-fade-up">
-            {/* Cover Image Area */}
-            <div className="h-28 sm:h-40 md:h-56 bg-gradient-to-r from-primary/30 via-primary/20 to-accent/30 rounded-t-xl sm:rounded-t-2xl shadow-lg relative overflow-hidden group">
+            {/* Cover Image Area - symmetric rounded corners */}
+            <div className="h-28 sm:h-40 md:h-56 bg-gradient-to-r from-primary/30 via-primary/20 to-accent/30 rounded-xl sm:rounded-2xl shadow-lg relative overflow-hidden group">
               <img 
                 src={getCoverImageUrl(profile?.cover_image_url || null, user?.id || null)} 
                 alt="Cover" 
@@ -1267,8 +1267,8 @@ const MyPage = () => {
             
             {/* Profile Header */}
             <div className="px-3 sm:px-6 -mt-10 sm:-mt-16">
-              <div className="flex items-end justify-between gap-2">
-                <div className="relative group">
+              <div className="flex items-end gap-2">
+                <div className="relative group flex-shrink-0">
                   <Avatar className="h-20 w-20 sm:h-32 sm:w-32 border-3 sm:border-4 border-background shadow-xl">
                     <AvatarImage src={profile?.avatar_url || undefined} />
                     <AvatarFallback className="text-xl sm:text-3xl">
@@ -1284,27 +1284,29 @@ const MyPage = () => {
                     <Upload className="w-3 h-3 sm:w-4 sm:h-4" />
                   </Button>
                 </div>
-                <div className="flex flex-col gap-1.5 sm:flex-row sm:gap-2 mb-2 sm:mb-4">
-                  <Button 
-                    variant="outline"
-                    onClick={() => {
-                      const profileUrl = profile?.username || user?.id;
-                      if (!profileUrl) {
-                        toast.error("プロフィールURLを取得できませんでした");
-                        return;
-                      }
-                      window.open(`/${profileUrl}`, '_blank');
-                    }}
-                    className="gap-1.5 sm:gap-2 text-xs h-8 sm:h-9 px-2 sm:px-3 active:scale-[0.98]"
-                    size="sm"
-                    disabled={!user?.id}
-                  >
-                    <ExternalLink className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                    <span className="hidden sm:inline">{language === "ja" ? "公開プロフィール" : "View Profile"}</span>
-                    <span className="sm:hidden">{language === "ja" ? "公開" : "View"}</span>
-                  </Button>
-                  <AthleteApplicationForm />
-                </div>
+              </div>
+              
+              {/* Action buttons moved below avatar row */}
+              <div className="flex flex-wrap gap-2 mt-3 sm:mt-4">
+                <Button 
+                  variant="outline"
+                  onClick={() => {
+                    const profileUrl = profile?.username || user?.id;
+                    if (!profileUrl) {
+                      toast.error("プロフィールURLを取得できませんでした");
+                      return;
+                    }
+                    window.open(`/${profileUrl}`, '_blank');
+                  }}
+                  className="gap-1.5 sm:gap-2 text-xs h-8 sm:h-9 px-2 sm:px-3 active:scale-[0.98]"
+                  size="sm"
+                  disabled={!user?.id}
+                >
+                  <ExternalLink className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                  <span className="hidden sm:inline">{language === "ja" ? "公開プロフィール" : "View Profile"}</span>
+                  <span className="sm:hidden">{language === "ja" ? "公開" : "View"}</span>
+                </Button>
+                <AthleteApplicationForm />
               </div>
               
               <div className="mt-3 sm:mt-4">
