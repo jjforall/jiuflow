@@ -1234,7 +1234,7 @@ const MyPage = () => {
         <div className="max-w-4xl mx-auto relative">
           <div className="relative mb-8 sm:mb-16 animate-fade-up">
             {/* Cover Image Area - symmetric rounded corners */}
-            <div className="h-28 sm:h-40 md:h-56 bg-gradient-to-r from-primary/30 via-primary/20 to-accent/30 rounded-xl sm:rounded-2xl shadow-lg relative overflow-hidden group">
+            <div className="h-32 sm:h-44 md:h-64 bg-gradient-to-r from-primary/30 via-primary/20 to-accent/30 rounded-xl sm:rounded-2xl shadow-lg relative overflow-hidden group">
               <img 
                 src={getCoverImageUrl(profile?.cover_image_url || null, user?.id || null)} 
                 alt="Cover" 
