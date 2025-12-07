@@ -136,6 +136,8 @@ export default function UserProfile() {
   const [followersCount, setFollowersCount] = useState(0);
   const [followingCount, setFollowingCount] = useState(0);
   const [userDojos, setUserDojos] = useState<Array<{ dojo: any; relationship_type: string }>>([]);
+  const [isPrivateProfile, setIsPrivateProfile] = useState(false);
+  const [privateProfileInfo, setPrivateProfileInfo] = useState<{ display_name: string | null; avatar_url: string | null } | null>(null);
 
   useEffect(() => {
     const checkCurrentUser = async () => {
@@ -179,6 +181,9 @@ export default function UserProfile() {
     }
 
     setLoading(true);
+    setIsPrivateProfile(false);
+    setPrivateProfileInfo(null);
+    
     try {
       console.log('Resolving user with identifier:', identifier);
       
@@ -229,6 +234,26 @@ export default function UserProfile() {
           profileData = data;
         } else {
           profileData = publicProfile;
+        }
+        
+        // If no public profile found, check if user exists but is private
+        if (!profileData) {
+          // Use RPC function to check if profile exists and is private
+          const { data: privateCheck } = await supabase.rpc('check_profile_exists_private', {
+            p_identifier: identifier,
+            p_is_uuid: isUUID
+          });
+          
+          if (privateCheck && privateCheck.length > 0 && privateCheck[0].exists) {
+            // Profile exists but is private
+            setIsPrivateProfile(true);
+            setPrivateProfileInfo({
+              display_name: privateCheck[0].display_name,
+              avatar_url: privateCheck[0].avatar_url
+            });
+            setLoading(false);
+            return;
+          }
         }
         
         // If viewing own profile by username, fetch full data
