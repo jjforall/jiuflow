@@ -2203,7 +2203,6 @@ export type Database = {
           description: string | null
           description_ja: string | null
           description_pt: string | null
-          email: string | null
           facebook: string | null
           facilities: Json | null
           faq: Json | null
@@ -2213,7 +2212,6 @@ export type Database = {
           instagram: string | null
           instructors: Json | null
           is_verified: boolean | null
-          line: string | null
           location: string | null
           logo_url: string | null
           media_coverage: Json | null
@@ -2229,7 +2227,6 @@ export type Database = {
           online_resources_pt: string | null
           opening_hours: Json | null
           perks: Json | null
-          phone: string | null
           pricing: Json | null
           rules: string | null
           rules_ja: string | null
@@ -2260,7 +2257,6 @@ export type Database = {
           description?: string | null
           description_ja?: string | null
           description_pt?: string | null
-          email?: never
           facebook?: string | null
           facilities?: Json | null
           faq?: Json | null
@@ -2270,7 +2266,6 @@ export type Database = {
           instagram?: string | null
           instructors?: Json | null
           is_verified?: boolean | null
-          line?: string | null
           location?: string | null
           logo_url?: string | null
           media_coverage?: Json | null
@@ -2286,7 +2281,6 @@ export type Database = {
           online_resources_pt?: string | null
           opening_hours?: Json | null
           perks?: Json | null
-          phone?: never
           pricing?: Json | null
           rules?: string | null
           rules_ja?: string | null
@@ -2317,7 +2311,6 @@ export type Database = {
           description?: string | null
           description_ja?: string | null
           description_pt?: string | null
-          email?: never
           facebook?: string | null
           facilities?: Json | null
           faq?: Json | null
@@ -2327,7 +2320,6 @@ export type Database = {
           instagram?: string | null
           instructors?: Json | null
           is_verified?: boolean | null
-          line?: string | null
           location?: string | null
           logo_url?: string | null
           media_coverage?: Json | null
@@ -2343,7 +2335,6 @@ export type Database = {
           online_resources_pt?: string | null
           opening_hours?: Json | null
           perks?: Json | null
-          phone?: never
           pricing?: Json | null
           rules?: string | null
           rules_ja?: string | null
