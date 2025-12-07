@@ -89,17 +89,18 @@ export const FollowedCelebrities = ({ userId }: FollowedCelebritiesProps) => {
         .eq('follower_id', userId);
 
       if (!userFollowsError && userFollows && userFollows.length > 0) {
-        const followingIds = userFollows.map(f => f.following_id);
-        followingIds.forEach(id => followingSet.add(id));
+        const userFollowingIds = userFollows.map(f => f.following_id);
+        userFollowingIds.forEach(id => followingSet.add(id));
         
+        // Use public_profiles view to bypass RLS restrictions
         const { data: profiles, error: profilesError } = await supabase
-          .from('profiles')
+          .from('public_profiles')
           .select('id, display_name, avatar_url, belt_history, username')
-          .in('id', followingIds);
+          .in('id', userFollowingIds);
 
         if (!profilesError && profiles) {
           allFollowed.push(...profiles.map(p => ({
-            id: p.id,
+            id: p.id!,
             display_name: p.display_name || p.username || 'Unknown',
             avatar_url: p.avatar_url,
             belt_history: p.belt_history,
