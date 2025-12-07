@@ -1811,8 +1811,13 @@ const MyPage = () => {
                               "北海道選手権",
                               "夏季柔術甲子園"        // Summer Jiu-Jitsu Koshien (10月)
                             ],
+                              "SJJIF": [
+                                "世界選手権",
+                                "アジア選手権",
+                                "各国選手権"
+                              ],
                               "パンパシフィック選手権": ["Champion"],
-                              "その他": []
+                              "custom_org": []
                             };
 
                             const selectedOrgTitles = title.organization ? organizationTitles[title.organization] || [] : [];
@@ -1842,6 +1847,7 @@ const MyPage = () => {
                                     </SelectTrigger>
                                     <SelectContent className="bg-popover z-50">
                                       <SelectItem value="SJJJF">SJJJF</SelectItem>
+                                      <SelectItem value="SJJIF">SJJIF</SelectItem>
                                       <SelectItem value="IBJJF">IBJJF</SelectItem>
                                       <SelectItem value="JBJJF">JBJJF</SelectItem>
                                       <SelectItem value="ADCC">ADCC</SelectItem>
@@ -1855,9 +1861,18 @@ const MyPage = () => {
                                       <SelectItem value="Combat Jiu-Jitsu Worlds">Combat Jiu-Jitsu Worlds</SelectItem>
                                       <SelectItem value="Grappling Industries">Grappling Industries</SelectItem>
                                       <SelectItem value="パンパシフィック選手権">パンパシフィック選手権</SelectItem>
-                                      <SelectItem value="その他">{language === "ja" ? "その他" : "Other"}</SelectItem>
+                                      <SelectItem value="custom_org">{language === "ja" ? "その他（カスタム入力）" : "Other (Custom)"}</SelectItem>
                                     </SelectContent>
                                   </Select>
+                                  
+                                  {title.organization === "custom_org" && (
+                                    <Input
+                                      value={title.customOrganization || ''}
+                                      onChange={(e) => updateTitle(index, 'customOrganization', e.target.value)}
+                                      placeholder={language === "ja" ? "団体名を入力" : "Enter organization name"}
+                                      className="col-span-3 h-11"
+                                    />
+                                  )}
                                   
                                   <Select
                                     value={title.year || ''}
