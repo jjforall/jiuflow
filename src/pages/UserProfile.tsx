@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { supabase } from "@/integrations/supabase/client";
 import { UserVideoCard } from "@/components/UserVideoCard";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { User, Video, Edit2, Check, X, Plus, Trash2, Calendar } from "lucide-react";
+import { User, Video, Edit2, Check, X, Plus, Trash2, Calendar, Lock, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { EventCard } from "@/components/EventCard";
@@ -119,6 +119,7 @@ interface Profile {
 export default function UserProfile() {
   const { slugOrUsername: identifier } = useParams();
   const { language } = useLanguage();
+  const navigate = useNavigate();
   const [videos, setVideos] = useState<UserVideo[]>([]);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -239,12 +240,12 @@ export default function UserProfile() {
         // If no public profile found, check if user exists but is private
         if (!profileData) {
           // Use RPC function to check if profile exists and is private
-          const { data: privateCheck } = await supabase.rpc('check_profile_exists_private', {
+          const { data: privateCheck } = await supabase.rpc('check_profile_exists_private' as any, {
             p_identifier: identifier,
             p_is_uuid: isUUID
-          });
+          }) as { data: Array<{ profile_exists: boolean; display_name: string | null; avatar_url: string | null }> | null };
           
-          if (privateCheck && privateCheck.length > 0 && privateCheck[0].exists) {
+          if (privateCheck && privateCheck.length > 0 && privateCheck[0].profile_exists) {
             // Profile exists but is private
             setIsPrivateProfile(true);
             setPrivateProfileInfo({
@@ -686,6 +687,76 @@ export default function UserProfile() {
       toast.error(language === "ja" ? "カバー画像の更新に失敗しました" : "Failed to update cover image");
     }
   };
+
+  // Private profile display
+  if (isPrivateProfile) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-background via-background to-accent/5">
+        <ChristmasSnow />
+        <Navigation />
+        
+        <main className="pt-24 pb-20 px-4 md:px-6">
+          <div className="max-w-2xl mx-auto animate-fade-up">
+            {/* Private Profile Card */}
+            <Card className="overflow-hidden border-0 shadow-2xl bg-gradient-to-br from-card via-card to-accent/5">
+              {/* Decorative Header */}
+              <div className="h-32 bg-gradient-to-br from-primary/20 via-accent/10 to-primary/5 relative overflow-hidden">
+                <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-primary/10 via-transparent to-transparent" />
+                <div className="absolute top-4 right-4 w-24 h-24 bg-primary/10 rounded-full blur-2xl" />
+                <div className="absolute bottom-0 left-0 w-32 h-32 bg-accent/10 rounded-full blur-2xl" />
+              </div>
+              
+              <CardContent className="pt-0 pb-12 px-8 text-center -mt-16 relative z-10">
+                {/* Avatar */}
+                <Avatar className="h-28 w-28 mx-auto ring-4 ring-background shadow-xl mb-6">
+                  {privateProfileInfo?.avatar_url ? (
+                    <AvatarImage src={privateProfileInfo.avatar_url} />
+                  ) : null}
+                  <AvatarFallback className="text-3xl font-bold bg-gradient-to-br from-muted to-muted-foreground/20 text-muted-foreground">
+                    <Lock className="w-10 h-10" />
+                  </AvatarFallback>
+                </Avatar>
+                
+                {/* Name if available */}
+                {privateProfileInfo?.display_name && (
+                  <h2 className="text-2xl font-bold text-foreground mb-2">
+                    {privateProfileInfo.display_name}
+                  </h2>
+                )}
+                
+                {/* Private Badge */}
+                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-muted/50 border border-border/50 mb-6">
+                  <Lock className="w-4 h-4 text-muted-foreground" />
+                  <span className="text-sm font-medium text-muted-foreground">
+                    {language === "ja" ? "非公開アカウント" : "Private Account"}
+                  </span>
+                </div>
+                
+                {/* Message */}
+                <p className="text-muted-foreground leading-relaxed mb-8 max-w-md mx-auto">
+                  {language === "ja" 
+                    ? "このプロフィールは非公開に設定されています。プロフィールの内容を見ることはできません。"
+                    : "This profile is set to private. You cannot view the profile content."}
+                </p>
+                
+                {/* Action Button */}
+                <Button 
+                  variant="outline" 
+                  onClick={() => navigate(-1)}
+                  className="group"
+                >
+                  <ArrowLeft className="w-4 h-4 mr-2 group-hover:-translate-x-1 transition-transform" />
+                  {language === "ja" ? "戻る" : "Go Back"}
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        </main>
+        
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-background to-accent/5">
