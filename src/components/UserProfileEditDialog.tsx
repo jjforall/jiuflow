@@ -25,6 +25,7 @@ export const UserProfileEditDialog = ({ open, onOpenChange, userId, onSuccess }:
   const [education, setEducation] = useState<Array<{school: string; degree?: string; period?: string}>>([]);
   const [workExperience, setWorkExperience] = useState<Array<{company: string; position: string; period?: string; description?: string}>>([]);
   const [titles, setTitles] = useState<Array<{title: string; rank?: string; organization?: string; customTitle?: string; weight_class?: string}>>([]);
+  const [favoriteTechniques, setFavoriteTechniques] = useState<string[]>([]);
   const [organizationId, setOrganizationId] = useState<string>("");
   const [organizations, setOrganizations] = useState<Array<{id: string; name: string; name_ja: string}>>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -55,7 +56,7 @@ export const UserProfileEditDialog = ({ open, onOpenChange, userId, onSuccess }:
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('display_name, bio, avatar_url, username, education, work_experience, titles, organization_id')
+        .select('display_name, bio, avatar_url, username, education, work_experience, titles, organization_id, favorite_techniques')
         .eq('id', userId)
         .single();
 
@@ -69,6 +70,7 @@ export const UserProfileEditDialog = ({ open, onOpenChange, userId, onSuccess }:
       setWorkExperience((data?.work_experience as any) || []);
       setTitles((data?.titles as any) || []);
       setOrganizationId(data?.organization_id || "");
+      setFavoriteTechniques((data?.favorite_techniques as string[]) || []);
     } catch (error) {
       console.error('Error loading profile:', error);
     }
@@ -146,8 +148,9 @@ export const UserProfileEditDialog = ({ open, onOpenChange, userId, onSuccess }:
           username: username.trim() || null,
           education: education.filter(e => e.school.trim()),
           work_experience: workExperience.filter(w => w.company.trim() && w.position.trim()),
-          titles: titles.filter(t => t.title || t.customTitle),
+          titles: titles.filter(t => (t.title && t.title !== "custom") || (t.title === "custom" && t.customTitle?.trim())),
           organization_id: organizationId || null,
+          favorite_techniques: favoriteTechniques.filter(t => t.trim()),
         })
         .eq('id', userId);
 
@@ -508,6 +511,45 @@ export const UserProfileEditDialog = ({ open, onOpenChange, userId, onSuccess }:
               onClick={() => setTitles([...titles, { title: "", customTitle: "" }])}
             >
               {language === "ja" ? "タイトルを追加" : "Add Title"}
+            </Button>
+          </div>
+
+          {/* Favorite Techniques Section */}
+          <div className="space-y-2">
+            <Label>
+              {language === "ja" ? "好きな技" : "Favorite Techniques"}
+            </Label>
+            {favoriteTechniques.map((technique, index) => (
+              <div key={index} className="flex gap-2">
+                <Input
+                  placeholder={language === "ja" ? "技名（例：三角絞め）" : "Technique name (e.g. Triangle Choke)"}
+                  value={technique}
+                  onChange={(e) => {
+                    const newTechniques = [...favoriteTechniques];
+                    newTechniques[index] = e.target.value;
+                    setFavoriteTechniques(newTechniques);
+                  }}
+                  className="flex-1"
+                />
+                <Button
+                  type="button"
+                  variant="destructive"
+                  size="icon"
+                  onClick={() => {
+                    const newTechniques = favoriteTechniques.filter((_, i) => i !== index);
+                    setFavoriteTechniques(newTechniques);
+                  }}
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+            ))}
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setFavoriteTechniques([...favoriteTechniques, ""])}
+            >
+              {language === "ja" ? "技を追加" : "Add Technique"}
             </Button>
           </div>
 
