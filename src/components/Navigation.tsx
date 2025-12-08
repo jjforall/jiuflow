@@ -30,7 +30,7 @@ const Navigation = () => {
   const [canAccessAdmin, setCanAccessAdmin] = useState(false);
   const { subscribed, loading: subscriptionLoading } = useSubscription();
   const [showOpenMatBadge, setShowOpenMatBadge] = useState(false);
-  const [hasUnreadNotifications, setHasUnreadNotifications] = useState(true); // TODO: Replace with real notification check
+  const [hasUnreadNotifications, setHasUnreadNotifications] = useState(false); // Will be true when there are actual notifications
 
   // Check if user has seen the Open Mat notification
   useEffect(() => {
