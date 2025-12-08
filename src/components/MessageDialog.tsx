@@ -7,7 +7,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useTranslation } from '@/hooks/useTranslation';
-import { Send, Loader2 } from 'lucide-react';
+import { Send, Loader2, Paperclip, X, Image, FileText, Download } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 
@@ -18,6 +18,9 @@ interface Message {
   content: string;
   created_at: string;
   read_at: string | null;
+  attachment_url?: string | null;
+  attachment_type?: string | null;
+  attachment_name?: string | null;
 }
 
 interface MessageDialogProps {
@@ -41,7 +44,10 @@ export const MessageDialog = ({
   const [newMessage, setNewMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isSending, setIsSending] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Load messages
   useEffect(() => {
@@ -114,23 +120,96 @@ export const MessageDialog = ({
     }
   }, [messages]);
 
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Max 10MB
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error(t('fileTooLarge', 'ファイルサイズは10MB以下にしてください'));
+      return;
+    }
+
+    setSelectedFile(file);
+  };
+
+  const removeSelectedFile = () => {
+    setSelectedFile(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const uploadFile = async (file: File): Promise<{ url: string; type: string; name: string } | null> => {
+    if (!user) return null;
+
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${user.id}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('message-attachments')
+      .upload(fileName, file);
+
+    if (uploadError) {
+      console.error('Upload error:', uploadError);
+      throw uploadError;
+    }
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('message-attachments')
+      .getPublicUrl(fileName);
+
+    // Since the bucket is private, we need to get a signed URL
+    const { data: signedData } = await supabase.storage
+      .from('message-attachments')
+      .createSignedUrl(fileName, 60 * 60 * 24 * 7); // 7 days
+
+    return {
+      url: signedData?.signedUrl || publicUrl,
+      type: file.type,
+      name: file.name
+    };
+  };
+
   const handleSend = async () => {
-    if (!newMessage.trim() || !user || isSending) return;
+    if ((!newMessage.trim() && !selectedFile) || !user || isSending) return;
 
     setIsSending(true);
-    const { error } = await supabase.from('messages').insert({
-      sender_id: user.id,
-      receiver_id: recipientId,
-      content: newMessage.trim()
-    });
+    setIsUploading(!!selectedFile);
 
-    if (error) {
-      console.error('Error sending message:', error);
+    try {
+      let attachmentData: { url: string; type: string; name: string } | null = null;
+
+      if (selectedFile) {
+        attachmentData = await uploadFile(selectedFile);
+      }
+
+      const { error } = await supabase.from('messages').insert({
+        sender_id: user.id,
+        receiver_id: recipientId,
+        content: newMessage.trim(),
+        attachment_url: attachmentData?.url || null,
+        attachment_type: attachmentData?.type || null,
+        attachment_name: attachmentData?.name || null
+      });
+
+      if (error) {
+        console.error('Error sending message:', error);
+        toast.error(t('messageSendError', 'メッセージの送信に失敗しました'));
+      } else {
+        setNewMessage('');
+        setSelectedFile(null);
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
+      }
+    } catch (error) {
+      console.error('Error:', error);
       toast.error(t('messageSendError', 'メッセージの送信に失敗しました'));
-    } else {
-      setNewMessage('');
     }
+
     setIsSending(false);
+    setIsUploading(false);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -138,6 +217,42 @@ export const MessageDialog = ({
       e.preventDefault();
       handleSend();
     }
+  };
+
+  const isImageType = (type: string | null | undefined) => {
+    return type?.startsWith('image/');
+  };
+
+  const renderAttachment = (message: Message) => {
+    if (!message.attachment_url) return null;
+
+    if (isImageType(message.attachment_type)) {
+      return (
+        <a href={message.attachment_url} target="_blank" rel="noopener noreferrer" className="block mt-2">
+          <img
+            src={message.attachment_url}
+            alt={message.attachment_name || 'Image'}
+            className="max-w-full max-h-48 rounded-lg object-cover"
+            onError={(e) => {
+              (e.target as HTMLImageElement).style.display = 'none';
+            }}
+          />
+        </a>
+      );
+    }
+
+    return (
+      <a
+        href={message.attachment_url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex items-center gap-2 mt-2 p-2 rounded bg-background/50 hover:bg-background/80 transition-colors"
+      >
+        <FileText className="h-4 w-4" />
+        <span className="text-sm truncate flex-1">{message.attachment_name || 'File'}</span>
+        <Download className="h-4 w-4" />
+      </a>
+    );
   };
 
   return (
@@ -178,9 +293,12 @@ export const MessageDialog = ({
                           : 'bg-muted'
                       }`}
                     >
-                      <p className="text-sm whitespace-pre-wrap break-words">
-                        {message.content}
-                      </p>
+                      {message.content && (
+                        <p className="text-sm whitespace-pre-wrap break-words">
+                          {message.content}
+                        </p>
+                      )}
+                      {renderAttachment(message)}
                       <p className={`text-xs mt-1 ${isOwn ? 'text-primary-foreground/70' : 'text-muted-foreground'}`}>
                         {format(new Date(message.created_at), 'MM/dd HH:mm')}
                       </p>
@@ -192,7 +310,43 @@ export const MessageDialog = ({
           )}
         </ScrollArea>
 
+        {/* Selected file preview */}
+        {selectedFile && (
+          <div className="flex items-center gap-2 p-2 bg-muted rounded-lg">
+            {selectedFile.type.startsWith('image/') ? (
+              <Image className="h-4 w-4 text-muted-foreground" />
+            ) : (
+              <FileText className="h-4 w-4 text-muted-foreground" />
+            )}
+            <span className="text-sm truncate flex-1">{selectedFile.name}</span>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6"
+              onClick={removeSelectedFile}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
+
         <div className="flex gap-2 pt-4 border-t">
+          <input
+            ref={fileInputRef}
+            type="file"
+            className="hidden"
+            onChange={handleFileSelect}
+            accept="image/*,.pdf,.doc,.docx,.txt"
+          />
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-[60px] w-[50px] shrink-0"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isSending}
+          >
+            <Paperclip className="h-4 w-4" />
+          </Button>
           <Textarea
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
@@ -203,9 +357,9 @@ export const MessageDialog = ({
           />
           <Button
             onClick={handleSend}
-            disabled={!newMessage.trim() || isSending}
+            disabled={(!newMessage.trim() && !selectedFile) || isSending}
             size="icon"
-            className="h-[60px] w-[60px]"
+            className="h-[60px] w-[60px] shrink-0"
           >
             {isSending ? (
               <Loader2 className="h-4 w-4 animate-spin" />
