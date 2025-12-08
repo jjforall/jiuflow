@@ -7,6 +7,11 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+const logStep = (step: string, details?: unknown) => {
+  const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
+  console.log(`[VIDEO-PURCHASE] ${step}${detailsStr}`);
+};
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -30,16 +35,25 @@ serve(async (req) => {
       throw new Error("Video ID is required");
     }
 
-    // Get video details
+    logStep("Processing video purchase request", { videoId, userId: user.id });
+
+    // Get video details including featured_user_id
     const { data: video, error: videoError } = await supabaseClient
       .from('user_videos')
-      .select('*')
+      .select('*, featured_user_id')
       .eq('id', videoId)
       .single();
 
     if (videoError || !video) {
       throw new Error("Video not found");
     }
+
+    logStep("Video found", { 
+      title: video.title, 
+      price: video.price,
+      ownerId: video.user_id,
+      featuredUserId: video.featured_user_id 
+    });
 
     if (!video.price || video.price === 0) {
       throw new Error("This video is free");
@@ -67,6 +81,29 @@ serve(async (req) => {
       customerId = customers.data[0].id;
     }
 
+    // Calculate revenue split
+    // 10% platform fee, then 30% to featured user (if exists), 70% to owner
+    const totalAmount = video.price;
+    const platformFee = Math.floor(totalAmount * 0.10);
+    const netAmount = totalAmount - platformFee;
+    
+    let ownerAmount = netAmount;
+    let featuredUserAmount = 0;
+    
+    if (video.featured_user_id) {
+      featuredUserAmount = Math.floor(netAmount * 0.30);
+      ownerAmount = netAmount - featuredUserAmount;
+    }
+
+    logStep("Revenue split calculated", {
+      totalAmount,
+      platformFee,
+      netAmount,
+      ownerAmount,
+      featuredUserAmount,
+      hasFeaturedUser: !!video.featured_user_id
+    });
+
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       customer_email: customerId ? undefined : user.email,
@@ -87,11 +124,19 @@ serve(async (req) => {
       success_url: `${req.headers.get("origin")}/user/${video.user_id}?purchase=success`,
       cancel_url: `${req.headers.get("origin")}/user/${video.user_id}`,
       metadata: {
+        type: "video_purchase",
         videoId,
-        userId: user.id,
-        amount: video.price.toString(),
+        buyerId: user.id,
+        ownerId: video.user_id,
+        featuredUserId: video.featured_user_id || "",
+        totalAmount: totalAmount.toString(),
+        platformFee: platformFee.toString(),
+        ownerAmount: ownerAmount.toString(),
+        featuredUserAmount: featuredUserAmount.toString(),
       },
     });
+
+    logStep("Checkout session created", { sessionId: session.id });
 
     return new Response(JSON.stringify({ url: session.url }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -99,7 +144,7 @@ serve(async (req) => {
     });
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    console.error("Error creating video purchase:", errorMessage);
+    logStep("ERROR", { error: errorMessage });
     return new Response(JSON.stringify({ error: errorMessage }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,
