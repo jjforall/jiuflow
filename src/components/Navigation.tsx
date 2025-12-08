@@ -355,17 +355,7 @@ const Navigation = () => {
               className="w-[85vw] max-w-[400px] p-0 flex flex-col"
             >
               <SheetHeader className="px-6 pt-6 pb-4 border-b border-border">
-                <div className="flex items-center justify-between">
-                  <SheetTitle className="text-2xl font-light">Menu</SheetTitle>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setIsOpen(false)}
-                    className="h-8 w-8 rounded-full hover:bg-muted"
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
+                <SheetTitle className="text-2xl font-light">Menu</SheetTitle>
               </SheetHeader>
 
               <nav className="flex-1 overflow-y-auto px-4 py-6">
@@ -476,19 +466,6 @@ const Navigation = () => {
                           </Button>
                         </Link>
                       )}
-                      <Button 
-                        variant="ghost" 
-                        className="w-full justify-start gap-3 h-12 text-destructive hover:bg-destructive/10 hover:text-destructive active:bg-destructive/20"
-                        onClick={() => {
-                          handleLogout();
-                          setIsOpen(false);
-                        }}
-                      >
-                        <LogOut className="h-5 w-5" />
-                        <span className="text-base">
-                          {t.nav.logout || (language === "ja" ? "ログアウト" : language === "pt" ? "Sair" : "Logout")}
-                        </span>
-                      </Button>
                     </>
                   ) : (
                     <Link to="/login" onClick={() => setIsOpen(false)}>
