@@ -2441,6 +2441,63 @@ export type Database = {
         }
         Relationships: []
       }
+      video_revenue_splits: {
+        Row: {
+          created_at: string
+          featured_user_amount: number | null
+          featured_user_id: string | null
+          id: string
+          owner_amount: number
+          owner_id: string
+          platform_fee: number
+          stripe_payment_id: string | null
+          total_amount: number
+          video_id: string
+          video_purchase_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          featured_user_amount?: number | null
+          featured_user_id?: string | null
+          id?: string
+          owner_amount: number
+          owner_id: string
+          platform_fee: number
+          stripe_payment_id?: string | null
+          total_amount: number
+          video_id: string
+          video_purchase_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          featured_user_amount?: number | null
+          featured_user_id?: string | null
+          id?: string
+          owner_amount?: number
+          owner_id?: string
+          platform_fee?: number
+          stripe_payment_id?: string | null
+          total_amount?: number
+          video_id?: string
+          video_purchase_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "video_revenue_splits_video_id_fkey"
+            columns: ["video_id"]
+            isOneToOne: false
+            referencedRelation: "user_videos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "video_revenue_splits_video_purchase_id_fkey"
+            columns: ["video_purchase_id"]
+            isOneToOne: false
+            referencedRelation: "video_purchases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       video_tips: {
         Row: {
           amount: number

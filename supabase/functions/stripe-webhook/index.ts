@@ -247,6 +247,69 @@ serve(async (req) => {
           break;
         }
 
+        // Handle video purchase payments
+        if (session.mode === "payment" && session.metadata?.type === "video_purchase") {
+          logStep("Processing video purchase", {
+            videoId: session.metadata.videoId,
+            buyerId: session.metadata.buyerId,
+            ownerId: session.metadata.ownerId,
+            featuredUserId: session.metadata.featuredUserId,
+          });
+
+          const videoId = session.metadata.videoId;
+          const buyerId = session.metadata.buyerId;
+          const ownerId = session.metadata.ownerId;
+          const featuredUserId = session.metadata.featuredUserId || null;
+          const totalAmount = parseInt(session.metadata.totalAmount || "0");
+          const platformFee = parseInt(session.metadata.platformFee || "0");
+          const ownerAmount = parseInt(session.metadata.ownerAmount || "0");
+          const featuredUserAmount = parseInt(session.metadata.featuredUserAmount || "0");
+
+          // Insert video purchase record
+          const { data: purchaseData, error: purchaseError } = await supabase
+            .from("video_purchases")
+            .insert({
+              video_id: videoId,
+              buyer_id: buyerId,
+              amount: totalAmount,
+              stripe_payment_id: session.payment_intent as string,
+            })
+            .select()
+            .single();
+
+          if (purchaseError) {
+            logStep("ERROR saving video purchase", { error: purchaseError.message });
+          } else {
+            logStep("Video purchase saved", { purchaseId: purchaseData.id });
+
+            // Insert revenue split record
+            const { error: splitError } = await supabase
+              .from("video_revenue_splits")
+              .insert({
+                video_purchase_id: purchaseData.id,
+                video_id: videoId,
+                total_amount: totalAmount,
+                platform_fee: platformFee,
+                owner_amount: ownerAmount,
+                featured_user_amount: featuredUserAmount,
+                owner_id: ownerId,
+                featured_user_id: featuredUserId || null,
+                stripe_payment_id: session.payment_intent as string,
+              });
+
+            if (splitError) {
+              logStep("ERROR saving revenue split", { error: splitError.message });
+            } else {
+              logStep("Revenue split saved successfully", {
+                ownerAmount,
+                featuredUserAmount,
+                platformFee,
+              });
+            }
+          }
+          break;
+        }
+
         // Handle video tip payments
         if (session.mode === "payment" && session.metadata?.videoId && session.metadata?.userId) {
           logStep("Processing video tip", {
