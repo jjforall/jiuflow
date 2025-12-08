@@ -1427,22 +1427,39 @@ export default function UserProfile() {
               ))}
             </div>
           ) : videos.length === 0 ? (
-            <Card className="backdrop-blur-xl bg-card/95 border-2 border-border/50 shadow-xl">
-              <CardContent className="p-16 text-center">
-                <div className="relative inline-block mb-6">
-                  <div className="absolute inset-0 bg-primary/20 rounded-full blur-2xl animate-pulse" />
-                  <div className="relative w-24 h-24 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
-                    <Video className="h-12 w-12 text-primary" />
+            <Card className="backdrop-blur-xl bg-gradient-to-br from-primary/5 via-card to-accent/5 border-2 border-dashed border-primary/30 shadow-xl hover:border-primary/50 transition-all duration-300">
+              <CardContent className="p-12 md:p-16 text-center">
+                <div className="relative inline-block mb-8">
+                  <div className="absolute inset-0 bg-primary/30 rounded-full blur-3xl animate-pulse" />
+                  <div className="absolute inset-0 bg-accent/20 rounded-full blur-2xl animate-pulse" style={{ animationDelay: '0.5s' }} />
+                  <div className="relative w-28 h-28 md:w-32 md:h-32 rounded-full bg-gradient-to-br from-primary/30 to-accent/30 flex items-center justify-center border-2 border-primary/20">
+                    <Upload className="h-14 w-14 md:h-16 md:w-16 text-primary" />
                   </div>
                 </div>
-                <h3 className="text-2xl font-bold mb-3">
-                  {language === "ja" ? "まだ動画がありません" : "No Videos Yet"}
+                <h3 className="text-2xl md:text-3xl font-bold mb-4 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+                  {language === "ja" ? "動画を投稿しよう！" : "Post a Video!"}
                 </h3>
-                <p className="text-muted-foreground text-lg">
-                  {language === "ja" 
-                    ? "このユーザーはまだ公開動画を投稿していません" 
-                    : "This user hasn't posted any public videos yet"}
+                <p className="text-muted-foreground text-base md:text-lg mb-8 max-w-md mx-auto">
+                  {currentUser === actualUserId 
+                    ? (language === "ja" 
+                        ? "あなたの柔術の動画をアップロードして、仲間とシェアしましょう" 
+                        : "Upload your jiu-jitsu videos and share with your friends")
+                    : (language === "ja" 
+                        ? `${profile?.display_name || "この人"}の動画を最初に投稿しませんか？` 
+                        : `Be the first to post a video of ${profile?.display_name || "this user"}!`)}
                 </p>
+                {currentUser && currentUser !== actualUserId && (
+                  <Button
+                    onClick={() => setVideoUploadDialogOpen(true)}
+                    size="lg"
+                    className="gap-3 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 text-lg px-8 py-6"
+                  >
+                    <Upload className="w-5 h-5" />
+                    {language === "ja" 
+                      ? `${profile?.display_name || "この人"}の動画を投稿する` 
+                      : `Post video of ${profile?.display_name || "this user"}`}
+                  </Button>
+                )}
               </CardContent>
             </Card>
           ) : (
