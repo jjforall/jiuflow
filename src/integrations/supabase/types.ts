@@ -1943,6 +1943,7 @@ export type Database = {
           notes_ja: string | null
           organizer: string
           registration_url: string | null
+          slug: string | null
           updated_at: string
           venue: string | null
           venue_ja: string | null
@@ -1965,6 +1966,7 @@ export type Database = {
           notes_ja?: string | null
           organizer: string
           registration_url?: string | null
+          slug?: string | null
           updated_at?: string
           venue?: string | null
           venue_ja?: string | null
@@ -1987,6 +1989,7 @@ export type Database = {
           notes_ja?: string | null
           organizer?: string
           registration_url?: string | null
+          slug?: string | null
           updated_at?: string
           venue?: string | null
           venue_ja?: string | null
