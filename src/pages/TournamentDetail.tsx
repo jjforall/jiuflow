@@ -9,7 +9,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Calendar, MapPin, Trophy, Info, ExternalLink, Building2, ArrowLeft, Globe, Users, UserPlus, UserMinus, AlertCircle } from "lucide-react";
+import { Calendar, MapPin, Trophy, Info, ExternalLink, Building2, ArrowLeft, Globe, Users, UserPlus, UserMinus, AlertCircle, Clock, FileText } from "lucide-react";
 import { format, parseISO, isBefore } from "date-fns";
 import { ja, enUS, pt } from "date-fns/locale";
 import { toast } from "sonner";
@@ -30,7 +30,10 @@ interface Tournament {
   category: string;
   notes: string | null;
   notes_ja: string | null;
+  description: string | null;
+  description_ja: string | null;
   registration_url: string | null;
+  registration_deadline: string | null;
   slug: string | null;
 }
 
@@ -166,6 +169,7 @@ const TournamentDetail = () => {
   const getLocation = (t: Tournament) => language === 'ja' && t.location_ja ? t.location_ja : t.location;
   const getVenue = (t: Tournament) => language === 'ja' && t.venue_ja ? t.venue_ja : t.venue;
   const getNotes = (t: Tournament) => language === 'ja' && t.notes_ja ? t.notes_ja : t.notes;
+  const getDescription = (t: Tournament) => language === 'ja' && t.description_ja ? t.description_ja : t.description;
 
   const getCategoryBadge = (category: string, isInternational: boolean) => {
     if (category === 'major' || category === 'international') {
@@ -321,6 +325,51 @@ const TournamentDetail = () => {
                   <p className="font-medium">{tournament.organizer}</p>
                 </div>
 
+                {/* Registration Deadline */}
+                {tournament.registration_deadline && !isPast && (
+                  <div className="flex items-start gap-4 text-foreground">
+                    <Clock className="h-6 w-6 text-orange-500 shrink-0 mt-0.5" />
+                    <div>
+                      <p className="font-medium">
+                        {language === 'ja' ? 'エントリー締切' : 'Registration Deadline'}
+                      </p>
+                      <p className={`text-sm ${
+                        isBefore(parseISO(tournament.registration_deadline), now) 
+                          ? 'text-muted-foreground line-through' 
+                          : 'text-orange-500 font-semibold'
+                      }`}>
+                        {format(parseISO(tournament.registration_deadline), language === 'ja' ? 'yyyy年M月d日(E)' : 'MMMM d, yyyy (EEE)', { locale: getLocale() })}
+                        {!isBefore(parseISO(tournament.registration_deadline), now) && (
+                          <span className="ml-2">
+                            ({(() => {
+                              const days = Math.ceil((parseISO(tournament.registration_deadline).getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+                              if (days === 0) return language === 'ja' ? '今日!' : 'Today!';
+                              if (days < 0) return language === 'ja' ? '締切済み' : 'Closed';
+                              return language === 'ja' ? `あと${days}日` : `${days} days left`;
+                            })()})
+                          </span>
+                        )}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Description */}
+                {getDescription(tournament) && (
+                  <div className="bg-primary/5 border border-primary/20 rounded-lg p-4 mt-4">
+                    <div className="flex items-start gap-3">
+                      <FileText className="h-5 w-5 mt-0.5 text-primary shrink-0" />
+                      <div>
+                        <p className="font-medium text-sm mb-1">
+                          {language === 'ja' ? '大会概要' : 'About this tournament'}
+                        </p>
+                        <p className="text-foreground">{getDescription(tournament)}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Notes */}
                 {getNotes(tournament) && (
                   <div className="bg-muted/50 rounded-lg p-4 mt-4">
                     <div className="flex items-start gap-3">
