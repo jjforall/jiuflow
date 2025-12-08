@@ -20,6 +20,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { toast } from "sonner";
 import { VideoPlayer } from "@/components/VideoPlayer";
 import { SeriesBadge } from "@/components/ui/series-badge";
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, BarChart, Bar } from "recharts";
 
 interface Technique {
   id: string;
@@ -242,6 +243,29 @@ const PracticeRecordsPage = () => {
       totalPractice: monthPractice.reduce((sum, r) => sum + (r.repetition_count || 1), 0),
       activeDays,
     };
+  }, [currentMonth, videoViews, practiceRecords]);
+
+  // Chart data for the month
+  const chartData = useMemo(() => {
+    const monthStart = startOfMonth(currentMonth);
+    const monthEnd = endOfMonth(currentMonth);
+    const days = eachDayOfInterval({ start: monthStart, end: monthEnd });
+    
+    return days.map(day => {
+      const dateStr = format(day, "yyyy-MM-dd");
+      
+      const dayViews = videoViews.filter(v => 
+        format(new Date(v.last_viewed_at), "yyyy-MM-dd") === dateStr
+      );
+      const dayPractice = practiceRecords.filter(r => r.practice_date === dateStr);
+      
+      return {
+        date: format(day, "d"),
+        fullDate: dateStr,
+        views: dayViews.reduce((sum, v) => sum + v.view_count, 0),
+        practice: dayPractice.reduce((sum, r) => sum + (r.repetition_count || 1), 0),
+      };
+    });
   }, [currentMonth, videoViews, practiceRecords]);
 
   // Check if user watched any video today
@@ -503,6 +527,79 @@ const PracticeRecordsPage = () => {
                   <div className="text-xs sm:text-sm text-muted-foreground">{texts.activeDays}</div>
                 </Card>
               </div>
+
+              {/* Activity Chart */}
+              <Card className="mb-6">
+                <CardHeader className="p-4 pb-2">
+                  <CardTitle className="text-base sm:text-lg">
+                    {language === "ja" ? "日別アクティビティ" : language === "pt" ? "Atividade Diária" : "Daily Activity"}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-2 sm:p-4">
+                  <div className="h-48 sm:h-64">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                        <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                        <XAxis 
+                          dataKey="date" 
+                          tick={{ fontSize: 10 }}
+                          tickLine={false}
+                          axisLine={false}
+                          interval="preserveStartEnd"
+                        />
+                        <YAxis 
+                          tick={{ fontSize: 10 }}
+                          tickLine={false}
+                          axisLine={false}
+                          allowDecimals={false}
+                        />
+                        <Tooltip
+                          contentStyle={{
+                            backgroundColor: 'hsl(var(--background))',
+                            border: '1px solid hsl(var(--border))',
+                            borderRadius: '8px',
+                            fontSize: '12px',
+                          }}
+                          labelFormatter={(value, payload) => {
+                            if (payload && payload[0]) {
+                              return format(new Date(payload[0].payload.fullDate), language === "ja" ? "M月d日" : "MMM d", { locale });
+                            }
+                            return value;
+                          }}
+                          formatter={(value, name) => [
+                            value,
+                            name === 'practice' 
+                              ? (language === "ja" ? "練習" : language === "pt" ? "Prática" : "Practice")
+                              : (language === "ja" ? "視聴" : language === "pt" ? "Visualização" : "Views")
+                          ]}
+                        />
+                        <Bar 
+                          dataKey="practice" 
+                          name="practice"
+                          fill="hsl(142, 76%, 36%)" 
+                          radius={[4, 4, 0, 0]}
+                        />
+                        <Bar 
+                          dataKey="views" 
+                          name="views"
+                          fill="hsl(217, 91%, 60%)" 
+                          radius={[4, 4, 0, 0]}
+                        />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <div className="flex items-center justify-center gap-4 mt-2 text-xs text-muted-foreground">
+                    <div className="flex items-center gap-1">
+                      <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: 'hsl(142, 76%, 36%)' }} />
+                      <span>{language === "ja" ? "練習" : language === "pt" ? "Prática" : "Practice"}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: 'hsl(217, 91%, 60%)' }} />
+                      <span>{language === "ja" ? "視聴" : language === "pt" ? "Visualização" : "Views"}</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
 
               {/* Calendar */}
               <Card>
