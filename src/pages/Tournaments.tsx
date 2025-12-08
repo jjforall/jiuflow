@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar, MapPin, Trophy, Globe } from "lucide-react";
+import { Calendar, MapPin, Trophy, Globe, Users } from "lucide-react";
 import { format, parseISO, isAfter, isBefore, addMonths } from "date-fns";
 import { ja, enUS, pt } from "date-fns/locale";
 
@@ -50,6 +50,26 @@ const Tournaments = () => {
       
       if (error) throw error;
       return data as Tournament[];
+    }
+  });
+
+  // Fetch participant counts for all tournaments
+  const { data: participantCounts } = useQuery({
+    queryKey: ['tournament-participant-counts'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('tournament_participants')
+        .select('tournament_id')
+        .neq('status', 'canceled');
+      
+      if (error) throw error;
+      
+      // Count participants per tournament
+      const counts: Record<string, number> = {};
+      data?.forEach(p => {
+        counts[p.tournament_id] = (counts[p.tournament_id] || 0) + 1;
+      });
+      return counts;
     }
   });
 
@@ -150,6 +170,7 @@ const Tournaments = () => {
 
   const TournamentCard = ({ tournament }: { tournament: Tournament }) => {
     const isPast = isBefore(parseISO(tournament.date_start), now);
+    const participantCount = participantCounts?.[tournament.id] || 0;
     
     return (
       <Link to={getTournamentUrl(tournament)}>
@@ -183,6 +204,14 @@ const Tournaments = () => {
                     {getLocation(tournament)}
                   </span>
                 </div>
+                {participantCount > 0 && (
+                  <div className="flex items-center gap-2">
+                    <Users className="h-4 w-4 text-primary" />
+                    <span className="text-primary font-medium">
+                      {participantCount} {language === 'ja' ? '人参加予定' : 'planning'}
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
           </CardContent>
