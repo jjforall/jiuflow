@@ -52,28 +52,26 @@ export const UsersTab = () => {
   const loadProfiles = async () => {
     setLoadingProfiles(true);
     try {
+      // Use get_profiles_masked() function for secure access with data masking
       const { data: profilesData, error: profilesError } = await supabase
-        .from("profiles")
-        .select(`
-          *,
-          user_roles (
-            role
-          )
-        `)
-        .order("created_at", { ascending: false });
+        .rpc("get_profiles_masked");
 
       if (profilesError) throw profilesError;
 
+      // Fetch user roles separately (not exposed in the masked function)
+      const { data: rolesData } = await supabase
+        .from("user_roles")
+        .select("user_id, role");
+
       // Fetch subscription data for all users
       const { data: subsData } = await supabase
-        .from("subscriptions")
-        .select("user_id, status, plan_type, current_period_end, trial_start, trial_end")
-        .in("status", ["active", "trialing"]);
+        .rpc("get_subscriptions_masked");
 
-      // Merge subscription data with profiles
+      // Merge subscription and role data with profiles
       const profilesWithSubs = (profilesData || []).map(profile => ({
         ...profile,
         is_public: profile.is_public ?? false,
+        user_roles: rolesData?.filter(r => r.user_id === profile.id) || [],
         subscription: subsData?.find(sub => sub.user_id === profile.id)
       }));
 

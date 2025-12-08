@@ -2887,6 +2887,37 @@ export type Database = {
           updated_at: string
         }[]
       }
+      get_profiles_masked: {
+        Args: never
+        Returns: {
+          avatar_url: string
+          belt_history: Json
+          bio: string
+          cover_image_url: string
+          created_at: string
+          date_of_birth: string
+          display_name: string
+          display_name_reading: string
+          education: Json
+          email: string
+          favorite_fighters: Json
+          favorite_techniques: Json
+          hobbies: Json
+          home_dojo: string
+          hometown: string
+          id: string
+          is_public: boolean
+          marital_status: string
+          organization_id: string
+          social_links: Json
+          stripe_customer_id: string
+          titles: Json
+          training_locations: Json
+          updated_at: string
+          username: string
+          work_experience: Json
+        }[]
+      }
       get_subscriptions_masked: {
         Args: never
         Returns: {
