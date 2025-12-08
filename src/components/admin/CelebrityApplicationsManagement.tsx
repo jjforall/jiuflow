@@ -26,10 +26,9 @@ export const CelebrityApplicationsManagement = () => {
   const { data: applications, isLoading } = useQuery({
     queryKey: ['celebrity-applications'],
     queryFn: async () => {
+      // Use get_celebrity_applications_masked() for secure access with audit logging
       const { data, error } = await supabase
-        .from('celebrity_applications')
-        .select('*')
-        .order('created_at', { ascending: false });
+        .rpc('get_celebrity_applications_masked');
       
       if (error) throw error;
       return data as CelebrityApplication[];
