@@ -255,7 +255,7 @@ const PracticeRecordsPage = () => {
   // Calculate forgetting curve priority for each viewed video
   // Based on Ebbinghaus forgetting curve - optimal review intervals: 1 day, 3 days, 7 days, 14 days, 30 days
   const reviewRecommendations = useMemo(() => {
-    if (todayViews.length > 0) return []; // Don't show if user watched videos today
+    const todayStr = format(new Date(), "yyyy-MM-dd");
     
     const now = new Date();
     const recommendations: Array<{
@@ -603,92 +603,95 @@ const PracticeRecordsPage = () => {
                 </CardContent>
               </Card>
 
-              {/* Today's quick action or Review Recommendations */}
-              <Card className="mt-6">
-                <CardHeader className="p-4">
-                  <CardTitle className="text-base sm:text-lg flex items-center gap-2">
-                    {todayViews.length > 0 ? (
-                      <>{texts.today}: {format(new Date(), language === "ja" ? "M月d日" : "MMM d", { locale })}</>
-                    ) : (
-                      <>{texts.reviewRecommended}</>
-                    )}
-                  </CardTitle>
-                  {todayViews.length === 0 && (
-                    <p className="text-xs text-muted-foreground">{texts.noWatchedToday}</p>
-                  )}
-                </CardHeader>
-                <CardContent className="p-4 pt-0">
-                  {todayViews.length > 0 ? (
-                    // Show today's watched videos
+              {/* Today's watched videos */}
+              {todayViews.length > 0 && (
+                <Card className="mt-6">
+                  <CardHeader className="p-4">
+                    <CardTitle className="text-base sm:text-lg flex items-center gap-2">
+                      {texts.today}: {format(new Date(), language === "ja" ? "M月d日" : "MMM d", { locale })}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-4 pt-0">
                     <div className="space-y-2 max-h-60 overflow-y-auto">
                       {todayViews.slice(0, 5).map((view) => {
-                          const technique = techniques.find(t => t.id === view.video_id);
-                          if (!technique) return null;
-                          const practiceCount = getPracticeCount(technique.id, new Date());
-                          
-                          return (
-                            <div
-                              key={view.id}
-                              className="flex items-center gap-2 p-2 rounded-lg bg-muted/50 overflow-hidden"
+                        const technique = techniques.find(t => t.id === view.video_id);
+                        if (!technique) return null;
+                        const practiceCount = getPracticeCount(technique.id, new Date());
+                        
+                        return (
+                          <div
+                            key={view.id}
+                            className="flex items-center gap-2 p-2 rounded-lg bg-muted/50 overflow-hidden"
+                          >
+                            <button 
+                              onClick={() => handleOpenVideo(technique)} 
+                              className="flex-shrink-0 group relative"
                             >
-                              <button 
-                                onClick={() => handleOpenVideo(technique)} 
-                                className="flex-shrink-0 group relative"
-                              >
-                                <div className="w-14 h-9 sm:w-16 sm:h-10 rounded bg-muted overflow-hidden group-hover:ring-2 ring-primary transition-all">
-                                  {technique.thumbnail_url ? (
-                                    <img
-                                      src={technique.thumbnail_url}
-                                      alt={getTechniqueName(technique)}
-                                      className="w-full h-full object-cover"
-                                    />
-                                  ) : (
-                                    <div className="w-full h-full flex items-center justify-center">
-                                      <Play className="h-4 w-4 text-muted-foreground" />
-                                    </div>
-                                  )}
-                                  <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <Play className="h-4 w-4 text-white" />
+                              <div className="w-14 h-9 sm:w-16 sm:h-10 rounded bg-muted overflow-hidden group-hover:ring-2 ring-primary transition-all">
+                                {technique.thumbnail_url ? (
+                                  <img
+                                    src={technique.thumbnail_url}
+                                    alt={getTechniqueName(technique)}
+                                    className="w-full h-full object-cover"
+                                  />
+                                ) : (
+                                  <div className="w-full h-full flex items-center justify-center">
+                                    <Play className="h-4 w-4 text-muted-foreground" />
                                   </div>
+                                )}
+                                <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity">
+                                  <Play className="h-4 w-4 text-white" />
                                 </div>
-                              </button>
-                              <div className="flex-1 min-w-0 overflow-hidden">
-                                <div className="flex items-center gap-1">
-                                  <button onClick={() => handleOpenVideo(technique)} className="hover:text-primary text-left truncate">
-                                    <span className="text-xs sm:text-sm font-medium">{getTechniqueName(technique)}</span>
-                                  </button>
-                                  <Link to={`/video/${technique.id}`} className="flex-shrink-0 text-muted-foreground hover:text-primary">
-                                    <ExternalLink className="h-3 w-3" />
-                                  </Link>
-                                </div>
-                                <SeriesBadge prefix={technique.series_prefix || ''} order={technique.series_order || undefined} className="text-[10px] h-5 min-w-0 px-1.5" />
                               </div>
-                              <div className="flex items-center gap-0.5 flex-shrink-0">
-                                <Button
-                                  size="icon"
-                                  variant="ghost"
-                                  className="h-7 w-7 sm:h-8 sm:w-8"
-                                  onClick={() => handleRemovePractice(technique.id, new Date())}
-                                  disabled={practiceCount === 0}
-                                >
-                                  <Minus className="h-3 w-3 sm:h-4 sm:w-4" />
-                                </Button>
-                                <span className="w-6 sm:w-8 text-center font-bold text-sm sm:text-lg">{practiceCount}</span>
-                                <Button
-                                  size="icon"
-                                  variant="default"
-                                  className="h-7 w-7 sm:h-8 sm:w-8"
-                                  onClick={() => handleAddPractice(technique.id, new Date())}
-                                >
-                                  <Plus className="h-3 w-3 sm:h-4 sm:w-4" />
-                                </Button>
+                            </button>
+                            <div className="flex-1 min-w-0 overflow-hidden">
+                              <div className="flex items-center gap-1">
+                                <button onClick={() => handleOpenVideo(technique)} className="hover:text-primary text-left truncate">
+                                  <span className="text-xs sm:text-sm font-medium">{getTechniqueName(technique)}</span>
+                                </button>
+                                <Link to={`/video/${technique.id}`} className="flex-shrink-0 text-muted-foreground hover:text-primary">
+                                  <ExternalLink className="h-3 w-3" />
+                                </Link>
                               </div>
+                              <SeriesBadge prefix={technique.series_prefix || ''} order={technique.series_order || undefined} className="text-[10px] h-5 min-w-0 px-1.5" />
                             </div>
-                          );
-                        })}
+                            <div className="flex items-center gap-0.5 flex-shrink-0">
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="h-7 w-7 sm:h-8 sm:w-8"
+                                onClick={() => handleRemovePractice(technique.id, new Date())}
+                                disabled={practiceCount === 0}
+                              >
+                                <Minus className="h-3 w-3 sm:h-4 sm:w-4" />
+                              </Button>
+                              <span className="w-6 sm:w-8 text-center font-bold text-sm sm:text-lg">{practiceCount}</span>
+                              <Button
+                                size="icon"
+                                variant="default"
+                                className="h-7 w-7 sm:h-8 sm:w-8"
+                                onClick={() => handleAddPractice(technique.id, new Date())}
+                              >
+                                <Plus className="h-3 w-3 sm:h-4 sm:w-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
-                  ) : reviewRecommendations.length > 0 ? (
-                    // Show review recommendations based on forgetting curve
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Review Recommendations based on forgetting curve */}
+              {reviewRecommendations.length > 0 && (
+                <Card className="mt-6">
+                  <CardHeader className="p-4">
+                    <CardTitle className="text-base sm:text-lg flex items-center gap-2">
+                      {texts.reviewRecommended}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-4 pt-0">
                     <div className="space-y-2 max-h-80 overflow-y-auto">
                       {reviewRecommendations.map((rec) => {
                         const practiceCount = getPracticeCount(rec.technique.id, new Date());
@@ -765,11 +768,9 @@ const PracticeRecordsPage = () => {
                         );
                       })}
                     </div>
-                  ) : (
-                    <p className="text-muted-foreground text-sm">{texts.noRecords}</p>
-                  )}
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              )}
             </>
           )}
         </div>
