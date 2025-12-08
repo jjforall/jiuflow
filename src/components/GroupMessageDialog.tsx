@@ -7,40 +7,55 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useTranslation } from '@/hooks/useTranslation';
-import { Send, Loader2, Paperclip, X, Image, FileText, Download, Check, CheckCheck } from 'lucide-react';
+import { Send, Loader2, Paperclip, X, Image, FileText, Download, Check, CheckCheck, Users } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 
 interface Message {
   id: string;
   sender_id: string;
-  receiver_id: string;
   content: string;
   created_at: string;
-  read_at: string | null;
+  group_id: string;
   attachment_url?: string | null;
   attachment_type?: string | null;
   attachment_name?: string | null;
 }
 
-interface MessageDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  recipientId: string;
-  recipientName: string;
-  recipientAvatar?: string;
+interface GroupMember {
+  user_id: string;
+  profile?: {
+    display_name: string | null;
+    avatar_url: string | null;
+  };
 }
 
-export const MessageDialog = ({
+interface ReadReceipt {
+  message_id: string;
+  user_id: string;
+  read_at: string;
+}
+
+interface GroupMessageDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  groupId: string;
+  groupName: string;
+  groupAvatar?: string;
+}
+
+export const GroupMessageDialog = ({
   open,
   onOpenChange,
-  recipientId,
-  recipientName,
-  recipientAvatar
-}: MessageDialogProps) => {
+  groupId,
+  groupName,
+  groupAvatar
+}: GroupMessageDialogProps) => {
   const { user } = useAuth();
   const { t } = useTranslation();
   const [messages, setMessages] = useState<Message[]>([]);
+  const [members, setMembers] = useState<GroupMember[]>([]);
+  const [readReceipts, setReadReceipts] = useState<ReadReceipt[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isSending, setIsSending] = useState(false);
@@ -48,80 +63,119 @@ export const MessageDialog = ({
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Load messages
   useEffect(() => {
-    if (!open || !user || !recipientId) return;
+    if (!open || !user || !groupId) return;
 
-    const loadMessages = async () => {
+    const loadData = async () => {
       setIsLoading(true);
-      const { data, error } = await supabase
+
+      // Load members
+      const { data: membersData } = await supabase
+        .from('message_group_members')
+        .select('user_id')
+        .eq('group_id', groupId);
+
+      if (membersData) {
+        const memberProfiles = await Promise.all(
+          membersData.map(async (m) => {
+            const { data: profile } = await supabase
+              .from('public_profiles')
+              .select('display_name, avatar_url')
+              .eq('id', m.user_id)
+              .single();
+            return { user_id: m.user_id, profile: profile || undefined };
+          })
+        );
+        setMembers(memberProfiles);
+      }
+
+      // Load messages
+      const { data: messagesData, error } = await supabase
         .from('messages')
         .select('*')
-        .or(`and(sender_id.eq.${user.id},receiver_id.eq.${recipientId}),and(sender_id.eq.${recipientId},receiver_id.eq.${user.id})`)
+        .eq('group_id', groupId)
         .order('created_at', { ascending: true });
 
       if (error) {
         console.error('Error loading messages:', error);
       } else {
-        setMessages(data || []);
-        // Mark received messages as read
-        const unreadIds = (data || [])
-          .filter(m => m.receiver_id === user.id && !m.read_at)
+        setMessages(messagesData || []);
+
+        // Load read receipts
+        const messageIds = (messagesData || []).map(m => m.id);
+        if (messageIds.length > 0) {
+          const { data: receipts } = await supabase
+            .from('message_read_receipts')
+            .select('*')
+            .in('message_id', messageIds);
+          setReadReceipts(receipts || []);
+        }
+
+        // Mark messages as read
+        const unreadMessageIds = (messagesData || [])
+          .filter(m => m.sender_id !== user.id)
           .map(m => m.id);
-        
-        if (unreadIds.length > 0) {
-          await supabase
-            .from('messages')
-            .update({ read_at: new Date().toISOString() })
-            .in('id', unreadIds);
-          
-          // Update local state
-          setMessages(prev => prev.map(m => 
-            unreadIds.includes(m.id) 
-              ? { ...m, read_at: new Date().toISOString() } 
-              : m
-          ));
+
+        for (const msgId of unreadMessageIds) {
+          const existingReceipt = readReceipts.find(
+            r => r.message_id === msgId && r.user_id === user.id
+          );
+          if (!existingReceipt) {
+            await supabase.from('message_read_receipts').upsert({
+              message_id: msgId,
+              user_id: user.id
+            }, { onConflict: 'message_id,user_id' });
+          }
         }
       }
+
       setIsLoading(false);
     };
 
-    loadMessages();
+    loadData();
 
-    // Subscribe to realtime updates
+    // Subscribe to realtime
     const channel = supabase
-      .channel(`messages-${user.id}-${recipientId}`)
+      .channel(`group-messages-${groupId}`)
       .on(
         'postgres_changes',
         {
-          event: '*',
+          event: 'INSERT',
           schema: 'public',
-          table: 'messages'
+          table: 'messages',
+          filter: `group_id=eq.${groupId}`
         },
         (payload) => {
-          if (payload.eventType === 'INSERT') {
-            const newMsg = payload.new as Message;
-            // Only add if it's our conversation
-            if ((newMsg.sender_id === user.id && newMsg.receiver_id === recipientId) ||
-                (newMsg.sender_id === recipientId && newMsg.receiver_id === user.id)) {
-              setMessages(prev => {
-                // Avoid duplicates
-                if (prev.some(m => m.id === newMsg.id)) return prev;
-                return [...prev, newMsg];
-              });
-              
-              // Mark as read if we received it
-              if (newMsg.receiver_id === user.id) {
-                supabase
-                  .from('messages')
-                  .update({ read_at: new Date().toISOString() })
-                  .eq('id', newMsg.id);
-              }
-            }
-          } else if (payload.eventType === 'UPDATE') {
-            const updatedMsg = payload.new as Message;
-            setMessages(prev => prev.map(m => m.id === updatedMsg.id ? updatedMsg : m));
+          const newMsg = payload.new as Message;
+          setMessages(prev => {
+            if (prev.some(m => m.id === newMsg.id)) return prev;
+            return [...prev, newMsg];
+          });
+
+          // Mark as read if from someone else
+          if (newMsg.sender_id !== user.id) {
+            supabase.from('message_read_receipts').upsert({
+              message_id: newMsg.id,
+              user_id: user.id
+            }, { onConflict: 'message_id,user_id' });
           }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'message_read_receipts'
+        },
+        (payload) => {
+          const newReceipt = payload.new as ReadReceipt;
+          setReadReceipts(prev => {
+            if (prev.some(r => r.message_id === newReceipt.message_id && r.user_id === newReceipt.user_id)) {
+              return prev;
+            }
+            return [...prev, newReceipt];
+          });
         }
       )
       .subscribe();
@@ -129,9 +183,8 @@ export const MessageDialog = ({
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [open, user, recipientId]);
+  }, [open, user, groupId]);
 
-  // Scroll to bottom when messages change
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
@@ -168,7 +221,6 @@ export const MessageDialog = ({
       .upload(fileName, file);
 
     if (uploadError) {
-      console.error('Upload error:', uploadError);
       throw uploadError;
     }
 
@@ -197,7 +249,7 @@ export const MessageDialog = ({
 
       const { error } = await supabase.from('messages').insert({
         sender_id: user.id,
-        receiver_id: recipientId,
+        group_id: groupId,
         content: newMessage.trim(),
         attachment_url: attachmentData?.url || null,
         attachment_type: attachmentData?.type || null,
@@ -233,6 +285,18 @@ export const MessageDialog = ({
     return type?.startsWith('image/');
   };
 
+  const getSenderInfo = (senderId: string) => {
+    const member = members.find(m => m.user_id === senderId);
+    return {
+      name: member?.profile?.display_name || 'Unknown',
+      avatar: member?.profile?.avatar_url || undefined
+    };
+  };
+
+  const getReadCount = (messageId: string) => {
+    return readReceipts.filter(r => r.message_id === messageId).length;
+  };
+
   const renderAttachment = (message: Message, isOwn: boolean) => {
     if (!message.attachment_url) return null;
 
@@ -243,9 +307,6 @@ export const MessageDialog = ({
             src={message.attachment_url}
             alt={message.attachment_name || 'Image'}
             className="max-w-full max-h-48 rounded-lg object-cover"
-            onError={(e) => {
-              (e.target as HTMLImageElement).style.display = 'none';
-            }}
           />
         </a>
       );
@@ -270,26 +331,47 @@ export const MessageDialog = ({
   const renderReadStatus = (message: Message) => {
     if (message.sender_id !== user?.id) return null;
 
-    if (message.read_at) {
+    const readCount = getReadCount(message.id);
+    const totalMembers = members.length - 1; // Exclude sender
+
+    if (readCount >= totalMembers && totalMembers > 0) {
       return (
-        <CheckCheck className="h-3 w-3 text-primary-foreground/70" />
+        <div className="flex items-center gap-1">
+          <CheckCheck className="h-3 w-3 text-primary-foreground/70" />
+          <span className="text-[10px] text-primary-foreground/70">{readCount}</span>
+        </div>
+      );
+    } else if (readCount > 0) {
+      return (
+        <div className="flex items-center gap-1">
+          <Check className="h-3 w-3 text-primary-foreground/50" />
+          <span className="text-[10px] text-primary-foreground/50">{readCount}</span>
+        </div>
       );
     }
-    return (
-      <Check className="h-3 w-3 text-primary-foreground/50" />
-    );
+    return <Check className="h-3 w-3 text-primary-foreground/30" />;
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md h-[70vh] flex flex-col">
+      <DialogContent className="sm:max-w-lg h-[75vh] flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Avatar className="h-8 w-8">
-              <AvatarImage src={recipientAvatar} />
-              <AvatarFallback>{recipientName?.charAt(0)?.toUpperCase()}</AvatarFallback>
+              {groupAvatar ? (
+                <AvatarImage src={groupAvatar} />
+              ) : (
+                <AvatarFallback>
+                  <Users className="h-4 w-4" />
+                </AvatarFallback>
+              )}
             </Avatar>
-            <span>{recipientName}</span>
+            <div>
+              <span>{groupName}</span>
+              <p className="text-xs text-muted-foreground font-normal">
+                {members.length} {t('members', 'メンバー')}
+              </p>
+            </div>
           </DialogTitle>
         </DialogHeader>
 
@@ -306,18 +388,32 @@ export const MessageDialog = ({
             <div className="space-y-3">
               {messages.map((message) => {
                 const isOwn = message.sender_id === user?.id;
+                const senderInfo = getSenderInfo(message.sender_id);
                 return (
                   <div
                     key={message.id}
                     className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}
                   >
+                    {!isOwn && (
+                      <Avatar className="h-6 w-6 mr-2 mt-1 shrink-0">
+                        <AvatarImage src={senderInfo.avatar} />
+                        <AvatarFallback className="text-xs">
+                          {senderInfo.name.charAt(0).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                    )}
                     <div
-                      className={`max-w-[80%] rounded-lg px-3 py-2 ${
+                      className={`max-w-[75%] rounded-lg px-3 py-2 ${
                         isOwn
                           ? 'bg-primary text-primary-foreground'
                           : 'bg-muted'
                       }`}
                     >
+                      {!isOwn && (
+                        <p className="text-xs font-medium mb-1 opacity-70">
+                          {senderInfo.name}
+                        </p>
+                      )}
                       {message.content && (
                         <p className="text-sm whitespace-pre-wrap break-words">
                           {message.content}
