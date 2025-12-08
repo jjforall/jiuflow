@@ -1997,6 +1997,7 @@ export type Database = {
           notes: string | null
           notes_ja: string | null
           organizer: string
+          registration_deadline: string | null
           registration_url: string | null
           slug: string | null
           updated_at: string
@@ -2020,6 +2021,7 @@ export type Database = {
           notes?: string | null
           notes_ja?: string | null
           organizer: string
+          registration_deadline?: string | null
           registration_url?: string | null
           slug?: string | null
           updated_at?: string
@@ -2043,6 +2045,7 @@ export type Database = {
           notes?: string | null
           notes_ja?: string | null
           organizer?: string
+          registration_deadline?: string | null
           registration_url?: string | null
           slug?: string | null
           updated_at?: string
