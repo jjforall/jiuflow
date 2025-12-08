@@ -29,6 +29,7 @@ import MusicManagement from "@/components/admin/MusicManagement";
 import { PrintfulManagement } from "@/components/admin/PrintfulManagement";
 import { CommunityManagement } from "@/components/admin/CommunityManagement";
 import { WeeklyTopicsManagement } from "@/components/admin/WeeklyTopicsManagement";
+import { TournamentsManagement } from "@/components/admin/TournamentsManagement";
 
 const AdminDashboard = () => {
   const { signOut } = useAuth();
@@ -81,6 +82,7 @@ const AdminDashboard = () => {
                         { id: "lineage", label: "系統管理" },
                         { id: "edit-requests", label: "編集リクエスト" },
                         { id: "celebrity", label: "有名人申請" },
+                        { id: "tournaments", label: "大会管理" },
                         { id: "events", label: "イベント管理" },
                         { id: "user-videos", label: "ユーザー動画" },
                         { id: "brothers", label: "Brothers申請" },
@@ -149,6 +151,7 @@ const AdminDashboard = () => {
                 {activeTab === "lineage" && <LineageManagement />}
                 {activeTab === "edit-requests" && <CelebrityEditRequestsManagement />}
                 {activeTab === "celebrity" && <CelebrityApplicationsManagement />}
+                {activeTab === "tournaments" && <TournamentsManagement />}
                 {activeTab === "events" && <EventsManagement />}
                 {activeTab === "user-videos" && <UserVideosManagement />}
                 {activeTab === "brothers" && <BrothersApplicationsManagement />}

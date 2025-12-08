@@ -51,6 +51,7 @@ const menuItems = [
   { id: "lineage", label: "系統管理", icon: Star },
   { id: "edit-requests", label: "編集リクエスト", icon: Star },
   { id: "celebrity", label: "有名人申請", icon: Star },
+  { id: "tournaments", label: "大会管理", icon: Trophy },
   { id: "events", label: "イベント管理", icon: Calendar },
   { id: "user-videos", label: "ユーザー動画", icon: Video },
   { id: "brothers", label: "Brothers申請", icon: Award },
