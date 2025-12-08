@@ -59,7 +59,6 @@ export default function LineageTree() {
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedBeltLevel, setSelectedBeltLevel] = useState<string | null>(null);
-  const [showFeaturedOnly, setShowFeaturedOnly] = useState(false);
 
   useEffect(() => {
     const titles = {
@@ -173,15 +172,11 @@ export default function LineageTree() {
               (belt: any) => belt.belt === selectedBeltLevel
             ));
 
-        const matchesFeatured =
-          !showFeaturedOnly || node.celebrity.featured;
-
         const filteredStudents = filterNodes(node.students);
 
         if (
           matchesSearch &&
-          matchesBelt &&
-          matchesFeatured
+          matchesBelt
         ) {
           return { ...node, students: filteredStudents };
         } else if (filteredStudents.length > 0) {
@@ -225,7 +220,7 @@ export default function LineageTree() {
             <Button variant="outline" size="sm" asChild>
               <Link to="/athletes" className="flex items-center gap-2">
                 <List className="w-4 h-4" />
-                {language === "ja" ? "一覧表示" : language === "pt" ? "Ver Lista" : "View List"}
+                {t("lineageTree.viewList", "View List")}
               </Link>
             </Button>
           </div>
@@ -246,9 +241,7 @@ export default function LineageTree() {
           <LineageFilters
             beltLevels={beltLevels}
             selectedBeltLevel={selectedBeltLevel}
-            showFeaturedOnly={showFeaturedOnly}
             onBeltLevelChange={setSelectedBeltLevel}
-            onFeaturedChange={setShowFeaturedOnly}
           />
         </div>
 
