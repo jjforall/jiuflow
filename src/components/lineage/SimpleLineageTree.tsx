@@ -10,6 +10,18 @@ import { cn } from "@/lib/utils";
 interface Celebrity {
   id: string;
   display_name: string;
+  name_en: string | null;
+  name_ja: string | null;
+  name_pt: string | null;
+  name_es: string | null;
+  name_fr: string | null;
+  name_de: string | null;
+  name_zh: string | null;
+  name_ko: string | null;
+  name_it: string | null;
+  name_ru: string | null;
+  name_ar: string | null;
+  name_hi: string | null;
   avatar_url: string | null;
   belt_history: any;
   organization_id: string | null;
@@ -64,6 +76,29 @@ function LineageNodeCard({ node, depth = 0, language }: { node: LineageNode; dep
   const beltStyle = getBeltStyle(belt);
   const beltLabel = getBeltTranslation(belt, language);
   const hasStudents = node.students.length > 0;
+
+  // Get localized name based on current language
+  const getLocalizedName = (): string | null => {
+    const nameMap: Record<string, string | null> = {
+      ja: node.celebrity.name_ja,
+      en: node.celebrity.name_en,
+      pt: node.celebrity.name_pt,
+      es: node.celebrity.name_es,
+      fr: node.celebrity.name_fr,
+      de: node.celebrity.name_de,
+      zh: node.celebrity.name_zh,
+      ko: node.celebrity.name_ko,
+      it: node.celebrity.name_it,
+      ru: node.celebrity.name_ru,
+      ar: node.celebrity.name_ar,
+      hi: node.celebrity.name_hi,
+    };
+    return nameMap[language] || null;
+  };
+
+  const localizedName = getLocalizedName();
+  const englishName = node.celebrity.name_en || node.celebrity.display_name;
+  const showBothNames = localizedName && language !== 'en' && localizedName !== englishName;
 
   return (
     <div className="relative">
@@ -131,10 +166,17 @@ function LineageNodeCard({ node, depth = 0, language }: { node: LineageNode; dep
           <div className="flex-1 min-w-0">
             <Link 
               to={`/athlete/${node.celebrity.id}`}
-              className="font-medium text-sm md:text-base hover:text-primary transition-colors line-clamp-1"
+              className="font-medium text-sm md:text-base hover:text-primary transition-colors"
               onClick={(e) => e.stopPropagation()}
             >
-              {node.celebrity.display_name}
+              <span className="line-clamp-1">
+                {showBothNames ? localizedName : (localizedName || englishName)}
+              </span>
+              {showBothNames && (
+                <span className="text-xs text-muted-foreground font-normal ml-1">
+                  ({englishName})
+                </span>
+              )}
             </Link>
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
               <span>{beltLabel}</span>

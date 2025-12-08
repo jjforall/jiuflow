@@ -12,6 +12,18 @@ import { useLanguage } from "@/contexts/LanguageContext";
 interface Celebrity {
   id: string;
   display_name: string;
+  name_en: string | null;
+  name_ja: string | null;
+  name_pt: string | null;
+  name_es: string | null;
+  name_fr: string | null;
+  name_de: string | null;
+  name_zh: string | null;
+  name_ko: string | null;
+  name_it: string | null;
+  name_ru: string | null;
+  name_ar: string | null;
+  name_hi: string | null;
   avatar_url: string | null;
   belt_history: any;
   organization_id: string | null;
