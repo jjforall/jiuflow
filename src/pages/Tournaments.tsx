@@ -533,16 +533,17 @@ const Tournaments = () => {
               {!isPast && (
                 <div className="pt-2 border-t border-border/50 flex items-center justify-between gap-2">
                   {tournament.registration_url && (
-                    <a 
-                      href={tournament.registration_url} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
+                    <button 
                       className={`inline-flex items-center gap-1.5 text-xs font-medium ${color.text} hover:underline`}
-                      onClick={(e) => e.stopPropagation()}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        window.open(tournament.registration_url!, '_blank', 'noopener,noreferrer');
+                      }}
                     >
                       <ExternalLink className="h-3 w-3" />
                       {language === 'ja' ? 'エントリー' : 'Register'}
-                    </a>
+                    </button>
                   )}
                   <Button
                     variant={isParticipating ? "default" : "outline"}
