@@ -2870,6 +2870,25 @@ export type Database = {
         }[]
       }
       generate_referral_code: { Args: never; Returns: string }
+      get_celebrity_applications_masked: {
+        Args: never
+        Returns: {
+          belt_history: Json
+          bio: string
+          created_at: string
+          display_name: string
+          email: string
+          home_dojo: string
+          id: string
+          organization_id: string
+          reviewed_at: string
+          reviewed_by: string
+          status: string
+          titles: Json
+          updated_at: string
+          username: string
+        }[]
+      }
       get_printful_orders_masked: {
         Args: never
         Returns: {
