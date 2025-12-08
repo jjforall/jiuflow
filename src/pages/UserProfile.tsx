@@ -6,8 +6,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { UserVideoCard } from "@/components/UserVideoCard";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { User, Video, Edit2, Check, X, Plus, Trash2, Calendar, Lock, ArrowLeft, MessageCircle } from "lucide-react";
+import { User, Video, Edit2, Check, X, Plus, Trash2, Calendar, Lock, ArrowLeft, MessageCircle, Upload } from "lucide-react";
 import { MessageDialog } from "@/components/MessageDialog";
+import { VideoUploadDialog } from "@/components/VideoUploadDialog";
 import { toast } from "sonner";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { EventCard } from "@/components/EventCard";
@@ -141,6 +142,7 @@ export default function UserProfile() {
   const [isPrivateProfile, setIsPrivateProfile] = useState(false);
   const [privateProfileInfo, setPrivateProfileInfo] = useState<{ display_name: string | null; avatar_url: string | null } | null>(null);
   const [messageDialogOpen, setMessageDialogOpen] = useState(false);
+  const [videoUploadDialogOpen, setVideoUploadDialogOpen] = useState(false);
 
   useEffect(() => {
     const checkCurrentUser = async () => {
@@ -380,20 +382,48 @@ export default function UserProfile() {
       // 最新の認証情報を取得
       const { data: { user } } = await supabase.auth.getUser();
       
-      let query = supabase
+      // Get videos owned by this user OR featuring this user
+      const isOwnProfile = user?.id === userId;
+      
+      // Query for videos owned by this user
+      let ownedQuery = supabase
         .from('user_videos')
         .select('*')
         .eq('user_id', userId);
 
       // 自分のプロフィールでない場合のみ公開動画に限定
-      if (user?.id !== userId) {
-        query = query.eq('is_public', true);
+      if (!isOwnProfile) {
+        ownedQuery = ownedQuery.eq('is_public', true);
       }
 
-      const { data, error } = await query.order('created_at', { ascending: false });
+      const { data: ownedVideos, error: ownedError } = await ownedQuery.order('created_at', { ascending: false });
+      if (ownedError) throw ownedError;
 
-      if (error) throw error;
-      setVideos(data || []);
+      // Query for videos featuring this user (uploaded by others)
+      let featuredQuery = supabase
+        .from('user_videos')
+        .select('*')
+        .eq('featured_user_id', userId)
+        .neq('user_id', userId); // Exclude videos they uploaded themselves
+
+      // Only show public featured videos (or if they're the featured user, show all)
+      if (!isOwnProfile) {
+        featuredQuery = featuredQuery.eq('is_public', true);
+      }
+
+      const { data: featuredVideos, error: featuredError } = await featuredQuery.order('created_at', { ascending: false });
+      if (featuredError) throw featuredError;
+
+      // Combine and deduplicate
+      const allVideos = [...(ownedVideos || []), ...(featuredVideos || [])];
+      const uniqueVideos = allVideos.filter((video, index, self) => 
+        index === self.findIndex(v => v.id === video.id)
+      );
+      
+      // Sort by created_at descending
+      uniqueVideos.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      
+      setVideos(uniqueVideos);
     } catch (error) {
       console.error('Error loading videos:', error);
     } finally {
@@ -1355,13 +1385,29 @@ export default function UserProfile() {
 
           {/* Videos Section with Elegant Header */}
           <div className="mb-10">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg">
-                <Video className="w-6 h-6 text-primary-foreground" />
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg">
+                  <Video className="w-6 h-6 text-primary-foreground" />
+                </div>
+                <h2 className="text-3xl md:text-4xl font-bold">
+                  {language === "ja" ? "動画コレクション" : "Video Collection"}
+                </h2>
               </div>
-              <h2 className="text-3xl md:text-4xl font-bold">
-                {language === "ja" ? "動画コレクション" : "Video Collection"}
-              </h2>
+              
+              {/* Upload video button for others to post videos featuring this user */}
+              {currentUser && currentUser !== actualUserId && (
+                <Button
+                  onClick={() => setVideoUploadDialogOpen(true)}
+                  variant="outline"
+                  className="gap-2"
+                >
+                  <Upload className="w-4 h-4" />
+                  {language === "ja" 
+                    ? `${profile?.display_name || "この人"}の動画を投稿` 
+                    : `Post video of ${profile?.display_name || "this user"}`}
+                </Button>
+              )}
             </div>
           </div>
 
@@ -1452,6 +1498,16 @@ export default function UserProfile() {
           recipientId={actualUserId}
           recipientName={profile.display_name || profile.username || "User"}
           recipientAvatar={profile.avatar_url || undefined}
+        />
+      )}
+
+      {/* Video Upload Dialog for posting videos featuring this user */}
+      {actualUserId && profile && currentUser && currentUser !== actualUserId && (
+        <VideoUploadDialog
+          open={videoUploadDialogOpen}
+          onOpenChange={setVideoUploadDialogOpen}
+          featuredUserId={actualUserId}
+          featuredUserName={profile.display_name || profile.username || undefined}
         />
       )}
     </div>
