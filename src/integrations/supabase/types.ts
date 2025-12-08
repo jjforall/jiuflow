@@ -2058,6 +2058,7 @@ export type Database = {
           venue_access_ja: string | null
           venue_address: string | null
           venue_address_ja: string | null
+          venue_id: string | null
           venue_image_url: string | null
           venue_ja: string | null
           weight_classes: string[] | null
@@ -2095,6 +2096,7 @@ export type Database = {
           venue_access_ja?: string | null
           venue_address?: string | null
           venue_address_ja?: string | null
+          venue_id?: string | null
           venue_image_url?: string | null
           venue_ja?: string | null
           weight_classes?: string[] | null
@@ -2132,11 +2134,20 @@ export type Database = {
           venue_access_ja?: string | null
           venue_address?: string | null
           venue_address_ja?: string | null
+          venue_id?: string | null
           venue_image_url?: string | null
           venue_ja?: string | null
           weight_classes?: string[] | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "tournaments_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venues"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       translation_cache: {
         Row: {
@@ -2421,6 +2432,66 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      venues: {
+        Row: {
+          access_info: string | null
+          access_info_ja: string | null
+          address: string | null
+          address_ja: string | null
+          capacity: number | null
+          city: string | null
+          country: string
+          created_at: string
+          google_maps_url: string | null
+          id: string
+          image_url: string | null
+          latitude: number | null
+          longitude: number | null
+          name: string
+          name_ja: string | null
+          updated_at: string
+          website: string | null
+        }
+        Insert: {
+          access_info?: string | null
+          access_info_ja?: string | null
+          address?: string | null
+          address_ja?: string | null
+          capacity?: number | null
+          city?: string | null
+          country?: string
+          created_at?: string
+          google_maps_url?: string | null
+          id?: string
+          image_url?: string | null
+          latitude?: number | null
+          longitude?: number | null
+          name: string
+          name_ja?: string | null
+          updated_at?: string
+          website?: string | null
+        }
+        Update: {
+          access_info?: string | null
+          access_info_ja?: string | null
+          address?: string | null
+          address_ja?: string | null
+          capacity?: number | null
+          city?: string | null
+          country?: string
+          created_at?: string
+          google_maps_url?: string | null
+          id?: string
+          image_url?: string | null
+          latitude?: number | null
+          longitude?: number | null
+          name?: string
+          name_ja?: string | null
+          updated_at?: string
+          website?: string | null
+        }
+        Relationships: []
       }
       video_comments: {
         Row: {
