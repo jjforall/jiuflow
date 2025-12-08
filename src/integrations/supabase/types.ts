@@ -141,7 +141,9 @@ export type Database = {
           bio_pt: string | null
           bio_ru: string | null
           bio_zh: string | null
+          birth_date: string | null
           created_at: string | null
+          death_date: string | null
           display_name: string
           featured: boolean | null
           home_dojo: string | null
@@ -183,7 +185,9 @@ export type Database = {
           bio_pt?: string | null
           bio_ru?: string | null
           bio_zh?: string | null
+          birth_date?: string | null
           created_at?: string | null
+          death_date?: string | null
           display_name: string
           featured?: boolean | null
           home_dojo?: string | null
@@ -225,7 +229,9 @@ export type Database = {
           bio_pt?: string | null
           bio_ru?: string | null
           bio_zh?: string | null
+          birth_date?: string | null
           created_at?: string | null
+          death_date?: string | null
           display_name?: string
           featured?: boolean | null
           home_dojo?: string | null
