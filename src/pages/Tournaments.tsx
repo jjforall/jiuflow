@@ -125,9 +125,36 @@ const Tournaments = () => {
   };
 
   const upcomingTournaments = filterByOrganizer(tournaments?.filter(t => isAfter(parseISO(t.date_start), now) && isBefore(parseISO(t.date_start), threeMonthsLater)));
-  const domesticTournaments = filterByOrganizer(filterByDate(tournaments?.filter(t => t.country === 'JP')));
-  const internationalTournaments = filterByOrganizer(filterByDate(tournaments?.filter(t => t.country !== 'JP')));
+  // Group tournaments by country
+  const tournamentsByCountry = tournaments?.reduce((acc, t) => {
+    const country = t.country || 'OTHER';
+    if (!acc[country]) acc[country] = [];
+    acc[country].push(t);
+    return acc;
+  }, {} as Record<string, Tournament[]>) || {};
+  
   const majorTournaments = filterByOrganizer(filterByDate(tournaments?.filter(t => t.category === 'major' || t.category === 'international'), !showPastTournaments));
+  
+  // Get unique countries for tabs
+  const countries = Object.keys(tournamentsByCountry).sort((a, b) => {
+    // Sort by number of tournaments (descending)
+    return (tournamentsByCountry[b]?.length || 0) - (tournamentsByCountry[a]?.length || 0);
+  });
+  
+  const getCountryName = (code: string) => {
+    const names: Record<string, Record<string, string>> = {
+      'JP': { ja: '日本', en: 'Japan', pt: 'Japão' },
+      'US': { ja: 'アメリカ', en: 'USA', pt: 'EUA' },
+      'PT': { ja: 'ポルトガル', en: 'Portugal', pt: 'Portugal' },
+      'IT': { ja: 'イタリア', en: 'Italy', pt: 'Itália' },
+      'AE': { ja: 'UAE', en: 'UAE', pt: 'EAU' },
+      'GB': { ja: 'イギリス', en: 'UK', pt: 'Reino Unido' },
+      'TW': { ja: '台湾', en: 'Taiwan', pt: 'Taiwan' },
+      'PL': { ja: 'ポーランド', en: 'Poland', pt: 'Polônia' },
+      'BR': { ja: 'ブラジル', en: 'Brazil', pt: 'Brasil' },
+    };
+    return names[code]?.[language] || names[code]?.en || code;
+  };
 
   const getCategoryBadge = (category: string, isInternational: boolean) => {
     if (category === 'major' || category === 'international') {
@@ -159,6 +186,10 @@ const Tournaments = () => {
       'PL': '🇵🇱',
       'IT': '🇮🇹',
       'AE': '🇦🇪',
+      'GB': '🇬🇧',
+      'TW': '🇹🇼',
+      'BR': '🇧🇷',
+      'IE': '🇮🇪',
     };
     return flags[country] || '🌍';
   };
@@ -359,18 +390,21 @@ const Tournaments = () => {
 
         {/* Main Content Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3 lg:w-auto lg:inline-grid">
+          <TabsList className="flex flex-wrap h-auto gap-1 lg:inline-flex">
             <TabsTrigger value="upcoming" className="gap-2">
               <Calendar className="h-4 w-4" />
               {language === 'ja' ? '直近' : 'Upcoming'}
             </TabsTrigger>
-            <TabsTrigger value="domestic" className="gap-2">
-              🇯🇵
-              {language === 'ja' ? '国内' : 'Japan'}
-            </TabsTrigger>
-            <TabsTrigger value="international" className="gap-2">
+            {countries.slice(0, 6).map((countryCode) => (
+              <TabsTrigger key={countryCode} value={`country-${countryCode}`} className="gap-1">
+                {getCountryFlag(countryCode)}
+                <span className="hidden sm:inline">{getCountryName(countryCode)}</span>
+                <span className="text-xs text-muted-foreground">({tournamentsByCountry[countryCode]?.length})</span>
+              </TabsTrigger>
+            ))}
+            <TabsTrigger value="all" className="gap-2">
               <Globe className="h-4 w-4" />
-              {language === 'ja' ? '国際' : 'World'}
+              {language === 'ja' ? 'すべて' : 'All'}
             </TabsTrigger>
           </TabsList>
 
@@ -382,18 +416,20 @@ const Tournaments = () => {
             />
           </TabsContent>
 
-          <TabsContent value="domestic">
-            <TournamentSection 
-              title={language === 'ja' ? '国内大会' : 'Domestic (Japan)'}
-              tournaments={domesticTournaments}
-              icon={<span className="text-xl">🇯🇵</span>}
-            />
-          </TabsContent>
+          {countries.map((countryCode) => (
+            <TabsContent key={countryCode} value={`country-${countryCode}`}>
+              <TournamentSection 
+                title={`${getCountryFlag(countryCode)} ${getCountryName(countryCode)}`}
+                tournaments={filterByOrganizer(filterByDate(tournamentsByCountry[countryCode]))}
+                icon={<span className="text-xl">{getCountryFlag(countryCode)}</span>}
+              />
+            </TabsContent>
+          ))}
 
-          <TabsContent value="international">
+          <TabsContent value="all">
             <TournamentSection 
-              title={language === 'ja' ? '国際大会' : 'International'}
-              tournaments={internationalTournaments}
+              title={language === 'ja' ? 'すべての大会' : 'All Tournaments'}
+              tournaments={filterByOrganizer(filterByDate(tournaments))}
               icon={<Globe className="h-5 w-5 text-primary" />}
             />
           </TabsContent>
