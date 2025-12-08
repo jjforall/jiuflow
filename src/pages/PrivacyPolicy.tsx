@@ -24,7 +24,13 @@ const PrivacyPolicy = () => {
               list: [
                 "アカウント情報：氏名、メールアドレス、ユーザー名、パスワード、プロフィール画像、所属道場、帯色など。",
                 "健康・身体情報（センシティブ情報）：練習記録機能においてユーザーが任意で入力する体重、怪我の履歴、身体的特徴など。これらはGDPR上の「特段の配慮を要する個人データ」に該当するため、お客様の明示的な同意に基づいてのみ処理されます。",
-                "決済情報：決済代行会社（Stripe等）が直接処理し、当社は完全なクレジットカード情報を保持しません。"
+                "決済情報：決済代行会社（Stripe等）が直接処理し、当社は完全なクレジットカード情報を保持しません。",
+                "ユーザー生成コンテンツ：アップロードした動画、コミュニティへの投稿、コメント、メッセージなど。",
+                "ソーシャル情報：他のユーザーやアスリートへのフォロー状況、グループ参加状況。",
+                "大会参加情報：トーナメントへの登録情報、階級、参加ステータス。",
+                "ポイント・紹介情報：獲得ポイント履歴、紹介コード、紹介実績。",
+                "商品購入情報：ショップでの注文情報、配送先住所、購入履歴（Printful連携）。",
+                "投げ銭・動画購入情報：クリエイターへの投げ銭履歴、有料動画の購入履歴。"
               ]
             },
             {
@@ -126,7 +132,13 @@ const PrivacyPolicy = () => {
               list: [
                 "Account Information: Name, email address, username, password, profile picture, affiliated dojo, belt rank, etc.",
                 "Health/Physical Information (Sensitive Data): Weight, injury history, physical characteristics, etc. that users voluntarily enter in the practice record feature. As \"special category personal data\" under GDPR, these are processed only with your explicit consent.",
-                "Payment Information: Processed directly by payment processors (Stripe, etc.); we do not retain complete credit card information."
+                "Payment Information: Processed directly by payment processors (Stripe, etc.); we do not retain complete credit card information.",
+                "User-Generated Content: Uploaded videos, community posts, comments, messages, etc.",
+                "Social Information: Follow status of other users and athletes, group membership.",
+                "Tournament Participation Information: Tournament registration information, weight class, participation status.",
+                "Points/Referral Information: Points history, referral codes, referral results.",
+                "Product Purchase Information: Shop order information, shipping addresses, purchase history (Printful integration).",
+                "Tips/Video Purchase Information: Tip history to creators, paid video purchase history."
               ]
             },
             {
@@ -228,7 +240,13 @@ const PrivacyPolicy = () => {
               list: [
                 "Informações da Conta: Nome, endereço de e-mail, nome de usuário, senha, foto de perfil, academia afiliada, graduação de faixa, etc.",
                 "Informações de Saúde/Físicas (Dados Sensíveis): Peso, histórico de lesões, características físicas, etc. que os usuários inserem voluntariamente no recurso de registro de prática. Como \"dados pessoais de categoria especial\" sob o GDPR, estes são processados apenas com seu consentimento explícito.",
-                "Informações de Pagamento: Processadas diretamente por processadores de pagamento (Stripe, etc.); não retemos informações completas de cartão de crédito."
+                "Informações de Pagamento: Processadas diretamente por processadores de pagamento (Stripe, etc.); não retemos informações completas de cartão de crédito.",
+                "Conteúdo Gerado pelo Usuário: Vídeos enviados, postagens na comunidade, comentários, mensagens, etc.",
+                "Informações Sociais: Status de seguir outros usuários e atletas, participação em grupos.",
+                "Informações de Participação em Torneios: Informações de registro em torneios, categoria de peso, status de participação.",
+                "Informações de Pontos/Indicação: Histórico de pontos, códigos de indicação, resultados de indicação.",
+                "Informações de Compra de Produtos: Informações de pedidos na loja, endereços de entrega, histórico de compras (integração Printful).",
+                "Informações de Gorjetas/Compra de Vídeos: Histórico de gorjetas para criadores, histórico de compras de vídeos pagos."
               ]
             },
             {
