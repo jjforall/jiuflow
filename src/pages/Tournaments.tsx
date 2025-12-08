@@ -6,6 +6,8 @@ import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Calendar, MapPin, Trophy, Globe, Info, ExternalLink } from "lucide-react";
 import { format, parseISO, isAfter, isBefore, addMonths } from "date-fns";
@@ -32,6 +34,7 @@ interface Tournament {
 
 const Tournaments = () => {
   const { language } = useLanguage();
+  const [showPastTournaments, setShowPastTournaments] = useState(false);
   const [activeTab, setActiveTab] = useState("upcoming");
   const [selectedOrganizer, setSelectedOrganizer] = useState<string | null>(null);
 
@@ -91,10 +94,18 @@ const Tournaments = () => {
     return list.filter(t => t.organizer === selectedOrganizer);
   };
 
+  // Filter by date (past/future)
+  const filterByDate = (list: Tournament[] | undefined, checkFuture: boolean = true) => {
+    if (!list) return list;
+    if (showPastTournaments) return list;
+    if (checkFuture) return list.filter(t => isAfter(parseISO(t.date_start), now));
+    return list;
+  };
+
   const upcomingTournaments = filterByOrganizer(tournaments?.filter(t => isAfter(parseISO(t.date_start), now) && isBefore(parseISO(t.date_start), threeMonthsLater)));
-  const domesticTournaments = filterByOrganizer(tournaments?.filter(t => t.country === 'JP' && isAfter(parseISO(t.date_start), now)));
-  const internationalTournaments = filterByOrganizer(tournaments?.filter(t => t.country !== 'JP' && isAfter(parseISO(t.date_start), now)));
-  const majorTournaments = filterByOrganizer(tournaments?.filter(t => t.category === 'major' || t.category === 'international'));
+  const domesticTournaments = filterByOrganizer(filterByDate(tournaments?.filter(t => t.country === 'JP')));
+  const internationalTournaments = filterByOrganizer(filterByDate(tournaments?.filter(t => t.country !== 'JP')));
+  const majorTournaments = filterByOrganizer(filterByDate(tournaments?.filter(t => t.category === 'major' || t.category === 'international'), !showPastTournaments));
 
   const getCategoryBadge = (category: string, isInternational: boolean) => {
     if (category === 'major' || category === 'international') {
@@ -269,8 +280,21 @@ const Tournaments = () => {
           </CardContent>
         </Card>
 
-        {/* Organizer Filter */}
-        <div className="mb-6">
+        {/* Filters */}
+        <div className="mb-6 space-y-4">
+          {/* Past Tournaments Toggle */}
+          <div className="flex items-center gap-3">
+            <Switch
+              id="show-past"
+              checked={showPastTournaments}
+              onCheckedChange={setShowPastTournaments}
+            />
+            <Label htmlFor="show-past" className="text-sm text-muted-foreground cursor-pointer">
+              {language === 'ja' ? '過去の大会も表示' : 'Show past tournaments'}
+            </Label>
+          </div>
+
+          {/* Organizer Filter */}
           <div className="flex items-center gap-2 mb-3">
             <Trophy className="h-4 w-4 text-muted-foreground" />
             <span className="text-sm font-medium text-muted-foreground">
