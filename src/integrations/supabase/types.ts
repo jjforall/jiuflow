@@ -1985,12 +1985,16 @@ export type Database = {
       tournaments: {
         Row: {
           category: string | null
+          contact_email: string | null
+          contact_url: string | null
           country: string | null
           created_at: string
           date_end: string | null
           date_start: string
           description: string | null
           description_ja: string | null
+          entry_fee: string | null
+          entry_fee_ja: string | null
           id: string
           is_international: boolean | null
           location: string
@@ -2002,19 +2006,31 @@ export type Database = {
           organizer: string
           registration_deadline: string | null
           registration_url: string | null
+          rules: string | null
+          rules_ja: string | null
           slug: string | null
           updated_at: string
           venue: string | null
+          venue_access: string | null
+          venue_access_ja: string | null
+          venue_address: string | null
+          venue_address_ja: string | null
+          venue_image_url: string | null
           venue_ja: string | null
+          weight_classes: string[] | null
         }
         Insert: {
           category?: string | null
+          contact_email?: string | null
+          contact_url?: string | null
           country?: string | null
           created_at?: string
           date_end?: string | null
           date_start: string
           description?: string | null
           description_ja?: string | null
+          entry_fee?: string | null
+          entry_fee_ja?: string | null
           id?: string
           is_international?: boolean | null
           location: string
@@ -2026,19 +2042,31 @@ export type Database = {
           organizer: string
           registration_deadline?: string | null
           registration_url?: string | null
+          rules?: string | null
+          rules_ja?: string | null
           slug?: string | null
           updated_at?: string
           venue?: string | null
+          venue_access?: string | null
+          venue_access_ja?: string | null
+          venue_address?: string | null
+          venue_address_ja?: string | null
+          venue_image_url?: string | null
           venue_ja?: string | null
+          weight_classes?: string[] | null
         }
         Update: {
           category?: string | null
+          contact_email?: string | null
+          contact_url?: string | null
           country?: string | null
           created_at?: string
           date_end?: string | null
           date_start?: string
           description?: string | null
           description_ja?: string | null
+          entry_fee?: string | null
+          entry_fee_ja?: string | null
           id?: string
           is_international?: boolean | null
           location?: string
@@ -2050,10 +2078,18 @@ export type Database = {
           organizer?: string
           registration_deadline?: string | null
           registration_url?: string | null
+          rules?: string | null
+          rules_ja?: string | null
           slug?: string | null
           updated_at?: string
           venue?: string | null
+          venue_access?: string | null
+          venue_access_ja?: string | null
+          venue_address?: string | null
+          venue_address_ja?: string | null
+          venue_image_url?: string | null
           venue_ja?: string | null
+          weight_classes?: string[] | null
         }
         Relationships: []
       }

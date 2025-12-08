@@ -10,10 +10,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Calendar, MapPin, Trophy, Info, ExternalLink, Building2, ArrowLeft, Globe, Users, UserPlus, UserMinus, AlertCircle, Clock, FileText } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
+import { Calendar, MapPin, Trophy, Info, ExternalLink, Building2, ArrowLeft, Globe, Users, UserPlus, UserMinus, AlertCircle, Clock, FileText, Train, DollarSign, ScrollText, Mail, Link as LinkIcon, Scale } from "lucide-react";
 import { format, parseISO, isBefore } from "date-fns";
 import { ja, enUS, pt } from "date-fns/locale";
 import { toast } from "sonner";
+import komazawaVenue from "@/assets/venues/komazawa-olympic-park.jpg";
 
 interface Tournament {
   id: string;
@@ -36,6 +38,18 @@ interface Tournament {
   registration_url: string | null;
   registration_deadline: string | null;
   slug: string | null;
+  venue_image_url: string | null;
+  venue_address: string | null;
+  venue_address_ja: string | null;
+  venue_access: string | null;
+  venue_access_ja: string | null;
+  weight_classes: string[] | null;
+  entry_fee: string | null;
+  entry_fee_ja: string | null;
+  rules: string | null;
+  rules_ja: string | null;
+  contact_email: string | null;
+  contact_url: string | null;
 }
 
 interface Participant {
@@ -172,6 +186,19 @@ const TournamentDetail = () => {
   const getVenue = (t: Tournament) => language === 'ja' && t.venue_ja ? t.venue_ja : t.venue;
   const getNotes = (t: Tournament) => language === 'ja' && t.notes_ja ? t.notes_ja : t.notes;
   const getDescription = (t: Tournament) => language === 'ja' && t.description_ja ? t.description_ja : t.description;
+  const getVenueAddress = (t: Tournament) => language === 'ja' && t.venue_address_ja ? t.venue_address_ja : t.venue_address;
+  const getVenueAccess = (t: Tournament) => language === 'ja' && t.venue_access_ja ? t.venue_access_ja : t.venue_access;
+  const getEntryFee = (t: Tournament) => language === 'ja' && t.entry_fee_ja ? t.entry_fee_ja : t.entry_fee;
+  const getRules = (t: Tournament) => language === 'ja' && t.rules_ja ? t.rules_ja : t.rules;
+  
+  const getVenueImage = (t: Tournament) => {
+    if (t.venue_image_url) return t.venue_image_url;
+    // Default venue image for Komazawa
+    if (t.venue?.includes('Komazawa') || t.venue_ja?.includes('駒沢')) {
+      return komazawaVenue;
+    }
+    return null;
+  };
 
   const getCategoryBadge = (category: string, isInternational: boolean) => {
     if (category === 'major' || category === 'international') {
@@ -259,6 +286,23 @@ const TournamentDetail = () => {
 
         <div className="max-w-3xl mx-auto space-y-6">
           <Card className={isPast ? 'opacity-75' : ''}>
+            {/* Venue Hero Image */}
+            {getVenueImage(tournament) && (
+              <div className="relative w-full h-48 sm:h-64 overflow-hidden rounded-t-lg">
+                <img 
+                  src={getVenueImage(tournament) || ''} 
+                  alt={getVenue(tournament) || 'Venue'}
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent" />
+                <div className="absolute bottom-4 left-4 right-4">
+                  <Badge variant="secondary" className="bg-background/80 backdrop-blur-sm">
+                    <Building2 className="h-3 w-3 mr-1" />
+                    {getVenue(tournament)}
+                  </Badge>
+                </div>
+              </div>
+            )}
             <CardContent className="p-6 sm:p-8">
               {/* Header */}
               <div className="flex items-start justify-between gap-3 mb-4">
@@ -370,6 +414,113 @@ const TournamentDetail = () => {
                     <div className="flex items-start gap-2.5">
                       <Info className="h-4 w-4 mt-0.5 text-muted-foreground shrink-0" />
                       <p className="text-muted-foreground text-sm">{getNotes(tournament)}</p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Extended Information Section */}
+                <Separator className="my-6" />
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Entry Fee */}
+                  {getEntryFee(tournament) && (
+                    <div className="flex items-start gap-3 p-3 bg-muted/30 rounded-lg">
+                      <DollarSign className="h-5 w-5 text-green-500 shrink-0 mt-0.5" />
+                      <div>
+                        <p className="font-medium text-xs text-muted-foreground mb-1">
+                          {language === 'ja' ? '参加費' : 'Entry Fee'}
+                        </p>
+                        <p className="text-sm font-semibold">{getEntryFee(tournament)}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Rules */}
+                  {getRules(tournament) && (
+                    <div className="flex items-start gap-3 p-3 bg-muted/30 rounded-lg">
+                      <ScrollText className="h-5 w-5 text-blue-500 shrink-0 mt-0.5" />
+                      <div>
+                        <p className="font-medium text-xs text-muted-foreground mb-1">
+                          {language === 'ja' ? 'ルール' : 'Rules'}
+                        </p>
+                        <p className="text-sm">{getRules(tournament)}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Venue Address */}
+                  {getVenueAddress(tournament) && (
+                    <div className="flex items-start gap-3 p-3 bg-muted/30 rounded-lg">
+                      <MapPin className="h-5 w-5 text-red-500 shrink-0 mt-0.5" />
+                      <div>
+                        <p className="font-medium text-xs text-muted-foreground mb-1">
+                          {language === 'ja' ? '住所' : 'Address'}
+                        </p>
+                        <p className="text-sm">{getVenueAddress(tournament)}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Access Info */}
+                  {getVenueAccess(tournament) && (
+                    <div className="flex items-start gap-3 p-3 bg-muted/30 rounded-lg">
+                      <Train className="h-5 w-5 text-purple-500 shrink-0 mt-0.5" />
+                      <div>
+                        <p className="font-medium text-xs text-muted-foreground mb-1">
+                          {language === 'ja' ? 'アクセス' : 'Access'}
+                        </p>
+                        <p className="text-sm">{getVenueAccess(tournament)}</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Weight Classes */}
+                {tournament.weight_classes && tournament.weight_classes.length > 0 && (
+                  <div className="mt-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Scale className="h-4 w-4 text-muted-foreground" />
+                      <p className="font-medium text-sm text-muted-foreground">
+                        {language === 'ja' ? '階級' : 'Weight Classes'}
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {tournament.weight_classes.map((wc, idx) => (
+                        <Badge key={idx} variant="outline" className="text-xs">
+                          {wc}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Contact Info */}
+                {(tournament.contact_email || tournament.contact_url) && (
+                  <div className="mt-4 p-3 bg-primary/5 border border-primary/20 rounded-lg">
+                    <p className="font-medium text-xs text-muted-foreground mb-2">
+                      {language === 'ja' ? 'お問い合わせ' : 'Contact'}
+                    </p>
+                    <div className="flex flex-wrap gap-3">
+                      {tournament.contact_email && (
+                        <a 
+                          href={`mailto:${tournament.contact_email}`}
+                          className="flex items-center gap-1.5 text-sm text-primary hover:underline"
+                        >
+                          <Mail className="h-4 w-4" />
+                          {tournament.contact_email}
+                        </a>
+                      )}
+                      {tournament.contact_url && (
+                        <a 
+                          href={tournament.contact_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-1.5 text-sm text-primary hover:underline"
+                        >
+                          <LinkIcon className="h-4 w-4" />
+                          {language === 'ja' ? '公式サイト' : 'Official Site'}
+                        </a>
+                      )}
                     </div>
                   </div>
                 )}
