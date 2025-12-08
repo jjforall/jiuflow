@@ -2892,6 +2892,16 @@ export type Database = {
           username: string
         }[]
       }
+      get_followed_profiles: {
+        Args: { p_user_ids: string[] }
+        Returns: {
+          avatar_url: string
+          belt_history: Json
+          display_name: string
+          id: string
+          username: string
+        }[]
+      }
       get_printful_orders_masked: {
         Args: never
         Returns: {
@@ -2940,6 +2950,30 @@ export type Database = {
           work_experience: Json
         }[]
       }
+      get_public_profile: {
+        Args: { p_identifier: string; p_is_uuid?: boolean }
+        Returns: {
+          avatar_url: string
+          belt_history: Json
+          bio: string
+          cover_image_url: string
+          created_at: string
+          display_name: string
+          display_name_reading: string
+          favorite_fighters: Json
+          favorite_techniques: Json
+          hobbies: Json
+          home_dojo: string
+          hometown: string
+          id: string
+          is_public: boolean
+          organization_id: string
+          social_links: Json
+          titles: Json
+          training_locations: Json
+          username: string
+        }[]
+      }
       get_subscriptions_masked: {
         Args: never
         Returns: {
@@ -2975,6 +3009,17 @@ export type Database = {
       reject_brothers_application: {
         Args: { application_id: string; reason: string }
         Returns: undefined
+      }
+      search_public_profiles: {
+        Args: { p_limit?: number; p_query: string }
+        Returns: {
+          avatar_url: string
+          belt_history: Json
+          display_name: string
+          display_name_reading: string
+          id: string
+          username: string
+        }[]
       }
       user_has_purchased_video: {
         Args: { p_user_id: string; p_video_id: string }
