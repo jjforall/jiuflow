@@ -538,7 +538,7 @@ const Athlete = () => {
                   </AvatarFallback>
                 </Avatar>
               </div>
-              {user && (
+              {(isAdmin || isOwner) && (
                 <Button
                   variant="outline"
                   size="sm"
@@ -546,7 +546,9 @@ const Athlete = () => {
                   className="gap-1.5 text-[10px] sm:text-xs h-7 sm:h-8 px-2 sm:px-3 active:scale-[0.98]"
                 >
                   <Camera className="h-3 w-3" />
-                  {language === "ja" ? "画像変更" : "Change"}
+                  {language === "ja" 
+                    ? (isAdmin ? "写真を更新" : "画像変更") 
+                    : (isAdmin ? "Update Photo" : "Change")}
                 </Button>
               )}
             </div>
