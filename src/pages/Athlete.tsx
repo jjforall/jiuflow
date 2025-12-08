@@ -540,9 +540,9 @@ const Athlete = () => {
     <div className="min-h-screen bg-background">
       <Navigation />
       
-      <main className="pt-14 sm:pt-16 md:pt-20 pb-12 sm:pb-16">
+      <main className="pt-16 sm:pt-20 md:pt-24 pb-12 sm:pb-16">
         {/* Back to List */}
-        <div className="max-w-6xl mx-auto px-3 sm:px-4 md:px-6 lg:px-12 py-2 sm:py-3">
+        <div className="max-w-6xl mx-auto px-3 sm:px-4 md:px-6 lg:px-12 pt-2 pb-2 sm:pt-3 sm:pb-3">
           <Link 
             to="/athletes" 
             className="inline-flex items-center gap-1 text-xs sm:text-sm text-muted-foreground hover:text-foreground transition-colors"
