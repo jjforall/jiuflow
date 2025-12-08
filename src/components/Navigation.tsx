@@ -5,7 +5,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { translations } from "@/lib/translations";
 import { prefetchRoute } from "@/utils/routePrefetch";
 import { Button } from "@/components/ui/button";
-import { Menu, LogIn, User, LogOut, ShieldCheck, Moon, Sun, Home, Map, Info, UserPlus, X, ClipboardList, Users, Bell } from "lucide-react";
+import { Menu, LogIn, User, LogOut, ShieldCheck, Moon, Sun, Home, Map, Info, UserPlus, X, ClipboardList, Users, Bell, Trophy } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { supabase } from "@/integrations/supabase/client";
 import { User as SupabaseUser } from "@supabase/supabase-js";
@@ -233,6 +233,10 @@ const Navigation = () => {
                     </span>
                   )}
                 </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate("/tournaments")} className="gap-2 cursor-pointer">
+                  <Trophy className="h-4 w-4" />
+                  {language === "ja" ? "大会一覧" : language === "pt" ? "Torneios" : "Tournaments"}
+                </DropdownMenuItem>
                   {canAccessAdmin && (
                     <DropdownMenuItem onClick={() => navigate("/admin/dashboard")} className="gap-2 cursor-pointer">
                       <ShieldCheck className="h-4 w-4" />
@@ -445,6 +449,19 @@ const Navigation = () => {
                             <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
                           </span>
                         )}
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        className="w-full justify-start gap-3 h-12 hover:bg-muted/50 active:bg-muted"
+                        onClick={() => {
+                          navigate("/tournaments");
+                          setIsOpen(false);
+                        }}
+                      >
+                        <Trophy className="h-5 w-5" />
+                        <span className="text-base">
+                          {language === "ja" ? "大会一覧" : language === "pt" ? "Torneios" : "Tournaments"}
+                        </span>
                       </Button>
                       {canAccessAdmin && (
                         <Link to="/admin/dashboard" onClick={() => setIsOpen(false)}>
