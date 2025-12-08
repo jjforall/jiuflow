@@ -208,36 +208,35 @@ const Tournaments = () => {
         <Card 
           className={`hover:shadow-lg transition-all duration-300 border-border/50 hover:border-primary/30 cursor-pointer h-full ${isPast ? 'opacity-60' : ''}`}
         >
-          <CardContent className="p-4">
-            <div className="flex flex-col gap-3">
+          <CardContent className="p-3 sm:p-4">
+            <div className="flex flex-col gap-2 sm:gap-3">
               <div className="flex items-start justify-between gap-2">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 flex-wrap mb-2">
-                    {getCategoryBadge(tournament.category, tournament.is_international)}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5 flex-wrap mb-1.5">
                     {getOrganizerBadge(tournament.organizer)}
-                    {isPast && <Badge variant="outline" className="text-muted-foreground">{language === 'ja' ? '終了' : 'Past'}</Badge>}
+                    {isPast && <Badge variant="outline" className="text-muted-foreground text-xs">{language === 'ja' ? '終了' : 'Past'}</Badge>}
                   </div>
-                  <h3 className="font-semibold text-lg leading-tight">{getName(tournament)}</h3>
+                  <h3 className="font-semibold text-sm sm:text-base leading-tight line-clamp-2">{getName(tournament)}</h3>
                 </div>
-                <span className="text-2xl">{getCountryFlag(tournament.country)}</span>
+                <span className="text-xl sm:text-2xl flex-shrink-0">{getCountryFlag(tournament.country)}</span>
               </div>
               
-              <div className="space-y-2 text-sm text-muted-foreground">
+              <div className="space-y-1.5 text-xs sm:text-sm text-muted-foreground">
                 <div className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4 text-primary" />
+                  <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary flex-shrink-0" />
                   <span className="font-medium text-foreground">
                     {formatDateRange(tournament.date_start, tournament.date_end)}
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <MapPin className="h-4 w-4" />
+                  <MapPin className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" />
                   <span className="line-clamp-1">
                     {getLocation(tournament)}
                   </span>
                 </div>
                 {participantCount > 0 && (
                   <div className="flex items-center gap-2">
-                    <Users className="h-4 w-4 text-primary" />
+                    <Users className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary flex-shrink-0" />
                     <span className="text-primary font-medium">
                       {participantCount} {language === 'ja' ? '人参加予定' : 'planning'}
                     </span>
@@ -278,14 +277,14 @@ const Tournaments = () => {
       
       <main className="flex-1 container mx-auto px-4 py-8 pt-24">
         {/* Header */}
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold mb-4">
+        <div className="text-center mb-8 sm:mb-12">
+          <h1 className="text-2xl sm:text-4xl font-bold mb-2 sm:mb-4">
             {language === 'ja' ? '大会スケジュール' : 'Tournament Schedule'}
           </h1>
-          <p className="text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-sm sm:text-base text-muted-foreground max-w-2xl mx-auto">
             {language === 'ja' 
-              ? '2025年〜2026年の柔術大会スケジュール。国内・国際大会の情報をまとめています。'
-              : 'Jiu-Jitsu tournament schedule for 2025-2026. Domestic and international events.'}
+              ? '2025年〜2026年の柔術大会スケジュール'
+              : 'BJJ tournament schedule 2025-2026'}
           </p>
         </div>
 
@@ -308,37 +307,37 @@ const Tournaments = () => {
           </Card>
         )}
 
-        {/* Tips Section */}
-        <Card className="mb-8 bg-muted/30">
-          <CardHeader>
-            <CardTitle className="text-lg">
-              {language === 'ja' ? '初心者の方へのヒント' : 'Tips for Beginners'}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4 text-sm">
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-2">
-                <h4 className="font-semibold text-primary">ASJJF / SJJJF</h4>
-                <p className="text-muted-foreground">
-                  {language === 'ja' 
-                    ? '初心者にやさしい。会員登録なしで出場できる大会が多く、エンターテイメント性が高い。'
-                    : 'Beginner-friendly. Many events allow participation without membership. High entertainment value.'}
-                </p>
+        {/* Tips Section - Collapsed on mobile */}
+        <details className="mb-6 sm:mb-8">
+          <summary className="cursor-pointer text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+            {language === 'ja' ? '💡 初心者の方へのヒント' : '💡 Tips for Beginners'}
+          </summary>
+          <Card className="mt-3 bg-muted/30">
+            <CardContent className="p-3 sm:p-4 space-y-3 text-xs sm:text-sm">
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="space-y-1">
+                  <h4 className="font-semibold text-primary text-sm">ASJJF / SJJJF</h4>
+                  <p className="text-muted-foreground">
+                    {language === 'ja' 
+                      ? '初心者にやさしい。会員登録なしで出場可能。'
+                      : 'Beginner-friendly. No membership required.'}
+                  </p>
+                </div>
+                <div className="space-y-1">
+                  <h4 className="font-semibold text-primary text-sm">JBJJF</h4>
+                  <p className="text-muted-foreground">
+                    {language === 'ja'
+                      ? 'IBJJF傘下で格式が高い。道着チェックが厳格。'
+                      : 'Under IBJJF. Strict gi checks.'}
+                  </p>
+                </div>
               </div>
-              <div className="space-y-2">
-                <h4 className="font-semibold text-primary">JBJJF</h4>
-                <p className="text-muted-foreground">
-                  {language === 'ja'
-                    ? '国際連盟（IBJJF）傘下で格式が高い。ルールや道着のチェックが厳格。事前会員登録が必要。'
-                    : 'Under IBJJF with high prestige. Strict rules and gi checks. Prior membership registration required.'}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </details>
 
         {/* Filters */}
-        <div className="mb-6 space-y-4">
+        <div className="mb-4 sm:mb-6 space-y-3 sm:space-y-4">
           {/* Past Tournaments Toggle */}
           <div className="flex items-center gap-3">
             <Switch
@@ -346,67 +345,64 @@ const Tournaments = () => {
               checked={showPastTournaments}
               onCheckedChange={setShowPastTournaments}
             />
-            <Label htmlFor="show-past" className="text-sm text-muted-foreground cursor-pointer">
-              {language === 'ja' ? '過去の大会も表示' : 'Show past tournaments'}
+            <Label htmlFor="show-past" className="text-xs sm:text-sm text-muted-foreground cursor-pointer">
+              {language === 'ja' ? '過去の大会も表示' : 'Show past'}
             </Label>
           </div>
 
           {/* Organizer Filter */}
-          <div className="flex items-center gap-2 mb-3">
-            <Trophy className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm font-medium text-muted-foreground">
-              {language === 'ja' ? '主催者で絞り込み' : 'Filter by Organizer'}
-            </span>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <Badge 
-              variant={selectedOrganizer === null ? "default" : "outline"}
-              className="cursor-pointer hover:opacity-80 transition-opacity"
-              onClick={() => setSelectedOrganizer(null)}
-            >
-              {language === 'ja' ? 'すべて' : 'All'}
-            </Badge>
-            {organizers.map((org) => (
+          <div className="overflow-x-auto -mx-4 px-4 pb-2">
+            <div className="flex gap-1.5 min-w-max">
               <Badge 
-                key={org}
-                variant={selectedOrganizer === org ? "default" : "outline"}
-                className={`cursor-pointer hover:opacity-80 transition-opacity ${
-                  selectedOrganizer === org ? '' : 
-                  org === 'IBJJF' ? 'bg-purple-500/10 text-purple-500 border-purple-500/30 hover:bg-purple-500/20' :
-                  org === 'AJP' ? 'bg-amber-500/10 text-amber-500 border-amber-500/30 hover:bg-amber-500/20' :
-                  org === 'ADCC' ? 'bg-green-500/10 text-green-500 border-green-500/30 hover:bg-green-500/20' :
-                  org === 'ASJJF' ? 'bg-blue-500/10 text-blue-500 border-blue-500/30 hover:bg-blue-500/20' :
-                  org === 'JBJJF' ? 'bg-red-500/10 text-red-500 border-red-500/30 hover:bg-red-500/20' :
-                  org === 'SJJIF' ? 'bg-pink-500/10 text-pink-500 border-pink-500/30 hover:bg-pink-500/20' :
-                  ''
-                }`}
-                onClick={() => setSelectedOrganizer(org)}
+                variant={selectedOrganizer === null ? "default" : "outline"}
+                className="cursor-pointer hover:opacity-80 transition-opacity text-xs"
+                onClick={() => setSelectedOrganizer(null)}
               >
-                {org}
+                {language === 'ja' ? 'すべて' : 'All'}
               </Badge>
-            ))}
+              {organizers.map((org) => (
+                <Badge 
+                  key={org}
+                  variant={selectedOrganizer === org ? "default" : "outline"}
+                  className={`cursor-pointer hover:opacity-80 transition-opacity text-xs ${
+                    selectedOrganizer === org ? '' : 
+                    org === 'IBJJF' ? 'bg-purple-500/10 text-purple-500 border-purple-500/30' :
+                    org === 'AJP' ? 'bg-amber-500/10 text-amber-500 border-amber-500/30' :
+                    org === 'ADCC' ? 'bg-green-500/10 text-green-500 border-green-500/30' :
+                    org === 'ASJJF' ? 'bg-blue-500/10 text-blue-500 border-blue-500/30' :
+                    org === 'JBJJF' ? 'bg-red-500/10 text-red-500 border-red-500/30' :
+                    org === 'SJJIF' ? 'bg-pink-500/10 text-pink-500 border-pink-500/30' :
+                    ''
+                  }`}
+                  onClick={() => setSelectedOrganizer(org)}
+                >
+                  {org}
+                </Badge>
+              ))}
+            </div>
           </div>
         </div>
 
         {/* Main Content Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="flex flex-wrap h-auto gap-1 lg:inline-flex">
-            <TabsTrigger value="upcoming" className="gap-2">
-              <Calendar className="h-4 w-4" />
-              {language === 'ja' ? '直近' : 'Upcoming'}
-            </TabsTrigger>
-            {countries.slice(0, 6).map((countryCode) => (
-              <TabsTrigger key={countryCode} value={`country-${countryCode}`} className="gap-1">
-                {getCountryFlag(countryCode)}
-                <span className="hidden sm:inline">{getCountryName(countryCode)}</span>
-                <span className="text-xs text-muted-foreground">({tournamentsByCountry[countryCode]?.length})</span>
+          <div className="overflow-x-auto -mx-4 px-4 pb-2">
+            <TabsList className="inline-flex h-auto gap-1 min-w-max">
+              <TabsTrigger value="upcoming" className="gap-1.5 text-xs sm:text-sm px-2 sm:px-3">
+                <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                {language === 'ja' ? '直近' : 'Upcoming'}
               </TabsTrigger>
-            ))}
-            <TabsTrigger value="all" className="gap-2">
-              <Globe className="h-4 w-4" />
-              {language === 'ja' ? 'すべて' : 'All'}
-            </TabsTrigger>
-          </TabsList>
+              {countries.slice(0, 6).map((countryCode) => (
+                <TabsTrigger key={countryCode} value={`country-${countryCode}`} className="gap-1 text-xs sm:text-sm px-2 sm:px-3">
+                  <span className="text-sm sm:text-base">{getCountryFlag(countryCode)}</span>
+                  <span className="text-xs text-muted-foreground">({tournamentsByCountry[countryCode]?.length})</span>
+                </TabsTrigger>
+              ))}
+              <TabsTrigger value="all" className="gap-1.5 text-xs sm:text-sm px-2 sm:px-3">
+                <Globe className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                {language === 'ja' ? '全部' : 'All'}
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
           <TabsContent value="upcoming">
             <TournamentSection 
