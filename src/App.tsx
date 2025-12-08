@@ -54,6 +54,8 @@ const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 const Terms = lazy(() => import("./pages/Terms"));
 const Tournaments = lazy(() => import("./pages/Tournaments"));
 const TournamentDetail = lazy(() => import("./pages/TournamentDetail"));
+const VenueDetail = lazy(() => import("./pages/VenueDetail"));
+const OrganizationDetail = lazy(() => import("./pages/OrganizationDetail"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const Glossary = lazy(() => import("./pages/Glossary"));
 
@@ -92,6 +94,8 @@ const App = () => (
                     <Route path="glossary" element={<SuspenseWrapper><Glossary /></SuspenseWrapper>} />
                     <Route path="tournaments" element={<SuspenseWrapper><Tournaments /></SuspenseWrapper>} />
                     <Route path="tournaments/:year/:slug" element={<SuspenseWrapper><TournamentDetail /></SuspenseWrapper>} />
+                    <Route path="venue/:id" element={<SuspenseWrapper><VenueDetail /></SuspenseWrapper>} />
+                    <Route path="organization/:slug" element={<SuspenseWrapper><OrganizationDetail /></SuspenseWrapper>} />
                     <Route path="map" element={
                       <ProtectedRoute>
                         <SuspenseWrapper variant="map"><Map /></SuspenseWrapper>
@@ -177,6 +181,8 @@ const App = () => (
                   <Route path="/glossary" element={<SuspenseWrapper><Glossary /></SuspenseWrapper>} />
                   <Route path="/tournaments" element={<SuspenseWrapper><Tournaments /></SuspenseWrapper>} />
                   <Route path="/tournaments/:year/:slug" element={<SuspenseWrapper><TournamentDetail /></SuspenseWrapper>} />
+                  <Route path="/venue/:id" element={<SuspenseWrapper><VenueDetail /></SuspenseWrapper>} />
+                  <Route path="/organization/:slug" element={<SuspenseWrapper><OrganizationDetail /></SuspenseWrapper>} />
 
                   {/* Map/Video grid pages */}
                   <Route path="/map" element={
