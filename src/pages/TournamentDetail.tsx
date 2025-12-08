@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Calendar, MapPin, Trophy, Info, ExternalLink, Building2, ArrowLeft, Globe, Users, UserPlus, UserMinus, AlertCircle, Clock, FileText, Train, DollarSign, ScrollText, Mail, Link as LinkIcon, Scale } from "lucide-react";
 import { format, parseISO, isBefore } from "date-fns";
 import { ja, enUS, pt } from "date-fns/locale";
@@ -65,6 +66,69 @@ interface Participant {
   } | null;
 }
 
+const TournamentDetailSkeleton = () => (
+  <div className="min-h-screen flex flex-col bg-background">
+    <Navigation />
+    <main className="flex-1 container mx-auto px-4 py-8 pt-24">
+      <Skeleton className="h-9 w-32 mb-6" />
+      <div className="max-w-3xl mx-auto space-y-6">
+        <Card>
+          {/* Hero skeleton */}
+          <Skeleton className="w-full h-48 sm:h-64 rounded-t-lg" />
+          <CardContent className="p-6 sm:p-8 space-y-4">
+            {/* Badges */}
+            <div className="flex gap-2">
+              <Skeleton className="h-5 w-16" />
+              <Skeleton className="h-5 w-12" />
+              <Skeleton className="h-5 w-14" />
+            </div>
+            {/* Title */}
+            <Skeleton className="h-8 w-3/4" />
+            {/* Details */}
+            <div className="space-y-3">
+              <div className="flex gap-3">
+                <Skeleton className="h-5 w-5 rounded" />
+                <Skeleton className="h-5 w-40" />
+              </div>
+              <div className="flex gap-3">
+                <Skeleton className="h-5 w-5 rounded" />
+                <Skeleton className="h-5 w-32" />
+              </div>
+              <div className="flex gap-3">
+                <Skeleton className="h-5 w-5 rounded" />
+                <Skeleton className="h-5 w-48" />
+              </div>
+            </div>
+            <Skeleton className="h-px w-full my-6" />
+            {/* Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Skeleton className="h-20 rounded-lg" />
+              <Skeleton className="h-20 rounded-lg" />
+            </div>
+            {/* Buttons */}
+            <div className="flex gap-3 pt-4">
+              <Skeleton className="h-10 flex-1" />
+              <Skeleton className="h-10 flex-1" />
+            </div>
+          </CardContent>
+        </Card>
+        {/* Participants skeleton */}
+        <Card>
+          <CardContent className="p-6">
+            <Skeleton className="h-6 w-32 mb-4" />
+            <div className="flex gap-2">
+              {[...Array(5)].map((_, i) => (
+                <Skeleton key={i} className="h-10 w-10 rounded-full" />
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </main>
+    <Footer />
+  </div>
+);
+
 const TournamentDetail = () => {
   const { year, slug } = useParams<{ year: string; slug: string }>();
   const { language } = useLanguage();
@@ -83,7 +147,9 @@ const TournamentDetail = () => {
       
       if (error) throw error;
       return data as Tournament | null;
-    }
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes cache
   });
 
   const { data: participants } = useQuery({
@@ -110,7 +176,8 @@ const TournamentDetail = () => {
       if (error) throw error;
       return data as Participant[];
     },
-    enabled: !!tournament?.id
+    enabled: !!tournament?.id,
+    staleTime: 2 * 60 * 1000, // 2 minutes
   });
 
   const isParticipating = participants?.some(p => p.user_id === user?.id);
@@ -234,17 +301,7 @@ const TournamentDetail = () => {
   const now = new Date();
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen flex flex-col bg-background">
-        <Navigation />
-        <main className="flex-1 container mx-auto px-4 py-8 pt-24">
-          <div className="flex justify-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-          </div>
-        </main>
-        <Footer />
-      </div>
-    );
+    return <TournamentDetailSkeleton />;
   }
 
   if (error || !tournament) {
