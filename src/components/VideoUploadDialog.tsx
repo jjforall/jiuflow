@@ -12,9 +12,11 @@ import { Upload, Loader2 } from "lucide-react";
 interface VideoUploadDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  featuredUserId?: string;
+  featuredUserName?: string;
 }
 
-export function VideoUploadDialog({ open, onOpenChange }: VideoUploadDialogProps) {
+export function VideoUploadDialog({ open, onOpenChange, featuredUserId, featuredUserName }: VideoUploadDialogProps) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [videoType, setVideoType] = useState<"match" | "sparring" | "technique" | "other">("other");
@@ -110,7 +112,8 @@ export function VideoUploadDialog({ open, onOpenChange }: VideoUploadDialogProps
           video_url: publicUrl,
           price: price ? Number(price) : 0,
           is_public: visibility === 'public',
-          visibility
+          visibility,
+          featured_user_id: featuredUserId || null
         });
 
       if (dbError) throw dbError;
@@ -139,10 +142,23 @@ export function VideoUploadDialog({ open, onOpenChange }: VideoUploadDialogProps
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>動画を投稿する</DialogTitle>
+          <DialogTitle>
+            {featuredUserName 
+              ? `${featuredUserName}さんの動画を投稿する` 
+              : '動画を投稿する'}
+          </DialogTitle>
           <DialogDescription className="space-y-2 pt-2">
-            <p>試合動画、テクニック動画など、どんな動画でもお気軽に投稿してください。</p>
-            <p className="text-sm">※ テクニック動画の場合、一部使わせていただく可能性があります。</p>
+            {featuredUserName ? (
+              <>
+                <p>{featuredUserName}さんが写っている動画を投稿できます。</p>
+                <p className="text-sm">※ 動画はあなたの所有物として管理され、{featuredUserName}さんのプロフィールにも表示されます。</p>
+              </>
+            ) : (
+              <>
+                <p>試合動画、テクニック動画など、どんな動画でもお気軽に投稿してください。</p>
+                <p className="text-sm">※ テクニック動画の場合、一部使わせていただく可能性があります。</p>
+              </>
+            )}
             <p className="text-sm font-medium text-primary">再生数に応じた収益をお返しします。</p>
           </DialogDescription>
         </DialogHeader>

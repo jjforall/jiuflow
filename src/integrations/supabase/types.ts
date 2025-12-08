@@ -2273,6 +2273,7 @@ export type Database = {
         Row: {
           created_at: string
           description: string | null
+          featured_user_id: string | null
           id: string
           is_public: boolean | null
           price: number | null
@@ -2289,6 +2290,7 @@ export type Database = {
         Insert: {
           created_at?: string
           description?: string | null
+          featured_user_id?: string | null
           id?: string
           is_public?: boolean | null
           price?: number | null
@@ -2305,6 +2307,7 @@ export type Database = {
         Update: {
           created_at?: string
           description?: string | null
+          featured_user_id?: string | null
           id?: string
           is_public?: boolean | null
           price?: number | null
@@ -2318,7 +2321,22 @@ export type Database = {
           view_count?: number
           visibility?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "user_videos_featured_user_id_fkey"
+            columns: ["featured_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_videos_featured_user_id_fkey"
+            columns: ["featured_user_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       video_comments: {
         Row: {
