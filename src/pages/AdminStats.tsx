@@ -108,10 +108,19 @@ const AdminStats = () => {
     try {
       setVideoStatsLoading(true);
       
-      // Fetch video views with technique info
+      // Calculate start of this week (Monday)
+      const now = new Date();
+      const dayOfWeek = now.getDay();
+      const diffToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+      const startOfWeek = new Date(now);
+      startOfWeek.setDate(now.getDate() - diffToMonday);
+      startOfWeek.setHours(0, 0, 0, 0);
+      
+      // Fetch video views from this week only
       const { data: videoViews, error: viewsError } = await supabase
         .from('video_views')
-        .select('video_id, view_count, user_id');
+        .select('video_id, view_count, user_id, last_viewed_at')
+        .gte('last_viewed_at', startOfWeek.toISOString());
 
       if (viewsError) throw viewsError;
 
@@ -387,7 +396,7 @@ const AdminStats = () => {
               <CollapsibleTrigger asChild>
                 <Button variant="ghost" size="sm" className="text-muted-foreground gap-2">
                   <ChevronDown className={`h-4 w-4 transition-transform ${videoStatsOpen ? '' : '-rotate-90'}`} />
-                  動画視聴統計
+                  動画視聴統計（今週）
                 </Button>
               </CollapsibleTrigger>
             </div>
