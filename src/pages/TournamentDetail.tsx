@@ -340,7 +340,8 @@ const TournamentDetail = () => {
     if (t.venue?.includes('Komazawa') || t.venue_ja?.includes('駒沢')) {
       return komazawaVenue;
     }
-    return null;
+    // Default placeholder image
+    return '/images/venues/default-venue.jpg';
   };
 
   const getCategoryBadge = (category: string, isInternational: boolean) => {

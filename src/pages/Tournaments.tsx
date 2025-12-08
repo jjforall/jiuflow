@@ -425,27 +425,29 @@ const Tournaments = () => {
       );
     }
     
-    const venueImageUrl = tournament.venues?.image_url;
+    const venueImageUrl = tournament.venues?.image_url || '/images/venues/default-venue.jpg';
     const [imageError, setImageError] = useState(false);
     
     return (
       <Link to={getTournamentUrl(tournament)}>
         <Card className={`group hover:shadow-xl transition-all duration-300 border-l-4 ${color.border} hover:scale-[1.02] cursor-pointer h-full overflow-hidden ${isPast ? 'opacity-60' : ''}`}>
           {/* Venue image or gradient header */}
-          {venueImageUrl && !imageError ? (
+          {!imageError ? (
             <div className="relative h-24 w-full overflow-hidden">
               <img 
                 src={venueImageUrl} 
-                alt={tournament.venues?.name_ja || tournament.venues?.name || ''} 
+                alt={tournament.venues?.name_ja || tournament.venues?.name || 'JiuFlow'} 
                 className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                 onError={() => setImageError(true)}
               />
               <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/30 to-transparent" />
-              <div className="absolute bottom-2 left-2 right-2">
-                <span className="text-[10px] text-foreground/80 bg-background/60 px-1.5 py-0.5 rounded backdrop-blur-sm">
-                  {language === 'ja' ? tournament.venues?.name_ja : tournament.venues?.name}
-                </span>
-              </div>
+              {tournament.venues && (
+                <div className="absolute bottom-2 left-2 right-2">
+                  <span className="text-[10px] text-foreground/80 bg-background/60 px-1.5 py-0.5 rounded backdrop-blur-sm">
+                    {language === 'ja' ? tournament.venues?.name_ja : tournament.venues?.name}
+                  </span>
+                </div>
+              )}
             </div>
           ) : (
             <div className={`h-1.5 ${color.bg}`} />
