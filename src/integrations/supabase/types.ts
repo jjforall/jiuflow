@@ -1266,6 +1266,91 @@ export type Database = {
         }
         Relationships: []
       }
+      message_group_members: {
+        Row: {
+          group_id: string
+          id: string
+          joined_at: string
+          user_id: string
+        }
+        Insert: {
+          group_id: string
+          id?: string
+          joined_at?: string
+          user_id: string
+        }
+        Update: {
+          group_id?: string
+          id?: string
+          joined_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "message_group_members_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "message_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      message_groups: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          created_by: string
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          created_by: string
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          created_by?: string
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      message_read_receipts: {
+        Row: {
+          id: string
+          message_id: string
+          read_at: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          message_id: string
+          read_at?: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          message_id?: string
+          read_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "message_read_receipts_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       messages: {
         Row: {
           attachment_name: string | null
@@ -1273,6 +1358,7 @@ export type Database = {
           attachment_url: string | null
           content: string
           created_at: string
+          group_id: string | null
           id: string
           read_at: string | null
           receiver_id: string
@@ -1285,6 +1371,7 @@ export type Database = {
           attachment_url?: string | null
           content: string
           created_at?: string
+          group_id?: string | null
           id?: string
           read_at?: string | null
           receiver_id: string
@@ -1297,13 +1384,22 @@ export type Database = {
           attachment_url?: string | null
           content?: string
           created_at?: string
+          group_id?: string | null
           id?: string
           read_at?: string | null
           receiver_id?: string
           sender_id?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "messages_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "message_groups"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       music_tracks: {
         Row: {
