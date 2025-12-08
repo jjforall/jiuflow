@@ -3075,6 +3075,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_group_member: {
+        Args: { p_group_id: string; p_user_id: string }
+        Returns: boolean
+      }
       log_admin_access: {
         Args: {
           p_action: string
