@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/hooks/useAuth";
@@ -53,16 +53,30 @@ const PAGE_SIZE = 30;
 const Tournaments = () => {
   const { language } = useLanguage();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const [showPastTournaments, setShowPastTournaments] = useState(false);
-  const [activeTab, setActiveTab] = useState("all");
-  const [selectedOrganizer, setSelectedOrganizer] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
+  
+  // Initialize state from URL params
+  const [showPastTournaments, setShowPastTournaments] = useState(() => searchParams.get('past') === 'true');
+  const [activeTab, setActiveTab] = useState(() => searchParams.get('tab') || "all");
+  const [selectedOrganizer, setSelectedOrganizer] = useState<string | null>(() => searchParams.get('org'));
+  const [viewMode, setViewMode] = useState<'list' | 'calendar'>(() => (searchParams.get('view') as 'list' | 'calendar') || 'list');
   const [currentMonth, setCurrentMonth] = useState(new Date());
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPage, setCurrentPage] = useState(() => parseInt(searchParams.get('page') || '1', 10));
   const [participationDialog, setParticipationDialog] = useState<{ open: boolean; tournamentId: string | null }>({ open: false, tournamentId: null });
   const [cancelDialog, setCancelDialog] = useState<{ open: boolean; tournamentId: string | null }>({ open: false, tournamentId: null });
+
+  // Sync state to URL params
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (showPastTournaments) params.set('past', 'true');
+    if (activeTab !== 'all') params.set('tab', activeTab);
+    if (selectedOrganizer) params.set('org', selectedOrganizer);
+    if (viewMode !== 'list') params.set('view', viewMode);
+    if (currentPage > 1) params.set('page', currentPage.toString());
+    setSearchParams(params, { replace: true });
+  }, [showPastTournaments, activeTab, selectedOrganizer, viewMode, currentPage, setSearchParams]);
   
   // Swipe back support
   const touchStartX = useRef<number>(0);
