@@ -352,42 +352,122 @@ const MyPage = () => {
     if (!user) return;
 
     try {
-      let query;
+      const resultList: Array<{ id: string; display_name: string; username: string; avatar_url: string; isCelebrity?: boolean }> = [];
+
       if (type === 'followers') {
-        query = supabase
+        // Get user followers from user_follows
+        const { data: userFollows, error: userFollowsError } = await supabase
           .from('user_follows')
           .select('follower_id')
           .eq('following_id', user.id);
+        if (userFollowsError) throw userFollowsError;
+
+        const userIds = userFollows?.map(f => f.follower_id) || [];
+        
+        if (userIds.length > 0) {
+          const { data: profiles, error: profilesError } = await supabase
+            .from('public_profiles')
+            .select('id, display_name, username, avatar_url')
+            .in('id', userIds);
+          if (profilesError) throw profilesError;
+          profiles?.forEach(p => {
+            resultList.push({
+              id: p.id!,
+              display_name: p.display_name || '',
+              username: p.username || '',
+              avatar_url: p.avatar_url || ''
+            });
+          });
+        }
+
+        // Check if user is linked to a celebrity profile and get celebrity followers
+        const { data: celebrityData } = await supabase
+          .from('celebrities')
+          .select('id')
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        if (celebrityData) {
+          const { data: celFollowers, error: celFollowersError } = await supabase
+            .from('celebrity_follows')
+            .select('user_id')
+            .eq('celebrity_id', celebrityData.id);
+          if (celFollowersError) throw celFollowersError;
+
+          const celFollowerIds = celFollowers?.map(f => f.user_id) || [];
+          if (celFollowerIds.length > 0) {
+            const { data: celProfiles, error: celProfilesError } = await supabase
+              .from('public_profiles')
+              .select('id, display_name, username, avatar_url')
+              .in('id', celFollowerIds);
+            if (celProfilesError) throw celProfilesError;
+            celProfiles?.forEach(p => {
+              // Avoid duplicates
+              if (!resultList.find(r => r.id === p.id)) {
+                resultList.push({
+                  id: p.id!,
+                  display_name: p.display_name || '',
+                  username: p.username || '',
+                  avatar_url: p.avatar_url || ''
+                });
+              }
+            });
+          }
+        }
       } else {
-        query = supabase
+        // Get users being followed from user_follows
+        const { data: userFollowing, error: userFollowingError } = await supabase
           .from('user_follows')
           .select('following_id')
           .eq('follower_id', user.id);
+        if (userFollowingError) throw userFollowingError;
+
+        const userIds = userFollowing?.map(f => f.following_id) || [];
+        
+        if (userIds.length > 0) {
+          const { data: profiles, error: profilesError } = await supabase
+            .from('public_profiles')
+            .select('id, display_name, username, avatar_url')
+            .in('id', userIds);
+          if (profilesError) throw profilesError;
+          profiles?.forEach(p => {
+            resultList.push({
+              id: p.id!,
+              display_name: p.display_name || '',
+              username: p.username || '',
+              avatar_url: p.avatar_url || ''
+            });
+          });
+        }
+
+        // Get celebrities being followed from celebrity_follows
+        const { data: celFollowing, error: celFollowingError } = await supabase
+          .from('celebrity_follows')
+          .select('celebrity_id')
+          .eq('user_id', user.id);
+        if (celFollowingError) throw celFollowingError;
+
+        const celebrityIds = celFollowing?.map(f => f.celebrity_id) || [];
+        
+        if (celebrityIds.length > 0) {
+          const { data: celebrities, error: celebritiesError } = await supabase
+            .from('celebrities')
+            .select('id, display_name, avatar_url, user_id')
+            .in('id', celebrityIds);
+          if (celebritiesError) throw celebritiesError;
+          celebrities?.forEach(c => {
+            resultList.push({
+              id: c.id,
+              display_name: c.display_name || '',
+              username: '', // Celebrities may not have usernames
+              avatar_url: c.avatar_url || '',
+              isCelebrity: true
+            });
+          });
+        }
       }
-
-      const { data: follows, error: followsError } = await query;
-      if (followsError) throw followsError;
-
-      const userIds = follows?.map(f => type === 'followers' ? f.follower_id : f.following_id) || [];
       
-      if (userIds.length === 0) {
-        setFollowList([]);
-        return;
-      }
-
-      // Use public_profiles view to bypass RLS restrictions
-      const { data: profiles, error: profilesError } = await supabase
-        .from('public_profiles')
-        .select('id, display_name, username, avatar_url')
-        .in('id', userIds);
-
-      if (profilesError) throw profilesError;
-      setFollowList((profiles || []).map(p => ({
-        id: p.id!,
-        display_name: p.display_name || '',
-        username: p.username || '',
-        avatar_url: p.avatar_url || ''
-      })));
+      setFollowList(resultList);
     } catch (error) {
       console.error('Error loading follow list:', error);
     }
