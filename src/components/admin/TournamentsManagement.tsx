@@ -50,6 +50,7 @@ interface Tournament {
   notes: string | null;
   notes_ja: string | null;
   registration_url: string | null;
+  slug: string | null;
 }
 
 const emptyTournament: Omit<Tournament, 'id'> = {
@@ -68,6 +69,7 @@ const emptyTournament: Omit<Tournament, 'id'> = {
   notes: '',
   notes_ja: '',
   registration_url: '',
+  slug: '',
 };
 
 export function TournamentsManagement() {
@@ -163,8 +165,19 @@ export function TournamentsManagement() {
       notes: tournament.notes || '',
       notes_ja: tournament.notes_ja || '',
       registration_url: tournament.registration_url || '',
+      slug: tournament.slug || '',
     });
     setIsDialogOpen(true);
+  };
+
+  const generateSlug = (name: string, dateStart: string) => {
+    const slug = name
+      .toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .substring(0, 50);
+    const year = dateStart ? new Date(dateStart).getFullYear() : new Date().getFullYear();
+    return `${slug}-${year}`;
   };
 
   const handleSubmit = () => {
@@ -173,8 +186,12 @@ export function TournamentsManagement() {
       return;
     }
 
+    // Auto-generate slug if empty
+    const slug = formData.slug || generateSlug(formData.name, formData.date_start);
+
     const submitData = {
       ...formData,
+      slug,
       date_end: formData.date_end || null,
       name_ja: formData.name_ja || null,
       location_ja: formData.location_ja || null,
@@ -463,6 +480,18 @@ export function TournamentsManagement() {
                 />
                 <Label>国際大会</Label>
               </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>スラッグ (URL用)</Label>
+              <Input
+                value={formData.slug || ''}
+                onChange={(e) => setFormData({ ...formData, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-') })}
+                placeholder="world-championship-2025 (空欄時は自動生成)"
+              />
+              <p className="text-xs text-muted-foreground">
+                URL: /tournaments/{formData.date_start ? new Date(formData.date_start).getFullYear() : '年'}/{formData.slug || '自動生成'}
+              </p>
             </div>
 
             <div className="space-y-2">
