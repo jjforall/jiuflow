@@ -567,18 +567,18 @@ const TournamentDetail = () => {
 
                 {/* Weight Classes */}
                 {tournament.weight_classes && tournament.weight_classes.length > 0 && (
-                  <div className="mt-4">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Scale className="h-4 w-4 text-muted-foreground" />
-                      <p className="font-medium text-sm text-muted-foreground">
-                        {language === 'ja' ? '階級' : 'Weight Classes'}
+                  <div className="mt-4 p-4 bg-muted/30 rounded-lg">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Scale className="h-5 w-5 text-primary" />
+                      <p className="font-semibold text-sm">
+                        {language === 'ja' ? '階級・体重一覧' : 'Weight Classes'}
                       </p>
                     </div>
-                    <div className="flex flex-wrap gap-1.5">
+                    <div className="space-y-2">
                       {tournament.weight_classes.map((wc, idx) => (
-                        <Badge key={idx} variant="outline" className="text-xs">
+                        <div key={idx} className="text-sm p-2 bg-background/50 rounded border border-border/50">
                           {wc}
-                        </Badge>
+                        </div>
                       ))}
                     </div>
                   </div>
