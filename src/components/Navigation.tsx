@@ -352,7 +352,7 @@ const Navigation = () => {
             </SheetTrigger>
             <SheetContent 
               side="right" 
-              className="w-[85vw] max-w-[400px] p-0 flex flex-col"
+              className="w-[85vw] max-w-[400px] p-0 flex flex-col data-[state=open]:animate-slide-in-right data-[state=closed]:animate-slide-out-right"
             >
               <SheetHeader className="px-6 pt-6 pb-4 border-b border-border">
                 <SheetTitle className="text-2xl font-light">Menu</SheetTitle>
@@ -360,25 +360,30 @@ const Navigation = () => {
 
               <nav className="flex-1 overflow-y-auto px-4 py-6">
                 <div className="space-y-2">
-                  {links.map((link) => {
+                  {links.map((link, index) => {
                     const Icon = link.icon;
                     const isActive = location.pathname === link.to;
                     return (
                       <Link
                         key={link.to}
                         to={link.to}
-                        onClick={() => setIsOpen(false)}
+                        onClick={(e) => {
+                          e.currentTarget.classList.add('scale-95', 'opacity-70');
+                          setTimeout(() => setIsOpen(false), 100);
+                        }}
                         onTouchStart={() => prefetchRoute(link.to)}
+                        style={{ animationDelay: `${index * 50}ms` }}
                         className={`
                           flex items-center gap-4 px-4 py-3.5 rounded-lg
-                          transition-all duration-200 group
+                          transition-all duration-150 ease-out group animate-fade-in
+                          active:scale-95 active:opacity-70
                           ${isActive 
                             ? "bg-primary text-primary-foreground shadow-md" 
                             : "hover:bg-muted/50 active:bg-muted"
                           }
                         `}
                       >
-                        <Icon className={`h-5 w-5 transition-transform group-hover:scale-110 ${
+                        <Icon className={`h-5 w-5 transition-transform duration-150 group-active:scale-90 ${
                           isActive ? "" : "text-muted-foreground"
                         }`} />
                         <span className={`text-base font-medium ${
@@ -396,10 +401,16 @@ const Navigation = () => {
                 <div className="space-y-2">
                   {user ? (
                     <>
-                      <Link to="/mypage" onClick={() => setIsOpen(false)}>
+                      <Link 
+                        to="/mypage" 
+                        onClick={(e) => {
+                          e.currentTarget.classList.add('scale-95', 'opacity-70');
+                          setTimeout(() => setIsOpen(false), 100);
+                        }}
+                      >
                         <Button 
                           variant="ghost" 
-                          className="w-full justify-start gap-3 h-12 hover:bg-muted/50 active:bg-muted"
+                          className="w-full justify-start gap-3 h-12 hover:bg-muted/50 active:scale-95 active:opacity-70 transition-all duration-150"
                         >
                           <User className="h-5 w-5" />
                           <span className="text-base">
@@ -409,10 +420,13 @@ const Navigation = () => {
                       </Link>
                       <Button 
                         variant="ghost" 
-                        className="w-full justify-start gap-3 h-12 hover:bg-muted/50 active:bg-muted"
-                        onClick={() => {
-                          navigate("/practice-records");
-                          setIsOpen(false);
+                        className="w-full justify-start gap-3 h-12 hover:bg-muted/50 active:scale-95 active:opacity-70 transition-all duration-150"
+                        onClick={(e) => {
+                          e.currentTarget.classList.add('scale-95', 'opacity-70');
+                          setTimeout(() => {
+                            navigate("/practice-records");
+                            setIsOpen(false);
+                          }, 100);
                         }}
                       >
                         <ClipboardList className="h-5 w-5" />
@@ -422,11 +436,14 @@ const Navigation = () => {
                       </Button>
                       <Button 
                         variant="ghost" 
-                        className="w-full justify-start gap-3 h-12 hover:bg-muted/50 active:bg-muted relative"
-                        onClick={() => {
-                          navigate("/open-mat");
-                          handleOpenMatClick();
-                          setIsOpen(false);
+                        className="w-full justify-start gap-3 h-12 hover:bg-muted/50 active:scale-95 active:opacity-70 transition-all duration-150 relative"
+                        onClick={(e) => {
+                          e.currentTarget.classList.add('scale-95', 'opacity-70');
+                          setTimeout(() => {
+                            navigate("/open-mat");
+                            handleOpenMatClick();
+                            setIsOpen(false);
+                          }, 100);
                         }}
                       >
                         <Users className="h-5 w-5" />
@@ -442,10 +459,13 @@ const Navigation = () => {
                       </Button>
                       <Button 
                         variant="ghost" 
-                        className="w-full justify-start gap-3 h-12 hover:bg-muted/50 active:bg-muted"
-                        onClick={() => {
-                          navigate("/tournaments");
-                          setIsOpen(false);
+                        className="w-full justify-start gap-3 h-12 hover:bg-muted/50 active:scale-95 active:opacity-70 transition-all duration-150"
+                        onClick={(e) => {
+                          e.currentTarget.classList.add('scale-95', 'opacity-70');
+                          setTimeout(() => {
+                            navigate("/tournaments");
+                            setIsOpen(false);
+                          }, 100);
                         }}
                       >
                         <Trophy className="h-5 w-5" />
@@ -454,10 +474,16 @@ const Navigation = () => {
                         </span>
                       </Button>
                       {canAccessAdmin && (
-                        <Link to="/admin/dashboard" onClick={() => setIsOpen(false)}>
+                        <Link 
+                          to="/admin/dashboard" 
+                          onClick={(e) => {
+                            e.currentTarget.classList.add('scale-95', 'opacity-70');
+                            setTimeout(() => setIsOpen(false), 100);
+                          }}
+                        >
                           <Button 
                             variant="ghost" 
-                            className="w-full justify-start gap-3 h-12 hover:bg-muted/50 active:bg-muted"
+                            className="w-full justify-start gap-3 h-12 hover:bg-muted/50 active:scale-95 active:opacity-70 transition-all duration-150"
                           >
                             <ShieldCheck className="h-5 w-5" />
                             <span className="text-base">
@@ -468,10 +494,16 @@ const Navigation = () => {
                       )}
                     </>
                   ) : (
-                    <Link to="/login" onClick={() => setIsOpen(false)}>
+                    <Link 
+                      to="/login" 
+                      onClick={(e) => {
+                        e.currentTarget.classList.add('scale-95', 'opacity-70');
+                        setTimeout(() => setIsOpen(false), 100);
+                      }}
+                    >
                       <Button 
                         variant="default" 
-                        className="w-full justify-start gap-3 h-12"
+                        className="w-full justify-start gap-3 h-12 active:scale-95 active:opacity-70 transition-all duration-150"
                       >
                         <LogIn className="h-5 w-5" />
                         <span className="text-base">{t.nav.login}</span>
