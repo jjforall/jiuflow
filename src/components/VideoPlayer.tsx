@@ -25,12 +25,14 @@ export const VideoPlayer = ({ videoUrl, autoPlay = true, thumbnailUrl, onPlay }:
   const { language } = useLanguage();
   const [quality, setQuality] = useState<string>("auto");
   const [isLoading, setIsLoading] = useState(true);
+  const [isBuffering, setIsBuffering] = useState(false);
   const [hasStarted, setHasStarted] = useState(false);
   const [showSkipIndicator, setShowSkipIndicator] = useState<'forward' | 'backward' | null>(null);
   const [showQualityMenu, setShowQualityMenu] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const lastTapRef = useRef<{ time: number; side: 'left' | 'right' } | null>(null);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const bufferingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -43,8 +45,40 @@ export const VideoPlayer = ({ videoUrl, autoPlay = true, thumbnailUrl, onPlay }:
     const handleCanPlay = () => setIsLoading(false);
     const handlePlaying = () => {
       setIsLoading(false);
+      setIsBuffering(false);
       setHasStarted(true);
       onPlay?.();
+    };
+    
+    // Buffering detection - show spinner when video stalls
+    const handleWaiting = () => {
+      // Debounce to avoid flickering on quick buffers
+      if (bufferingTimeoutRef.current) {
+        clearTimeout(bufferingTimeoutRef.current);
+      }
+      bufferingTimeoutRef.current = setTimeout(() => {
+        if (!video.paused && video.readyState < 3) {
+          setIsBuffering(true);
+        }
+      }, 200);
+    };
+    
+    const handleCanPlayThrough = () => {
+      setIsBuffering(false);
+      if (bufferingTimeoutRef.current) {
+        clearTimeout(bufferingTimeoutRef.current);
+      }
+    };
+    
+    const handleStalled = () => {
+      // Video data transfer has stalled
+      console.log('Video stalled, attempting recovery...');
+      setIsBuffering(true);
+    };
+    
+    const handleSeeked = () => {
+      // After seeking, reset buffering state
+      setIsBuffering(false);
     };
 
     // Debounced time update to reduce sessionStorage writes
@@ -57,10 +91,10 @@ export const VideoPlayer = ({ videoUrl, autoPlay = true, thumbnailUrl, onPlay }:
           clearTimeout(saveTimeoutRef.current);
         }
         
-        // Save after 1 second of no updates (reduces writes significantly)
+        // Save after 2 seconds of no updates (reduces writes significantly)
         saveTimeoutRef.current = setTimeout(() => {
           sessionStorage.setItem(progressKey, video.currentTime.toString());
-        }, 1000);
+        }, 2000);
       } catch (e) {
         console.log('Unable to save video progress:', e);
       }
@@ -68,43 +102,57 @@ export const VideoPlayer = ({ videoUrl, autoPlay = true, thumbnailUrl, onPlay }:
 
     video.addEventListener('loadstart', handleLoadStart);
     video.addEventListener('canplay', handleCanPlay);
+    video.addEventListener('canplaythrough', handleCanPlayThrough);
     video.addEventListener('playing', handlePlaying);
+    video.addEventListener('waiting', handleWaiting);
+    video.addEventListener('stalled', handleStalled);
+    video.addEventListener('seeked', handleSeeked);
     video.addEventListener('timeupdate', handleTimeUpdate);
 
     // Check if the video URL is an HLS stream (.m3u8)
     const isHLS = videoUrl.includes('.m3u8');
 
     if (isHLS && Hls.isSupported()) {
-      // Initialize HLS.js optimized for single high-quality video
-      // Since we only have one quality level, focus on buffering stability
+      // Initialize HLS.js with aggressive buffering for smooth playback
       const hls = new Hls({
         enableWorker: true,
         lowLatencyMode: false,
-        // LARGER buffers for single-quality video - prevents stuttering
-        backBufferLength: 60, // Keep more played content in memory
-        maxBufferLength: 60, // Buffer 60 seconds ahead
-        maxBufferSize: 120 * 1000 * 1000, // 120MB - allow large buffer for HD
-        maxMaxBufferLength: 120, // Up to 2 minutes buffer
-        // Fragment loading - generous timeouts for mobile
-        fragLoadingTimeOut: 30000, // 30s timeout
-        fragLoadingMaxRetry: 6, // More retries
-        fragLoadingRetryDelay: 500, // Faster retry
-        manifestLoadingTimeOut: 15000,
-        manifestLoadingMaxRetry: 4,
-        levelLoadingTimeOut: 15000,
-        levelLoadingMaxRetry: 4,
+        // VERY LARGE buffers - prevents stuttering on variable connections
+        backBufferLength: 90, // Keep 90s of played content in memory
+        maxBufferLength: 90, // Buffer 90 seconds ahead
+        maxBufferSize: 200 * 1000 * 1000, // 200MB - large buffer for HD content
+        maxMaxBufferLength: 180, // Up to 3 minutes buffer maximum
+        // Start loading more aggressively
+        startFragPrefetch: true,
+        // Fragment loading - very generous for mobile networks
+        fragLoadingTimeOut: 45000, // 45s timeout
+        fragLoadingMaxRetry: 8, // 8 retries
+        fragLoadingRetryDelay: 300, // Quick retry
+        fragLoadingMaxRetryTimeout: 60000, // Max 60s between retries
+        manifestLoadingTimeOut: 20000,
+        manifestLoadingMaxRetry: 6,
+        levelLoadingTimeOut: 20000,
+        levelLoadingMaxRetry: 6,
         // Auto start loading immediately
-        startLevel: -1, // Auto (only one level anyway)
+        startLevel: -1, // Auto
         autoStartLoad: true,
-        // Stall recovery - critical for smooth playback
-        nudgeMaxRetry: 10, // More aggressive stall recovery
-        nudgeOffset: 0.2,
+        // Stall recovery - very aggressive to prevent freezing
+        nudgeMaxRetry: 20, // Many more retries for stall recovery
+        nudgeOffset: 0.1, // Small nudge
+        highBufferWatchdogPeriod: 1, // Check every 1 second
         // Progressive loading - start playback faster
         progressive: true,
+        // ABR settings - prefer stability over quick switching
+        abrEwmaDefaultEstimate: 5000000, // Assume 5Mbps initially
+        abrBandWidthFactor: 0.8, // Be conservative
+        abrBandWidthUpFactor: 0.5, // Be very conservative going up
+        abrMaxWithRealBitrate: true,
         // Reduce CPU overhead
         enableCEA708Captions: false,
         enableWebVTT: false,
         enableIMSC1: false,
+        // License key for premium features (none needed)
+        debug: false,
       });
 
       hlsRef.current = hls;
@@ -126,29 +174,30 @@ export const VideoPlayer = ({ videoUrl, autoPlay = true, thumbnailUrl, onPlay }:
         console.log(`Quality changed to: ${qualityLabel}`);
         setQuality(qualityLabel);
       });
+      
+      // Buffer state logging for debugging
+      hls.on(Hls.Events.BUFFER_APPENDED, () => {
+        // Buffer was successfully appended
+        setIsBuffering(false);
+      });
+      
+      hls.on(Hls.Events.FRAG_BUFFERED, () => {
+        // Fragment buffered successfully
+        setIsBuffering(false);
+      });
 
-      // Error handling
+      // Error handling with aggressive recovery
       hls.on(Hls.Events.ERROR, (event, data) => {
-        console.error('HLS error:', data);
+        console.error('HLS error:', data.type, data.details);
+        
         if (data.fatal) {
           switch (data.type) {
             case Hls.ErrorTypes.NETWORK_ERROR:
               console.log('Network error, attempting recovery...');
-              hls.startLoad();
-              toast.error(
-                language === "ja" 
-                  ? "ネットワークエラー" 
-                  : language === "pt" 
-                  ? "Erro de rede" 
-                  : "Network Error",
-                {
-                  description: language === "ja" 
-                    ? "動画の読み込みを再試行しています" 
-                    : language === "pt" 
-                    ? "Tentando recarregar o vídeo" 
-                    : "Attempting to reload video"
-                }
-              );
+              // Try to recover by restarting load
+              setTimeout(() => {
+                hls.startLoad();
+              }, 1000);
               break;
             case Hls.ErrorTypes.MEDIA_ERROR:
               console.log('Media error, attempting recovery...');
@@ -165,29 +214,37 @@ export const VideoPlayer = ({ videoUrl, autoPlay = true, thumbnailUrl, onPlay }:
                   : "Video Error",
                 {
                   description: language === "ja" 
-                    ? "動画の再生に失敗しました" 
+                    ? "動画の再生に失敗しました。ページを更新してください。" 
                     : language === "pt" 
-                    ? "Falha ao reproduzir vídeo" 
-                    : "Failed to play video"
+                    ? "Falha ao reproduzir vídeo. Atualize a página." 
+                    : "Failed to play video. Please refresh the page."
                 }
               );
               break;
           }
+        } else {
+          // Non-fatal error - try to recover silently
+          if (data.details === 'bufferStalledError') {
+            console.log('Buffer stalled, nudging...');
+            // HLS.js will auto-recover, just log it
+          }
         }
-      });
-
-      // Reduced logging for performance
-      hls.on(Hls.Events.LEVEL_LOADED, () => {
-        // Removed console.log for performance
       });
 
       return () => {
         video.removeEventListener('loadstart', handleLoadStart);
         video.removeEventListener('canplay', handleCanPlay);
+        video.removeEventListener('canplaythrough', handleCanPlayThrough);
         video.removeEventListener('playing', handlePlaying);
+        video.removeEventListener('waiting', handleWaiting);
+        video.removeEventListener('stalled', handleStalled);
+        video.removeEventListener('seeked', handleSeeked);
         video.removeEventListener('timeupdate', handleTimeUpdate);
         if (saveTimeoutRef.current) {
           clearTimeout(saveTimeoutRef.current);
+        }
+        if (bufferingTimeoutRef.current) {
+          clearTimeout(bufferingTimeoutRef.current);
         }
         if (hlsRef.current) {
           hlsRef.current.destroy();
@@ -195,14 +252,16 @@ export const VideoPlayer = ({ videoUrl, autoPlay = true, thumbnailUrl, onPlay }:
         }
       };
     } else if (isHLS && video.canPlayType('application/vnd.apple.mpegurl')) {
-      // Native HLS support (Safari)
+      // Native HLS support (Safari) - use auto preload for better buffering
       video.src = videoUrl;
+      video.preload = 'auto';
       if (autoPlay) {
         video.play().catch(e => console.log('Autoplay prevented:', e));
       }
     } else {
-      // Regular video file
+      // Regular video file - use auto preload
       video.src = videoUrl;
+      video.preload = 'auto';
       if (autoPlay) {
         video.play().catch(e => console.log('Autoplay prevented:', e));
       }
@@ -211,10 +270,17 @@ export const VideoPlayer = ({ videoUrl, autoPlay = true, thumbnailUrl, onPlay }:
     return () => {
       video.removeEventListener('loadstart', handleLoadStart);
       video.removeEventListener('canplay', handleCanPlay);
+      video.removeEventListener('canplaythrough', handleCanPlayThrough);
       video.removeEventListener('playing', handlePlaying);
+      video.removeEventListener('waiting', handleWaiting);
+      video.removeEventListener('stalled', handleStalled);
+      video.removeEventListener('seeked', handleSeeked);
       video.removeEventListener('timeupdate', handleTimeUpdate);
       if (saveTimeoutRef.current) {
         clearTimeout(saveTimeoutRef.current);
+      }
+      if (bufferingTimeoutRef.current) {
+        clearTimeout(bufferingTimeoutRef.current);
       }
     };
   }, [videoUrl, autoPlay, language, onPlay]);
@@ -339,7 +405,7 @@ export const VideoPlayer = ({ videoUrl, autoPlay = true, thumbnailUrl, onPlay }:
 
   return (
     <div ref={containerRef} className="relative bg-black">
-      {/* Loading indicator */}
+      {/* Initial loading indicator */}
       {isLoading && !hasStarted && (
         <div className="absolute inset-0 flex items-center justify-center bg-black/80 z-10 pointer-events-none">
           <div className="flex flex-col items-center gap-3">
@@ -347,6 +413,15 @@ export const VideoPlayer = ({ videoUrl, autoPlay = true, thumbnailUrl, onPlay }:
             <p className="text-sm text-muted-foreground">
               {language === "ja" ? "読み込み中..." : language === "pt" ? "Carregando..." : "Loading..."}
             </p>
+          </div>
+        </div>
+      )}
+      
+      {/* Buffering indicator during playback */}
+      {isBuffering && hasStarted && (
+        <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
+          <div className="bg-black/60 backdrop-blur-sm rounded-full p-4">
+            <Loader2 className="w-10 h-10 text-white animate-spin" />
           </div>
         </div>
       )}
@@ -376,7 +451,7 @@ export const VideoPlayer = ({ videoUrl, autoPlay = true, thumbnailUrl, onPlay }:
         controlsList="nodownload"
         className="w-full h-full"
         playsInline
-        preload="metadata"
+        preload="auto"
         loop
         poster={thumbnailUrl || undefined}
         onContextMenu={(e) => e.preventDefault()}
