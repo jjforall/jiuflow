@@ -1,6 +1,6 @@
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTranslation } from "@/hooks/useTranslation";
@@ -14,8 +14,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Calendar, MapPin, Trophy, Info, ExternalLink, Building2, ArrowLeft, Globe, Users, UserPlus, UserMinus, AlertCircle, Clock, FileText, Train, DollarSign, ScrollText, Mail, Link as LinkIcon, Scale, ChevronDown, ChevronRight } from "lucide-react";
-import { useState } from "react";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Calendar, MapPin, Trophy, Info, ExternalLink, Building2, ArrowLeft, Globe, Users, UserPlus, UserMinus, AlertCircle, Clock, FileText, Train, DollarSign, ScrollText, Mail, Link as LinkIcon, Scale, ChevronDown, ChevronRight, CheckCircle2, CircleDashed } from "lucide-react";
 import { format, parseISO, isBefore } from "date-fns";
 import { ja, enUS, pt } from "date-fns/locale";
 import { toast } from "sonner";
@@ -141,9 +141,10 @@ const TournamentDetail = () => {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   
-  // State for collapsible sections
+  // State for collapsible sections and dialog
   const [notesOpen, setNotesOpen] = useState(false);
   const [weightClassesOpen, setWeightClassesOpen] = useState(false);
+  const [participationDialogOpen, setParticipationDialogOpen] = useState(false);
   
   // Scroll to top on mount
   useEffect(() => {
@@ -236,23 +237,30 @@ const TournamentDetail = () => {
     staleTime: 10 * 60 * 1000,
   });
 
-  const isParticipating = participants?.some(p => p.user_id === user?.id);
+  const userParticipation = participants?.find(p => p.user_id === user?.id);
+  const isParticipating = !!userParticipation;
+  const participationStatus = userParticipation?.status;
 
   const joinMutation = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (status: 'registered' | 'planning') => {
       if (!user || !tournament) throw new Error('Not authenticated');
       const { error } = await supabase
         .from('tournament_participants')
         .insert({
           tournament_id: tournament.id,
           user_id: user.id,
-          status: 'planning'
+          status: status
         });
       if (error) throw error;
     },
-    onSuccess: () => {
+    onSuccess: (_, status) => {
       queryClient.invalidateQueries({ queryKey: ['tournament-participants', tournament?.id] });
-      toast.success(t('tournaments.addedToPlan'));
+      setParticipationDialogOpen(false);
+      toast.success(
+        status === 'registered' 
+          ? (language === 'ja' ? 'エントリー済みとして登録しました' : 'Registered as entered')
+          : (language === 'ja' ? 'エントリー予定として登録しました' : 'Registered as planning to enter')
+      );
     },
     onError: () => {
       toast.error(t('tournaments.errorOccurred'));
@@ -684,19 +692,39 @@ const TournamentDetail = () => {
                 
                 {user ? (
                   isParticipating ? (
-                    <Button
-                      variant="outline"
-                      className="w-full"
-                      onClick={() => leaveMutation.mutate()}
-                      disabled={leaveMutation.isPending}
-                    >
-                      <UserMinus className="h-5 w-5 mr-2" />
-                      {t('tournaments.cancelParticipation')}
-                    </Button>
+                    <div className="space-y-3">
+                      <div className={`flex items-center gap-2 p-3 rounded-lg ${
+                        participationStatus === 'registered' 
+                          ? 'bg-green-500/10 border border-green-500/30' 
+                          : 'bg-amber-500/10 border border-amber-500/30'
+                      }`}>
+                        {participationStatus === 'registered' ? (
+                          <CheckCircle2 className="h-5 w-5 text-green-500" />
+                        ) : (
+                          <CircleDashed className="h-5 w-5 text-amber-500" />
+                        )}
+                        <span className={`font-medium ${
+                          participationStatus === 'registered' ? 'text-green-700 dark:text-green-400' : 'text-amber-700 dark:text-amber-400'
+                        }`}>
+                          {participationStatus === 'registered' 
+                            ? (language === 'ja' ? 'エントリー済み' : 'Registered')
+                            : (language === 'ja' ? 'エントリー予定' : 'Planning to Enter')}
+                        </span>
+                      </div>
+                      <Button
+                        variant="outline"
+                        className="w-full"
+                        onClick={() => leaveMutation.mutate()}
+                        disabled={leaveMutation.isPending}
+                      >
+                        <UserMinus className="h-5 w-5 mr-2" />
+                        {t('tournaments.cancelParticipation')}
+                      </Button>
+                    </div>
                   ) : (
                     <Button
                       className="w-full"
-                      onClick={() => joinMutation.mutate()}
+                      onClick={() => setParticipationDialogOpen(true)}
                       disabled={joinMutation.isPending}
                     >
                       <UserPlus className="h-5 w-5 mr-2" />
@@ -714,9 +742,11 @@ const TournamentDetail = () => {
 
                 <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-3">
                   <div className="flex items-start gap-2">
-                    <AlertCircle className="h-4 w-4 mt-0.5 text-amber-600 shrink-0" />
+                    <Info className="h-4 w-4 mt-0.5 text-amber-600 shrink-0" />
                     <p className="text-xs text-amber-700 dark:text-amber-400">
-                      {t('tournaments.participationNote')}
+                      {language === 'ja' 
+                        ? 'これは公式エントリーではありません。実際のエントリーは大会の公式サイトから行ってください。'
+                        : 'This is NOT official registration. Please register through the official tournament website.'}
                     </p>
                   </div>
                 </div>
@@ -787,6 +817,56 @@ const TournamentDetail = () => {
           </Card>
         </div>
       </main>
+
+      {/* Participation Status Dialog */}
+      <Dialog open={participationDialogOpen} onOpenChange={setParticipationDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <UserPlus className="h-5 w-5 text-primary" />
+              {language === 'ja' ? '参加予定に追加' : 'Add to Plan'}
+            </DialogTitle>
+            <DialogDescription className="text-left">
+              <div className="flex items-start gap-2 p-3 bg-amber-500/10 border border-amber-500/30 rounded-lg mt-2">
+                <Info className="h-4 w-4 mt-0.5 text-amber-600 shrink-0" />
+                <p className="text-sm text-amber-700 dark:text-amber-400">
+                  {language === 'ja' 
+                    ? 'これは公式エントリーではありません。実際のエントリーは大会の公式サイトから行ってください。'
+                    : 'This is NOT official registration. Please register through the official tournament website.'}
+                </p>
+              </div>
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 pt-2">
+            <p className="text-sm text-muted-foreground">
+              {language === 'ja' ? 'エントリー状況を教えてください：' : 'What is your entry status?'}
+            </p>
+            <Button
+              className="w-full justify-start gap-3 h-auto py-3 bg-green-500 hover:bg-green-600"
+              onClick={() => joinMutation.mutate('registered')}
+              disabled={joinMutation.isPending}
+            >
+              <CheckCircle2 className="h-5 w-5" />
+              <div className="text-left">
+                <p className="font-medium">{language === 'ja' ? 'すでにエントリー済み' : 'Already Registered'}</p>
+                <p className="text-xs opacity-80">{language === 'ja' ? '公式サイトでエントリー完了している' : 'Completed registration on official site'}</p>
+              </div>
+            </Button>
+            <Button
+              variant="outline"
+              className="w-full justify-start gap-3 h-auto py-3 border-amber-500/50 text-amber-700 dark:text-amber-400 hover:bg-amber-500/10"
+              onClick={() => joinMutation.mutate('planning')}
+              disabled={joinMutation.isPending}
+            >
+              <CircleDashed className="h-5 w-5" />
+              <div className="text-left">
+                <p className="font-medium">{language === 'ja' ? 'これからエントリー予定' : 'Planning to Register'}</p>
+                <p className="text-xs opacity-80">{language === 'ja' ? 'まだエントリーしていない' : 'Not yet registered'}</p>
+              </div>
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <Footer />
     </div>
