@@ -193,20 +193,25 @@ const TournamentDetail = () => {
     return <Badge variant="outline" className={colors[organizer] || ''}>{organizer}</Badge>;
   };
 
-  const getCountryFlag = (country: string) => {
-    const flags: Record<string, string> = {
-      'JP': '🇯🇵',
-      'US': '🇺🇸',
-      'BR': '🇧🇷',
-      'PT': '🇵🇹',
-      'PL': '🇵🇱',
-      'IT': '🇮🇹',
-      'AE': '🇦🇪',
-      'GB': '🇬🇧',
-      'TH': '🇹🇭',
-      'CN': '🇨🇳',
+  const getCountryBadge = (country: string) => {
+    const countryNames: Record<string, { ja: string; en: string }> = {
+      'JP': { ja: '日本', en: 'Japan' },
+      'US': { ja: 'アメリカ', en: 'USA' },
+      'BR': { ja: 'ブラジル', en: 'Brazil' },
+      'PT': { ja: 'ポルトガル', en: 'Portugal' },
+      'PL': { ja: 'ポーランド', en: 'Poland' },
+      'IT': { ja: 'イタリア', en: 'Italy' },
+      'AE': { ja: 'UAE', en: 'UAE' },
+      'GB': { ja: 'イギリス', en: 'UK' },
+      'TH': { ja: 'タイ', en: 'Thailand' },
+      'CN': { ja: '中国', en: 'China' },
     };
-    return flags[country] || '🌍';
+    const name = countryNames[country] || { ja: country, en: country };
+    return (
+      <Badge variant="outline" className="text-xs font-medium">
+        {language === 'ja' ? name.ja : name.en}
+      </Badge>
+    );
   };
 
   const now = new Date();
@@ -266,29 +271,29 @@ const TournamentDetail = () => {
           <Card className={isPast ? 'opacity-75' : ''}>
             <CardContent className="p-6 sm:p-8">
               {/* Header */}
-              <div className="flex items-start justify-between gap-4 mb-6">
-                <div className="flex items-center gap-2 flex-wrap">
+              <div className="flex items-start justify-between gap-3 mb-4">
+                <div className="flex items-center gap-1.5 flex-wrap">
                   {getCategoryBadge(tournament.category, tournament.is_international)}
                   {getOrganizerBadge(tournament.organizer)}
+                  {getCountryBadge(tournament.country)}
                   {isPast && (
-                    <Badge variant="outline" className="text-muted-foreground">
+                    <Badge variant="outline" className="text-muted-foreground text-xs">
                       {language === 'ja' ? '終了' : 'Past'}
                     </Badge>
                   )}
                 </div>
-                <span className="text-4xl">{getCountryFlag(tournament.country)}</span>
               </div>
 
-              <h1 className="text-2xl sm:text-3xl font-bold mb-6">{getName(tournament)}</h1>
+              <h1 className="text-xl sm:text-2xl md:text-3xl font-bold mb-4 leading-tight">{getName(tournament)}</h1>
 
               {/* Details */}
-              <div className="space-y-5">
-                <div className="flex items-start gap-4 text-foreground">
-                  <Calendar className="h-6 w-6 text-primary shrink-0 mt-0.5" />
+              <div className="space-y-4">
+                <div className="flex items-start gap-3 text-foreground">
+                  <Calendar className="h-5 w-5 text-primary shrink-0 mt-0.5" />
                   <div>
-                    <p className="font-semibold text-lg">{formatDateRange(tournament.date_start, tournament.date_end)}</p>
+                    <p className="font-semibold text-sm sm:text-base">{formatDateRange(tournament.date_start, tournament.date_end)}</p>
                     {tournament.date_end && tournament.date_start !== tournament.date_end && (
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-xs text-muted-foreground">
                         {(() => {
                           const start = parseISO(tournament.date_start);
                           const end = parseISO(tournament.date_end);
@@ -300,12 +305,12 @@ const TournamentDetail = () => {
                   </div>
                 </div>
 
-                <div className="flex items-start gap-4 text-foreground">
-                  <MapPin className="h-6 w-6 text-primary shrink-0 mt-0.5" />
+                <div className="flex items-start gap-3 text-foreground">
+                  <MapPin className="h-5 w-5 text-primary shrink-0 mt-0.5" />
                   <div>
-                    <p className="font-medium">{getLocation(tournament)}</p>
+                    <p className="font-medium text-sm sm:text-base">{getLocation(tournament)}</p>
                     {tournament.is_international && (
-                      <div className="flex items-center gap-1 text-sm text-muted-foreground mt-1">
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground mt-0.5">
                         <Globe className="h-3 w-3" />
                         {language === 'ja' ? '国際大会' : 'International Event'}
                       </div>
@@ -314,38 +319,38 @@ const TournamentDetail = () => {
                 </div>
 
                 {getVenue(tournament) && (
-                  <div className="flex items-start gap-4 text-foreground">
-                    <Building2 className="h-6 w-6 text-muted-foreground shrink-0 mt-0.5" />
-                    <p className="font-medium">{getVenue(tournament)}</p>
+                  <div className="flex items-start gap-3 text-foreground">
+                    <Building2 className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
+                    <p className="font-medium text-sm sm:text-base">{getVenue(tournament)}</p>
                   </div>
                 )}
 
-                <div className="flex items-start gap-4 text-foreground">
-                  <Trophy className="h-6 w-6 text-muted-foreground shrink-0 mt-0.5" />
-                  <p className="font-medium">{tournament.organizer}</p>
+                <div className="flex items-start gap-3 text-foreground">
+                  <Trophy className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
+                  <p className="font-medium text-sm sm:text-base">{tournament.organizer}</p>
                 </div>
 
                 {/* Registration Deadline */}
                 {tournament.registration_deadline && !isPast && (
-                  <div className="flex items-start gap-4 text-foreground">
-                    <Clock className="h-6 w-6 text-orange-500 shrink-0 mt-0.5" />
+                  <div className="flex items-start gap-3 text-foreground">
+                    <Clock className="h-5 w-5 text-orange-500 shrink-0 mt-0.5" />
                     <div>
-                      <p className="font-medium">
+                      <p className="font-medium text-sm sm:text-base">
                         {language === 'ja' ? 'エントリー締切' : 'Registration Deadline'}
                       </p>
-                      <p className={`text-sm ${
+                      <p className={`text-xs sm:text-sm ${
                         isBefore(parseISO(tournament.registration_deadline), now) 
                           ? 'text-muted-foreground line-through' 
                           : 'text-orange-500 font-semibold'
                       }`}>
-                        {format(parseISO(tournament.registration_deadline), language === 'ja' ? 'yyyy年M月d日(E)' : 'MMMM d, yyyy (EEE)', { locale: getLocale() })}
+                        {format(parseISO(tournament.registration_deadline), language === 'ja' ? 'M月d日(E)' : 'MMM d (EEE)', { locale: getLocale() })}
                         {!isBefore(parseISO(tournament.registration_deadline), now) && (
-                          <span className="ml-2">
+                          <span className="ml-1.5">
                             ({(() => {
                               const days = Math.ceil((parseISO(tournament.registration_deadline).getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
                               if (days === 0) return language === 'ja' ? '今日!' : 'Today!';
                               if (days < 0) return language === 'ja' ? '締切済み' : 'Closed';
-                              return language === 'ja' ? `あと${days}日` : `${days} days left`;
+                              return language === 'ja' ? `あと${days}日` : `${days}d left`;
                             })()})
                           </span>
                         )}
@@ -356,14 +361,14 @@ const TournamentDetail = () => {
 
                 {/* Description */}
                 {getDescription(tournament) && (
-                  <div className="bg-primary/5 border border-primary/20 rounded-lg p-4 mt-4">
-                    <div className="flex items-start gap-3">
-                      <FileText className="h-5 w-5 mt-0.5 text-primary shrink-0" />
+                  <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 mt-3">
+                    <div className="flex items-start gap-2.5">
+                      <FileText className="h-4 w-4 mt-0.5 text-primary shrink-0" />
                       <div>
-                        <p className="font-medium text-sm mb-1">
-                          {language === 'ja' ? '大会概要' : 'About this tournament'}
+                        <p className="font-medium text-xs mb-1">
+                          {language === 'ja' ? '大会概要' : 'About'}
                         </p>
-                        <p className="text-foreground">{getDescription(tournament)}</p>
+                        <p className="text-foreground text-sm">{getDescription(tournament)}</p>
                       </div>
                     </div>
                   </div>
@@ -371,10 +376,10 @@ const TournamentDetail = () => {
 
                 {/* Notes */}
                 {getNotes(tournament) && (
-                  <div className="bg-muted/50 rounded-lg p-4 mt-4">
-                    <div className="flex items-start gap-3">
-                      <Info className="h-5 w-5 mt-0.5 text-muted-foreground shrink-0" />
-                      <p className="text-muted-foreground">{getNotes(tournament)}</p>
+                  <div className="bg-muted/50 rounded-lg p-3 mt-3">
+                    <div className="flex items-start gap-2.5">
+                      <Info className="h-4 w-4 mt-0.5 text-muted-foreground shrink-0" />
+                      <p className="text-muted-foreground text-sm">{getNotes(tournament)}</p>
                     </div>
                   </div>
                 )}
