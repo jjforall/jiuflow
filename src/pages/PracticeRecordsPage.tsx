@@ -82,6 +82,13 @@ const PracticeRecordsPage = () => {
       totalPractice: "総練習回数",
       totalViews: "総視聴回数",
       activeDays: "練習日数",
+      reviewRecommended: "復習推奨",
+      daysAgo: "日前",
+      noWatchedToday: "今日はまだ動画を視聴していません",
+      reviewPriority: "復習優先度",
+      high: "高",
+      medium: "中",
+      low: "低",
     },
     en: {
       title: "Practice Records",
@@ -95,6 +102,13 @@ const PracticeRecordsPage = () => {
       totalPractice: "Total Practice",
       totalViews: "Total Views",
       activeDays: "Active Days",
+      reviewRecommended: "Review Recommended",
+      daysAgo: "days ago",
+      noWatchedToday: "No videos watched today",
+      reviewPriority: "Review Priority",
+      high: "High",
+      medium: "Medium",
+      low: "Low",
     },
     pt: {
       title: "Registros de Prática",
@@ -108,6 +122,13 @@ const PracticeRecordsPage = () => {
       totalPractice: "Total de Práticas",
       totalViews: "Total de Visualizações",
       activeDays: "Dias Ativos",
+      reviewRecommended: "Revisão Recomendada",
+      daysAgo: "dias atrás",
+      noWatchedToday: "Nenhum vídeo assistido hoje",
+      reviewPriority: "Prioridade de Revisão",
+      high: "Alta",
+      medium: "Média",
+      low: "Baixa",
     },
   };
 
@@ -222,6 +243,82 @@ const PracticeRecordsPage = () => {
       activeDays,
     };
   }, [currentMonth, videoViews, practiceRecords]);
+
+  // Check if user watched any video today
+  const todayViews = useMemo(() => {
+    const todayStr = format(new Date(), "yyyy-MM-dd");
+    return videoViews.filter(v => 
+      format(new Date(v.last_viewed_at), "yyyy-MM-dd") === todayStr
+    );
+  }, [videoViews]);
+
+  // Calculate forgetting curve priority for each viewed video
+  // Based on Ebbinghaus forgetting curve - optimal review intervals: 1 day, 3 days, 7 days, 14 days, 30 days
+  const reviewRecommendations = useMemo(() => {
+    if (todayViews.length > 0) return []; // Don't show if user watched videos today
+    
+    const now = new Date();
+    const recommendations: Array<{
+      technique: Technique;
+      view: VideoView;
+      daysSinceView: number;
+      priority: 'high' | 'medium' | 'low';
+      priorityScore: number;
+    }> = [];
+
+    videoViews.forEach(view => {
+      const technique = techniques.find(t => t.id === view.video_id);
+      if (!technique) return;
+
+      const lastViewed = new Date(view.last_viewed_at);
+      const daysSinceView = Math.floor((now.getTime() - lastViewed.getTime()) / (1000 * 60 * 60 * 24));
+      
+      // Skip if viewed today
+      if (daysSinceView === 0) return;
+
+      // Calculate priority based on forgetting curve intervals
+      // Higher priority for videos that are at optimal review intervals
+      let priorityScore = 0;
+      let priority: 'high' | 'medium' | 'low' = 'low';
+
+      // Optimal review intervals (Ebbinghaus): 1, 3, 7, 14, 30 days
+      // Videos near these intervals get higher priority
+      if (daysSinceView >= 1 && daysSinceView <= 2) {
+        priorityScore = 100 - (Math.abs(daysSinceView - 1) * 20);
+        priority = 'high';
+      } else if (daysSinceView >= 2 && daysSinceView <= 4) {
+        priorityScore = 90 - (Math.abs(daysSinceView - 3) * 15);
+        priority = 'high';
+      } else if (daysSinceView >= 5 && daysSinceView <= 9) {
+        priorityScore = 80 - (Math.abs(daysSinceView - 7) * 10);
+        priority = 'medium';
+      } else if (daysSinceView >= 10 && daysSinceView <= 20) {
+        priorityScore = 70 - (Math.abs(daysSinceView - 14) * 5);
+        priority = 'medium';
+      } else if (daysSinceView >= 21 && daysSinceView <= 45) {
+        priorityScore = 60 - (Math.abs(daysSinceView - 30) * 2);
+        priority = 'low';
+      } else if (daysSinceView > 45) {
+        // Very old - high priority because knowledge likely forgotten
+        priorityScore = 95;
+        priority = 'high';
+      }
+
+      // Boost priority based on view count (more views = more important to retain)
+      priorityScore += Math.min(view.view_count * 2, 10);
+
+      recommendations.push({
+        technique,
+        view,
+        daysSinceView,
+        priority,
+        priorityScore,
+      });
+    });
+
+    // Sort by priority score (highest first)
+    return recommendations.sort((a, b) => b.priorityScore - a.priorityScore).slice(0, 10);
+  }, [videoViews, techniques, todayViews]);
 
   const handleDateClick = (date: Date) => {
     setSelectedDate(date);
@@ -506,22 +603,25 @@ const PracticeRecordsPage = () => {
                 </CardContent>
               </Card>
 
-              {/* Today's quick action */}
+              {/* Today's quick action or Review Recommendations */}
               <Card className="mt-6">
                 <CardHeader className="p-4">
                   <CardTitle className="text-base sm:text-lg flex items-center gap-2">
-                    {texts.today}: {format(new Date(), language === "ja" ? "M月d日" : "MMM d", { locale })}
+                    {todayViews.length > 0 ? (
+                      <>{texts.today}: {format(new Date(), language === "ja" ? "M月d日" : "MMM d", { locale })}</>
+                    ) : (
+                      <>{texts.reviewRecommended}</>
+                    )}
                   </CardTitle>
+                  {todayViews.length === 0 && (
+                    <p className="text-xs text-muted-foreground">{texts.noWatchedToday}</p>
+                  )}
                 </CardHeader>
                 <CardContent className="p-4 pt-0">
-                  {techniques.length === 0 ? (
-                    <p className="text-muted-foreground text-sm">{texts.noRecords}</p>
-                  ) : (
+                  {todayViews.length > 0 ? (
+                    // Show today's watched videos
                     <div className="space-y-2 max-h-60 overflow-y-auto">
-                      {videoViews
-                        .filter(v => format(new Date(v.last_viewed_at), "yyyy-MM-dd") === format(new Date(), "yyyy-MM-dd"))
-                        .slice(0, 5)
-                        .map((view) => {
+                      {todayViews.slice(0, 5).map((view) => {
                           const technique = techniques.find(t => t.id === view.video_id);
                           if (!technique) return null;
                           const practiceCount = getPracticeCount(technique.id, new Date());
@@ -587,6 +687,86 @@ const PracticeRecordsPage = () => {
                           );
                         })}
                     </div>
+                  ) : reviewRecommendations.length > 0 ? (
+                    // Show review recommendations based on forgetting curve
+                    <div className="space-y-2 max-h-80 overflow-y-auto">
+                      {reviewRecommendations.map((rec) => {
+                        const practiceCount = getPracticeCount(rec.technique.id, new Date());
+                        
+                        return (
+                          <div
+                            key={rec.view.id}
+                            className="flex items-center gap-2 p-2 rounded-lg bg-muted/50 overflow-hidden"
+                          >
+                            <button 
+                              onClick={() => handleOpenVideo(rec.technique)} 
+                              className="flex-shrink-0 group relative"
+                            >
+                              <div className="w-14 h-9 sm:w-16 sm:h-10 rounded bg-muted overflow-hidden group-hover:ring-2 ring-primary transition-all">
+                                {rec.technique.thumbnail_url ? (
+                                  <img
+                                    src={rec.technique.thumbnail_url}
+                                    alt={getTechniqueName(rec.technique)}
+                                    className="w-full h-full object-cover"
+                                  />
+                                ) : (
+                                  <div className="w-full h-full flex items-center justify-center">
+                                    <Play className="h-4 w-4 text-muted-foreground" />
+                                  </div>
+                                )}
+                                <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity">
+                                  <Play className="h-4 w-4 text-white" />
+                                </div>
+                              </div>
+                            </button>
+                            <div className="flex-1 min-w-0 overflow-hidden">
+                              <div className="flex items-center gap-1">
+                                <button onClick={() => handleOpenVideo(rec.technique)} className="hover:text-primary text-left truncate">
+                                  <span className="text-xs sm:text-sm font-medium">{getTechniqueName(rec.technique)}</span>
+                                </button>
+                                <Link to={`/video/${rec.technique.id}`} className="flex-shrink-0 text-muted-foreground hover:text-primary">
+                                  <ExternalLink className="h-3 w-3" />
+                                </Link>
+                              </div>
+                              <div className="flex items-center gap-1.5">
+                                <SeriesBadge prefix={rec.technique.series_prefix || ''} order={rec.technique.series_order || undefined} className="text-[10px] h-5 min-w-0 px-1.5" />
+                                <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
+                                  rec.priority === 'high' 
+                                    ? 'bg-red-500/20 text-red-600 dark:text-red-400' 
+                                    : rec.priority === 'medium'
+                                    ? 'bg-yellow-500/20 text-yellow-600 dark:text-yellow-400'
+                                    : 'bg-green-500/20 text-green-600 dark:text-green-400'
+                                }`}>
+                                  {rec.daysSinceView}{texts.daysAgo}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-0.5 flex-shrink-0">
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="h-7 w-7 sm:h-8 sm:w-8"
+                                onClick={() => handleRemovePractice(rec.technique.id, new Date())}
+                                disabled={practiceCount === 0}
+                              >
+                                <Minus className="h-3 w-3 sm:h-4 sm:w-4" />
+                              </Button>
+                              <span className="w-6 sm:w-8 text-center font-bold text-sm sm:text-lg">{practiceCount}</span>
+                              <Button
+                                size="icon"
+                                variant="default"
+                                className="h-7 w-7 sm:h-8 sm:w-8"
+                                onClick={() => handleAddPractice(rec.technique.id, new Date())}
+                              >
+                                <Plus className="h-3 w-3 sm:h-4 sm:w-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <p className="text-muted-foreground text-sm">{texts.noRecords}</p>
                   )}
                 </CardContent>
               </Card>
