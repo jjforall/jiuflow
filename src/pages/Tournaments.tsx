@@ -11,7 +11,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Calendar, MapPin, Trophy, Globe, Users } from "lucide-react";
-import { format, parseISO, isAfter, isBefore, addMonths } from "date-fns";
+import { format, parseISO, isAfter, isBefore, addMonths, differenceInDays } from "date-fns";
 import { ja, enUS, pt } from "date-fns/locale";
 
 interface Tournament {
@@ -203,7 +203,10 @@ const Tournaments = () => {
   };
 
   const TournamentCard = ({ tournament }: { tournament: Tournament }) => {
-    const isPast = isBefore(parseISO(tournament.date_start), now);
+    const tournamentDate = parseISO(tournament.date_start);
+    const isPast = isBefore(tournamentDate, now);
+    const daysUntil = differenceInDays(tournamentDate, now);
+    const showDaysLeft = !isPast && daysUntil >= 0 && daysUntil <= 14;
     const participantCount = participantCounts?.[tournament.id] || 0;
     
     return (
@@ -218,6 +221,15 @@ const Tournaments = () => {
                   <div className="flex items-center gap-1.5 flex-wrap mb-1.5">
                     {getOrganizerBadge(tournament.organizer)}
                     {isPast && <Badge variant="outline" className="text-muted-foreground text-xs">{language === 'ja' ? '終了' : 'Past'}</Badge>}
+                    {showDaysLeft && (
+                      <Badge variant="default" className="bg-gradient-to-r from-red-500 to-orange-500 text-white text-xs animate-pulse">
+                        {daysUntil === 0 
+                          ? (language === 'ja' ? '今日!' : 'Today!') 
+                          : daysUntil === 1 
+                            ? (language === 'ja' ? '明日!' : 'Tomorrow!')
+                            : (language === 'ja' ? `あと${daysUntil}日` : `${daysUntil} days`)}
+                      </Badge>
+                    )}
                   </div>
                   <h3 className="font-semibold text-sm sm:text-base leading-tight line-clamp-2">{getName(tournament)}</h3>
                 </div>
