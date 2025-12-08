@@ -264,7 +264,7 @@ const Athletes = () => {
     <div className="min-h-screen bg-background">
       <Navigation />
       
-      <main className="pt-16 md:pt-24 pb-12 md:pb-16 px-3 md:px-8 lg:px-12">
+      <main className="pt-20 md:pt-28 pb-12 md:pb-16 px-3 md:px-8 lg:px-12">
         <div className="max-w-7xl mx-auto">
           {/* Header */}
           <div className="mb-6 md:mb-12 text-center animate-fade-in">
