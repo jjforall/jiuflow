@@ -166,20 +166,18 @@ function LineageNodeCard({ node, depth = 0, language }: { node: LineageNode; dep
           <div className="flex-1 min-w-0">
             <Link 
               to={`/athlete/${node.celebrity.id}`}
-              className="font-medium text-sm md:text-base hover:text-primary transition-colors"
+              className="font-medium text-sm md:text-base hover:text-primary transition-colors block"
               onClick={(e) => e.stopPropagation()}
             >
               <span className="line-clamp-1">
                 {showBothNames ? localizedName : (localizedName || englishName)}
               </span>
-              {showBothNames && (
-                <span className="text-xs text-muted-foreground font-normal ml-1">
-                  ({englishName})
-                </span>
-              )}
             </Link>
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
               <span>{beltLabel}</span>
+              {showBothNames && (
+                <span className="truncate max-w-[120px]">({englishName})</span>
+              )}
               {node.celebrity.featured && <span className="text-amber-500">★</span>}
             </div>
           </div>
