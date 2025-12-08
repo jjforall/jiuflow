@@ -87,8 +87,8 @@ export function AdminSidebar({ activeTab, onTabChange }: AdminSidebarProps) {
 
     fetchUnreadCount();
 
-    // Refresh every 30 seconds
-    const interval = setInterval(fetchUnreadCount, 30000);
+    // Refresh every 5 minutes
+    const interval = setInterval(fetchUnreadCount, 300000);
     return () => clearInterval(interval);
   }, []);
 
