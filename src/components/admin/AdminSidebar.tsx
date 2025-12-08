@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import {
   Grid3X3,
@@ -33,6 +33,8 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
+import { Badge } from "@/components/ui/badge";
+import { supabase } from "@/integrations/supabase/client";
 
 interface AdminSidebarProps {
   activeTab: string;
@@ -56,7 +58,7 @@ const menuItems = [
   { id: "user-videos", label: "ユーザー動画", icon: Video },
   { id: "brothers", label: "Brothers申請", icon: Award },
   { id: "printful", label: "商品管理", icon: ShoppingBag },
-  { id: "contacts", label: "お問い合わせ", icon: Mail },
+  { id: "contacts", label: "お問い合わせ", icon: Mail, showBadge: true },
   { id: "logs", label: "ログ", icon: FileText },
   { id: "tips", label: "投げ銭", icon: Gift },
   { id: "music", label: "音楽管理", icon: Music },
@@ -68,7 +70,27 @@ const menuItems = [
 export function AdminSidebar({ activeTab, onTabChange }: AdminSidebarProps) {
   const { state, toggleSidebar } = useSidebar();
   const [isExpanded, setIsExpanded] = useState(true);
+  const [unreadContactCount, setUnreadContactCount] = useState(0);
   const isCollapsed = state === "collapsed";
+
+  useEffect(() => {
+    const fetchUnreadCount = async () => {
+      const { count, error } = await supabase
+        .from("contact_messages")
+        .select("*", { count: "exact", head: true })
+        .eq("status", "unread");
+
+      if (!error && count !== null) {
+        setUnreadContactCount(count);
+      }
+    };
+
+    fetchUnreadCount();
+
+    // Refresh every 30 seconds
+    const interval = setInterval(fetchUnreadCount, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <Sidebar collapsible="icon" className="bg-background border-r">
@@ -120,7 +142,19 @@ export function AdminSidebar({ activeTab, onTabChange }: AdminSidebarProps) {
                       }`}
                     >
                       <item.icon className="h-4 w-4" />
-                      {!isCollapsed && <span>{item.label}</span>}
+                      {!isCollapsed && (
+                        <span className="flex items-center gap-2">
+                          {item.label}
+                          {item.showBadge && unreadContactCount > 0 && (
+                            <Badge variant="destructive" className="h-5 min-w-5 px-1.5 text-xs">
+                              {unreadContactCount}
+                            </Badge>
+                          )}
+                        </span>
+                      )}
+                      {isCollapsed && item.showBadge && unreadContactCount > 0 && (
+                        <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-destructive" />
+                      )}
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 ))}
