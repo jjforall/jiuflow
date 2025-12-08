@@ -2,6 +2,7 @@ import { useParams, Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useTranslation } from "@/hooks/useTranslation";
 import { useAuth } from "@/hooks/useAuth";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
@@ -53,6 +54,7 @@ interface Participant {
 const TournamentDetail = () => {
   const { year, slug } = useParams<{ year: string; slug: string }>();
   const { language } = useLanguage();
+  const { t } = useTranslation();
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
@@ -113,10 +115,10 @@ const TournamentDetail = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tournament-participants', tournament?.id] });
-      toast.success(language === 'ja' ? '参加予定に登録しました' : 'Added to your plan');
+      toast.success(t('tournaments.addedToPlan'));
     },
     onError: () => {
-      toast.error(language === 'ja' ? 'エラーが発生しました' : 'An error occurred');
+      toast.error(t('tournaments.errorOccurred'));
     }
   });
 
@@ -132,10 +134,10 @@ const TournamentDetail = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tournament-participants', tournament?.id] });
-      toast.success(language === 'ja' ? '参加予定を取り消しました' : 'Removed from your plan');
+      toast.success(t('tournaments.removedFromPlan'));
     },
     onError: () => {
-      toast.error(language === 'ja' ? 'エラーが発生しました' : 'An error occurred');
+      toast.error(t('tournaments.errorOccurred'));
     }
   });
 
@@ -173,12 +175,12 @@ const TournamentDetail = () => {
 
   const getCategoryBadge = (category: string, isInternational: boolean) => {
     if (category === 'major' || category === 'international') {
-      return <Badge variant="default" className="bg-gradient-to-r from-amber-500 to-orange-500 text-white">{language === 'ja' ? '主要大会' : 'Major'}</Badge>;
+      return <Badge variant="default" className="bg-gradient-to-r from-amber-500 to-orange-500 text-white">{t('tournaments.major')}</Badge>;
     }
     if (isInternational) {
-      return <Badge variant="secondary">{language === 'ja' ? '国際' : 'International'}</Badge>;
+      return <Badge variant="secondary">{t('tournaments.international')}</Badge>;
     }
-    return <Badge variant="outline">{language === 'ja' ? '国内' : 'Domestic'}</Badge>;
+    return <Badge variant="outline">{t('tournaments.domestic')}</Badge>;
   };
 
   const getOrganizerBadge = (organizer: string) => {
@@ -194,22 +196,10 @@ const TournamentDetail = () => {
   };
 
   const getCountryBadge = (country: string) => {
-    const countryNames: Record<string, { ja: string; en: string }> = {
-      'JP': { ja: '日本', en: 'Japan' },
-      'US': { ja: 'アメリカ', en: 'USA' },
-      'BR': { ja: 'ブラジル', en: 'Brazil' },
-      'PT': { ja: 'ポルトガル', en: 'Portugal' },
-      'PL': { ja: 'ポーランド', en: 'Poland' },
-      'IT': { ja: 'イタリア', en: 'Italy' },
-      'AE': { ja: 'UAE', en: 'UAE' },
-      'GB': { ja: 'イギリス', en: 'UK' },
-      'TH': { ja: 'タイ', en: 'Thailand' },
-      'CN': { ja: '中国', en: 'China' },
-    };
-    const name = countryNames[country] || { ja: country, en: country };
+    const name = t(`tournaments.countries.${country}`, country);
     return (
       <Badge variant="outline" className="text-xs font-medium">
-        {language === 'ja' ? name.ja : name.en}
+        {name}
       </Badge>
     );
   };
@@ -237,12 +227,12 @@ const TournamentDetail = () => {
         <main className="flex-1 container mx-auto px-4 py-8 pt-24">
           <div className="text-center py-12">
             <h1 className="text-2xl font-bold mb-4">
-              {language === 'ja' ? '大会が見つかりません' : 'Tournament not found'}
+              {t('tournaments.notFound')}
             </h1>
             <Button asChild>
               <Link to="/tournaments">
                 <ArrowLeft className="h-4 w-4 mr-2" />
-                {language === 'ja' ? '大会一覧に戻る' : 'Back to Tournaments'}
+                {t('tournaments.backToList')}
               </Link>
             </Button>
           </div>
@@ -263,7 +253,7 @@ const TournamentDetail = () => {
         <Button variant="ghost" asChild className="mb-6">
           <Link to="/tournaments">
             <ArrowLeft className="h-4 w-4 mr-2" />
-            {language === 'ja' ? '大会一覧' : 'All Tournaments'}
+            {t('tournaments.backToList')}
           </Link>
         </Button>
 
@@ -278,7 +268,7 @@ const TournamentDetail = () => {
                   {getCountryBadge(tournament.country)}
                   {isPast && (
                     <Badge variant="outline" className="text-muted-foreground text-xs">
-                      {language === 'ja' ? '終了' : 'Past'}
+                      {t('tournaments.past')}
                     </Badge>
                   )}
                 </div>
@@ -298,7 +288,7 @@ const TournamentDetail = () => {
                           const start = parseISO(tournament.date_start);
                           const end = parseISO(tournament.date_end);
                           const days = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-                          return language === 'ja' ? `${days}日間` : `${days} days`;
+                          return `${days} ${t('tournaments.days')}`;
                         })()}
                       </p>
                     )}
@@ -312,7 +302,7 @@ const TournamentDetail = () => {
                     {tournament.is_international && (
                       <div className="flex items-center gap-1 text-xs text-muted-foreground mt-0.5">
                         <Globe className="h-3 w-3" />
-                        {language === 'ja' ? '国際大会' : 'International Event'}
+                        {t('tournaments.internationalEvent')}
                       </div>
                     )}
                   </div>
@@ -336,7 +326,7 @@ const TournamentDetail = () => {
                     <Clock className="h-5 w-5 text-orange-500 shrink-0 mt-0.5" />
                     <div>
                       <p className="font-medium text-sm sm:text-base">
-                        {language === 'ja' ? 'エントリー締切' : 'Registration Deadline'}
+                        {t('tournaments.registrationDeadline')}
                       </p>
                       <p className={`text-xs sm:text-sm ${
                         isBefore(parseISO(tournament.registration_deadline), now) 
@@ -348,9 +338,9 @@ const TournamentDetail = () => {
                           <span className="ml-1.5">
                             ({(() => {
                               const days = Math.ceil((parseISO(tournament.registration_deadline).getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-                              if (days === 0) return language === 'ja' ? '今日!' : 'Today!';
-                              if (days < 0) return language === 'ja' ? '締切済み' : 'Closed';
-                              return language === 'ja' ? `あと${days}日` : `${days}d left`;
+                              if (days === 0) return t('tournaments.today');
+                              if (days < 0) return t('tournaments.closed');
+                              return t('tournaments.daysLeft').replace('{days}', String(days));
                             })()})
                           </span>
                         )}
@@ -366,7 +356,7 @@ const TournamentDetail = () => {
                       <FileText className="h-4 w-4 mt-0.5 text-primary shrink-0" />
                       <div>
                         <p className="font-medium text-xs mb-1">
-                          {language === 'ja' ? '大会概要' : 'About'}
+                          {t('tournaments.about')}
                         </p>
                         <p className="text-foreground text-sm">{getDescription(tournament)}</p>
                       </div>
@@ -396,7 +386,7 @@ const TournamentDetail = () => {
                           disabled={leaveMutation.isPending}
                         >
                           <UserMinus className="h-5 w-5 mr-2" />
-                          {language === 'ja' ? '参加予定を取り消す' : 'Cancel Participation'}
+                          {t('tournaments.cancelParticipation')}
                         </Button>
                       ) : (
                         <Button
@@ -405,14 +395,14 @@ const TournamentDetail = () => {
                           disabled={joinMutation.isPending}
                         >
                           <UserPlus className="h-5 w-5 mr-2" />
-                          {language === 'ja' ? '参加予定' : 'Plan to Participate'}
+                          {t('tournaments.planToParticipate')}
                         </Button>
                       )
                     ) : (
                       <Button variant="outline" asChild className="w-full">
                         <Link to="/login">
                           <UserPlus className="h-5 w-5 mr-2" />
-                          {language === 'ja' ? 'ログインして参加予定を登録' : 'Login to Join'}
+                          {t('tournaments.loginToJoin')}
                         </Link>
                       </Button>
                     )}
@@ -421,9 +411,7 @@ const TournamentDetail = () => {
                       <div className="flex items-start gap-2">
                         <AlertCircle className="h-4 w-4 mt-0.5 text-amber-600 shrink-0" />
                         <p className="text-sm text-amber-700 dark:text-amber-400">
-                          {language === 'ja' 
-                            ? '※「参加予定」はあくまで予定の共有です。本エントリーは必ず各主催者の公式ページから行ってください。' 
-                            : '※ This is just for sharing your plans. Please register officially through the organizer\'s page.'}
+                          {t('tournaments.participationNote')}
                         </p>
                       </div>
                     </div>
@@ -438,7 +426,7 @@ const TournamentDetail = () => {
                       rel="noopener noreferrer"
                     >
                       <ExternalLink className="h-5 w-5 mr-2" />
-                      {language === 'ja' ? '公式登録ページを開く' : 'Open Official Registration'}
+                      {t('tournaments.openRegistration')}
                     </a>
                   </Button>
                 )}
@@ -452,7 +440,7 @@ const TournamentDetail = () => {
               <div className="flex items-center gap-2 mb-4">
                 <Users className="h-5 w-5 text-primary" />
                 <h2 className="text-lg font-semibold">
-                  {language === 'ja' ? '参加予定者' : 'Participants'}
+                  {t('tournaments.participants')}
                 </h2>
                 <Badge variant="secondary">{participants?.length || 0}</Badge>
               </div>
@@ -473,7 +461,7 @@ const TournamentDetail = () => {
                       </Avatar>
                       <div className="flex-1 min-w-0">
                         <p className="font-medium truncate">
-                          {participant.profiles?.display_name || (language === 'ja' ? '名前未設定' : 'Anonymous')}
+                          {participant.profiles?.display_name || t('tournaments.anonymous')}
                         </p>
                         {participant.weight_class && (
                           <p className="text-sm text-muted-foreground">{participant.weight_class}</p>
@@ -481,7 +469,7 @@ const TournamentDetail = () => {
                       </div>
                       {participant.status === 'registered' && (
                         <Badge variant="default" className="bg-green-500">
-                          {language === 'ja' ? '登録済' : 'Registered'}
+                          {t('tournaments.registered')}
                         </Badge>
                       )}
                     </Link>
@@ -489,7 +477,7 @@ const TournamentDetail = () => {
                 </div>
               ) : (
                 <p className="text-muted-foreground text-center py-6">
-                  {language === 'ja' ? 'まだ参加予定者がいません' : 'No participants yet'}
+                  {t('tournaments.noParticipants')}
                 </p>
               )}
             </CardContent>
