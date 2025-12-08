@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar, MapPin, Globe, Users, ChevronLeft, ChevronRight, CalendarDays, List, ExternalLink, Clock } from "lucide-react";
+import { Calendar, MapPin, Globe, Users, ChevronLeft, ChevronRight, CalendarDays, List, ExternalLink, Clock, ChevronsLeft, ChevronsRight } from "lucide-react";
 import { format, parseISO, isAfter, isBefore, addMonths, differenceInDays, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addDays, getDay } from "date-fns";
 import { ja, enUS, pt } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
@@ -36,13 +36,27 @@ interface Tournament {
   slug: string | null;
 }
 
+const PAGE_SIZE = 30;
+
 const Tournaments = () => {
   const { language } = useLanguage();
   const [showPastTournaments, setShowPastTournaments] = useState(false);
-  const [activeTab, setActiveTab] = useState("upcoming");
+  const [activeTab, setActiveTab] = useState("all");
   const [selectedOrganizer, setSelectedOrganizer] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [currentPage, setCurrentPage] = useState(1);
+
+  // Reset page when filters change
+  const handleOrganizerChange = (org: string | null) => {
+    setSelectedOrganizer(org);
+    setCurrentPage(1);
+  };
+  
+  const handlePastToggle = (checked: boolean) => {
+    setShowPastTournaments(checked);
+    setCurrentPage(1);
+  };
 
   const { data: tournaments, isLoading } = useQuery({
     queryKey: ['tournaments'],
@@ -363,34 +377,90 @@ const Tournaments = () => {
     </Card>
   );
 
-  const TournamentSection = ({ title, tournaments, icon, loading = false }: { title: string; tournaments: Tournament[] | undefined; icon: React.ReactNode; loading?: boolean }) => (
-    <div className="space-y-4">
-      <div className="flex items-center gap-2">
-        {icon}
-        <h2 className="text-xl font-bold">{title}</h2>
-        {!loading && <Badge variant="secondary" className="ml-2 font-mono">{tournaments?.length || 0}</Badge>}
+  const TournamentSection = ({ title, tournaments, icon, loading = false, paginated = false }: { title: string; tournaments: Tournament[] | undefined; icon: React.ReactNode; loading?: boolean; paginated?: boolean }) => {
+    const totalItems = tournaments?.length || 0;
+    const totalPages = Math.ceil(totalItems / PAGE_SIZE);
+    const paginatedTournaments = paginated && tournaments 
+      ? tournaments.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
+      : tournaments;
+
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center gap-2">
+          {icon}
+          <h2 className="text-xl font-bold">{title}</h2>
+          {!loading && <Badge variant="secondary" className="ml-2 font-mono">{totalItems}</Badge>}
+        </div>
+        {loading ? (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {[...Array(6)].map((_, i) => (
+              <TournamentSkeleton key={i} />
+            ))}
+          </div>
+        ) : paginatedTournaments && paginatedTournaments.length > 0 ? (
+          <>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {paginatedTournaments.map((t) => (
+                <TournamentCard key={t.id} tournament={t} />
+              ))}
+            </div>
+            {paginated && totalPages > 1 && (
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t">
+                <div className="text-sm text-muted-foreground">
+                  {language === 'ja' 
+                    ? `${(currentPage - 1) * PAGE_SIZE + 1} - ${Math.min(currentPage * PAGE_SIZE, totalItems)} / ${totalItems} 件`
+                    : `${(currentPage - 1) * PAGE_SIZE + 1} - ${Math.min(currentPage * PAGE_SIZE, totalItems)} of ${totalItems}`}
+                </div>
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(1)}
+                    disabled={currentPage === 1}
+                  >
+                    <ChevronsLeft className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  <span className="px-3 text-sm font-medium">
+                    {currentPage} / {totalPages}
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                    disabled={currentPage === totalPages}
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(totalPages)}
+                    disabled={currentPage === totalPages}
+                  >
+                    <ChevronsRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
+          </>
+        ) : (
+          <Card className="border-dashed">
+            <CardContent className="py-12 text-center text-muted-foreground">
+              {language === 'ja' ? '大会がありません' : 'No tournaments found'}
+            </CardContent>
+          </Card>
+        )}
       </div>
-      {loading ? (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {[...Array(6)].map((_, i) => (
-            <TournamentSkeleton key={i} />
-          ))}
-        </div>
-      ) : tournaments && tournaments.length > 0 ? (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {tournaments.map((t) => (
-            <TournamentCard key={t.id} tournament={t} />
-          ))}
-        </div>
-      ) : (
-        <Card className="border-dashed">
-          <CardContent className="py-12 text-center text-muted-foreground">
-            {language === 'ja' ? '大会がありません' : 'No tournaments found'}
-          </CardContent>
-        </Card>
-      )}
-    </div>
-  );
+    );
+  };
 
   const CalendarView = () => {
     const weekDays = language === 'ja' 
@@ -490,7 +560,7 @@ const Tournaments = () => {
               <Switch
                 id="show-past"
                 checked={showPastTournaments}
-                onCheckedChange={setShowPastTournaments}
+                onCheckedChange={handlePastToggle}
               />
               <Label htmlFor="show-past" className="text-sm text-muted-foreground cursor-pointer">
                 {language === 'ja' ? '過去の大会も表示' : 'Show past'}
@@ -526,7 +596,7 @@ const Tournaments = () => {
               <Badge 
                 variant={selectedOrganizer === null ? "default" : "outline"}
                 className="cursor-pointer hover:opacity-80 transition-opacity text-xs"
-                onClick={() => setSelectedOrganizer(null)}
+                onClick={() => handleOrganizerChange(null)}
               >
                 {language === 'ja' ? 'すべて' : 'All'}
               </Badge>
@@ -540,7 +610,7 @@ const Tournaments = () => {
                     className={`cursor-pointer hover:opacity-80 transition-opacity text-xs ${
                       selectedOrganizer === org ? '' : `${color.bg}/10 ${color.text} ${color.border}/30`
                     }`}
-                    onClick={() => setSelectedOrganizer(org)}
+                    onClick={() => handleOrganizerChange(org)}
                   >
                     {org} <span className="ml-1 opacity-70">({count})</span>
                   </Badge>
@@ -601,6 +671,7 @@ const Tournaments = () => {
                 tournaments={filterByOrganizer(filterByDate(tournaments))}
                 icon={<Globe className="h-5 w-5 text-primary" />}
                 loading={isLoading}
+                paginated
               />
             </TabsContent>
           </Tabs>
