@@ -173,21 +173,12 @@ function LineageNodeCard({ node, depth = 0, language }: { node: LineageNode; dep
                 {showBothNames ? localizedName : (localizedName || englishName)}
               </span>
             </Link>
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              {belt !== 'Unknown' && <span>{beltLabel}</span>}
-              {showBothNames && (
-                <span className="truncate max-w-[120px]">({englishName})</span>
-              )}
-            </div>
+            {showBothNames && (
+              <div className="text-xs text-muted-foreground">
+                <span className="truncate max-w-[150px] block">{englishName}</span>
+              </div>
+            )}
           </div>
-
-          {/* Student count badge */}
-          {hasStudents && (
-            <div className="shrink-0 flex items-center gap-1 text-xs text-muted-foreground bg-muted px-2 py-1 rounded-full">
-              <Users className="w-3 h-3" />
-              <span>{node.students.length}</span>
-            </div>
-          )}
         </div>
 
         {/* Children */}
