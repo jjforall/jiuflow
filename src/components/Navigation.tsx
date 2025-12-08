@@ -5,7 +5,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { translations } from "@/lib/translations";
 import { prefetchRoute } from "@/utils/routePrefetch";
 import { Button } from "@/components/ui/button";
-import { Menu, LogIn, User, LogOut, ShieldCheck, Moon, Sun, Home, Map, Info, UserPlus, X, ClipboardList, Users } from "lucide-react";
+import { Menu, LogIn, User, LogOut, ShieldCheck, Moon, Sun, Home, Map, Info, UserPlus, X, ClipboardList, Users, Bell } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { supabase } from "@/integrations/supabase/client";
 import { User as SupabaseUser } from "@supabase/supabase-js";
@@ -30,6 +30,7 @@ const Navigation = () => {
   const [canAccessAdmin, setCanAccessAdmin] = useState(false);
   const { subscribed, loading: subscriptionLoading } = useSubscription();
   const [showOpenMatBadge, setShowOpenMatBadge] = useState(false);
+  const [hasUnreadNotifications, setHasUnreadNotifications] = useState(true); // TODO: Replace with real notification check
 
   // Check if user has seen the Open Mat notification
   useEffect(() => {
@@ -185,13 +186,34 @@ const Navigation = () => {
             <span className="text-muted-foreground">|</span>
             
             {user ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm" className="gap-2">
-                    <User className="h-4 w-4" />
-                    {t.nav.myPage || (language === "ja" ? "マイページ" : language === "pt" ? "Minha Página" : "My Page")}
-                  </Button>
-                </DropdownMenuTrigger>
+              <>
+                {/* Notification Bell Button */}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="relative"
+                  onClick={() => {
+                    // TODO: Navigate to notifications page or open notifications dropdown
+                    setHasUnreadNotifications(false);
+                    toast.info(language === "ja" ? "通知はありません" : language === "pt" ? "Sem notificações" : "No notifications");
+                  }}
+                >
+                  <Bell className="h-5 w-5" />
+                  {hasUnreadNotifications && (
+                    <span className="absolute -top-0.5 -right-0.5 flex h-3 w-3">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                    </span>
+                  )}
+                </Button>
+                
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="sm" className="gap-2">
+                      <User className="h-4 w-4" />
+                      {t.nav.myPage || (language === "ja" ? "マイページ" : language === "pt" ? "Minha Página" : "My Page")}
+                    </Button>
+                  </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                 <DropdownMenuItem onClick={() => navigate("/mypage")} className="gap-2 cursor-pointer">
                   <User className="h-4 w-4" />
@@ -223,6 +245,7 @@ const Navigation = () => {
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
+              </>
             ) : (
               <Link to="/login">
                 <Button variant="ghost" size="sm" className="gap-2">
@@ -271,6 +294,27 @@ const Navigation = () => {
 
           {/* Mobile: Language Switcher + Hamburger */}
           <div className="flex md:hidden items-center gap-3">
+            {/* Mobile Notification Bell - only when logged in */}
+            {user && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="relative"
+                onClick={() => {
+                  setHasUnreadNotifications(false);
+                  toast.info(language === "ja" ? "通知はありません" : language === "pt" ? "Sem notificações" : "No notifications");
+                }}
+              >
+                <Bell className="h-5 w-5" />
+                {hasUnreadNotifications && (
+                  <span className="absolute -top-0.5 -right-0.5 flex h-3 w-3">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                  </span>
+                )}
+              </Button>
+            )}
+
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="sm" className="gap-1 px-2">
