@@ -1,8 +1,9 @@
 import { useState, useMemo, useCallback, useRef, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useAuth } from "@/hooks/useAuth";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { Card, CardContent } from "@/components/ui/card";
@@ -10,10 +11,11 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar, MapPin, Globe, Users, ChevronLeft, ChevronRight, CalendarDays, List, ExternalLink, Clock, ChevronsLeft, ChevronsRight } from "lucide-react";
+import { Calendar, MapPin, Globe, Users, ChevronLeft, ChevronRight, CalendarDays, List, ExternalLink, Clock, ChevronsLeft, ChevronsRight, UserPlus, UserMinus, Loader2 } from "lucide-react";
 import { format, parseISO, isAfter, isBefore, addMonths, differenceInDays, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addDays, getDay } from "date-fns";
 import { ja, enUS, pt } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 interface Tournament {
   id: string;
@@ -41,6 +43,8 @@ const PAGE_SIZE = 30;
 const Tournaments = () => {
   const { language } = useLanguage();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [showPastTournaments, setShowPastTournaments] = useState(false);
   const [activeTab, setActiveTab] = useState("all");
   const [selectedOrganizer, setSelectedOrganizer] = useState<string | null>(null);
@@ -108,8 +112,68 @@ const Tournaments = () => {
       if (error) throw error;
       return data as Tournament[];
     },
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
+  });
+
+  // User's participations
+  const { data: userParticipations } = useQuery({
+    queryKey: ['user-tournament-participations', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      const { data, error } = await supabase
+        .from('tournament_participants')
+        .select('tournament_id')
+        .eq('user_id', user.id)
+        .neq('status', 'canceled');
+      
+      if (error) throw error;
+      return data.map(p => p.tournament_id);
+    },
+    enabled: !!user?.id,
+    staleTime: 2 * 60 * 1000,
+  });
+
+  const joinMutation = useMutation({
+    mutationFn: async (tournamentId: string) => {
+      if (!user) throw new Error('Not authenticated');
+      const { error } = await supabase
+        .from('tournament_participants')
+        .insert({
+          tournament_id: tournamentId,
+          user_id: user.id,
+          status: 'planning'
+        });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['user-tournament-participations'] });
+      queryClient.invalidateQueries({ queryKey: ['tournament-participant-counts'] });
+      toast.success(language === 'ja' ? '参加予定に追加しました' : 'Added to your plan');
+    },
+    onError: () => {
+      toast.error(language === 'ja' ? 'エラーが発生しました' : 'An error occurred');
+    }
+  });
+
+  const leaveMutation = useMutation({
+    mutationFn: async (tournamentId: string) => {
+      if (!user) throw new Error('Not authenticated');
+      const { error } = await supabase
+        .from('tournament_participants')
+        .delete()
+        .eq('tournament_id', tournamentId)
+        .eq('user_id', user.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['user-tournament-participations'] });
+      queryClient.invalidateQueries({ queryKey: ['tournament-participant-counts'] });
+      toast.success(language === 'ja' ? '参加予定から削除しました' : 'Removed from your plan');
+    },
+    onError: () => {
+      toast.error(language === 'ja' ? 'エラーが発生しました' : 'An error occurred');
+    }
   });
 
   const { data: participantCounts } = useQuery({
@@ -271,11 +335,27 @@ const Tournaments = () => {
     const showDaysLeft = !isPast && daysUntil >= 0 && daysUntil <= 14;
     const participantCount = participantCounts?.[tournament.id] || 0;
     const color = getOrganizerColor(tournament.organizer);
+    const isParticipating = userParticipations?.includes(tournament.id);
+    const isMutating = joinMutation.isPending || leaveMutation.isPending;
     
     // Registration deadline logic
     const deadlineDate = tournament.registration_deadline ? parseISO(tournament.registration_deadline) : null;
     const isDeadlineSoon = deadlineDate && !isPast && differenceInDays(deadlineDate, now) >= 0 && differenceInDays(deadlineDate, now) <= 7;
     const isDeadlinePassed = deadlineDate && isBefore(deadlineDate, now);
+    
+    const handleParticipationToggle = (e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (!user) {
+        toast.error(language === 'ja' ? 'ログインが必要です' : 'Please login first');
+        return;
+      }
+      if (isParticipating) {
+        leaveMutation.mutate(tournament.id);
+      } else {
+        joinMutation.mutate(tournament.id);
+      }
+    };
     
     if (compact) {
       return (
@@ -372,19 +452,42 @@ const Tournaments = () => {
                 )}
               </div>
 
-              {/* Registration link */}
-              {tournament.registration_url && !isPast && (
-                <div className="pt-2 border-t border-border/50">
-                  <a 
-                    href={tournament.registration_url} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className={`inline-flex items-center gap-1.5 text-xs font-medium ${color.text} hover:underline`}
-                    onClick={(e) => e.stopPropagation()}
+              {/* Actions */}
+              {!isPast && (
+                <div className="pt-2 border-t border-border/50 flex items-center justify-between gap-2">
+                  {tournament.registration_url && (
+                    <a 
+                      href={tournament.registration_url} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className={`inline-flex items-center gap-1.5 text-xs font-medium ${color.text} hover:underline`}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <ExternalLink className="h-3 w-3" />
+                      {language === 'ja' ? 'エントリー' : 'Register'}
+                    </a>
+                  )}
+                  <Button
+                    variant={isParticipating ? "default" : "outline"}
+                    size="sm"
+                    className={`h-7 text-xs gap-1 ${isParticipating ? 'bg-primary' : ''}`}
+                    onClick={handleParticipationToggle}
+                    disabled={isMutating}
                   >
-                    <ExternalLink className="h-3 w-3" />
-                    {language === 'ja' ? 'エントリー' : 'Register'}
-                  </a>
+                    {isMutating ? (
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                    ) : isParticipating ? (
+                      <>
+                        <UserMinus className="h-3 w-3" />
+                        {language === 'ja' ? '予定済' : 'Planned'}
+                      </>
+                    ) : (
+                      <>
+                        <UserPlus className="h-3 w-3" />
+                        {language === 'ja' ? '参加予定' : 'Plan'}
+                      </>
+                    )}
+                  </Button>
                 </div>
               )}
             </div>
