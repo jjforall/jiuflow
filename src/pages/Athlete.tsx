@@ -453,6 +453,8 @@ const Athlete = () => {
 
   const getOrganizationName = (org: Celebrity['organization']) => {
     if (!org) return null;
+    // 無所属/Independent の場合は表示しない
+    if (org.name === 'Independent' || org.name_ja === '無所属') return null;
     switch (language) {
       case 'ja': return org.name_ja;
       case 'pt': return org.name_pt;
