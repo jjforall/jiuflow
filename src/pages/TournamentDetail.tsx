@@ -7,13 +7,15 @@ import { useTranslation } from "@/hooks/useTranslation";
 import { useAuth } from "@/hooks/useAuth";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Calendar, MapPin, Trophy, Info, ExternalLink, Building2, ArrowLeft, Globe, Users, UserPlus, UserMinus, AlertCircle, Clock, FileText, Train, DollarSign, ScrollText, Mail, Link as LinkIcon, Scale } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Calendar, MapPin, Trophy, Info, ExternalLink, Building2, ArrowLeft, Globe, Users, UserPlus, UserMinus, AlertCircle, Clock, FileText, Train, DollarSign, ScrollText, Mail, Link as LinkIcon, Scale, ChevronDown, ChevronRight } from "lucide-react";
+import { useState } from "react";
 import { format, parseISO, isBefore } from "date-fns";
 import { ja, enUS, pt } from "date-fns/locale";
 import { toast } from "sonner";
@@ -138,6 +140,10 @@ const TournamentDetail = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  
+  // State for collapsible sections
+  const [notesOpen, setNotesOpen] = useState(false);
+  const [weightClassesOpen, setWeightClassesOpen] = useState(false);
   
   // Scroll to top on mount
   useEffect(() => {
@@ -382,161 +388,168 @@ const TournamentDetail = () => {
     <div className="min-h-screen flex flex-col bg-background">
       <Navigation />
       
-      <main className="flex-1 container mx-auto px-4 py-8 pt-24">
+      <main className="flex-1 container mx-auto px-4 py-6 pt-20 sm:pt-24">
         {/* Back Button */}
-        <Button variant="ghost" asChild className="mb-6">
+        <Button variant="ghost" asChild className="mb-4" size="sm">
           <Link to="/tournaments">
             <ArrowLeft className="h-4 w-4 mr-2" />
             {t('tournaments.backToList')}
           </Link>
         </Button>
 
-        <div className="max-w-3xl mx-auto space-y-6">
-          <Card className={isPast ? 'opacity-75' : ''}>
+        <div className="max-w-4xl mx-auto space-y-4">
+          {/* Hero Card - Title & Key Info */}
+          <Card className={`overflow-hidden ${isPast ? 'opacity-75' : ''}`}>
             {/* Venue Hero Image */}
             {getVenueImage(tournament) && (
-              <div className="relative w-full h-48 sm:h-64 overflow-hidden rounded-t-lg">
+              <div className="relative w-full h-40 sm:h-56 overflow-hidden">
                 <img 
                   src={getVenueImage(tournament) || ''} 
                   alt={getVenue(tournament) || 'Venue'}
                   className="w-full h-full object-cover"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent" />
-                <div className="absolute bottom-4 left-4 right-4">
-                  <Badge variant="secondary" className="bg-background/80 backdrop-blur-sm">
-                    <Building2 className="h-3 w-3 mr-1" />
-                    {getVenue(tournament)}
-                  </Badge>
-                </div>
+                <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent" />
               </div>
             )}
-            <CardContent className="p-6 sm:p-8">
-              {/* Header */}
-              <div className="flex items-start justify-between gap-3 mb-4">
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  {getCategoryBadge(tournament.category, tournament.is_international)}
-                  {getOrganizerBadge(tournament.organizer)}
-                  {getCountryBadge(tournament.country)}
-                  {isPast && (
-                    <Badge variant="outline" className="text-muted-foreground text-xs">
-                      {t('tournaments.past')}
-                    </Badge>
-                  )}
+            <CardContent className={`${getVenueImage(tournament) ? '-mt-16 relative z-10' : ''} p-4 sm:p-6`}>
+              {/* Badges */}
+              <div className="flex items-center gap-1.5 flex-wrap mb-3">
+                {getCategoryBadge(tournament.category, tournament.is_international)}
+                {getOrganizerBadge(tournament.organizer)}
+                {getCountryBadge(tournament.country)}
+                {isPast && (
+                  <Badge variant="outline" className="text-muted-foreground text-xs">
+                    {t('tournaments.past')}
+                  </Badge>
+                )}
+              </div>
+
+              {/* Title */}
+              <h1 className="text-xl sm:text-2xl md:text-3xl font-bold mb-4 leading-tight">{getName(tournament)}</h1>
+
+              {/* Key Info Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {/* Date */}
+                <div className="flex items-center gap-3 p-3 bg-primary/5 rounded-lg border border-primary/10">
+                  <Calendar className="h-5 w-5 text-primary shrink-0" />
+                  <div>
+                    <p className="text-xs text-muted-foreground">{language === 'ja' ? '開催日' : 'Date'}</p>
+                    <p className="font-semibold text-sm">{formatDateRange(tournament.date_start, tournament.date_end)}</p>
+                  </div>
+                </div>
+
+                {/* Location */}
+                <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+                  <MapPin className="h-5 w-5 text-primary shrink-0" />
+                  <div>
+                    <p className="text-xs text-muted-foreground">{language === 'ja' ? '開催地' : 'Location'}</p>
+                    <p className="font-semibold text-sm">{getLocation(tournament)}</p>
+                  </div>
+                </div>
+
+                {/* Venue */}
+                {getVenue(tournament) && (
+                  <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+                    <Building2 className="h-5 w-5 text-muted-foreground shrink-0" />
+                    <div>
+                      <p className="text-xs text-muted-foreground">{language === 'ja' ? '会場' : 'Venue'}</p>
+                      <p className="font-semibold text-sm">{getVenue(tournament)}</p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Organizer */}
+                <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+                  <Trophy className="h-5 w-5 text-amber-500 shrink-0" />
+                  <div>
+                    <p className="text-xs text-muted-foreground">{language === 'ja' ? '主催' : 'Organizer'}</p>
+                    <p className="font-semibold text-sm">{tournament.organizer}</p>
+                  </div>
                 </div>
               </div>
 
-              <h1 className="text-xl sm:text-2xl md:text-3xl font-bold mb-4 leading-tight">{getName(tournament)}</h1>
-
-              {/* Details */}
-              <div className="space-y-4">
-                <div className="flex items-start gap-3 text-foreground">
-                  <Calendar className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+              {/* Registration Deadline Alert */}
+              {tournament.registration_deadline && !isPast && (
+                <div className={`mt-4 p-3 rounded-lg flex items-center gap-3 ${
+                  isBefore(parseISO(tournament.registration_deadline), now)
+                    ? 'bg-muted/50 text-muted-foreground'
+                    : 'bg-orange-500/10 border border-orange-500/30'
+                }`}>
+                  <Clock className={`h-5 w-5 shrink-0 ${
+                    isBefore(parseISO(tournament.registration_deadline), now) ? 'text-muted-foreground' : 'text-orange-500'
+                  }`} />
                   <div>
-                    <p className="font-semibold text-sm sm:text-base">{formatDateRange(tournament.date_start, tournament.date_end)}</p>
-                    {tournament.date_end && tournament.date_start !== tournament.date_end && (
-                      <p className="text-xs text-muted-foreground">
-                        {(() => {
-                          const start = parseISO(tournament.date_start);
-                          const end = parseISO(tournament.date_end);
-                          const days = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-                          return `${days} ${t('tournaments.days')}`;
-                        })()}
-                      </p>
-                    )}
+                    <p className="text-xs text-muted-foreground">{t('tournaments.registrationDeadline')}</p>
+                    <p className={`font-semibold text-sm ${
+                      isBefore(parseISO(tournament.registration_deadline), now) 
+                        ? 'line-through' 
+                        : 'text-orange-600 dark:text-orange-400'
+                    }`}>
+                      {format(parseISO(tournament.registration_deadline), language === 'ja' ? 'M月d日(E)' : 'MMM d (EEE)', { locale: getLocale() })}
+                      {!isBefore(parseISO(tournament.registration_deadline), now) && (
+                        <span className="ml-2 text-xs font-normal">
+                          ({(() => {
+                            const days = Math.ceil((parseISO(tournament.registration_deadline).getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+                            if (days === 0) return t('tournaments.today');
+                            if (days < 0) return t('tournaments.closed');
+                            return t('tournaments.daysLeft').replace('{days}', String(days));
+                          })()})
+                        </span>
+                      )}
+                    </p>
                   </div>
                 </div>
+              )}
+            </CardContent>
+          </Card>
 
-                <div className="flex items-start gap-3 text-foreground">
-                  <MapPin className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-                  <div>
-                    <p className="font-medium text-sm sm:text-base">{getLocation(tournament)}</p>
-                    {tournament.is_international && (
-                      <div className="flex items-center gap-1 text-xs text-muted-foreground mt-0.5">
-                        <Globe className="h-3 w-3" />
-                        {t('tournaments.internationalEvent')}
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {getVenue(tournament) && (
-                  <div className="flex items-start gap-3 text-foreground">
-                    <Building2 className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
-                    <p className="font-medium text-sm sm:text-base">{getVenue(tournament)}</p>
-                  </div>
-                )}
-
-                <div className="flex items-start gap-3 text-foreground">
-                  <Trophy className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
-                  <p className="font-medium text-sm sm:text-base">{tournament.organizer}</p>
-                </div>
-
-                {/* Registration Deadline */}
-                {tournament.registration_deadline && !isPast && (
-                  <div className="flex items-start gap-3 text-foreground">
-                    <Clock className="h-5 w-5 text-orange-500 shrink-0 mt-0.5" />
-                    <div>
-                      <p className="font-medium text-sm sm:text-base">
-                        {t('tournaments.registrationDeadline')}
-                      </p>
-                      <p className={`text-xs sm:text-sm ${
-                        isBefore(parseISO(tournament.registration_deadline), now) 
-                          ? 'text-muted-foreground line-through' 
-                          : 'text-orange-500 font-semibold'
-                      }`}>
-                        {format(parseISO(tournament.registration_deadline), language === 'ja' ? 'M月d日(E)' : 'MMM d (EEE)', { locale: getLocale() })}
-                        {!isBefore(parseISO(tournament.registration_deadline), now) && (
-                          <span className="ml-1.5">
-                            ({(() => {
-                              const days = Math.ceil((parseISO(tournament.registration_deadline).getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-                              if (days === 0) return t('tournaments.today');
-                              if (days < 0) return t('tournaments.closed');
-                              return t('tournaments.daysLeft').replace('{days}', String(days));
-                            })()})
-                          </span>
-                        )}
-                      </p>
-                    </div>
-                  </div>
-                )}
-
+          {/* Description & Notes Card */}
+          {(getDescription(tournament) || getNotes(tournament)) && (
+            <Card>
+              <CardContent className="p-4 sm:p-6">
                 {/* Description */}
                 {getDescription(tournament) && (
-                  <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 mt-3">
-                    <div className="flex items-start gap-2.5">
-                      <FileText className="h-4 w-4 mt-0.5 text-primary shrink-0" />
-                      <div>
-                        <p className="font-medium text-xs mb-1">
-                          {t('tournaments.about')}
-                        </p>
-                        <p className="text-foreground text-sm">{getDescription(tournament)}</p>
-                      </div>
+                  <div className="mb-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <FileText className="h-4 w-4 text-primary" />
+                      <h3 className="font-semibold text-sm">{t('tournaments.about')}</h3>
                     </div>
+                    <p className="text-sm text-foreground leading-relaxed">{getDescription(tournament)}</p>
                   </div>
                 )}
 
-                {/* Notes */}
+                {/* Notes - Collapsible */}
                 {getNotes(tournament) && (
-                  <div className="bg-muted/50 rounded-lg p-3 mt-3">
-                    <div className="flex items-start gap-2.5">
-                      <Info className="h-4 w-4 mt-0.5 text-muted-foreground shrink-0" />
-                      <p className="text-muted-foreground text-sm">{getNotes(tournament)}</p>
-                    </div>
-                  </div>
+                  <Collapsible open={notesOpen} onOpenChange={setNotesOpen}>
+                    <CollapsibleTrigger className="flex items-center gap-2 w-full p-2 bg-muted/50 rounded-lg hover:bg-muted/70 transition-colors">
+                      <Info className="h-4 w-4 text-muted-foreground" />
+                      <span className="font-medium text-sm text-muted-foreground flex-1 text-left">
+                        {language === 'ja' ? '詳細情報' : 'Details'}
+                      </span>
+                      {notesOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="mt-2">
+                      <div className="p-3 bg-muted/30 rounded-lg text-sm text-muted-foreground whitespace-pre-line">
+                        {getNotes(tournament)}
+                      </div>
+                    </CollapsibleContent>
+                  </Collapsible>
                 )}
+              </CardContent>
+            </Card>
+          )}
 
-                {/* Extended Information Section */}
-                <Separator className="my-6" />
-                
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {/* Details Grid Card */}
+          {(getEntryFee(tournament) || getRules(tournament) || getVenueAddress(tournament) || getVenueAccess(tournament)) && (
+            <Card>
+              <CardContent className="p-4 sm:p-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {/* Entry Fee */}
                   {getEntryFee(tournament) && (
-                    <div className="flex items-start gap-3 p-3 bg-muted/30 rounded-lg">
-                      <DollarSign className="h-5 w-5 text-green-500 shrink-0 mt-0.5" />
+                    <div className="flex items-start gap-3 p-3 bg-green-500/10 rounded-lg border border-green-500/20">
+                      <DollarSign className="h-5 w-5 text-green-500 shrink-0" />
                       <div>
-                        <p className="font-medium text-xs text-muted-foreground mb-1">
-                          {language === 'ja' ? '参加費' : 'Entry Fee'}
-                        </p>
+                        <p className="text-xs text-muted-foreground">{language === 'ja' ? '参加費' : 'Entry Fee'}</p>
                         <p className="text-sm font-semibold">{getEntryFee(tournament)}</p>
                       </div>
                     </div>
@@ -544,12 +557,10 @@ const TournamentDetail = () => {
 
                   {/* Rules */}
                   {getRules(tournament) && (
-                    <div className="flex items-start gap-3 p-3 bg-muted/30 rounded-lg">
-                      <ScrollText className="h-5 w-5 text-blue-500 shrink-0 mt-0.5" />
+                    <div className="flex items-start gap-3 p-3 bg-blue-500/10 rounded-lg border border-blue-500/20">
+                      <ScrollText className="h-5 w-5 text-blue-500 shrink-0" />
                       <div>
-                        <p className="font-medium text-xs text-muted-foreground mb-1">
-                          {language === 'ja' ? 'ルール' : 'Rules'}
-                        </p>
+                        <p className="text-xs text-muted-foreground">{language === 'ja' ? 'ルール' : 'Rules'}</p>
                         <p className="text-sm">{getRules(tournament)}</p>
                       </div>
                     </div>
@@ -557,12 +568,10 @@ const TournamentDetail = () => {
 
                   {/* Venue Address */}
                   {getVenueAddress(tournament) && (
-                    <div className="flex items-start gap-3 p-3 bg-muted/30 rounded-lg">
-                      <MapPin className="h-5 w-5 text-red-500 shrink-0 mt-0.5" />
+                    <div className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg">
+                      <MapPin className="h-5 w-5 text-red-500 shrink-0" />
                       <div>
-                        <p className="font-medium text-xs text-muted-foreground mb-1">
-                          {language === 'ja' ? '住所' : 'Address'}
-                        </p>
+                        <p className="text-xs text-muted-foreground">{language === 'ja' ? '住所' : 'Address'}</p>
                         <p className="text-sm">{getVenueAddress(tournament)}</p>
                       </div>
                     </div>
@@ -570,40 +579,53 @@ const TournamentDetail = () => {
 
                   {/* Access Info */}
                   {getVenueAccess(tournament) && (
-                    <div className="flex items-start gap-3 p-3 bg-muted/30 rounded-lg">
-                      <Train className="h-5 w-5 text-purple-500 shrink-0 mt-0.5" />
+                    <div className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg">
+                      <Train className="h-5 w-5 text-purple-500 shrink-0" />
                       <div>
-                        <p className="font-medium text-xs text-muted-foreground mb-1">
-                          {language === 'ja' ? 'アクセス' : 'Access'}
-                        </p>
+                        <p className="text-xs text-muted-foreground">{language === 'ja' ? 'アクセス' : 'Access'}</p>
                         <p className="text-sm">{getVenueAccess(tournament)}</p>
                       </div>
                     </div>
                   )}
                 </div>
+              </CardContent>
+            </Card>
+          )}
 
-                {/* Weight Classes */}
-                {tournament.weight_classes && tournament.weight_classes.length > 0 && (
-                  <div className="mt-4 p-4 bg-muted/30 rounded-lg">
-                    <div className="flex items-center gap-2 mb-3">
-                      <Scale className="h-5 w-5 text-primary" />
-                      <p className="font-semibold text-sm">
-                        {language === 'ja' ? '階級・体重一覧' : 'Weight Classes'}
-                      </p>
-                    </div>
-                    <div className="space-y-2">
+          {/* Weight Classes Card - Collapsible */}
+          {tournament.weight_classes && tournament.weight_classes.length > 0 && (
+            <Card>
+              <CardContent className="p-4 sm:p-6">
+                <Collapsible open={weightClassesOpen} onOpenChange={setWeightClassesOpen}>
+                  <CollapsibleTrigger className="flex items-center gap-2 w-full">
+                    <Scale className="h-5 w-5 text-primary" />
+                    <span className="font-semibold text-sm flex-1 text-left">
+                      {language === 'ja' ? '階級・体重一覧' : 'Weight Classes'}
+                    </span>
+                    <Badge variant="secondary" className="mr-2">{tournament.weight_classes.length}</Badge>
+                    {weightClassesOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="mt-3">
+                    <div className="space-y-2 max-h-64 overflow-y-auto">
                       {tournament.weight_classes.map((wc, idx) => (
-                        <div key={idx} className="text-sm p-2 bg-background/50 rounded border border-border/50">
+                        <div key={idx} className="text-sm p-2 bg-muted/50 rounded border border-border/50">
                           {wc}
                         </div>
                       ))}
                     </div>
-                  </div>
-                )}
+                  </CollapsibleContent>
+                </Collapsible>
+              </CardContent>
+            </Card>
+          )}
 
+          {/* Contact & Related Card */}
+          {(tournament.contact_email || tournament.contact_url || relatedTournament) && (
+            <Card>
+              <CardContent className="p-4 sm:p-6 space-y-4">
                 {/* Contact Info */}
                 {(tournament.contact_email || tournament.contact_url) && (
-                  <div className="mt-4 p-3 bg-primary/5 border border-primary/20 rounded-lg">
+                  <div>
                     <p className="font-medium text-xs text-muted-foreground mb-2">
                       {language === 'ja' ? 'お問い合わせ' : 'Contact'}
                     </p>
@@ -611,7 +633,7 @@ const TournamentDetail = () => {
                       {tournament.contact_email && (
                         <a 
                           href={`mailto:${tournament.contact_email}`}
-                          className="flex items-center gap-1.5 text-sm text-primary hover:underline"
+                          className="inline-flex items-center gap-1.5 text-sm text-primary hover:underline px-3 py-1.5 bg-primary/5 rounded-full"
                         >
                           <Mail className="h-4 w-4" />
                           {tournament.contact_email}
@@ -622,7 +644,7 @@ const TournamentDetail = () => {
                           href={tournament.contact_url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="flex items-center gap-1.5 text-sm text-primary hover:underline"
+                          className="inline-flex items-center gap-1.5 text-sm text-primary hover:underline px-3 py-1.5 bg-primary/5 rounded-full"
                         >
                           <LinkIcon className="h-4 w-4" />
                           {language === 'ja' ? '公式サイト' : 'Official Site'}
@@ -634,116 +656,110 @@ const TournamentDetail = () => {
 
                 {/* Related Tournament Link */}
                 {relatedTournament && (
-                  <div className="mt-4 p-3 bg-secondary/30 border border-border/50 rounded-lg">
+                  <div className="pt-3 border-t">
                     <p className="font-medium text-xs text-muted-foreground mb-2">
                       {language === 'ja' ? '関連大会' : 'Related Tournament'}
                     </p>
                     <Link 
                       to={`/tournaments/${relatedTournament.date_start?.substring(0, 4)}/${relatedTournament.slug}`}
-                      className="flex items-center gap-2 text-sm text-primary hover:underline"
+                      className="flex items-center gap-2 text-sm text-primary hover:underline p-2 bg-secondary/30 rounded-lg"
                     >
                       <Calendar className="h-4 w-4" />
                       {language === 'ja' && relatedTournament.name_ja ? relatedTournament.name_ja : relatedTournament.name}
                     </Link>
                   </div>
                 )}
+              </CardContent>
+            </Card>
+          )}
 
-                {/* Participation Section */}
-                {!isPast && (
-                  <div className="border-t pt-6 mt-6 space-y-4">
-                    {user ? (
-                      isParticipating ? (
-                        <Button
-                          variant="outline"
-                          className="w-full"
-                          onClick={() => leaveMutation.mutate()}
-                          disabled={leaveMutation.isPending}
-                        >
-                          <UserMinus className="h-5 w-5 mr-2" />
-                          {t('tournaments.cancelParticipation')}
-                        </Button>
-                      ) : (
-                        <Button
-                          className="w-full"
-                          onClick={() => joinMutation.mutate()}
-                          disabled={joinMutation.isPending}
-                        >
-                          <UserPlus className="h-5 w-5 mr-2" />
-                          {t('tournaments.planToParticipate')}
-                        </Button>
-                      )
-                    ) : (
-                      <Button variant="outline" asChild className="w-full">
-                        <Link to="/login">
-                          <UserPlus className="h-5 w-5 mr-2" />
-                          {t('tournaments.loginToJoin')}
-                        </Link>
-                      </Button>
-                    )}
-
-                    <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-3">
-                      <div className="flex items-start gap-2">
-                        <AlertCircle className="h-4 w-4 mt-0.5 text-amber-600 shrink-0" />
-                        <p className="text-sm text-amber-700 dark:text-amber-400">
-                          {t('tournaments.participationNote')}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {tournament.registration_url && (
-                  <Button asChild className="w-full mt-6" size="lg">
-                    <a
-                      href={tournament.registration_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
+          {/* Participation Card */}
+          {!isPast && (
+            <Card className="border-primary/20">
+              <CardContent className="p-4 sm:p-6 space-y-4">
+                <div className="flex items-center gap-2">
+                  <UserPlus className="h-5 w-5 text-primary" />
+                  <h3 className="font-semibold">{language === 'ja' ? '参加予定' : 'Participation'}</h3>
+                </div>
+                
+                {user ? (
+                  isParticipating ? (
+                    <Button
+                      variant="outline"
+                      className="w-full"
+                      onClick={() => leaveMutation.mutate()}
+                      disabled={leaveMutation.isPending}
                     >
-                      <ExternalLink className="h-5 w-5 mr-2" />
-                      {t('tournaments.openRegistration')}
-                    </a>
+                      <UserMinus className="h-5 w-5 mr-2" />
+                      {t('tournaments.cancelParticipation')}
+                    </Button>
+                  ) : (
+                    <Button
+                      className="w-full"
+                      onClick={() => joinMutation.mutate()}
+                      disabled={joinMutation.isPending}
+                    >
+                      <UserPlus className="h-5 w-5 mr-2" />
+                      {t('tournaments.planToParticipate')}
+                    </Button>
+                  )
+                ) : (
+                  <Button variant="outline" asChild className="w-full">
+                    <Link to="/login">
+                      <UserPlus className="h-5 w-5 mr-2" />
+                      {t('tournaments.loginToJoin')}
+                    </Link>
                   </Button>
                 )}
-              </div>
-            </CardContent>
-          </Card>
+
+                <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-3">
+                  <div className="flex items-start gap-2">
+                    <AlertCircle className="h-4 w-4 mt-0.5 text-amber-600 shrink-0" />
+                    <p className="text-xs text-amber-700 dark:text-amber-400">
+                      {t('tournaments.participationNote')}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Participants Section */}
           <Card>
-            <CardContent className="p-6">
+            <CardContent className="p-4 sm:p-6">
               <div className="flex items-center gap-2 mb-4">
                 <Users className="h-5 w-5 text-primary" />
-                <h2 className="text-lg font-semibold">
+                <h3 className="font-semibold">
                   {t('tournaments.participants')}
-                </h2>
+                </h3>
                 {user && <Badge variant="secondary">{participants?.length || 0}</Badge>}
               </div>
 
               {user ? (
                 participants && participants.length > 0 ? (
-                  <div className="space-y-3">
+                  <div className="space-y-2">
                     {participants.map((participant) => (
                       <Link
                         key={participant.id}
                         to={participant.profiles?.username ? `/${participant.profiles.username}` : '#'}
                         className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors"
                       >
-                        <Avatar className="h-10 w-10">
+                        <Avatar className="h-9 w-9">
                           <AvatarImage src={participant.profiles?.avatar_url || undefined} />
-                          <AvatarFallback>
+                          <AvatarFallback className="text-sm">
                             {participant.profiles?.display_name?.charAt(0) || '?'}
                           </AvatarFallback>
                         </Avatar>
                         <div className="flex-1 min-w-0">
-                          <p className="font-medium truncate">
+                          <p className="font-medium text-sm truncate">
                             {participant.profiles?.display_name || t('tournaments.anonymous')}
                           </p>
                           {participant.weight_class && (
-                            <p className="text-sm text-muted-foreground">{participant.weight_class}</p>
+                            <p className="text-xs text-muted-foreground">{participant.weight_class}</p>
                           )}
                         </div>
                         {participant.status === 'registered' && (
-                          <Badge variant="default" className="bg-green-500">
+                          <Badge variant="default" className="bg-green-500 text-xs">
                             {t('tournaments.registered')}
                           </Badge>
                         )}
@@ -751,13 +767,13 @@ const TournamentDetail = () => {
                     ))}
                   </div>
                 ) : (
-                  <p className="text-muted-foreground text-center py-6">
+                  <p className="text-muted-foreground text-center py-4 text-sm">
                     {t('tournaments.noParticipants')}
                   </p>
                 )
               ) : (
-                <div className="text-center py-6">
-                  <p className="text-muted-foreground mb-3">
+                <div className="text-center py-4">
+                  <p className="text-muted-foreground text-sm mb-3">
                     {language === 'ja' ? '参加予定者を確認するにはログインしてください' : 'Login to see participants'}
                   </p>
                   <Button variant="outline" asChild size="sm">
