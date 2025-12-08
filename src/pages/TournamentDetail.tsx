@@ -52,6 +52,7 @@ interface Tournament {
   rules_ja: string | null;
   contact_email: string | null;
   contact_url: string | null;
+  related_tournament_slug: string | null;
 }
 
 interface Participant {
@@ -211,6 +212,22 @@ const TournamentDetail = () => {
     },
     enabled: !!tournament?.id,
     staleTime: 2 * 60 * 1000, // 2 minutes
+  });
+
+  const { data: relatedTournament } = useQuery({
+    queryKey: ['related-tournament', tournament?.related_tournament_slug],
+    queryFn: async () => {
+      if (!tournament?.related_tournament_slug) return null;
+      const { data, error } = await supabase
+        .from('tournaments')
+        .select('name, name_ja, slug, date_start')
+        .eq('slug', tournament.related_tournament_slug)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!tournament?.related_tournament_slug,
+    staleTime: 10 * 60 * 1000,
   });
 
   const isParticipating = participants?.some(p => p.user_id === user?.id);
@@ -612,6 +629,22 @@ const TournamentDetail = () => {
                         </a>
                       )}
                     </div>
+                  </div>
+                )}
+
+                {/* Related Tournament Link */}
+                {relatedTournament && (
+                  <div className="mt-4 p-3 bg-secondary/30 border border-border/50 rounded-lg">
+                    <p className="font-medium text-xs text-muted-foreground mb-2">
+                      {language === 'ja' ? '関連大会' : 'Related Tournament'}
+                    </p>
+                    <Link 
+                      to={`/tournaments/${relatedTournament.date_start?.substring(0, 4)}/${relatedTournament.slug}`}
+                      className="flex items-center gap-2 text-sm text-primary hover:underline"
+                    >
+                      <Calendar className="h-4 w-4" />
+                      {language === 'ja' && relatedTournament.name_ja ? relatedTournament.name_ja : relatedTournament.name}
+                    </Link>
                   </div>
                 )}
 
