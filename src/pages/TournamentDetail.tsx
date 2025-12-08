@@ -716,43 +716,56 @@ const TournamentDetail = () => {
                 <h2 className="text-lg font-semibold">
                   {t('tournaments.participants')}
                 </h2>
-                <Badge variant="secondary">{participants?.length || 0}</Badge>
+                {user && <Badge variant="secondary">{participants?.length || 0}</Badge>}
               </div>
 
-              {participants && participants.length > 0 ? (
-                <div className="space-y-3">
-                  {participants.map((participant) => (
-                    <Link
-                      key={participant.id}
-                      to={participant.profiles?.username ? `/${participant.profiles.username}` : '#'}
-                      className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors"
-                    >
-                      <Avatar className="h-10 w-10">
-                        <AvatarImage src={participant.profiles?.avatar_url || undefined} />
-                        <AvatarFallback>
-                          {participant.profiles?.display_name?.charAt(0) || '?'}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium truncate">
-                          {participant.profiles?.display_name || t('tournaments.anonymous')}
-                        </p>
-                        {participant.weight_class && (
-                          <p className="text-sm text-muted-foreground">{participant.weight_class}</p>
+              {user ? (
+                participants && participants.length > 0 ? (
+                  <div className="space-y-3">
+                    {participants.map((participant) => (
+                      <Link
+                        key={participant.id}
+                        to={participant.profiles?.username ? `/${participant.profiles.username}` : '#'}
+                        className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors"
+                      >
+                        <Avatar className="h-10 w-10">
+                          <AvatarImage src={participant.profiles?.avatar_url || undefined} />
+                          <AvatarFallback>
+                            {participant.profiles?.display_name?.charAt(0) || '?'}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium truncate">
+                            {participant.profiles?.display_name || t('tournaments.anonymous')}
+                          </p>
+                          {participant.weight_class && (
+                            <p className="text-sm text-muted-foreground">{participant.weight_class}</p>
+                          )}
+                        </div>
+                        {participant.status === 'registered' && (
+                          <Badge variant="default" className="bg-green-500">
+                            {t('tournaments.registered')}
+                          </Badge>
                         )}
-                      </div>
-                      {participant.status === 'registered' && (
-                        <Badge variant="default" className="bg-green-500">
-                          {t('tournaments.registered')}
-                        </Badge>
-                      )}
-                    </Link>
-                  ))}
-                </div>
+                      </Link>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-muted-foreground text-center py-6">
+                    {t('tournaments.noParticipants')}
+                  </p>
+                )
               ) : (
-                <p className="text-muted-foreground text-center py-6">
-                  {t('tournaments.noParticipants')}
-                </p>
+                <div className="text-center py-6">
+                  <p className="text-muted-foreground mb-3">
+                    {language === 'ja' ? '参加予定者を確認するにはログインしてください' : 'Login to see participants'}
+                  </p>
+                  <Button variant="outline" asChild size="sm">
+                    <Link to="/login">
+                      {language === 'ja' ? 'ログイン' : 'Login'}
+                    </Link>
+                  </Button>
+                </div>
               )}
             </CardContent>
           </Card>
