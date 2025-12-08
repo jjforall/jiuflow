@@ -47,31 +47,38 @@ const Footer = () => {
           </div>
           
           <div>
-            <h4 className="font-light mb-4 text-sm">Navigation</h4>
+            <h4 className="font-light mb-4 text-sm">
+              {language === "ja" ? "ナビゲーション" : language === "pt" ? "Navegação" : "Navigation"}
+            </h4>
             <ul className="space-y-2 text-sm">
               <li>
                 <Link to="/" className="text-muted-foreground hover:text-foreground transition-smooth">
-                  {t("nav.home", "Home")}
-                </Link>
-              </li>
-              <li>
-                <Link to="/map" className="text-muted-foreground hover:text-foreground transition-smooth">
-                  {t("nav.map", "Map")}
-                </Link>
-              </li>
-              <li>
-                <Link to="/dojos" className="text-muted-foreground hover:text-foreground transition-smooth">
-                  {t("nav.dojos", "Dojos")}
-                </Link>
-              </li>
-              <li>
-                <Link to="/athletes" className="text-muted-foreground hover:text-foreground transition-smooth">
-                  {t("nav.athletes", "選手")}
+                  {language === "ja" ? "ホーム" : language === "pt" ? "Início" : "Home"}
                 </Link>
               </li>
               <li>
                 <Link to="/about" className="text-muted-foreground hover:text-foreground transition-smooth">
-                  {t("nav.about", "About")}
+                  {language === "ja" ? "私たちについて" : language === "pt" ? "Sobre Nós" : "About"}
+                </Link>
+              </li>
+              <li>
+                <Link to="/join" className="text-muted-foreground hover:text-foreground transition-smooth">
+                  {language === "ja" ? "料金" : language === "pt" ? "Planos" : "Pricing"}
+                </Link>
+              </li>
+              <li>
+                <Link to="/map" className="text-muted-foreground hover:text-foreground transition-smooth">
+                  {language === "ja" ? "マップ" : language === "pt" ? "Mapa" : "Map"}
+                </Link>
+              </li>
+              <li>
+                <Link to="/dojos" className="text-muted-foreground hover:text-foreground transition-smooth">
+                  {language === "ja" ? "道場" : language === "pt" ? "Academias" : "Dojos"}
+                </Link>
+              </li>
+              <li>
+                <Link to="/athletes" className="text-muted-foreground hover:text-foreground transition-smooth">
+                  {language === "ja" ? "選手" : language === "pt" ? "Atletas" : "Athletes"}
                 </Link>
               </li>
               <li>
@@ -80,18 +87,13 @@ const Footer = () => {
                 </Link>
               </li>
               <li>
-                <Link to="/contact" className="text-muted-foreground hover:text-foreground transition-smooth">
-                  {t("nav.contact", "Contact")}
-                </Link>
-              </li>
-              <li>
-                <Link to="/join" className="text-muted-foreground hover:text-foreground transition-smooth">
-                  {t("nav.join", "Join")}
-                </Link>
-              </li>
-              <li>
                 <Link to="/tournaments" className="text-muted-foreground hover:text-foreground transition-smooth">
                   {language === "ja" ? "大会" : language === "pt" ? "Torneios" : "Tournaments"}
+                </Link>
+              </li>
+              <li>
+                <Link to="/contact" className="text-muted-foreground hover:text-foreground transition-smooth">
+                  {language === "ja" ? "お問い合わせ" : language === "pt" ? "Contato" : "Contact"}
                 </Link>
               </li>
             </ul>
@@ -114,7 +116,9 @@ const Footer = () => {
           </div>
 
           <div>
-            <h4 className="font-light mb-4 text-sm">Social</h4>
+            <h4 className="font-light mb-4 text-sm">
+              {language === "ja" ? "ソーシャル" : language === "pt" ? "Redes Sociais" : "Social"}
+            </h4>
             <ul className="space-y-2 text-sm">
               <li>
                 <a 
