@@ -192,13 +192,12 @@ const Home = () => {
                   {/* Content */}
                   <div className="space-y-6">
                     <div>
-                      <h2 className="text-4xl md:text-5xl font-light mb-4">
+                      <h2 className="text-3xl sm:text-4xl md:text-5xl font-light mb-4">
                         {homeT.instructor?.title || "誰から学ぶか、が全てを変える"}
                       </h2>
-                      <div className="flex items-center gap-3 mb-6">
-                        <h3 className="text-2xl font-medium">{homeT.instructor?.name || "村田 良蔵"}</h3>
-                        <span className="text-muted-foreground">|</span>
-                        <span className="text-muted-foreground">{homeT.instructor?.subtitle || "Ryozo Murata | 黒帯・世界王者"}</span>
+                      <div className="mb-6">
+                        <h3 className="text-xl sm:text-2xl font-medium whitespace-nowrap">{homeT.instructor?.name || "村田 良蔵"}</h3>
+                        <span className="text-muted-foreground block mt-1">{homeT.instructor?.subtitle || "Ryozo Murata | 黒帯・世界王者"}</span>
                       </div>
                     </div>
 
