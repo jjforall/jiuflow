@@ -178,7 +178,6 @@ function LineageNodeCard({ node, depth = 0, language }: { node: LineageNode; dep
               {showBothNames && (
                 <span className="truncate max-w-[120px]">({englishName})</span>
               )}
-              {node.celebrity.featured && <span className="text-amber-500">★</span>}
             </div>
           </div>
 
@@ -193,7 +192,7 @@ function LineageNodeCard({ node, depth = 0, language }: { node: LineageNode; dep
 
         {/* Children */}
         {hasStudents && isExpanded && (
-          <div className="mt-3 pl-5 border-l border-border space-y-3">
+          <div className="mt-3 pl-3 border-l border-border space-y-3">
             {node.students.map((student) => (
               <LineageNodeCard 
                 key={student.celebrity.id} 
