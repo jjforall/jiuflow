@@ -6,7 +6,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { UserVideoCard } from "@/components/UserVideoCard";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { User, Video, Edit2, Check, X, Plus, Trash2, Calendar, Lock, ArrowLeft } from "lucide-react";
+import { User, Video, Edit2, Check, X, Plus, Trash2, Calendar, Lock, ArrowLeft, MessageCircle } from "lucide-react";
+import { MessageDialog } from "@/components/MessageDialog";
 import { toast } from "sonner";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { EventCard } from "@/components/EventCard";
@@ -139,6 +140,7 @@ export default function UserProfile() {
   const [userDojos, setUserDojos] = useState<Array<{ dojo: any; relationship_type: string }>>([]);
   const [isPrivateProfile, setIsPrivateProfile] = useState(false);
   const [privateProfileInfo, setPrivateProfileInfo] = useState<{ display_name: string | null; avatar_url: string | null } | null>(null);
+  const [messageDialogOpen, setMessageDialogOpen] = useState(false);
 
   useEffect(() => {
     const checkCurrentUser = async () => {
@@ -896,28 +898,41 @@ export default function UserProfile() {
                       )}
 
                       {currentUser && currentUser !== actualUserId && (
-                        <Button
-                          onClick={isFollowing ? handleUnfollow : handleFollow}
-                          variant={isFollowing ? "outline" : "default"}
-                          size="lg"
-                          className={`ml-auto transition-all duration-300 ${
-                            isFollowing 
-                              ? "hover:bg-destructive hover:text-destructive-foreground hover:border-destructive" 
-                              : "bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-lg hover:shadow-xl hover:scale-105"
-                          }`}
-                        >
-                          {isFollowing ? (
-                            <>
-                              <Check className="w-4 h-4 mr-2" />
-                              {language === "ja" ? "フォロー中" : "Following"}
-                            </>
-                          ) : (
-                            <>
-                              <User className="w-4 h-4 mr-2" />
-                              {language === "ja" ? "フォロー" : "Follow"}
-                            </>
+                        <div className="flex gap-2 ml-auto">
+                          {isFollowing && (
+                            <Button
+                              onClick={() => setMessageDialogOpen(true)}
+                              variant="outline"
+                              size="lg"
+                              className="transition-all duration-300 hover:bg-primary/10 hover:border-primary"
+                            >
+                              <MessageCircle className="w-4 h-4 mr-2" />
+                              {language === "ja" ? "メッセージ" : "Message"}
+                            </Button>
                           )}
-                        </Button>
+                          <Button
+                            onClick={isFollowing ? handleUnfollow : handleFollow}
+                            variant={isFollowing ? "outline" : "default"}
+                            size="lg"
+                            className={`transition-all duration-300 ${
+                              isFollowing 
+                                ? "hover:bg-destructive hover:text-destructive-foreground hover:border-destructive" 
+                                : "bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-lg hover:shadow-xl hover:scale-105"
+                            }`}
+                          >
+                            {isFollowing ? (
+                              <>
+                                <Check className="w-4 h-4 mr-2" />
+                                {language === "ja" ? "フォロー中" : "Following"}
+                              </>
+                            ) : (
+                              <>
+                                <User className="w-4 h-4 mr-2" />
+                                {language === "ja" ? "フォロー" : "Follow"}
+                              </>
+                            )}
+                          </Button>
+                        </div>
                       )}
                     </div>
                   </div>
@@ -1427,6 +1442,17 @@ export default function UserProfile() {
             currentIndex={getCurrentCoverIndex(profile?.cover_image_url || null)}
           />
         </>
+      )}
+
+      {/* Message Dialog */}
+      {actualUserId && profile && (
+        <MessageDialog
+          open={messageDialogOpen}
+          onOpenChange={setMessageDialogOpen}
+          recipientId={actualUserId}
+          recipientName={profile.display_name || profile.username || "User"}
+          recipientAvatar={profile.avatar_url || undefined}
+        />
       )}
     </div>
   );
