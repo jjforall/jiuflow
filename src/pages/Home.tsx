@@ -141,13 +141,23 @@ const Home = () => {
             </section>
 
             {/* 4K Overhead Image Section */}
-            <section className="relative w-full">
-              <div className="relative w-full h-[60vh] md:h-[70vh]">
-                <img 
-                  src={kimuraLockImage} 
-                  alt="4K Overhead View - Kimura Lock"
-                  className="w-full h-full object-cover"
-                />
+            <section className="py-20 px-6 bg-background">
+              <div className="max-w-5xl mx-auto">
+                <div className="text-center mb-8">
+                  <h2 className="text-3xl md:text-4xl font-light mb-3">
+                    {language === 'ja' ? '上面からの4K撮影' : language === 'pt' ? 'Filmagem 4K Aérea' : '4K Overhead Filming'}
+                  </h2>
+                  <p className="text-lg text-muted-foreground font-light">
+                    {language === 'ja' ? '細部まで見逃さない、プロ仕様の撮影' : language === 'pt' ? 'Filmagem profissional que não perde nenhum detalhe' : 'Professional filming that captures every detail'}
+                  </p>
+                </div>
+                <div className="relative rounded-2xl overflow-hidden shadow-xl">
+                  <img 
+                    src={kimuraLockImage} 
+                    alt="4K Overhead View - Kimura Lock"
+                    className="w-full h-auto object-cover"
+                  />
+                </div>
               </div>
             </section>
 
