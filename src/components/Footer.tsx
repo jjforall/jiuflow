@@ -89,6 +89,11 @@ const Footer = () => {
                   {t("nav.join", "Join")}
                 </Link>
               </li>
+              <li>
+                <Link to="/tournaments" className="text-muted-foreground hover:text-foreground transition-smooth">
+                  {language === "ja" ? "大会" : language === "pt" ? "Torneios" : "Tournaments"}
+                </Link>
+              </li>
             </ul>
           </div>
           

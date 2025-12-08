@@ -51,6 +51,7 @@ const OpenMatPage = lazy(() => import("./pages/OpenMatPage"));
 const Shop = lazy(() => import("./pages/Shop"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 const Terms = lazy(() => import("./pages/Terms"));
+const Tournaments = lazy(() => import("./pages/Tournaments"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
@@ -84,6 +85,7 @@ const App = () => (
                   <Route path="/shop" element={<SuspenseWrapper><Shop /></SuspenseWrapper>} />
                   <Route path="/privacy" element={<SuspenseWrapper><PrivacyPolicy /></SuspenseWrapper>} />
                   <Route path="/terms" element={<SuspenseWrapper><Terms /></SuspenseWrapper>} />
+                  <Route path="/tournaments" element={<SuspenseWrapper><Tournaments /></SuspenseWrapper>} />
 
                   {/* Map/Video grid pages */}
                   <Route path="/map" element={
