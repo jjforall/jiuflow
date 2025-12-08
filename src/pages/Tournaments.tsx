@@ -33,6 +33,7 @@ interface Tournament {
 const Tournaments = () => {
   const { language } = useLanguage();
   const [activeTab, setActiveTab] = useState("upcoming");
+  const [selectedOrganizer, setSelectedOrganizer] = useState<string | null>(null);
 
   const { data: tournaments, isLoading } = useQuery({
     queryKey: ['tournaments'],
@@ -81,10 +82,19 @@ const Tournaments = () => {
   const now = new Date();
   const threeMonthsLater = addMonths(now, 3);
 
-  const upcomingTournaments = tournaments?.filter(t => isAfter(parseISO(t.date_start), now) && isBefore(parseISO(t.date_start), threeMonthsLater));
-  const domesticTournaments = tournaments?.filter(t => t.country === 'JP' && isAfter(parseISO(t.date_start), now));
-  const internationalTournaments = tournaments?.filter(t => t.country !== 'JP' && isAfter(parseISO(t.date_start), now));
-  const majorTournaments = tournaments?.filter(t => t.category === 'major' || t.category === 'international');
+  // Get unique organizers for filter
+  const organizers = Array.from(new Set(tournaments?.map(t => t.organizer) || [])).sort();
+
+  // Filter by organizer if selected
+  const filterByOrganizer = (list: Tournament[] | undefined) => {
+    if (!selectedOrganizer || !list) return list;
+    return list.filter(t => t.organizer === selectedOrganizer);
+  };
+
+  const upcomingTournaments = filterByOrganizer(tournaments?.filter(t => isAfter(parseISO(t.date_start), now) && isBefore(parseISO(t.date_start), threeMonthsLater)));
+  const domesticTournaments = filterByOrganizer(tournaments?.filter(t => t.country === 'JP' && isAfter(parseISO(t.date_start), now)));
+  const internationalTournaments = filterByOrganizer(tournaments?.filter(t => t.country !== 'JP' && isAfter(parseISO(t.date_start), now)));
+  const majorTournaments = filterByOrganizer(tournaments?.filter(t => t.category === 'major' || t.category === 'international'));
 
   const getCategoryBadge = (category: string, isInternational: boolean) => {
     if (category === 'major' || category === 'international') {
@@ -258,6 +268,44 @@ const Tournaments = () => {
             </div>
           </CardContent>
         </Card>
+
+        {/* Organizer Filter */}
+        <div className="mb-6">
+          <div className="flex items-center gap-2 mb-3">
+            <Trophy className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm font-medium text-muted-foreground">
+              {language === 'ja' ? '主催者で絞り込み' : 'Filter by Organizer'}
+            </span>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Badge 
+              variant={selectedOrganizer === null ? "default" : "outline"}
+              className="cursor-pointer hover:opacity-80 transition-opacity"
+              onClick={() => setSelectedOrganizer(null)}
+            >
+              {language === 'ja' ? 'すべて' : 'All'}
+            </Badge>
+            {organizers.map((org) => (
+              <Badge 
+                key={org}
+                variant={selectedOrganizer === org ? "default" : "outline"}
+                className={`cursor-pointer hover:opacity-80 transition-opacity ${
+                  selectedOrganizer === org ? '' : 
+                  org === 'IBJJF' ? 'bg-purple-500/10 text-purple-500 border-purple-500/30 hover:bg-purple-500/20' :
+                  org === 'AJP' ? 'bg-amber-500/10 text-amber-500 border-amber-500/30 hover:bg-amber-500/20' :
+                  org === 'ADCC' ? 'bg-green-500/10 text-green-500 border-green-500/30 hover:bg-green-500/20' :
+                  org === 'ASJJF' ? 'bg-blue-500/10 text-blue-500 border-blue-500/30 hover:bg-blue-500/20' :
+                  org === 'JBJJF' ? 'bg-red-500/10 text-red-500 border-red-500/30 hover:bg-red-500/20' :
+                  org === 'SJJIF' ? 'bg-pink-500/10 text-pink-500 border-pink-500/30 hover:bg-pink-500/20' :
+                  ''
+                }`}
+                onClick={() => setSelectedOrganizer(org)}
+              >
+                {org}
+              </Badge>
+            ))}
+          </div>
+        </div>
 
         {/* Main Content Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
