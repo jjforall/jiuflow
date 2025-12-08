@@ -14,7 +14,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { BeltBadge } from "@/components/ui/belt-badge";
-import { Star, MapPin, Trophy, Edit, Instagram, Twitter, Youtube, Globe, Languages, User, UserMinus, UserPlus, Camera, Image as ImageIcon } from "lucide-react";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Star, MapPin, Trophy, Edit, Instagram, Twitter, Youtube, Globe, Languages, User, UserMinus, UserPlus, Camera, Image as ImageIcon, UserCheck } from "lucide-react";
 import { toast } from "sonner";
 import { UserVideoCard } from "@/components/UserVideoCard";
 import { LineageTree } from "@/components/LineageTree";
@@ -111,6 +112,9 @@ const Athlete = () => {
   const [purchasedVideos, setPurchasedVideos] = useState<Set<string>>(new Set());
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isAvatarUploadOpen, setIsAvatarUploadOpen] = useState(false);
+  const [isImagePreviewOpen, setIsImagePreviewOpen] = useState(false);
+  const [isClaimDialogOpen, setIsClaimDialogOpen] = useState(false);
+  const [claimReason, setClaimReason] = useState("");
 
   useEffect(() => {
     loadCelebrity();
@@ -445,6 +449,35 @@ const Athlete = () => {
     }
   };
 
+  const handleClaimProfile = async () => {
+    if (!user) {
+      toast.error(language === "ja" ? "ログインが必要です" : "Login required");
+      return;
+    }
+    if (!celebrity) return;
+
+    try {
+      const { error } = await supabase
+        .from('celebrity_edit_requests')
+        .insert({
+          celebrity_id: celebrity.id,
+          requested_by: user.id,
+          display_name: celebrity.display_name,
+          bio: claimReason || (language === "ja" ? "本人/代理人として管理を申請します" : "Requesting to manage as owner/representative"),
+          status: 'pending',
+        });
+
+      if (error) throw error;
+
+      toast.success(language === "ja" ? "管理申請を送信しました。管理者の承認をお待ちください。" : "Claim request submitted. Please wait for admin approval.");
+      setIsClaimDialogOpen(false);
+      setClaimReason("");
+    } catch (error) {
+      console.error('Claim profile error:', error);
+      toast.error(language === "ja" ? "申請の送信に失敗しました" : "Failed to submit claim request");
+    }
+  };
+
   const getBeltName = (beltHistory: any[]) => {
     if (!beltHistory || beltHistory.length === 0) return null;
     const latestBelt = beltHistory[beltHistory.length - 1];
@@ -533,7 +566,10 @@ const Athlete = () => {
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-6 mb-4 sm:mb-8">
             <div className="flex flex-col items-center sm:items-start gap-2">
               <div className="relative">
-                <Avatar className="h-20 w-20 sm:h-28 sm:w-28 md:h-36 md:w-36 border-3 sm:border-4 border-background shadow-xl">
+                <Avatar 
+                  className="h-20 w-20 sm:h-28 sm:w-28 md:h-36 md:w-36 border-3 sm:border-4 border-background shadow-xl cursor-pointer hover:opacity-90 transition-opacity"
+                  onClick={() => celebrity.avatar_url && setIsImagePreviewOpen(true)}
+                >
                   <AvatarImage src={celebrity.avatar_url || undefined} />
                   <AvatarFallback className="text-2xl sm:text-3xl md:text-4xl bg-primary/10">
                     {celebrity.display_name[0]}
@@ -622,6 +658,17 @@ const Athlete = () => {
                           {language === "ja" ? "フォロー" : language === "pt" ? "Seguir" : "Follow"}
                         </>
                       )}
+                    </Button>
+                  )}
+                  {/* Claim profile button for logged in users who are not owner */}
+                  {user && !isOwner && !celebrity.user_id && (
+                    <Button
+                      variant="outline"
+                      onClick={() => setIsClaimDialogOpen(true)}
+                      className="gap-1.5 sm:gap-2 h-9 sm:h-10 text-sm active:scale-[0.98]"
+                    >
+                      <UserCheck className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                      {language === "ja" ? "本人/代理人申請" : language === "pt" ? "Reivindicar" : "Claim Profile"}
                     </Button>
                   )}
                 </div>
@@ -808,6 +855,49 @@ const Athlete = () => {
               loadCelebrity();
             }}
           />
+          
+          {/* Image Preview Dialog */}
+          <Dialog open={isImagePreviewOpen} onOpenChange={setIsImagePreviewOpen}>
+            <DialogContent className="max-w-lg p-2 sm:p-4">
+              <div className="flex items-center justify-center">
+                <img
+                  src={celebrity.avatar_url || undefined}
+                  alt={celebrity.display_name}
+                  className="max-w-full max-h-[70vh] rounded-lg object-contain"
+                />
+              </div>
+            </DialogContent>
+          </Dialog>
+
+          {/* Claim Profile Dialog */}
+          <Dialog open={isClaimDialogOpen} onOpenChange={setIsClaimDialogOpen}>
+            <DialogContent className="max-w-md">
+              <div className="space-y-4">
+                <h2 className="text-lg font-semibold">
+                  {language === "ja" ? "本人/代理人として管理申請" : "Claim Profile as Owner/Representative"}
+                </h2>
+                <p className="text-sm text-muted-foreground">
+                  {language === "ja" 
+                    ? "このプロフィールの本人または正式な代理人として管理を申請します。管理者の承認後、プロフィールの編集やマイページとの紐付けが可能になります。"
+                    : "Request to manage this profile as the owner or authorized representative. After admin approval, you can edit the profile and link it to your account."}
+                </p>
+                <textarea
+                  value={claimReason}
+                  onChange={(e) => setClaimReason(e.target.value)}
+                  placeholder={language === "ja" ? "申請理由を入力してください（任意）" : "Enter reason for claim (optional)"}
+                  className="w-full min-h-[100px] p-3 rounded-md border border-input bg-background text-sm"
+                />
+                <div className="flex justify-end gap-2">
+                  <Button variant="outline" onClick={() => setIsClaimDialogOpen(false)}>
+                    {language === "ja" ? "キャンセル" : "Cancel"}
+                  </Button>
+                  <Button onClick={handleClaimProfile}>
+                    {language === "ja" ? "申請を送信" : "Submit Claim"}
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
         </>
       )}
 
