@@ -174,7 +174,7 @@ function LineageNodeCard({ node, depth = 0, language }: { node: LineageNode; dep
               </span>
             </Link>
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <span>{beltLabel}</span>
+              {belt !== 'Unknown' && <span>{beltLabel}</span>}
               {showBothNames && (
                 <span className="truncate max-w-[120px]">({englishName})</span>
               )}
