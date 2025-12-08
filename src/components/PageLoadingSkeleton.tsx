@@ -1,14 +1,11 @@
 import { Skeleton } from "@/components/ui/skeleton";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
+import { User, Video, BookOpen, Users, Settings, Loader2 } from "lucide-react";
 
 interface PageLoadingSkeletonProps {
   variant?: "default" | "map" | "video" | "profile" | "admin";
 }
-
-const ShimmerOverlay = () => (
-  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-[shimmer_2s_infinite] -translate-x-full" />
-);
 
 const PageLoadingSkeleton = ({ variant = "default" }: PageLoadingSkeletonProps) => {
   const renderContent = () => {
@@ -18,12 +15,8 @@ const PageLoadingSkeleton = ({ variant = "default" }: PageLoadingSkeletonProps) 
           <div className="space-y-6 px-4 sm:px-6 pt-8">
             {/* Search bar */}
             <div className="flex gap-4 flex-wrap">
-              <div className="relative h-10 w-64 rounded-lg bg-muted overflow-hidden">
-                <ShimmerOverlay />
-              </div>
-              <div className="relative h-10 w-32 rounded-lg bg-muted overflow-hidden">
-                <ShimmerOverlay />
-              </div>
+              <Skeleton className="h-10 w-64 rounded-lg" />
+              <Skeleton className="h-10 w-32 rounded-lg" />
             </div>
             
             {/* Video grid */}
@@ -34,12 +27,7 @@ const PageLoadingSkeleton = ({ variant = "default" }: PageLoadingSkeletonProps) 
                   className="space-y-3 opacity-0 animate-fade-in"
                   style={{ animationDelay: `${i * 40}ms`, animationFillMode: 'forwards' }}
                 >
-                  <div className="relative aspect-video w-full rounded-xl bg-muted overflow-hidden">
-                    <ShimmerOverlay />
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="w-10 h-10 rounded-full bg-background/20 animate-pulse" />
-                    </div>
-                  </div>
+                  <Skeleton className="aspect-video w-full rounded-xl" />
                   <Skeleton className="h-4 w-3/4" />
                   <Skeleton className="h-3 w-24" />
                 </div>
@@ -52,13 +40,7 @@ const PageLoadingSkeleton = ({ variant = "default" }: PageLoadingSkeletonProps) 
         return (
           <div className="space-y-6 px-4 sm:px-6 pt-8">
             {/* Video player */}
-            <div className="relative aspect-video w-full max-w-4xl mx-auto rounded-xl overflow-hidden">
-              <div className="absolute inset-0 bg-muted" />
-              <ShimmerOverlay />
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="w-16 h-16 rounded-full bg-background/30 animate-pulse" />
-              </div>
-            </div>
+            <Skeleton className="aspect-video w-full max-w-4xl mx-auto rounded-xl" />
             
             {/* Title and info */}
             <div className="max-w-4xl mx-auto space-y-4">
@@ -76,124 +58,70 @@ const PageLoadingSkeleton = ({ variant = "default" }: PageLoadingSkeletonProps) 
 
       case "profile":
         return (
-          <div className="max-w-4xl mx-auto px-3 sm:px-6 pt-20 sm:pt-32 pb-12">
-            {/* Cover image - matches MyPage exactly */}
-            <div className="relative mb-8 sm:mb-16">
-              <div className="h-32 sm:h-44 md:h-64 rounded-xl sm:rounded-2xl overflow-hidden relative bg-gradient-to-r from-primary/20 via-accent/30 to-primary/20">
-                <ShimmerOverlay />
-                <div className="absolute inset-0 bg-gradient-to-t from-background/60 via-transparent to-transparent" />
-              </div>
+          <div className="max-w-4xl mx-auto px-3 sm:px-6 pt-20 sm:pt-24 pb-12">
+            {/* Loading indicator at top */}
+            <div className="flex items-center justify-center gap-2 mb-4 text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <span className="text-sm">読み込み中...</span>
+            </div>
+            
+            {/* Cover image */}
+            <div className="relative mb-8 sm:mb-12">
+              <Skeleton className="h-32 sm:h-44 md:h-56 w-full rounded-xl sm:rounded-2xl" />
               
-              {/* Profile header - positioned like MyPage */}
-              <div className="px-3 sm:px-6 -mt-10 sm:-mt-16">
+              {/* Profile header */}
+              <div className="px-3 sm:px-6 -mt-10 sm:-mt-14">
                 <div className="flex items-end justify-between gap-2">
-                  {/* Avatar */}
+                  {/* Avatar with user icon placeholder */}
                   <div className="relative">
-                    <div className="h-20 w-20 sm:h-32 sm:w-32 rounded-full border-3 sm:border-4 border-background bg-muted animate-pulse shadow-xl" />
+                    <div className="h-20 w-20 sm:h-28 sm:w-28 rounded-full border-4 border-background bg-muted flex items-center justify-center shadow-lg">
+                      <User className="h-8 w-8 sm:h-12 sm:w-12 text-muted-foreground/50" />
+                    </div>
                   </div>
                   
-                  {/* Action buttons */}
-                  <div className="flex gap-2 mb-0">
-                    <Skeleton className="h-8 sm:h-9 w-20 sm:w-24 rounded-md" />
-                    <Skeleton className="h-8 sm:h-9 w-16 sm:w-20 rounded-md" />
+                  {/* Action buttons placeholder */}
+                  <div className="flex gap-2 mb-1">
+                    <Skeleton className="h-8 sm:h-9 w-20 rounded-md" />
                   </div>
                 </div>
                 
-                {/* Name and bio */}
+                {/* Name and info */}
                 <div className="mt-3 sm:mt-4 space-y-2">
-                  <Skeleton className="h-7 sm:h-9 w-40 sm:w-56" />
-                  <Skeleton className="h-4 w-full max-w-md" />
-                  
-                  {/* Stats row */}
-                  <div className="flex gap-4 sm:gap-6 pt-2 text-sm">
-                    <div className="flex items-center gap-1">
-                      <Skeleton className="h-4 w-6" />
-                      <Skeleton className="h-3 w-12" />
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Skeleton className="h-4 w-6" />
-                      <Skeleton className="h-3 w-16" />
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Skeleton className="h-4 w-6" />
-                      <Skeleton className="h-3 w-10" />
-                    </div>
-                  </div>
+                  <Skeleton className="h-6 sm:h-8 w-36 sm:w-48" />
+                  <Skeleton className="h-4 w-full max-w-sm" />
                 </div>
               </div>
             </div>
             
-            {/* Visibility toggle bar */}
-            <div className="mb-4 sm:mb-6 p-3 sm:p-4 rounded-lg sm:rounded-xl bg-muted/40 border border-border/50 flex items-center justify-between">
-              <div className="flex items-center gap-2 sm:gap-3">
-                <Skeleton className="w-8 h-8 sm:w-10 sm:h-10 rounded-full" />
-                <div className="space-y-1">
-                  <Skeleton className="h-4 w-16" />
-                  <Skeleton className="h-3 w-32 hidden sm:block" />
-                </div>
-              </div>
-              <Skeleton className="h-5 w-9 rounded-full" />
-            </div>
-            
-            {/* Profile card */}
-            <div className="mb-6 sm:mb-8 border border-border/50 rounded-lg overflow-hidden shadow-lg">
-              <div className="bg-gradient-to-r from-accent/10 via-primary/5 to-accent/10 border-b border-border/50 p-4 sm:p-6">
-                <div className="flex items-center gap-2 sm:gap-3">
-                  <Skeleton className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg" />
-                  <Skeleton className="h-6 sm:h-7 w-24 sm:w-32" />
-                </div>
-              </div>
-              <div className="p-3 sm:p-6 md:p-8 space-y-4">
-                {/* Belt history section */}
-                <div className="p-4 bg-muted/30 rounded-lg border border-border/50">
-                  <div className="flex items-center justify-between mb-3">
-                    <Skeleton className="h-5 w-24" />
-                    <Skeleton className="h-8 w-8 rounded" />
-                  </div>
-                  <div className="flex gap-2">
-                    <Skeleton className="h-6 w-16 rounded-full" />
-                    <Skeleton className="h-6 w-20 rounded-full" />
-                  </div>
-                </div>
-                
-                {/* Other sections */}
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="p-4 bg-muted/30 rounded-lg border border-border/50">
-                    <Skeleton className="h-5 w-20 mb-3" />
-                    <Skeleton className="h-4 w-full" />
-                  </div>
-                  <div className="p-4 bg-muted/30 rounded-lg border border-border/50">
-                    <Skeleton className="h-5 w-24 mb-3" />
-                    <Skeleton className="h-4 w-full" />
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            {/* Tabs - matches exactly 5 tabs like MyPage */}
-            <div className="mt-6 sm:mt-12">
-              <div className="grid w-full grid-cols-5 h-auto p-1 bg-muted rounded-lg mb-4 sm:mb-6">
-                {["動画", "練習", "履歴", "フォロー", "設定"].map((tab, i) => (
+            {/* Tabs - simple clean design */}
+            <div className="mt-6 sm:mt-8">
+              <div className="flex gap-1 p-1 bg-muted/60 rounded-lg mb-6">
+                {[
+                  { icon: Video, label: "動画" },
+                  { icon: BookOpen, label: "練習" },
+                  { icon: BookOpen, label: "履歴" },
+                  { icon: Users, label: "フォロー" },
+                  { icon: Settings, label: "設定" }
+                ].map((tab, i) => (
                   <div 
                     key={i} 
-                    className={`flex items-center justify-center text-[10px] sm:text-sm px-1 sm:px-3 py-1.5 sm:py-2 rounded-md ${i === 0 ? 'bg-background shadow-sm' : ''}`}
+                    className={`flex-1 flex items-center justify-center gap-1 px-2 py-2 rounded-md text-xs sm:text-sm ${i === 0 ? 'bg-background shadow-sm' : 'text-muted-foreground/60'}`}
                   >
-                    <Skeleton className="h-3 sm:h-4 w-8 sm:w-12" />
+                    <tab.icon className="h-3 w-3 sm:h-4 sm:w-4" />
+                    <span className="hidden sm:inline">{tab.label}</span>
                   </div>
                 ))}
               </div>
               
-              {/* Video content grid */}
+              {/* Content placeholder */}
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {Array.from({ length: 3 }).map((_, i) => (
                   <div 
                     key={i} 
                     className="space-y-3 opacity-0 animate-fade-in"
-                    style={{ animationDelay: `${100 + i * 60}ms`, animationFillMode: 'forwards' }}
+                    style={{ animationDelay: `${i * 80}ms`, animationFillMode: 'forwards' }}
                   >
-                    <div className="aspect-video rounded-xl bg-muted relative overflow-hidden">
-                      <ShimmerOverlay />
-                    </div>
+                    <Skeleton className="aspect-video rounded-lg" />
                     <Skeleton className="h-4 w-3/4" />
                     <Skeleton className="h-3 w-1/2" />
                   </div>
@@ -271,9 +199,8 @@ const PageLoadingSkeleton = ({ variant = "default" }: PageLoadingSkeletonProps) 
         return (
           <div className="mx-auto flex max-w-5xl flex-col gap-8 px-4 py-8">
             {/* Hero section */}
-            <div className="relative rounded-2xl overflow-hidden p-8 sm:p-12 bg-gradient-to-br from-primary/10 via-accent/5 to-primary/10">
-              <ShimmerOverlay />
-              <div className="relative space-y-4">
+            <div className="rounded-2xl p-8 sm:p-12 bg-muted/30">
+              <div className="space-y-4">
                 <Skeleton className="h-10 sm:h-14 w-3/4 max-w-lg" />
                 <Skeleton className="h-5 sm:h-6 w-2/3 max-w-md" />
                 <div className="flex gap-3 pt-4">
@@ -288,12 +215,10 @@ const PageLoadingSkeleton = ({ variant = "default" }: PageLoadingSkeletonProps) 
               {Array.from({ length: 6 }).map((_, i) => (
                 <div 
                   key={i} 
-                  className="relative rounded-xl overflow-hidden opacity-0 animate-fade-in p-1"
+                  className="opacity-0 animate-fade-in"
                   style={{ animationDelay: `${100 + i * 60}ms`, animationFillMode: 'forwards' }}
                 >
-                  <div className="aspect-[4/3] rounded-lg bg-muted overflow-hidden">
-                    <ShimmerOverlay />
-                  </div>
+                  <Skeleton className="aspect-[4/3] rounded-lg" />
                   <div className="p-4 space-y-3">
                     <Skeleton className="h-5 w-3/4" />
                     <Skeleton className="h-4 w-full" />
