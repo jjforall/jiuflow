@@ -68,7 +68,9 @@ const Tournaments = () => {
       
       if (error) throw error;
       return data as Tournament[];
-    }
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000,
   });
 
   const { data: participantCounts } = useQuery({
@@ -86,7 +88,8 @@ const Tournaments = () => {
         counts[p.tournament_id] = (counts[p.tournament_id] || 0) + 1;
       });
       return counts;
-    }
+    },
+    staleTime: 2 * 60 * 1000,
   });
 
   const getLocale = () => {
