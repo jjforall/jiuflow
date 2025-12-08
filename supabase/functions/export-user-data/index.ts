@@ -218,6 +218,55 @@ Deno.serve(async (req) => {
       .eq('user_id', user.id);
     exportData.brothers_applications = brothersApplications;
 
+    // Messages (sent and received)
+    const { data: messages } = await supabaseAdmin
+      .from('messages')
+      .select('*')
+      .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`);
+    exportData.messages = messages;
+
+    // Message group memberships
+    const { data: messageGroupMembers } = await supabaseAdmin
+      .from('message_group_members')
+      .select('*')
+      .eq('user_id', user.id);
+    exportData.message_group_members = messageGroupMembers;
+
+    // Message groups created by user
+    const { data: messageGroups } = await supabaseAdmin
+      .from('message_groups')
+      .select('*')
+      .eq('created_by', user.id);
+    exportData.message_groups = messageGroups;
+
+    // Favorite techniques
+    const { data: favoriteTechniques } = await supabaseAdmin
+      .from('favorite_techniques')
+      .select('*')
+      .eq('user_id', user.id);
+    exportData.favorite_techniques = favoriteTechniques;
+
+    // Tournament participants
+    const { data: tournamentParticipants } = await supabaseAdmin
+      .from('tournament_participants')
+      .select('*')
+      .eq('user_id', user.id);
+    exportData.tournament_participants = tournamentParticipants;
+
+    // Community reactions
+    const { data: communityReactions } = await supabaseAdmin
+      .from('community_reactions')
+      .select('*')
+      .eq('user_id', user.id);
+    exportData.community_reactions = communityReactions;
+
+    // Community ranks
+    const { data: communityRanks } = await supabaseAdmin
+      .from('community_ranks')
+      .select('*')
+      .eq('user_id', user.id);
+    exportData.community_ranks = communityRanks;
+
     console.log(`[export-user-data] Successfully exported data for user: ${user.id}`);
 
     return new Response(
