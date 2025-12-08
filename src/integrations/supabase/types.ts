@@ -2787,6 +2787,7 @@ export type Database = {
           social_links: Json | null
           titles: Json | null
           training_locations: Json | null
+          updated_at: string | null
           username: string | null
         }
         Insert: {
@@ -2808,6 +2809,7 @@ export type Database = {
           social_links?: Json | null
           titles?: Json | null
           training_locations?: Json | null
+          updated_at?: string | null
           username?: string | null
         }
         Update: {
@@ -2829,6 +2831,7 @@ export type Database = {
           social_links?: Json | null
           titles?: Json | null
           training_locations?: Json | null
+          updated_at?: string | null
           username?: string | null
         }
         Relationships: [
