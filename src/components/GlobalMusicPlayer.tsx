@@ -54,6 +54,7 @@ const GlobalMusicPlayer = () => {
   const [isMuted, setIsMuted] = useState(false);
   const [previousVolume, setPreviousVolume] = useState(0.5);
   const [isMinimal, setIsMinimal] = useState(true);
+  const [hasOpenedByScroll, setHasOpenedByScroll] = useState(false);
 
   useEffect(() => {
     loadPlaylist();
@@ -64,6 +65,33 @@ const GlobalMusicPlayer = () => {
       setIsVisible(true);
     }
   }, [playlist]);
+
+  // Open player when scrolling to bottom
+  useEffect(() => {
+    const handleScroll = () => {
+      if (hasOpenedByScroll) return;
+      
+      const scrollHeight = document.documentElement.scrollHeight;
+      const scrollTop = window.scrollY;
+      const clientHeight = window.innerHeight;
+      
+      // Check if user is near the bottom (within 100px)
+      if (scrollTop + clientHeight >= scrollHeight - 100) {
+        setIsMinimal(false);
+        setHasOpenedByScroll(true);
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [hasOpenedByScroll]);
+
+  // Reset scroll trigger when user manually minimizes
+  const handleMinimize = () => {
+    setIsMinimal(true);
+    // Allow re-trigger after 30 seconds
+    setTimeout(() => setHasOpenedByScroll(false), 30000);
+  };
 
   const toggleMute = () => {
     if (isMuted) {
@@ -352,7 +380,7 @@ const GlobalMusicPlayer = () => {
               variant="ghost"
               size="icon"
               className="h-9 w-9 text-muted-foreground hover:text-foreground"
-              onClick={() => setIsMinimal(true)}
+              onClick={handleMinimize}
               title="ミニマルモード"
             >
               <Minimize2 className="h-4 w-4" />
