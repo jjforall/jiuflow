@@ -30,6 +30,8 @@ interface Celebrity {
   belt_history: any;
   organization_id: string | null;
   featured: boolean;
+  birth_date: string | null;
+  death_date: string | null;
   organization?: {
     id: string;
     name: string;
@@ -59,6 +61,7 @@ export default function LineageTree() {
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedBeltLevel, setSelectedBeltLevel] = useState<string | null>(null);
+  const [showLivingOnly, setShowLivingOnly] = useState(false);
 
   useEffect(() => {
     const titles = {
@@ -172,11 +175,15 @@ export default function LineageTree() {
               (belt: any) => belt.belt === selectedBeltLevel
             ));
 
+        const matchesLiving =
+          !showLivingOnly || !node.celebrity.death_date;
+
         const filteredStudents = filterNodes(node.students);
 
         if (
           matchesSearch &&
-          matchesBelt
+          matchesBelt &&
+          matchesLiving
         ) {
           return { ...node, students: filteredStudents };
         } else if (filteredStudents.length > 0) {
@@ -242,6 +249,8 @@ export default function LineageTree() {
             beltLevels={beltLevels}
             selectedBeltLevel={selectedBeltLevel}
             onBeltLevelChange={setSelectedBeltLevel}
+            showLivingOnly={showLivingOnly}
+            onShowLivingOnlyChange={setShowLivingOnly}
           />
         </div>
 
