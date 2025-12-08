@@ -78,6 +78,8 @@ interface Celebrity {
   } | null;
   social_links: any;
   stats: any;
+  birth_date: string | null;
+  death_date: string | null;
 }
 
 interface UserVideo {
@@ -611,6 +613,24 @@ const Athlete = () => {
                       </Badge>
                     )}
                   </div>
+                  
+                  {/* Birth and Death dates */}
+                  {(celebrity.birth_date || celebrity.death_date) && (
+                    <div className="text-xs sm:text-sm text-muted-foreground mb-2 sm:mb-3 text-center sm:text-left">
+                      {celebrity.birth_date && celebrity.death_date ? (
+                        <span>
+                          {new Date(celebrity.birth_date).toLocaleDateString(language === 'ja' ? 'ja-JP' : language === 'pt' ? 'pt-BR' : 'en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+                          {' — '}
+                          {new Date(celebrity.death_date).toLocaleDateString(language === 'ja' ? 'ja-JP' : language === 'pt' ? 'pt-BR' : 'en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+                        </span>
+                      ) : celebrity.birth_date ? (
+                        <span>
+                          {language === 'ja' ? '生年月日: ' : language === 'pt' ? 'Nascimento: ' : 'Born: '}
+                          {new Date(celebrity.birth_date).toLocaleDateString(language === 'ja' ? 'ja-JP' : language === 'pt' ? 'pt-BR' : 'en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+                        </span>
+                      ) : null}
+                    </div>
+                  )}
 
                   <div className="flex items-center justify-center sm:justify-start gap-3 sm:gap-6 text-[11px] sm:text-sm text-muted-foreground">
                     <div className="flex items-center gap-1">
