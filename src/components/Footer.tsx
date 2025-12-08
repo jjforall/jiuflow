@@ -89,6 +89,11 @@ const Footer = () => {
             </h4>
             <ul className="space-y-2 text-sm">
               <li>
+                <Link to="/map" className="text-muted-foreground hover:text-foreground transition-colors">
+                  {language === "ja" ? "教則動画" : language === "pt" ? "Vídeos" : "Videos"}
+                </Link>
+              </li>
+              <li>
                 <Link to="/dojos" className="text-muted-foreground hover:text-foreground transition-colors">
                   {language === "ja" ? "道場" : language === "pt" ? "Academias" : "Dojos"}
                 </Link>
