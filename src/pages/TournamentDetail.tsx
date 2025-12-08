@@ -21,6 +21,13 @@ import { ja, enUS, pt } from "date-fns/locale";
 import { toast } from "sonner";
 import komazawaVenue from "@/assets/venues/komazawa-olympic-park.jpg";
 
+interface Venue {
+  id: string;
+  name: string;
+  name_ja: string | null;
+  image_url: string | null;
+}
+
 interface Tournament {
   id: string;
   name: string;
@@ -55,6 +62,8 @@ interface Tournament {
   contact_email: string | null;
   contact_url: string | null;
   related_tournament_slug: string | null;
+  venue_id: string | null;
+  venues: Venue | null;
 }
 
 interface Participant {
@@ -183,7 +192,7 @@ const TournamentDetail = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('tournaments')
-        .select('*')
+        .select('*, venues(id, name, name_ja, image_url)')
         .eq('slug', slug)
         .maybeSingle();
       
@@ -324,6 +333,8 @@ const TournamentDetail = () => {
   const getRules = (t: Tournament) => language === 'ja' && t.rules_ja ? t.rules_ja : t.rules;
   
   const getVenueImage = (t: Tournament) => {
+    // Use venue from relation if available
+    if (t.venues?.image_url) return t.venues.image_url;
     if (t.venue_image_url) return t.venue_image_url;
     // Default venue image for Komazawa
     if (t.venue?.includes('Komazawa') || t.venue_ja?.includes('駒沢')) {
@@ -458,23 +469,41 @@ const TournamentDetail = () => {
 
                 {/* Venue */}
                 {getVenue(tournament) && (
-                  <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
-                    <Building2 className="h-5 w-5 text-muted-foreground shrink-0" />
-                    <div>
-                      <p className="text-xs text-muted-foreground">{language === 'ja' ? '会場' : 'Venue'}</p>
-                      <p className="font-semibold text-sm">{getVenue(tournament)}</p>
+                  tournament.venue_id ? (
+                    <Link 
+                      to={`/venue/${tournament.venue_id}`}
+                      className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg hover:bg-muted/70 transition-colors group"
+                    >
+                      <Building2 className="h-5 w-5 text-muted-foreground shrink-0" />
+                      <div className="flex-1">
+                        <p className="text-xs text-muted-foreground">{language === 'ja' ? '会場' : 'Venue'}</p>
+                        <p className="font-semibold text-sm group-hover:text-primary transition-colors">{getVenue(tournament)}</p>
+                      </div>
+                      <ExternalLink className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </Link>
+                  ) : (
+                    <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+                      <Building2 className="h-5 w-5 text-muted-foreground shrink-0" />
+                      <div>
+                        <p className="text-xs text-muted-foreground">{language === 'ja' ? '会場' : 'Venue'}</p>
+                        <p className="font-semibold text-sm">{getVenue(tournament)}</p>
+                      </div>
                     </div>
-                  </div>
+                  )
                 )}
 
                 {/* Organizer */}
-                <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+                <Link 
+                  to={`/organization/${tournament.organizer.toLowerCase()}`}
+                  className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg hover:bg-muted/70 transition-colors group"
+                >
                   <Trophy className="h-5 w-5 text-amber-500 shrink-0" />
-                  <div>
+                  <div className="flex-1">
                     <p className="text-xs text-muted-foreground">{language === 'ja' ? '主催' : 'Organizer'}</p>
-                    <p className="font-semibold text-sm">{tournament.organizer}</p>
+                    <p className="font-semibold text-sm group-hover:text-primary transition-colors">{tournament.organizer}</p>
                   </div>
-                </div>
+                  <ExternalLink className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                </Link>
               </div>
 
               {/* Registration Deadline Alert */}
