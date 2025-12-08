@@ -7,24 +7,46 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { X } from "lucide-react";
 import { useTranslation } from "@/hooks/useTranslation";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface LineageFiltersProps {
   beltLevels: string[];
   selectedBeltLevel: string | null;
   onBeltLevelChange: (belt: string | null) => void;
+  showLivingOnly: boolean;
+  onShowLivingOnlyChange: (value: boolean) => void;
 }
 
 export function LineageFilters({
   beltLevels,
   selectedBeltLevel,
   onBeltLevelChange,
+  showLivingOnly,
+  onShowLivingOnlyChange,
 }: LineageFiltersProps) {
   const { t } = useTranslation();
+  const { language } = useLanguage();
 
   const getBeltTranslation = (belt: string) => {
     return t(`lineageTree.belts.${belt}`, belt);
+  };
+
+  const getLivingOnlyLabel = () => {
+    switch (language) {
+      case 'ja': return '生存者のみ';
+      case 'pt': return 'Apenas vivos';
+      case 'es': return 'Solo vivos';
+      case 'fr': return 'Vivants seulement';
+      case 'de': return 'Nur Lebende';
+      case 'zh': return '仅显示在世者';
+      case 'ko': return '생존자만';
+      case 'it': return 'Solo viventi';
+      case 'ru': return 'Только живущие';
+      default: return 'Living Only';
+    }
   };
 
   return (
@@ -53,12 +75,24 @@ export function LineageFilters({
         </Select>
       </div>
 
-      {selectedBeltLevel && (
+      <div className="flex items-center space-x-2 pb-1">
+        <Checkbox
+          id="livingOnly"
+          checked={showLivingOnly}
+          onCheckedChange={(checked) => onShowLivingOnlyChange(checked === true)}
+        />
+        <Label htmlFor="livingOnly" className="cursor-pointer text-sm">
+          {getLivingOnlyLabel()}
+        </Label>
+      </div>
+
+      {(selectedBeltLevel || showLivingOnly) && (
         <Button
           variant="outline"
           size="sm"
           onClick={() => {
             onBeltLevelChange(null);
+            onShowLivingOnlyChange(false);
           }}
         >
           <X className="h-4 w-4 mr-1" />
