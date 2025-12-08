@@ -338,14 +338,45 @@ const Tournaments = () => {
     );
   };
 
-  const TournamentSection = ({ title, tournaments, icon }: { title: string; tournaments: Tournament[] | undefined; icon: React.ReactNode }) => (
+  const TournamentSkeleton = () => (
+    <Card className="overflow-hidden">
+      <div className="h-1.5 bg-muted animate-pulse" />
+      <CardContent className="p-4 space-y-3">
+        <div className="flex items-start justify-between">
+          <div className="flex-1 space-y-2">
+            <div className="h-5 w-16 bg-muted rounded animate-pulse" />
+            <div className="h-5 w-3/4 bg-muted rounded animate-pulse" />
+          </div>
+          <div className="h-8 w-8 bg-muted rounded animate-pulse" />
+        </div>
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <div className="h-7 w-7 bg-muted rounded animate-pulse" />
+            <div className="h-4 w-24 bg-muted rounded animate-pulse" />
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="h-7 w-7 bg-muted rounded animate-pulse" />
+            <div className="h-4 w-32 bg-muted rounded animate-pulse" />
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+
+  const TournamentSection = ({ title, tournaments, icon, loading = false }: { title: string; tournaments: Tournament[] | undefined; icon: React.ReactNode; loading?: boolean }) => (
     <div className="space-y-4">
       <div className="flex items-center gap-2">
         {icon}
         <h2 className="text-xl font-bold">{title}</h2>
-        <Badge variant="secondary" className="ml-2 font-mono">{tournaments?.length || 0}</Badge>
+        {!loading && <Badge variant="secondary" className="ml-2 font-mono">{tournaments?.length || 0}</Badge>}
       </div>
-      {tournaments && tournaments.length > 0 ? (
+      {loading ? (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {[...Array(6)].map((_, i) => (
+            <TournamentSkeleton key={i} />
+          ))}
+        </div>
+      ) : tournaments && tournaments.length > 0 ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {tournaments.map((t) => (
             <TournamentCard key={t.id} tournament={t} />
@@ -549,6 +580,7 @@ const Tournaments = () => {
                 title={language === 'ja' ? '直近3ヶ月の大会' : 'Next 3 Months'}
                 tournaments={upcomingTournaments}
                 icon={<Calendar className="h-5 w-5 text-primary" />}
+                loading={isLoading}
               />
             </TabsContent>
 
@@ -558,6 +590,7 @@ const Tournaments = () => {
                   title={`${getCountryFlag(countryCode)} ${getCountryName(countryCode)}`}
                   tournaments={filterByOrganizer(filterByDate(tournamentsByCountry[countryCode]))}
                   icon={<span className="text-xl">{getCountryFlag(countryCode)}</span>}
+                  loading={isLoading}
                 />
               </TabsContent>
             ))}
@@ -567,15 +600,10 @@ const Tournaments = () => {
                 title={language === 'ja' ? 'すべての大会' : 'All Tournaments'}
                 tournaments={filterByOrganizer(filterByDate(tournaments))}
                 icon={<Globe className="h-5 w-5 text-primary" />}
+                loading={isLoading}
               />
             </TabsContent>
           </Tabs>
-        )}
-
-        {isLoading && (
-          <div className="flex justify-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-          </div>
         )}
       </main>
 
