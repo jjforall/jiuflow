@@ -146,6 +146,18 @@ export type Database = {
           featured: boolean | null
           home_dojo: string | null
           id: string
+          name_ar: string | null
+          name_de: string | null
+          name_en: string | null
+          name_es: string | null
+          name_fr: string | null
+          name_hi: string | null
+          name_it: string | null
+          name_ja: string | null
+          name_ko: string | null
+          name_pt: string | null
+          name_ru: string | null
+          name_zh: string | null
           organization_id: string | null
           slug: string | null
           social_links: Json | null
@@ -176,6 +188,18 @@ export type Database = {
           featured?: boolean | null
           home_dojo?: string | null
           id?: string
+          name_ar?: string | null
+          name_de?: string | null
+          name_en?: string | null
+          name_es?: string | null
+          name_fr?: string | null
+          name_hi?: string | null
+          name_it?: string | null
+          name_ja?: string | null
+          name_ko?: string | null
+          name_pt?: string | null
+          name_ru?: string | null
+          name_zh?: string | null
           organization_id?: string | null
           slug?: string | null
           social_links?: Json | null
@@ -206,6 +230,18 @@ export type Database = {
           featured?: boolean | null
           home_dojo?: string | null
           id?: string
+          name_ar?: string | null
+          name_de?: string | null
+          name_en?: string | null
+          name_es?: string | null
+          name_fr?: string | null
+          name_hi?: string | null
+          name_it?: string | null
+          name_ja?: string | null
+          name_ko?: string | null
+          name_pt?: string | null
+          name_ru?: string | null
+          name_zh?: string | null
           organization_id?: string | null
           slug?: string | null
           social_links?: Json | null
