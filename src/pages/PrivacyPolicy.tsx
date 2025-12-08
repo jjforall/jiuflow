@@ -338,7 +338,7 @@ const PrivacyPolicy = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
-      <main className="container max-w-4xl mx-auto px-4 py-8 md:py-16">
+      <main className="container max-w-4xl mx-auto px-4 pt-24 md:pt-28 pb-8 md:pb-16">
         <h1 className="text-3xl md:text-4xl font-bold mb-4">{currentContent.title}</h1>
         <p className="text-muted-foreground mb-8">{currentContent.lastUpdated}</p>
 
