@@ -5,7 +5,9 @@ import Footer from "@/components/Footer";
 import { SimpleLineageTree } from "@/components/lineage/SimpleLineageTree";
 import { LineageFilters } from "@/components/lineage/LineageFilters";
 import { Input } from "@/components/ui/input";
-import { Search } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Search, List } from "lucide-react";
+import { Link } from "react-router-dom";
 import { useTranslation } from "@/hooks/useTranslation";
 import { useLanguage } from "@/contexts/LanguageContext";
 
@@ -208,13 +210,25 @@ export default function LineageTree() {
       <Navigation />
       
       <main className="flex-1 container mx-auto px-4 pt-20 md:pt-28 pb-8">
-        <div className="mb-8 animate-fade-in text-center">
-          <h1 className="text-2xl sm:text-3xl md:text-4xl font-light tracking-tight mb-2 md:mb-4 text-foreground">
-            {language === "ja" ? "系譜ツリー" : language === "pt" ? "Árvore de Linhagem" : language === "es" ? "Árbol de Linaje" : language === "fr" ? "Arbre Généalogique" : language === "de" ? "Stammbaum" : language === "zh" ? "传承树" : language === "ko" ? "계보 트리" : language === "it" ? "Albero Genealogico" : language === "ru" ? "Древо Наследия" : language === "ar" ? "شجرة النسب" : language === "hi" ? "वंश वृक्ष" : "Lineage Tree"}
-          </h1>
-          <p className="text-sm sm:text-base md:text-lg text-muted-foreground">
-            {language === "ja" ? "ブラジリアン柔術マスターの系譜と繋がりを探る" : language === "pt" ? "Explore as conexões e herança dos mestres de Jiu-Jitsu Brasileiro" : language === "es" ? "Explora las conexiones y herencia de los maestros de Jiu-Jitsu Brasileño" : language === "fr" ? "Explorez les connexions et l'héritage des maîtres de Jiu-Jitsu Brésilien" : language === "de" ? "Erkunden Sie die Verbindungen und das Erbe der brasilianischen Jiu-Jitsu-Meister" : language === "zh" ? "探索巴西柔术大师的传承与联系" : language === "ko" ? "브라질리언 주짓수 마스터들의 연결과 유산을 탐험하세요" : language === "it" ? "Esplora le connessioni e l'eredità dei maestri di Jiu-Jitsu Brasiliano" : language === "ru" ? "Исследуйте связи и наследие мастеров бразильского джиу-джитсу" : language === "ar" ? "استكشف روابط وتراث أساتذة الجيو جيتسو البرازيلي" : language === "hi" ? "ब्राज़ीलियन जिउ-जित्सु मास्टर्स की विरासत और संबंधों का अन्वेषण करें" : "Explore the connections and heritage of Brazilian Jiu-Jitsu masters"}
-          </p>
+        <div className="mb-8 animate-fade-in">
+          <div className="flex items-center justify-between mb-4">
+            <div className="text-center flex-1">
+              <h1 className="text-2xl sm:text-3xl md:text-4xl font-light tracking-tight mb-2 md:mb-4 text-foreground">
+                {language === "ja" ? "系譜ツリー" : language === "pt" ? "Árvore de Linhagem" : language === "es" ? "Árbol de Linaje" : language === "fr" ? "Arbre Généalogique" : language === "de" ? "Stammbaum" : language === "zh" ? "传承树" : language === "ko" ? "계보 트리" : language === "it" ? "Albero Genealogico" : language === "ru" ? "Древо Наследия" : language === "ar" ? "شجرة النسب" : language === "hi" ? "वंश वृक्ष" : "Lineage Tree"}
+              </h1>
+              <p className="text-sm sm:text-base md:text-lg text-muted-foreground">
+                {language === "ja" ? "ブラジリアン柔術マスターの系譜と繋がりを探る" : language === "pt" ? "Explore as conexões e herança dos mestres de Jiu-Jitsu Brasileiro" : language === "es" ? "Explora las conexiones y herencia de los maestros de Jiu-Jitsu Brasileño" : language === "fr" ? "Explorez les connexions et l'héritage des maîtres de Jiu-Jitsu Brésilien" : language === "de" ? "Erkunden Sie die Verbindungen und das Erbe der brasilianischen Jiu-Jitsu-Meister" : language === "zh" ? "探索巴西柔术大师的传承与联系" : language === "ko" ? "브라질리언 주짓수 마스터들의 연결과 유산을 탐험하세요" : language === "it" ? "Esplora le connessioni e l'eredità dei maestri di Jiu-Jitsu Brasiliano" : language === "ru" ? "Исследуйте связи и наследие мастеров бразильского джиу-джитсу" : language === "ar" ? "استكشف روابط وتراث أساتذة الجيو جيتسو البرازيلي" : language === "hi" ? "ब्राज़ीलियन जिउ-जित्सु मास्टर्स की विरासत और संबंधों का अन्वेषण करें" : "Explore the connections and heritage of Brazilian Jiu-Jitsu masters"}
+              </p>
+            </div>
+          </div>
+          <div className="flex justify-center">
+            <Button variant="outline" size="sm" asChild>
+              <Link to="/athletes" className="flex items-center gap-2">
+                <List className="w-4 h-4" />
+                {language === "ja" ? "一覧表示" : language === "pt" ? "Ver Lista" : "View List"}
+              </Link>
+            </Button>
+          </div>
         </div>
 
         <div className="mb-6 space-y-4 animate-fade-in" style={{ animationDelay: "0.1s" }}>
