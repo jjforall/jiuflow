@@ -18,6 +18,13 @@ import { ja, enUS, pt } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
+interface Venue {
+  id: string;
+  name: string;
+  name_ja: string | null;
+  image_url: string | null;
+}
+
 interface Tournament {
   id: string;
   name: string;
@@ -37,6 +44,8 @@ interface Tournament {
   registration_url: string | null;
   registration_deadline: string | null;
   slug: string | null;
+  venue_id: string | null;
+  venues: Venue | null;
 }
 
 const PAGE_SIZE = 30;
@@ -109,7 +118,7 @@ const Tournaments = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('tournaments')
-        .select('*')
+        .select('*, venues(id, name, name_ja, image_url)')
         .order('date_start', { ascending: true });
       
       if (error) throw error;
@@ -402,11 +411,31 @@ const Tournaments = () => {
       );
     }
     
+    const venueImageUrl = tournament.venues?.image_url;
+    const [imageError, setImageError] = useState(false);
+    
     return (
       <Link to={getTournamentUrl(tournament)}>
         <Card className={`group hover:shadow-xl transition-all duration-300 border-l-4 ${color.border} hover:scale-[1.02] cursor-pointer h-full overflow-hidden ${isPast ? 'opacity-60' : ''}`}>
-          {/* Gradient header */}
-          <div className={`h-1.5 ${color.bg}`} />
+          {/* Venue image or gradient header */}
+          {venueImageUrl && !imageError ? (
+            <div className="relative h-24 w-full overflow-hidden">
+              <img 
+                src={venueImageUrl} 
+                alt={tournament.venues?.name_ja || tournament.venues?.name || ''} 
+                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                onError={() => setImageError(true)}
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/30 to-transparent" />
+              <div className="absolute bottom-2 left-2 right-2">
+                <span className="text-[10px] text-foreground/80 bg-background/60 px-1.5 py-0.5 rounded backdrop-blur-sm">
+                  {language === 'ja' ? tournament.venues?.name_ja : tournament.venues?.name}
+                </span>
+              </div>
+            </div>
+          ) : (
+            <div className={`h-1.5 ${color.bg}`} />
+          )}
           
           <CardContent className="p-4">
             <div className="flex flex-col gap-3">
