@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Star, Search, UserPlus, X, Loader2 } from "lucide-react";
+import { Star, Search, UserPlus, X, Loader2, MessageCircle } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { BeltBadge } from "@/components/ui/belt-badge";
 import { toast } from "sonner";
@@ -16,6 +16,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { MessageDialog } from "@/components/MessageDialog";
 
 interface FollowedPerson {
   id: string;
@@ -49,6 +50,17 @@ export const FollowedCelebrities = ({ userId }: FollowedCelebritiesProps) => {
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [followingIds, setFollowingIds] = useState<Set<string>>(new Set());
+  const [messageDialogOpen, setMessageDialogOpen] = useState(false);
+  const [selectedRecipient, setSelectedRecipient] = useState<{
+    id: string;
+    name: string;
+    avatar?: string;
+  } | null>(null);
+
+  const openMessageDialog = (recipientId: string, recipientName: string, recipientAvatar?: string) => {
+    setSelectedRecipient({ id: recipientId, name: recipientName, avatar: recipientAvatar || undefined });
+    setMessageDialogOpen(true);
+  };
 
   useEffect(() => {
     loadFollowedCelebrities();
@@ -385,13 +397,12 @@ export const FollowedCelebrities = ({ userId }: FollowedCelebritiesProps) => {
       ) : (
         <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
           {followedPeople.map((person) => (
-            <Link
-              key={person.id}
-              to={person.is_celebrity ? `/athlete/${person.user_id || person.id}` : `/${person.user_id}`}
-              className="group"
-            >
+            <div key={person.id} className="group">
               <div className="flex flex-col items-center gap-1.5 p-2 rounded-lg hover:bg-muted/50 transition-colors">
-                <div className="relative">
+                <Link
+                  to={person.is_celebrity ? `/athlete/${person.user_id || person.id}` : `/${person.user_id}`}
+                  className="relative"
+                >
                   <Avatar className="h-14 w-14 border border-border group-hover:border-primary transition-colors">
                     <AvatarImage src={person.avatar_url || undefined} />
                     <AvatarFallback className="text-sm">
@@ -401,11 +412,15 @@ export const FollowedCelebrities = ({ userId }: FollowedCelebritiesProps) => {
                   {person.featured && (
                     <Star className="h-3 w-3 text-yellow-500 fill-yellow-500 absolute -top-1 -right-1" />
                   )}
-                </div>
+                </Link>
                 <div className="text-center w-full">
-                  <p className="font-medium text-xs truncate group-hover:text-primary transition-colors">
-                    {person.display_name}
-                  </p>
+                  <Link
+                    to={person.is_celebrity ? `/athlete/${person.user_id || person.id}` : `/${person.user_id}`}
+                  >
+                    <p className="font-medium text-xs truncate group-hover:text-primary transition-colors">
+                      {person.display_name}
+                    </p>
+                  </Link>
                   {getBeltName(person.belt_history) && (
                     <BeltBadge 
                       belt={getBeltName(person.belt_history)!} 
@@ -413,10 +428,37 @@ export const FollowedCelebrities = ({ userId }: FollowedCelebritiesProps) => {
                     />
                   )}
                 </div>
+                {/* Message button - only for followed users (not celebrities without user_id) */}
+                {person.user_id && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 px-2 text-xs gap-1"
+                    onClick={() => openMessageDialog(
+                      person.user_id!,
+                      person.display_name,
+                      person.avatar_url || undefined
+                    )}
+                  >
+                    <MessageCircle className="h-3 w-3" />
+                    {language === "ja" ? "メッセージ" : "Message"}
+                  </Button>
+                )}
               </div>
-            </Link>
+            </div>
           ))}
         </div>
+      )}
+
+      {/* Message Dialog */}
+      {selectedRecipient && (
+        <MessageDialog
+          open={messageDialogOpen}
+          onOpenChange={setMessageDialogOpen}
+          recipientId={selectedRecipient.id}
+          recipientName={selectedRecipient.name}
+          recipientAvatar={selectedRecipient.avatar}
+        />
       )}
     </div>
   );
