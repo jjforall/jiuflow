@@ -2048,6 +2048,7 @@ export type Database = {
           organizer: string
           registration_deadline: string | null
           registration_url: string | null
+          related_tournament_slug: string | null
           rules: string | null
           rules_ja: string | null
           slug: string | null
@@ -2084,6 +2085,7 @@ export type Database = {
           organizer: string
           registration_deadline?: string | null
           registration_url?: string | null
+          related_tournament_slug?: string | null
           rules?: string | null
           rules_ja?: string | null
           slug?: string | null
@@ -2120,6 +2122,7 @@ export type Database = {
           organizer?: string
           registration_deadline?: string | null
           registration_url?: string | null
+          related_tournament_slug?: string | null
           rules?: string | null
           rules_ja?: string | null
           slug?: string | null
