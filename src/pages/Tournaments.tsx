@@ -107,8 +107,11 @@ const Tournaments = () => {
   const now = new Date();
   const threeMonthsLater = addMonths(now, 3);
 
-  // Get unique organizers for filter
-  const organizers = Array.from(new Set(tournaments?.map(t => t.organizer) || [])).sort();
+  // Get unique organizers for filter, sorted by tournament count (descending)
+  const organizers = Array.from(new Set(tournaments?.map(t => t.organizer) || []))
+    .map(org => ({ name: org, count: tournaments?.filter(t => t.organizer === org).length || 0 }))
+    .sort((a, b) => b.count - a.count)
+    .map(o => o.name);
 
   // Filter by organizer if selected
   const filterByOrganizer = (list: Tournament[] | undefined) => {
@@ -393,7 +396,7 @@ const Tournaments = () => {
               </TabsTrigger>
               {countries.slice(0, 6).map((countryCode) => (
                 <TabsTrigger key={countryCode} value={`country-${countryCode}`} className="gap-1 text-xs sm:text-sm px-2 sm:px-3">
-                  <span className="text-sm sm:text-base">{getCountryFlag(countryCode)}</span>
+                  {getCountryFlag(countryCode)}
                   <span className="text-xs text-muted-foreground">({tournamentsByCountry[countryCode]?.length})</span>
                 </TabsTrigger>
               ))}
