@@ -82,6 +82,28 @@ export const ContactsManagement = () => {
     }
   };
 
+  const handleMarkAsUnread = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('contact_messages')
+        .update({ status: 'unread' })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setMessages(prev =>
+        prev.map(msg =>
+          msg.id === id ? { ...msg, status: 'unread' as const } : msg
+        )
+      );
+      setSelectedMessage(prev => prev ? { ...prev, status: 'unread' as const } : null);
+      toast.success("未読に戻しました");
+    } catch (error) {
+      console.error('Error marking message as unread:', error);
+      toast.error("未読への変更に失敗しました");
+    }
+  };
+
   const handleDelete = async (id: string) => {
     if (!isAdmin) {
       toast.error("削除権限がありません");
@@ -225,6 +247,16 @@ export const ContactsManagement = () => {
 
             {isAdmin && (
               <div className="flex justify-end gap-2 pt-4 border-t">
+                {selectedMessage?.status === 'read' && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => selectedMessage && handleMarkAsUnread(selectedMessage.id)}
+                  >
+                    <Mail className="h-4 w-4 mr-2" />
+                    未読に戻す
+                  </Button>
+                )}
                 <Button
                   variant="destructive"
                   size="sm"
