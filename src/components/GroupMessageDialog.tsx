@@ -249,6 +249,7 @@ export const GroupMessageDialog = ({
 
       const { error } = await supabase.from('messages').insert({
         sender_id: user.id,
+        receiver_id: user.id, // For group messages, set receiver to self (nullable now but type requires it)
         group_id: groupId,
         content: newMessage.trim(),
         attachment_url: attachmentData?.url || null,
