@@ -152,9 +152,9 @@ const Tournaments = () => {
 
   const getOrganizerColor = (organizer: string) => {
     const colors: Record<string, { bg: string; text: string; border: string }> = {
-      'ASJJF': { bg: 'bg-blue-500', text: 'text-blue-500', border: 'border-blue-500' },
-      'JBJJF': { bg: 'bg-red-500', text: 'text-red-500', border: 'border-red-500' },
-      'IBJJF': { bg: 'bg-purple-500', text: 'text-purple-500', border: 'border-purple-500' },
+      'ASJJF': { bg: 'bg-red-500', text: 'text-red-500', border: 'border-red-500' },
+      'JBJJF': { bg: 'bg-blue-500', text: 'text-blue-500', border: 'border-blue-500' },
+      'IBJJF': { bg: 'bg-blue-600', text: 'text-blue-600', border: 'border-blue-600' },
       'ADCC': { bg: 'bg-green-500', text: 'text-green-500', border: 'border-green-500' },
       'AJP': { bg: 'bg-amber-500', text: 'text-amber-500', border: 'border-amber-500' },
       'SJJIF': { bg: 'bg-pink-500', text: 'text-pink-500', border: 'border-pink-500' },
