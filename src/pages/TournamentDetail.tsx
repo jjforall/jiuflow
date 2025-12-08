@@ -433,6 +433,15 @@ const TournamentDetail = () => {
               </div>
             )}
             <CardContent className={`${getVenueImage(tournament) ? '-mt-16 relative z-10' : ''} p-4 sm:p-6`}>
+              {/* Featured Badge */}
+              {tournament.slug?.includes('sjjif-world-jiu-jitsu-championship-2026') && (
+                <div className="mb-3">
+                  <Badge className="bg-gradient-to-r from-yellow-400 via-amber-500 to-orange-500 text-white font-bold px-3 py-1 text-sm shadow-lg animate-pulse">
+                    ⭐ {language === 'ja' ? '注目の大会' : 'Featured Tournament'}
+                  </Badge>
+                </div>
+              )}
+              
               {/* Badges */}
               <div className="flex items-center gap-1.5 flex-wrap mb-3">
                 {getCategoryBadge(tournament.category, tournament.is_international)}
