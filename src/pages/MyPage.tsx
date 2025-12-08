@@ -17,7 +17,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { CalendarIcon } from "lucide-react";
-import { User, CreditCard, Calendar, Mail, Upload, Video, Eye, Edit2, Check, X, Trash2, Lock, Globe, Plus, Copy, MapPin, Building2, Camera, Image } from "lucide-react";
+import { User, CreditCard, Calendar, Mail, Upload, Video, Eye, Edit2, Check, X, Trash2, Lock, Globe, Plus, Copy, MapPin, Building2, Camera, Image, LogOut } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import { VideoUploadDialog } from "@/components/VideoUploadDialog";
@@ -3381,6 +3381,33 @@ const MyPage = () => {
 
                 {/* GDPR Privacy Settings */}
                 <GDPRSettings userEmail={user?.email} />
+
+                {/* Logout Button */}
+                <Card className="border-destructive/20">
+                  <CardContent className="pt-6">
+                    <Button
+                      variant="outline"
+                      className="w-full gap-2 text-destructive border-destructive/30 hover:bg-destructive/10 hover:text-destructive"
+                      onClick={async () => {
+                        try {
+                          const { error } = await supabase.auth.signOut();
+                          if (error && error.message !== "Session not found") {
+                            toast.error(language === "ja" ? "ログアウトに失敗しました" : "Failed to logout");
+                            return;
+                          }
+                          toast.success(language === "ja" ? "ログアウトしました" : "Logged out successfully");
+                          navigate("/");
+                        } catch (error) {
+                          console.error('Error signing out:', error);
+                          toast.error(language === "ja" ? "ログアウトに失敗しました" : "Failed to logout");
+                        }
+                      }}
+                    >
+                      <LogOut className="h-4 w-4" />
+                      {language === "ja" ? "ログアウト" : language === "pt" ? "Sair" : "Logout"}
+                    </Button>
+                  </CardContent>
+                </Card>
               </TabsContent>
             </Tabs>
           </div>
