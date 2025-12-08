@@ -16,6 +16,7 @@ import GlobalMusicPlayer from "./components/GlobalMusicPlayer";
 import PageLoadingSkeleton from "@/components/PageLoadingSkeleton";
 import { SuspenseWrapper } from "@/components/SuspenseWrapper";
 import CookieConsentBanner from "./components/CookieConsentBanner";
+import { LanguageRoute } from "./components/LanguageRoute";
 
 // Lazy load route components for better performance
 const Home = lazy(() => import("./pages/Home"));
@@ -70,7 +71,92 @@ const App = () => (
                 <MusicProvider>
                 <RoutePrefetcher />
                 <Routes>
-                  {/* Default pages */}
+                  {/* Language prefixed routes */}
+                  <Route path="/:lang" element={<LanguageRoute />}>
+                    <Route path="" element={<SuspenseWrapper><Home /></SuspenseWrapper>} />
+                    <Route path="login" element={<SuspenseWrapper><Login /></SuspenseWrapper>} />
+                    <Route path="logout" element={<SuspenseWrapper><Logout /></SuspenseWrapper>} />
+                    <Route path="reset-password" element={<SuspenseWrapper><ResetPassword /></SuspenseWrapper>} />
+                    <Route path="update-password" element={<SuspenseWrapper><UpdatePassword /></SuspenseWrapper>} />
+                    <Route path="about" element={<SuspenseWrapper><About /></SuspenseWrapper>} />
+                    <Route path="contact" element={<SuspenseWrapper><Contact /></SuspenseWrapper>} />
+                    <Route path="join" element={<SuspenseWrapper><Join /></SuspenseWrapper>} />
+                    <Route path="payment-success" element={<SuspenseWrapper><PaymentSuccess /></SuspenseWrapper>} />
+                    <Route path="payment-canceled" element={<SuspenseWrapper><PaymentCanceled /></SuspenseWrapper>} />
+                    <Route path="payment-error" element={<SuspenseWrapper><PaymentError /></SuspenseWrapper>} />
+                    <Route path="founder-trial" element={<SuspenseWrapper><FounderTrial /></SuspenseWrapper>} />
+                    <Route path="shop" element={<SuspenseWrapper><Shop /></SuspenseWrapper>} />
+                    <Route path="privacy" element={<SuspenseWrapper><PrivacyPolicy /></SuspenseWrapper>} />
+                    <Route path="terms" element={<SuspenseWrapper><Terms /></SuspenseWrapper>} />
+                    <Route path="tournaments" element={<SuspenseWrapper><Tournaments /></SuspenseWrapper>} />
+                    <Route path="tournaments/:year/:slug" element={<SuspenseWrapper><TournamentDetail /></SuspenseWrapper>} />
+                    <Route path="map" element={
+                      <ProtectedRoute>
+                        <SuspenseWrapper variant="map"><Map /></SuspenseWrapper>
+                      </ProtectedRoute>
+                    } />
+                    <Route path="dojos" element={<SuspenseWrapper variant="map"><Dojos /></SuspenseWrapper>} />
+                    <Route path="athletes" element={<SuspenseWrapper variant="map"><Athletes /></SuspenseWrapper>} />
+                    <Route path="lineage-tree" element={<SuspenseWrapper variant="map"><LineageTree /></SuspenseWrapper>} />
+                    <Route path="video/:id" element={
+                      <ProtectedRoute>
+                        <SuspenseWrapper variant="video"><Video /></SuspenseWrapper>
+                      </ProtectedRoute>
+                    } />
+                    <Route path="video-upload-info" element={
+                      <ProtectedRoute>
+                        <SuspenseWrapper variant="video"><VideoUploadInfo /></SuspenseWrapper>
+                      </ProtectedRoute>
+                    } />
+                    <Route path="mypage" element={
+                      <ProtectedRoute>
+                        <SuspenseWrapper variant="profile"><MyPage /></SuspenseWrapper>
+                      </ProtectedRoute>
+                    } />
+                    <Route path="dojos/new" element={
+                      <ProtectedRoute>
+                        <SuspenseWrapper variant="profile"><DojoNew /></SuspenseWrapper>
+                      </ProtectedRoute>
+                    } />
+                    <Route path="dojo/:id" element={<SuspenseWrapper variant="profile"><Dojo /></SuspenseWrapper>} />
+                    <Route path="athlete/:slugOrUsername" element={<SuspenseWrapper variant="profile"><Athlete /></SuspenseWrapper>} />
+                    <Route path="ryozo" element={<SuspenseWrapper variant="profile"><Athlete /></SuspenseWrapper>} />
+                    <Route path="practice-records" element={
+                      <ProtectedRoute>
+                        <SuspenseWrapper variant="map"><PracticeRecordsPage /></SuspenseWrapper>
+                      </ProtectedRoute>
+                    } />
+                    <Route path="open-mat" element={
+                      <ProtectedRoute>
+                        <SuspenseWrapper variant="map"><OpenMatPage /></SuspenseWrapper>
+                      </ProtectedRoute>
+                    } />
+                    <Route path="admin" element={<SuspenseWrapper variant="admin"><AdminLogin /></SuspenseWrapper>} />
+                    <Route path="admin-dashboard" element={
+                      <ProtectedRoute requireAdmin>
+                        <SuspenseWrapper variant="admin"><AdminStats /></SuspenseWrapper>
+                      </ProtectedRoute>
+                    } />
+                    <Route path="admin/dashboard" element={
+                      <ProtectedRoute requireAdmin>
+                        <SuspenseWrapper variant="admin"><AdminStats /></SuspenseWrapper>
+                      </ProtectedRoute>
+                    } />
+                    <Route path="admin/techniques" element={
+                      <ProtectedRoute requireAdmin>
+                        <SuspenseWrapper variant="admin"><AdminDashboard /></SuspenseWrapper>
+                      </ProtectedRoute>
+                    } />
+                    <Route path="generate-images" element={
+                      <ProtectedRoute requireAdmin>
+                        <SuspenseWrapper variant="admin"><GenerateImages /></SuspenseWrapper>
+                      </ProtectedRoute>
+                    } />
+                    {/* Profile/Dojo slug - must be last in language routes */}
+                    <Route path=":slugOrUsername" element={<SuspenseWrapper variant="profile"><DojoOrProfile /></SuspenseWrapper>} />
+                  </Route>
+
+                  {/* Default pages (no language prefix) */}
                   <Route path="/" element={<SuspenseWrapper><Home /></SuspenseWrapper>} />
                   <Route path="/login" element={<SuspenseWrapper><Login /></SuspenseWrapper>} />
                   <Route path="/logout" element={<SuspenseWrapper><Logout /></SuspenseWrapper>} />
