@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import Navigation from "@/components/Navigation";
 import { useTranslation } from "@/hooks/useTranslation";
 import { translations } from "@/lib/translations";
+import { useHeroImages } from "@/hooks/useHeroImages";
 import { useAuth } from "@/hooks/useAuth";
 import Footer from "@/components/Footer";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -19,7 +20,7 @@ const Home = () => {
   const { language } = useTranslation();
   const t = translations[language] || translations.ja; // Fallback to Japanese
   const homeT = t.home as typeof translations.ja.home; // Type assertion for full home type
-  const isLoading = false;
+  const { images, isLoading, currentIndex, totalImages } = useHeroImages();
 
   useEffect(() => {
     const titles = {
@@ -71,76 +72,84 @@ const Home = () => {
                 </div>
               </div>
             </section>
-
-            {/* Clarity Section Skeleton */}
-            <section className="py-32 px-6">
-              <div className="max-w-5xl mx-auto">
-                <div className="text-center mb-20 space-y-4">
-                  <Skeleton className="h-16 w-2/3 mx-auto" />
-                  <Skeleton className="h-6 w-1/2 mx-auto" />
-                </div>
-                <div className="grid md:grid-cols-3 gap-12">
-                  {[1, 2, 3].map((i) => (
-                    <div key={i} className="text-center space-y-4">
-                      <Skeleton className="w-20 h-20 mx-auto rounded-lg" />
-                      <Skeleton className="h-6 w-2/3 mx-auto" />
-                      <Skeleton className="h-4 w-full" />
-                      <Skeleton className="h-4 w-5/6 mx-auto" />
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </section>
           </div>
         ) : (
           <>
             {/* Hero Section */}
-            <section className="relative min-h-screen flex flex-col overflow-hidden">
-              {/* Large Overhead Image */}
-              <div className="relative w-full h-[70vh] md:h-[80vh]">
+            <section className="relative h-screen flex items-center justify-center overflow-hidden">
+              {/* Background Image/Video */}
+              <div className="absolute inset-0 bg-muted">
+                {images.length > 0 ? (
+                  <>
+                    {/* Multiple images overlaid with fade transitions */}
+                    {images.map((image, idx) => (
+                      <div
+                        key={image.id}
+                        className="absolute inset-0 transition-opacity duration-1000 ease-in-out"
+                        style={{ opacity: idx === currentIndex ? 1 : 0 }}
+                      >
+                        <img 
+                          src={image.url} 
+                          alt={`Jiu-Jitsu Training ${idx + 1}`}
+                          className="w-full h-full object-cover"
+                          loading="lazy"
+                        />
+                      </div>
+                    ))}
+                    <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/60" />
+                  </>
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+                    <div className="text-center">
+                      <div className="text-6xl mb-4">🥋</div>
+                      <p className="text-sm">4K Overhead View</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+              
+              <div className="relative z-10 text-center px-6 max-w-4xl mx-auto animate-fade-up space-y-8">
+                <h1 className="text-6xl md:text-8xl font-light mb-4 tracking-tight text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)]">
+                  {t.home.hero.title}
+                </h1>
+                <p className="text-xl md:text-2xl font-light text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)] whitespace-pre-line">
+                  {t.home.hero.subtitle}
+                </p>
+                
+                {/* Value Proposition */}
+                <div className="bg-black/40 backdrop-blur-sm border border-white/20 rounded-lg p-6 max-w-2xl mx-auto">
+                  <p className="text-lg md:text-xl font-light text-white whitespace-pre-line">
+                    {t.home.hero.valueProposition}
+                  </p>
+                </div>
+                
+                {!user && (
+                  <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
+                    <Link to="/join" className="w-full sm:w-auto">
+                      <Button size="lg" className="w-full sm:min-w-[240px] text-lg font-medium bg-primary hover:bg-primary/90 shadow-lg hover:shadow-xl transition-all">
+                        {t.home.hero.freeTrial}
+                      </Button>
+                    </Link>
+                    <Link to="/login" className="w-full sm:w-auto">
+                      <Button variant="outline" size="lg" className="w-full sm:min-w-[200px] bg-transparent border-white/30 text-white hover:bg-white/10 backdrop-blur-sm">
+                        {t.nav.login}
+                      </Button>
+                    </Link>
+                  </div>
+                )}
+              </div>
+            </section>
+
+            {/* 4K Overhead Image Section */}
+            <section className="relative w-full">
+              <div className="relative w-full h-[60vh] md:h-[70vh]">
                 <img 
                   src={kimuraLockImage} 
                   alt="4K Overhead View - Kimura Lock"
                   className="w-full h-full object-cover"
                 />
-                <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/80" />
-              </div>
-              
-              {/* Content overlay at bottom */}
-              <div className="relative z-10 -mt-32 pb-16 px-6">
-                <div className="max-w-4xl mx-auto text-center animate-fade-up space-y-8">
-                  <h1 className="text-5xl md:text-7xl font-light tracking-tight text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)]">
-                    {t.home.hero.title}
-                  </h1>
-                  <p className="text-xl md:text-2xl font-light text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)] whitespace-pre-line">
-                    {t.home.hero.subtitle}
-                  </p>
-                  
-                  {/* Value Proposition */}
-                  <div className="bg-black/40 backdrop-blur-sm border border-white/20 rounded-lg p-6 max-w-2xl mx-auto">
-                    <p className="text-lg md:text-xl font-light text-white whitespace-pre-line">
-                      {t.home.hero.valueProposition}
-                    </p>
-                  </div>
-                  
-                  {!user && (
-                    <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
-                      <Link to="/join" className="w-full sm:w-auto">
-                        <Button size="lg" className="w-full sm:min-w-[240px] text-lg font-medium bg-primary hover:bg-primary/90 shadow-lg hover:shadow-xl transition-all">
-                          {t.home.hero.freeTrial}
-                        </Button>
-                      </Link>
-                      <Link to="/login" className="w-full sm:w-auto">
-                        <Button variant="outline" size="lg" className="w-full sm:min-w-[200px] bg-transparent border-white/30 text-white hover:bg-white/10 backdrop-blur-sm">
-                          {t.nav.login}
-                        </Button>
-                      </Link>
-                    </div>
-                  )}
-                </div>
               </div>
             </section>
-
 
             {/* Instructor Section - "Who You Learn From" */}
             <section className="py-24 px-6 bg-gradient-to-br from-primary/5 via-background to-primary/10">
