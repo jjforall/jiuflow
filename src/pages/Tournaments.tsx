@@ -53,6 +53,7 @@ const Tournaments = () => {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [currentPage, setCurrentPage] = useState(1);
   const [participationDialog, setParticipationDialog] = useState<{ open: boolean; tournamentId: string | null }>({ open: false, tournamentId: null });
+  const [cancelDialog, setCancelDialog] = useState<{ open: boolean; tournamentId: string | null }>({ open: false, tournamentId: null });
   
   // Swipe back support
   const touchStartX = useRef<number>(0);
@@ -363,7 +364,11 @@ const Tournaments = () => {
         return;
       }
       if (isParticipating) {
-        leaveMutation.mutate(tournament.id);
+        if (participationStatus === 'registered') {
+          setCancelDialog({ open: true, tournamentId: tournament.id });
+        } else {
+          leaveMutation.mutate(tournament.id);
+        }
       } else {
         setParticipationDialog({ open: true, tournamentId: tournament.id });
       }
@@ -899,6 +904,54 @@ const Tournaments = () => {
                 <p className="text-xs opacity-80">{language === 'ja' ? 'まだエントリーしていない' : 'Not yet registered'}</p>
               </div>
             </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Cancel Registered Dialog */}
+      <Dialog 
+        open={cancelDialog.open} 
+        onOpenChange={(open) => setCancelDialog({ open, tournamentId: open ? cancelDialog.tournamentId : null })}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CheckCircle2 className="h-5 w-5 text-green-500" />
+              {language === 'ja' ? 'エントリー済み' : 'Already Registered'}
+            </DialogTitle>
+            <DialogDescription>
+              {language === 'ja' 
+                ? 'この大会にエントリー済みとして登録されています。'
+                : 'You are registered as entered for this tournament.'}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 pt-2">
+            <p className="text-sm text-muted-foreground">
+              {language === 'ja' ? '参加予定リストから削除しますか？' : 'Remove from your participation list?'}
+            </p>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => setCancelDialog({ open: false, tournamentId: null })}
+              >
+                {language === 'ja' ? 'キャンセル' : 'Cancel'}
+              </Button>
+              <Button
+                variant="destructive"
+                className="flex-1"
+                onClick={() => {
+                  if (cancelDialog.tournamentId) {
+                    leaveMutation.mutate(cancelDialog.tournamentId);
+                    setCancelDialog({ open: false, tournamentId: null });
+                  }
+                }}
+                disabled={leaveMutation.isPending}
+              >
+                <UserMinus className="h-4 w-4 mr-2" />
+                {language === 'ja' ? '削除する' : 'Remove'}
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>

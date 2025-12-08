@@ -145,6 +145,7 @@ const TournamentDetail = () => {
   const [notesOpen, setNotesOpen] = useState(false);
   const [weightClassesOpen, setWeightClassesOpen] = useState(false);
   const [participationDialogOpen, setParticipationDialogOpen] = useState(false);
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   
   // Scroll to top on mount
   useEffect(() => {
@@ -693,11 +694,14 @@ const TournamentDetail = () => {
                 {user ? (
                   isParticipating ? (
                     <div className="space-y-3">
-                      <div className={`flex items-center gap-2 p-3 rounded-lg ${
+                    <button
+                      onClick={() => participationStatus === 'registered' ? setCancelDialogOpen(true) : leaveMutation.mutate()}
+                      className={`w-full flex items-center gap-2 p-3 rounded-lg cursor-pointer transition-colors ${
                         participationStatus === 'registered' 
-                          ? 'bg-green-500/10 border border-green-500/30' 
-                          : 'bg-amber-500/10 border border-amber-500/30'
-                      }`}>
+                          ? 'bg-green-500/10 border border-green-500/30 hover:bg-green-500/20' 
+                          : 'bg-amber-500/10 border border-amber-500/30 hover:bg-amber-500/20'
+                      }`}
+                    >
                         {participationStatus === 'registered' ? (
                           <CheckCircle2 className="h-5 w-5 text-green-500" />
                         ) : (
@@ -710,16 +714,10 @@ const TournamentDetail = () => {
                             ? (language === 'ja' ? 'エントリー済み' : 'Registered')
                             : (language === 'ja' ? 'エントリー予定' : 'Planning to Enter')}
                         </span>
-                      </div>
-                      <Button
-                        variant="outline"
-                        className="w-full"
-                        onClick={() => leaveMutation.mutate()}
-                        disabled={leaveMutation.isPending}
-                      >
-                        <UserMinus className="h-5 w-5 mr-2" />
-                        {t('tournaments.cancelParticipation')}
-                      </Button>
+                      </button>
+                      <p className="text-xs text-muted-foreground text-center">
+                        {language === 'ja' ? 'クリックして変更' : 'Click to change'}
+                      </p>
                     </div>
                   ) : (
                     <Button
@@ -864,6 +862,49 @@ const TournamentDetail = () => {
                 <p className="text-xs opacity-80">{language === 'ja' ? 'まだエントリーしていない' : 'Not yet registered'}</p>
               </div>
             </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Cancel Registered Dialog */}
+      <Dialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CheckCircle2 className="h-5 w-5 text-green-500" />
+              {language === 'ja' ? 'エントリー済み' : 'Already Registered'}
+            </DialogTitle>
+            <DialogDescription>
+              {language === 'ja' 
+                ? 'この大会にエントリー済みとして登録されています。'
+                : 'You are registered as entered for this tournament.'}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 pt-2">
+            <p className="text-sm text-muted-foreground">
+              {language === 'ja' ? '参加予定リストから削除しますか？' : 'Remove from your participation list?'}
+            </p>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => setCancelDialogOpen(false)}
+              >
+                {language === 'ja' ? 'キャンセル' : 'Cancel'}
+              </Button>
+              <Button
+                variant="destructive"
+                className="flex-1"
+                onClick={() => {
+                  leaveMutation.mutate();
+                  setCancelDialogOpen(false);
+                }}
+                disabled={leaveMutation.isPending}
+              >
+                <UserMinus className="h-4 w-4 mr-2" />
+                {language === 'ja' ? '削除する' : 'Remove'}
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
