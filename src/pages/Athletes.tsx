@@ -37,6 +37,7 @@ interface Celebrity {
   featured: boolean;
   sort_order: number;
   user_id: string | null;
+  organization_id?: string | null;
   organization: {
     name: string;
     name_ja: string;
@@ -91,28 +92,94 @@ const Athletes = () => {
   const loadCelebrities = async () => {
     setIsLoading(true);
     try {
+      // First, load basic celebrity data (fast query)
       const { data, error } = await supabase
         .from('celebrities')
         .select(`
-          *,
-          organization:organizations(name, name_ja, name_pt),
-          instructors:celebrity_lineage!celebrity_lineage_student_id_fkey(
-            instructor:celebrities!celebrity_lineage_instructor_id_fkey(
-              id,
-              display_name,
-              avatar_url
-            )
-          )
+          id,
+          display_name,
+          bio_ja,
+          bio_en,
+          bio_pt,
+          avatar_url,
+          belt_history,
+          featured,
+          sort_order,
+          user_id,
+          organization_id
         `)
         .order('featured', { ascending: false })
         .order('sort_order', { ascending: true })
         .order('display_name', { ascending: true });
 
       if (error) throw error;
-      setCelebrities(data || []);
+      
+      // Set initial data immediately for fast render
+      const initialData = (data || []).map(c => ({
+        ...c,
+        bio: null,
+        bio_es: null,
+        bio_fr: null,
+        bio_de: null,
+        bio_zh: null,
+        bio_ko: null,
+        bio_it: null,
+        bio_ru: null,
+        bio_ar: null,
+        bio_hi: null,
+        titles: null,
+        home_dojo: null,
+        organization: null,
+        instructors: []
+      }));
+      setCelebrities(initialData);
+      setIsLoading(false);
+
+      // Then load organizations in background
+      const orgIds = [...new Set(data?.filter(c => c.organization_id).map(c => c.organization_id))];
+      if (orgIds.length > 0) {
+        const { data: orgs } = await supabase
+          .from('organizations')
+          .select('id, name, name_ja, name_pt')
+          .in('id', orgIds);
+        
+        if (orgs) {
+          const orgMap = new Map(orgs.map(o => [o.id, o]));
+          setCelebrities(prev => prev.map(c => ({
+            ...c,
+            organization: c.organization_id ? orgMap.get(c.organization_id) || null : null
+          })));
+        }
+      }
+
+      // Load instructors in background (lazy)
+      const { data: lineages } = await supabase
+        .from('celebrity_lineage')
+        .select(`
+          student_id,
+          instructor:celebrities!celebrity_lineage_instructor_id_fkey(
+            id,
+            display_name,
+            avatar_url
+          )
+        `);
+      
+      if (lineages) {
+        const instructorMap = new Map<string, any[]>();
+        lineages.forEach(l => {
+          if (!instructorMap.has(l.student_id)) {
+            instructorMap.set(l.student_id, []);
+          }
+          instructorMap.get(l.student_id)!.push({ instructor: l.instructor });
+        });
+        
+        setCelebrities(prev => prev.map(c => ({
+          ...c,
+          instructors: instructorMap.get(c.id) || []
+        })));
+      }
     } catch (error) {
       console.error('Error loading celebrities:', error);
-    } finally {
       setIsLoading(false);
     }
   };
