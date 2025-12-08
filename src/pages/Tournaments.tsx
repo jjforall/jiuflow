@@ -107,10 +107,12 @@ const Tournaments = () => {
   const now = new Date();
   const threeMonthsLater = addMonths(now, 3);
 
-  const organizers = Array.from(new Set(tournaments?.map(t => t.organizer) || []))
+  const organizerData = Array.from(new Set(tournaments?.map(t => t.organizer) || []))
     .map(org => ({ name: org, count: tournaments?.filter(t => t.organizer === org).length || 0 }))
-    .sort((a, b) => b.count - a.count)
-    .map(o => o.name);
+    .sort((a, b) => b.count - a.count);
+  
+  const organizers = organizerData.map(o => o.name);
+  const organizerCounts = Object.fromEntries(organizerData.map(o => [o.name, o.count]));
 
   const filterByOrganizer = (list: Tournament[] | undefined) => {
     if (!selectedOrganizer || !list) return list;
@@ -499,6 +501,7 @@ const Tournaments = () => {
               </Badge>
               {organizers.map((org) => {
                 const color = getOrganizerColor(org);
+                const count = organizerCounts[org] || 0;
                 return (
                   <Badge 
                     key={org}
@@ -508,7 +511,7 @@ const Tournaments = () => {
                     }`}
                     onClick={() => setSelectedOrganizer(org)}
                   >
-                    {org}
+                    {org} <span className="ml-1 opacity-70">({count})</span>
                   </Badge>
                 );
               })}
