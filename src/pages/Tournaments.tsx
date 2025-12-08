@@ -9,7 +9,9 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar, MapPin, Trophy, Globe, Info, ExternalLink } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Calendar, MapPin, Trophy, Globe, Info, ExternalLink, Clock, Building2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { format, parseISO, isAfter, isBefore, addMonths } from "date-fns";
 import { ja, enUS, pt } from "date-fns/locale";
 
@@ -36,6 +38,7 @@ const Tournaments = () => {
   const { language } = useLanguage();
   const [showPastTournaments, setShowPastTournaments] = useState(false);
   const [activeTab, setActiveTab] = useState("upcoming");
+  const [selectedTournament, setSelectedTournament] = useState<Tournament | null>(null);
   const [selectedOrganizer, setSelectedOrganizer] = useState<string | null>(null);
 
   const { data: tournaments, isLoading } = useQuery({
@@ -141,58 +144,47 @@ const Tournaments = () => {
     return flags[country] || '🌍';
   };
 
-  const TournamentCard = ({ tournament }: { tournament: Tournament }) => (
-    <Card className="hover:shadow-lg transition-all duration-300 border-border/50 hover:border-primary/30">
-      <CardContent className="p-4">
-        <div className="flex flex-col gap-3">
-          <div className="flex items-start justify-between gap-2">
-            <div className="flex-1">
-              <div className="flex items-center gap-2 flex-wrap mb-2">
-                {getCategoryBadge(tournament.category, tournament.is_international)}
-                {getOrganizerBadge(tournament.organizer)}
+  const TournamentCard = ({ tournament }: { tournament: Tournament }) => {
+    const isPast = isBefore(parseISO(tournament.date_start), now);
+    
+    return (
+      <Card 
+        className={`hover:shadow-lg transition-all duration-300 border-border/50 hover:border-primary/30 cursor-pointer ${isPast ? 'opacity-60' : ''}`}
+        onClick={() => setSelectedTournament(tournament)}
+      >
+        <CardContent className="p-4">
+          <div className="flex flex-col gap-3">
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex-1">
+                <div className="flex items-center gap-2 flex-wrap mb-2">
+                  {getCategoryBadge(tournament.category, tournament.is_international)}
+                  {getOrganizerBadge(tournament.organizer)}
+                  {isPast && <Badge variant="outline" className="text-muted-foreground">{language === 'ja' ? '終了' : 'Past'}</Badge>}
+                </div>
+                <h3 className="font-semibold text-lg leading-tight">{getName(tournament)}</h3>
               </div>
-              <h3 className="font-semibold text-lg leading-tight">{getName(tournament)}</h3>
+              <span className="text-2xl">{getCountryFlag(tournament.country)}</span>
             </div>
-            <span className="text-2xl">{getCountryFlag(tournament.country)}</span>
-          </div>
-          
-          <div className="space-y-2 text-sm text-muted-foreground">
-            <div className="flex items-center gap-2">
-              <Calendar className="h-4 w-4 text-primary" />
-              <span className="font-medium text-foreground">
-                {formatDateRange(tournament.date_start, tournament.date_end)}
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <MapPin className="h-4 w-4" />
-              <span>
-                {getLocation(tournament)}
-                {getVenue(tournament) && ` - ${getVenue(tournament)}`}
-              </span>
-            </div>
-            {getNotes(tournament) && (
-              <div className="flex items-start gap-2 bg-muted/50 rounded-lg p-2 mt-2">
-                <Info className="h-4 w-4 mt-0.5 shrink-0" />
-                <span className="text-xs">{getNotes(tournament)}</span>
+            
+            <div className="space-y-2 text-sm text-muted-foreground">
+              <div className="flex items-center gap-2">
+                <Calendar className="h-4 w-4 text-primary" />
+                <span className="font-medium text-foreground">
+                  {formatDateRange(tournament.date_start, tournament.date_end)}
+                </span>
               </div>
-            )}
+              <div className="flex items-center gap-2">
+                <MapPin className="h-4 w-4" />
+                <span className="line-clamp-1">
+                  {getLocation(tournament)}
+                </span>
+              </div>
+            </div>
           </div>
-
-          {tournament.registration_url && (
-            <a
-              href={tournament.registration_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 text-sm text-primary hover:underline mt-2"
-            >
-              <ExternalLink className="h-3 w-3" />
-              {language === 'ja' ? '登録ページ' : 'Registration'}
-            </a>
-          )}
-        </div>
-      </CardContent>
-    </Card>
-  );
+        </CardContent>
+      </Card>
+    );
+  };
 
   const TournamentSection = ({ title, tournaments, icon }: { title: string; tournaments: Tournament[] | undefined; icon: React.ReactNode }) => (
     <div className="space-y-4">
@@ -218,6 +210,82 @@ const Tournaments = () => {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Navigation />
+
+      {/* Tournament Detail Dialog */}
+      <Dialog open={!!selectedTournament} onOpenChange={(open) => !open && setSelectedTournament(null)}>
+        <DialogContent className="max-w-lg">
+          {selectedTournament && (
+            <>
+              <DialogHeader>
+                <div className="flex items-center gap-2 flex-wrap mb-2">
+                  {getCategoryBadge(selectedTournament.category, selectedTournament.is_international)}
+                  {getOrganizerBadge(selectedTournament.organizer)}
+                  <span className="text-2xl ml-auto">{getCountryFlag(selectedTournament.country)}</span>
+                </div>
+                <DialogTitle className="text-xl">{getName(selectedTournament)}</DialogTitle>
+              </DialogHeader>
+              
+              <div className="space-y-4 mt-4">
+                <div className="flex items-center gap-3 text-foreground">
+                  <Calendar className="h-5 w-5 text-primary shrink-0" />
+                  <div>
+                    <p className="font-medium">{formatDateRange(selectedTournament.date_start, selectedTournament.date_end)}</p>
+                    {selectedTournament.date_end && selectedTournament.date_start !== selectedTournament.date_end && (
+                      <p className="text-sm text-muted-foreground">
+                        {(() => {
+                          const start = parseISO(selectedTournament.date_start);
+                          const end = parseISO(selectedTournament.date_end);
+                          const days = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+                          return language === 'ja' ? `${days}日間` : `${days} days`;
+                        })()}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3 text-foreground">
+                  <MapPin className="h-5 w-5 text-primary shrink-0" />
+                  <p>{getLocation(selectedTournament)}</p>
+                </div>
+
+                {getVenue(selectedTournament) && (
+                  <div className="flex items-center gap-3 text-foreground">
+                    <Building2 className="h-5 w-5 text-muted-foreground shrink-0" />
+                    <p>{getVenue(selectedTournament)}</p>
+                  </div>
+                )}
+
+                <div className="flex items-center gap-3 text-foreground">
+                  <Trophy className="h-5 w-5 text-muted-foreground shrink-0" />
+                  <p>{selectedTournament.organizer}</p>
+                </div>
+
+                {getNotes(selectedTournament) && (
+                  <div className="bg-muted/50 rounded-lg p-3">
+                    <div className="flex items-start gap-2">
+                      <Info className="h-4 w-4 mt-0.5 text-muted-foreground shrink-0" />
+                      <p className="text-sm text-muted-foreground">{getNotes(selectedTournament)}</p>
+                    </div>
+                  </div>
+                )}
+
+                {selectedTournament.registration_url && (
+                  <Button asChild className="w-full mt-4">
+                    <a
+                      href={selectedTournament.registration_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <ExternalLink className="h-4 w-4 mr-2" />
+                      {language === 'ja' ? '登録ページを開く' : 'Open Registration'}
+                    </a>
+                  </Button>
+                )}
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
       
       <main className="flex-1 container mx-auto px-4 py-8 pt-24">
         {/* Header */}
