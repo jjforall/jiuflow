@@ -9,7 +9,7 @@ const corsHeaders = {
 
 const LANGUAGES = ["en", "ja", "pt", "es", "fr", "de", "zh", "ko", "it", "ru", "ar", "hi"];
 
-// Rate limit: 10 translations per 10 minutes per IP
+// Rate limit: 10 translations per 10 minutes per user
 const RATE_LIMIT_CONFIG = {
   maxRequests: 10,
   windowMs: 10 * 60 * 1000, // 10 minutes
@@ -20,16 +20,40 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  // Check rate limit
-  const clientId = getClientIdentifier(req);
-  const rateLimitResult = checkRateLimit(`translate:${clientId}`, RATE_LIMIT_CONFIG);
-  
-  if (!rateLimitResult.allowed) {
-    console.log(`Rate limit exceeded for ${clientId}`);
-    return rateLimitResponse(rateLimitResult.resetInMs);
-  }
-
   try {
+    // Verify authentication
+    const authHeader = req.headers.get("authorization");
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: "Authorization header required" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Create client with user's JWT to verify identity
+    const supabaseUser = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_ANON_KEY") ?? "",
+      { global: { headers: { Authorization: authHeader } } }
+    );
+
+    const { data: { user }, error: authError } = await supabaseUser.auth.getUser();
+    if (authError || !user) {
+      console.error("Auth error:", authError);
+      return new Response(
+        JSON.stringify({ error: "Authentication failed" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Check rate limit using user ID
+    const rateLimitResult = checkRateLimit(`translate:${user.id}`, RATE_LIMIT_CONFIG);
+    
+    if (!rateLimitResult.allowed) {
+      console.log(`Rate limit exceeded for user ${user.id}`);
+      return rateLimitResponse(rateLimitResult.resetInMs);
+    }
+
     const { type, id, content, title, source_lang } = await req.json();
 
     // Input validation
@@ -71,16 +95,41 @@ serve(async (req) => {
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+
+    // Create service role client for database operations
+    const supabaseAdmin = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+    );
+
+    // Verify user is the author of the content
+    const table = type === "thread" ? "community_threads" : "community_posts";
+    const { data: existingRecord, error: fetchError } = await supabaseAdmin
+      .from(table)
+      .select("author_id")
+      .eq("id", id)
+      .single();
+
+    if (fetchError || !existingRecord) {
+      console.error("Record not found:", fetchError);
+      return new Response(
+        JSON.stringify({ error: "Content not found" }),
+        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (existingRecord.author_id !== user.id) {
+      console.error(`User ${user.id} attempted to translate content owned by ${existingRecord.author_id}`);
+      return new Response(
+        JSON.stringify({ error: "You can only translate your own content" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
     
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
-
-    const supabaseClient = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-    );
 
     const targetLangs = LANGUAGES.filter(l => l !== source_lang);
     
@@ -155,8 +204,7 @@ serve(async (req) => {
     }
 
     // Update database
-    const table = type === "thread" ? "community_threads" : "community_posts";
-    const { error } = await supabaseClient
+    const { error } = await supabaseAdmin
       .from(table)
       .update(updates)
       .eq("id", id);
@@ -166,7 +214,7 @@ serve(async (req) => {
       throw error;
     }
 
-    console.log(`Translated ${type} ${id} from ${source_lang} to ${targetLangs.join(", ")}`);
+    console.log(`User ${user.id} translated ${type} ${id} from ${source_lang} to ${targetLangs.join(", ")}`);
 
     return new Response(JSON.stringify({ success: true }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

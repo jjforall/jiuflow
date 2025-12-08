@@ -99,7 +99,7 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.generate-music-cover]
-verify_jwt = false
+verify_jwt = true
 
 [functions.create-printful-product]
 verify_jwt = true
@@ -117,5 +117,4 @@ verify_jwt = true
 verify_jwt = true
 
 [functions.translate-community-content]
-verify_jwt = false
-
+verify_jwt = true
