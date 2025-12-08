@@ -3073,7 +3073,13 @@ const MyPage = () => {
               </TabsContent>
 
               <TabsContent value="athletes" className="mt-4 sm:mt-6">
-                <FollowedCelebrities userId={user?.id || ''} />
+                {user?.id ? (
+                  <FollowedCelebrities userId={user.id} />
+                ) : (
+                  <div className="flex items-center justify-center py-8">
+                    <div className="text-muted-foreground">{language === "ja" ? "読み込み中..." : "Loading..."}</div>
+                  </div>
+                )}
               </TabsContent>
 
               <TabsContent value="settings" className="mt-4 sm:mt-6 space-y-4 sm:space-y-6">
