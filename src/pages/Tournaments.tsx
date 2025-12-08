@@ -293,21 +293,28 @@ const Tournaments = () => {
 
         {/* World Pro Highlight */}
         {majorTournaments && majorTournaments.length > 0 && (
-          <Card className="mb-8 bg-gradient-to-br from-primary/10 via-background to-amber-500/10 border-primary/30">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Trophy className="h-6 w-6 text-amber-500" />
-                {language === 'ja' ? '注目の大会' : 'Featured Events'}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-4 md:grid-cols-2">
-                {majorTournaments.slice(0, 4).map((t) => (
-                  <TournamentCard key={t.id} tournament={t} />
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+          <details className="mb-8" open>
+            <summary className="cursor-pointer list-none">
+              <Card className="bg-gradient-to-br from-primary/10 via-background to-amber-500/10 border-primary/30">
+                <CardHeader className="pb-0">
+                  <CardTitle className="flex items-center gap-2">
+                    <Trophy className="h-6 w-6 text-amber-500" />
+                    {language === 'ja' ? '注目の大会' : 'Featured Events'}
+                    <Badge variant="secondary" className="ml-auto">{majorTournaments.length}</Badge>
+                  </CardTitle>
+                </CardHeader>
+              </Card>
+            </summary>
+            <Card className="bg-gradient-to-br from-primary/10 via-background to-amber-500/10 border-primary/30 border-t-0 rounded-t-none -mt-2 pt-2">
+              <CardContent className="pt-4">
+                <div className="grid gap-4 md:grid-cols-2">
+                  {majorTournaments.slice(0, 4).map((t) => (
+                    <TournamentCard key={t.id} tournament={t} />
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </details>
         )}
 
         {/* Tips Section - Collapsed on mobile */}
