@@ -296,7 +296,7 @@ const Home = () => {
                   </div>
 
                   {/* Glossary Card */}
-                  <div className="group relative bg-card rounded-2xl border border-border p-8 hover:border-primary/50 transition-colors">
+                  <Link to="/glossary" className="group relative bg-card rounded-2xl border border-border p-8 hover:border-primary/50 transition-colors block">
                     <div className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center mb-6 group-hover:bg-primary/20 transition-colors">
                       <BookOpen className="w-7 h-7 text-primary" />
                     </div>
@@ -309,7 +309,7 @@ const Home = () => {
                     <Button variant="outline" className="group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
                       {homeT.seo?.glossaryCta || "用語集を見る"}
                     </Button>
-                  </div>
+                  </Link>
                 </div>
               </div>
             </section>
