@@ -13,26 +13,24 @@ const PrivacyPolicy = () => {
       sections: [
         {
           title: "1. はじめに",
-          content: "jiuFlow（以下「当サービス」または「当社」）は、お客様の個人情報の重要性を認識し、その保護を徹底するために、以下の通りプライバシーポリシー（以下「本ポリシー」）を定めます。当社は、日本の「個人情報の保護に関する法律（平成15年法律第57号）」およびその他の関連法令を遵守し、お客様の安心・安全なサービス利用をサポートします。"
+          content: "jiuFlow（以下「当サービス」または「当社」）は、お客様のプライバシーを尊重し、その保護に全力で取り組みます。本プライバシーポリシー（以下「本ポリシー」）は、当社が収集する個人情報の種類、使用方法、共有範囲、およびお客様の権利について説明するものです。当社は、日本の「個人情報の保護に関する法律」および「EU一般データ保護規則（GDPR）」を含む適用法令を遵守します。なお、GDPRの適用範囲において、当サービスは個人データの「管理者（Controller）」となります。"
         },
         {
           title: "2. 収集する情報",
           content: "当サービスは、以下の情報を適法かつ公正な手段により取得します。",
           subsections: [
             {
-              subtitle: "ユーザーから提供される情報",
+              subtitle: "お客様から提供される情報",
               list: [
-                "アカウント情報：ユーザー名、メールアドレス、パスワード、プロフィール画像、所属道場、帯色など。",
-                "要配慮個人情報（健康・身体情報）：練習記録機能においてユーザーが任意で入力する、体重、怪我の状態、身体的な特徴などの情報（これらはユーザーの明示的な同意に基づいて取得します）。",
-                "決済情報：クレジットカード情報等の決済情報は、当サービスが提携する決済代行会社（Stripe, Apple, Google等）が直接取得・管理し、当社はこれらの完全な情報を保持しません。",
-                "お問い合わせ情報：サポート対応時のやり取りの内容。"
+                "アカウント情報：氏名、メールアドレス、ユーザー名、パスワード、プロフィール画像、所属道場、帯色など。",
+                "健康・身体情報（センシティブ情報）：練習記録機能においてユーザーが任意で入力する体重、怪我の履歴、身体的特徴など。これらはGDPR上の「特段の配慮を要する個人データ」に該当するため、お客様の明示的な同意に基づいてのみ処理されます。",
+                "決済情報：決済代行会社（Stripe等）が直接処理し、当社は完全なクレジットカード情報を保持しません。"
               ]
             },
             {
-              subtitle: "サービス利用時に自動的に収集される情報",
+              subtitle: "自動的に収集される情報",
               list: [
-                "端末情報・ログ情報：IPアドレス、デバイスの種類、OSのバージョン、ブラウザの種類、アクセス日時、サービス内の操作履歴（動画の視聴履歴、「いいね」等のアクション）。",
-                "Cookieおよび識別子：Cookie、Device ID、Advertising IDなど。"
+                "端末・利用データ：IPアドレス、ブラウザの種類、OS、アクセス日時、サービス内の操作ログ（動画視聴履歴など）、Cookie、デバイスID。"
               ]
             }
           ]
@@ -41,58 +39,73 @@ const PrivacyPolicy = () => {
           title: "3. 利用目的",
           content: "当社は、取得した個人情報を以下の目的で利用します。",
           list: [
-            "当サービスの提供、維持、保護および改善のため",
-            "ユーザー登録の受付、本人確認、利用料金の計算・請求のため",
-            "練習記録や視聴履歴に基づいた、おすすめの動画やトレーニングメニューの提案（パーソナライズ）のため",
-            "当サービスに関するご案内、お問い合わせ等への対応のため",
-            "当サービスの規約、ポリシー等に違反する行為に対する対応のため（不正利用の防止）",
-            "当サービスの利用状況の分析およびマーケティングのため",
-            "個人を識別できない形式に加工した統計データを作成するため"
+            "サービスの提供、本人確認、課金管理のため",
+            "ユーザーごとの練習記録の管理および分析機能の提供のため",
+            "おすすめ動画の提案など、ユーザー体験のパーソナライズのため",
+            "サービスの改善、新機能の開発、利用動向の分析のため",
+            "カスタマーサポートおよびお問い合わせ対応のため",
+            "不正利用の防止、セキュリティ確保のため"
           ]
         },
         {
-          title: "4. 第三者への提供",
-          content: "当社は、以下の場合を除き、お客様の同意なく第三者に個人情報を提供しません。",
+          title: "4. データの処理の法的根拠（GDPR対応）",
+          content: "当社は、GDPRが適用されるお客様の個人データを、以下のいずれかの法的根拠に基づいて処理します。",
           list: [
-            "法令に基づく場合",
-            "人の生命、身体または財産の保護のために必要がある場合であって、本人の同意を得ることが困難であるとき（例：練習中の事故等による緊急搬送時など）。",
-            "業務委託：利用目的の達成に必要な範囲内において、個人情報の取り扱いの全部または一部を委託する場合（サーバー管理会社、決済代行会社など）。この場合、当社は委託先に対して必要かつ適切な監督を行います。"
+            "契約の履行：サービスの利用規約に基づき、サービスを提供するために必要な場合（アカウント管理、課金など）。",
+            "同意：お客様が特定の目的（健康データの記録、ニュースレターの受信など）のために処理に同意した場合。同意はいつでも撤回可能です。",
+            "正当な利益：当社のサービスを改善し、セキュリティを確保し、マーケティングを行うという当社の正当な利益のために必要な場合（ただし、お客様の利益や基本的権利が優先される場合を除く）。",
+            "法的義務：法令遵守のために必要な場合。"
           ]
         },
         {
-          title: "5. 情報収集モジュール・外部送信",
-          content: "当サービスでは、サービスの利用状況分析や広告配信のために、以下の第三者が提供する情報収集モジュールを利用しています。これに伴い、ユーザーの利用情報が各提供者に送信される場合があります。",
+          title: "5. 第三者への共有",
+          content: "当社は、以下の場合を除き、個人データを第三者と共有しません。",
           list: [
-            "Google Analytics (Google LLC)：送信される情報 - サイト/アプリの閲覧履歴、端末情報など。利用目的 - アクセス解析、サービス改善"
+            "サービス提供業者：ホスティングプロバイダー（AWS等）、分析ツール提供者（Google Analytics等）、決済代行会社など、当社の指示に従ってデータを処理する委託先。",
+            "法的要請：法令、裁判所の命令、または政府機関の要請に応じる必要がある場合。",
+            "事業譲渡：合併、買収、資産売却等に伴う場合。"
           ]
         },
         {
-          title: "6. 安全管理措置",
-          content: "当社は、個人情報の漏洩、滅失またはき損の防止その他の個人情報の安全管理のために、必要かつ適切な措置（通信のSSL暗号化、アクセス制限の実施等）を講じます。"
+          title: "6. 情報収集モジュール",
+          content: "当サービスでは、Google Analyticsなどの第三者ツールを使用しています。これらはCookie等を使用して利用データを収集します。",
+          list: [
+            "Google Analyticsのオプトアウト：https://tools.google.com/dlpage/gaoptout"
+          ]
         },
         {
-          title: "7. ユーザーの権利（保有個人データの開示等）",
-          content: "ユーザーは、当社が保有する自身の個人情報について、以下の権利を有します。",
+          title: "7. データの保持期間",
+          content: "当社は、利用目的の達成に必要な期間、または法令で定められた期間、データを保持します。アカウントが削除された場合、または同意が撤回された場合、当社は合理的な期間内（原則30日以内）にデータを削除または匿名化します。ただし、法的義務の履行や紛争解決のために必要な場合はこの限りではありません。"
+        },
+        {
+          title: "8. 国際データ移転（GDPR対応）",
+          content: "当サービスは日本に拠点を置いています。そのため、EEA（欧州経済領域）または英国にお住まいのお客様のデータは、日本へ移転され、処理されます。日本は、欧州委員会により十分なデータ保護水準を有しているとの認定（十分性認定）を受けています。これにより、お客様のデータはEU域内と同様の基準で保護されます。"
+        },
+        {
+          title: "9. お客様の権利（GDPR・日本法共通）",
+          content: "お客様は、当社が保有する個人データに関して以下の権利を有します。",
           list: [
-            "利用目的の通知、開示、訂正、追加または削除、利用の停止、消去および第三者への提供の停止"
+            "アクセス権：自身のデータおよびその処理状況を確認する権利",
+            "訂正権：不正確なデータを修正させる権利",
+            "消去権（忘れられる権利）：データを削除させる権利",
+            "処理の制限権：データの利用を一時的に停止させる権利",
+            "データポータビリティ権：データを構造化された形式で受け取る権利",
+            "異議申立権：特定の処理（ダイレクトマーケティング等）に異議を唱える権利",
+            "同意の撤回権：いつでも同意を撤回する権利（撤回前の処理の適法性には影響しません）"
           ],
-          note: "これらの請求を行いたい場合は、第11条のお問い合わせ窓口までご連絡ください。ご本人確認の上、法令に従い合理的な期間内に対応いたします。また、アプリ内の設定画面からも、一部の情報の確認・修正・削除が可能です。"
+          note: "これらの権利を行使したい場合は、下記のお問い合わせ窓口までご連絡ください。"
         },
         {
-          title: "8. データの保持期間",
-          content: "当社は、利用目的の達成に必要な期間、または法令で定められた期間、個人情報を保持します。ユーザーが退会（アカウント削除）の手続きを行った場合、30日以内にバックアップを含む全ての個人情報を適切に削除または匿名化処理します。ただし、法的義務の履行や紛争解決のために必要な場合はこの限りではありません。"
+          title: "10. 未成年者のプライバシー",
+          content: "当サービスは、16歳未満（または各国の法令で定める年齢）の未成年者の個人データを、保護者の同意なしに意図的に収集しません。"
         },
         {
-          title: "9. 未成年者のプライバシー",
-          content: "当サービスは、未成年者が利用する場合、親権者などの法定代理人の同意を得ることを推奨しています。特に13歳未満のお子様が利用される場合、保護者の方によるアカウント管理をお願いしております。"
+          title: "11. プライバシーポリシーの変更",
+          content: "本ポリシーの内容は変更されることがあります。重要な変更がある場合は、サービス内またはメールにて通知します。"
         },
         {
-          title: "10. プライバシーポリシーの変更",
-          content: "当社は、本ポリシーの内容を適宜見直し、その改善に努めます。本ポリシーを変更する場合、変更後の内容を当サービス上またはメール等の適切な方法で通知します。"
-        },
-        {
-          title: "11. 事業者情報・お問い合わせ",
-          content: "本ポリシーに関するご質問、苦情のお申し出、その他個人情報の取り扱いに関するお問い合わせは、お問い合わせフォームよりご連絡ください。"
+          title: "12. お問い合わせ・データ管理者",
+          content: "本ポリシーやデータ処理に関するご質問は、お問い合わせフォームよりご連絡ください。EEA域内にお住まいの方で、現地の監督機関に苦情を申し立てたい場合は、居住国のデータ保護当局にご連絡ください。"
         }
       ]
     },
@@ -102,86 +115,99 @@ const PrivacyPolicy = () => {
       sections: [
         {
           title: "1. Introduction",
-          content: "jiuFlow (\"the Service\" or \"the Company\") recognizes the importance of your personal information and establishes this Privacy Policy (\"Policy\") to ensure its thorough protection. We comply with Japan's \"Act on the Protection of Personal Information (Act No. 57 of 2003)\" and other relevant laws and regulations to support your safe and secure use of our Service."
+          content: "jiuFlow (\"the Service\" or \"the Company\") respects your privacy and is committed to protecting it. This Privacy Policy (\"Policy\") explains the types of personal information we collect, how we use it, with whom we share it, and your rights. We comply with applicable laws including Japan's \"Act on the Protection of Personal Information\" and the \"EU General Data Protection Regulation (GDPR)\". Where GDPR applies, the Service acts as the \"Controller\" of personal data."
         },
         {
           title: "2. Information We Collect",
           content: "The Service collects the following information through lawful and fair means.",
           subsections: [
             {
-              subtitle: "Information Provided by Users",
+              subtitle: "Information You Provide",
               list: [
-                "Account Information: Username, email address, password, profile picture, affiliated dojo, belt rank, etc.",
-                "Sensitive Personal Information (Health/Physical Information): Information such as weight, injury status, and physical characteristics that users voluntarily enter in the practice record feature (this is collected based on the user's explicit consent).",
-                "Payment Information: Payment information such as credit card details is directly collected and managed by our partner payment processors (Stripe, Apple, Google, etc.), and we do not retain complete information.",
-                "Inquiry Information: Content of exchanges during support correspondence."
+                "Account Information: Name, email address, username, password, profile picture, affiliated dojo, belt rank, etc.",
+                "Health/Physical Information (Sensitive Data): Weight, injury history, physical characteristics, etc. that users voluntarily enter in the practice record feature. As \"special category personal data\" under GDPR, these are processed only with your explicit consent.",
+                "Payment Information: Processed directly by payment processors (Stripe, etc.); we do not retain complete credit card information."
               ]
             },
             {
-              subtitle: "Information Automatically Collected During Service Use",
+              subtitle: "Automatically Collected Information",
               list: [
-                "Device/Log Information: IP address, device type, OS version, browser type, access date/time, operation history within the service (video viewing history, actions such as 'likes').",
-                "Cookies and Identifiers: Cookies, Device ID, Advertising ID, etc."
+                "Device/Usage Data: IP address, browser type, OS, access date/time, operation logs within the service (video viewing history, etc.), Cookies, Device ID."
               ]
             }
           ]
         },
         {
           title: "3. Purpose of Use",
-          content: "We use the collected personal information for the following purposes:",
+          content: "We use collected personal information for the following purposes:",
           list: [
-            "To provide, maintain, protect, and improve the Service",
-            "To accept user registration, verify identity, and calculate/bill usage fees",
-            "To suggest recommended videos and training menus based on practice records and viewing history (personalization)",
-            "To respond to inquiries and provide information about the Service",
-            "To respond to violations of our terms, policies, etc. (fraud prevention)",
-            "To analyze Service usage and conduct marketing",
-            "To create statistical data processed into a form that cannot identify individuals"
+            "To provide services, verify identity, and manage billing",
+            "To provide practice record management and analysis features for each user",
+            "To personalize user experience, such as recommending videos",
+            "To improve services, develop new features, and analyze usage trends",
+            "To provide customer support and respond to inquiries",
+            "To prevent fraud and ensure security"
           ]
         },
         {
-          title: "4. Disclosure to Third Parties",
-          content: "We will not provide personal information to third parties without your consent, except in the following cases:",
+          title: "4. Legal Basis for Processing (GDPR Compliance)",
+          content: "We process personal data of customers subject to GDPR based on the following legal bases:",
           list: [
-            "When required by law",
-            "When necessary for the protection of human life, body, or property, and it is difficult to obtain the consent of the person (e.g., emergency transport due to accidents during practice).",
-            "Outsourcing: When outsourcing all or part of the handling of personal information within the scope necessary to achieve the purpose of use (server management companies, payment processors, etc.). In this case, we will exercise necessary and appropriate supervision over the contractor."
+            "Contract Performance: When necessary to provide services under the Terms of Service (account management, billing, etc.).",
+            "Consent: When you have consented to processing for specific purposes (health data recording, newsletter, etc.). Consent can be withdrawn at any time.",
+            "Legitimate Interest: When necessary for our legitimate interests in improving services, ensuring security, and marketing (unless your interests or fundamental rights take precedence).",
+            "Legal Obligation: When necessary for legal compliance."
           ]
         },
         {
-          title: "5. Information Collection Modules / External Transmission",
-          content: "The Service uses information collection modules provided by the following third parties for analyzing service usage and delivering advertisements. User usage information may be transmitted to each provider accordingly.",
+          title: "5. Sharing with Third Parties",
+          content: "We do not share personal data with third parties except in the following cases:",
           list: [
-            "Google Analytics (Google LLC): Information transmitted - Site/app browsing history, device information, etc. Purpose - Access analysis, service improvement"
+            "Service Providers: Hosting providers (AWS, etc.), analytics tool providers (Google Analytics, etc.), payment processors, and other contractors that process data on our behalf.",
+            "Legal Requests: When required to comply with laws, court orders, or government agency requests.",
+            "Business Transfers: In connection with mergers, acquisitions, or asset sales."
           ]
         },
         {
-          title: "6. Security Measures",
-          content: "We take necessary and appropriate measures (SSL encryption of communications, implementation of access restrictions, etc.) to prevent leakage, loss, or damage of personal information and for other security management of personal information."
+          title: "6. Information Collection Modules",
+          content: "The Service uses third-party tools such as Google Analytics. These use Cookies and similar technologies to collect usage data.",
+          list: [
+            "Google Analytics Opt-out: https://tools.google.com/dlpage/gaoptout"
+          ]
         },
         {
-          title: "7. User Rights (Disclosure of Retained Personal Data)",
-          content: "Users have the following rights regarding their personal information held by us:",
+          title: "7. Data Retention Period",
+          content: "We retain data for the period necessary to achieve the purpose of use or as required by law. When an account is deleted or consent is withdrawn, we will delete or anonymize the data within a reasonable period (generally within 30 days). However, this does not apply when necessary for legal compliance or dispute resolution."
+        },
+        {
+          title: "8. International Data Transfers (GDPR Compliance)",
+          content: "The Service is based in Japan. Therefore, data of customers residing in the EEA (European Economic Area) or UK will be transferred to and processed in Japan. Japan has received an adequacy decision from the European Commission, meaning your data is protected to the same standard as within the EU."
+        },
+        {
+          title: "9. Your Rights (GDPR & Japanese Law)",
+          content: "You have the following rights regarding personal data we hold:",
           list: [
-            "Notification of purpose of use, disclosure, correction, addition or deletion, suspension of use, erasure, and suspension of provision to third parties"
+            "Right of Access: The right to confirm your data and its processing status",
+            "Right to Rectification: The right to have inaccurate data corrected",
+            "Right to Erasure (Right to be Forgotten): The right to have data deleted",
+            "Right to Restriction of Processing: The right to temporarily suspend data use",
+            "Right to Data Portability: The right to receive data in a structured format",
+            "Right to Object: The right to object to certain processing (direct marketing, etc.)",
+            "Right to Withdraw Consent: The right to withdraw consent at any time (does not affect the lawfulness of processing before withdrawal)"
           ],
-          note: "If you wish to make these requests, please contact us through the inquiry desk in Section 11. After verifying your identity, we will respond within a reasonable period in accordance with the law. You can also confirm, modify, or delete some information through the settings screen within the app."
+          note: "To exercise these rights, please contact us through the inquiry form below."
         },
         {
-          title: "8. Data Retention Period",
-          content: "We retain personal information for the period necessary to achieve the purpose of use or for the period required by law. When a user completes the withdrawal (account deletion) procedure, all personal information including backups will be appropriately deleted or anonymized within 30 days. However, this does not apply when necessary for the fulfillment of legal obligations or dispute resolution."
+          title: "10. Privacy of Minors",
+          content: "The Service does not intentionally collect personal data from minors under 16 (or the age specified by local law) without parental consent."
         },
         {
-          title: "9. Privacy of Minors",
-          content: "The Service recommends that when minors use the service, they obtain consent from a legal representative such as a parent. In particular, when children under 13 use the service, we ask that account management be handled by a guardian."
+          title: "11. Changes to Privacy Policy",
+          content: "This Policy may change. For significant changes, we will notify you through the Service or by email."
         },
         {
-          title: "10. Changes to Privacy Policy",
-          content: "We will review and endeavor to improve the content of this Policy as appropriate. If we change this Policy, we will notify you of the changes through the Service or by email or other appropriate means."
-        },
-        {
-          title: "11. Business Information / Contact Us",
-          content: "For questions about this Policy, complaints, or other inquiries regarding the handling of personal information, please contact us through our contact form."
+          title: "12. Contact / Data Controller",
+          content: "For questions about this Policy or data processing, please contact us through our contact form. For EEA residents who wish to file a complaint with a local supervisory authority, please contact the data protection authority in your country of residence."
         }
       ]
     },
@@ -191,26 +217,24 @@ const PrivacyPolicy = () => {
       sections: [
         {
           title: "1. Introdução",
-          content: "jiuFlow (\"o Serviço\" ou \"a Empresa\") reconhece a importância das suas informações pessoais e estabelece esta Política de Privacidade (\"Política\") para garantir sua proteção completa. Cumprimos a \"Lei de Proteção de Informações Pessoais do Japão (Lei nº 57 de 2003)\" e outras leis e regulamentos relevantes para apoiar seu uso seguro e protegido do nosso Serviço."
+          content: "jiuFlow (\"o Serviço\" ou \"a Empresa\") respeita sua privacidade e está comprometida em protegê-la. Esta Política de Privacidade (\"Política\") explica os tipos de informações pessoais que coletamos, como as usamos, com quem as compartilhamos e seus direitos. Cumprimos as leis aplicáveis, incluindo a \"Lei de Proteção de Informações Pessoais\" do Japão e o \"Regulamento Geral de Proteção de Dados da UE (GDPR)\". Onde o GDPR se aplica, o Serviço atua como \"Controlador\" de dados pessoais."
         },
         {
           title: "2. Informações que Coletamos",
           content: "O Serviço coleta as seguintes informações através de meios lícitos e justos.",
           subsections: [
             {
-              subtitle: "Informações Fornecidas pelos Usuários",
+              subtitle: "Informações que Você Fornece",
               list: [
-                "Informações da Conta: Nome de usuário, endereço de e-mail, senha, foto de perfil, academia afiliada, graduação de faixa, etc.",
-                "Informações Pessoais Sensíveis (Saúde/Físicas): Informações como peso, estado de lesões e características físicas que os usuários inserem voluntariamente no recurso de registro de prática (coletadas com base no consentimento explícito do usuário).",
-                "Informações de Pagamento: Informações de pagamento como dados de cartão de crédito são coletadas e gerenciadas diretamente por nossos processadores de pagamento parceiros (Stripe, Apple, Google, etc.), e não retemos informações completas.",
-                "Informações de Consulta: Conteúdo das trocas durante correspondência de suporte."
+                "Informações da Conta: Nome, endereço de e-mail, nome de usuário, senha, foto de perfil, academia afiliada, graduação de faixa, etc.",
+                "Informações de Saúde/Físicas (Dados Sensíveis): Peso, histórico de lesões, características físicas, etc. que os usuários inserem voluntariamente no recurso de registro de prática. Como \"dados pessoais de categoria especial\" sob o GDPR, estes são processados apenas com seu consentimento explícito.",
+                "Informações de Pagamento: Processadas diretamente por processadores de pagamento (Stripe, etc.); não retemos informações completas de cartão de crédito."
               ]
             },
             {
-              subtitle: "Informações Coletadas Automaticamente Durante o Uso do Serviço",
+              subtitle: "Informações Coletadas Automaticamente",
               list: [
-                "Informações de Dispositivo/Log: Endereço IP, tipo de dispositivo, versão do SO, tipo de navegador, data/hora de acesso, histórico de operações dentro do serviço (histórico de visualização de vídeos, ações como 'curtidas').",
-                "Cookies e Identificadores: Cookies, ID do Dispositivo, ID de Publicidade, etc."
+                "Dados de Dispositivo/Uso: Endereço IP, tipo de navegador, SO, data/hora de acesso, logs de operação dentro do serviço (histórico de visualização de vídeos, etc.), Cookies, ID do Dispositivo."
               ]
             }
           ]
@@ -219,117 +243,128 @@ const PrivacyPolicy = () => {
           title: "3. Finalidade de Uso",
           content: "Usamos as informações pessoais coletadas para os seguintes fins:",
           list: [
-            "Para fornecer, manter, proteger e melhorar o Serviço",
-            "Para aceitar registro de usuário, verificar identidade e calcular/cobrar taxas de uso",
-            "Para sugerir vídeos recomendados e menus de treinamento com base em registros de prática e histórico de visualização (personalização)",
-            "Para responder a consultas e fornecer informações sobre o Serviço",
-            "Para responder a violações de nossos termos, políticas, etc. (prevenção de fraudes)",
-            "Para analisar o uso do Serviço e conduzir marketing",
-            "Para criar dados estatísticos processados em uma forma que não pode identificar indivíduos"
+            "Para fornecer serviços, verificar identidade e gerenciar cobrança",
+            "Para fornecer recursos de gerenciamento e análise de registros de prática para cada usuário",
+            "Para personalizar a experiência do usuário, como recomendar vídeos",
+            "Para melhorar serviços, desenvolver novos recursos e analisar tendências de uso",
+            "Para fornecer suporte ao cliente e responder a consultas",
+            "Para prevenir fraudes e garantir segurança"
           ]
         },
         {
-          title: "4. Divulgação a Terceiros",
-          content: "Não forneceremos informações pessoais a terceiros sem seu consentimento, exceto nos seguintes casos:",
+          title: "4. Base Legal para Processamento (Conformidade GDPR)",
+          content: "Processamos dados pessoais de clientes sujeitos ao GDPR com base nas seguintes bases legais:",
           list: [
-            "Quando exigido por lei",
-            "Quando necessário para a proteção da vida, corpo ou propriedade humana, e é difícil obter o consentimento da pessoa (por exemplo, transporte de emergência devido a acidentes durante a prática).",
-            "Terceirização: Ao terceirizar todo ou parte do tratamento de informações pessoais dentro do escopo necessário para alcançar o propósito de uso (empresas de gerenciamento de servidores, processadores de pagamento, etc.). Neste caso, exerceremos supervisão necessária e apropriada sobre o contratado."
+            "Execução de Contrato: Quando necessário para fornecer serviços sob os Termos de Serviço (gerenciamento de conta, cobrança, etc.).",
+            "Consentimento: Quando você consentiu com o processamento para fins específicos (registro de dados de saúde, newsletter, etc.). O consentimento pode ser retirado a qualquer momento.",
+            "Interesse Legítimo: Quando necessário para nossos interesses legítimos em melhorar serviços, garantir segurança e marketing (a menos que seus interesses ou direitos fundamentais prevaleçam).",
+            "Obrigação Legal: Quando necessário para conformidade legal."
           ]
         },
         {
-          title: "5. Módulos de Coleta de Informações / Transmissão Externa",
-          content: "O Serviço usa módulos de coleta de informações fornecidos pelos seguintes terceiros para analisar o uso do serviço e entregar anúncios. As informações de uso do usuário podem ser transmitidas a cada provedor de acordo.",
+          title: "5. Compartilhamento com Terceiros",
+          content: "Não compartilhamos dados pessoais com terceiros, exceto nos seguintes casos:",
           list: [
-            "Google Analytics (Google LLC): Informações transmitidas - Histórico de navegação do site/aplicativo, informações do dispositivo, etc. Finalidade - Análise de acesso, melhoria do serviço"
+            "Provedores de Serviço: Provedores de hospedagem (AWS, etc.), provedores de ferramentas de análise (Google Analytics, etc.), processadores de pagamento e outros contratados que processam dados em nosso nome.",
+            "Solicitações Legais: Quando necessário para cumprir leis, ordens judiciais ou solicitações de agências governamentais.",
+            "Transferências Comerciais: Em conexão com fusões, aquisições ou vendas de ativos."
           ]
         },
         {
-          title: "6. Medidas de Segurança",
-          content: "Tomamos medidas necessárias e apropriadas (criptografia SSL de comunicações, implementação de restrições de acesso, etc.) para prevenir vazamento, perda ou dano de informações pessoais e para outro gerenciamento de segurança de informações pessoais."
+          title: "6. Módulos de Coleta de Informações",
+          content: "O Serviço usa ferramentas de terceiros como o Google Analytics. Estas usam Cookies e tecnologias similares para coletar dados de uso.",
+          list: [
+            "Opt-out do Google Analytics: https://tools.google.com/dlpage/gaoptout"
+          ]
         },
         {
-          title: "7. Direitos do Usuário (Divulgação de Dados Pessoais Retidos)",
-          content: "Os usuários têm os seguintes direitos em relação às suas informações pessoais mantidas por nós:",
+          title: "7. Período de Retenção de Dados",
+          content: "Retemos dados pelo período necessário para alcançar a finalidade de uso ou conforme exigido por lei. Quando uma conta é excluída ou o consentimento é retirado, excluiremos ou anonimizaremos os dados dentro de um período razoável (geralmente dentro de 30 dias). No entanto, isso não se aplica quando necessário para conformidade legal ou resolução de disputas."
+        },
+        {
+          title: "8. Transferências Internacionais de Dados (Conformidade GDPR)",
+          content: "O Serviço está sediado no Japão. Portanto, os dados de clientes residentes no EEE (Espaço Econômico Europeu) ou Reino Unido serão transferidos e processados no Japão. O Japão recebeu uma decisão de adequação da Comissão Europeia, o que significa que seus dados são protegidos com o mesmo padrão que dentro da UE."
+        },
+        {
+          title: "9. Seus Direitos (GDPR e Lei Japonesa)",
+          content: "Você tem os seguintes direitos em relação aos dados pessoais que mantemos:",
           list: [
-            "Notificação da finalidade de uso, divulgação, correção, adição ou exclusão, suspensão de uso, eliminação e suspensão de fornecimento a terceiros"
+            "Direito de Acesso: O direito de confirmar seus dados e seu status de processamento",
+            "Direito de Retificação: O direito de ter dados imprecisos corrigidos",
+            "Direito de Apagamento (Direito ao Esquecimento): O direito de ter dados excluídos",
+            "Direito à Restrição de Processamento: O direito de suspender temporariamente o uso de dados",
+            "Direito à Portabilidade de Dados: O direito de receber dados em formato estruturado",
+            "Direito de Oposição: O direito de se opor a certos processamentos (marketing direto, etc.)",
+            "Direito de Retirar Consentimento: O direito de retirar o consentimento a qualquer momento (não afeta a legalidade do processamento antes da retirada)"
           ],
-          note: "Se você deseja fazer essas solicitações, entre em contato conosco através do balcão de atendimento na Seção 11. Após verificar sua identidade, responderemos dentro de um período razoável de acordo com a lei. Você também pode confirmar, modificar ou excluir algumas informações através da tela de configurações dentro do aplicativo."
+          note: "Para exercer esses direitos, entre em contato conosco através do formulário de consulta abaixo."
         },
         {
-          title: "8. Período de Retenção de Dados",
-          content: "Retemos informações pessoais pelo período necessário para alcançar o propósito de uso ou pelo período exigido por lei. Quando um usuário conclui o procedimento de retirada (exclusão de conta), todas as informações pessoais, incluindo backups, serão apropriadamente excluídas ou anonimizadas dentro de 30 dias. No entanto, isso não se aplica quando necessário para o cumprimento de obrigações legais ou resolução de disputas."
+          title: "10. Privacidade de Menores",
+          content: "O Serviço não coleta intencionalmente dados pessoais de menores de 16 anos (ou a idade especificada pela lei local) sem consentimento dos pais."
         },
         {
-          title: "9. Privacidade de Menores",
-          content: "O Serviço recomenda que quando menores usam o serviço, eles obtenham consentimento de um representante legal, como um pai. Em particular, quando crianças menores de 13 anos usam o serviço, pedimos que o gerenciamento da conta seja feito por um responsável."
+          title: "11. Alterações na Política de Privacidade",
+          content: "Esta Política pode mudar. Para mudanças significativas, notificaremos você através do Serviço ou por e-mail."
         },
         {
-          title: "10. Alterações na Política de Privacidade",
-          content: "Revisaremos e nos esforçaremos para melhorar o conteúdo desta Política conforme apropriado. Se alterarmos esta Política, notificaremos você das alterações através do Serviço ou por e-mail ou outros meios apropriados."
-        },
-        {
-          title: "11. Informações Empresariais / Contato",
-          content: "Para perguntas sobre esta Política, reclamações ou outras consultas sobre o tratamento de informações pessoais, entre em contato conosco através do nosso formulário de contato."
+          title: "12. Contato / Controlador de Dados",
+          content: "Para perguntas sobre esta Política ou processamento de dados, entre em contato conosco através do nosso formulário de contato. Para residentes do EEE que desejam registrar uma reclamação junto a uma autoridade supervisora local, entre em contato com a autoridade de proteção de dados em seu país de residência."
         }
       ]
     }
   };
 
-  const t = content[language as keyof typeof content] || content.en;
+  const currentContent = content[language as keyof typeof content] || content.en;
 
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
-      
-      <main className="container mx-auto px-4 sm:px-6 pt-24 pb-12 max-w-4xl">
-        <h1 className="text-3xl sm:text-4xl font-light mb-2">{t.title}</h1>
-        <p className="text-sm text-muted-foreground mb-8">{t.lastUpdated}</p>
+      <main className="container max-w-4xl mx-auto px-4 py-8 md:py-16">
+        <h1 className="text-3xl md:text-4xl font-bold mb-4">{currentContent.title}</h1>
+        <p className="text-muted-foreground mb-8">{currentContent.lastUpdated}</p>
 
         <div className="space-y-8">
-          {t.sections.map((section, index) => (
-            <section key={index} className="space-y-3">
-              <h2 className="text-xl font-semibold">{section.title}</h2>
-              <p className="text-muted-foreground leading-relaxed">{section.content}</p>
+          {currentContent.sections.map((section, index) => (
+            <section key={index} className="space-y-4">
+              <h2 className="text-xl md:text-2xl font-semibold">{section.title}</h2>
+              <p className="text-foreground/90 leading-relaxed">{section.content}</p>
               
-              {section.subsections && section.subsections.map((sub, subIdx) => (
-                <div key={subIdx} className="ml-4 space-y-2">
-                  <h3 className="font-medium text-foreground">{sub.subtitle}</h3>
-                  <ul className="list-disc list-inside space-y-1 text-muted-foreground ml-4">
-                    {sub.list.map((item, itemIdx) => (
-                      <li key={itemIdx}>{item}</li>
+              {section.subsections && section.subsections.map((subsection, subIndex) => (
+                <div key={subIndex} className="ml-4 space-y-2">
+                  <h3 className="font-medium text-foreground">{subsection.subtitle}</h3>
+                  <ul className="list-disc list-inside space-y-2 text-foreground/80">
+                    {subsection.list.map((item, itemIndex) => (
+                      <li key={itemIndex} className="leading-relaxed">{item}</li>
                     ))}
                   </ul>
                 </div>
               ))}
-              
+
               {section.list && (
-                <ul className="list-disc list-inside space-y-1 text-muted-foreground ml-4">
-                  {section.list.map((item, idx) => (
-                    <li key={idx}>{item}</li>
+                <ul className="list-disc list-inside space-y-2 text-foreground/80 ml-4">
+                  {section.list.map((item, itemIndex) => (
+                    <li key={itemIndex} className="leading-relaxed">{item}</li>
                   ))}
                 </ul>
               )}
-              
+
               {section.note && (
-                <p className="text-muted-foreground leading-relaxed text-sm mt-2 ml-4 border-l-2 border-muted pl-4">
-                  {section.note}
-                </p>
+                <p className="text-sm text-muted-foreground italic mt-2 ml-4">{section.note}</p>
               )}
             </section>
           ))}
-          
-          <div className="mt-8 pt-8 border-t border-border">
-            <Link 
-              to="/contact" 
-              className="text-primary hover:underline"
-            >
-              {language === "ja" ? "お問い合わせフォームはこちら" : language === "pt" ? "Formulário de contato aqui" : "Contact form here"}
-            </Link>
-          </div>
+        </div>
+
+        <div className="mt-12 pt-8 border-t">
+          <Link 
+            to="/contact" 
+            className="text-primary hover:underline"
+          >
+            {language === "ja" ? "お問い合わせフォームへ →" : language === "pt" ? "Ir para o formulário de contato →" : "Go to contact form →"}
+          </Link>
         </div>
       </main>
-
       <Footer />
     </div>
   );

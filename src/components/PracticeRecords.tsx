@@ -28,6 +28,7 @@ import { format } from "date-fns";
 import { ja } from "date-fns/locale";
 import { Plus, Edit2, Trash2, CalendarIcon, Clock, Star, Video } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { HealthDataConsent, getHealthDataConsent } from "@/components/HealthDataConsent";
 
 interface PracticeRecord {
   id: string;
@@ -71,6 +72,7 @@ export function PracticeRecords() {
   const [loading, setLoading] = useState(true);
   const [showDialog, setShowDialog] = useState(false);
   const [editingRecord, setEditingRecord] = useState<PracticeRecord | null>(null);
+  const [healthConsent, setHealthConsent] = useState(getHealthDataConsent());
   const [formData, setFormData] = useState({
     technique_id: "",
     user_video_id: "",
@@ -502,11 +504,17 @@ export function PracticeRecords() {
               />
             </div>
 
+            {/* GDPR Health Data Consent */}
+            <HealthDataConsent 
+              onConsentChange={setHealthConsent}
+              className="mt-2"
+            />
+
             <DialogFooter>
               <Button type="button" variant="outline" onClick={closeDialog}>
                 キャンセル
               </Button>
-              <Button type="submit">
+              <Button type="submit" disabled={!healthConsent}>
                 {editingRecord ? "更新" : "追加"}
               </Button>
             </DialogFooter>
