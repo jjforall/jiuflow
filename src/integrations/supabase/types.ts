@@ -1361,7 +1361,7 @@ export type Database = {
           group_id: string | null
           id: string
           read_at: string | null
-          receiver_id: string
+          receiver_id: string | null
           sender_id: string
           updated_at: string
         }
@@ -1374,7 +1374,7 @@ export type Database = {
           group_id?: string | null
           id?: string
           read_at?: string | null
-          receiver_id: string
+          receiver_id?: string | null
           sender_id: string
           updated_at?: string
         }
@@ -1387,7 +1387,7 @@ export type Database = {
           group_id?: string | null
           id?: string
           read_at?: string | null
-          receiver_id?: string
+          receiver_id?: string | null
           sender_id?: string
           updated_at?: string
         }
@@ -1921,6 +1921,75 @@ export type Database = {
           video_url?: string | null
           video_url_ja?: string | null
           video_url_pt?: string | null
+        }
+        Relationships: []
+      }
+      tournaments: {
+        Row: {
+          category: string | null
+          country: string | null
+          created_at: string
+          date_end: string | null
+          date_start: string
+          description: string | null
+          description_ja: string | null
+          id: string
+          is_international: boolean | null
+          location: string
+          location_ja: string | null
+          name: string
+          name_ja: string | null
+          notes: string | null
+          notes_ja: string | null
+          organizer: string
+          registration_url: string | null
+          updated_at: string
+          venue: string | null
+          venue_ja: string | null
+        }
+        Insert: {
+          category?: string | null
+          country?: string | null
+          created_at?: string
+          date_end?: string | null
+          date_start: string
+          description?: string | null
+          description_ja?: string | null
+          id?: string
+          is_international?: boolean | null
+          location: string
+          location_ja?: string | null
+          name: string
+          name_ja?: string | null
+          notes?: string | null
+          notes_ja?: string | null
+          organizer: string
+          registration_url?: string | null
+          updated_at?: string
+          venue?: string | null
+          venue_ja?: string | null
+        }
+        Update: {
+          category?: string | null
+          country?: string | null
+          created_at?: string
+          date_end?: string | null
+          date_start?: string
+          description?: string | null
+          description_ja?: string | null
+          id?: string
+          is_international?: boolean | null
+          location?: string
+          location_ja?: string | null
+          name?: string
+          name_ja?: string | null
+          notes?: string | null
+          notes_ja?: string | null
+          organizer?: string
+          registration_url?: string | null
+          updated_at?: string
+          venue?: string | null
+          venue_ja?: string | null
         }
         Relationships: []
       }
