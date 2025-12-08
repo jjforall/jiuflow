@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar, MapPin, Globe, Users, ChevronLeft, ChevronRight, CalendarDays, List, ExternalLink } from "lucide-react";
+import { Calendar, MapPin, Globe, Users, ChevronLeft, ChevronRight, CalendarDays, List, ExternalLink, Clock } from "lucide-react";
 import { format, parseISO, isAfter, isBefore, addMonths, differenceInDays, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addDays, getDay } from "date-fns";
 import { ja, enUS, pt } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
@@ -32,6 +32,7 @@ interface Tournament {
   notes: string | null;
   notes_ja: string | null;
   registration_url: string | null;
+  registration_deadline: string | null;
   slug: string | null;
 }
 
@@ -213,6 +214,11 @@ const Tournaments = () => {
     const participantCount = participantCounts?.[tournament.id] || 0;
     const color = getOrganizerColor(tournament.organizer);
     
+    // Registration deadline logic
+    const deadlineDate = tournament.registration_deadline ? parseISO(tournament.registration_deadline) : null;
+    const isDeadlineSoon = deadlineDate && !isPast && differenceInDays(deadlineDate, now) >= 0 && differenceInDays(deadlineDate, now) <= 7;
+    const isDeadlinePassed = deadlineDate && isBefore(deadlineDate, now);
+    
     if (compact) {
       return (
         <Link to={getTournamentUrl(tournament)} className="block">
@@ -284,6 +290,25 @@ const Tournaments = () => {
                     </div>
                     <span className={`font-medium ${color.text}`}>
                       {participantCount} {language === 'ja' ? '人参加予定' : 'planning'}
+                    </span>
+                  </div>
+                )}
+                {/* Registration deadline */}
+                {deadlineDate && !isPast && (
+                  <div className="flex items-center gap-2">
+                    <div className={`p-1.5 rounded-md ${isDeadlinePassed ? 'bg-muted/50' : isDeadlineSoon ? 'bg-orange-500/10' : 'bg-muted/50'}`}>
+                      <Clock className={`h-3.5 w-3.5 ${isDeadlinePassed ? 'text-muted-foreground' : isDeadlineSoon ? 'text-orange-500' : 'text-muted-foreground'}`} />
+                    </div>
+                    <span className={`text-xs ${isDeadlinePassed ? 'text-muted-foreground line-through' : isDeadlineSoon ? 'text-orange-500 font-medium' : 'text-muted-foreground'}`}>
+                      {language === 'ja' ? '締切: ' : 'Deadline: '}
+                      {format(deadlineDate, language === 'ja' ? 'M/d' : 'MMM d', { locale: getLocale() })}
+                      {isDeadlineSoon && !isDeadlinePassed && (
+                        <span className="ml-1">
+                          ({differenceInDays(deadlineDate, now) === 0 
+                            ? (language === 'ja' ? '今日!' : 'Today!') 
+                            : (language === 'ja' ? `あと${differenceInDays(deadlineDate, now)}日` : `${differenceInDays(deadlineDate, now)}d left`)})
+                        </span>
+                      )}
                     </span>
                   </div>
                 )}
