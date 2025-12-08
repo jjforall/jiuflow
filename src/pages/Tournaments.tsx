@@ -1,6 +1,6 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useLanguage } from "@/contexts/LanguageContext";
 import Navigation from "@/components/Navigation";
@@ -40,12 +40,51 @@ const PAGE_SIZE = 30;
 
 const Tournaments = () => {
   const { language } = useLanguage();
+  const navigate = useNavigate();
   const [showPastTournaments, setShowPastTournaments] = useState(false);
   const [activeTab, setActiveTab] = useState("all");
   const [selectedOrganizer, setSelectedOrganizer] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [currentPage, setCurrentPage] = useState(1);
+  
+  // Swipe back support
+  const touchStartX = useRef<number>(0);
+  const touchEndX = useRef<number>(0);
+
+  useEffect(() => {
+    const handleTouchStart = (e: TouchEvent) => {
+      touchStartX.current = e.touches[0].clientX;
+    };
+    
+    const handleTouchEnd = (e: TouchEvent) => {
+      touchEndX.current = e.changedTouches[0].clientX;
+      const swipeDistance = touchEndX.current - touchStartX.current;
+      // Swipe right from left edge to go back
+      if (touchStartX.current < 50 && swipeDistance > 100) {
+        navigate(-1);
+      }
+    };
+    
+    document.addEventListener('touchstart', handleTouchStart, { passive: true });
+    document.addEventListener('touchend', handleTouchEnd, { passive: true });
+    
+    return () => {
+      document.removeEventListener('touchstart', handleTouchStart);
+      document.removeEventListener('touchend', handleTouchEnd);
+    };
+  }, [navigate]);
+
+  // Scroll to top helper
+  const scrollToTop = useCallback(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
+
+  // Pagination with scroll to top
+  const goToPage = useCallback((page: number) => {
+    setCurrentPage(page);
+    scrollToTop();
+  }, [scrollToTop]);
 
   // Reset page when filters change
   const handleOrganizerChange = (org: string | null) => {
@@ -418,7 +457,7 @@ const Tournaments = () => {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => setCurrentPage(1)}
+                    onClick={() => goToPage(1)}
                     disabled={currentPage === 1}
                   >
                     <ChevronsLeft className="h-4 w-4" />
@@ -426,7 +465,7 @@ const Tournaments = () => {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                    onClick={() => goToPage(Math.max(1, currentPage - 1))}
                     disabled={currentPage === 1}
                   >
                     <ChevronLeft className="h-4 w-4" />
@@ -437,7 +476,7 @@ const Tournaments = () => {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                    onClick={() => goToPage(Math.min(totalPages, currentPage + 1))}
                     disabled={currentPage === totalPages}
                   >
                     <ChevronRight className="h-4 w-4" />
@@ -445,7 +484,7 @@ const Tournaments = () => {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => setCurrentPage(totalPages)}
+                    onClick={() => goToPage(totalPages)}
                     disabled={currentPage === totalPages}
                   >
                     <ChevronsRight className="h-4 w-4" />
