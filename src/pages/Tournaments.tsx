@@ -533,7 +533,7 @@ const Tournaments = () => {
                         <><CircleDashed className="h-3 w-3 mr-1" />{language === 'ja' ? '予定' : '○'}</>
                       )
                     ) : (
-                      <><UserPlus className="h-3 w-3 mr-1" />{language === 'ja' ? '参加' : '+'}</>
+                      <>{language === 'ja' ? '興味あり' : language === 'pt' ? 'Interesse' : 'Interested'}</>
                     )}
                   </Badge>
                 </button>
@@ -574,7 +574,7 @@ const Tournaments = () => {
                         <><CircleDashed className="h-3 w-3 mr-1" />{language === 'ja' ? '予定' : '○'}</>
                       )
                     ) : (
-                      <><UserPlus className="h-3 w-3 mr-1" />{language === 'ja' ? '参加' : '+'}</>
+                      <>{language === 'ja' ? '興味あり' : language === 'pt' ? 'Interesse' : 'Interested'}</>
                     )}
                   </Badge>
                 </button>
@@ -678,20 +678,7 @@ const Tournaments = () => {
 
               {/* Actions - Registration link and Google Calendar */}
               {!isPast && (
-                <div className="pt-2 border-t border-border/50 flex items-center gap-3">
-                  {tournament.registration_url && (
-                    <button 
-                      className={`inline-flex items-center gap-1.5 text-xs font-medium ${color.text} hover:underline`}
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        window.open(tournament.registration_url!, '_blank', 'noopener,noreferrer');
-                      }}
-                    >
-                      <ExternalLink className="h-3 w-3" />
-                      {language === 'ja' ? 'エントリー' : 'Register'}
-                    </button>
-                  )}
+                <div className="pt-2 border-t border-border/50 flex items-center justify-between gap-3">
                   <button 
                     className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
                     onClick={(e) => {
@@ -710,8 +697,21 @@ const Tournaments = () => {
                     }}
                   >
                     <img src="/images/google-calendar-logo.png" alt="Google Calendar" className="h-4 w-4" />
-                    <span className="hidden sm:inline">{language === 'ja' ? 'カレンダーに登録' : 'Add to Calendar'}</span>
+                    <span className="hidden sm:inline">{language === 'ja' ? 'カレンダーに登録' : language === 'pt' ? 'Adicionar ao Calendário' : 'Add to Calendar'}</span>
                   </button>
+                  {tournament.registration_url && (
+                    <button 
+                      className={`inline-flex items-center gap-1.5 text-xs font-medium ${color.text} hover:underline`}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        window.open(tournament.registration_url!, '_blank', 'noopener,noreferrer');
+                      }}
+                    >
+                      <ExternalLink className="h-3 w-3" />
+                      {language === 'ja' ? 'エントリー' : language === 'pt' ? 'Inscrever' : 'Register'}
+                    </button>
+                  )}
                 </div>
               )}
             </div>
