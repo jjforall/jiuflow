@@ -18,7 +18,7 @@ Deno.serve(async (req) => {
       throw new Error("Bunny.net credentials not configured");
     }
 
-    // Authenticate user
+    // Authenticate user with retry logic for transient failures
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
       throw new Error("No authorization header");
@@ -30,8 +30,22 @@ Deno.serve(async (req) => {
       { global: { headers: { Authorization: authHeader } } }
     );
 
-    const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
+    // Retry auth up to 3 times for transient failures
+    let user = null;
+    let authError = null;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const result = await supabaseClient.auth.getUser();
+      user = result.data?.user;
+      authError = result.error;
+      if (user) break;
+      if (attempt < 2) {
+        console.log(`Auth attempt ${attempt + 1} failed, retrying...`);
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+    }
+    
     if (authError || !user) {
+      console.error("Auth failed after retries:", authError?.message);
       throw new Error("Unauthorized");
     }
 
