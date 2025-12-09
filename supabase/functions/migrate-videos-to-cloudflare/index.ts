@@ -74,112 +74,40 @@ serve(async (req) => {
                   return btoa(binary);
                 };
 
-                // First, get the file size using HEAD request
-                const headResponse = await fetch(url, { method: 'HEAD' });
-                let fileSize = headResponse.headers.get('content-length');
-                
-                if (!fileSize) {
-                  // If HEAD doesn't work, do a GET and get content-length
-                  const getResponse = await fetch(url);
-                  fileSize = getResponse.headers.get('content-length');
-                  
-                  if (!fileSize) {
-                    // Download to get size
-                    const buffer = await getResponse.arrayBuffer();
-                    fileSize = buffer.byteLength.toString();
-                    console.log(`Got file size from download: ${fileSize}`);
-                    
-                    // Upload directly using simple upload API instead of TUS
-                    const videoName = `${technique.name_ja || technique.id} (${field})`;
-                    const formData = new FormData();
-                    formData.append('file', new Blob([buffer]), `${technique.id}.mp4`);
-                    
-                    const uploadResponse = await fetch(
-                      `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/stream`,
-                      {
-                        method: 'POST',
-                        headers: {
-                          'Authorization': `Bearer ${CLOUDFLARE_STREAM_API_TOKEN}`,
-                        },
-                        body: formData,
-                      }
-                    );
-
-                    if (!uploadResponse.ok) {
-                      const errorText = await uploadResponse.text();
-                      console.error(`Cloudflare upload failed for ${field}:`, errorText);
-                      continue;
-                    }
-
-                    const uploadData = await uploadResponse.json();
-                    const videoUid = uploadData.result.uid;
-                    console.log(`Uploaded to Cloudflare with UID: ${videoUid}`);
-
-                    const playbackUrl = `https://customer-${CLOUDFLARE_ACCOUNT_ID}.cloudflarestream.com/${videoUid}/manifest/video.m3u8`;
-                    updates[field] = playbackUrl;
-                    continue;
-                  }
-                }
-
-                console.log(`File size: ${fileSize} bytes`);
-
-                // Get TUS upload URL from Cloudflare with correct Upload-Length
+                // Use Cloudflare Stream's URL copy feature - no memory needed!
+                // This tells Cloudflare to fetch the video directly from the URL
                 const videoName = `${technique.name_ja || technique.id} (${field})`;
-                const tusResponse = await fetch(
-                  `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/stream?direct_user=true`,
+                
+                const copyResponse = await fetch(
+                  `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/stream/copy`,
                   {
                     method: 'POST',
                     headers: {
                       'Authorization': `Bearer ${CLOUDFLARE_STREAM_API_TOKEN}`,
-                      'Tus-Resumable': '1.0.0',
-                      'Upload-Length': fileSize,
-                      'Upload-Metadata': `name ${encodeBase64(videoName)}`
+                      'Content-Type': 'application/json',
                     },
+                    body: JSON.stringify({
+                      url: url,
+                      meta: { 
+                        name: videoName,
+                        original_id: technique.id,
+                        field: field 
+                      },
+                    }),
                   }
                 );
 
-                if (!tusResponse.ok) {
-                  const errorText = await tusResponse.text();
-                  console.error(`Failed to get TUS upload URL for ${field}:`, errorText);
+                if (!copyResponse.ok) {
+                  const errorText = await copyResponse.text();
+                  console.error(`Cloudflare copy failed for ${field}:`, errorText);
                   continue;
                 }
 
-                const tusUploadUrl = tusResponse.headers.get('Location') || tusResponse.headers.get('stream-media-id');
-                const streamMediaId = tusResponse.headers.get('stream-media-id');
-                console.log(`Got TUS upload URL, media ID: ${streamMediaId}`);
+                const copyData = await copyResponse.json();
+                const videoUid = copyData.result.uid;
+                console.log(`Cloudflare is copying video, UID: ${videoUid}`);
 
-                // Download video from Supabase
-                const videoResponse = await fetch(url);
-                if (!videoResponse.ok) {
-                  console.error(`Failed to download video from Supabase: ${videoResponse.status}`);
-                  continue;
-                }
-
-                // Read video as array buffer
-                const videoBuffer = await videoResponse.arrayBuffer();
-                console.log(`Downloaded video, size: ${videoBuffer.byteLength} bytes`);
-
-                // Upload the video using PATCH (TUS protocol)
-                const uploadResponse = await fetch(tusUploadUrl!, {
-                  method: 'PATCH',
-                  headers: {
-                    'Content-Type': 'application/offset+octet-stream',
-                    'Upload-Offset': '0',
-                    'Tus-Resumable': '1.0.0',
-                  },
-                  body: videoBuffer,
-                });
-
-                if (!uploadResponse.ok) {
-                  const errorText = await uploadResponse.text();
-                  console.error(`Cloudflare TUS upload failed for ${field}:`, errorText);
-                  continue;
-                }
-
-                const videoUid = streamMediaId;
-                console.log(`Uploaded to Cloudflare with UID: ${videoUid}`);
-
-                // Use iframe embed URL format
+                // Use HLS manifest URL
                 const playbackUrl = `https://customer-${CLOUDFLARE_ACCOUNT_ID}.cloudflarestream.com/${videoUid}/manifest/video.m3u8`;
                 updates[field] = playbackUrl;
               } catch (fieldError) {
