@@ -1,7 +1,8 @@
 import { Link } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useAuth } from "@/hooks/useAuth";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { SEOHead } from "@/components/SEOHead";
@@ -10,10 +11,11 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Building2, MapPin, Trophy, Calendar, Search, Users, ArrowRight } from "lucide-react";
-import { format, parseISO, isAfter } from "date-fns";
+import { Building2, MapPin, Trophy, Calendar, Search, Users, ArrowRight, Heart } from "lucide-react";
+import { format, parseISO, isAfter, isBefore } from "date-fns";
 import { ja, enUS, pt } from "date-fns/locale";
 import { useState, useMemo } from "react";
+import { toast } from "sonner";
 
 interface Venue {
   id: string;
@@ -48,6 +50,8 @@ const countryNames: Record<string, { ja: string; en: string }> = {
   'TW': { ja: '台湾', en: 'Taiwan' },
   'CN': { ja: '中国', en: 'China' },
   'KR': { ja: '韓国', en: 'South Korea' },
+  'MY': { ja: 'マレーシア', en: 'Malaysia' },
+  'SG': { ja: 'シンガポール', en: 'Singapore' },
 };
 
 const countryFlags: Record<string, string> = {
@@ -61,10 +65,14 @@ const countryFlags: Record<string, string> = {
   'TW': '🇹🇼',
   'CN': '🇨🇳',
   'KR': '🇰🇷',
+  'MY': '🇲🇾',
+  'SG': '🇸🇬',
 };
 
 const Venues = () => {
   const { language } = useLanguage();
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState("");
 
   const getLocale = () => {
@@ -102,6 +110,67 @@ const Venues = () => {
     },
   });
 
+  // Fetch favorite venues
+  const { data: favoriteVenues } = useQuery({
+    queryKey: ['favorite-venues', user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      const { data, error } = await supabase
+        .from('favorite_venues')
+        .select('venue_id')
+        .eq('user_id', user.id);
+      if (error) throw error;
+      return data.map(f => f.venue_id);
+    },
+    enabled: !!user,
+  });
+
+  // Add favorite mutation
+  const addFavorite = useMutation({
+    mutationFn: async (venueId: string) => {
+      if (!user) throw new Error('Not authenticated');
+      const { error } = await supabase
+        .from('favorite_venues')
+        .insert({ user_id: user.id, venue_id: venueId });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['favorite-venues'] });
+      toast.success(language === 'ja' ? 'お気に入りに追加しました' : 'Added to favorites');
+    },
+  });
+
+  // Remove favorite mutation
+  const removeFavorite = useMutation({
+    mutationFn: async (venueId: string) => {
+      if (!user) throw new Error('Not authenticated');
+      const { error } = await supabase
+        .from('favorite_venues')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('venue_id', venueId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['favorite-venues'] });
+      toast.success(language === 'ja' ? 'お気に入りから削除しました' : 'Removed from favorites');
+    },
+  });
+
+  const toggleFavorite = (e: React.MouseEvent, venueId: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!user) {
+      toast.error(language === 'ja' ? 'ログインしてください' : 'Please login');
+      return;
+    }
+    if (favoriteVenues?.includes(venueId)) {
+      removeFavorite.mutate(venueId);
+    } else {
+      addFavorite.mutate(venueId);
+    }
+  };
+
   // Group tournaments by venue
   const tournamentsByVenue = useMemo(() => {
     if (!tournaments) return {};
@@ -127,22 +196,47 @@ const Venues = () => {
     );
   }, [venues, searchQuery]);
 
-  // Sort venues by tournament count
+  // Sort venues: with image first, then by capacity (largest first)
   const sortedVenues = useMemo(() => {
     return [...filteredVenues].sort((a, b) => {
-      const countA = tournamentsByVenue[a.id]?.length || 0;
-      const countB = tournamentsByVenue[b.id]?.length || 0;
-      return countB - countA;
+      // First, prioritize venues with images
+      const hasImageA = a.image_url && !a.image_url.includes('default-venue') ? 1 : 0;
+      const hasImageB = b.image_url && !b.image_url.includes('default-venue') ? 1 : 0;
+      if (hasImageB !== hasImageA) return hasImageB - hasImageA;
+      
+      // Then, sort by capacity (largest first)
+      const capacityA = a.capacity || 0;
+      const capacityB = b.capacity || 0;
+      return capacityB - capacityA;
     });
-  }, [filteredVenues, tournamentsByVenue]);
+  }, [filteredVenues]);
 
   const getName = (venue: Venue) => language === 'ja' && venue.name_ja ? venue.name_ja : venue.name;
   const getTournamentName = (t: Tournament) => language === 'ja' && t.name_ja ? t.name_ja : t.name;
 
-  const getNextTournament = (venueId: string) => {
+  // Get next upcoming tournament or most recent past tournament
+  const getDisplayTournament = (venueId: string): { tournament: Tournament | null; isPast: boolean } => {
     const venueTournaments = tournamentsByVenue[venueId] || [];
     const now = new Date();
-    return venueTournaments.find(t => isAfter(parseISO(t.date_start), now));
+    
+    // Find next upcoming tournament
+    const upcomingTournaments = venueTournaments.filter(t => isAfter(parseISO(t.date_start), now));
+    if (upcomingTournaments.length > 0) {
+      // Sort by date ascending and get the nearest one
+      const sorted = [...upcomingTournaments].sort((a, b) => 
+        parseISO(a.date_start).getTime() - parseISO(b.date_start).getTime()
+      );
+      return { tournament: sorted[0], isPast: false };
+    }
+    
+    // No upcoming, get most recent past tournament
+    const pastTournaments = venueTournaments.filter(t => isBefore(parseISO(t.date_start), now));
+    if (pastTournaments.length > 0) {
+      // Already sorted descending, so first one is most recent
+      return { tournament: pastTournaments[0], isPast: true };
+    }
+    
+    return { tournament: null, isPast: false };
   };
 
   const seoData = {
@@ -233,7 +327,8 @@ const Venues = () => {
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {sortedVenues.map((venue) => {
               const tournamentCount = tournamentsByVenue[venue.id]?.length || 0;
-              const nextTournament = getNextTournament(venue.id);
+              const { tournament: displayTournament, isPast } = getDisplayTournament(venue.id);
+              const isFavorite = favoriteVenues?.includes(venue.id);
               
               return (
                 <Link key={venue.id} to={`/venue/${venue.id}`}>
@@ -258,6 +353,17 @@ const Venues = () => {
                       <div className="absolute top-2 right-2 text-2xl">
                         {countryFlags[venue.country] || '🏟️'}
                       </div>
+                      {/* Favorite button */}
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="absolute top-2 left-2 h-8 w-8 bg-background/80 backdrop-blur-sm hover:bg-background"
+                        onClick={(e) => toggleFavorite(e, venue.id)}
+                      >
+                        <Heart 
+                          className={`h-4 w-4 ${isFavorite ? 'fill-red-500 text-red-500' : 'text-muted-foreground'}`}
+                        />
+                      </Button>
                       {/* Tournament count badge */}
                       {tournamentCount > 0 && (
                         <Badge className="absolute bottom-2 left-2 bg-primary/90 backdrop-blur-sm">
@@ -292,18 +398,23 @@ const Venues = () => {
                         </div>
                       )}
                       
-                      {/* Next tournament */}
-                      {nextTournament && (
+                      {/* Tournament info */}
+                      {displayTournament && (
                         <div className="pt-2 border-t border-border/50">
                           <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
                             <Calendar className="h-3 w-3" />
-                            <span>{language === 'ja' ? '次回開催' : 'Next event'}</span>
+                            <span>
+                              {isPast 
+                                ? (language === 'ja' ? '過去開催' : 'Past event')
+                                : (language === 'ja' ? '次回開催' : 'Next event')
+                              }
+                            </span>
                           </div>
-                          <div className="text-sm font-medium text-primary line-clamp-1">
-                            {getTournamentName(nextTournament)}
+                          <div className={`text-sm font-medium line-clamp-1 ${isPast ? 'text-muted-foreground' : 'text-primary'}`}>
+                            {getTournamentName(displayTournament)}
                           </div>
                           <div className="text-xs text-muted-foreground">
-                            {format(parseISO(nextTournament.date_start), language === 'ja' ? 'yyyy年M月d日' : 'MMM d, yyyy', { locale: getLocale() })}
+                            {format(parseISO(displayTournament.date_start), language === 'ja' ? 'yyyy年M月d日' : 'MMM d, yyyy', { locale: getLocale() })}
                           </div>
                         </div>
                       )}
