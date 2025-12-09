@@ -230,13 +230,22 @@ const AdminStats = () => {
       subscriptions.forEach((sub: any) => {
         if (sub.created_at) {
           const createdDate = new Date(sub.created_at);
+          const trialEnd = sub.trial_end ? new Date(sub.trial_end) : null;
+          
           dateMap.forEach((value, dateStr) => {
             const targetDate = new Date(dateStr);
+            targetDate.setHours(23, 59, 59, 999); // End of day
+            
+            // Only count if subscription was created on or before target date
             if (createdDate <= targetDate) {
-              if (sub.status === 'active' && !sub.is_trialing) {
-                value.paid++;
-              } else if (sub.is_trialing) {
+              // Check if subscription was in trial on the target date
+              const wasInTrial = trialEnd && targetDate < trialEnd;
+              
+              if (wasInTrial) {
                 value.trial++;
+              } else if (sub.status === 'active' || sub.status === 'trialing') {
+                // Subscription exists and trial has ended (or no trial) = paid
+                value.paid++;
               }
             }
           });
@@ -598,7 +607,7 @@ const AdminStats = () => {
                 <Line 
                   type="monotone" 
                   dataKey="trialMembers" 
-                  stroke="hsl(var(--secondary))" 
+                  stroke="#22c55e"
                   name="トライアル会員数"
                   strokeWidth={2}
                 />
