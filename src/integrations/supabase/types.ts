@@ -2339,6 +2339,63 @@ export type Database = {
           },
         ]
       }
+      user_oura_data: {
+        Row: {
+          activity_data: Json | null
+          created_at: string
+          id: string
+          last_synced_at: string | null
+          readiness_data: Json | null
+          sleep_data: Json | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          activity_data?: Json | null
+          created_at?: string
+          id?: string
+          last_synced_at?: string | null
+          readiness_data?: Json | null
+          sleep_data?: Json | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          activity_data?: Json | null
+          created_at?: string
+          id?: string
+          last_synced_at?: string | null
+          readiness_data?: Json | null
+          sleep_data?: Json | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_oura_tokens: {
+        Row: {
+          access_token: string
+          created_at: string
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          access_token: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          access_token?: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_points: {
         Row: {
           id: string
