@@ -187,7 +187,8 @@ export function VideoUploadDialog({ open, onOpenChange, featuredUserId, featured
 
       if (!videoReady || !playbackUrl) {
         // Video still processing, use HLS URL with video ID
-        playbackUrl = `https://customer-stream.cloudflarestream.com/${cloudflareVideoId}/manifest/video.m3u8`;
+        // Note: The account ID will be embedded in the playbackUrl from the edge function
+        playbackUrl = uploadData.playbackUrl || `https://cloudflarestream.com/${cloudflareVideoId}/manifest/video.m3u8`;
       }
 
       setUploadedVideoUrl(playbackUrl);
