@@ -2473,6 +2473,7 @@ export type Database = {
           created_at: string
           description: string | null
           featured_user_id: string | null
+          file_size: number | null
           id: string
           is_public: boolean | null
           price: number | null
@@ -2490,6 +2491,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           featured_user_id?: string | null
+          file_size?: number | null
           id?: string
           is_public?: boolean | null
           price?: number | null
@@ -2507,6 +2509,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           featured_user_id?: string | null
+          file_size?: number | null
           id?: string
           is_public?: boolean | null
           price?: number | null
@@ -3125,6 +3128,10 @@ export type Database = {
           profile_exists: boolean
         }[]
       }
+      check_storage_limit: {
+        Args: { p_file_size: number; p_user_id: string }
+        Returns: Json
+      }
       generate_referral_code: { Args: never; Returns: string }
       get_celebrity_applications_masked: {
         Args: never
@@ -3243,6 +3250,7 @@ export type Database = {
           user_id: string
         }[]
       }
+      get_user_storage_usage: { Args: { p_user_id: string }; Returns: number }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

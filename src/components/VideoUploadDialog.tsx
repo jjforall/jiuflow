@@ -5,10 +5,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Upload, Loader2, CheckCircle, Video } from "lucide-react";
-
+import { Upload, Loader2, CheckCircle, Video, AlertCircle, HardDrive } from "lucide-react";
+import { useStorageLimit } from "@/hooks/useStorageLimit";
 interface VideoUploadDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -34,6 +35,9 @@ export function VideoUploadDialog({ open, onOpenChange, featuredUserId, featured
   const [visibility, setVisibility] = useState<"public" | "unlisted" | "private">("public");
   const [uploadedVideoUrl, setUploadedVideoUrl] = useState<string | null>(null);
   const [uploadedFileName, setUploadedFileName] = useState<string | null>(null);
+  const [uploadedFileSize, setUploadedFileSize] = useState<number>(0);
+  
+  const { currentUsage, storageLimit, remaining, isSubscribed, checkCanUpload, formatBytes, refetch } = useStorageLimit();
 
   // Auto-set title when video type changes
   useEffect(() => {
@@ -53,17 +57,31 @@ export function VideoUploadDialog({ open, onOpenChange, featuredUserId, featured
       setVisibility("public");
       setUploadedVideoUrl(null);
       setUploadedFileName(null);
+      setUploadedFileSize(0);
       setUploadProgress(0);
+      refetch();
     }
-  }, [open]);
+  }, [open, refetch]);
 
   const handleVideoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Check file size (max 500MB)
+    // Check file size (max 500MB per file)
     if (file.size > 500 * 1024 * 1024) {
       toast.error("動画ファイルは500MB以下にしてください");
+      return;
+    }
+
+    // Check storage limit
+    const storageCheck = await checkCanUpload(file.size);
+    if (!storageCheck.canUpload) {
+      const limitGB = isSubscribed ? '1TB' : '100GB';
+      toast.error(
+        `ストレージ容量が不足しています。現在 ${formatBytes(storageCheck.currentUsage)} / ${limitGB} を使用中です。${
+          !isSubscribed ? '有料プランにアップグレードすると1TBまで利用可能になります。' : ''
+        }`
+      );
       return;
     }
 
@@ -82,6 +100,7 @@ export function VideoUploadDialog({ open, onOpenChange, featuredUserId, featured
       }
       
       setVideoFile(file);
+      setUploadedFileSize(file.size);
       // Start upload immediately
       await uploadVideo(file);
     };
@@ -228,12 +247,14 @@ export function VideoUploadDialog({ open, onOpenChange, featuredUserId, featured
           price: price ? Number(price) : 0,
           is_public: visibility === 'public',
           visibility,
-          featured_user_id: featuredUserId || null
+          featured_user_id: featuredUserId || null,
+          file_size: uploadedFileSize
         });
 
       if (dbError) throw dbError;
 
       toast.success("動画を投稿しました！");
+      refetch(); // Refresh storage info
       onOpenChange(false);
     } catch (error) {
       console.error('Save error:', error);
@@ -267,6 +288,26 @@ export function VideoUploadDialog({ open, onOpenChange, featuredUserId, featured
             <p className="text-sm font-medium text-primary">再生数に応じた収益をお返しします。</p>
           </DialogDescription>
         </DialogHeader>
+        
+        {/* Storage Usage Indicator */}
+        <div className="bg-muted/50 rounded-lg p-3 border">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2 text-sm">
+              <HardDrive className="w-4 h-4 text-muted-foreground" />
+              <span className="text-muted-foreground">ストレージ使用量</span>
+            </div>
+            <span className="text-sm font-medium">
+              {formatBytes(currentUsage)} / {isSubscribed ? '1TB' : '100GB'}
+            </span>
+          </div>
+          <Progress value={(currentUsage / storageLimit) * 100} className="h-2" />
+          {!isSubscribed && remaining < 10 * 1024 * 1024 * 1024 && (
+            <p className="text-xs text-amber-500 mt-2 flex items-center gap-1">
+              <AlertCircle className="w-3 h-3" />
+              容量が残りわずかです。有料プランで1TBまで拡張できます。
+            </p>
+          )}
+        </div>
         
         <form onSubmit={handleSubmit} className="space-y-4 pt-4">
           {/* Video Type - First */}
