@@ -1,5 +1,6 @@
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
+import { SEOHead } from "@/components/SEOHead";
 import { useTranslation } from "@/hooks/useTranslation";
 import { Button } from "@/components/ui/button";
 import { useNavigate, Link } from "react-router-dom";
@@ -33,26 +34,22 @@ const About = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [techniqueStats, setTechniqueStats] = useState<TechniqueStats[]>([]);
 
-  useEffect(() => {
-    const titles = {
-      ja: "jiuflowについて | jiuflow",
-      en: "About jiuflow | jiuflow",
-      pt: "Sobre jiuflow | jiuflow"
-    };
-    
-    const descriptions = {
-      ja: "jiuflowは、上面からの4K撮影と体系化された技術で、安全で長く続けられるブラジリアン柔術を提供します。",
-      en: "jiuflow provides safe and sustainable Brazilian Jiu-Jitsu through 4K overhead filming and systematic techniques.",
-      pt: "jiuflow oferece Jiu-Jitsu Brasileiro seguro e sustentável através de filmagem aérea 4K e técnicas sistemáticas."
-    };
-    
-    document.title = titles[language] || titles.ja;
-    
-    const metaDescription = document.querySelector('meta[name="description"]');
-    if (metaDescription) {
-      metaDescription.setAttribute('content', descriptions[language] || descriptions.ja);
+  const seoContent = {
+    ja: {
+      title: 'jiuflowについて | jiuflow',
+      description: 'jiuflowは、上面からの4K撮影と体系化された技術で、安全で長く続けられるブラジリアン柔術を提供します。'
+    },
+    en: {
+      title: 'About jiuflow | jiuflow',
+      description: 'jiuflow provides safe and sustainable Brazilian Jiu-Jitsu through 4K overhead filming and systematic techniques.'
+    },
+    pt: {
+      title: 'Sobre jiuflow | jiuflow',
+      description: 'jiuflow oferece Jiu-Jitsu Brasileiro seguro e sustentável através de filmagem aérea 4K e técnicas sistemáticas.'
     }
-  }, [language]);
+  };
+
+  const currentSeo = seoContent[language] || seoContent.ja;
 
   useEffect(() => {
     const loadTechniqueStats = async () => {
@@ -95,6 +92,12 @@ const About = () => {
 
   return (
     <div className="min-h-screen relative overflow-hidden">
+      <SEOHead
+        title={currentSeo.title}
+        description={currentSeo.description}
+        canonicalUrl="/about"
+        keywords={['柔術', 'BJJ', 'jiuflow', '村田良蔵', 'SJJIF世界チャンピオン']}
+      />
       {/* Animated Flow Background */}
       <div className="fixed inset-0 -z-10 overflow-hidden">
         {/* Base gradient */}

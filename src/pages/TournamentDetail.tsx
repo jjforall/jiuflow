@@ -2,6 +2,7 @@ import { useParams, Link, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { SEOHead, generateTournamentStructuredData, generateBreadcrumbStructuredData } from "@/components/SEOHead";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTranslation } from "@/hooks/useTranslation";
 import { useAuth } from "@/hooks/useAuth";
@@ -460,8 +461,44 @@ const TournamentDetail = () => {
 
   const isPast = isBefore(parseISO(tournament.date_start), now);
 
+  // SEO Data
+  const tournamentName = language === 'ja' && tournament.name_ja ? tournament.name_ja : tournament.name;
+  const tournamentDescription = language === 'ja' && tournament.description_ja 
+    ? tournament.description_ja 
+    : tournament.description || `${tournamentName} - ${tournament.organizer}主催のブラジリアン柔術大会`;
+  const pageUrl = `/tournaments/${year}/${slug}`;
+  const venueImage = getVenueImage(tournament);
+
+  const structuredData = generateTournamentStructuredData({
+    name: tournamentName,
+    description: tournamentDescription,
+    date_start: tournament.date_start,
+    date_end: tournament.date_end,
+    location: language === 'ja' && tournament.location_ja ? tournament.location_ja : tournament.location,
+    venue: getVenue(tournament),
+    venue_image_url: venueImage,
+    organizer: tournament.organizer,
+    registration_url: tournament.registration_url,
+    entry_fee: language === 'ja' && tournament.entry_fee_ja ? tournament.entry_fee_ja : tournament.entry_fee,
+  });
+
+  const breadcrumbData = generateBreadcrumbStructuredData([
+    { name: language === 'ja' ? 'ホーム' : 'Home', url: '/' },
+    { name: language === 'ja' ? '大会一覧' : 'Tournaments', url: '/tournaments' },
+    { name: tournamentName, url: pageUrl },
+  ]);
+
   return (
     <div className="min-h-screen flex flex-col bg-background">
+      <SEOHead
+        title={`${tournamentName} | JiuFlow`}
+        description={tournamentDescription}
+        ogImage={venueImage || undefined}
+        ogType="event"
+        canonicalUrl={pageUrl}
+        structuredData={{ "@graph": [structuredData, breadcrumbData] }}
+        keywords={['柔術', 'BJJ', '大会', tournament.organizer, tournament.location]}
+      />
       <Navigation />
       
       <main className="flex-1 container mx-auto px-4 py-6 pt-20 sm:pt-24">

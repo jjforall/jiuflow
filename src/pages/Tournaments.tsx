@@ -6,6 +6,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/hooks/useAuth";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
+import { SEOHead } from "@/components/SEOHead";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
@@ -909,8 +910,31 @@ const Tournaments = () => {
     );
   };
 
+  const seoContent = {
+    ja: {
+      title: '柔術大会スケジュール | JiuFlow',
+      description: 'JBJJF、ASJJF、IBJJF、ADCCなどのブラジリアン柔術大会スケジュール。日本国内外の主要大会情報を網羅。'
+    },
+    en: {
+      title: 'BJJ Tournament Schedule | JiuFlow',
+      description: 'Brazilian Jiu-Jitsu tournament schedule including JBJJF, ASJJF, IBJJF, ADCC and more. Find competitions in Japan and worldwide.'
+    },
+    pt: {
+      title: 'Calendário de Torneios de Jiu-Jitsu | JiuFlow',
+      description: 'Calendário de torneios de Jiu-Jitsu Brasileiro incluindo JBJJF, ASJJF, IBJJF, ADCC e mais.'
+    }
+  };
+
+  const currentSeo = seoContent[language] || seoContent.ja;
+
   return (
     <div className="min-h-screen flex flex-col bg-background">
+      <SEOHead
+        title={currentSeo.title}
+        description={currentSeo.description}
+        canonicalUrl="/tournaments"
+        keywords={['柔術', 'BJJ', '大会', 'トーナメント', 'JBJJF', 'ASJJF', 'IBJJF']}
+      />
       <Navigation />
       
       <main className="flex-1 container mx-auto px-4 py-8 pt-24">
