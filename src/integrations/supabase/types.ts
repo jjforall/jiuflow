@@ -640,6 +640,7 @@ export type Database = {
           media_url: string | null
           thread_id: string
           updated_at: string
+          user_video_id: string | null
         }
         Insert: {
           author_id: string
@@ -662,6 +663,7 @@ export type Database = {
           media_url?: string | null
           thread_id: string
           updated_at?: string
+          user_video_id?: string | null
         }
         Update: {
           author_id?: string
@@ -684,6 +686,7 @@ export type Database = {
           media_url?: string | null
           thread_id?: string
           updated_at?: string
+          user_video_id?: string | null
         }
         Relationships: [
           {
@@ -705,6 +708,13 @@ export type Database = {
             columns: ["thread_id"]
             isOneToOne: false
             referencedRelation: "community_threads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "community_posts_user_video_id_fkey"
+            columns: ["user_video_id"]
+            isOneToOne: false
+            referencedRelation: "user_videos"
             referencedColumns: ["id"]
           },
         ]
@@ -820,6 +830,7 @@ export type Database = {
           title_ru: string | null
           title_zh: string | null
           updated_at: string
+          user_video_id: string | null
           view_count: number | null
         }
         Insert: {
@@ -857,6 +868,7 @@ export type Database = {
           title_ru?: string | null
           title_zh?: string | null
           updated_at?: string
+          user_video_id?: string | null
           view_count?: number | null
         }
         Update: {
@@ -894,6 +906,7 @@ export type Database = {
           title_ru?: string | null
           title_zh?: string | null
           updated_at?: string
+          user_video_id?: string | null
           view_count?: number | null
         }
         Relationships: [
@@ -916,6 +929,13 @@ export type Database = {
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "community_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "community_threads_user_video_id_fkey"
+            columns: ["user_video_id"]
+            isOneToOne: false
+            referencedRelation: "user_videos"
             referencedColumns: ["id"]
           },
         ]

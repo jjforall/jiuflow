@@ -36,6 +36,7 @@ interface Post {
   content_pt?: string | null;
   media_url?: string | null;
   media_type?: string | null;
+  user_video_id?: string | null;
   created_at: string;
   updated_at: string;
   author?: UserProfile;
@@ -51,6 +52,7 @@ interface Reply {
   content: string;
   media_url?: string | null;
   media_type?: string | null;
+  user_video_id?: string | null;
   created_at: string;
   author?: UserProfile;
   like_count?: number;
@@ -84,9 +86,9 @@ export const OpenMat = () => {
   const [editingReplyId, setEditingReplyId] = useState<string | null>(null);
   const [editContent, setEditContent] = useState("");
   
-  // New state for single media upload
-  const [postMedia, setPostMedia] = useState<{ url: string; type: 'image' | 'video' } | null>(null);
-  const [replyMedia, setReplyMedia] = useState<Record<string, { url: string; type: 'image' | 'video' } | null>>({});
+  // New state for single media upload (includes user_video_id for videos)
+  const [postMedia, setPostMedia] = useState<{ url: string; type: 'image' | 'video'; userVideoId?: string } | null>(null);
+  const [replyMedia, setReplyMedia] = useState<Record<string, { url: string; type: 'image' | 'video'; userVideoId?: string } | null>>({});
 
   const getDateLocale = () => {
     if (language === "ja") return ja;
@@ -160,6 +162,7 @@ export const OpenMat = () => {
           content_pt,
           media_url,
           media_type,
+          user_video_id,
           created_at,
           updated_at,
           author:profiles!community_threads_author_id_fkey(id, display_name, avatar_url, username)
@@ -195,6 +198,7 @@ export const OpenMat = () => {
             content_pt: thread.content_pt,
             media_url: thread.media_url,
             media_type: thread.media_type,
+            user_video_id: thread.user_video_id,
             created_at: thread.created_at,
             updated_at: thread.updated_at,
             author: thread.author,
@@ -225,6 +229,7 @@ export const OpenMat = () => {
           content,
           media_url,
           media_type,
+          user_video_id,
           created_at,
           author:profiles!community_posts_author_id_fkey(id, display_name, avatar_url, username)
         `)
@@ -250,6 +255,7 @@ export const OpenMat = () => {
             content: reply.content,
             media_url: reply.media_url,
             media_type: reply.media_type,
+            user_video_id: reply.user_video_id,
             created_at: reply.created_at,
             author: reply.author,
             like_count: reactions?.length || 0,
@@ -318,6 +324,7 @@ export const OpenMat = () => {
           content: newPostContent.trim(),
           media_url: postMedia?.url || null,
           media_type: postMedia?.type || null,
+          user_video_id: postMedia?.userVideoId || null,
         })
         .select()
         .single();
@@ -373,6 +380,7 @@ export const OpenMat = () => {
           content: content || '',
           media_url: media?.url || null,
           media_type: media?.type || null,
+          user_video_id: media?.userVideoId || null,
         })
         .select()
         .single();
@@ -461,6 +469,17 @@ export const OpenMat = () => {
 
   const deletePost = async (postId: string) => {
     try {
+      // Find the post to get user_video_id
+      const post = posts.find(p => p.id === postId);
+      
+      // If there's a video, set it to private instead of deleting
+      if (post?.user_video_id) {
+        await supabase
+          .from('user_videos')
+          .update({ visibility: 'private' })
+          .eq('id', post.user_video_id);
+      }
+      
       const { error } = await supabase
         .from('community_threads')
         .delete()
@@ -478,6 +497,17 @@ export const OpenMat = () => {
 
   const deleteReply = async (postId: string, replyId: string) => {
     try {
+      // Find the reply to get user_video_id
+      const reply = replies[postId]?.find(r => r.id === replyId);
+      
+      // If there's a video, set it to private instead of deleting
+      if (reply?.user_video_id) {
+        await supabase
+          .from('user_videos')
+          .update({ visibility: 'private' })
+          .eq('id', reply.user_video_id);
+      }
+      
       const { error } = await supabase
         .from('community_posts')
         .delete()
@@ -602,8 +632,8 @@ export const OpenMat = () => {
     return user?.id === authorId || isAdmin;
   };
 
-  // Upload video to Bunny and save to user_videos
-  const uploadVideoToBunny = async (file: File): Promise<string> => {
+  // Upload video to Bunny and save to user_videos, returns { url, userVideoId }
+  const uploadVideoToBunny = async (file: File): Promise<{ url: string; userVideoId: string }> => {
     // 1. Create video in Bunny
     const { data: createData, error: createError } = await supabase.functions.invoke('upload-to-bunny', {
       body: {
@@ -617,7 +647,6 @@ export const OpenMat = () => {
     }
 
     const videoId = createData.videoId;
-    const libraryId = createData.libraryId;
 
     // 2. Get upload URL and API key
     const { data: uploadData, error: uploadError } = await supabase.functions.invoke('upload-to-bunny', {
@@ -647,10 +676,10 @@ export const OpenMat = () => {
 
     // 4. Poll for processing status
     let attempts = 0;
-    const maxAttempts = 30;
+    const maxAttempts = 60; // Increased for larger files
     
     while (attempts < maxAttempts) {
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      await new Promise(resolve => setTimeout(resolve, 3000));
       
       const { data: statusData, error: statusError } = await supabase.functions.invoke('upload-to-bunny', {
         body: {
@@ -666,18 +695,20 @@ export const OpenMat = () => {
 
       // Status 4 = finished, status 5 = error
       if (statusData.status === 4 && statusData.playbackUrl) {
-        // Save to user_videos
-        await supabase.from('user_videos').insert({
+        // Save to user_videos with visibility='public'
+        const { data: userVideo, error: insertError } = await supabase.from('user_videos').insert({
           user_id: user!.id,
-          title: `OpenMat Video ${new Date().toLocaleDateString()}`,
+          title: `OpenMat Video ${new Date().toLocaleDateString('ja-JP')}`,
           video_type: 'sparring',
           video_url: statusData.playbackUrl,
           thumbnail_url: statusData.thumbnailUrl,
           visibility: 'public',
           file_size: file.size,
-        });
+        }).select('id').single();
 
-        return statusData.playbackUrl;
+        if (insertError) throw insertError;
+
+        return { url: statusData.playbackUrl, userVideoId: userVideo.id };
       }
 
       if (statusData.status === 5) {
@@ -719,30 +750,28 @@ export const OpenMat = () => {
       return;
     }
 
-    // Size limit: 50MB for images, 500MB for videos
+    // Size limit: 100MB for images, 3GB for videos
     const isVideo = file.type.startsWith('video/');
-    const maxSize = isVideo ? 500 * 1024 * 1024 : 50 * 1024 * 1024;
+    const maxSize = isVideo ? 3 * 1024 * 1024 * 1024 : 100 * 1024 * 1024;
     
     if (file.size > maxSize) {
       toast.error(language === "ja" 
-        ? `ファイルは${isVideo ? '500MB' : '50MB'}以下にしてください` 
-        : `File must be under ${isVideo ? '500MB' : '50MB'}`);
+        ? `ファイルは${isVideo ? '3GB' : '100MB'}以下にしてください` 
+        : `File must be under ${isVideo ? '3GB' : '100MB'}`);
       e.target.value = '';
       return;
     }
 
     setUploading(true);
     try {
-      let url: string;
-      
       if (isVideo) {
         toast.info(language === "ja" ? "動画をアップロード中..." : "Uploading video...");
-        url = await uploadVideoToBunny(file);
+        const result = await uploadVideoToBunny(file);
+        setPostMedia({ url: result.url, type: 'video', userVideoId: result.userVideoId });
       } else {
-        url = await uploadImage(file);
+        const url = await uploadImage(file);
+        setPostMedia({ url, type: 'image' });
       }
-
-      setPostMedia({ url, type: isVideo ? 'video' : 'image' });
       toast.success(language === "ja" ? "アップロードしました" : "Uploaded");
     } catch (error) {
       console.error('Error uploading:', error);
@@ -764,30 +793,28 @@ export const OpenMat = () => {
       return;
     }
 
-    // Size limit
+    // Size limit: 100MB for images, 3GB for videos
     const isVideo = file.type.startsWith('video/');
-    const maxSize = isVideo ? 500 * 1024 * 1024 : 50 * 1024 * 1024;
+    const maxSize = isVideo ? 3 * 1024 * 1024 * 1024 : 100 * 1024 * 1024;
     
     if (file.size > maxSize) {
       toast.error(language === "ja" 
-        ? `ファイルは${isVideo ? '500MB' : '50MB'}以下にしてください` 
-        : `File must be under ${isVideo ? '500MB' : '50MB'}`);
+        ? `ファイルは${isVideo ? '3GB' : '100MB'}以下にしてください` 
+        : `File must be under ${isVideo ? '3GB' : '100MB'}`);
       e.target.value = '';
       return;
     }
 
     setReplyUploading(prev => ({ ...prev, [postId]: true }));
     try {
-      let url: string;
-      
       if (isVideo) {
         toast.info(language === "ja" ? "動画をアップロード中..." : "Uploading video...");
-        url = await uploadVideoToBunny(file);
+        const result = await uploadVideoToBunny(file);
+        setReplyMedia(prev => ({ ...prev, [postId]: { url: result.url, type: 'video', userVideoId: result.userVideoId } }));
       } else {
-        url = await uploadImage(file);
+        const url = await uploadImage(file);
+        setReplyMedia(prev => ({ ...prev, [postId]: { url, type: 'image' } }));
       }
-
-      setReplyMedia(prev => ({ ...prev, [postId]: { url, type: isVideo ? 'video' : 'image' } }));
       toast.success(language === "ja" ? "アップロードしました" : "Uploaded");
     } catch (error) {
       console.error('Error uploading:', error);
