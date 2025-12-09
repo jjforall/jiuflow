@@ -74,7 +74,56 @@ serve(async (req) => {
                   return btoa(binary);
                 };
 
-                // Get TUS upload URL from Cloudflare
+                // First, get the file size using HEAD request
+                const headResponse = await fetch(url, { method: 'HEAD' });
+                let fileSize = headResponse.headers.get('content-length');
+                
+                if (!fileSize) {
+                  // If HEAD doesn't work, do a GET and get content-length
+                  const getResponse = await fetch(url);
+                  fileSize = getResponse.headers.get('content-length');
+                  
+                  if (!fileSize) {
+                    // Download to get size
+                    const buffer = await getResponse.arrayBuffer();
+                    fileSize = buffer.byteLength.toString();
+                    console.log(`Got file size from download: ${fileSize}`);
+                    
+                    // Upload directly using simple upload API instead of TUS
+                    const videoName = `${technique.name_ja || technique.id} (${field})`;
+                    const formData = new FormData();
+                    formData.append('file', new Blob([buffer]), `${technique.id}.mp4`);
+                    
+                    const uploadResponse = await fetch(
+                      `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/stream`,
+                      {
+                        method: 'POST',
+                        headers: {
+                          'Authorization': `Bearer ${CLOUDFLARE_STREAM_API_TOKEN}`,
+                        },
+                        body: formData,
+                      }
+                    );
+
+                    if (!uploadResponse.ok) {
+                      const errorText = await uploadResponse.text();
+                      console.error(`Cloudflare upload failed for ${field}:`, errorText);
+                      continue;
+                    }
+
+                    const uploadData = await uploadResponse.json();
+                    const videoUid = uploadData.result.uid;
+                    console.log(`Uploaded to Cloudflare with UID: ${videoUid}`);
+
+                    const playbackUrl = `https://customer-${CLOUDFLARE_ACCOUNT_ID}.cloudflarestream.com/${videoUid}/manifest/video.m3u8`;
+                    updates[field] = playbackUrl;
+                    continue;
+                  }
+                }
+
+                console.log(`File size: ${fileSize} bytes`);
+
+                // Get TUS upload URL from Cloudflare with correct Upload-Length
                 const videoName = `${technique.name_ja || technique.id} (${field})`;
                 const tusResponse = await fetch(
                   `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/stream?direct_user=true`,
@@ -83,7 +132,7 @@ serve(async (req) => {
                     headers: {
                       'Authorization': `Bearer ${CLOUDFLARE_STREAM_API_TOKEN}`,
                       'Tus-Resumable': '1.0.0',
-                      'Upload-Length': '0', // Will be determined during upload
+                      'Upload-Length': fileSize,
                       'Upload-Metadata': `name ${encodeBase64(videoName)}`
                     },
                   }
@@ -99,17 +148,14 @@ serve(async (req) => {
                 const streamMediaId = tusResponse.headers.get('stream-media-id');
                 console.log(`Got TUS upload URL, media ID: ${streamMediaId}`);
 
-                // Download video from Supabase and upload to Cloudflare using streaming
+                // Download video from Supabase
                 const videoResponse = await fetch(url);
                 if (!videoResponse.ok) {
                   console.error(`Failed to download video from Supabase: ${videoResponse.status}`);
                   continue;
                 }
 
-                const contentLength = videoResponse.headers.get('content-length');
-                console.log(`Video content length: ${contentLength}`);
-
-                // Read video as array buffer in chunks to upload
+                // Read video as array buffer
                 const videoBuffer = await videoResponse.arrayBuffer();
                 console.log(`Downloaded video, size: ${videoBuffer.byteLength} bytes`);
 
