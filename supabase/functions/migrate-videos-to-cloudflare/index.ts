@@ -32,12 +32,12 @@ serve(async (req) => {
     let results: { id: string; name: string; success: boolean; error?: string }[] = [];
 
     if (tableType === 'techniques') {
-      // Get techniques with Supabase Storage URLs
+      // Get techniques with Supabase Storage URLs - process only 1 at a time to avoid memory limits
       const { data: techniques, error: fetchError } = await supabase
         .from('techniques')
         .select('id, name_ja, video_url, video_url_ja, video_url_pt')
         .or('video_url.like.%supabase.co/storage%,video_url_ja.like.%supabase.co/storage%,video_url_pt.like.%supabase.co/storage%')
-        .limit(10);
+        .limit(1);
 
       if (fetchError) throw fetchError;
 
@@ -48,7 +48,7 @@ serve(async (req) => {
         );
       }
 
-      console.log(`Found ${techniques.length} techniques to migrate`);
+      console.log(`Found ${techniques.length} technique to migrate`);
 
       for (const technique of techniques) {
         try {
@@ -63,44 +63,62 @@ serve(async (req) => {
               console.log(`Migrating ${field}: ${url}`);
 
               try {
-                // First download the video from Supabase
+                // Get TUS upload URL from Cloudflare
+                const tusResponse = await fetch(
+                  `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/stream?direct_user=true`,
+                  {
+                    method: 'POST',
+                    headers: {
+                      'Authorization': `Bearer ${CLOUDFLARE_STREAM_API_TOKEN}`,
+                      'Tus-Resumable': '1.0.0',
+                      'Upload-Length': '0', // Will be determined during upload
+                      'Upload-Metadata': `name ${btoa(`${technique.name_ja} (${field})`)},requiresignedurls`
+                    },
+                  }
+                );
+
+                if (!tusResponse.ok) {
+                  const errorText = await tusResponse.text();
+                  console.error(`Failed to get TUS upload URL for ${field}:`, errorText);
+                  continue;
+                }
+
+                const tusUploadUrl = tusResponse.headers.get('Location') || tusResponse.headers.get('stream-media-id');
+                const streamMediaId = tusResponse.headers.get('stream-media-id');
+                console.log(`Got TUS upload URL, media ID: ${streamMediaId}`);
+
+                // Download video from Supabase and upload to Cloudflare using streaming
                 const videoResponse = await fetch(url);
                 if (!videoResponse.ok) {
                   console.error(`Failed to download video from Supabase: ${videoResponse.status}`);
                   continue;
                 }
 
-                const videoBlob = await videoResponse.blob();
-                console.log(`Downloaded video, size: ${videoBlob.size} bytes`);
+                const contentLength = videoResponse.headers.get('content-length');
+                console.log(`Video content length: ${contentLength}`);
 
-                // Create FormData for direct upload
-                const formData = new FormData();
-                formData.append('file', videoBlob, `${technique.id}-${field}.mp4`);
-                formData.append('meta', JSON.stringify({
-                  name: `${technique.name_ja} (${field})`,
-                  original_id: technique.id,
-                }));
+                // Read video as array buffer in chunks to upload
+                const videoBuffer = await videoResponse.arrayBuffer();
+                console.log(`Downloaded video, size: ${videoBuffer.byteLength} bytes`);
 
-                // Upload to Cloudflare Stream using direct upload
-                const uploadResponse = await fetch(
-                  `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/stream`,
-                  {
-                    method: 'POST',
-                    headers: {
-                      'Authorization': `Bearer ${CLOUDFLARE_STREAM_API_TOKEN}`,
-                    },
-                    body: formData,
-                  }
-                );
+                // Upload the video using PATCH (TUS protocol)
+                const uploadResponse = await fetch(tusUploadUrl!, {
+                  method: 'PATCH',
+                  headers: {
+                    'Content-Type': 'application/offset+octet-stream',
+                    'Upload-Offset': '0',
+                    'Tus-Resumable': '1.0.0',
+                  },
+                  body: videoBuffer,
+                });
 
                 if (!uploadResponse.ok) {
                   const errorText = await uploadResponse.text();
-                  console.error(`Cloudflare upload failed for ${field}:`, errorText);
+                  console.error(`Cloudflare TUS upload failed for ${field}:`, errorText);
                   continue;
                 }
 
-                const uploadData = await uploadResponse.json();
-                const videoUid = uploadData.result.uid;
+                const videoUid = streamMediaId;
                 console.log(`Uploaded to Cloudflare with UID: ${videoUid}`);
 
                 // Use iframe embed URL format
