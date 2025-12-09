@@ -27,7 +27,6 @@ interface TopViewer {
   user_id: string;
   display_name: string | null;
   avatar_url: string | null;
-  email: string | null;
   total_views: number;
   videos_watched: number;
 }
@@ -134,7 +133,7 @@ const AdminStats = () => {
       // Get all profiles for viewers
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
-        .select('id, display_name, avatar_url, email');
+        .select('id, display_name, avatar_url');
 
       if (profilesError) throw profilesError;
 
@@ -179,7 +178,6 @@ const AdminStats = () => {
           user_id: userId,
           display_name: profile?.display_name || null,
           avatar_url: profile?.avatar_url || null,
-          email: profile?.email || null,
           total_views: stats.total_views,
           videos_watched: stats.videos_watched.size,
         });
@@ -515,12 +513,12 @@ const AdminStats = () => {
                               <Avatar className="h-10 w-10">
                                 <AvatarImage src={viewer.avatar_url || undefined} />
                                 <AvatarFallback>
-                                  {viewer.display_name?.[0] || viewer.email?.[0]?.toUpperCase() || 'U'}
+                                  {viewer.display_name?.[0]?.toUpperCase() || 'U'}
                                 </AvatarFallback>
                               </Avatar>
                               <div className="flex-1 min-w-0">
                                 <p className="font-medium text-sm truncate">
-                                  {hideNumbers ? "***" : (viewer.display_name || viewer.email?.split('@')[0] || 'Unknown')}
+                                  {hideNumbers ? "***" : (viewer.display_name || 'Unknown')}
                                 </p>
                                 <p className="text-xs text-muted-foreground">
                                   {hideNumbers ? "***" : `${viewer.videos_watched} 動画視聴`}

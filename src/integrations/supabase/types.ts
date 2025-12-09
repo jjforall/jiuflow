@@ -287,7 +287,6 @@ export type Database = {
           bio: string | null
           created_at: string
           display_name: string
-          email: string | null
           home_dojo: string | null
           id: string
           organization_id: string | null
@@ -304,7 +303,6 @@ export type Database = {
           bio?: string | null
           created_at?: string
           display_name: string
-          email?: string | null
           home_dojo?: string | null
           id?: string
           organization_id?: string | null
@@ -321,7 +319,6 @@ export type Database = {
           bio?: string | null
           created_at?: string
           display_name?: string
-          email?: string | null
           home_dojo?: string | null
           id?: string
           organization_id?: string | null
@@ -1706,7 +1703,6 @@ export type Database = {
           display_name: string | null
           display_name_reading: string | null
           education: Json | null
-          email: string | null
           favorite_fighters: Json | null
           favorite_techniques: Json | null
           hobbies: Json | null
@@ -1717,7 +1713,6 @@ export type Database = {
           marital_status: string | null
           organization_id: string | null
           social_links: Json | null
-          stripe_customer_id: string | null
           titles: Json | null
           training_locations: Json | null
           updated_at: string
@@ -1734,7 +1729,6 @@ export type Database = {
           display_name?: string | null
           display_name_reading?: string | null
           education?: Json | null
-          email?: string | null
           favorite_fighters?: Json | null
           favorite_techniques?: Json | null
           hobbies?: Json | null
@@ -1745,7 +1739,6 @@ export type Database = {
           marital_status?: string | null
           organization_id?: string | null
           social_links?: Json | null
-          stripe_customer_id?: string | null
           titles?: Json | null
           training_locations?: Json | null
           updated_at?: string
@@ -1762,7 +1755,6 @@ export type Database = {
           display_name?: string | null
           display_name_reading?: string | null
           education?: Json | null
-          email?: string | null
           favorite_fighters?: Json | null
           favorite_techniques?: Json | null
           hobbies?: Json | null
@@ -1773,7 +1765,6 @@ export type Database = {
           marital_status?: string | null
           organization_id?: string | null
           social_links?: Json | null
-          stripe_customer_id?: string | null
           titles?: Json | null
           training_locations?: Json | null
           updated_at?: string
@@ -2173,6 +2164,30 @@ export type Database = {
           source_text?: string
           target_lang?: string
           translated_text?: string
+        }
+        Relationships: []
+      }
+      user_billing: {
+        Row: {
+          created_at: string
+          id: string
+          stripe_customer_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          stripe_customer_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          stripe_customer_id?: string | null
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }

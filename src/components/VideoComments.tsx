@@ -95,15 +95,15 @@ export const VideoComments = ({ videoId, userId }: VideoCommentsProps) => {
         .select("from_user_id, amount, message, created_at")
         .eq("video_id", videoId);
 
-      // Get user emails separately
+      // Get user display names separately
       if (commentsData && commentsData.length > 0) {
         const userIds = [...new Set(commentsData.map(c => c.user_id))];
         const { data: profilesData } = await supabase
           .from("profiles")
-          .select("id, email")
+          .select("id, display_name")
           .in("id", userIds);
 
-        const profilesMap = new Map(profilesData?.map(p => [p.id, p.email]) || []);
+        const profilesMap = new Map(profilesData?.map(p => [p.id, p.display_name]) || []);
 
         const commentsWithEmails = commentsData.map(comment => {
           // Find matching tip by user_id and message content

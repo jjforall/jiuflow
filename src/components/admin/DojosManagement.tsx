@@ -74,7 +74,6 @@ interface DojoMember {
   id: string;
   user_dojo_id: string;
   display_name: string | null;
-  email: string | null;
   avatar_url: string | null;
   relationship_type: string;
   joined_at: string | null;
@@ -365,7 +364,6 @@ export default function DojosManagement() {
           profiles:user_id (
             id,
             display_name,
-            email,
             avatar_url
           )
         `)
@@ -377,7 +375,6 @@ export default function DojosManagement() {
         id: item.profiles?.id || '',
         user_dojo_id: item.id,
         display_name: item.profiles?.display_name,
-        email: item.profiles?.email,
         avatar_url: item.profiles?.avatar_url,
         relationship_type: item.relationship_type,
         joined_at: item.joined_at
@@ -684,8 +681,7 @@ export default function DojosManagement() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>名前</TableHead>
-                      <TableHead>メールアドレス</TableHead>
+                      <TableHead>ユーザー名</TableHead>
                       <TableHead>役割</TableHead>
                       <TableHead>参加日</TableHead>
                     </TableRow>
@@ -694,10 +690,7 @@ export default function DojosManagement() {
                     {viewingMembers.members.map((member) => (
                       <TableRow key={member.user_dojo_id}>
                         <TableCell className="font-medium">
-                          {member.display_name || member.email || '名前なし'}
-                        </TableCell>
-                        <TableCell className="text-sm text-muted-foreground">
-                          {member.email || '-'}
+                          {member.display_name || '名前なし'}
                         </TableCell>
                         <TableCell>
                           <Select

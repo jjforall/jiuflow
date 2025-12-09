@@ -36,7 +36,6 @@ interface EditRequest {
   requester: {
     id: string;
     display_name: string | null;
-    email: string | null;
   };
 }
 
@@ -59,7 +58,7 @@ export const CelebrityEditRequestsManagement = () => {
         .select(`
           *,
           celebrity:celebrities!celebrity_edit_requests_celebrity_id_fkey(id, display_name, avatar_url),
-          requester:profiles!celebrity_edit_requests_requested_by_fkey(id, display_name, email)
+          requester:profiles!celebrity_edit_requests_requested_by_fkey(id, display_name)
         `)
         .order('created_at', { ascending: false });
 
@@ -185,7 +184,7 @@ export const CelebrityEditRequestsManagement = () => {
                           {request.celebrity.display_name}
                         </CardTitle>
                         <p className="text-sm text-muted-foreground">
-                          申請者: {request.requester.display_name || request.requester.email}
+                          申請者: {request.requester.display_name || '不明'}
                         </p>
                         <p className="text-xs text-muted-foreground">
                           {new Date(request.created_at).toLocaleString('ja-JP')}

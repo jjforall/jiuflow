@@ -20,7 +20,6 @@ interface TipRecord {
   from_user: {
     id: string;
     display_name: string | null;
-    email: string | null;
   } | null;
   video: {
     id: string;
@@ -61,7 +60,7 @@ export const TipsManagement = () => {
           const [userResult, videoResult] = await Promise.all([
             supabase
               .from('profiles')
-              .select('id, display_name, email')
+              .select('id, display_name')
               .eq('id', tip.from_user_id)
               .single(),
             supabase
@@ -124,7 +123,7 @@ export const TipsManagement = () => {
                       {format(new Date(tip.created_at), 'yyyy/MM/dd HH:mm')}
                     </TableCell>
                     <TableCell>
-                      {tip.from_user?.display_name || tip.from_user?.email || '不明'}
+                      {tip.from_user?.display_name || '不明'}
                     </TableCell>
                     <TableCell>
                       {tip.video?.title || '削除された動画'}

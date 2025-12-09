@@ -43,8 +43,7 @@ export function BrothersApplicationsManagement() {
           *,
           profiles:user_id (
             display_name,
-            username,
-            email
+            username
           )
         `)
         .order("submitted_at", { ascending: false });
@@ -161,9 +160,6 @@ export function BrothersApplicationsManagement() {
                   <TableCell>
                     <div>
                       <div>{app.profiles?.display_name || app.profiles?.username || "不明"}</div>
-                      <div className="text-xs text-muted-foreground">
-                        {app.profiles?.email}
-                      </div>
                     </div>
                   </TableCell>
                   <TableCell>{app.application_year}年</TableCell>
