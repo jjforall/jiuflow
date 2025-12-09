@@ -113,45 +113,44 @@ export const VideoPlayer = ({ videoUrl, autoPlay = true, thumbnailUrl, onPlay }:
     const isHLS = videoUrl.includes('.m3u8');
 
     if (isHLS && Hls.isSupported()) {
-      // Initialize HLS.js with aggressive buffering for smooth playback
+      // Initialize HLS.js with FAST START optimizations
       const hls = new Hls({
         enableWorker: true,
-        lowLatencyMode: false,
-        // VERY LARGE buffers - prevents stuttering on variable connections
-        backBufferLength: 90, // Keep 90s of played content in memory
-        maxBufferLength: 90, // Buffer 90 seconds ahead
-        maxBufferSize: 200 * 1000 * 1000, // 200MB - large buffer for HD content
-        maxMaxBufferLength: 180, // Up to 3 minutes buffer maximum
-        // Start loading more aggressively
+        lowLatencyMode: true, // Enable low latency for faster start
+        // Smaller initial buffer for FAST START
+        backBufferLength: 30, // Keep 30s of played content
+        maxBufferLength: 30, // Buffer 30s ahead initially
+        maxBufferSize: 60 * 1000 * 1000, // 60MB buffer
+        maxMaxBufferLength: 60, // Max 60s buffer
+        // FAST START - start playing with minimal data
         startFragPrefetch: true,
-        // Fragment loading - very generous for mobile networks
-        fragLoadingTimeOut: 45000, // 45s timeout
-        fragLoadingMaxRetry: 8, // 8 retries
-        fragLoadingRetryDelay: 300, // Quick retry
-        fragLoadingMaxRetryTimeout: 60000, // Max 60s between retries
-        manifestLoadingTimeOut: 20000,
-        manifestLoadingMaxRetry: 6,
-        levelLoadingTimeOut: 20000,
-        levelLoadingMaxRetry: 6,
-        // Auto start loading immediately
-        startLevel: -1, // Auto
+        // Shorter timeouts for faster failure detection
+        fragLoadingTimeOut: 20000, // 20s timeout
+        fragLoadingMaxRetry: 4,
+        fragLoadingRetryDelay: 100, // Very quick retry
+        fragLoadingMaxRetryTimeout: 30000,
+        manifestLoadingTimeOut: 10000, // Fast manifest load
+        manifestLoadingMaxRetry: 3,
+        levelLoadingTimeOut: 10000,
+        levelLoadingMaxRetry: 3,
+        // Start with lowest quality for INSTANT playback
+        startLevel: 0, // Start with lowest quality for fast start
         autoStartLoad: true,
-        // Stall recovery - very aggressive to prevent freezing
-        nudgeMaxRetry: 20, // Many more retries for stall recovery
-        nudgeOffset: 0.1, // Small nudge
-        highBufferWatchdogPeriod: 1, // Check every 1 second
-        // Progressive loading - start playback faster
+        // Stall recovery
+        nudgeMaxRetry: 10,
+        nudgeOffset: 0.1,
+        highBufferWatchdogPeriod: 2,
+        // Progressive loading for faster start
         progressive: true,
-        // ABR settings - prefer stability over quick switching
-        abrEwmaDefaultEstimate: 5000000, // Assume 5Mbps initially
-        abrBandWidthFactor: 0.8, // Be conservative
-        abrBandWidthUpFactor: 0.5, // Be very conservative going up
+        // ABR - quick adaptation
+        abrEwmaDefaultEstimate: 1000000, // Start conservative (1Mbps)
+        abrBandWidthFactor: 0.95, // Upgrade quality faster
+        abrBandWidthUpFactor: 0.7, // Upgrade quality faster
         abrMaxWithRealBitrate: true,
         // Reduce CPU overhead
         enableCEA708Captions: false,
         enableWebVTT: false,
         enableIMSC1: false,
-        // License key for premium features (none needed)
         debug: false,
       });
 
