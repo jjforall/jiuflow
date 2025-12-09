@@ -111,23 +111,34 @@ Deno.serve(async (req) => {
       );
 
       if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Bunny get status error:", errorText);
         throw new Error(`Failed to get video status: ${response.status}`);
       }
 
       const videoData = await response.json();
+      console.log("Video status data:", JSON.stringify(videoData));
       
       // Status: 0 = created, 1 = uploaded, 2 = processing, 3 = transcoding, 4 = finished, 5 = error
       const isReady = videoData.status === 4;
-      const pullZone = videoData.videoLibraryId || BUNNY_LIBRARY_ID;
+      // Also consider status 3 (transcoding) as still processing but progressing
+      const isProcessing = videoData.status === 2 || videoData.status === 3;
+      
+      // Use library ID for embed URL (this is correct format)
+      const embedUrl = `https://iframe.mediadelivery.net/embed/${BUNNY_LIBRARY_ID}/${videoId}`;
+      // For HLS/thumbnail, Bunny uses a specific CDN format
+      const cdnBase = `https://vz-558812.b-cdn.net`;
       
       return new Response(
         JSON.stringify({
           ready: isReady,
           status: videoData.status,
-          playbackUrl: isReady ? `https://iframe.mediadelivery.net/embed/${pullZone}/${videoId}` : null,
-          hlsUrl: isReady ? `https://vz-${pullZone}.b-cdn.net/${videoId}/playlist.m3u8` : null,
-          thumbnailUrl: isReady ? `https://vz-${pullZone}.b-cdn.net/${videoId}/thumbnail.jpg` : null,
-          duration: videoData.length,
+          isProcessing,
+          encodeProgress: videoData.encodeProgress || 0,
+          playbackUrl: isReady ? embedUrl : null,
+          hlsUrl: isReady ? `${cdnBase}/${videoId}/playlist.m3u8` : null,
+          thumbnailUrl: isReady ? `${cdnBase}/${videoId}/thumbnail.jpg` : null,
+          duration: videoData.length || 0,
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );

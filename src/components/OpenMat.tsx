@@ -676,7 +676,7 @@ export const OpenMat = () => {
 
     // 4. Poll for processing status
     let attempts = 0;
-    const maxAttempts = 60; // Increased for larger files
+    const maxAttempts = 120; // 6 minutes for longer videos
     
     while (attempts < maxAttempts) {
       await new Promise(resolve => setTimeout(resolve, 3000));
@@ -689,8 +689,18 @@ export const OpenMat = () => {
       });
 
       if (statusError) {
+        console.error('Status check error:', statusError);
         attempts++;
         continue;
+      }
+
+      console.log('Video status:', statusData);
+      
+      // Show progress if available
+      if (statusData.encodeProgress && statusData.encodeProgress > 0) {
+        toast.info(language === "ja" 
+          ? `動画エンコード中... ${statusData.encodeProgress}%` 
+          : `Encoding video... ${statusData.encodeProgress}%`);
       }
 
       // Status 4 = finished, status 5 = error
@@ -718,7 +728,7 @@ export const OpenMat = () => {
       attempts++;
     }
 
-    throw new Error('Video processing timeout');
+    throw new Error('Video processing timeout - please try with a shorter video');
   };
 
   // Upload image to Supabase storage
