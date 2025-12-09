@@ -1,19 +1,25 @@
 import { useParams, Link } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useAuth } from "@/hooks/useAuth";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { toast } from "sonner";
 import { 
   Building2, MapPin, Users, Globe, ArrowLeft, Calendar, 
-  ExternalLink, Navigation as NavIcon, Trophy
+  ExternalLink, Navigation as NavIcon, Trophy, Camera, Loader2
 } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { ja, enUS, pt } from "date-fns/locale";
+import { useState, useEffect } from "react";
 
 interface Venue {
   id: string;
@@ -61,6 +67,44 @@ const VenueDetailSkeleton = () => (
 const VenueDetail = () => {
   const { id } = useParams<{ id: string }>();
   const { language } = useLanguage();
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+  
+  const [imageDialogOpen, setImageDialogOpen] = useState(false);
+  const [newImageUrl, setNewImageUrl] = useState("");
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  // Check admin status
+  useEffect(() => {
+    const checkAdmin = async () => {
+      if (!user) {
+        setIsAdmin(false);
+        return;
+      }
+      const { data } = await supabase.rpc('has_role', { _user_id: user.id, _role: 'admin' });
+      setIsAdmin(!!data);
+    };
+    checkAdmin();
+  }, [user]);
+
+  const updateImageMutation = useMutation({
+    mutationFn: async (imageUrl: string) => {
+      const { error } = await supabase
+        .from('venues')
+        .update({ image_url: imageUrl || null })
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['venue', id] });
+      setImageDialogOpen(false);
+      setNewImageUrl("");
+      toast.success(language === 'ja' ? '画像を更新しました' : 'Image updated');
+    },
+    onError: () => {
+      toast.error(language === 'ja' ? '更新に失敗しました' : 'Failed to update');
+    },
+  });
 
   const { data: venue, isLoading } = useQuery({
     queryKey: ['venue', id],
@@ -158,7 +202,7 @@ const VenueDetail = () => {
         <div className="max-w-4xl mx-auto space-y-6">
           {/* Hero Image */}
           {venue.image_url && (
-            <div className="relative w-full h-48 sm:h-72 rounded-xl overflow-hidden">
+            <div className="relative w-full h-48 sm:h-72 rounded-xl overflow-hidden group">
               <img 
                 src={venue.image_url} 
                 alt={getName(venue)}
@@ -174,16 +218,34 @@ const VenueDetail = () => {
                   {getName(venue)}
                 </h1>
               </div>
+              {isAdmin && (
+                <button
+                  onClick={() => { setNewImageUrl(venue.image_url || ""); setImageDialogOpen(true); }}
+                  className="absolute top-3 right-3 p-2 rounded-full bg-background/80 hover:bg-background opacity-0 group-hover:opacity-100 transition-opacity"
+                  title={language === 'ja' ? '画像を変更' : 'Change image'}
+                >
+                  <Camera className="h-4 w-4" />
+                </button>
+              )}
             </div>
           )}
 
           {!venue.image_url && (
-            <div className="bg-gradient-to-br from-primary/20 to-primary/5 rounded-xl p-8">
+            <div className="relative bg-gradient-to-br from-primary/20 to-primary/5 rounded-xl p-8 group">
               <Badge variant="secondary" className="mb-2">
                 <Building2 className="h-3 w-3 mr-1" />
                 {language === 'ja' ? '会場' : 'Venue'}
               </Badge>
               <h1 className="text-2xl sm:text-3xl font-bold">{getName(venue)}</h1>
+              {isAdmin && (
+                <button
+                  onClick={() => { setNewImageUrl(""); setImageDialogOpen(true); }}
+                  className="absolute top-3 right-3 p-2 rounded-full bg-background/80 hover:bg-background opacity-0 group-hover:opacity-100 transition-opacity"
+                  title={language === 'ja' ? '画像を追加' : 'Add image'}
+                >
+                  <Camera className="h-4 w-4" />
+                </button>
+              )}
             </div>
           )}
 
@@ -338,6 +400,49 @@ const VenueDetail = () => {
       </main>
       
       <Footer />
+
+      {/* Image Change Dialog */}
+      <Dialog open={imageDialogOpen} onOpenChange={setImageDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {language === 'ja' ? '会場画像を変更' : 'Change Venue Image'}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>{language === 'ja' ? '画像URL' : 'Image URL'}</Label>
+              <Input
+                value={newImageUrl}
+                onChange={(e) => setNewImageUrl(e.target.value)}
+                placeholder="https://..."
+              />
+            </div>
+            {newImageUrl && (
+              <div className="rounded-lg overflow-hidden border">
+                <img
+                  src={newImageUrl}
+                  alt="Preview"
+                  className="w-full h-40 object-cover"
+                  onError={(e) => (e.currentTarget.style.display = 'none')}
+                />
+              </div>
+            )}
+          </div>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setImageDialogOpen(false)}>
+              {language === 'ja' ? 'キャンセル' : 'Cancel'}
+            </Button>
+            <Button
+              onClick={() => updateImageMutation.mutate(newImageUrl)}
+              disabled={updateImageMutation.isPending}
+            >
+              {updateImageMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              {language === 'ja' ? '保存' : 'Save'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
