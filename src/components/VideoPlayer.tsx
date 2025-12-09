@@ -113,41 +113,41 @@ export const VideoPlayer = ({ videoUrl, autoPlay = true, thumbnailUrl, onPlay }:
     const isHLS = videoUrl.includes('.m3u8');
 
     if (isHLS && Hls.isSupported()) {
-      // Initialize HLS.js with FAST START optimizations
+      // Initialize HLS.js with ULTRA FAST START optimizations
       const hls = new Hls({
         enableWorker: true,
-        lowLatencyMode: true, // Enable low latency for faster start
-        // Smaller initial buffer for FAST START
-        backBufferLength: 30, // Keep 30s of played content
-        maxBufferLength: 30, // Buffer 30s ahead initially
-        maxBufferSize: 60 * 1000 * 1000, // 60MB buffer
-        maxMaxBufferLength: 60, // Max 60s buffer
-        // FAST START - start playing with minimal data
+        lowLatencyMode: true,
+        // ULTRA FAST - minimal initial buffer
+        backBufferLength: 10,
+        maxBufferLength: 10, // Start with just 10s buffer
+        maxBufferSize: 30 * 1000 * 1000, // 30MB buffer
+        maxMaxBufferLength: 30,
+        // INSTANT START - prefetch first fragment immediately
         startFragPrefetch: true,
-        // Shorter timeouts for faster failure detection
-        fragLoadingTimeOut: 20000, // 20s timeout
-        fragLoadingMaxRetry: 4,
-        fragLoadingRetryDelay: 100, // Very quick retry
-        fragLoadingMaxRetryTimeout: 30000,
-        manifestLoadingTimeOut: 10000, // Fast manifest load
-        manifestLoadingMaxRetry: 3,
-        levelLoadingTimeOut: 10000,
-        levelLoadingMaxRetry: 3,
+        // Super aggressive timeouts
+        fragLoadingTimeOut: 8000, // 8s timeout
+        fragLoadingMaxRetry: 2,
+        fragLoadingRetryDelay: 50, // 50ms retry
+        fragLoadingMaxRetryTimeout: 10000,
+        manifestLoadingTimeOut: 5000, // 5s manifest timeout
+        manifestLoadingMaxRetry: 2,
+        levelLoadingTimeOut: 5000,
+        levelLoadingMaxRetry: 2,
         // Start with lowest quality for INSTANT playback
-        startLevel: 0, // Start with lowest quality for fast start
+        startLevel: 0,
         autoStartLoad: true,
-        // Stall recovery
-        nudgeMaxRetry: 10,
-        nudgeOffset: 0.1,
-        highBufferWatchdogPeriod: 2,
-        // Progressive loading for faster start
+        // Fast stall recovery
+        nudgeMaxRetry: 5,
+        nudgeOffset: 0.05,
+        highBufferWatchdogPeriod: 1,
+        // Progressive loading
         progressive: true,
-        // ABR - quick adaptation
-        abrEwmaDefaultEstimate: 1000000, // Start conservative (1Mbps)
-        abrBandWidthFactor: 0.95, // Upgrade quality faster
-        abrBandWidthUpFactor: 0.7, // Upgrade quality faster
+        // ABR - aggressive quality upgrade
+        abrEwmaDefaultEstimate: 500000, // Start very conservative (500kbps)
+        abrBandWidthFactor: 0.98, // Quick quality upgrade
+        abrBandWidthUpFactor: 0.8,
         abrMaxWithRealBitrate: true,
-        // Reduce CPU overhead
+        // Disable unused features for speed
         enableCEA708Captions: false,
         enableWebVTT: false,
         enableIMSC1: false,
@@ -162,7 +162,14 @@ export const VideoPlayer = ({ videoUrl, autoPlay = true, thumbnailUrl, onPlay }:
       hls.on(Hls.Events.MANIFEST_PARSED, () => {
         console.log('HLS manifest parsed, qualities available:', hls.levels);
         if (autoPlay) {
-          video.play().catch(e => console.log('Autoplay prevented:', e));
+          // Start muted for guaranteed autoplay, unmute after start
+          video.muted = true;
+          video.play().then(() => {
+            // Unmute after successful play
+            setTimeout(() => {
+              video.muted = false;
+            }, 100);
+          }).catch(e => console.log('Autoplay prevented:', e));
         }
       });
 
@@ -251,18 +258,24 @@ export const VideoPlayer = ({ videoUrl, autoPlay = true, thumbnailUrl, onPlay }:
         }
       };
     } else if (isHLS && video.canPlayType('application/vnd.apple.mpegurl')) {
-      // Native HLS support (Safari) - use auto preload for better buffering
+      // Native HLS support (Safari) - use auto preload
       video.src = videoUrl;
       video.preload = 'auto';
       if (autoPlay) {
-        video.play().catch(e => console.log('Autoplay prevented:', e));
+        video.muted = true;
+        video.play().then(() => {
+          setTimeout(() => { video.muted = false; }, 100);
+        }).catch(e => console.log('Autoplay prevented:', e));
       }
     } else {
-      // Regular video file - use auto preload
+      // Regular video file
       video.src = videoUrl;
       video.preload = 'auto';
       if (autoPlay) {
-        video.play().catch(e => console.log('Autoplay prevented:', e));
+        video.muted = true;
+        video.play().then(() => {
+          setTimeout(() => { video.muted = false; }, 100);
+        }).catch(e => console.log('Autoplay prevented:', e));
       }
     }
 
@@ -452,6 +465,8 @@ export const VideoPlayer = ({ videoUrl, autoPlay = true, thumbnailUrl, onPlay }:
         playsInline
         preload="auto"
         loop
+        muted={autoPlay}
+        autoPlay={autoPlay}
         poster={thumbnailUrl || undefined}
         onContextMenu={(e) => e.preventDefault()}
         disablePictureInPicture
