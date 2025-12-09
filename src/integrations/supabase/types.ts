@@ -1964,6 +1964,7 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          is_public: boolean
           notes: string | null
           status: string
           tournament_id: string
@@ -1974,6 +1975,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          is_public?: boolean
           notes?: string | null
           status?: string
           tournament_id: string
@@ -1984,6 +1986,7 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          is_public?: boolean
           notes?: string | null
           status?: string
           tournament_id?: string
