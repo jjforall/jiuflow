@@ -2950,13 +2950,11 @@ export type Database = {
           favorite_techniques: Json | null
           hobbies: Json | null
           home_dojo: string | null
-          hometown: string | null
           id: string | null
           is_public: boolean | null
           organization_id: string | null
           social_links: Json | null
           titles: Json | null
-          training_locations: Json | null
           username: string | null
         }
         Insert: {
@@ -2971,13 +2969,11 @@ export type Database = {
           favorite_techniques?: Json | null
           hobbies?: Json | null
           home_dojo?: string | null
-          hometown?: string | null
           id?: string | null
           is_public?: boolean | null
           organization_id?: string | null
           social_links?: Json | null
           titles?: Json | null
-          training_locations?: Json | null
           username?: string | null
         }
         Update: {
@@ -2992,13 +2988,11 @@ export type Database = {
           favorite_techniques?: Json | null
           hobbies?: Json | null
           home_dojo?: string | null
-          hometown?: string | null
           id?: string | null
           is_public?: boolean | null
           organization_id?: string | null
           social_links?: Json | null
           titles?: Json | null
-          training_locations?: Json | null
           username?: string | null
         }
         Relationships: [
