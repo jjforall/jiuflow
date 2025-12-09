@@ -430,6 +430,44 @@ const TournamentDetail = () => {
                   className="w-full h-full object-cover"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent" />
+                
+                {/* Participation Status Badge - Top Right */}
+                {user && isParticipating && !isPast && (
+                  <div className="absolute top-3 right-3 z-10">
+                    <Badge 
+                      className={`px-3 py-1.5 text-sm font-semibold shadow-lg ${
+                        participationStatus === 'registered' 
+                          ? 'bg-green-500 text-white hover:bg-green-600' 
+                          : 'bg-amber-500 text-white hover:bg-amber-600'
+                      }`}
+                    >
+                      {participationStatus === 'registered' ? (
+                        <><CheckCircle2 className="h-4 w-4 mr-1.5" />{language === 'ja' ? 'エントリー済み' : 'Registered'}</>
+                      ) : (
+                        <><CircleDashed className="h-4 w-4 mr-1.5" />{language === 'ja' ? 'エントリー予定' : 'Planning'}</>
+                      )}
+                    </Badge>
+                  </div>
+                )}
+              </div>
+            )}
+            
+            {/* Participation Status Badge when no hero image */}
+            {!getVenueImage(tournament) && user && isParticipating && !isPast && (
+              <div className="absolute top-3 right-3 z-10">
+                <Badge 
+                  className={`px-3 py-1.5 text-sm font-semibold shadow-lg ${
+                    participationStatus === 'registered' 
+                      ? 'bg-green-500 text-white hover:bg-green-600' 
+                      : 'bg-amber-500 text-white hover:bg-amber-600'
+                  }`}
+                >
+                  {participationStatus === 'registered' ? (
+                    <><CheckCircle2 className="h-4 w-4 mr-1.5" />{language === 'ja' ? 'エントリー済み' : 'Registered'}</>
+                  ) : (
+                    <><CircleDashed className="h-4 w-4 mr-1.5" />{language === 'ja' ? 'エントリー予定' : 'Planning'}</>
+                  )}
+                </Badge>
               </div>
             )}
             <CardContent className={`${getVenueImage(tournament) ? '-mt-16 relative z-10' : ''} p-4 sm:p-6`}>
