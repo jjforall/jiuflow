@@ -249,12 +249,20 @@ const VenueDetail = () => {
       <Navigation />
       
       <main className="flex-1 container mx-auto px-4 py-6 pt-20 sm:pt-24">
-        <Button variant="ghost" asChild className="mb-4" size="sm">
-          <Link to="/tournaments">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            {language === 'ja' ? '大会一覧へ戻る' : 'Back to Tournaments'}
-          </Link>
-        </Button>
+        <div className="flex items-center gap-2 mb-4">
+          <Button variant="ghost" asChild size="sm">
+            <Link to="/venues">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              {language === 'ja' ? '会場一覧' : 'All Venues'}
+            </Link>
+          </Button>
+          <span className="text-muted-foreground">/</span>
+          <Button variant="ghost" asChild size="sm">
+            <Link to="/tournaments">
+              {language === 'ja' ? '大会一覧' : 'Tournaments'}
+            </Link>
+          </Button>
+        </div>
 
         <div className="max-w-4xl mx-auto space-y-6">
           {/* Hero Image */}
