@@ -62,38 +62,54 @@ serve(async (req) => {
             if (url && url.includes('supabase.co/storage')) {
               console.log(`Migrating ${field}: ${url}`);
 
-              // Upload to Cloudflare Stream
-              const uploadResponse = await fetch(
-                `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/stream/copy`,
-                {
-                  method: 'POST',
-                  headers: {
-                    'Authorization': `Bearer ${CLOUDFLARE_STREAM_API_TOKEN}`,
-                    'Content-Type': 'application/json',
-                  },
-                  body: JSON.stringify({
-                    url: url.split('?')[0], // Remove query params
-                    meta: {
-                      name: `${technique.name_ja} (${field})`,
-                      original_id: technique.id,
-                    },
-                  }),
+              try {
+                // First download the video from Supabase
+                const videoResponse = await fetch(url);
+                if (!videoResponse.ok) {
+                  console.error(`Failed to download video from Supabase: ${videoResponse.status}`);
+                  continue;
                 }
-              );
 
-              if (!uploadResponse.ok) {
-                const errorText = await uploadResponse.text();
-                console.error(`Cloudflare upload failed for ${field}:`, errorText);
+                const videoBlob = await videoResponse.blob();
+                console.log(`Downloaded video, size: ${videoBlob.size} bytes`);
+
+                // Create FormData for direct upload
+                const formData = new FormData();
+                formData.append('file', videoBlob, `${technique.id}-${field}.mp4`);
+                formData.append('meta', JSON.stringify({
+                  name: `${technique.name_ja} (${field})`,
+                  original_id: technique.id,
+                }));
+
+                // Upload to Cloudflare Stream using direct upload
+                const uploadResponse = await fetch(
+                  `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/stream`,
+                  {
+                    method: 'POST',
+                    headers: {
+                      'Authorization': `Bearer ${CLOUDFLARE_STREAM_API_TOKEN}`,
+                    },
+                    body: formData,
+                  }
+                );
+
+                if (!uploadResponse.ok) {
+                  const errorText = await uploadResponse.text();
+                  console.error(`Cloudflare upload failed for ${field}:`, errorText);
+                  continue;
+                }
+
+                const uploadData = await uploadResponse.json();
+                const videoUid = uploadData.result.uid;
+                console.log(`Uploaded to Cloudflare with UID: ${videoUid}`);
+
+                // Use iframe embed URL format
+                const playbackUrl = `https://customer-${CLOUDFLARE_ACCOUNT_ID}.cloudflarestream.com/${videoUid}/manifest/video.m3u8`;
+                updates[field] = playbackUrl;
+              } catch (fieldError) {
+                console.error(`Error processing ${field}:`, fieldError);
                 continue;
               }
-
-              const uploadData = await uploadResponse.json();
-              const videoUid = uploadData.result.uid;
-              console.log(`Uploaded to Cloudflare with UID: ${videoUid}`);
-
-              // Wait for processing (simplified - just get the URL)
-              const playbackUrl = `https://customer-${CLOUDFLARE_ACCOUNT_ID}.cloudflarestream.com/${videoUid}/manifest/video.m3u8`;
-              updates[field] = playbackUrl;
             }
           }
 
@@ -106,6 +122,13 @@ serve(async (req) => {
             if (updateError) throw updateError;
             console.log(`Successfully migrated technique ${technique.id}`);
             results.push({ id: technique.id, name: technique.name_ja, success: true });
+          } else {
+            results.push({ 
+              id: technique.id, 
+              name: technique.name_ja,
+              success: false, 
+              error: 'No fields were migrated' 
+            });
           }
 
         } catch (techError) {
