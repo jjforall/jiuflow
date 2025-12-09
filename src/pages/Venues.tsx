@@ -54,19 +54,20 @@ const countryNames: Record<string, { ja: string; en: string }> = {
   'SG': { ja: 'シンガポール', en: 'Singapore' },
 };
 
-const countryFlags: Record<string, string> = {
-  'JP': '🇯🇵',
-  'US': '🇺🇸',
-  'BR': '🇧🇷',
-  'GB': '🇬🇧',
-  'IT': '🇮🇹',
-  'PT': '🇵🇹',
-  'AE': '🇦🇪',
-  'TW': '🇹🇼',
-  'CN': '🇨🇳',
-  'KR': '🇰🇷',
-  'MY': '🇲🇾',
-  'SG': '🇸🇬',
+// Modern country badge colors
+const countryStyles: Record<string, { bg: string; text: string }> = {
+  'JP': { bg: 'bg-red-500', text: 'text-white' },
+  'US': { bg: 'bg-blue-600', text: 'text-white' },
+  'BR': { bg: 'bg-green-500', text: 'text-yellow-300' },
+  'GB': { bg: 'bg-indigo-600', text: 'text-white' },
+  'IT': { bg: 'bg-emerald-600', text: 'text-white' },
+  'PT': { bg: 'bg-green-600', text: 'text-red-400' },
+  'AE': { bg: 'bg-black', text: 'text-white' },
+  'TW': { bg: 'bg-blue-700', text: 'text-white' },
+  'CN': { bg: 'bg-red-600', text: 'text-yellow-400' },
+  'KR': { bg: 'bg-slate-800', text: 'text-white' },
+  'MY': { bg: 'bg-blue-800', text: 'text-yellow-400' },
+  'SG': { bg: 'bg-red-600', text: 'text-white' },
 };
 
 const Venues = () => {
@@ -349,9 +350,9 @@ const Venues = () => {
                           <Building2 className="h-12 w-12 text-muted-foreground/50" />
                         </div>
                       )}
-                      {/* Country flag */}
-                      <div className="absolute top-2 left-2 text-2xl">
-                        {countryFlags[venue.country] || '🏟️'}
+                      {/* Country badge */}
+                      <div className={`absolute top-2 left-2 px-2 py-0.5 rounded text-xs font-bold tracking-wide ${countryStyles[venue.country]?.bg || 'bg-slate-600'} ${countryStyles[venue.country]?.text || 'text-white'}`}>
+                        {venue.country}
                       </div>
                       {/* Favorite button */}
                       <Button
