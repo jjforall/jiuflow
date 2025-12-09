@@ -66,30 +66,33 @@ export const VideoPlayer = ({ videoUrl, autoPlay = true, thumbnailUrl, onPlay }:
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const bufferingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
-  // Lazy loading: only load video when visible or when user interacts
+  // Get thumbnail for placeholder
   const effectiveThumbnail = thumbnailUrl || getCloudflareStreamThumbnail(videoUrl);
   
-  // Intersection Observer for lazy loading
+  // INSTANT LOAD - no lazy loading delay for autoPlay videos
   useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsVisible(true);
-          // Auto-load if autoPlay is true, otherwise wait for user click
-          if (autoPlay) {
-            setShouldLoad(true);
+    if (autoPlay) {
+      // Load immediately for autoPlay
+      setShouldLoad(true);
+      setIsVisible(true);
+    } else {
+      // Only use intersection observer for non-autoPlay videos
+      const observer = new IntersectionObserver(
+        ([entry]) => {
+          if (entry.isIntersecting) {
+            setIsVisible(true);
+            observer.disconnect();
           }
-          observer.disconnect();
-        }
-      },
-      { rootMargin: '50px' } // Start loading slightly before visible
-    );
+        },
+        { rootMargin: '100px' }
+      );
 
-    if (containerRef.current) {
-      observer.observe(containerRef.current);
+      if (containerRef.current) {
+        observer.observe(containerRef.current);
+      }
+
+      return () => observer.disconnect();
     }
-
-    return () => observer.disconnect();
   }, [autoPlay]);
   
   // Handle manual play trigger
@@ -189,42 +192,44 @@ export const VideoPlayer = ({ videoUrl, autoPlay = true, thumbnailUrl, onPlay }:
       const hls = new Hls({
         enableWorker: true,
         lowLatencyMode: true,
-        // ULTRA-AGGRESSIVE buffer settings - adapt to connection quality
-        maxBufferLength: isSlow ? 3 : (isMobile ? 5 : 15),
-        maxBufferSize: isSlow ? 5 * 1000 * 1000 : (isMobile ? 10 * 1000 * 1000 : 30 * 1000 * 1000),
-        maxMaxBufferLength: isSlow ? 5 : (isMobile ? 10 : 30),
-        backBufferLength: isSlow ? 3 : (isMobile ? 5 : 15),
-        // INSTANT START - lowest quality first
+        // EXTREME settings for instant playback
+        maxBufferLength: isSlow ? 2 : 4,
+        maxBufferSize: isSlow ? 3 * 1000 * 1000 : 8 * 1000 * 1000,
+        maxMaxBufferLength: isSlow ? 3 : 8,
+        backBufferLength: 0, // No back buffer needed
+        // INSTANT START - force lowest quality
         startLevel: 0,
         autoStartLoad: true,
-        // Minimal initial buffer before playback starts
-        maxBufferHole: 0.5,
-        highBufferWatchdogPeriod: 1,
-        // Timeouts based on connection quality
-        fragLoadingTimeOut: isSlow ? 4000 : (isMobile ? 5000 : 10000),
-        fragLoadingMaxRetry: isSlow ? 1 : 2,
-        fragLoadingRetryDelay: 200,
-        manifestLoadingTimeOut: isSlow ? 3000 : 5000,
-        manifestLoadingMaxRetry: 2,
-        levelLoadingTimeOut: isSlow ? 3000 : 5000,
-        levelLoadingMaxRetry: 2,
-        // Start playing immediately
-        maxStarvationDelay: isSlow ? 0.5 : 1,
-        maxLoadingDelay: isSlow ? 0.5 : 1,
-        // ABR based on detected connection
-        abrEwmaDefaultEstimate: isSlow ? 200000 : (isMobile ? 500000 : 2000000),
-        abrBandWidthFactor: isSlow ? 0.5 : 0.7,
-        abrBandWidthUpFactor: isSlow ? 0.2 : 0.4,
+        // Absolute minimum buffer before playback
+        maxBufferHole: 0.3,
+        highBufferWatchdogPeriod: 0.5,
+        // Aggressive timeouts
+        fragLoadingTimeOut: isSlow ? 3000 : 5000,
+        fragLoadingMaxRetry: 1,
+        fragLoadingRetryDelay: 100,
+        manifestLoadingTimeOut: 2000,
+        manifestLoadingMaxRetry: 1,
+        levelLoadingTimeOut: 2000,
+        levelLoadingMaxRetry: 1,
+        // Zero delay start
+        maxStarvationDelay: 0.2,
+        maxLoadingDelay: 0.2,
+        // Conservative ABR - stay low quality longer
+        abrEwmaDefaultEstimate: isSlow ? 100000 : 300000,
+        abrBandWidthFactor: 0.4,
+        abrBandWidthUpFactor: 0.1,
         abrMaxWithRealBitrate: true,
-        // Prefetch for faster subsequent loads
+        // Prefetch
         startFragPrefetch: true,
-        // Disable unused features for faster init
+        // Disable everything unnecessary
         enableCEA708Captions: false,
         enableWebVTT: false,
         enableIMSC1: false,
         debug: false,
-        // Progressive loading for faster initial render
         progressive: true,
+        // Force cap quality to player size
+        capLevelToPlayerSize: true,
+        capLevelOnFPSDrop: true,
       });
 
       hlsRef.current = hls;
