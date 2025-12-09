@@ -67,7 +67,9 @@ const Tournaments = () => {
   const [currentPage, setCurrentPage] = useState(() => parseInt(searchParams.get('page') || '1', 10));
   const [participationDialog, setParticipationDialog] = useState<{ open: boolean; tournamentId: string | null }>({ open: false, tournamentId: null });
   const [cancelDialog, setCancelDialog] = useState<{ open: boolean; tournamentId: string | null }>({ open: false, tournamentId: null });
+  const [planningDialog, setPlanningDialog] = useState<{ open: boolean; tournamentId: string | null; currentIsPublic: boolean }>({ open: false, tournamentId: null, currentIsPublic: true });
   const [isPublicParticipation, setIsPublicParticipation] = useState(true);
+  const [planningIsPublic, setPlanningIsPublic] = useState(true);
 
   // Sync state to URL params
   useEffect(() => {
@@ -144,21 +146,21 @@ const Tournaments = () => {
     gcTime: 10 * 60 * 1000,
   });
 
-  // User's participations with status
+  // User's participations with status and is_public
   const { data: userParticipations } = useQuery({
     queryKey: ['user-tournament-participations', user?.id],
     queryFn: async () => {
       if (!user?.id) return {};
       const { data, error } = await supabase
         .from('tournament_participants')
-        .select('tournament_id, status')
+        .select('tournament_id, status, is_public')
         .eq('user_id', user.id)
         .neq('status', 'canceled');
       
       if (error) throw error;
-      const result: Record<string, string> = {};
+      const result: Record<string, { status: string; is_public: boolean }> = {};
       data?.forEach(p => {
-        result[p.tournament_id] = p.status;
+        result[p.tournament_id] = { status: p.status, is_public: p.is_public ?? true };
       });
       return result;
     },
@@ -209,7 +211,32 @@ const Tournaments = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['user-tournament-participations'] });
       queryClient.invalidateQueries({ queryKey: ['tournament-participant-counts'] });
+      queryClient.invalidateQueries({ queryKey: ['tournament-public-participants'] });
+      setPlanningDialog({ open: false, tournamentId: null, currentIsPublic: true });
       toast.success(language === 'ja' ? '参加予定から削除しました' : 'Removed from your plan');
+    },
+    onError: () => {
+      toast.error(language === 'ja' ? 'エラーが発生しました' : 'An error occurred');
+    }
+  });
+
+  // Update status mutation (for planning -> registered)
+  const updateStatusMutation = useMutation({
+    mutationFn: async ({ tournamentId, status, isPublic }: { tournamentId: string; status: 'registered' | 'planning'; isPublic: boolean }) => {
+      if (!user) throw new Error('Not authenticated');
+      const { error } = await supabase
+        .from('tournament_participants')
+        .update({ status, is_public: isPublic })
+        .eq('tournament_id', tournamentId)
+        .eq('user_id', user.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['user-tournament-participations'] });
+      queryClient.invalidateQueries({ queryKey: ['tournament-public-participants'] });
+      setPlanningDialog({ open: false, tournamentId: null, currentIsPublic: true });
+      setPlanningIsPublic(true);
+      toast.success(language === 'ja' ? 'エントリー済みに変更しました' : 'Updated to registered');
     },
     onError: () => {
       toast.error(language === 'ja' ? 'エラーが発生しました' : 'An error occurred');
@@ -407,9 +434,10 @@ const Tournaments = () => {
     const participantCount = participantCounts?.[tournament.id] || 0;
     const participantAvatars = publicParticipants?.[tournament.id] || [];
     const color = getOrganizerColor(tournament.organizer);
-    const participationStatus = userParticipations?.[tournament.id];
-    const isParticipating = !!participationStatus;
-    const isMutating = joinMutation.isPending || leaveMutation.isPending;
+    const participationData = userParticipations?.[tournament.id];
+    const participationStatus = participationData?.status;
+    const isParticipating = !!participationData;
+    const isMutating = joinMutation.isPending || leaveMutation.isPending || updateStatusMutation.isPending;
     
     // Registration deadline logic
     const deadlineDate = tournament.registration_deadline ? parseISO(tournament.registration_deadline) : null;
@@ -427,7 +455,9 @@ const Tournaments = () => {
         if (participationStatus === 'registered') {
           setCancelDialog({ open: true, tournamentId: tournament.id });
         } else {
-          leaveMutation.mutate(tournament.id);
+          // Planning status - show dialog to upgrade to registered or cancel
+          setPlanningIsPublic(participationData?.is_public ?? true);
+          setPlanningDialog({ open: true, tournamentId: tournament.id, currentIsPublic: participationData?.is_public ?? true });
         }
       } else {
         setParticipationDialog({ open: true, tournamentId: tournament.id });
@@ -1139,6 +1169,88 @@ const Tournaments = () => {
                 {language === 'ja' ? '削除する' : 'Remove'}
               </Button>
             </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Planning Status Update Dialog */}
+      <Dialog 
+        open={planningDialog.open} 
+        onOpenChange={(open) => {
+          setPlanningDialog({ open, tournamentId: open ? planningDialog.tournamentId : null, currentIsPublic: planningDialog.currentIsPublic });
+          if (!open) setPlanningIsPublic(true);
+        }}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CircleDashed className="h-5 w-5 text-amber-500" />
+              {language === 'ja' ? 'エントリー予定' : 'Planning to Enter'}
+            </DialogTitle>
+            <DialogDescription>
+              {language === 'ja' 
+                ? 'この大会にエントリー予定として登録されています。'
+                : 'You are registered as planning to enter this tournament.'}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 pt-2">
+            {/* Public/Private toggle */}
+            <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+              <div className="flex items-center gap-2">
+                {planningIsPublic ? (
+                  <Users className="h-4 w-4 text-primary" />
+                ) : (
+                  <Info className="h-4 w-4 text-muted-foreground" />
+                )}
+                <div>
+                  <p className="text-sm font-medium">
+                    {language === 'ja' ? '参加を公開する' : 'Make participation public'}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {planningIsPublic 
+                      ? (language === 'ja' ? '参加者一覧に表示されます' : 'Visible in participants list')
+                      : (language === 'ja' ? '他のユーザーには表示されません' : 'Hidden from other users')}
+                  </p>
+                </div>
+              </div>
+              <Switch 
+                checked={planningIsPublic} 
+                onCheckedChange={setPlanningIsPublic} 
+              />
+            </div>
+
+            <Button
+              className="w-full justify-start gap-3 h-auto py-3 bg-green-500 hover:bg-green-600"
+              onClick={() => planningDialog.tournamentId && updateStatusMutation.mutate({ 
+                tournamentId: planningDialog.tournamentId, 
+                status: 'registered',
+                isPublic: planningIsPublic 
+              })}
+              disabled={updateStatusMutation.isPending}
+            >
+              <CheckCircle2 className="h-5 w-5" />
+              <div className="text-left">
+                <p className="font-medium">{language === 'ja' ? 'エントリー済みに変更' : 'Mark as Registered'}</p>
+                <p className="text-xs opacity-80">{language === 'ja' ? '公式サイトでエントリー完了した' : 'Completed registration on official site'}</p>
+              </div>
+            </Button>
+            
+            <Button
+              variant="outline"
+              className="w-full justify-start gap-3 h-auto py-3 border-destructive/50 text-destructive hover:bg-destructive/10"
+              onClick={() => {
+                if (planningDialog.tournamentId) {
+                  leaveMutation.mutate(planningDialog.tournamentId);
+                }
+              }}
+              disabled={leaveMutation.isPending}
+            >
+              <UserMinus className="h-5 w-5" />
+              <div className="text-left">
+                <p className="font-medium">{language === 'ja' ? '参加予定をキャンセル' : 'Cancel Participation'}</p>
+                <p className="text-xs opacity-80">{language === 'ja' ? 'この大会に出ない' : 'Not attending this tournament'}</p>
+              </div>
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
