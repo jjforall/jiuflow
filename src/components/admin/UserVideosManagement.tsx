@@ -28,7 +28,7 @@ import {
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { ja } from "date-fns/locale";
-import { Video, Trash2, Eye, EyeOff, Search, BarChart3, ChevronDown } from "lucide-react";
+import { Video, Trash2, Eye, EyeOff, Search, BarChart3, ChevronDown, Cloud, Loader2 } from "lucide-react";
 import {
   Pagination,
   PaginationContent,
@@ -47,7 +47,13 @@ export function UserVideosManagement() {
   const [filterVisibility, setFilterVisibility] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
+  const [migrating, setMigrating] = useState(false);
   const itemsPerPage = 10;
+
+  // Count videos still on Supabase Storage
+  const supabaseStorageVideos = videos.filter(v => 
+    v.video_url?.includes('supabase.co/storage')
+  ).length;
 
   useEffect(() => {
     fetchVideos();
@@ -108,6 +114,42 @@ export function UserVideosManagement() {
     } catch (error) {
       console.error("動画公開設定エラー:", error);
       toast.error("動画の公開設定の変更に失敗しました");
+    }
+  };
+
+  const handleMigrateToCloudflare = async () => {
+    if (!confirm(`${supabaseStorageVideos}本の動画をCloudflare Streamに移行しますか？この処理には時間がかかる場合があります。`)) return;
+    
+    setMigrating(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error("ログインが必要です");
+        return;
+      }
+
+      const response = await supabase.functions.invoke('migrate-videos-to-cloudflare', {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (response.error) {
+        throw new Error(response.error.message);
+      }
+
+      const result = response.data;
+      if (result.success) {
+        toast.success(result.message);
+        fetchVideos();
+      } else {
+        throw new Error(result.error || '移行に失敗しました');
+      }
+    } catch (error) {
+      console.error("移行エラー:", error);
+      toast.error(error instanceof Error ? error.message : "動画の移行に失敗しました");
+    } finally {
+      setMigrating(false);
     }
   };
 
@@ -228,6 +270,43 @@ export function UserVideosManagement() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Cloudflare移行カード */}
+      {supabaseStorageVideos > 0 && (
+        <Card className="border-amber-500/50 bg-amber-500/5">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <Cloud className="w-8 h-8 text-amber-500" />
+                <div>
+                  <p className="font-medium">Cloudflare Stream移行</p>
+                  <p className="text-sm text-muted-foreground">
+                    {supabaseStorageVideos}本の動画がSupabase Storageに残っています
+                  </p>
+                </div>
+              </div>
+              <Button 
+                onClick={handleMigrateToCloudflare}
+                disabled={migrating}
+                variant="outline"
+                className="border-amber-500 text-amber-500 hover:bg-amber-500/10"
+              >
+                {migrating ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    移行中...
+                  </>
+                ) : (
+                  <>
+                    <Cloud className="w-4 h-4 mr-2" />
+                    移行実行
+                  </>
+                )}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardHeader>
