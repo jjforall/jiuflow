@@ -546,6 +546,131 @@ Projetado para formar comunidades ativas com controle de acesso RLS adequado.`,
     icon: <MessageSquare className="w-5 h-5" />
   },
   {
+    id: "rls-security",
+    titleJa: "Row Level Security - データベースセキュリティ設計",
+    titleEn: "Row Level Security - Database Security Design",
+    titlePt: "Row Level Security - Design de Segurança de Banco de Dados",
+    dateJa: "2025年12月",
+    dateEn: "December 2025",
+    datePt: "Dezembro 2025",
+    contentJa: `Supabaseの強力なRow Level Security（RLS）機能を活用し、包括的なセキュリティ設計を実装しました。
+
+■ ロールベースアクセス制御
+• app_role enum型（admin, moderator, user）を定義
+• user_rolesテーブルで権限を管理
+• has_role()関数でSECURITY DEFINERを使用し、無限再帰を回避
+
+■ 主要なRLSポリシー設計
+
+【公開コンテンツ】
+• techniques, celebrities, dojos, tournaments, venues
+→ 誰でも閲覧可能（SELECT: true）
+→ 変更はadminのみ
+
+【ユーザー所有データ】
+• profiles, practice_records, favorite_*
+→ 自分のデータのみ閲覧・編集可能（auth.uid() = user_id）
+
+【課金・PII保護】
+• subscriptions, user_billing
+→ 匿名アクセス完全禁止（false）
+→ マスキング関数でStripe IDや古いメールアドレスを隠蔽
+
+【コミュニティ】
+• community_threads, community_posts
+→ 投稿は認証ユーザーのみ
+→ 削除は作成者またはadminのみ
+
+■ セキュリティ関数
+• get_profiles_masked(): 6ヶ月以上前のPII自動マスキング
+• get_subscriptions_masked(): Stripe ID部分隠蔽
+• log_admin_access(): 管理者アクセスの監査ログ
+
+■ ストレージバケット
+• avatars, music-tracks: パブリック
+• user-videos, message-attachments: プライベート（認証必須）
+
+この設計により、柔軟なアクセス制御と堅牢なセキュリティを両立しています。`,
+    contentEn: `Implemented comprehensive security design using Supabase's powerful Row Level Security (RLS).
+
+■ Role-Based Access Control
+• Defined app_role enum (admin, moderator, user)
+• Manage permissions via user_roles table
+• Use SECURITY DEFINER in has_role() to avoid infinite recursion
+
+■ Key RLS Policy Design
+
+【Public Content】
+• techniques, celebrities, dojos, tournaments, venues
+→ Anyone can view (SELECT: true)
+→ Only admins can modify
+
+【User-Owned Data】
+• profiles, practice_records, favorite_*
+→ Only view/edit own data (auth.uid() = user_id)
+
+【Billing & PII Protection】
+• subscriptions, user_billing
+→ Anonymous access completely blocked (false)
+→ Masking functions hide Stripe IDs and old emails
+
+【Community】
+• community_threads, community_posts
+→ Only authenticated users can post
+→ Only creators or admins can delete
+
+■ Security Functions
+• get_profiles_masked(): Auto-mask PII older than 6 months
+• get_subscriptions_masked(): Partial Stripe ID hiding
+• log_admin_access(): Admin access audit logging
+
+■ Storage Buckets
+• avatars, music-tracks: Public
+• user-videos, message-attachments: Private (auth required)
+
+This design achieves flexible access control with robust security.`,
+    contentPt: `Implementei design de segurança abrangente usando o poderoso Row Level Security (RLS) do Supabase.
+
+■ Controle de Acesso Baseado em Papéis
+• Definido enum app_role (admin, moderator, user)
+• Gerenciar permissões via tabela user_roles
+• Usar SECURITY DEFINER em has_role() para evitar recursão infinita
+
+■ Design de Políticas RLS Principais
+
+【Conteúdo Público】
+• techniques, celebrities, dojos, tournaments, venues
+→ Qualquer um pode visualizar (SELECT: true)
+→ Apenas admins podem modificar
+
+【Dados do Usuário】
+• profiles, practice_records, favorite_*
+→ Apenas visualizar/editar próprios dados (auth.uid() = user_id)
+
+【Cobrança & Proteção de PII】
+• subscriptions, user_billing
+→ Acesso anônimo completamente bloqueado (false)
+→ Funções de mascaramento ocultam IDs Stripe e emails antigos
+
+【Comunidade】
+• community_threads, community_posts
+→ Apenas usuários autenticados podem postar
+→ Apenas criadores ou admins podem deletar
+
+■ Funções de Segurança
+• get_profiles_masked(): Auto-mascarar PII mais antigo que 6 meses
+• get_subscriptions_masked(): Ocultação parcial de ID Stripe
+• log_admin_access(): Log de auditoria de acesso admin
+
+■ Buckets de Armazenamento
+• avatars, music-tracks: Público
+• user-videos, message-attachments: Privado (auth necessário)
+
+Este design alcança controle de acesso flexível com segurança robusta.`,
+    category: "technical",
+    icon: <Shield className="w-5 h-5" />
+  },
+  {
     id: "future-vision",
     titleJa: "今後の展望 - AIジャッジシステム",
     titleEn: "Future Vision - AI Judge System",
