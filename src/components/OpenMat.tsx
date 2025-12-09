@@ -12,11 +12,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 import { ja, enUS, ptBR } from "date-fns/locale";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
 import { 
   MessageCircle, Send, Trash2, Heart, MessageSquare, Image as ImageIcon,
-  Video, MoreHorizontal, RefreshCw, Pencil, X, Check
+  Video, MoreHorizontal, RefreshCw, Pencil, X, Check, Loader2
 } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -36,6 +34,8 @@ interface Post {
   content_en?: string | null;
   content_ja?: string | null;
   content_pt?: string | null;
+  media_url?: string | null;
+  media_type?: string | null;
   created_at: string;
   updated_at: string;
   author?: UserProfile;
@@ -49,6 +49,8 @@ interface Reply {
   post_id: string;
   author_id: string;
   content: string;
+  media_url?: string | null;
+  media_type?: string | null;
   created_at: string;
   author?: UserProfile;
   like_count?: number;
@@ -81,6 +83,10 @@ export const OpenMat = () => {
   const [editingPostId, setEditingPostId] = useState<string | null>(null);
   const [editingReplyId, setEditingReplyId] = useState<string | null>(null);
   const [editContent, setEditContent] = useState("");
+  
+  // New state for single media upload
+  const [postMedia, setPostMedia] = useState<{ url: string; type: 'image' | 'video' } | null>(null);
+  const [replyMedia, setReplyMedia] = useState<Record<string, { url: string; type: 'image' | 'video' } | null>>({});
 
   const getDateLocale = () => {
     if (language === "ja") return ja;
@@ -152,6 +158,8 @@ export const OpenMat = () => {
           content_en,
           content_ja,
           content_pt,
+          media_url,
+          media_type,
           created_at,
           updated_at,
           author:profiles!community_threads_author_id_fkey(id, display_name, avatar_url, username)
@@ -185,6 +193,8 @@ export const OpenMat = () => {
             content_en: thread.content_en,
             content_ja: thread.content_ja,
             content_pt: thread.content_pt,
+            media_url: thread.media_url,
+            media_type: thread.media_type,
             created_at: thread.created_at,
             updated_at: thread.updated_at,
             author: thread.author,
@@ -213,6 +223,8 @@ export const OpenMat = () => {
           thread_id,
           author_id,
           content,
+          media_url,
+          media_type,
           created_at,
           author:profiles!community_posts_author_id_fkey(id, display_name, avatar_url, username)
         `)
@@ -236,6 +248,8 @@ export const OpenMat = () => {
             post_id: reply.thread_id,
             author_id: reply.author_id,
             content: reply.content,
+            media_url: reply.media_url,
+            media_type: reply.media_type,
             created_at: reply.created_at,
             author: reply.author,
             like_count: reactions?.length || 0,
@@ -262,7 +276,7 @@ export const OpenMat = () => {
       toast.error(language === "ja" ? "ログインしてください" : "Please log in");
       return;
     }
-    if (!newPostContent.trim()) {
+    if (!newPostContent.trim() && !postMedia) {
       toast.error(language === "ja" ? "内容を入力してください" : "Please enter content");
       return;
     }
@@ -300,8 +314,10 @@ export const OpenMat = () => {
         .insert({
           category_id: categoryId,
           author_id: user.id,
-          title: newPostContent.trim().slice(0, 100), // Use first 100 chars as title
+          title: newPostContent.trim().slice(0, 100) || 'Media Post',
           content: newPostContent.trim(),
+          media_url: postMedia?.url || null,
+          media_type: postMedia?.type || null,
         })
         .select()
         .single();
@@ -309,18 +325,21 @@ export const OpenMat = () => {
       if (error) throw error;
 
       // Translate in background
-      supabase.functions.invoke('translate-community-content', {
-        body: {
-          type: 'thread',
-          id: data.id,
-          title: newPostContent.trim().slice(0, 100),
-          content: newPostContent.trim(),
-          source_lang: language
-        }
-      }).catch(err => console.error('Translation error:', err));
+      if (newPostContent.trim()) {
+        supabase.functions.invoke('translate-community-content', {
+          body: {
+            type: 'thread',
+            id: data.id,
+            title: newPostContent.trim().slice(0, 100),
+            content: newPostContent.trim(),
+            source_lang: language
+          }
+        }).catch(err => console.error('Translation error:', err));
+      }
 
       toast.success(language === "ja" ? "投稿しました！" : "Posted!");
       setNewPostContent("");
+      setPostMedia(null);
       await loadPosts();
     } catch (error) {
       console.error('Error creating post:', error);
@@ -337,7 +356,9 @@ export const OpenMat = () => {
     }
     
     const content = replyContent[postId]?.trim();
-    if (!content) {
+    const media = replyMedia[postId];
+    
+    if (!content && !media) {
       toast.error(language === "ja" ? "内容を入力してください" : "Please enter content");
       return;
     }
@@ -349,7 +370,9 @@ export const OpenMat = () => {
         .insert({
           thread_id: postId,
           author_id: user.id,
-          content: content,
+          content: content || '',
+          media_url: media?.url || null,
+          media_type: media?.type || null,
         })
         .select()
         .single();
@@ -357,17 +380,20 @@ export const OpenMat = () => {
       if (error) throw error;
 
       // Translate in background
-      supabase.functions.invoke('translate-community-content', {
-        body: {
-          type: 'post',
-          id: data.id,
-          content: content,
-          source_lang: language
-        }
-      }).catch(err => console.error('Translation error:', err));
+      if (content) {
+        supabase.functions.invoke('translate-community-content', {
+          body: {
+            type: 'post',
+            id: data.id,
+            content: content,
+            source_lang: language
+          }
+        }).catch(err => console.error('Translation error:', err));
+      }
 
       toast.success(language === "ja" ? "返信しました" : "Replied!");
       setReplyContent(prev => ({ ...prev, [postId]: "" }));
+      setReplyMedia(prev => ({ ...prev, [postId]: null }));
       await loadReplies(postId);
       
       // Update reply count in posts
@@ -492,8 +518,7 @@ export const OpenMat = () => {
         .from('community_threads')
         .update({ 
           content: editContent.trim(),
-          title: editContent.trim().slice(0, 100),
-          updated_at: new Date().toISOString()
+          title: editContent.trim().slice(0, 100)
         })
         .eq('id', postId);
 
@@ -541,10 +566,7 @@ export const OpenMat = () => {
     try {
       const { error } = await supabase
         .from('community_posts')
-        .update({ 
-          content: editContent.trim(),
-          updated_at: new Date().toISOString()
-        })
+        .update({ content: editContent.trim() })
         .eq('id', replyId);
 
       if (error) throw error;
@@ -580,36 +602,147 @@ export const OpenMat = () => {
     return user?.id === authorId || isAdmin;
   };
 
+  // Upload video to Bunny and save to user_videos
+  const uploadVideoToBunny = async (file: File): Promise<string> => {
+    // 1. Create video in Bunny
+    const { data: createData, error: createError } = await supabase.functions.invoke('upload-to-bunny', {
+      body: {
+        action: 'create-video',
+        title: `OpenMat_${Date.now()}`
+      }
+    });
+
+    if (createError || !createData?.videoId) {
+      throw new Error('Failed to create video on Bunny');
+    }
+
+    const videoId = createData.videoId;
+    const libraryId = createData.libraryId;
+
+    // 2. Get upload URL and API key
+    const { data: uploadData, error: uploadError } = await supabase.functions.invoke('upload-to-bunny', {
+      body: {
+        action: 'get-upload-url',
+        videoId
+      }
+    });
+
+    if (uploadError || !uploadData?.apiKey) {
+      throw new Error('Failed to get upload URL');
+    }
+
+    // 3. Upload to Bunny directly
+    const uploadResponse = await fetch(uploadData.uploadUrl, {
+      method: 'PUT',
+      headers: {
+        'AccessKey': uploadData.apiKey,
+        'Content-Type': 'application/octet-stream',
+      },
+      body: file,
+    });
+
+    if (!uploadResponse.ok) {
+      throw new Error('Failed to upload to Bunny');
+    }
+
+    // 4. Poll for processing status
+    let attempts = 0;
+    const maxAttempts = 30;
+    
+    while (attempts < maxAttempts) {
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      const { data: statusData, error: statusError } = await supabase.functions.invoke('upload-to-bunny', {
+        body: {
+          action: 'get-video-status',
+          videoId
+        }
+      });
+
+      if (statusError) {
+        attempts++;
+        continue;
+      }
+
+      // Status 4 = finished, status 5 = error
+      if (statusData.status === 4 && statusData.playbackUrl) {
+        // Save to user_videos
+        await supabase.from('user_videos').insert({
+          user_id: user!.id,
+          title: `OpenMat Video ${new Date().toLocaleDateString()}`,
+          video_type: 'sparring',
+          video_url: statusData.playbackUrl,
+          thumbnail_url: statusData.thumbnailUrl,
+          visibility: 'public',
+          file_size: file.size,
+        });
+
+        return statusData.playbackUrl;
+      }
+
+      if (statusData.status === 5) {
+        throw new Error('Video processing failed');
+      }
+
+      attempts++;
+    }
+
+    throw new Error('Video processing timeout');
+  };
+
+  // Upload image to Supabase storage
+  const uploadImage = async (file: File): Promise<string> => {
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${user?.id}/${Date.now()}.${fileExt}`;
+    
+    const { error: uploadError } = await supabase.storage
+      .from('community-media')
+      .upload(fileName, file);
+
+    if (uploadError) throw uploadError;
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('community-media')
+      .getPublicUrl(fileName);
+
+    return publicUrl;
+  };
+
   const handleMediaUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 50 * 1024 * 1024) {
-      toast.error(language === "ja" ? "ファイルは50MB以下にしてください" : "File must be under 50MB");
+    // Check if already has media
+    if (postMedia) {
+      toast.error(language === "ja" ? "メディアは1つまでです" : "Only one media allowed");
+      e.target.value = '';
+      return;
+    }
+
+    // Size limit: 50MB for images, 500MB for videos
+    const isVideo = file.type.startsWith('video/');
+    const maxSize = isVideo ? 500 * 1024 * 1024 : 50 * 1024 * 1024;
+    
+    if (file.size > maxSize) {
+      toast.error(language === "ja" 
+        ? `ファイルは${isVideo ? '500MB' : '50MB'}以下にしてください` 
+        : `File must be under ${isVideo ? '500MB' : '50MB'}`);
+      e.target.value = '';
       return;
     }
 
     setUploading(true);
     try {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${user?.id}/${Date.now()}.${fileExt}`;
+      let url: string;
       
-      const { error: uploadError } = await supabase.storage
-        .from('community-media')
-        .upload(fileName, file);
+      if (isVideo) {
+        toast.info(language === "ja" ? "動画をアップロード中..." : "Uploading video...");
+        url = await uploadVideoToBunny(file);
+      } else {
+        url = await uploadImage(file);
+      }
 
-      if (uploadError) throw uploadError;
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('community-media')
-        .getPublicUrl(fileName);
-
-      const isVideo = file.type.startsWith('video/');
-      const markdown = isVideo 
-        ? `\n\n<video src="${publicUrl}" controls style="max-width:100%;border-radius:8px;"></video>\n`
-        : `\n\n![image](${publicUrl})\n`;
-      
-      setNewPostContent(prev => prev + markdown);
+      setPostMedia({ url, type: isVideo ? 'video' : 'image' });
       toast.success(language === "ja" ? "アップロードしました" : "Uploaded");
     } catch (error) {
       console.error('Error uploading:', error);
@@ -624,35 +757,37 @@ export const OpenMat = () => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 50 * 1024 * 1024) {
-      toast.error(language === "ja" ? "ファイルは50MB以下にしてください" : "File must be under 50MB");
+    // Check if already has media
+    if (replyMedia[postId]) {
+      toast.error(language === "ja" ? "メディアは1つまでです" : "Only one media allowed");
+      e.target.value = '';
+      return;
+    }
+
+    // Size limit
+    const isVideo = file.type.startsWith('video/');
+    const maxSize = isVideo ? 500 * 1024 * 1024 : 50 * 1024 * 1024;
+    
+    if (file.size > maxSize) {
+      toast.error(language === "ja" 
+        ? `ファイルは${isVideo ? '500MB' : '50MB'}以下にしてください` 
+        : `File must be under ${isVideo ? '500MB' : '50MB'}`);
+      e.target.value = '';
       return;
     }
 
     setReplyUploading(prev => ({ ...prev, [postId]: true }));
     try {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${user?.id}/${Date.now()}.${fileExt}`;
+      let url: string;
       
-      const { error: uploadError } = await supabase.storage
-        .from('community-media')
-        .upload(fileName, file);
+      if (isVideo) {
+        toast.info(language === "ja" ? "動画をアップロード中..." : "Uploading video...");
+        url = await uploadVideoToBunny(file);
+      } else {
+        url = await uploadImage(file);
+      }
 
-      if (uploadError) throw uploadError;
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('community-media')
-        .getPublicUrl(fileName);
-
-      const isVideo = file.type.startsWith('video/');
-      const markdown = isVideo 
-        ? `\n\n<video src="${publicUrl}" controls style="max-width:100%;border-radius:8px;"></video>\n`
-        : `\n\n![image](${publicUrl})\n`;
-      
-      setReplyContent(prev => ({ 
-        ...prev, 
-        [postId]: (prev[postId] || "") + markdown 
-      }));
+      setReplyMedia(prev => ({ ...prev, [postId]: { url, type: isVideo ? 'video' : 'image' } }));
       toast.success(language === "ja" ? "アップロードしました" : "Uploaded");
     } catch (error) {
       console.error('Error uploading:', error);
@@ -661,6 +796,14 @@ export const OpenMat = () => {
       setReplyUploading(prev => ({ ...prev, [postId]: false }));
       e.target.value = '';
     }
+  };
+
+  const removePostMedia = () => {
+    setPostMedia(null);
+  };
+
+  const removeReplyMedia = (postId: string) => {
+    setReplyMedia(prev => ({ ...prev, [postId]: null }));
   };
 
   const toggleExpand = (postId: string) => {
@@ -686,24 +829,42 @@ export const OpenMat = () => {
     return item.content;
   };
 
-  const renderContent = (content: string) => (
-    <ReactMarkdown 
-      remarkPlugins={[remarkGfm]}
-      components={{
-        a: ({ href, children }) => (
-          <a href={href} target="_blank" rel="noopener noreferrer" className="text-primary underline">
-            {children}
-          </a>
-        ),
-        p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
-        img: ({ src, alt }) => (
-          <img src={src} alt={alt || ''} className="max-w-full rounded-lg my-2" />
-        ),
-      }}
-    >
-      {content}
-    </ReactMarkdown>
-  );
+  const renderMediaContent = (mediaUrl?: string | null, mediaType?: string | null) => {
+    if (!mediaUrl) return null;
+    
+    if (mediaType === 'video') {
+      // Bunny embed URL
+      if (mediaUrl.includes('mediadelivery.net')) {
+        return (
+          <div className="mt-2 rounded-lg overflow-hidden aspect-video bg-black">
+            <iframe
+              src={mediaUrl}
+              className="w-full h-full"
+              allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture"
+              allowFullScreen
+            />
+          </div>
+        );
+      }
+      // HLS video
+      return (
+        <video
+          src={mediaUrl}
+          controls
+          className="mt-2 max-w-full rounded-lg"
+        />
+      );
+    }
+    
+    return (
+      <img 
+        src={mediaUrl} 
+        alt="" 
+        className="mt-2 max-w-full rounded-lg"
+        loading="lazy"
+      />
+    );
+  };
 
   // Subscription Gate
   if (subscriptionLoading) {
@@ -779,6 +940,29 @@ export const OpenMat = () => {
                 onChange={(e) => setNewPostContent(e.target.value)}
                 className="min-h-[80px] resize-none border-0 bg-transparent p-0 focus-visible:ring-0 text-base placeholder:text-muted-foreground/60"
               />
+              
+              {/* Media Preview */}
+              {postMedia && (
+                <div className="relative inline-block">
+                  {postMedia.type === 'image' ? (
+                    <img src={postMedia.url} alt="" className="max-h-32 rounded-lg" />
+                  ) : (
+                    <div className="flex items-center gap-2 p-2 bg-muted rounded-lg">
+                      <Video className="h-5 w-5 text-primary" />
+                      <span className="text-sm">{language === "ja" ? "動画" : "Video"}</span>
+                    </div>
+                  )}
+                  <Button
+                    variant="secondary"
+                    size="icon"
+                    className="absolute -top-2 -right-2 h-6 w-6 rounded-full"
+                    onClick={removePostMedia}
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                </div>
+              )}
+              
               <div className="flex items-center justify-between pt-2 border-t">
                 <div className="flex gap-1">
                   <input
@@ -792,25 +976,33 @@ export const OpenMat = () => {
                     variant="ghost"
                     size="sm"
                     onClick={() => fileInputRef.current?.click()}
-                    disabled={uploading}
+                    disabled={uploading || !!postMedia}
                     className="text-muted-foreground hover:text-primary"
                   >
-                    <ImageIcon className="h-4 w-4" />
+                    {uploading ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <ImageIcon className="h-4 w-4" />
+                    )}
                   </Button>
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => fileInputRef.current?.click()}
-                    disabled={uploading}
+                    disabled={uploading || !!postMedia}
                     className="text-muted-foreground hover:text-primary"
                   >
-                    <Video className="h-4 w-4" />
+                    {uploading ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Video className="h-4 w-4" />
+                    )}
                   </Button>
                 </div>
                 <Button
                   size="sm"
                   onClick={createPost}
-                  disabled={submitting || !newPostContent.trim()}
+                  disabled={submitting || (!newPostContent.trim() && !postMedia)}
                   className="px-4"
                 >
                   {submitting ? (
@@ -973,9 +1165,14 @@ export const OpenMat = () => {
                         </div>
                       </div>
                     ) : (
-                      <div className="mt-2 text-sm whitespace-pre-wrap break-words prose prose-sm dark:prose-invert max-w-none">
-                        {renderContent(getTranslatedContent(post))}
-                      </div>
+                      <>
+                        {post.content && (
+                          <p className="mt-2 text-sm whitespace-pre-wrap break-words">
+                            {getTranslatedContent(post)}
+                          </p>
+                        )}
+                        {renderMediaContent(post.media_url, post.media_type)}
+                      </>
                     )}
 
                     {/* Post Actions */}
@@ -1064,7 +1261,12 @@ export const OpenMat = () => {
                                   </div>
                                 </div>
                               ) : (
-                                <p className="text-sm mt-0.5 break-words">{reply.content}</p>
+                                <>
+                                  {reply.content && (
+                                    <p className="text-sm mt-0.5 break-words">{reply.content}</p>
+                                  )}
+                                  {renderMediaContent(reply.media_url, reply.media_type)}
+                                </>
                               )}
                               <div className="flex items-center gap-2 mt-1">
                                 <Button
@@ -1135,6 +1337,29 @@ export const OpenMat = () => {
                               className="min-h-[60px] resize-none text-sm"
                               rows={2}
                             />
+                            
+                            {/* Reply Media Preview */}
+                            {replyMedia[post.id] && (
+                              <div className="relative inline-block">
+                                {replyMedia[post.id]?.type === 'image' ? (
+                                  <img src={replyMedia[post.id]?.url} alt="" className="max-h-24 rounded-lg" />
+                                ) : (
+                                  <div className="flex items-center gap-2 p-2 bg-muted rounded-lg">
+                                    <Video className="h-4 w-4 text-primary" />
+                                    <span className="text-xs">{language === "ja" ? "動画" : "Video"}</span>
+                                  </div>
+                                )}
+                                <Button
+                                  variant="secondary"
+                                  size="icon"
+                                  className="absolute -top-2 -right-2 h-5 w-5 rounded-full"
+                                  onClick={() => removeReplyMedia(post.id)}
+                                >
+                                  <X className="h-2.5 w-2.5" />
+                                </Button>
+                              </div>
+                            )}
+                            
                             <div className="flex items-center justify-between">
                               <div className="flex gap-1">
                                 <input
@@ -1148,25 +1373,33 @@ export const OpenMat = () => {
                                   variant="ghost"
                                   size="sm"
                                   onClick={() => document.getElementById(`reply-file-${post.id}`)?.click()}
-                                  disabled={replyUploading[post.id]}
+                                  disabled={replyUploading[post.id] || !!replyMedia[post.id]}
                                   className="h-7 px-2 text-muted-foreground hover:text-primary"
                                 >
-                                  <ImageIcon className="h-3.5 w-3.5" />
+                                  {replyUploading[post.id] ? (
+                                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                  ) : (
+                                    <ImageIcon className="h-3.5 w-3.5" />
+                                  )}
                                 </Button>
                                 <Button
                                   variant="ghost"
                                   size="sm"
                                   onClick={() => document.getElementById(`reply-file-${post.id}`)?.click()}
-                                  disabled={replyUploading[post.id]}
+                                  disabled={replyUploading[post.id] || !!replyMedia[post.id]}
                                   className="h-7 px-2 text-muted-foreground hover:text-primary"
                                 >
-                                  <Video className="h-3.5 w-3.5" />
+                                  {replyUploading[post.id] ? (
+                                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                  ) : (
+                                    <Video className="h-3.5 w-3.5" />
+                                  )}
                                 </Button>
                               </div>
                               <Button
                                 size="sm"
                                 onClick={() => createReply(post.id)}
-                                disabled={submitting || !replyContent[post.id]?.trim()}
+                                disabled={submitting || (!replyContent[post.id]?.trim() && !replyMedia[post.id])}
                                 className="h-7"
                               >
                                 <Send className="h-3.5 w-3.5 mr-1" />
