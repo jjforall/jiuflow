@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { VideoPlayer } from "@/components/VideoPlayer";
 
 interface UserProfile {
   id: string;
@@ -870,26 +871,11 @@ export const OpenMat = () => {
     if (!mediaUrl) return null;
     
     if (mediaType === 'video') {
-      // Bunny embed URL
-      if (mediaUrl.includes('mediadelivery.net')) {
-        return (
-          <div className="mt-2 rounded-lg overflow-hidden aspect-video bg-black">
-            <iframe
-              src={mediaUrl}
-              className="w-full h-full"
-              allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture"
-              allowFullScreen
-            />
-          </div>
-        );
-      }
-      // HLS video
+      // Use VideoPlayer for HLS/Bunny videos
       return (
-        <video
-          src={mediaUrl}
-          controls
-          className="mt-2 max-w-full rounded-lg"
-        />
+        <div className="mt-2 rounded-lg overflow-hidden">
+          <VideoPlayer videoUrl={mediaUrl} />
+        </div>
       );
     }
     
