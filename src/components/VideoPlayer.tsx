@@ -113,44 +113,51 @@ export const VideoPlayer = ({ videoUrl, autoPlay = true, thumbnailUrl, onPlay }:
     const isHLS = videoUrl.includes('.m3u8');
 
     if (isHLS && Hls.isSupported()) {
-      // Japan typically has very fast internet - optimize for speed
-      console.log('Initializing HLS.js for fast playback...');
+      // Detect connection type for adaptive configuration
+      const connection = (navigator as any).connection || (navigator as any).mozConnection || (navigator as any).webkitConnection;
+      const effectiveType = connection?.effectiveType || '4g';
+      const isSlow = effectiveType === '2g' || effectiveType === 'slow-2g' || effectiveType === '3g';
       
-      // Initialize HLS.js optimized for fast start & Japanese networks
+      console.log(`Initializing HLS.js - Network: ${effectiveType}, Slow mode: ${isSlow}`);
+      
+      // Adaptive HLS.js config based on network speed
       const hls = new Hls({
         enableWorker: true,
-        lowLatencyMode: true,
-        // Minimal initial buffer for fastest start
-        maxBufferLength: 10, // Only buffer 10 seconds ahead
-        maxBufferSize: 30 * 1000 * 1000, // 30MB buffer
-        maxMaxBufferLength: 30,
-        backBufferLength: 15,
-        // Start immediately with lowest quality for fast initial load
-        startLevel: 0, // Start with lowest quality
+        lowLatencyMode: false, // Disable for better mobile compatibility
+        // Buffer settings - more conservative for mobile
+        maxBufferLength: isSlow ? 20 : 15,
+        maxBufferSize: isSlow ? 20 * 1000 * 1000 : 40 * 1000 * 1000,
+        maxMaxBufferLength: isSlow ? 40 : 60,
+        backBufferLength: 30,
+        // Start with auto quality selection (-1) for adaptive bitrate
+        startLevel: -1, // Auto select based on bandwidth
         autoStartLoad: true,
         startFragPrefetch: true,
-        // Quick timeouts for fast networks
-        fragLoadingTimeOut: 8000,
-        fragLoadingMaxRetry: 3,
-        fragLoadingRetryDelay: 300,
-        manifestLoadingTimeOut: 5000,
-        manifestLoadingMaxRetry: 2,
-        levelLoadingTimeOut: 5000,
-        levelLoadingMaxRetry: 2,
-        // Aggressive ABR for quick quality upgrade
-        abrEwmaDefaultEstimate: 10000000, // Assume 10 Mbps
-        abrEwmaFastLive: 2.0,
-        abrEwmaSlowLive: 5.0,
-        abrEwmaFastVoD: 2.0,
-        abrEwmaSlowVoD: 5.0,
-        abrBandWidthFactor: 0.95, // Use 95% of measured bandwidth
-        abrBandWidthUpFactor: 0.9,
+        // Longer timeouts for mobile networks
+        fragLoadingTimeOut: isSlow ? 30000 : 20000,
+        fragLoadingMaxRetry: 6,
+        fragLoadingRetryDelay: isSlow ? 2000 : 1000,
+        manifestLoadingTimeOut: isSlow ? 20000 : 10000,
+        manifestLoadingMaxRetry: 4,
+        levelLoadingTimeOut: isSlow ? 15000 : 10000,
+        levelLoadingMaxRetry: 4,
+        // Conservative ABR for mobile - assume lower bandwidth initially
+        abrEwmaDefaultEstimate: isSlow ? 500000 : 2000000, // 0.5 Mbps for slow, 2 Mbps for fast
+        abrEwmaFastLive: 3.0,
+        abrEwmaSlowLive: 9.0,
+        abrEwmaFastVoD: 3.0,
+        abrEwmaSlowVoD: 9.0,
+        abrBandWidthFactor: 0.7, // Use only 70% of measured bandwidth (conservative)
+        abrBandWidthUpFactor: 0.5, // Even more conservative for quality upgrades
         abrMaxWithRealBitrate: true,
-        // Stall recovery
-        nudgeMaxRetry: 5,
-        nudgeOffset: 0.2,
+        // Better stall recovery
+        nudgeMaxRetry: 10,
+        nudgeOffset: 0.3,
         progressive: true,
-        // Disable unused features for faster init
+        // Max stall timeout before error
+        maxStarvationDelay: 8,
+        maxLoadingDelay: 8,
+        // Disable unused features
         enableCEA708Captions: false,
         enableWebVTT: false,
         enableIMSC1: false,
