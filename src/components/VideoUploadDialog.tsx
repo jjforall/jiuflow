@@ -105,28 +105,95 @@ export function VideoUploadDialog({ open, onOpenChange, featuredUserId, featured
     setUploadProgress(0);
 
     try {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+      // Step 1: Get upload URL from Cloudflare Stream
+      setUploadProgress(10);
+      const { data: uploadData, error: uploadError } = await supabase.functions.invoke(
+        'upload-to-cloudflare-stream',
+        {
+          body: { action: 'get-upload-url' }
+        }
+      );
+
+      if (uploadError || !uploadData?.uploadUrl) {
+        console.log('Cloudflare Stream not available, falling back to Supabase Storage');
+        // Fallback to Supabase Storage
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+        
+        const { error: storageError } = await supabase.storage
+          .from('user-videos')
+          .upload(fileName, file, {
+            cacheControl: '604800',
+            upsert: false
+          });
+
+        if (storageError) throw storageError;
+
+        setUploadProgress(80);
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('user-videos')
+          .getPublicUrl(fileName);
+
+        setUploadedVideoUrl(publicUrl);
+        setUploadedFileName(fileName);
+        setUploadProgress(100);
+        toast.success("動画のアップロードが完了しました");
+        return;
+      }
+
+      // Step 2: Upload directly to Cloudflare Stream
+      setUploadProgress(20);
+      const cloudflareVideoId = uploadData.videoId;
       
-      const { error: uploadError } = await supabase.storage
-        .from('user-videos')
-        .upload(fileName, file, {
-          cacheControl: '604800',
-          upsert: false
-        });
+      const formData = new FormData();
+      formData.append('file', file);
 
-      if (uploadError) throw uploadError;
+      const cfResponse = await fetch(uploadData.uploadUrl, {
+        method: 'POST',
+        body: formData,
+      });
 
-      setUploadProgress(80);
+      if (!cfResponse.ok) {
+        throw new Error('Failed to upload to Cloudflare Stream');
+      }
 
-      const { data: { publicUrl } } = supabase.storage
-        .from('user-videos')
-        .getPublicUrl(fileName);
+      setUploadProgress(60);
 
-      setUploadedVideoUrl(publicUrl);
-      setUploadedFileName(fileName);
+      // Step 3: Poll for video processing status
+      let attempts = 0;
+      const maxAttempts = 30; // 30 seconds timeout
+      let videoReady = false;
+      let playbackUrl = '';
+
+      while (attempts < maxAttempts && !videoReady) {
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        const { data: statusData } = await supabase.functions.invoke(
+          'upload-to-cloudflare-stream',
+          {
+            body: { action: 'get-video-status', videoId: cloudflareVideoId }
+          }
+        );
+
+        if (statusData?.ready && statusData?.playbackUrl) {
+          videoReady = true;
+          playbackUrl = statusData.playbackUrl;
+        }
+        
+        attempts++;
+        setUploadProgress(60 + Math.min(30, attempts));
+      }
+
+      if (!videoReady || !playbackUrl) {
+        // Video still processing, use HLS URL with video ID
+        playbackUrl = `https://customer-stream.cloudflarestream.com/${cloudflareVideoId}/manifest/video.m3u8`;
+      }
+
+      setUploadedVideoUrl(playbackUrl);
+      setUploadedFileName(cloudflareVideoId);
       setUploadProgress(100);
-      toast.success("動画のアップロードが完了しました");
+      toast.success("動画のアップロードが完了しました（CDN配信）");
     } catch (error) {
       console.error('Upload error:', error);
       toast.error("アップロードに失敗しました");
