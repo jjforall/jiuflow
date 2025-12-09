@@ -105,75 +105,95 @@ export function VideoUploadDialog({ open, onOpenChange, featuredUserId, featured
     setUploadProgress(0);
 
     try {
-      // Get upload URL from Cloudflare Stream
+      // Step 1: Create video in Bunny Stream
       setUploadProgress(10);
-      const { data: uploadData, error: uploadError } = await supabase.functions.invoke(
-        'upload-to-cloudflare-stream',
+      const { data: createData, error: createError } = await supabase.functions.invoke(
+        'upload-to-bunny',
         {
-          body: { action: 'get-upload-url' }
+          body: { action: 'create-video', title: title || `Video_${Date.now()}` }
+        }
+      );
+
+      if (createError || !createData?.videoId) {
+        throw new Error('Bunny.netへの接続に失敗しました');
+      }
+
+      const bunnyVideoId = createData.videoId;
+      const libraryId = createData.libraryId;
+
+      // Step 2: Get upload URL and API key
+      setUploadProgress(20);
+      const { data: uploadData, error: uploadError } = await supabase.functions.invoke(
+        'upload-to-bunny',
+        {
+          body: { action: 'get-upload-url', videoId: bunnyVideoId }
         }
       );
 
       if (uploadError || !uploadData?.uploadUrl) {
-        throw new Error('Cloudflare Streamへの接続に失敗しました');
+        throw new Error('アップロードURLの取得に失敗しました');
       }
 
-      // Step 2: Upload directly to Cloudflare Stream
-      setUploadProgress(20);
-      const cloudflareVideoId = uploadData.videoId;
+      // Step 3: Upload directly to Bunny Stream
+      setUploadProgress(30);
       
-      const formData = new FormData();
-      formData.append('file', file);
-
-      const cfResponse = await fetch(uploadData.uploadUrl, {
-        method: 'POST',
-        body: formData,
+      const uploadResponse = await fetch(uploadData.uploadUrl, {
+        method: 'PUT',
+        headers: {
+          'AccessKey': uploadData.apiKey,
+          'Content-Type': 'application/octet-stream',
+        },
+        body: file,
       });
 
-      if (!cfResponse.ok) {
-        throw new Error('Failed to upload to Cloudflare Stream');
+      if (!uploadResponse.ok) {
+        const errorText = await uploadResponse.text();
+        console.error('Bunny upload error:', errorText);
+        throw new Error('Bunny.netへのアップロードに失敗しました');
       }
 
       setUploadProgress(60);
 
-      // Step 3: Poll for video processing status
+      // Step 4: Poll for video processing status
       let attempts = 0;
-      const maxAttempts = 30; // 30 seconds timeout
+      const maxAttempts = 60; // 60 seconds timeout for processing
       let videoReady = false;
       let playbackUrl = '';
 
       while (attempts < maxAttempts && !videoReady) {
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await new Promise(resolve => setTimeout(resolve, 2000));
         
         const { data: statusData } = await supabase.functions.invoke(
-          'upload-to-cloudflare-stream',
+          'upload-to-bunny',
           {
-            body: { action: 'get-video-status', videoId: cloudflareVideoId }
+            body: { action: 'get-video-status', videoId: bunnyVideoId }
           }
         );
 
-        if (statusData?.ready && statusData?.playbackUrl) {
+        if (statusData?.ready && statusData?.hlsUrl) {
           videoReady = true;
-          playbackUrl = statusData.playbackUrl;
+          playbackUrl = statusData.hlsUrl;
+        } else if (statusData?.status === 5) {
+          // Error status
+          throw new Error('動画の処理中にエラーが発生しました');
         }
         
         attempts++;
-        setUploadProgress(60 + Math.min(30, attempts));
+        setUploadProgress(60 + Math.min(35, Math.floor(attempts * 0.6)));
       }
 
-      if (!videoReady || !playbackUrl) {
-        // Video still processing, use HLS URL with video ID
-        // Note: The account ID will be embedded in the playbackUrl from the edge function
-        playbackUrl = uploadData.playbackUrl || `https://cloudflarestream.com/${cloudflareVideoId}/manifest/video.m3u8`;
+      if (!videoReady) {
+        // Video still processing, use expected HLS URL
+        playbackUrl = `https://vz-${libraryId}.b-cdn.net/${bunnyVideoId}/playlist.m3u8`;
       }
 
       setUploadedVideoUrl(playbackUrl);
-      setUploadedFileName(cloudflareVideoId);
+      setUploadedFileName(bunnyVideoId);
       setUploadProgress(100);
-      toast.success("動画のアップロードが完了しました（CDN配信）");
+      toast.success("動画のアップロードが完了しました（Bunny CDN配信）");
     } catch (error) {
       console.error('Upload error:', error);
-      toast.error("アップロードに失敗しました");
+      toast.error(error instanceof Error ? error.message : "アップロードに失敗しました");
       setVideoFile(null);
     } finally {
       setUploading(false);
