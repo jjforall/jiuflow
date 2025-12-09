@@ -11,6 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import TechniqueFlowchart from "@/components/TechniqueFlowchart";
 import { Badge } from "@/components/ui/badge";
 import { Award, Play, BookOpen, FileText, CheckCircle } from "lucide-react";
+import { SEOHead } from "@/components/SEOHead";
 import murataImage from "@/assets/murata-ryozo-portrait.jpg";
 import kimuraLockImage from "@/assets/kimura-lock-overhead.png";
 
@@ -22,39 +23,31 @@ const Home = () => {
   const homeT = t.home as typeof translations.ja.home; // Type assertion for full home type
   const { images, isLoading, currentIndex, totalImages } = useHeroImages();
 
-  useEffect(() => {
-    const titles = {
-      ja: "jiuflow | 柔術を、体系で学ぶ",
-      en: "jiuflow | Learn Jiu-Jitsu with Clarity",
-      pt: "jiuflow | Aprenda Jiu-Jitsu com Clareza"
-    };
-    
-    const descriptions = {
-      ja: "上面からの4K撮影、体系化された流れ、構造と意図の言語化。安全で、長く、そして強い一生モノの柔術を、あなたに。",
-      en: "4K overhead filming, systematic flows, verbalized structure and intent. Safe, lasting, and strong lifelong Jiu-Jitsu for you.",
-      pt: "Filmagem aérea 4K, fluxos sistemáticos, estrutura e intenção verbalizadas. Jiu-Jitsu seguro, duradouro e forte para toda a vida."
-    };
-    
-    document.title = titles[language] || titles.ja;
-    
-    const metaDescription = document.querySelector('meta[name="description"]');
-    if (metaDescription) {
-      metaDescription.setAttribute('content', descriptions[language] || descriptions.ja);
+  const seoContent = {
+    ja: {
+      title: "jiuflow | 柔術を、体系で学ぶ",
+      description: "上面からの4K撮影、体系化された流れ、構造と意図の言語化。安全で、長く、そして強い一生モノの柔術を、あなたに。"
+    },
+    en: {
+      title: "jiuflow | Learn Jiu-Jitsu with Clarity",
+      description: "4K overhead filming, systematic flows, verbalized structure and intent. Safe, lasting, and strong lifelong Jiu-Jitsu for you."
+    },
+    pt: {
+      title: "jiuflow | Aprenda Jiu-Jitsu com Clareza",
+      description: "Filmagem aérea 4K, fluxos sistemáticos, estrutura e intenção verbalizadas. Jiu-Jitsu seguro, duradouro e forte para toda a vida."
     }
-    
-    const ogTitle = document.querySelector('meta[property="og:title"]');
-    if (ogTitle) {
-      ogTitle.setAttribute('content', titles[language] || titles.ja);
-    }
-    
-    const ogDescription = document.querySelector('meta[property="og:description"]');
-    if (ogDescription) {
-      ogDescription.setAttribute('content', descriptions[language] || descriptions.ja);
-    }
-  }, [language]);
+  };
+
+  const currentSeo = seoContent[language] || seoContent.ja;
 
   return (
     <div className="min-h-screen">
+      <SEOHead
+        title={currentSeo.title}
+        description={currentSeo.description}
+        canonicalUrl="/"
+        keywords={['柔術', 'BJJ', 'ブラジリアン柔術', 'martial arts', '技術動画', '武道']}
+      />
       <Navigation />
       
       <main className="pt-16">

@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
+import { SEOHead } from "@/components/SEOHead";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTranslation } from "@/hooks/useTranslation";
 import { supabase } from "@/integrations/supabase/client";
@@ -68,26 +69,22 @@ const Athletes = () => {
     }
   }, [user]);
 
-  useEffect(() => {
-    const titles = {
-      ja: "有名選手 | jiuflow",
-      en: "Famous Athletes | jiuflow",
-      pt: "Atletas Famosos | jiuflow"
-    };
-    
-    const descriptions = {
-      ja: "世界で活躍するトップブラジリアン柔術選手たち。選手のプロフィール、実績、系譜を確認できます。",
-      en: "Elite Brazilian Jiu-Jitsu athletes from around the world. View profiles, achievements, and lineage.",
-      pt: "Atletas de elite de Jiu-Jitsu Brasileiro do mundo todo. Veja perfis, conquistas e linhagem."
-    };
-    
-    document.title = titles[language] || titles.ja;
-    
-    const metaDescription = document.querySelector('meta[name="description"]');
-    if (metaDescription) {
-      metaDescription.setAttribute('content', descriptions[language] || descriptions.ja);
+  const seoContent = {
+    ja: {
+      title: '有名選手 | jiuflow',
+      description: '世界で活躍するトップブラジリアン柔術選手たち。選手のプロフィール、実績、系譜を確認できます。'
+    },
+    en: {
+      title: 'Famous Athletes | jiuflow',
+      description: 'Elite Brazilian Jiu-Jitsu athletes from around the world. View profiles, achievements, and lineage.'
+    },
+    pt: {
+      title: 'Atletas Famosos | jiuflow',
+      description: 'Atletas de elite de Jiu-Jitsu Brasileiro do mundo todo. Veja perfis, conquistas e linhagem.'
     }
-  }, [language]);
+  };
+
+  const currentSeo = seoContent[language] || seoContent.ja;
 
   const loadCelebrities = async () => {
     setIsLoading(true);
@@ -331,6 +328,12 @@ const Athletes = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEOHead
+        title={currentSeo.title}
+        description={currentSeo.description}
+        canonicalUrl="/athletes"
+        keywords={['柔術', 'BJJ', '選手', 'アスリート', 'ブラジリアン柔術']}
+      />
       <Navigation />
       
       <main className="pt-20 md:pt-28 pb-12 md:pb-16 px-3 md:px-8 lg:px-12">

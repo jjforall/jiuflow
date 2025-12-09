@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
+import { SEOHead, generateDojoStructuredData, generateBreadcrumbStructuredData } from "@/components/SEOHead";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -370,8 +371,39 @@ export default function Dojo() {
   const homeMembers = members.filter(m => m.relationship_type === 'home');
   const trainingMembers = members.filter(m => m.relationship_type === 'training');
 
+  const dojoName = getDojoName(dojo);
+  const dojoDescription = getDojoDescription(dojo) || `${dojoName} - ブラジリアン柔術道場`;
+  const pageUrl = `/dojo/${dojo.slug || dojo.id}`;
+
+  const structuredData = generateDojoStructuredData({
+    name: dojoName,
+    description: dojoDescription,
+    location: dojo.location,
+    logo_url: dojo.logo_url,
+    cover_image_url: dojo.cover_image_url,
+    website: dojo.website,
+    phone: dojo.phone,
+    email: dojo.email,
+    instagram: dojo.instagram,
+    facebook: dojo.facebook,
+  });
+
+  const breadcrumbData = generateBreadcrumbStructuredData([
+    { name: language === 'ja' ? 'ホーム' : 'Home', url: '/' },
+    { name: language === 'ja' ? '道場' : 'Dojos', url: '/dojos' },
+    { name: dojoName, url: pageUrl },
+  ]);
+
   return (
     <div className="min-h-screen flex flex-col">
+      <SEOHead
+        title={`${dojoName} | JiuFlow`}
+        description={dojoDescription}
+        ogImage={dojo.cover_image_url || dojo.logo_url || undefined}
+        canonicalUrl={pageUrl}
+        structuredData={{ "@graph": [structuredData, breadcrumbData] }}
+        keywords={['柔術', 'BJJ', '道場', dojoName, dojo.location || '']}
+      />
       <Navigation />
       <main className="flex-grow pt-20 pb-16">
         <div className="container mx-auto px-4 md:px-6 max-w-6xl">
