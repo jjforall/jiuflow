@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useAuth } from "@/hooks/useAuth";
 import { useFavoriteTechniques } from "@/hooks/useFavoriteTechniques";
+import { prefetchVideo } from "@/hooks/useVideoPrefetch";
 import { Lock, Eye, Target, Trophy, Flame, ArrowLeft, Heart } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { VideoPlayer } from "@/components/VideoPlayer";
@@ -1128,6 +1129,7 @@ const Video = () => {
                         key={video.id}
                         to={`/video/${video.id}`}
                         className="block group"
+                        onMouseEnter={() => prefetchVideo(getTechniqueVideoUrl(video))}
                       >
                          <div className="flex gap-3 hover:bg-muted/50 p-2 rounded-lg transition-colors">
                           <div className="flex-shrink-0 w-40 h-24 relative">
