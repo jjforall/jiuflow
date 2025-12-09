@@ -34,6 +34,9 @@ import { PracticeRecords } from "@/components/PracticeRecords";
 import { WatchHistory } from "@/components/WatchHistory";
 import { GDPRSettings } from "@/components/GDPRSettings";
 import { OuraRingData } from "@/components/OuraRingData";
+import { TodayCondition } from "@/components/TodayCondition";
+import { ConditionTrends } from "@/components/ConditionTrends";
+import { PracticeOuraCorrelation } from "@/components/PracticeOuraCorrelation";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
@@ -2985,6 +2988,13 @@ const MyPage = () => {
               </TabsList>
 
               <TabsContent value="videos" className="mt-4 sm:mt-6">
+                {/* Today's Condition - Oura Integration */}
+                {user && (
+                  <div className="mb-6">
+                    <TodayCondition userId={user.id} language={language} />
+                  </div>
+                )}
+                
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 sm:mb-6 gap-3">
               <div>
                 <div className="flex items-center gap-2 sm:gap-3 mb-1 sm:mb-2">
@@ -3066,6 +3076,13 @@ const MyPage = () => {
               </TabsContent>
 
               <TabsContent value="practice" className="mt-4 sm:mt-6">
+                {/* Condition Trends - Oura Integration */}
+                {user && (
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+                    <ConditionTrends userId={user.id} language={language} />
+                    <PracticeOuraCorrelation userId={user.id} language={language} />
+                  </div>
+                )}
                 <PracticeRecords />
               </TabsContent>
 
