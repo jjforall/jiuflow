@@ -1,88 +1,63 @@
 import { useCallback, useRef } from 'react';
 
-// Cache for prefetched manifests
-const prefetchedUrls = new Set<string>();
-
-// Extract video ID from Cloudflare Stream URL
-const extractVideoId = (url: string): string | null => {
-  const patterns = [
-    /cloudflarestream\.com\/([a-zA-Z0-9]+)/,
-    /videodelivery\.net\/([a-zA-Z0-9]+)/,
-    /watch\.cloudflarestream\.com\/([a-zA-Z0-9]+)/,
-  ];
+// Extract Cloudflare Stream video ID from various URL formats
+const getCloudflareVideoId = (url: string): string | null => {
+  if (!url) return null;
   
-  for (const pattern of patterns) {
-    const match = url.match(pattern);
-    if (match) return match[1];
-  }
+  // Format: https://customer-xxx.cloudflarestream.com/videoId/manifest/video.m3u8
+  const streamMatch = url.match(/cloudflarestream\.com\/([a-zA-Z0-9]+)/);
+  if (streamMatch) return streamMatch[1];
+  
+  // Format: https://videodelivery.net/videoId/...
+  const deliveryMatch = url.match(/videodelivery\.net\/([a-zA-Z0-9]+)/);
+  if (deliveryMatch) return deliveryMatch[1];
+  
   return null;
 };
 
-// Get manifest URL from video ID
-const getManifestUrl = (videoId: string): string => {
-  return `https://customer-${videoId.substring(0, 8)}.cloudflarestream.com/${videoId}/manifest/video.m3u8`;
+// Prefetch video manifest and thumbnail
+export const prefetchVideo = (videoUrl: string) => {
+  const videoId = getCloudflareVideoId(videoUrl);
+  if (!videoId) return;
+
+  // Prefetch the HLS manifest
+  const manifestUrl = `https://customer-h30twz5us03qxnww.cloudflarestream.com/${videoId}/manifest/video.m3u8`;
+  
+  // Use link preload for manifest
+  const existingLink = document.querySelector(`link[href="${manifestUrl}"]`);
+  if (!existingLink) {
+    const link = document.createElement('link');
+    link.rel = 'preload';
+    link.as = 'fetch';
+    link.href = manifestUrl;
+    link.crossOrigin = 'anonymous';
+    document.head.appendChild(link);
+  }
+
+  // Also prefetch the thumbnail
+  const thumbnailUrl = `https://customer-h30twz5us03qxnww.cloudflarestream.com/${videoId}/thumbnails/thumbnail.jpg?time=1s&width=640`;
+  const existingThumb = document.querySelector(`link[href="${thumbnailUrl}"]`);
+  if (!existingThumb) {
+    const thumbLink = document.createElement('link');
+    thumbLink.rel = 'preload';
+    thumbLink.as = 'image';
+    thumbLink.href = thumbnailUrl;
+    document.head.appendChild(thumbLink);
+  }
 };
 
-// Prefetch manifest using link preload
-const prefetchManifest = (videoUrl: string) => {
-  const videoId = extractVideoId(videoUrl);
-  if (!videoId || prefetchedUrls.has(videoId)) return;
-  
-  prefetchedUrls.add(videoId);
-  
-  // Create preload link for manifest
-  const link = document.createElement('link');
-  link.rel = 'prefetch';
-  link.href = `https://videodelivery.net/${videoId}/manifest/video.m3u8`;
-  link.as = 'fetch';
-  link.crossOrigin = 'anonymous';
-  document.head.appendChild(link);
-  
-  // Also prefetch thumbnail
-  const thumbLink = document.createElement('link');
-  thumbLink.rel = 'prefetch';
-  thumbLink.href = `https://videodelivery.net/${videoId}/thumbnails/thumbnail.jpg?time=1s&width=320&height=180`;
-  thumbLink.as = 'image';
-  document.head.appendChild(thumbLink);
-  
-  // Cleanup after 30 seconds
-  setTimeout(() => {
-    link.remove();
-    thumbLink.remove();
-  }, 30000);
-};
-
-// Prefetch video by URL
-export const prefetchVideo = (videoUrl: string | null | undefined) => {
-  if (!videoUrl) return;
-  prefetchManifest(videoUrl);
-};
-
-// Prefetch video by Cloudflare video ID directly
-export const prefetchVideoById = (videoId: string) => {
-  if (prefetchedUrls.has(videoId)) return;
-  prefetchedUrls.add(videoId);
-  
-  const link = document.createElement('link');
-  link.rel = 'prefetch';
-  link.href = `https://videodelivery.net/${videoId}/manifest/video.m3u8`;
-  link.as = 'fetch';
-  link.crossOrigin = 'anonymous';
-  document.head.appendChild(link);
-  
-  setTimeout(() => link.remove(), 30000);
-};
-
-// Hook for video link hover prefetching
 export const useVideoPrefetch = () => {
+  const prefetchedRef = useRef<Set<string>>(new Set());
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   
+  // For desktop hover
   const onMouseEnter = useCallback((videoUrl: string | null | undefined) => {
-    if (!videoUrl) return;
+    if (!videoUrl || prefetchedRef.current.has(videoUrl)) return;
     
     // Delay prefetch slightly to avoid unnecessary fetches on quick mouse movements
     timeoutRef.current = setTimeout(() => {
       prefetchVideo(videoUrl);
+      prefetchedRef.current.add(videoUrl);
     }, 100);
   }, []);
   
@@ -93,7 +68,14 @@ export const useVideoPrefetch = () => {
     }
   }, []);
   
-  return { onMouseEnter, onMouseLeave };
+  // For mobile touch - prefetch immediately on touch start
+  const onTouchStart = useCallback((videoUrl: string | null | undefined) => {
+    if (!videoUrl || prefetchedRef.current.has(videoUrl)) return;
+    prefetchVideo(videoUrl);
+    prefetchedRef.current.add(videoUrl);
+  }, []);
+  
+  return { onMouseEnter, onMouseLeave, onTouchStart };
 };
 
 // Simple wrapper component for video links with prefetch
@@ -106,12 +88,13 @@ export const VideoPrefetchLink = ({
   children: React.ReactNode;
   [key: string]: unknown;
 }) => {
-  const { onMouseEnter, onMouseLeave } = useVideoPrefetch();
+  const { onMouseEnter, onMouseLeave, onTouchStart } = useVideoPrefetch();
   
   return (
     <div 
       onMouseEnter={() => onMouseEnter(videoUrl)}
       onMouseLeave={onMouseLeave}
+      onTouchStart={() => onTouchStart(videoUrl)}
       {...props}
     >
       {children}
