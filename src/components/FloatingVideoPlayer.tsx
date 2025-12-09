@@ -5,6 +5,17 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import Hls from "hls.js";
 
+// Get connection quality for adaptive settings
+const getConnectionQuality = (): 'slow' | 'medium' | 'fast' => {
+  const nav = navigator as Navigator & { connection?: { effectiveType?: string; downlink?: number } };
+  if (nav.connection) {
+    const { effectiveType, downlink } = nav.connection;
+    if (effectiveType === '2g' || effectiveType === 'slow-2g' || (downlink && downlink < 0.5)) return 'slow';
+    if (effectiveType === '3g' || (downlink && downlink < 2)) return 'medium';
+  }
+  return 'fast';
+};
+
 export const FloatingVideoPlayer = () => {
   const { floatingVideo, clearFloatingVideo } = useFloatingVideo();
   const navigate = useNavigate();
@@ -17,26 +28,33 @@ export const FloatingVideoPlayer = () => {
     if (!video || !floatingVideo) return;
 
     const isHLS = floatingVideo.videoUrl.includes('.m3u8');
+    const quality = getConnectionQuality();
 
     if (isHLS && Hls.isSupported()) {
       const hls = new Hls({
         enableWorker: true,
-        lowLatencyMode: false,
-        // Minimal buffer for floating player
-        backBufferLength: 10,
-        maxBufferLength: 10,
-        maxBufferSize: 15 * 1000 * 1000, // 15MB max
-        maxMaxBufferLength: 15,
-        // Start at lowest quality for small player
+        lowLatencyMode: true,
+        // Ultra-minimal buffer for floating player
+        backBufferLength: 5,
+        maxBufferLength: quality === 'slow' ? 3 : 8,
+        maxBufferSize: 10 * 1000 * 1000, // 10MB max
+        maxMaxBufferLength: 10,
+        // Always start at lowest quality for small player
         startLevel: 0,
         capLevelToPlayerSize: true,
         capLevelOnFPSDrop: true,
-        // Conservative bandwidth for background playback
-        abrEwmaDefaultEstimate: 200000,
-        abrBandWidthFactor: 0.7,
+        // Very conservative for floating player
+        abrEwmaDefaultEstimate: quality === 'slow' ? 100000 : 300000,
+        abrBandWidthFactor: 0.6,
+        abrBandWidthUpFactor: 0.3,
+        // Fast timeouts
+        fragLoadingTimeOut: 5000,
+        manifestLoadingTimeOut: 4000,
         // Reduce overhead
         enableCEA708Captions: false,
+        enableWebVTT: false,
         progressive: true,
+        startFragPrefetch: true,
       });
       hlsRef.current = hls;
       hls.loadSource(floatingVideo.videoUrl);
@@ -54,10 +72,12 @@ export const FloatingVideoPlayer = () => {
       };
     } else if (isHLS && video.canPlayType('application/vnd.apple.mpegurl')) {
       video.src = floatingVideo.videoUrl;
+      video.preload = 'metadata';
       video.currentTime = floatingVideo.currentTime;
       video.play().catch(e => console.log('Play prevented:', e));
     } else {
       video.src = floatingVideo.videoUrl;
+      video.preload = 'metadata';
       video.currentTime = floatingVideo.currentTime;
       video.play().catch(e => console.log('Play prevented:', e));
     }
@@ -114,7 +134,7 @@ export const FloatingVideoPlayer = () => {
           controlsList="nodownload"
           className="w-full h-full"
           playsInline
-          preload="auto"
+          preload="metadata"
           poster={floatingVideo.thumbnailUrl || undefined}
           onContextMenu={(e) => e.preventDefault()}
           disablePictureInPicture
