@@ -121,3 +121,6 @@ verify_jwt = true
 
 [functions.upload-to-cloudflare-stream]
 verify_jwt = false
+
+[functions.migrate-videos-to-cloudflare]
+verify_jwt = true
