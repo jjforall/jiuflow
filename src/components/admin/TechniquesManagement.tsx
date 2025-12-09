@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { InputWithSuggestions } from "@/components/ui/input-with-suggestions";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Upload, Trash2, Search, Check, X, Languages, ExternalLink, ChevronDown } from "lucide-react";
+import { Upload, Trash2, Search, Check, X, Languages, ExternalLink, ChevronDown, Cloud, Loader2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   Collapsible,
@@ -84,6 +84,8 @@ export const TechniquesManagement = () => {
   const [previewVideoUrl, setPreviewVideoUrl] = useState<string | null>(null);
   const [showVideoPreview, setShowVideoPreview] = useState(false);
   const [seriesMapping, setSeriesMapping] = useState<Array<{ series_name: string; series_prefix: string }>>([]);
+  const [isMigrating, setIsMigrating] = useState(false);
+  const [supabaseStorageCount, setSupabaseStorageCount] = useState(0);
 
 
   // すべての言語（カウント用）
@@ -144,9 +146,29 @@ export const TechniquesManagement = () => {
       setSeriesMapping(mappings);
       setSeriesNameSuggestions(mappings.map(m => m.series_name));
     };
+
+    const fetchSupabaseStorageCount = async () => {
+      const { data, error } = await supabase
+        .from('techniques')
+        .select('id, video_url, video_url_ja, video_url_pt');
+      
+      if (error) {
+        console.error('Error fetching storage count:', error);
+        return;
+      }
+      
+      let count = 0;
+      data?.forEach(t => {
+        if (t.video_url?.includes('supabase.co/storage')) count++;
+        if (t.video_url_ja?.includes('supabase.co/storage')) count++;
+        if (t.video_url_pt?.includes('supabase.co/storage')) count++;
+      });
+      setSupabaseStorageCount(count);
+    };
     
     fetchCategories();
     fetchSeriesNames();
+    fetchSupabaseStorageCount();
   }, []);
 
   // シリーズ名リストを再取得する関数
@@ -174,6 +196,52 @@ export const TechniquesManagement = () => {
     
     setSeriesMapping(mappings);
     setSeriesNameSuggestions(mappings.map(m => m.series_name));
+  };
+
+  // Cloudflare Streamへの移行
+  const handleMigrateToCloudflare = async () => {
+    if (!confirm(`${supabaseStorageCount}件の動画URLをCloudflare Streamに移行しますか？この処理には時間がかかる場合があります。`)) return;
+    
+    setIsMigrating(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error("ログインが必要です");
+        return;
+      }
+
+      const response = await supabase.functions.invoke('migrate-videos-to-cloudflare', {
+        body: { table: 'techniques' },
+      });
+
+      if (response.error) {
+        throw new Error(response.error.message);
+      }
+
+      const result = response.data;
+      if (result.success) {
+        toast.success(result.message);
+        // Refresh count
+        const { data } = await supabase
+          .from('techniques')
+          .select('id, video_url, video_url_ja, video_url_pt');
+        
+        let count = 0;
+        data?.forEach(t => {
+          if (t.video_url?.includes('supabase.co/storage')) count++;
+          if (t.video_url_ja?.includes('supabase.co/storage')) count++;
+          if (t.video_url_pt?.includes('supabase.co/storage')) count++;
+        });
+        setSupabaseStorageCount(count);
+      } else {
+        throw new Error(result.error || '移行に失敗しました');
+      }
+    } catch (error) {
+      console.error("移行エラー:", error);
+      toast.error(error instanceof Error ? error.message : "動画の移行に失敗しました");
+    } finally {
+      setIsMigrating(false);
+    }
   };
   
   // 次に利用可能なアルファベットを取得
@@ -1356,6 +1424,41 @@ export const TechniquesManagement = () => {
           )}
         </div>
       </div>
+
+      {/* Cloudflare Stream Migration Card */}
+      {supabaseStorageCount > 0 && isAdmin && (
+        <div className="mb-6 p-4 border border-amber-500/50 bg-amber-500/5 rounded-lg">
+          <div className="flex items-center justify-between gap-4 flex-wrap">
+            <div className="flex items-center gap-3">
+              <Cloud className="w-8 h-8 text-amber-500" />
+              <div>
+                <p className="font-medium">Cloudflare Stream移行</p>
+                <p className="text-sm text-muted-foreground">
+                  {supabaseStorageCount}件の動画URLがSupabase Storageに残っています
+                </p>
+              </div>
+            </div>
+            <Button 
+              onClick={handleMigrateToCloudflare}
+              disabled={isMigrating}
+              variant="outline"
+              className="border-amber-500 text-amber-500 hover:bg-amber-500/10"
+            >
+              {isMigrating ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  移行中...
+                </>
+              ) : (
+                <>
+                  <Cloud className="w-4 h-4 mr-2" />
+                  移行実行
+                </>
+              )}
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* Series Mapping Section */}
       {seriesMapping.length > 0 && (

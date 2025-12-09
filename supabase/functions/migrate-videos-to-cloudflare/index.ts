@@ -21,122 +21,160 @@ serve(async (req) => {
       throw new Error('Cloudflare credentials not configured');
     }
 
-    // Use service role for admin access
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    // Get videos that are still on Supabase Storage
-    const { data: videos, error: fetchError } = await supabase
-      .from('user_videos')
-      .select('id, video_url, title')
-      .like('video_url', '%supabase.co/storage%')
-      .limit(10); // Process in batches
+    // Parse request to check table type
+    const body = await req.json().catch(() => ({}));
+    const tableType = body.table || 'techniques'; // Default to techniques
 
-    if (fetchError) {
-      throw fetchError;
-    }
+    console.log(`Starting migration for table: ${tableType}`);
 
-    if (!videos || videos.length === 0) {
-      return new Response(
-        JSON.stringify({ success: true, message: 'No videos to migrate', migrated: 0 }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
+    let results: { id: string; name: string; success: boolean; error?: string }[] = [];
 
-    console.log(`Found ${videos.length} videos to migrate`);
+    if (tableType === 'techniques') {
+      // Get techniques with Supabase Storage URLs
+      const { data: techniques, error: fetchError } = await supabase
+        .from('techniques')
+        .select('id, name_ja, video_url, video_url_ja, video_url_pt')
+        .or('video_url.like.%supabase.co/storage%,video_url_ja.like.%supabase.co/storage%,video_url_pt.like.%supabase.co/storage%')
+        .limit(10);
 
-    const results: { id: string; success: boolean; error?: string }[] = [];
+      if (fetchError) throw fetchError;
 
-    for (const video of videos) {
-      try {
-        console.log(`Migrating video: ${video.id} - ${video.title}`);
-
-        // Upload video to Cloudflare Stream using URL fetch
-        const uploadResponse = await fetch(
-          `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/stream/copy`,
-          {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${CLOUDFLARE_STREAM_API_TOKEN}`,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              url: video.video_url,
-              meta: {
-                name: video.title || 'Untitled',
-                original_id: video.id,
-              },
-            }),
-          }
+      if (!techniques || techniques.length === 0) {
+        return new Response(
+          JSON.stringify({ success: true, message: 'No techniques to migrate', migrated: 0 }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
+      }
 
-        if (!uploadResponse.ok) {
-          const errorText = await uploadResponse.text();
-          throw new Error(`Cloudflare upload failed: ${errorText}`);
+      console.log(`Found ${techniques.length} techniques to migrate`);
+
+      for (const technique of techniques) {
+        try {
+          console.log(`Migrating technique: ${technique.id} - ${technique.name_ja}`);
+
+          const updates: Record<string, string> = {};
+          const urlFields = ['video_url', 'video_url_ja', 'video_url_pt'] as const;
+
+          for (const field of urlFields) {
+            const url = technique[field];
+            if (url && url.includes('supabase.co/storage')) {
+              console.log(`Migrating ${field}: ${url}`);
+
+              // Upload to Cloudflare Stream
+              const uploadResponse = await fetch(
+                `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/stream/copy`,
+                {
+                  method: 'POST',
+                  headers: {
+                    'Authorization': `Bearer ${CLOUDFLARE_STREAM_API_TOKEN}`,
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({
+                    url: url.split('?')[0], // Remove query params
+                    meta: {
+                      name: `${technique.name_ja} (${field})`,
+                      original_id: technique.id,
+                    },
+                  }),
+                }
+              );
+
+              if (!uploadResponse.ok) {
+                const errorText = await uploadResponse.text();
+                console.error(`Cloudflare upload failed for ${field}:`, errorText);
+                continue;
+              }
+
+              const uploadData = await uploadResponse.json();
+              const videoUid = uploadData.result.uid;
+              console.log(`Uploaded to Cloudflare with UID: ${videoUid}`);
+
+              // Wait for processing (simplified - just get the URL)
+              const playbackUrl = `https://customer-${CLOUDFLARE_ACCOUNT_ID}.cloudflarestream.com/${videoUid}/manifest/video.m3u8`;
+              updates[field] = playbackUrl;
+            }
+          }
+
+          if (Object.keys(updates).length > 0) {
+            const { error: updateError } = await supabase
+              .from('techniques')
+              .update(updates)
+              .eq('id', technique.id);
+
+            if (updateError) throw updateError;
+            console.log(`Successfully migrated technique ${technique.id}`);
+            results.push({ id: technique.id, name: technique.name_ja, success: true });
+          }
+
+        } catch (techError) {
+          console.error(`Failed to migrate technique ${technique.id}:`, techError);
+          results.push({ 
+            id: technique.id, 
+            name: technique.name_ja,
+            success: false, 
+            error: techError instanceof Error ? techError.message : 'Unknown error' 
+          });
         }
+      }
+    } else if (tableType === 'user_videos') {
+      // Original user_videos migration logic
+      const { data: videos, error: fetchError } = await supabase
+        .from('user_videos')
+        .select('id, video_url, title')
+        .like('video_url', '%supabase.co/storage%')
+        .limit(10);
 
-        const uploadData = await uploadResponse.json();
-        const videoUid = uploadData.result.uid;
+      if (fetchError) throw fetchError;
 
-        console.log(`Video uploaded to Cloudflare with UID: ${videoUid}`);
+      if (!videos || videos.length === 0) {
+        return new Response(
+          JSON.stringify({ success: true, message: 'No user videos to migrate', migrated: 0 }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
 
-        // Poll for processing completion (max 60 seconds)
-        let attempts = 0;
-        let isReady = false;
-        let playbackUrl = '';
-
-        while (attempts < 30 && !isReady) {
-          await new Promise(resolve => setTimeout(resolve, 2000));
-          
-          const statusResponse = await fetch(
-            `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/stream/${videoUid}`,
+      for (const video of videos) {
+        try {
+          const uploadResponse = await fetch(
+            `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/stream/copy`,
             {
+              method: 'POST',
               headers: {
                 'Authorization': `Bearer ${CLOUDFLARE_STREAM_API_TOKEN}`,
+                'Content-Type': 'application/json',
               },
+              body: JSON.stringify({
+                url: video.video_url,
+                meta: { name: video.title || 'Untitled', original_id: video.id },
+              }),
             }
           );
 
-          if (statusResponse.ok) {
-            const statusData = await statusResponse.json();
-            const status = statusData.result?.status?.state;
-            
-            if (status === 'ready') {
-              isReady = true;
-              playbackUrl = statusData.result?.playback?.hls || 
-                           `https://customer-${CLOUDFLARE_ACCOUNT_ID}.cloudflarestream.com/${videoUid}/manifest/video.m3u8`;
-            } else if (status === 'error') {
-              throw new Error('Video processing failed on Cloudflare');
-            }
+          if (!uploadResponse.ok) {
+            const errorText = await uploadResponse.text();
+            throw new Error(`Cloudflare upload failed: ${errorText}`);
           }
-          
-          attempts++;
+
+          const uploadData = await uploadResponse.json();
+          const videoUid = uploadData.result.uid;
+          const playbackUrl = `https://customer-${CLOUDFLARE_ACCOUNT_ID}.cloudflarestream.com/${videoUid}/manifest/video.m3u8`;
+
+          await supabase
+            .from('user_videos')
+            .update({ video_url: playbackUrl })
+            .eq('id', video.id);
+
+          results.push({ id: video.id, name: video.title, success: true });
+        } catch (videoError) {
+          results.push({ 
+            id: video.id, 
+            name: video.title,
+            success: false, 
+            error: videoError instanceof Error ? videoError.message : 'Unknown error' 
+          });
         }
-
-        if (!isReady) {
-          // Even if not ready, we can still use the URL - it will work once processing completes
-          playbackUrl = `https://customer-${CLOUDFLARE_ACCOUNT_ID}.cloudflarestream.com/${videoUid}/manifest/video.m3u8`;
-        }
-
-        // Update database with new URL
-        const { error: updateError } = await supabase
-          .from('user_videos')
-          .update({ video_url: playbackUrl })
-          .eq('id', video.id);
-
-        if (updateError) {
-          throw updateError;
-        }
-
-        console.log(`Successfully migrated video ${video.id}`);
-        results.push({ id: video.id, success: true });
-
-      } catch (videoError) {
-        console.error(`Failed to migrate video ${video.id}:`, videoError);
-        results.push({ 
-          id: video.id, 
-          success: false, 
-          error: videoError instanceof Error ? videoError.message : 'Unknown error' 
-        });
       }
     }
 
