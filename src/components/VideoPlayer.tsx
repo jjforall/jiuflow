@@ -59,11 +59,13 @@ export const VideoPlayer = ({ videoUrl, autoPlay = true, thumbnailUrl, onPlay }:
   const [hasStarted, setHasStarted] = useState(false);
   const [showSkipIndicator, setShowSkipIndicator] = useState<'forward' | 'backward' | null>(null);
   const [showQualityMenu, setShowQualityMenu] = useState(false);
+  const [showQualityLabel, setShowQualityLabel] = useState(true);
   const [isVisible, setIsVisible] = useState(false);
   const [shouldLoad, setShouldLoad] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const lastTapRef = useRef<{ time: number; side: 'left' | 'right' } | null>(null);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const qualityLabelTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const bufferingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   // Get thumbnail for placeholder
@@ -257,6 +259,15 @@ export const VideoPlayer = ({ videoUrl, autoPlay = true, thumbnailUrl, onPlay }:
         const qualityLabel = level ? `${level.height}p` : 'auto';
         console.log(`Quality changed to: ${qualityLabel}`);
         setQuality(qualityLabel);
+        
+        // Show quality label for 5 seconds on quality change
+        setShowQualityLabel(true);
+        if (qualityLabelTimeoutRef.current) {
+          clearTimeout(qualityLabelTimeoutRef.current);
+        }
+        qualityLabelTimeoutRef.current = setTimeout(() => {
+          setShowQualityLabel(false);
+        }, 5000);
       });
       
       // Buffer state logging for debugging
@@ -329,6 +340,9 @@ export const VideoPlayer = ({ videoUrl, autoPlay = true, thumbnailUrl, onPlay }:
         }
         if (bufferingTimeoutRef.current) {
           clearTimeout(bufferingTimeoutRef.current);
+        }
+        if (qualityLabelTimeoutRef.current) {
+          clearTimeout(qualityLabelTimeoutRef.current);
         }
         if (hlsRef.current) {
           hlsRef.current.destroy();
@@ -590,16 +604,18 @@ export const VideoPlayer = ({ videoUrl, autoPlay = true, thumbnailUrl, onPlay }:
             <DropdownMenuTrigger asChild>
               <Button
                 variant="secondary"
-                size="sm"
-                className="h-9 px-3 bg-background/90 backdrop-blur-sm border border-border hover:bg-background/95 gap-2"
+                size="icon"
+                className={`bg-background/90 backdrop-blur-sm border border-border hover:bg-background/95 transition-all duration-300 ${showQualityLabel ? 'w-auto px-3 gap-2' : 'w-9'}`}
               >
-                <Settings className="h-4 w-4" />
-                <span className="text-xs font-medium">
-                  {quality === 'auto' 
-                    ? (language === "ja" ? "自動" : language === "pt" ? "Auto" : "Auto")
-                    : quality
-                  }
-                </span>
+                <Settings className="h-4 w-4 flex-shrink-0" />
+                {showQualityLabel && (
+                  <span className="text-xs font-medium animate-in fade-in duration-200">
+                    {quality === 'auto' 
+                      ? (language === "ja" ? "自動" : language === "pt" ? "Auto" : "Auto")
+                      : quality
+                    }
+                  </span>
+                )}
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="min-w-[150px]">
