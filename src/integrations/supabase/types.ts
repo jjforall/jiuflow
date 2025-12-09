@@ -636,6 +636,8 @@ export type Database = {
           content_zh: string | null
           created_at: string
           id: string
+          media_type: string | null
+          media_url: string | null
           thread_id: string
           updated_at: string
         }
@@ -656,6 +658,8 @@ export type Database = {
           content_zh?: string | null
           created_at?: string
           id?: string
+          media_type?: string | null
+          media_url?: string | null
           thread_id: string
           updated_at?: string
         }
@@ -676,6 +680,8 @@ export type Database = {
           content_zh?: string | null
           created_at?: string
           id?: string
+          media_type?: string | null
+          media_url?: string | null
           thread_id?: string
           updated_at?: string
         }
@@ -798,6 +804,8 @@ export type Database = {
           created_at: string
           id: string
           is_pinned: boolean | null
+          media_type: string | null
+          media_url: string | null
           title: string
           title_ar: string | null
           title_de: string | null
@@ -833,6 +841,8 @@ export type Database = {
           created_at?: string
           id?: string
           is_pinned?: boolean | null
+          media_type?: string | null
+          media_url?: string | null
           title: string
           title_ar?: string | null
           title_de?: string | null
@@ -868,6 +878,8 @@ export type Database = {
           created_at?: string
           id?: string
           is_pinned?: boolean | null
+          media_type?: string | null
+          media_url?: string | null
           title?: string
           title_ar?: string | null
           title_de?: string | null
