@@ -597,15 +597,17 @@ export const VideoPlayer = ({ videoUrl, autoPlay = true, thumbnailUrl, onPlay }:
         </video>
       )}
       
-      {/* Quality selector - positioned at bottom right inside player controls area */}
+      {/* Quality selector button */}
       {hlsRef.current && hlsRef.current.levels.length > 1 && (
-        <div className="absolute bottom-12 right-3 z-30">
+        <div className="absolute top-4 right-4 z-30">
           <DropdownMenu open={showQualityMenu} onOpenChange={setShowQualityMenu}>
             <DropdownMenuTrigger asChild>
-              <button
-                className={`flex items-center justify-center bg-black/60 hover:bg-black/80 text-white rounded transition-all duration-300 h-7 ${showQualityLabel ? 'px-2 gap-1.5' : 'w-7'}`}
+              <Button
+                variant="secondary"
+                size="icon"
+                className={`bg-background/90 backdrop-blur-sm border border-border hover:bg-background/95 transition-all duration-300 ${showQualityLabel ? 'w-auto px-3 gap-2' : 'w-9'}`}
               >
-                <Settings className="h-3.5 w-3.5 flex-shrink-0" />
+                <Settings className="h-4 w-4 flex-shrink-0" />
                 {showQualityLabel && (
                   <span className="text-xs font-medium animate-in fade-in duration-200">
                     {quality === 'auto' 
@@ -614,14 +616,14 @@ export const VideoPlayer = ({ videoUrl, autoPlay = true, thumbnailUrl, onPlay }:
                     }
                   </span>
                 )}
-              </button>
+              </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="min-w-[120px] bg-black/90 border-white/20">
+            <DropdownMenuContent align="end" className="min-w-[150px]">
               <DropdownMenuItem
                 onClick={() => changeQuality(-1)}
-                className={`text-white hover:bg-white/20 ${quality === 'auto' ? 'bg-white/10 font-semibold' : ''}`}
+                className={quality === 'auto' ? 'bg-primary/10 font-semibold' : ''}
               >
-                <span className="flex items-center justify-between w-full text-sm">
+                <span className="flex items-center justify-between w-full">
                   {language === "ja" ? "自動" : language === "pt" ? "Auto" : "Auto"}
                   {quality === 'auto' && <span className="ml-2">✓</span>}
                 </span>
@@ -630,9 +632,9 @@ export const VideoPlayer = ({ videoUrl, autoPlay = true, thumbnailUrl, onPlay }:
                 <DropdownMenuItem
                   key={index}
                   onClick={() => changeQuality(index)}
-                  className={`text-white hover:bg-white/20 ${quality === `${level.height}p` ? 'bg-white/10 font-semibold' : ''}`}
+                  className={quality === `${level.height}p` ? 'bg-primary/10 font-semibold' : ''}
                 >
-                  <span className="flex items-center justify-between w-full text-sm">
+                  <span className="flex items-center justify-between w-full">
                     {level.height}p
                     {quality === `${level.height}p` && <span className="ml-2">✓</span>}
                   </span>
