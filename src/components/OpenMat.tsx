@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -76,7 +76,6 @@ export const OpenMat = () => {
   const [uploading, setUploading] = useState(false);
   const [replyUploading, setReplyUploading] = useState<Record<string, boolean>>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const replyFileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
   const [refreshing, setRefreshing] = useState(false);
   const [myProfile, setMyProfile] = useState<UserProfile | null>(null);
   const [editingPostId, setEditingPostId] = useState<string | null>(null);
@@ -1140,7 +1139,7 @@ export const OpenMat = () => {
                               <div className="flex gap-1">
                                 <input
                                   type="file"
-                                  ref={(el) => { replyFileInputRefs.current[post.id] = el; }}
+                                  id={`reply-file-${post.id}`}
                                   onChange={(e) => handleReplyMediaUpload(post.id, e)}
                                   accept="image/*,video/*"
                                   className="hidden"
@@ -1148,7 +1147,7 @@ export const OpenMat = () => {
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  onClick={() => replyFileInputRefs.current[post.id]?.click()}
+                                  onClick={() => document.getElementById(`reply-file-${post.id}`)?.click()}
                                   disabled={replyUploading[post.id]}
                                   className="h-7 px-2 text-muted-foreground hover:text-primary"
                                 >
@@ -1157,7 +1156,7 @@ export const OpenMat = () => {
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  onClick={() => replyFileInputRefs.current[post.id]?.click()}
+                                  onClick={() => document.getElementById(`reply-file-${post.id}`)?.click()}
                                   disabled={replyUploading[post.id]}
                                   className="h-7 px-2 text-muted-foreground hover:text-primary"
                                 >
