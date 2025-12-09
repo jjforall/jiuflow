@@ -18,6 +18,23 @@ interface VideoPlayerProps {
   onPlay?: () => void;
 }
 
+// Get Cloudflare Stream thumbnail URL for placeholder
+const getCloudflareStreamThumbnail = (videoUrl: string, time = 1): string | null => {
+  const patterns = [
+    /cloudflarestream\.com\/([a-zA-Z0-9]+)/,
+    /videodelivery\.net\/([a-zA-Z0-9]+)/,
+    /watch\.cloudflarestream\.com\/([a-zA-Z0-9]+)/,
+  ];
+  
+  for (const pattern of patterns) {
+    const match = videoUrl.match(pattern);
+    if (match) {
+      return `https://videodelivery.net/${match[1]}/thumbnails/thumbnail.jpg?time=${time}s&width=640&height=360`;
+    }
+  }
+  return null;
+};
+
 export const VideoPlayer = ({ videoUrl, autoPlay = true, thumbnailUrl, onPlay }: VideoPlayerProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const hlsRef = useRef<Hls | null>(null);
@@ -29,12 +46,48 @@ export const VideoPlayer = ({ videoUrl, autoPlay = true, thumbnailUrl, onPlay }:
   const [hasStarted, setHasStarted] = useState(false);
   const [showSkipIndicator, setShowSkipIndicator] = useState<'forward' | 'backward' | null>(null);
   const [showQualityMenu, setShowQualityMenu] = useState(false);
+  const [isVisible, setIsVisible] = useState(false);
+  const [shouldLoad, setShouldLoad] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const lastTapRef = useRef<{ time: number; side: 'left' | 'right' } | null>(null);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const bufferingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // Lazy loading: only load video when visible or when user interacts
+  const effectiveThumbnail = thumbnailUrl || getCloudflareStreamThumbnail(videoUrl);
+  
+  // Intersection Observer for lazy loading
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+          // Auto-load if autoPlay is true, otherwise wait for user click
+          if (autoPlay) {
+            setShouldLoad(true);
+          }
+          observer.disconnect();
+        }
+      },
+      { rootMargin: '50px' } // Start loading slightly before visible
+    );
+
+    if (containerRef.current) {
+      observer.observe(containerRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, [autoPlay]);
+  
+  // Handle manual play trigger
+  const handlePlayClick = useCallback(() => {
+    setShouldLoad(true);
+  }, []);
 
   useEffect(() => {
+    // Don't load video until visible and shouldLoad is true
+    if (!shouldLoad) return;
+    
     const video = videoRef.current;
     if (!video) return;
 
@@ -292,7 +345,7 @@ export const VideoPlayer = ({ videoUrl, autoPlay = true, thumbnailUrl, onPlay }:
         clearTimeout(bufferingTimeoutRef.current);
       }
     };
-  }, [videoUrl, autoPlay, language, onPlay]);
+  }, [videoUrl, autoPlay, language, onPlay, shouldLoad]);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -413,9 +466,36 @@ export const VideoPlayer = ({ videoUrl, autoPlay = true, thumbnailUrl, onPlay }:
   }, []);
 
   return (
-    <div ref={containerRef} className="relative bg-black">
+    <div ref={containerRef} className="relative bg-black aspect-video">
+      {/* Skeleton placeholder before visible */}
+      {!isVisible && (
+        <div className="absolute inset-0 bg-muted animate-pulse" />
+      )}
+      
+      {/* Lazy load placeholder - show thumbnail with play button until video loads */}
+      {!shouldLoad && isVisible && (
+        <div 
+          className="absolute inset-0 flex items-center justify-center cursor-pointer z-20"
+          onClick={handlePlayClick}
+        >
+          {effectiveThumbnail && (
+            <img 
+              src={effectiveThumbnail} 
+              alt="Video thumbnail"
+              className="absolute inset-0 w-full h-full object-cover"
+              loading="lazy"
+            />
+          )}
+          <div className="relative z-10 bg-black/40 rounded-full p-4 hover:bg-black/60 transition-colors">
+            <svg className="w-12 h-12 text-white" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M8 5v14l11-7z"/>
+            </svg>
+          </div>
+        </div>
+      )}
+      
       {/* Initial loading indicator */}
-      {isLoading && !hasStarted && (
+      {shouldLoad && isLoading && !hasStarted && (
         <div className="absolute inset-0 flex items-center justify-center bg-black/80 z-10 pointer-events-none">
           <div className="flex flex-col items-center gap-3">
             <Loader2 className="w-8 h-8 text-primary animate-spin" />
@@ -454,23 +534,26 @@ export const VideoPlayer = ({ videoUrl, autoPlay = true, thumbnailUrl, onPlay }:
         </div>
       )}
       
-      <video
-        ref={videoRef}
-        controls
-        controlsList="nodownload"
-        className="w-full h-full"
-        playsInline
-        preload="metadata"
-        loop
-        muted={autoPlay}
-        autoPlay={autoPlay}
-        poster={thumbnailUrl || undefined}
-        onContextMenu={(e) => e.preventDefault()}
-        disablePictureInPicture
-        webkit-playsinline="true"
-      >
-        Your browser does not support the video tag.
-      </video>
+      {/* Only render video when shouldLoad is true */}
+      {shouldLoad && (
+        <video
+          ref={videoRef}
+          controls
+          controlsList="nodownload"
+          className="w-full h-full"
+          playsInline
+          preload="metadata"
+          loop
+          muted={autoPlay}
+          autoPlay={autoPlay}
+          poster={effectiveThumbnail || undefined}
+          onContextMenu={(e) => e.preventDefault()}
+          disablePictureInPicture
+          webkit-playsinline="true"
+        >
+          Your browser does not support the video tag.
+        </video>
+      )}
       
       {/* Quality selector button */}
       {hlsRef.current && hlsRef.current.levels.length > 1 && (
