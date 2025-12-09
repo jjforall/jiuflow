@@ -350,14 +350,14 @@ const Venues = () => {
                         </div>
                       )}
                       {/* Country flag */}
-                      <div className="absolute top-2 right-2 text-2xl">
+                      <div className="absolute top-2 left-2 text-2xl">
                         {countryFlags[venue.country] || '🏟️'}
                       </div>
                       {/* Favorite button */}
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="absolute top-2 left-2 h-8 w-8 bg-background/80 backdrop-blur-sm hover:bg-background"
+                        className="absolute top-2 right-2 h-8 w-8 bg-background/80 backdrop-blur-sm hover:bg-background"
                         onClick={(e) => toggleFavorite(e, venue.id)}
                       >
                         <Heart 
