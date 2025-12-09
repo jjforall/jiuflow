@@ -36,13 +36,50 @@ async function getOAuthToken(clientId: string, clientSecret: string): Promise<st
   return data.access_token;
 }
 
+async function uploadToCloudflare(
+  videoUrl: string,
+  videoName: string,
+  accountId: string,
+  apiToken: string
+): Promise<string> {
+  console.log(`Uploading translated video to Cloudflare: ${videoName}`);
+  
+  const copyResponse = await fetch(
+    `https://api.cloudflare.com/client/v4/accounts/${accountId}/stream/copy`,
+    {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        url: videoUrl,
+        meta: { name: videoName },
+      }),
+    }
+  );
+
+  if (!copyResponse.ok) {
+    const errorText = await copyResponse.text();
+    console.error("Cloudflare copy failed:", errorText);
+    throw new Error(`Cloudflare upload failed: ${errorText}`);
+  }
+
+  const copyData = await copyResponse.json();
+  const videoUid = copyData.result.uid;
+  console.log(`Cloudflare is copying video, UID: ${videoUid}`);
+
+  // Return HLS manifest URL
+  return `https://customer-${accountId}.cloudflarestream.com/${videoUid}/manifest/video.m3u8`;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { projectId } = await req.json();
+    const { projectId, techniqueId, targetLanguage } = await req.json();
 
     if (!projectId) {
       return new Response(
@@ -53,6 +90,10 @@ serve(async (req) => {
 
     const RASK_AI_CLIENT_ID = Deno.env.get("RASK_AI_CLIENT_ID");
     const RASK_AI_CLIENT_SECRET = Deno.env.get("RASK_AI_CLIENT_SECRET");
+    const CLOUDFLARE_ACCOUNT_ID = Deno.env.get("CLOUDFLARE_ACCOUNT_ID");
+    const CLOUDFLARE_STREAM_API_TOKEN = Deno.env.get("CLOUDFLARE_STREAM_API_TOKEN");
+    const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     
     if (!RASK_AI_CLIENT_ID || !RASK_AI_CLIENT_SECRET) {
       return new Response(
@@ -66,7 +107,7 @@ serve(async (req) => {
     // Get OAuth2 access token
     const accessToken = await getOAuthToken(RASK_AI_CLIENT_ID, RASK_AI_CLIENT_SECRET);
 
-    // Get project status (正しいエンドポイント)
+    // Get project status
     const statusRes = await fetch(`https://api.rask.ai/v2/projects/${projectId}`, {
       method: "GET",
       headers: {
@@ -89,19 +130,73 @@ serve(async (req) => {
     console.log("Project progress:", projectData.progress);
     console.log("Full project data:", JSON.stringify(projectData, null, 2));
 
-    // statusフィールドを確認（merging_doneも完了とみなす）
+    // Check if completed
     const isCompleted = projectData.status === "completed" || 
                        projectData.status === "done" || 
                        projectData.status === "merging_done";
     
-    // 翻訳済み動画URLを取得（複数の可能性があるフィールド名をチェック）
-    const videoUrl = isCompleted 
+    // Get translated video URL
+    let videoUrl = isCompleted 
       ? (projectData.translated_video || projectData.output_url || projectData.video_url)
       : null;
     
     const progress = projectData.progress || (isCompleted ? 100 : 0);
     
     console.log("Video URL extracted:", videoUrl);
+
+    // If completed and we have a video URL, upload to Cloudflare
+    if (isCompleted && videoUrl && techniqueId && targetLanguage) {
+      if (!CLOUDFLARE_ACCOUNT_ID || !CLOUDFLARE_STREAM_API_TOKEN) {
+        console.error("Cloudflare credentials not configured");
+      } else {
+        try {
+          const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+          
+          // Get technique name for video title
+          const { data: technique } = await supabase
+            .from('techniques')
+            .select('name_ja')
+            .eq('id', techniqueId)
+            .single();
+
+          const videoName = `${technique?.name_ja || techniqueId} (${targetLanguage})`;
+          
+          // Upload to Cloudflare Stream
+          const cloudflareUrl = await uploadToCloudflare(
+            videoUrl,
+            videoName,
+            CLOUDFLARE_ACCOUNT_ID,
+            CLOUDFLARE_STREAM_API_TOKEN
+          );
+          
+          console.log(`Cloudflare URL: ${cloudflareUrl}`);
+
+          // Determine which field to update based on target language
+          const fieldMap: Record<string, string> = {
+            ja: 'video_url_ja',
+            en: 'video_url',
+            pt: 'video_url_pt',
+          };
+          const updateField = fieldMap[targetLanguage] || `video_url_${targetLanguage}`;
+
+          // Update technique with Cloudflare URL
+          const { error: updateError } = await supabase
+            .from('techniques')
+            .update({ [updateField]: cloudflareUrl })
+            .eq('id', techniqueId);
+
+          if (updateError) {
+            console.error("Failed to update technique:", updateError);
+          } else {
+            console.log(`Updated technique ${techniqueId} ${updateField} with Cloudflare URL`);
+            videoUrl = cloudflareUrl; // Return the Cloudflare URL
+          }
+        } catch (cloudflareError) {
+          console.error("Cloudflare upload error:", cloudflareError);
+          // Continue with original URL if Cloudflare upload fails
+        }
+      }
+    }
 
     return new Response(
       JSON.stringify({
