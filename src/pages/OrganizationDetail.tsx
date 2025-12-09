@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useLanguage } from "@/contexts/LanguageContext";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
+import { SEOHead } from "@/components/SEOHead";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -176,8 +177,21 @@ const OrganizationDetail = () => {
   const countries = [...new Set(tournaments?.map(t => t.country) || [])];
   const majorTournaments = tournaments?.filter(t => t.category === 'major' || t.category === 'international').length || 0;
 
+  const seoTitle = language === 'ja' 
+    ? `${getName(organization)} | 柔術大会団体 - JiuFlow`
+    : `${getName(organization)} | BJJ Organization - JiuFlow`;
+  const seoDescription = language === 'ja'
+    ? `${getName(organization)}の大会情報。${totalTournaments}件の大会を開催。${description || ''}`
+    : `${getName(organization)} tournament information. ${totalTournaments} tournaments hosted. ${description || ''}`;
+
   return (
     <div className="min-h-screen flex flex-col bg-background">
+      <SEOHead
+        title={seoTitle}
+        description={seoDescription.slice(0, 160)}
+        ogImage={organization.logo_url || undefined}
+        canonicalUrl={`https://jiuflow.lovableproject.com/organization/${slug}`}
+      />
       <Navigation />
       
       <main className="flex-1 container mx-auto px-4 py-6 pt-20 sm:pt-24">

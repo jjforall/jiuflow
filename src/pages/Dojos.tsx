@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
+import { SEOHead } from "@/components/SEOHead";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -42,26 +43,22 @@ export default function Dojos() {
   const [userId, setUserId] = useState<string | null>(null);
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
 
-  useEffect(() => {
-    const titles = {
-      ja: "道場一覧 | jiuflow",
-      en: "Dojos | jiuflow",
-      pt: "Academias | jiuflow"
-    };
-    
-    const descriptions = {
-      ja: "世界中のブラジリアン柔術道場を検索。道場の情報、場所、連絡先を確認できます。",
-      en: "Find Brazilian Jiu-Jitsu dojos worldwide. View gym information, locations, and contact details.",
-      pt: "Encontre academias de Jiu-Jitsu Brasileiro em todo o mundo. Veja informações, localizações e contatos."
-    };
-    
-    document.title = titles[language] || titles.ja;
-    
-    const metaDescription = document.querySelector('meta[name="description"]');
-    if (metaDescription) {
-      metaDescription.setAttribute('content', descriptions[language] || descriptions.ja);
+  const seoData = {
+    ja: {
+      title: "道場一覧 | JiuFlow - ブラジリアン柔術道場検索",
+      description: "全国・世界のブラジリアン柔術道場を検索。道場の詳細情報、場所、連絡先を確認できます。お近くの道場を見つけましょう。"
+    },
+    en: {
+      title: "Dojos | JiuFlow - Find BJJ Academies",
+      description: "Find Brazilian Jiu-Jitsu dojos worldwide. View gym information, locations, and contact details. Discover academies near you."
+    },
+    pt: {
+      title: "Academias | JiuFlow - Encontre Academias de BJJ",
+      description: "Encontre academias de Jiu-Jitsu Brasileiro em todo o mundo. Veja informações, localizações e contatos das academias."
     }
-  }, [language]);
+  };
+
+  const currentSeo = seoData[language] || seoData.ja;
 
   useEffect(() => {
     const initPage = async () => {
@@ -235,6 +232,12 @@ export default function Dojos() {
 
   return (
     <div className="min-h-screen flex flex-col">
+      <SEOHead
+        title={currentSeo.title}
+        description={currentSeo.description}
+        canonicalUrl="https://jiuflow.lovableproject.com/dojos"
+        keywords={["BJJ", "道場", "ジム", "アカデミー", "柔術"]}
+      />
       <Navigation />
       <main className="flex-grow pt-16 sm:pt-20 pb-12 sm:pb-16">
         <div className="container mx-auto px-3 sm:px-4 md:px-6 max-w-7xl">

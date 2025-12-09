@@ -1,5 +1,6 @@
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
+import { SEOHead } from "@/components/SEOHead";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
@@ -476,8 +477,31 @@ const Join = () => {
     );
   }
 
+  const seoData = {
+    ja: {
+      title: "料金プラン | JiuFlow - ブラジリアン柔術学習プラットフォーム",
+      description: "JiuFlowの料金プラン。月額プラン、年間プラン、ファウンダープランをご用意。200以上のテクニック動画で柔術を学べます。1ヶ月無料トライアル付き。"
+    },
+    en: {
+      title: "Pricing Plans | JiuFlow - BJJ Learning Platform",
+      description: "JiuFlow pricing plans. Monthly, annual, and founder plans available. Learn Jiu-Jitsu with 200+ technique videos. 1-month free trial included."
+    },
+    pt: {
+      title: "Planos de Preços | JiuFlow - Plataforma de Aprendizado de BJJ",
+      description: "Planos de preços JiuFlow. Planos mensais, anuais e de fundador disponíveis. Aprenda Jiu-Jitsu com mais de 200 vídeos. Teste grátis de 1 mês."
+    }
+  };
+
+  const currentSeo = seoData[language] || seoData.ja;
+
   return (
     <div className="min-h-screen">
+      <SEOHead
+        title={currentSeo.title}
+        description={currentSeo.description}
+        canonicalUrl="https://jiuflow.lovableproject.com/join"
+        keywords={["BJJ", "柔術", "料金", "プラン", "サブスクリプション"]}
+      />
       <Navigation />
       
       <main className="pt-32 pb-20 px-6">

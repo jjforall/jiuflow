@@ -1,9 +1,12 @@
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
+import { SEOHead } from "@/components/SEOHead";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 const Terms = () => {
   const { language } = useLanguage();
+  const seoTitle = language === 'ja' ? '利用規約 | JiuFlow' : 'Terms of Service | JiuFlow';
+  const seoDescription = language === 'ja' ? 'JiuFlowの利用規約。サービス利用に関する条件を説明します。' : 'JiuFlow Terms of Service.';
 
   const content = {
     ja: {
@@ -315,6 +318,7 @@ const Terms = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEOHead title={seoTitle} description={seoDescription} canonicalUrl="https://jiuflow.lovableproject.com/terms" noindex={true} />
       <Navigation />
       
       <main className="container mx-auto px-4 sm:px-6 pt-24 pb-12 max-w-4xl">

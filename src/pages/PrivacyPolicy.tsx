@@ -1,10 +1,15 @@
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
+import { SEOHead } from "@/components/SEOHead";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Link } from "react-router-dom";
 
 const PrivacyPolicy = () => {
   const { language } = useLanguage();
+  const seoTitle = language === 'ja' ? 'プライバシーポリシー | JiuFlow' : 'Privacy Policy | JiuFlow';
+  const seoDescription = language === 'ja' 
+    ? 'JiuFlowのプライバシーポリシー。個人情報の取り扱いについて説明します。'
+    : 'JiuFlow Privacy Policy. Learn how we handle your personal information.';
 
   const content = {
     ja: {
@@ -337,6 +342,7 @@ const PrivacyPolicy = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEOHead title={seoTitle} description={seoDescription} canonicalUrl="https://jiuflow.lovableproject.com/privacy" noindex={true} />
       <Navigation />
       <main className="container max-w-4xl mx-auto px-4 pt-24 md:pt-28 pb-8 md:pb-16">
         <h1 className="text-3xl md:text-4xl font-bold mb-4">{currentContent.title}</h1>
