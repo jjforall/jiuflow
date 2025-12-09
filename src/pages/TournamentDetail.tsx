@@ -16,7 +16,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
-import { Calendar, MapPin, Trophy, Info, ExternalLink, Building2, ArrowLeft, Globe, Users, UserPlus, UserMinus, AlertCircle, Clock, FileText, Train, DollarSign, ScrollText, Mail, Link as LinkIcon, Scale, ChevronDown, ChevronRight, CheckCircle2, CircleDashed, CalendarPlus } from "lucide-react";
+import { Calendar, MapPin, Trophy, Info, ExternalLink, Building2, ArrowLeft, Globe, Users, UserPlus, UserMinus, AlertCircle, Clock, FileText, Train, DollarSign, ScrollText, Mail, Link as LinkIcon, Scale, ChevronDown, ChevronRight, CheckCircle2, CircleDashed, CalendarPlus, Camera, Loader2 } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { format, parseISO, isBefore } from "date-fns";
 import { ja, enUS, pt } from "date-fns/locale";
 import { toast } from "sonner";
@@ -158,6 +160,8 @@ const TournamentDetail = () => {
   const [participationDialogOpen, setParticipationDialogOpen] = useState(false);
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [isPublicParticipation, setIsPublicParticipation] = useState(true);
+  const [venueImageDialogOpen, setVenueImageDialogOpen] = useState(false);
+  const [newVenueImageUrl, setNewVenueImageUrl] = useState('');
   
   // Scroll to top on mount
   useEffect(() => {
@@ -250,6 +254,19 @@ const TournamentDetail = () => {
     staleTime: 10 * 60 * 1000,
   });
 
+  // Check if user is admin
+  const { data: isAdmin } = useQuery({
+    queryKey: ['user-is-admin', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return false;
+      const { data, error } = await supabase.rpc('has_role', { _user_id: user.id, _role: 'admin' });
+      if (error) return false;
+      return data as boolean;
+    },
+    enabled: !!user?.id,
+    staleTime: 5 * 60 * 1000,
+  });
+
   const userParticipation = participants?.find(p => p.user_id === user?.id);
   const isParticipating = !!userParticipation;
   const participationStatus = userParticipation?.status;
@@ -298,6 +315,39 @@ const TournamentDetail = () => {
     },
     onError: () => {
       toast.error(t('tournaments.errorOccurred'));
+    }
+  });
+
+  // Mutation to update venue image
+  const updateVenueImageMutation = useMutation({
+    mutationFn: async (imageUrl: string) => {
+      if (!tournament) throw new Error('No tournament');
+      
+      // If tournament has a venue_id, update the venue table
+      if (tournament.venue_id) {
+        const { error } = await supabase
+          .from('venues')
+          .update({ image_url: imageUrl })
+          .eq('id', tournament.venue_id);
+        if (error) throw error;
+      } else {
+        // Otherwise update the tournament's venue_image_url directly
+        const { error } = await supabase
+          .from('tournaments')
+          .update({ venue_image_url: imageUrl })
+          .eq('id', tournament.id);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tournament', year, slug] });
+      queryClient.invalidateQueries({ queryKey: ['tournaments'] });
+      setVenueImageDialogOpen(false);
+      setNewVenueImageUrl('');
+      toast.success(language === 'ja' ? '施設画像を更新しました' : 'Venue image updated');
+    },
+    onError: () => {
+      toast.error(language === 'ja' ? 'エラーが発生しました' : 'An error occurred');
     }
   });
 
@@ -428,13 +478,27 @@ const TournamentDetail = () => {
           <Card className={`overflow-hidden ${isPast ? 'opacity-75' : ''}`}>
             {/* Venue Hero Image */}
             {getVenueImage(tournament) && (
-              <div className="relative w-full h-40 sm:h-56 overflow-hidden">
+              <div className="relative w-full h-40 sm:h-56 overflow-hidden group">
                 <img 
                   src={getVenueImage(tournament) || ''} 
                   alt={getVenue(tournament) || 'Venue'}
                   className="w-full h-full object-cover"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent" />
+                
+                {/* Admin: Edit venue image button */}
+                {isAdmin && (
+                  <button
+                    onClick={() => {
+                      setNewVenueImageUrl(getVenueImage(tournament) || '');
+                      setVenueImageDialogOpen(true);
+                    }}
+                    className="absolute bottom-3 left-3 z-10 p-2 bg-background/80 hover:bg-background rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                    title={language === 'ja' ? '施設画像を変更' : 'Change venue image'}
+                  >
+                    <Camera className="h-4 w-4" />
+                  </button>
+                )}
                 
                 {/* Participation Status Badge - Top Right (Clickable) */}
                 {user && !isPast && (
@@ -1060,6 +1124,65 @@ const TournamentDetail = () => {
               >
                 <UserMinus className="h-4 w-4 mr-2" />
                 {language === 'ja' ? '削除する' : 'Remove'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Venue Image Edit Dialog (Admin only) */}
+      <Dialog open={venueImageDialogOpen} onOpenChange={setVenueImageDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Camera className="h-5 w-5" />
+              {language === 'ja' ? '施設画像を変更' : 'Change Venue Image'}
+            </DialogTitle>
+            <DialogDescription>
+              {language === 'ja' 
+                ? '画像のURLを入力してください（/images/venues/xxx.jpg または https://...）'
+                : 'Enter the image URL (/images/venues/xxx.jpg or https://...)'}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 pt-2">
+            <div className="space-y-2">
+              <Label htmlFor="venue-image-url">
+                {language === 'ja' ? '画像URL' : 'Image URL'}
+              </Label>
+              <Input
+                id="venue-image-url"
+                value={newVenueImageUrl}
+                onChange={(e) => setNewVenueImageUrl(e.target.value)}
+                placeholder="/images/venues/venue-name.jpg"
+              />
+            </div>
+            {newVenueImageUrl && (
+              <div className="relative w-full h-32 rounded-lg overflow-hidden bg-muted">
+                <img 
+                  src={newVenueImageUrl} 
+                  alt="Preview" 
+                  className="w-full h-full object-cover"
+                  onError={(e) => (e.currentTarget.style.display = 'none')}
+                />
+              </div>
+            )}
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => setVenueImageDialogOpen(false)}
+              >
+                {language === 'ja' ? 'キャンセル' : 'Cancel'}
+              </Button>
+              <Button
+                className="flex-1"
+                onClick={() => updateVenueImageMutation.mutate(newVenueImageUrl)}
+                disabled={updateVenueImageMutation.isPending || !newVenueImageUrl}
+              >
+                {updateVenueImageMutation.isPending ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : null}
+                {language === 'ja' ? '保存' : 'Save'}
               </Button>
             </div>
           </div>
