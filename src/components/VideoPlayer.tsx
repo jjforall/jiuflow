@@ -113,44 +113,52 @@ export const VideoPlayer = ({ videoUrl, autoPlay = true, thumbnailUrl, onPlay }:
     const isHLS = videoUrl.includes('.m3u8');
 
     if (isHLS && Hls.isSupported()) {
-      // Initialize HLS.js with ULTRA FAST START optimizations
+      // Initialize HLS.js optimized for 4G/mobile networks
       const hls = new Hls({
         enableWorker: true,
-        lowLatencyMode: true,
-        // ULTRA FAST - minimal initial buffer
-        backBufferLength: 10,
-        maxBufferLength: 10, // Start with just 10s buffer
-        maxBufferSize: 30 * 1000 * 1000, // 30MB buffer
-        maxMaxBufferLength: 30,
-        // INSTANT START - prefetch first fragment immediately
+        lowLatencyMode: false, // Disable for better buffering on slow networks
+        // Buffer settings optimized for 4G (5-20Mbps typical)
+        backBufferLength: 30,
+        maxBufferLength: 15, // Keep reasonable buffer
+        maxBufferSize: 60 * 1000 * 1000, // 60MB buffer for 4G
+        maxMaxBufferLength: 60,
+        // Prefetch for faster start
         startFragPrefetch: true,
-        // Super aggressive timeouts
-        fragLoadingTimeOut: 8000, // 8s timeout
-        fragLoadingMaxRetry: 2,
-        fragLoadingRetryDelay: 50, // 50ms retry
-        fragLoadingMaxRetryTimeout: 10000,
-        manifestLoadingTimeOut: 5000, // 5s manifest timeout
-        manifestLoadingMaxRetry: 2,
-        levelLoadingTimeOut: 5000,
-        levelLoadingMaxRetry: 2,
-        // Start with lowest quality for INSTANT playback
-        startLevel: 0,
+        // More lenient timeouts for mobile networks
+        fragLoadingTimeOut: 20000, // 20s for slow 4G
+        fragLoadingMaxRetry: 4, // More retries
+        fragLoadingRetryDelay: 500, // 500ms retry delay
+        fragLoadingMaxRetryTimeout: 30000,
+        manifestLoadingTimeOut: 15000, // 15s manifest timeout
+        manifestLoadingMaxRetry: 3,
+        levelLoadingTimeOut: 15000,
+        levelLoadingMaxRetry: 3,
+        // Start with AUTO quality (-1) so ABR can adapt to bandwidth
+        startLevel: -1,
         autoStartLoad: true,
-        // Fast stall recovery
-        nudgeMaxRetry: 5,
-        nudgeOffset: 0.05,
-        highBufferWatchdogPeriod: 1,
-        // Progressive loading
+        // Stall recovery
+        nudgeMaxRetry: 10,
+        nudgeOffset: 0.1,
+        highBufferWatchdogPeriod: 2,
+        // Progressive loading for mobile
         progressive: true,
-        // ABR - aggressive quality upgrade
-        abrEwmaDefaultEstimate: 500000, // Start very conservative (500kbps)
-        abrBandWidthFactor: 0.98, // Quick quality upgrade
-        abrBandWidthUpFactor: 0.8,
+        // ABR optimized for 4G - conservative to avoid stalls
+        abrEwmaDefaultEstimate: 3000000, // 3Mbps initial estimate (typical 4G)
+        abrEwmaFastLive: 3.0,
+        abrEwmaSlowLive: 9.0,
+        abrEwmaFastVoD: 3.0,
+        abrEwmaSlowVoD: 9.0,
+        abrBandWidthFactor: 0.8, // Conservative - use 80% of measured bandwidth
+        abrBandWidthUpFactor: 0.7, // Even more conservative for upgrades
         abrMaxWithRealBitrate: true,
         // Disable unused features for speed
         enableCEA708Captions: false,
         enableWebVTT: false,
         enableIMSC1: false,
+        // Network error recovery
+        xhrSetup: (xhr) => {
+          xhr.timeout = 20000; // 20s timeout for XHR requests
+        },
         debug: false,
       });
 
