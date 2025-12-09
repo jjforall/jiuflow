@@ -35,6 +35,19 @@ const getCloudflareStreamThumbnail = (videoUrl: string, time = 1): string | null
   return null;
 };
 
+// Network Information API - detect connection quality for adaptive settings
+const getConnectionQuality = (): 'slow' | 'medium' | 'fast' => {
+  const nav = navigator as Navigator & { connection?: { effectiveType?: string; downlink?: number; saveData?: boolean } };
+  if (nav.connection) {
+    // Respect data saver mode
+    if (nav.connection.saveData) return 'slow';
+    const { effectiveType, downlink } = nav.connection;
+    if (effectiveType === '2g' || effectiveType === 'slow-2g' || (downlink && downlink < 0.5)) return 'slow';
+    if (effectiveType === '3g' || (downlink && downlink < 2)) return 'medium';
+  }
+  return 'fast';
+};
+
 export const VideoPlayer = ({ videoUrl, autoPlay = true, thumbnailUrl, onPlay }: VideoPlayerProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const hlsRef = useRef<Hls | null>(null);
@@ -168,40 +181,50 @@ export const VideoPlayer = ({ videoUrl, autoPlay = true, thumbnailUrl, onPlay }:
     if (isHLS && Hls.isSupported()) {
       console.log('Initializing HLS.js...');
       
-      // Mobile-optimized HLS.js config for fast start
+      // Ultra-fast start optimized HLS.js config with network detection
       const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+      const connectionQuality = getConnectionQuality();
+      const isSlow = connectionQuality === 'slow' || (isMobile && connectionQuality === 'medium');
       
       const hls = new Hls({
         enableWorker: true,
-        lowLatencyMode: true, // Enable low latency for faster start
-        // Aggressive buffer settings for fast start
-        maxBufferLength: isMobile ? 10 : 30, // Smaller buffer on mobile
-        maxBufferSize: isMobile ? 20 * 1000 * 1000 : 60 * 1000 * 1000, // 20MB mobile, 60MB desktop
-        maxMaxBufferLength: isMobile ? 20 : 60,
-        backBufferLength: isMobile ? 10 : 30,
-        // START WITH LOWEST QUALITY for instant playback (key optimization!)
-        startLevel: 0, // Force lowest quality first, then ABR takes over
+        lowLatencyMode: true,
+        // ULTRA-AGGRESSIVE buffer settings - adapt to connection quality
+        maxBufferLength: isSlow ? 3 : (isMobile ? 5 : 15),
+        maxBufferSize: isSlow ? 5 * 1000 * 1000 : (isMobile ? 10 * 1000 * 1000 : 30 * 1000 * 1000),
+        maxMaxBufferLength: isSlow ? 5 : (isMobile ? 10 : 30),
+        backBufferLength: isSlow ? 3 : (isMobile ? 5 : 15),
+        // INSTANT START - lowest quality first
+        startLevel: 0,
         autoStartLoad: true,
-        // Faster timeouts for quicker error recovery
-        fragLoadingTimeOut: isMobile ? 10000 : 20000,
-        fragLoadingMaxRetry: 3,
-        fragLoadingRetryDelay: 500,
-        manifestLoadingTimeOut: 8000,
+        // Minimal initial buffer before playback starts
+        maxBufferHole: 0.5,
+        highBufferWatchdogPeriod: 1,
+        // Timeouts based on connection quality
+        fragLoadingTimeOut: isSlow ? 4000 : (isMobile ? 5000 : 10000),
+        fragLoadingMaxRetry: isSlow ? 1 : 2,
+        fragLoadingRetryDelay: 200,
+        manifestLoadingTimeOut: isSlow ? 3000 : 5000,
         manifestLoadingMaxRetry: 2,
-        levelLoadingTimeOut: 8000,
+        levelLoadingTimeOut: isSlow ? 3000 : 5000,
         levelLoadingMaxRetry: 2,
-        // Conservative ABR settings - upgrade quality gradually
-        abrEwmaDefaultEstimate: isMobile ? 1000000 : 5000000, // 1Mbps mobile, 5Mbps desktop
-        abrBandWidthFactor: 0.8, // More conservative bandwidth estimation
-        abrBandWidthUpFactor: 0.5, // Slower quality upgrades
+        // Start playing immediately
+        maxStarvationDelay: isSlow ? 0.5 : 1,
+        maxLoadingDelay: isSlow ? 0.5 : 1,
+        // ABR based on detected connection
+        abrEwmaDefaultEstimate: isSlow ? 200000 : (isMobile ? 500000 : 2000000),
+        abrBandWidthFactor: isSlow ? 0.5 : 0.7,
+        abrBandWidthUpFactor: isSlow ? 0.2 : 0.4,
         abrMaxWithRealBitrate: true,
-        // Faster initial load
+        // Prefetch for faster subsequent loads
         startFragPrefetch: true,
-        // Disable unused features
+        // Disable unused features for faster init
         enableCEA708Captions: false,
         enableWebVTT: false,
         enableIMSC1: false,
         debug: false,
+        // Progressive loading for faster initial render
+        progressive: true,
       });
 
       hlsRef.current = hls;
