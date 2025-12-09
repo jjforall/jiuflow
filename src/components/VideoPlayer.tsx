@@ -113,51 +113,61 @@ export const VideoPlayer = ({ videoUrl, autoPlay = true, thumbnailUrl, onPlay }:
     const isHLS = videoUrl.includes('.m3u8');
 
     if (isHLS && Hls.isSupported()) {
-      // Initialize HLS.js optimized for 4G/mobile networks
+      // Detect connection type for adaptive settings
+      const connection = (navigator as any).connection;
+      const effectiveType = connection?.effectiveType || '4g';
+      const downlink = connection?.downlink || 10; // Mbps estimate
+      
+      // Adaptive settings based on connection
+      const is5GOrFast = effectiveType === '5g' || downlink >= 20;
+      const isSlow = effectiveType === '3g' || effectiveType === '2g' || downlink < 3;
+      
+      console.log(`Network: ${effectiveType}, Downlink: ${downlink}Mbps, Mode: ${is5GOrFast ? '5G/Fast' : isSlow ? 'Slow' : '4G'}`);
+      
+      // Initialize HLS.js optimized for 4G/5G mobile networks
       const hls = new Hls({
         enableWorker: true,
-        lowLatencyMode: false, // Disable for better buffering on slow networks
-        // Buffer settings optimized for 4G (5-20Mbps typical)
-        backBufferLength: 30,
-        maxBufferLength: 15, // Keep reasonable buffer
-        maxBufferSize: 60 * 1000 * 1000, // 60MB buffer for 4G
-        maxMaxBufferLength: 60,
+        lowLatencyMode: is5GOrFast, // Enable for 5G
+        // Buffer settings - more aggressive for 5G
+        backBufferLength: is5GOrFast ? 60 : 30,
+        maxBufferLength: is5GOrFast ? 30 : 15,
+        maxBufferSize: is5GOrFast ? 120 * 1000 * 1000 : 60 * 1000 * 1000,
+        maxMaxBufferLength: is5GOrFast ? 120 : 60,
         // Prefetch for faster start
         startFragPrefetch: true,
-        // More lenient timeouts for mobile networks
-        fragLoadingTimeOut: 20000, // 20s for slow 4G
-        fragLoadingMaxRetry: 4, // More retries
-        fragLoadingRetryDelay: 500, // 500ms retry delay
+        // Timeouts - shorter for 5G, longer for slow connections
+        fragLoadingTimeOut: isSlow ? 30000 : is5GOrFast ? 10000 : 20000,
+        fragLoadingMaxRetry: isSlow ? 6 : 4,
+        fragLoadingRetryDelay: isSlow ? 1000 : 500,
         fragLoadingMaxRetryTimeout: 30000,
-        manifestLoadingTimeOut: 15000, // 15s manifest timeout
+        manifestLoadingTimeOut: isSlow ? 20000 : is5GOrFast ? 8000 : 15000,
         manifestLoadingMaxRetry: 3,
-        levelLoadingTimeOut: 15000,
+        levelLoadingTimeOut: isSlow ? 20000 : is5GOrFast ? 8000 : 15000,
         levelLoadingMaxRetry: 3,
-        // Start with AUTO quality (-1) so ABR can adapt to bandwidth
-        startLevel: -1,
+        // Start level: auto for fast, low for slow
+        startLevel: isSlow ? 0 : -1,
         autoStartLoad: true,
         // Stall recovery
         nudgeMaxRetry: 10,
         nudgeOffset: 0.1,
         highBufferWatchdogPeriod: 2,
-        // Progressive loading for mobile
         progressive: true,
-        // ABR optimized for 4G - conservative to avoid stalls
-        abrEwmaDefaultEstimate: 3000000, // 3Mbps initial estimate (typical 4G)
-        abrEwmaFastLive: 3.0,
-        abrEwmaSlowLive: 9.0,
-        abrEwmaFastVoD: 3.0,
-        abrEwmaSlowVoD: 9.0,
-        abrBandWidthFactor: 0.8, // Conservative - use 80% of measured bandwidth
-        abrBandWidthUpFactor: 0.7, // Even more conservative for upgrades
+        // ABR - adaptive based on connection
+        abrEwmaDefaultEstimate: isSlow ? 1000000 : is5GOrFast ? 20000000 : 5000000, // 1/20/5 Mbps
+        abrEwmaFastLive: is5GOrFast ? 2.0 : 3.0,
+        abrEwmaSlowLive: is5GOrFast ? 6.0 : 9.0,
+        abrEwmaFastVoD: is5GOrFast ? 2.0 : 3.0,
+        abrEwmaSlowVoD: is5GOrFast ? 6.0 : 9.0,
+        abrBandWidthFactor: is5GOrFast ? 0.9 : 0.8,
+        abrBandWidthUpFactor: is5GOrFast ? 0.85 : 0.7,
         abrMaxWithRealBitrate: true,
-        // Disable unused features for speed
+        // Disable unused features
         enableCEA708Captions: false,
         enableWebVTT: false,
         enableIMSC1: false,
-        // Network error recovery
+        // XHR timeout
         xhrSetup: (xhr) => {
-          xhr.timeout = 20000; // 20s timeout for XHR requests
+          xhr.timeout = isSlow ? 30000 : is5GOrFast ? 10000 : 20000;
         },
         debug: false,
       });
