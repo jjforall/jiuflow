@@ -16,7 +16,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { toast } from "sonner";
 import { 
   Building2, MapPin, Users, Globe, ArrowLeft, Calendar, 
-  ExternalLink, Navigation as NavIcon, Trophy, Camera, Loader2, Upload
+  ExternalLink, Navigation as NavIcon, Trophy, Camera, Loader2, Upload, Heart
 } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { ja, enUS, pt } from "date-fns/locale";
@@ -176,6 +176,85 @@ const VenueDetail = () => {
     },
     enabled: !!id,
   });
+
+  // Fetch favorite count
+  const { data: favoriteCount } = useQuery({
+    queryKey: ['venue-favorite-count', id],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from('favorite_venues')
+        .select('*', { count: 'exact', head: true })
+        .eq('venue_id', id);
+      if (error) throw error;
+      return count || 0;
+    },
+    enabled: !!id,
+  });
+
+  // Check if user has favorited
+  const { data: isFavorite } = useQuery({
+    queryKey: ['venue-is-favorite', id, user?.id],
+    queryFn: async () => {
+      if (!user) return false;
+      const { data, error } = await supabase
+        .from('favorite_venues')
+        .select('id')
+        .eq('venue_id', id)
+        .eq('user_id', user.id)
+        .maybeSingle();
+      if (error) throw error;
+      return !!data;
+    },
+    enabled: !!id && !!user,
+  });
+
+  // Add favorite mutation
+  const addFavorite = useMutation({
+    mutationFn: async () => {
+      if (!user) throw new Error('Not authenticated');
+      const { error } = await supabase
+        .from('favorite_venues')
+        .insert({ user_id: user.id, venue_id: id });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['venue-favorite-count', id] });
+      queryClient.invalidateQueries({ queryKey: ['venue-is-favorite', id] });
+      queryClient.invalidateQueries({ queryKey: ['favorite-venues'] });
+      toast.success(language === 'ja' ? 'お気に入りに追加しました' : 'Added to favorites');
+    },
+  });
+
+  // Remove favorite mutation
+  const removeFavorite = useMutation({
+    mutationFn: async () => {
+      if (!user) throw new Error('Not authenticated');
+      const { error } = await supabase
+        .from('favorite_venues')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('venue_id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['venue-favorite-count', id] });
+      queryClient.invalidateQueries({ queryKey: ['venue-is-favorite', id] });
+      queryClient.invalidateQueries({ queryKey: ['favorite-venues'] });
+      toast.success(language === 'ja' ? 'お気に入りから削除しました' : 'Removed from favorites');
+    },
+  });
+
+  const toggleFavorite = () => {
+    if (!user) {
+      toast.error(language === 'ja' ? 'ログインしてください' : 'Please login');
+      return;
+    }
+    if (isFavorite) {
+      removeFavorite.mutate();
+    } else {
+      addFavorite.mutate();
+    }
+  };
 
   const getLocale = () => {
     switch (language) {
@@ -374,8 +453,25 @@ const VenueDetail = () => {
             </Card>
           )}
 
-          {/* Links */}
-          <div className="flex gap-3 flex-wrap">
+          {/* Actions */}
+          <div className="flex gap-3 flex-wrap items-center">
+            {/* Favorite button */}
+            <Button
+              variant={isFavorite ? "default" : "outline"}
+              size="sm"
+              onClick={toggleFavorite}
+              disabled={addFavorite.isPending || removeFavorite.isPending}
+              className="gap-2"
+            >
+              <Heart className={`h-4 w-4 ${isFavorite ? 'fill-current' : ''}`} />
+              {language === 'ja' ? 'お気に入り' : 'Favorite'}
+              {typeof favoriteCount === 'number' && (
+                <Badge variant="secondary" className="ml-1 text-xs">
+                  {favoriteCount}
+                </Badge>
+              )}
+            </Button>
+
             {venue.google_maps_url && (
               <Button asChild variant="outline" size="sm">
                 <a href={venue.google_maps_url} target="_blank" rel="noopener noreferrer">
