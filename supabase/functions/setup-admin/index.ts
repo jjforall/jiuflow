@@ -76,6 +76,28 @@ serve(async (req) => {
       );
     }
 
+    // Additional password strength requirements
+    if (!/[A-Z]/.test(password)) {
+      return new Response(
+        JSON.stringify({ error: 'Password must contain at least one uppercase letter' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (!/[a-z]/.test(password)) {
+      return new Response(
+        JSON.stringify({ error: 'Password must contain at least one lowercase letter' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (!/[0-9]/.test(password)) {
+      return new Response(
+        JSON.stringify({ error: 'Password must contain at least one number' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     console.log('Attempting to create initial admin user:', email);
 
     // Check if any admin users exist - use FOR UPDATE SKIP LOCKED to prevent race conditions
