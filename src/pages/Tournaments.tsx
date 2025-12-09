@@ -13,7 +13,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Calendar, MapPin, Globe, Users, ChevronLeft, ChevronRight, CalendarDays, List, ExternalLink, Clock, ChevronsLeft, ChevronsRight, UserPlus, UserMinus, Loader2, CheckCircle2, CircleDashed, Info, CalendarPlus } from "lucide-react";
+import { Calendar, MapPin, Globe, Users, ChevronLeft, ChevronRight, CalendarDays, List, ExternalLink, Clock, ChevronsLeft, ChevronsRight, UserPlus, UserMinus, Loader2, CheckCircle2, CircleDashed, Info, CalendarPlus, Building2 } from "lucide-react";
 import { format, parseISO, isAfter, isBefore, addMonths, differenceInDays, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addDays, getDay } from "date-fns";
 import { ja, enUS, pt } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
@@ -929,11 +929,18 @@ const Tournaments = () => {
           <h1 className="text-3xl sm:text-4xl font-bold mb-3 bg-gradient-to-r from-primary via-purple-500 to-pink-500 bg-clip-text text-transparent">
             {language === 'ja' ? '大会スケジュール' : 'Tournament Schedule'}
           </h1>
-          <p className="text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-muted-foreground max-w-2xl mx-auto mb-4">
             {language === 'ja' 
               ? '2025年〜2026年の柔術大会スケジュール'
               : 'BJJ tournament schedule 2025-2026'}
           </p>
+          <Link 
+            to="/venues" 
+            className="inline-flex items-center gap-2 text-sm text-primary hover:underline"
+          >
+            <Building2 className="h-4 w-4" />
+            {language === 'ja' ? '会場一覧を見る' : 'View all venues'}
+          </Link>
         </div>
 
         {/* View mode toggle & Filters */}
