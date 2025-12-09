@@ -713,6 +713,61 @@ const Join = () => {
               </div>
             </div>
 
+            {/* Free Plan - Only shown when not logged in and no valid referral code */}
+            {!user && !isValidReferralCode && (
+              <div className="relative overflow-hidden rounded-2xl mb-12 animate-fade-up">
+                <div className="absolute inset-0 bg-gradient-to-br from-green-500/10 via-emerald-500/5 to-teal-500/10 rounded-2xl" />
+                <div className="relative border-2 border-green-500/30 p-10 rounded-2xl backdrop-blur-sm">
+                  <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-green-500 to-emerald-500 text-white px-6 py-2 text-sm font-bold rounded-full shadow-lg z-10">
+                    {language === "ja" ? "🆓 無料プラン" : language === "pt" ? "🆓 Plano Gratuito" : "🆓 Free Plan"}
+                  </div>
+                  <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-8">
+                    <div className="space-y-4">
+                      <h3 className="text-3xl font-light mt-2">
+                        {language === "ja" ? "無料プラン" : language === "pt" ? "Plano Gratuito" : "Free Plan"}
+                      </h3>
+                      <div className="text-5xl font-bold bg-gradient-to-r from-green-500 to-emerald-500 bg-clip-text text-transparent">¥0</div>
+                      <p className="text-muted-foreground">
+                        {language === "ja" ? "まずは無料で始めよう" : language === "pt" ? "Comece gratuitamente" : "Start for free"}
+                      </p>
+                    </div>
+                    <div className="flex-1">
+                      <ul className="space-y-3 text-base font-light">
+                        <li className="flex items-start">
+                          <span className="mr-3 text-green-500 text-xl">✓</span>
+                          <span>{language === "ja" ? "毎日1本の動画視聴" : language === "pt" ? "1 vídeo por dia" : "1 video per day"}</span>
+                        </li>
+                        <li className="flex items-start">
+                          <span className="mr-3 text-green-500 text-xl">✓</span>
+                          <span>{language === "ja" ? "動画ストレージ100GB無料" : language === "pt" ? "100GB de armazenamento grátis" : "100GB video storage free"}</span>
+                        </li>
+                        <li className="flex items-start">
+                          <span className="mr-3 text-green-500 text-xl">✓</span>
+                          <span>{language === "ja" ? "SNS機能（フォロー・メッセージ）" : language === "pt" ? "Recursos de SNS (seguir, mensagens)" : "SNS features (follow, messages)"}</span>
+                        </li>
+                        <li className="flex items-start">
+                          <span className="mr-3 text-green-500 text-xl">✓</span>
+                          <span>{language === "ja" ? "コミュニティ参加" : language === "pt" ? "Participação na comunidade" : "Community access"}</span>
+                        </li>
+                        <li className="flex items-start">
+                          <span className="mr-3 text-green-500 text-xl">✓</span>
+                          <span>{language === "ja" ? "大会情報・道場検索" : language === "pt" ? "Informações de torneios e dojos" : "Tournament info & dojo search"}</span>
+                        </li>
+                      </ul>
+                    </div>
+                    <div className="md:w-48">
+                      <Button
+                        className="w-full h-14 text-lg bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white shadow-lg transition-all font-bold"
+                        onClick={() => navigate("/login")}
+                      >
+                        {language === "ja" ? "無料で始める" : language === "pt" ? "Começar Grátis" : "Start Free"}
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Pricing */}
             <div className={`grid ${isValidReferralCode ? 'md:grid-cols-1 max-w-xl mx-auto' : 'md:grid-cols-2'} gap-8 mb-16 animate-fade-up`}>
               {/* Referral Plans - shown when valid referral code is entered */}
