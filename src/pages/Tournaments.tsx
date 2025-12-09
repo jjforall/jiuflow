@@ -609,7 +609,7 @@ const Tournaments = () => {
                     </button>
                   )}
                   <button 
-                    className="inline-flex items-center gap-1.5 text-xs font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors"
+                    className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
@@ -625,9 +625,7 @@ const Tournaments = () => {
                       window.open(calendarUrl, '_blank', 'noopener,noreferrer');
                     }}
                   >
-                    <div className="p-1 rounded bg-blue-100 dark:bg-blue-900/30">
-                      <CalendarPlus className="h-3 w-3" />
-                    </div>
+                    <img src="/images/google-calendar-logo.png" alt="Google Calendar" className="h-4 w-4" />
                     <span className="hidden sm:inline">{language === 'ja' ? 'カレンダー' : 'Calendar'}</span>
                   </button>
                 </div>

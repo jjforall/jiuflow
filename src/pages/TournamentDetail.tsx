@@ -618,7 +618,7 @@ const TournamentDetail = () => {
               {!isPast && (
                 <Button
                   variant="outline"
-                  className="w-full mt-4 border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:border-blue-300 dark:hover:border-blue-700"
+                  className="w-full mt-4"
                   onClick={() => {
                     const calendarUrl = generateGoogleCalendarUrl({
                       title: getName(tournament),
@@ -633,9 +633,7 @@ const TournamentDetail = () => {
                     window.open(calendarUrl, '_blank', 'noopener,noreferrer');
                   }}
                 >
-                  <div className="p-1.5 rounded bg-blue-100 dark:bg-blue-900/40 mr-2">
-                    <CalendarPlus className="h-4 w-4" />
-                  </div>
+                  <img src="/images/google-calendar-logo.png" alt="Google Calendar" className="h-5 w-5 mr-2" />
                   {language === 'ja' ? 'Googleカレンダーに追加' : 'Add to Google Calendar'}
                 </Button>
               )}
