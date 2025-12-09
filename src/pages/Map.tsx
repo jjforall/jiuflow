@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useAuth } from "@/hooks/useAuth";
 import { useFavoriteTechniques } from "@/hooks/useFavoriteTechniques";
+import { prefetchVideo } from "@/hooks/useVideoPrefetch";
 import { Button } from "@/components/ui/button";
 import { Lock, Loader2, Upload, X, ChevronDown, Eye, Check, Search, Star, Heart } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -529,6 +530,11 @@ const Map = () => {
                               <Link
                                 to={`/video/${tech.id}`}
                                 className="flex items-center gap-3 md:gap-4 flex-1 min-w-0"
+                                onMouseEnter={() => prefetchVideo(
+                                  language === "ja" ? tech.video_url_ja : 
+                                  language === "pt" ? tech.video_url_pt : 
+                                  tech.video_url
+                                )}
                               >
                                 <div className={`flex items-center justify-center min-w-[2.5rem] h-8 md:h-10 px-2 rounded-lg font-semibold text-xs md:text-sm flex-shrink-0 transition-all shadow-sm ${
                                   isWatched 
@@ -643,9 +649,14 @@ const Map = () => {
                                 key={tech.id}
                                 className="flex items-center gap-3 md:gap-4 p-3 md:p-4 hover:bg-gradient-to-r hover:from-muted/50 hover:to-transparent transition-all group"
                               >
-                                <Link
+                              <Link
                                   to={`/video/${tech.id}`}
                                   className="flex items-center gap-3 md:gap-4 flex-1 min-w-0"
+                                  onMouseEnter={() => prefetchVideo(
+                                    language === "ja" ? tech.video_url_ja : 
+                                    language === "pt" ? tech.video_url_pt : 
+                                    tech.video_url
+                                  )}
                                 >
                                   <div className={`flex items-center justify-center min-w-[2.5rem] h-8 md:h-10 px-2 rounded-lg font-semibold text-xs md:text-sm flex-shrink-0 transition-all shadow-sm ${
                                     isWatched 
