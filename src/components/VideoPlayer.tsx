@@ -115,31 +115,35 @@ export const VideoPlayer = ({ videoUrl, autoPlay = true, thumbnailUrl, onPlay }:
     if (isHLS && Hls.isSupported()) {
       console.log('Initializing HLS.js...');
       
-      // Simple, reliable HLS.js config
+      // Mobile-optimized HLS.js config for fast start
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+      
       const hls = new Hls({
         enableWorker: true,
-        lowLatencyMode: false,
-        // Standard buffer settings
-        maxBufferLength: 30,
-        maxBufferSize: 60 * 1000 * 1000, // 60MB
-        maxMaxBufferLength: 60,
-        backBufferLength: 30,
-        // Auto quality selection
-        startLevel: -1,
+        lowLatencyMode: true, // Enable low latency for faster start
+        // Aggressive buffer settings for fast start
+        maxBufferLength: isMobile ? 10 : 30, // Smaller buffer on mobile
+        maxBufferSize: isMobile ? 20 * 1000 * 1000 : 60 * 1000 * 1000, // 20MB mobile, 60MB desktop
+        maxMaxBufferLength: isMobile ? 20 : 60,
+        backBufferLength: isMobile ? 10 : 30,
+        // START WITH LOWEST QUALITY for instant playback (key optimization!)
+        startLevel: 0, // Force lowest quality first, then ABR takes over
         autoStartLoad: true,
-        // Standard timeouts
-        fragLoadingTimeOut: 20000,
-        fragLoadingMaxRetry: 4,
-        fragLoadingRetryDelay: 1000,
-        manifestLoadingTimeOut: 10000,
-        manifestLoadingMaxRetry: 3,
-        levelLoadingTimeOut: 10000,
-        levelLoadingMaxRetry: 3,
-        // Standard ABR settings
-        abrEwmaDefaultEstimate: 5000000, // 5 Mbps
-        abrBandWidthFactor: 0.9,
-        abrBandWidthUpFactor: 0.7,
+        // Faster timeouts for quicker error recovery
+        fragLoadingTimeOut: isMobile ? 10000 : 20000,
+        fragLoadingMaxRetry: 3,
+        fragLoadingRetryDelay: 500,
+        manifestLoadingTimeOut: 8000,
+        manifestLoadingMaxRetry: 2,
+        levelLoadingTimeOut: 8000,
+        levelLoadingMaxRetry: 2,
+        // Conservative ABR settings - upgrade quality gradually
+        abrEwmaDefaultEstimate: isMobile ? 1000000 : 5000000, // 1Mbps mobile, 5Mbps desktop
+        abrBandWidthFactor: 0.8, // More conservative bandwidth estimation
+        abrBandWidthUpFactor: 0.5, // Slower quality upgrades
         abrMaxWithRealBitrate: true,
+        // Faster initial load
+        startFragPrefetch: true,
         // Disable unused features
         enableCEA708Captions: false,
         enableWebVTT: false,
@@ -251,9 +255,9 @@ export const VideoPlayer = ({ videoUrl, autoPlay = true, thumbnailUrl, onPlay }:
         }
       };
     } else if (isHLS && video.canPlayType('application/vnd.apple.mpegurl')) {
-      // Native HLS support (Safari) - use auto preload
+      // Native HLS support (Safari) - use metadata preload for faster start
       video.src = videoUrl;
-      video.preload = 'auto';
+      video.preload = 'metadata'; // Only load metadata, not full video
       if (autoPlay) {
         video.muted = true;
         video.play().then(() => {
@@ -261,9 +265,9 @@ export const VideoPlayer = ({ videoUrl, autoPlay = true, thumbnailUrl, onPlay }:
         }).catch(e => console.log('Autoplay prevented:', e));
       }
     } else {
-      // Regular video file
+      // Regular video file - use metadata preload
       video.src = videoUrl;
-      video.preload = 'auto';
+      video.preload = 'metadata'; // Only load metadata for faster initial load
       if (autoPlay) {
         video.muted = true;
         video.play().then(() => {
@@ -456,7 +460,7 @@ export const VideoPlayer = ({ videoUrl, autoPlay = true, thumbnailUrl, onPlay }:
         controlsList="nodownload"
         className="w-full h-full"
         playsInline
-        preload="auto"
+        preload="metadata"
         loop
         muted={autoPlay}
         autoPlay={autoPlay}
