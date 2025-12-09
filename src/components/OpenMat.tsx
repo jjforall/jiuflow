@@ -10,17 +10,23 @@ import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
-import { format, formatDistanceToNow } from "date-fns";
+import { formatDistanceToNow } from "date-fns";
 import { ja, enUS, ptBR } from "date-fns/locale";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { 
   MessageCircle, Send, Trash2, Heart, MessageSquare, Image as ImageIcon,
-  Video, MoreHorizontal, RefreshCw
+  Video, MoreHorizontal, RefreshCw, Pencil, X, Check
 } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { ScrollArea } from "@/components/ui/scroll-area";
+
+interface UserProfile {
+  id: string;
+  display_name: string | null;
+  avatar_url: string | null;
+  username: string | null;
+}
 
 interface Post {
   id: string;
@@ -32,12 +38,7 @@ interface Post {
   content_pt?: string | null;
   created_at: string;
   updated_at: string;
-  author?: {
-    id: string;
-    display_name: string | null;
-    avatar_url: string | null;
-    username: string | null;
-  };
+  author?: UserProfile;
   reply_count?: number;
   like_count?: number;
   is_liked?: boolean;
@@ -49,12 +50,7 @@ interface Reply {
   author_id: string;
   content: string;
   created_at: string;
-  author?: {
-    id: string;
-    display_name: string | null;
-    avatar_url: string | null;
-    username: string | null;
-  };
+  author?: UserProfile;
   like_count?: number;
   is_liked?: boolean;
 }
@@ -66,7 +62,7 @@ interface Reply {
 
 export const OpenMat = () => {
   const { language } = useLanguage();
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const { subscribed, loading: subscriptionLoading } = useSubscription();
   const navigate = useNavigate();
   
@@ -80,12 +76,22 @@ export const OpenMat = () => {
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [myProfile, setMyProfile] = useState<UserProfile | null>(null);
+  const [editingPostId, setEditingPostId] = useState<string | null>(null);
+  const [editingReplyId, setEditingReplyId] = useState<string | null>(null);
+  const [editContent, setEditContent] = useState("");
 
   const getDateLocale = () => {
     if (language === "ja") return ja;
     if (language === "pt") return ptBR;
     return enUS;
   };
+
+  useEffect(() => {
+    if (user) {
+      loadMyProfile();
+    }
+  }, [user]);
 
   useEffect(() => {
     if (subscribed) {
@@ -112,6 +118,23 @@ export const OpenMat = () => {
       };
     }
   }, [subscribed]);
+
+  const loadMyProfile = async () => {
+    if (!user) return;
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, display_name, avatar_url, username')
+        .eq('id', user.id)
+        .maybeSingle();
+      
+      if (!error && data) {
+        setMyProfile(data);
+      }
+    } catch (error) {
+      console.error('Error loading profile:', error);
+    }
+  };
 
   const loadPosts = async () => {
     try {
@@ -449,6 +472,113 @@ export const OpenMat = () => {
     }
   };
 
+  const startEditPost = (post: Post) => {
+    setEditingPostId(post.id);
+    setEditContent(post.content);
+  };
+
+  const cancelEditPost = () => {
+    setEditingPostId(null);
+    setEditContent("");
+  };
+
+  const saveEditPost = async (postId: string) => {
+    if (!editContent.trim()) return;
+    
+    setSubmitting(true);
+    try {
+      const { error } = await supabase
+        .from('community_threads')
+        .update({ 
+          content: editContent.trim(),
+          title: editContent.trim().slice(0, 100),
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', postId);
+
+      if (error) throw error;
+
+      // Translate in background
+      supabase.functions.invoke('translate-community-content', {
+        body: {
+          type: 'thread',
+          id: postId,
+          title: editContent.trim().slice(0, 100),
+          content: editContent.trim(),
+          source_lang: language
+        }
+      }).catch(err => console.error('Translation error:', err));
+
+      toast.success(language === "ja" ? "更新しました" : "Updated");
+      setPosts(prev => prev.map(p => 
+        p.id === postId ? { ...p, content: editContent.trim() } : p
+      ));
+      setEditingPostId(null);
+      setEditContent("");
+    } catch (error) {
+      console.error('Error updating post:', error);
+      toast.error(language === "ja" ? "更新に失敗しました" : "Failed to update");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const startEditReply = (reply: Reply) => {
+    setEditingReplyId(reply.id);
+    setEditContent(reply.content);
+  };
+
+  const cancelEditReply = () => {
+    setEditingReplyId(null);
+    setEditContent("");
+  };
+
+  const saveEditReply = async (postId: string, replyId: string) => {
+    if (!editContent.trim()) return;
+    
+    setSubmitting(true);
+    try {
+      const { error } = await supabase
+        .from('community_posts')
+        .update({ 
+          content: editContent.trim(),
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', replyId);
+
+      if (error) throw error;
+
+      // Translate in background
+      supabase.functions.invoke('translate-community-content', {
+        body: {
+          type: 'post',
+          id: replyId,
+          content: editContent.trim(),
+          source_lang: language
+        }
+      }).catch(err => console.error('Translation error:', err));
+
+      toast.success(language === "ja" ? "更新しました" : "Updated");
+      setReplies(prev => ({
+        ...prev,
+        [postId]: (prev[postId] || []).map(r => 
+          r.id === replyId ? { ...r, content: editContent.trim() } : r
+        )
+      }));
+      setEditingReplyId(null);
+      setEditContent("");
+    } catch (error) {
+      console.error('Error updating reply:', error);
+      toast.error(language === "ja" ? "更新に失敗しました" : "Failed to update");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const canEditOrDelete = (authorId: string) => {
+    return user?.id === authorId || isAdmin;
+  };
+
   const handleMediaUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -593,9 +723,9 @@ export const OpenMat = () => {
         <CardContent className="p-4">
           <div className="flex gap-3">
             <Avatar className="h-10 w-10 shrink-0">
-              <AvatarImage src={user?.user_metadata?.avatar_url} />
+              <AvatarImage src={myProfile?.avatar_url || undefined} />
               <AvatarFallback>
-                {user?.email?.slice(0, 2).toUpperCase() || "?"}
+                {myProfile?.display_name?.slice(0, 2) || user?.email?.slice(0, 2).toUpperCase() || "?"}
               </AvatarFallback>
             </Avatar>
             <div className="flex-1 space-y-3">
@@ -724,7 +854,7 @@ export const OpenMat = () => {
                         </span>
                       </div>
                       
-                      {user?.id === post.author_id && (
+                      {canEditOrDelete(post.author_id) && (
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
@@ -732,6 +862,10 @@ export const OpenMat = () => {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => startEditPost(post)}>
+                              <Pencil className="h-4 w-4 mr-2" />
+                              {language === "ja" ? "編集" : "Edit"}
+                            </DropdownMenuItem>
                             <AlertDialog>
                               <AlertDialogTrigger asChild>
                                 <DropdownMenuItem 
@@ -767,9 +901,38 @@ export const OpenMat = () => {
                     </div>
 
                     {/* Post Content */}
-                    <div className="mt-2 text-sm whitespace-pre-wrap break-words prose prose-sm dark:prose-invert max-w-none">
-                      {renderContent(getTranslatedContent(post))}
-                    </div>
+                    {editingPostId === post.id ? (
+                      <div className="mt-2 space-y-2">
+                        <Textarea
+                          value={editContent}
+                          onChange={(e) => setEditContent(e.target.value)}
+                          className="min-h-[100px] resize-none"
+                        />
+                        <div className="flex gap-2 justify-end">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={cancelEditPost}
+                            disabled={submitting}
+                          >
+                            <X className="h-4 w-4 mr-1" />
+                            {language === "ja" ? "キャンセル" : "Cancel"}
+                          </Button>
+                          <Button
+                            size="sm"
+                            onClick={() => saveEditPost(post.id)}
+                            disabled={submitting || !editContent.trim()}
+                          >
+                            <Check className="h-4 w-4 mr-1" />
+                            {language === "ja" ? "保存" : "Save"}
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="mt-2 text-sm whitespace-pre-wrap break-words prose prose-sm dark:prose-invert max-w-none">
+                        {renderContent(getTranslatedContent(post))}
+                      </div>
+                    )}
 
                     {/* Post Actions */}
                     <div className="flex items-center gap-4 mt-3 pt-2 border-t">
@@ -826,7 +989,39 @@ export const OpenMat = () => {
                                   })}
                                 </span>
                               </div>
-                              <p className="text-sm mt-0.5 break-words">{reply.content}</p>
+                              {editingReplyId === reply.id ? (
+                                <div className="mt-1 space-y-2">
+                                  <Textarea
+                                    value={editContent}
+                                    onChange={(e) => setEditContent(e.target.value)}
+                                    className="min-h-[60px] resize-none text-sm"
+                                    rows={2}
+                                  />
+                                  <div className="flex gap-2 justify-end">
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={cancelEditReply}
+                                      disabled={submitting}
+                                      className="h-6 text-xs"
+                                    >
+                                      <X className="h-3 w-3 mr-1" />
+                                      {language === "ja" ? "キャンセル" : "Cancel"}
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      onClick={() => saveEditReply(post.id, reply.id)}
+                                      disabled={submitting || !editContent.trim()}
+                                      className="h-6 text-xs"
+                                    >
+                                      <Check className="h-3 w-3 mr-1" />
+                                      {language === "ja" ? "保存" : "Save"}
+                                    </Button>
+                                  </div>
+                                </div>
+                              ) : (
+                                <p className="text-sm mt-0.5 break-words">{reply.content}</p>
+                              )}
                               <div className="flex items-center gap-2 mt-1">
                                 <Button
                                   variant="ghost"
@@ -837,33 +1032,43 @@ export const OpenMat = () => {
                                   <Heart className={`h-3 w-3 ${reply.is_liked ? 'fill-current' : ''}`} />
                                   <span className="text-xs">{reply.like_count || 0}</span>
                                 </Button>
-                                {user?.id === reply.author_id && (
-                                  <AlertDialog>
-                                    <AlertDialogTrigger asChild>
-                                      <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="h-6 px-1.5 text-muted-foreground hover:text-destructive"
-                                      >
-                                        <Trash2 className="h-3 w-3" />
-                                      </Button>
-                                    </AlertDialogTrigger>
-                                    <AlertDialogContent>
-                                      <AlertDialogHeader>
-                                        <AlertDialogTitle>
-                                          {language === "ja" ? "返信を削除しますか？" : "Delete this reply?"}
-                                        </AlertDialogTitle>
-                                      </AlertDialogHeader>
-                                      <AlertDialogFooter>
-                                        <AlertDialogCancel>
-                                          {language === "ja" ? "キャンセル" : "Cancel"}
-                                        </AlertDialogCancel>
-                                        <AlertDialogAction onClick={() => deleteReply(post.id, reply.id)}>
-                                          {language === "ja" ? "削除" : "Delete"}
-                                        </AlertDialogAction>
-                                      </AlertDialogFooter>
-                                    </AlertDialogContent>
-                                  </AlertDialog>
+                                {canEditOrDelete(reply.author_id) && (
+                                  <>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => startEditReply(reply)}
+                                      className="h-6 px-1.5 text-muted-foreground hover:text-foreground"
+                                    >
+                                      <Pencil className="h-3 w-3" />
+                                    </Button>
+                                    <AlertDialog>
+                                      <AlertDialogTrigger asChild>
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          className="h-6 px-1.5 text-muted-foreground hover:text-destructive"
+                                        >
+                                          <Trash2 className="h-3 w-3" />
+                                        </Button>
+                                      </AlertDialogTrigger>
+                                      <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                          <AlertDialogTitle>
+                                            {language === "ja" ? "返信を削除しますか？" : "Delete this reply?"}
+                                          </AlertDialogTitle>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                          <AlertDialogCancel>
+                                            {language === "ja" ? "キャンセル" : "Cancel"}
+                                          </AlertDialogCancel>
+                                          <AlertDialogAction onClick={() => deleteReply(post.id, reply.id)}>
+                                            {language === "ja" ? "削除" : "Delete"}
+                                          </AlertDialogAction>
+                                        </AlertDialogFooter>
+                                      </AlertDialogContent>
+                                    </AlertDialog>
+                                  </>
                                 )}
                               </div>
                             </div>
@@ -873,9 +1078,9 @@ export const OpenMat = () => {
                         {/* Reply Input */}
                         <div className="flex gap-2 pt-2">
                           <Avatar className="h-7 w-7 shrink-0">
-                            <AvatarImage src={user?.user_metadata?.avatar_url} />
+                            <AvatarImage src={myProfile?.avatar_url || undefined} />
                             <AvatarFallback className="text-xs">
-                              {user?.email?.slice(0, 2).toUpperCase() || "?"}
+                              {myProfile?.display_name?.slice(0, 2) || user?.email?.slice(0, 2).toUpperCase() || "?"}
                             </AvatarFallback>
                           </Avatar>
                           <div className="flex-1 flex gap-2">
