@@ -18,6 +18,7 @@ interface GlossaryTerm {
 }
 
 const glossaryTerms: GlossaryTerm[] = [
+  // Positions
   {
     term: "Guard",
     termJa: "ガード",
@@ -73,6 +74,106 @@ const glossaryTerms: GlossaryTerm[] = [
     category: "position"
   },
   {
+    term: "Open Guard",
+    termJa: "オープンガード",
+    termPt: "Guarda Aberta",
+    definition: "Any guard position where your legs are not locked around your opponent.",
+    definitionJa: "足を相手に巻きつけていないガードポジションの総称。",
+    definitionPt: "Qualquer posição de guarda onde suas pernas não estão travadas ao redor do oponente.",
+    category: "position"
+  },
+  {
+    term: "Spider Guard",
+    termJa: "スパイダーガード",
+    termPt: "Guarda Aranha",
+    definition: "A guard using sleeve grips with feet on opponent's biceps for control and sweeps.",
+    definitionJa: "袖を掴み、足を相手の二頭筋に当てて距離を管理するガード。",
+    definitionPt: "Uma guarda usando pegadas nas mangas com os pés nos bíceps do oponente.",
+    category: "position"
+  },
+  {
+    term: "De La Riva Guard",
+    termJa: "デラヒーバガード",
+    termPt: "Guarda De La Riva",
+    definition: "A guard where you hook your leg around the outside of opponent's leg from the inside.",
+    definitionJa: "相手の足の内側から外側に足をフックするガード。リカルド・デラヒーバが有名。",
+    definitionPt: "Uma guarda onde você engancha sua perna por fora da perna do oponente a partir de dentro.",
+    category: "position"
+  },
+  {
+    term: "Lasso Guard",
+    termJa: "ラッソガード",
+    termPt: "Guarda Laço",
+    definition: "A guard where your leg wraps around opponent's arm like a lasso.",
+    definitionJa: "足を相手の腕に投げ縄のように巻きつけるガード。",
+    definitionPt: "Uma guarda onde sua perna envolve o braço do oponente como um laço.",
+    category: "position"
+  },
+  {
+    term: "X-Guard",
+    termJa: "Xガード",
+    termPt: "Guarda X",
+    definition: "A guard position underneath your opponent with legs forming an X shape around their leg.",
+    definitionJa: "相手の下に潜り、足でX字を作って相手の足をコントロールするガード。",
+    definitionPt: "Uma posição de guarda embaixo do oponente com as pernas formando um X ao redor da perna dele.",
+    category: "position"
+  },
+  {
+    term: "Butterfly Guard",
+    termJa: "バタフライガード",
+    termPt: "Guarda Borboleta",
+    definition: "A seated guard with both feet hooked inside your opponent's thighs.",
+    definitionJa: "座った状態で両足を相手の太ももの内側にフックするガード。",
+    definitionPt: "Uma guarda sentada com ambos os pés enganchados dentro das coxas do oponente.",
+    category: "position"
+  },
+  {
+    term: "Knee Shield",
+    termJa: "ニーシールド",
+    termPt: "Joelho Escudo",
+    definition: "Using your knee as a frame to create distance and protect against passes.",
+    definitionJa: "膝をフレームとして使い、距離を作りパスを防ぐ。",
+    definitionPt: "Usar o joelho como uma moldura para criar distância e proteger contra passagens.",
+    category: "position"
+  },
+  {
+    term: "Turtle",
+    termJa: "タートル",
+    termPt: "Tartaruga",
+    definition: "A defensive position on hands and knees with head tucked.",
+    definitionJa: "四つん這いで頭を守る防御姿勢。",
+    definitionPt: "Uma posição defensiva de quatro com a cabeça protegida.",
+    category: "position"
+  },
+  {
+    term: "North-South",
+    termJa: "ノースサウス",
+    termPt: "Norte-Sul",
+    definition: "A pinning position where you lay chest-to-chest with opponent, head-to-toe aligned.",
+    definitionJa: "相手と胸を合わせ、頭と足が逆向きになる押さえ込みポジション。",
+    definitionPt: "Uma posição de imobilização onde você deita peito a peito com o oponente, alinhado cabeça a pé.",
+    category: "position"
+  },
+  {
+    term: "Knee on Belly",
+    termJa: "ニーオンベリー",
+    termPt: "Joelho na Barriga",
+    definition: "A dominant position with your knee pressing into opponent's stomach.",
+    definitionJa: "膝を相手の腹に押し付ける支配的なポジション。",
+    definitionPt: "Uma posição dominante com o joelho pressionando o estômago do oponente.",
+    category: "position"
+  },
+  {
+    term: "Crucifix",
+    termJa: "クルシフィックス",
+    termPt: "Crucifixo",
+    definition: "A controlling position trapping opponent's arms spread apart like a cross.",
+    definitionJa: "相手の両腕を十字架のように広げてコントロールするポジション。",
+    definitionPt: "Uma posição de controle prendendo os braços do oponente abertos como uma cruz.",
+    category: "position"
+  },
+  // Submissions
+  {
     term: "Armbar",
     termJa: "腕十字固め",
     termPt: "Armlock",
@@ -127,6 +228,133 @@ const glossaryTerms: GlossaryTerm[] = [
     category: "submission"
   },
   {
+    term: "Omoplata",
+    termJa: "オモプラッタ",
+    termPt: "Omoplata",
+    definition: "A shoulder lock using your legs to rotate the opponent's shoulder.",
+    definitionJa: "足を使って相手の肩を回転させる肩関節技。",
+    definitionPt: "Uma chave de ombro usando suas pernas para rotacionar o ombro do oponente.",
+    category: "submission"
+  },
+  {
+    term: "Ezekiel Choke",
+    termJa: "エゼキエルチョーク",
+    termPt: "Ezequiel",
+    definition: "A choke using the sleeve of your gi to apply pressure to the neck.",
+    definitionJa: "道着の袖を使って首を絞める技。",
+    definitionPt: "Um estrangulamento usando a manga do seu kimono para aplicar pressão no pescoço.",
+    category: "submission"
+  },
+  {
+    term: "Bow and Arrow",
+    termJa: "ボウアンドアロー",
+    termPt: "Arco e Flecha",
+    definition: "A powerful collar choke from back control using the gi.",
+    definitionJa: "バックコントロールから道着を使って極める強力な襟絞め。",
+    definitionPt: "Um poderoso estrangulamento de gola do controle das costas usando o kimono.",
+    category: "submission"
+  },
+  {
+    term: "Cross Collar Choke",
+    termJa: "クロスカラーチョーク",
+    termPt: "Estrangulamento Cruzado",
+    definition: "A choke using crossed grips on opponent's collar.",
+    definitionJa: "相手の襟を交差させて掴んで絞める技。",
+    definitionPt: "Um estrangulamento usando pegadas cruzadas na gola do oponente.",
+    category: "submission"
+  },
+  {
+    term: "Baseball Bat Choke",
+    termJa: "ベースボールバットチョーク",
+    termPt: "Estrangulamento Taco de Beisebol",
+    definition: "A choke with grip positioning similar to holding a baseball bat.",
+    definitionJa: "野球のバットを握るような手の位置で極める絞め技。",
+    definitionPt: "Um estrangulamento com posicionamento de pegada similar a segurar um taco de beisebol.",
+    category: "submission"
+  },
+  {
+    term: "Heel Hook",
+    termJa: "ヒールフック",
+    termPt: "Heel Hook",
+    definition: "A dangerous leg lock attacking the knee by twisting the heel.",
+    definitionJa: "踵を捻って膝を攻撃する危険な足関節技。",
+    definitionPt: "Uma chave de perna perigosa atacando o joelho torcendo o calcanhar.",
+    category: "submission"
+  },
+  {
+    term: "Kneebar",
+    termJa: "膝十字固め",
+    termPt: "Chave de Joelho",
+    definition: "A leg lock that hyperextends the knee joint.",
+    definitionJa: "膝関節を過伸展させる足関節技。",
+    definitionPt: "Uma chave de perna que hiperextende a articulação do joelho.",
+    category: "submission"
+  },
+  {
+    term: "Ankle Lock",
+    termJa: "アンクルロック",
+    termPt: "Chave de Tornozelo",
+    definition: "A submission targeting the ankle joint.",
+    definitionJa: "足首の関節を狙う極め技。",
+    definitionPt: "Uma finalização visando a articulação do tornozelo.",
+    category: "submission"
+  },
+  {
+    term: "Toe Hold",
+    termJa: "トーホールド",
+    termPt: "Chave de Pé",
+    definition: "A foot lock that twists the foot and attacks the ankle.",
+    definitionJa: "足を捻って足首を攻撃する足関節技。",
+    definitionPt: "Uma chave de pé que torce o pé e ataca o tornozelo.",
+    category: "submission"
+  },
+  {
+    term: "Calf Slicer",
+    termJa: "カーフスライサー",
+    termPt: "Fatia de Panturrilha",
+    definition: "A compression lock on the calf muscle.",
+    definitionJa: "ふくらはぎの筋肉を圧迫する関節技。",
+    definitionPt: "Uma chave de compressão no músculo da panturrilha.",
+    category: "submission"
+  },
+  {
+    term: "Wristlock",
+    termJa: "リストロック",
+    termPt: "Chave de Pulso",
+    definition: "A joint lock attacking the wrist.",
+    definitionJa: "手首の関節を攻撃する技。",
+    definitionPt: "Uma chave articular atacando o pulso.",
+    category: "submission"
+  },
+  {
+    term: "D'Arce Choke",
+    termJa: "ダースチョーク",
+    termPt: "D'Arce",
+    definition: "An arm triangle variation entered from the side.",
+    definitionJa: "横から入る腕三角絞めのバリエーション。",
+    definitionPt: "Uma variação do triângulo de braço entrada pela lateral.",
+    category: "submission"
+  },
+  {
+    term: "Anaconda Choke",
+    termJa: "アナコンダチョーク",
+    termPt: "Anaconda",
+    definition: "An arm triangle choke similar to D'Arce but entered differently.",
+    definitionJa: "ダースに似た腕三角絞めだが、入り方が異なる。",
+    definitionPt: "Um estrangulamento triângulo de braço similar ao D'Arce mas com entrada diferente.",
+    category: "submission"
+  },
+  {
+    term: "Von Flue Choke",
+    termJa: "ヴォンフルーチョーク",
+    termPt: "Von Flue",
+    definition: "A choke applied using shoulder pressure when opponent attempts guillotine.",
+    definitionJa: "相手がギロチンを狙った時に肩の圧力で極める絞め技。",
+    definitionPt: "Um estrangulamento aplicado usando pressão do ombro quando o oponente tenta guilhotina.",
+    category: "submission"
+  },
+  // Techniques
+  {
     term: "Sweep",
     termJa: "スイープ",
     termPt: "Raspagem",
@@ -154,6 +382,79 @@ const glossaryTerms: GlossaryTerm[] = [
     category: "technique"
   },
   {
+    term: "Takedown",
+    termJa: "テイクダウン",
+    termPt: "Queda",
+    definition: "Techniques to bring an opponent from standing to the ground.",
+    definitionJa: "立った相手を地面に倒す技術。",
+    definitionPt: "Técnicas para levar o oponente de pé ao chão.",
+    category: "technique"
+  },
+  {
+    term: "Guard Pull",
+    termJa: "ガードプル",
+    termPt: "Puxada de Guarda",
+    definition: "Intentionally going to your back to play guard.",
+    definitionJa: "意図的に背中をつけてガードを展開すること。",
+    definitionPt: "Ir intencionalmente para as costas para jogar guarda.",
+    category: "technique"
+  },
+  {
+    term: "Berimbolo",
+    termJa: "ベリンボロ",
+    termPt: "Berimbolo",
+    definition: "A spinning inversion technique used to take the back.",
+    definitionJa: "回転してバックを取るインバーション技術。",
+    definitionPt: "Uma técnica de inversão giratória usada para pegar as costas.",
+    category: "technique"
+  },
+  {
+    term: "Scissor Sweep",
+    termJa: "シザースイープ",
+    termPt: "Raspagem Tesoura",
+    definition: "A fundamental sweep using a scissoring motion with your legs.",
+    definitionJa: "足をハサミのように使う基本的なスイープ。",
+    definitionPt: "Uma raspagem fundamental usando um movimento de tesoura com as pernas.",
+    category: "technique"
+  },
+  {
+    term: "Hip Bump Sweep",
+    termJa: "ヒップバンプスイープ",
+    termPt: "Raspagem de Quadril",
+    definition: "A sweep using explosive hip movement to off-balance opponent.",
+    definitionJa: "腰の爆発的な動きで相手のバランスを崩すスイープ。",
+    definitionPt: "Uma raspagem usando movimento explosivo de quadril para desequilibrar o oponente.",
+    category: "technique"
+  },
+  {
+    term: "Toreando Pass",
+    termJa: "トレアンドパス",
+    termPt: "Passagem Toreando",
+    definition: "A guard pass pushing opponent's legs to the side like a bullfighter.",
+    definitionJa: "闘牛士のように相手の足を横に押すガードパス。",
+    definitionPt: "Uma passagem de guarda empurrando as pernas do oponente para o lado como um toureiro.",
+    category: "technique"
+  },
+  {
+    term: "Knee Cut Pass",
+    termJa: "ニーカットパス",
+    termPt: "Passagem Joelho",
+    definition: "A guard pass cutting your knee across opponent's thigh.",
+    definitionJa: "膝を相手の太ももを横切るようにするガードパス。",
+    definitionPt: "Uma passagem de guarda cortando o joelho pela coxa do oponente.",
+    category: "technique"
+  },
+  {
+    term: "Long Step Pass",
+    termJa: "ロングステップパス",
+    termPt: "Passagem Passo Longo",
+    definition: "A pass using a long stepping motion to clear the legs.",
+    definitionJa: "大きなステップで足を越えるパス。",
+    definitionPt: "Uma passagem usando um movimento de passo longo para passar as pernas.",
+    category: "technique"
+  },
+  // Movements
+  {
     term: "Shrimp",
     termJa: "エビ",
     termPt: "Fuga de Quadril",
@@ -172,6 +473,125 @@ const glossaryTerms: GlossaryTerm[] = [
     category: "movement"
   },
   {
+    term: "Technical Stand Up",
+    termJa: "テクニカルスタンドアップ",
+    termPt: "Levantada Técnica",
+    definition: "A safe method to stand up while maintaining base and protection.",
+    definitionJa: "ベースと防御を維持しながら安全に立ち上がる方法。",
+    definitionPt: "Um método seguro de levantar mantendo base e proteção.",
+    category: "movement"
+  },
+  {
+    term: "Granby Roll",
+    termJa: "グランビーロール",
+    termPt: "Rolamento Granby",
+    definition: "A shoulder roll used for escapes and inversions.",
+    definitionJa: "エスケープやインバージョンに使う肩を使った回転。",
+    definitionPt: "Um rolamento de ombro usado para fugas e inversões.",
+    category: "movement"
+  },
+  {
+    term: "Inversion",
+    termJa: "インバージョン",
+    termPt: "Inversão",
+    definition: "Going upside down to recover guard or create attacks.",
+    definitionJa: "逆さまになってガードを回復したり攻撃を作る動き。",
+    definitionPt: "Ficar de cabeça para baixo para recuperar guarda ou criar ataques.",
+    category: "movement"
+  },
+  {
+    term: "Pummel",
+    termJa: "パメル",
+    termPt: "Pummel",
+    definition: "Fighting for inside position with your arms in the clinch.",
+    definitionJa: "組み合いで腕の内側のポジションを争う動き。",
+    definitionPt: "Lutando por posição interna com os braços no clinch.",
+    category: "movement"
+  },
+  // Concepts
+  {
+    term: "Posture",
+    termJa: "ポスチャー",
+    termPt: "Postura",
+    definition: "Your body alignment and positioning, crucial for both offense and defense.",
+    definitionJa: "体の配置とポジショニング。攻撃と防御の両方に重要。",
+    definitionPt: "Seu alinhamento e posicionamento corporal, crucial para ataque e defesa.",
+    category: "concept"
+  },
+  {
+    term: "Base",
+    termJa: "ベース",
+    termPt: "Base",
+    definition: "Your stability and balance, the foundation of all positions.",
+    definitionJa: "安定性とバランス。すべてのポジションの基盤。",
+    definitionPt: "Sua estabilidade e equilíbrio, a fundação de todas as posições.",
+    category: "concept"
+  },
+  {
+    term: "Pressure",
+    termJa: "プレッシャー",
+    termPt: "Pressão",
+    definition: "Using your body weight effectively to control your opponent.",
+    definitionJa: "体重を効果的に使って相手をコントロールすること。",
+    definitionPt: "Usar seu peso corporal efetivamente para controlar seu oponente.",
+    category: "concept"
+  },
+  {
+    term: "Frame",
+    termJa: "フレーム",
+    termPt: "Frame",
+    definition: "Using your skeletal structure to create space and defend.",
+    definitionJa: "骨格構造を使ってスペースを作り防御すること。",
+    definitionPt: "Usar sua estrutura esquelética para criar espaço e defender.",
+    category: "concept"
+  },
+  {
+    term: "Leverage",
+    termJa: "レバレッジ",
+    termPt: "Alavanca",
+    definition: "Using mechanical advantage to overcome strength.",
+    definitionJa: "力学的優位性を使って力を克服すること。",
+    definitionPt: "Usar vantagem mecânica para superar força.",
+    category: "concept"
+  },
+  {
+    term: "Timing",
+    termJa: "タイミング",
+    termPt: "Timing",
+    definition: "Executing techniques at the optimal moment.",
+    definitionJa: "最適なタイミングで技を実行すること。",
+    definitionPt: "Executar técnicas no momento ideal.",
+    category: "concept"
+  },
+  {
+    term: "Hip Movement",
+    termJa: "ヒップムーブメント",
+    termPt: "Movimento de Quadril",
+    definition: "The foundation of all Jiu-Jitsu movement and technique.",
+    definitionJa: "すべての柔術の動きと技術の基盤。",
+    definitionPt: "A fundação de todo movimento e técnica de Jiu-Jitsu.",
+    category: "concept"
+  },
+  {
+    term: "Grip Fighting",
+    termJa: "グリップファイティング",
+    termPt: "Luta de Pegadas",
+    definition: "The battle for advantageous grips on your opponent.",
+    definitionJa: "相手に対する有利なグリップを争うこと。",
+    definitionPt: "A batalha por pegadas vantajosas no oponente.",
+    category: "concept"
+  },
+  {
+    term: "Connection",
+    termJa: "コネクション",
+    termPt: "Conexão",
+    definition: "Maintaining contact with your opponent for control.",
+    definitionJa: "コントロールのために相手との接触を維持すること。",
+    definitionPt: "Manter contato com o oponente para controle.",
+    category: "concept"
+  },
+  // Equipment
+  {
     term: "Gi",
     termJa: "道着",
     termPt: "Kimono",
@@ -189,6 +609,43 @@ const glossaryTerms: GlossaryTerm[] = [
     definitionPt: "Luta sem o uniforme tradicional, geralmente de shorts e rash guard.",
     category: "equipment"
   },
+  {
+    term: "Rash Guard",
+    termJa: "ラッシュガード",
+    termPt: "Rash Guard",
+    definition: "A tight-fitting athletic shirt worn for no-gi training.",
+    definitionJa: "ノーギトレーニングで着用するタイトなアスレチックシャツ。",
+    definitionPt: "Uma camisa atlética justa usada para treino sem kimono.",
+    category: "equipment"
+  },
+  {
+    term: "Spats",
+    termJa: "スパッツ",
+    termPt: "Spats",
+    definition: "Compression pants worn for no-gi training.",
+    definitionJa: "ノーギトレーニングで着用するコンプレッションパンツ。",
+    definitionPt: "Calças de compressão usadas para treino sem kimono.",
+    category: "equipment"
+  },
+  {
+    term: "Belt",
+    termJa: "帯",
+    termPt: "Faixa",
+    definition: "Colored belt indicating rank: white, blue, purple, brown, black.",
+    definitionJa: "ランクを示す色帯：白、青、紫、茶、黒。",
+    definitionPt: "Faixa colorida indicando graduação: branca, azul, roxa, marrom, preta.",
+    category: "equipment"
+  },
+  {
+    term: "Mouth Guard",
+    termJa: "マウスピース",
+    termPt: "Protetor Bucal",
+    definition: "Protective gear for teeth during training and competition.",
+    definitionJa: "トレーニングや試合中に歯を保護する道具。",
+    definitionPt: "Equipamento de proteção para os dentes durante treino e competição.",
+    category: "equipment"
+  },
+  // General
   {
     term: "Tap",
     termJa: "タップ",
@@ -217,31 +674,67 @@ const glossaryTerms: GlossaryTerm[] = [
     category: "general"
   },
   {
-    term: "Posture",
-    termJa: "ポスチャー",
-    termPt: "Postura",
-    definition: "Your body alignment and positioning, crucial for both offense and defense.",
-    definitionJa: "体の配置とポジショニング。攻撃と防御の両方に重要。",
-    definitionPt: "Seu alinhamento e posicionamento corporal, crucial para ataque e defesa.",
-    category: "concept"
+    term: "IBJJF",
+    termJa: "IBJJF",
+    termPt: "IBJJF",
+    definition: "International Brazilian Jiu-Jitsu Federation, the largest BJJ organization.",
+    definitionJa: "国際ブラジリアン柔術連盟。最大のBJJ組織。",
+    definitionPt: "Federação Internacional de Jiu-Jitsu Brasileiro, a maior organização de BJJ.",
+    category: "general"
   },
   {
-    term: "Base",
-    termJa: "ベース",
-    termPt: "Base",
-    definition: "Your stability and balance, the foundation of all positions.",
-    definitionJa: "安定性とバランス。すべてのポジションの基盤。",
-    definitionPt: "Sua estabilidade e equilíbrio, a fundação de todas as posições.",
-    category: "concept"
+    term: "SJJIF",
+    termJa: "SJJIF",
+    termPt: "SJJIF",
+    definition: "Sport Jiu-Jitsu International Federation.",
+    definitionJa: "スポーツ柔術国際連盟。",
+    definitionPt: "Federação Internacional de Jiu-Jitsu Esportivo.",
+    category: "general"
   },
   {
-    term: "Pressure",
-    termJa: "プレッシャー",
-    termPt: "Pressão",
-    definition: "Using your body weight effectively to control your opponent.",
-    definitionJa: "体重を効果的に使って相手をコントロールすること。",
-    definitionPt: "Usar seu peso corporal efetivamente para controlar seu oponente.",
-    category: "concept"
+    term: "Warm Up",
+    termJa: "ウォームアップ",
+    termPt: "Aquecimento",
+    definition: "Preparation exercises before training.",
+    definitionJa: "トレーニング前の準備運動。",
+    definitionPt: "Exercícios de preparação antes do treino.",
+    category: "general"
+  },
+  {
+    term: "Drilling",
+    termJa: "ドリル",
+    termPt: "Drill",
+    definition: "Repetitive practice of techniques without resistance.",
+    definitionJa: "抵抗なしでの技術の反復練習。",
+    definitionPt: "Prática repetitiva de técnicas sem resistência.",
+    category: "general"
+  },
+  {
+    term: "Flow Roll",
+    termJa: "フローロール",
+    termPt: "Rolar Leve",
+    definition: "Light sparring focusing on movement and technique over power.",
+    definitionJa: "パワーより動きとテクニックに焦点を当てた軽いスパーリング。",
+    definitionPt: "Sparring leve focando em movimento e técnica ao invés de força.",
+    category: "general"
+  },
+  {
+    term: "Competition",
+    termJa: "試合",
+    termPt: "Competição",
+    definition: "Official Jiu-Jitsu tournament or match.",
+    definitionJa: "公式の柔術トーナメントまたは試合。",
+    definitionPt: "Torneio ou luta oficial de Jiu-Jitsu.",
+    category: "general"
+  },
+  {
+    term: "Professor",
+    termJa: "先生",
+    termPt: "Professor",
+    definition: "A Jiu-Jitsu instructor, typically black belt.",
+    definitionJa: "柔術の指導者。通常は黒帯。",
+    definitionPt: "Um instrutor de Jiu-Jitsu, tipicamente faixa preta.",
+    category: "general"
   }
 ];
 

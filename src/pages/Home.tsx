@@ -272,7 +272,7 @@ const Home = () => {
 
                 <div className="grid md:grid-cols-2 gap-8">
                   {/* Blog Card */}
-                  <div className="group relative bg-card rounded-2xl border border-border p-8 hover:border-primary/50 transition-colors">
+                  <Link to="/blog" className="group relative bg-card rounded-2xl border border-border p-8 hover:border-primary/50 transition-colors block">
                     <div className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center mb-6 group-hover:bg-primary/20 transition-colors">
                       <FileText className="w-7 h-7 text-primary" />
                     </div>
@@ -280,12 +280,12 @@ const Home = () => {
                       {homeT.seo?.blogTitle || "JiuFlow Blog"}
                     </h3>
                     <p className="text-muted-foreground mb-6">
-                      {homeT.seo?.blogDesc || "柔術の技術解説、練習のコツ、大会レポートなど"}
+                      {homeT.seo?.blogDesc || "開発記録 - Lovable.devで構築した柔術プラットフォーム"}
                     </p>
                     <Button variant="outline" className="group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
                       {homeT.seo?.blogCta || "ブログを読む"}
                     </Button>
-                  </div>
+                  </Link>
 
                   {/* Glossary Card */}
                   <Link to="/glossary" className="group relative bg-card rounded-2xl border border-border p-8 hover:border-primary/50 transition-colors block">
