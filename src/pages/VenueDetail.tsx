@@ -16,11 +16,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { toast } from "sonner";
 import { 
   Building2, MapPin, Users, Globe, ArrowLeft, Calendar, 
-  ExternalLink, Navigation as NavIcon, Trophy, Camera, Loader2
+  ExternalLink, Navigation as NavIcon, Trophy, Camera, Loader2, Upload
 } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { ja, enUS, pt } from "date-fns/locale";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 interface Venue {
   id: string;
@@ -74,6 +74,8 @@ const VenueDetail = () => {
   const [imageDialogOpen, setImageDialogOpen] = useState(false);
   const [newImageUrl, setNewImageUrl] = useState("");
   const [isAdmin, setIsAdmin] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Check admin status
   useEffect(() => {
@@ -106,6 +108,46 @@ const VenueDetail = () => {
       toast.error(language === 'ja' ? '更新に失敗しました' : 'Failed to update');
     },
   });
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast.error(language === 'ja' ? '画像ファイルを選択してください' : 'Please select an image file');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error(language === 'ja' ? 'ファイルサイズは5MB以下にしてください' : 'File size must be under 5MB');
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `venue-${id}-${Date.now()}.${fileExt}`;
+      const filePath = `venues/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('venue-images')
+        .upload(filePath, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('venue-images')
+        .getPublicUrl(filePath);
+
+      setNewImageUrl(publicUrl);
+      toast.success(language === 'ja' ? 'アップロード完了' : 'Upload complete');
+    } catch (error) {
+      console.error('Upload error:', error);
+      toast.error(language === 'ja' ? 'アップロードに失敗しました' : 'Upload failed');
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const { data: venue, isLoading } = useQuery({
     queryKey: ['venue', id],
@@ -425,6 +467,44 @@ const VenueDetail = () => {
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
+            {/* File Upload */}
+            <div className="space-y-2">
+              <Label>{language === 'ja' ? 'ファイルをアップロード' : 'Upload File'}</Label>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleFileUpload}
+                className="hidden"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+              >
+                {uploading ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <Upload className="h-4 w-4 mr-2" />
+                )}
+                {language === 'ja' ? '画像を選択' : 'Select Image'}
+              </Button>
+            </div>
+
+            {/* Or URL input */}
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-background px-2 text-muted-foreground">
+                  {language === 'ja' ? 'または' : 'or'}
+                </span>
+              </div>
+            </div>
+
             <div className="space-y-2">
               <Label>{language === 'ja' ? '画像URL' : 'Image URL'}</Label>
               <Input
@@ -433,6 +513,7 @@ const VenueDetail = () => {
                 placeholder="https://..."
               />
             </div>
+
             {newImageUrl && (
               <div className="rounded-lg overflow-hidden border">
                 <img
@@ -450,7 +531,7 @@ const VenueDetail = () => {
             </Button>
             <Button
               onClick={() => updateImageMutation.mutate(newImageUrl)}
-              disabled={updateImageMutation.isPending}
+              disabled={updateImageMutation.isPending || !newImageUrl}
             >
               {updateImageMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               {language === 'ja' ? '保存' : 'Save'}
