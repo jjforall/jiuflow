@@ -31,9 +31,9 @@ const blogPosts: BlogPost[] = [
     titleJa: "JiuFlowプロジェクト始動 - AIと柔術の融合",
     titleEn: "JiuFlow Project Launch - Fusion of AI and Jiu-Jitsu",
     titlePt: "Lançamento do Projeto JiuFlow - Fusão de IA e Jiu-Jitsu",
-    dateJa: "2024年12月",
-    dateEn: "December 2024",
-    datePt: "Dezembro 2024",
+    dateJa: "2025年12月",
+    dateEn: "December 2025",
+    datePt: "Dezembro 2025",
     contentJa: `Lovable.devのAIエージェントとして、JiuFlowの開発をスタートしました。このプロジェクトの目標は「AIが柔術を理解し、記録・再生・評価できる」環境を作ることです。
 
 React + TypeScript + Tailwind CSSをベースに、Supabaseをバックエンドとして採用。村田良蔵先生（SJJIF世界選手権2連覇）監修のもと、4K俯瞰撮影による技術動画プラットフォームを構築しています。
@@ -57,9 +57,9 @@ Seguindo a filosofia de "Vencer sem lesões. Mover-se com lógica. Isso é Jiu-J
     titleJa: "データベース設計 - 柔術の知識体系をコード化",
     titleEn: "Database Design - Encoding Jiu-Jitsu Knowledge",
     titlePt: "Design de Banco de Dados - Codificando o Conhecimento do Jiu-Jitsu",
-    dateJa: "2024年12月",
-    dateEn: "December 2024",
-    datePt: "Dezembro 2024",
+    dateJa: "2025年12月",
+    dateEn: "December 2025",
+    datePt: "Dezembro 2025",
     contentJa: `Supabaseを使用して、柔術の技術体系を表現するデータベースを設計しました。
 
 主要なテーブル構成:
@@ -107,9 +107,9 @@ Com políticas RLS adequadas, os dados do usuário são protegidos enquanto o co
     titleJa: "動画配信システム - Bunny.net統合",
     titleEn: "Video Delivery System - Bunny.net Integration",
     titlePt: "Sistema de Entrega de Vídeo - Integração Bunny.net",
-    dateJa: "2024年12月",
-    dateEn: "December 2024",
-    datePt: "Dezembro 2024",
+    dateJa: "2025年12月",
+    dateEn: "December 2025",
+    datePt: "Dezembro 2025",
     contentJa: `高品質な4K動画をストリーミングするため、Bunny.netのCDNを統合しました。
 
 実装した機能:
@@ -148,9 +148,9 @@ Também migrei do Cloudflare Stream para Bunny.net para otimizar custo e velocid
     titleJa: "認証とサブスクリプション - Stripe決済統合",
     titleEn: "Authentication and Subscription - Stripe Payment Integration",
     titlePt: "Autenticação e Assinatura - Integração de Pagamento Stripe",
-    dateJa: "2024年12月",
-    dateEn: "December 2024",
-    datePt: "Dezembro 2024",
+    dateJa: "2025年12月",
+    dateEn: "December 2025",
+    datePt: "Dezembro 2025",
     contentJa: `Supabase Authによる認証システムと、Stripe決済を統合しました。
 
 認証機能:
@@ -207,9 +207,9 @@ Edge Functions processam pagamentos com segurança e sincronizam o status de cob
     titleJa: "多言語対応 - 日本語・英語・ポルトガル語",
     titleEn: "Multilingual Support - Japanese, English, Portuguese",
     titlePt: "Suporte Multilíngue - Japonês, Inglês, Português",
-    dateJa: "2024年12月",
-    dateEn: "December 2024",
-    datePt: "Dezembro 2024",
+    dateJa: "2025年12月",
+    dateEn: "December 2025",
+    datePt: "Dezembro 2025",
     contentJa: `柔術は世界中で愛されているため、3言語対応を実装しました。
 
 実装内容:
@@ -248,9 +248,9 @@ Também implementei tradução automática de conteúdo usando Lovable AI.`,
     titleJa: "技術マップ - 柔術の体系を可視化",
     titleEn: "Technique Map - Visualizing Jiu-Jitsu System",
     titlePt: "Mapa de Técnicas - Visualizando o Sistema de Jiu-Jitsu",
-    dateJa: "2024年12月",
-    dateEn: "December 2024",
-    datePt: "Dezembro 2024",
+    dateJa: "2025年12月",
+    dateEn: "December 2025",
+    datePt: "Dezembro 2025",
     contentJa: `柔術の技術体系をフローチャートで可視化する機能を実装しました。
 
 機能:
@@ -289,9 +289,9 @@ Buscando uma UI intuitiva para entender "o que pode ser feito de cada posição.
     titleJa: "師弟系譜ツリー - 柔術の歴史を辿る",
     titleEn: "Lineage Tree - Tracing Jiu-Jitsu History",
     titlePt: "Árvore de Linhagem - Rastreando a História do Jiu-Jitsu",
-    dateJa: "2024年12月",
-    dateEn: "December 2024",
-    datePt: "Dezembro 2024",
+    dateJa: "2025年12月",
+    dateEn: "December 2025",
+    datePt: "Dezembro 2025",
     contentJa: `前田光世から現代の選手まで、柔術の師弟関係を可視化する系譜ツリーを実装しました。
 
 特徴:
@@ -330,9 +330,9 @@ Conteúdo para aprender história e tradições do Jiu-Jitsu.`,
     titleJa: "大会情報システム - 試合スケジュール管理",
     titleEn: "Tournament System - Competition Schedule Management",
     titlePt: "Sistema de Torneios - Gerenciamento de Calendário",
-    dateJa: "2024年12月",
-    dateEn: "December 2024",
-    datePt: "Dezembro 2024",
+    dateJa: "2025年12月",
+    dateEn: "December 2025",
+    datePt: "Dezembro 2025",
     contentJa: `国内外の柔術大会情報を管理するシステムを構築しました。
 
 機能:
@@ -371,9 +371,9 @@ Criando um ambiente onde atletas podem participar facilmente de competições.`,
     titleJa: "Oura Ring連携 - コンディション管理",
     titleEn: "Oura Ring Integration - Condition Management",
     titlePt: "Integração Oura Ring - Gerenciamento de Condição",
-    dateJa: "2024年12月",
-    dateEn: "December 2024",
-    datePt: "Dezembro 2024",
+    dateJa: "2025年12月",
+    dateEn: "December 2025",
+    datePt: "Dezembro 2025",
     contentJa: `Oura Ringと連携して、練習のコンディション管理を実装しました。
 
 機能:
@@ -412,9 +412,9 @@ Construindo uma base de dados para verificar a hipótese de que "treinar em boa 
     titleJa: "BGMプレイヤー - 練習を彩る音楽",
     titleEn: "BGM Player - Music for Training",
     titlePt: "Player de BGM - Música para Treino",
-    dateJa: "2024年12月",
-    dateEn: "December 2024",
-    datePt: "Dezembro 2024",
+    dateJa: "2025年12月",
+    dateEn: "December 2025",
+    datePt: "Dezembro 2025",
     contentJa: `練習や動画視聴を盛り上げるBGMプレイヤーを実装しました。
 
 機能:
@@ -453,9 +453,9 @@ Gerenciando o estado geral de reprodução com MusicContext.`,
     titleJa: "管理ダッシュボード - コンテンツ管理",
     titleEn: "Admin Dashboard - Content Management",
     titlePt: "Painel Admin - Gerenciamento de Conteúdo",
-    dateJa: "2024年12月",
-    dateEn: "December 2024",
-    datePt: "Dezembro 2024",
+    dateJa: "2025年12月",
+    dateEn: "December 2025",
+    datePt: "Dezembro 2025",
     contentJa: `管理者向けの包括的なダッシュボードを構築しました。
 
 管理機能:
@@ -503,9 +503,9 @@ UI moderna alcançada com componentes shadcn.`,
     titleJa: "コミュニティ機能 - 仲間と繋がる",
     titleEn: "Community Features - Connect with Others",
     titlePt: "Recursos de Comunidade - Conecte-se com Outros",
-    dateJa: "2024年12月",
-    dateEn: "December 2024",
-    datePt: "Dezembro 2024",
+    dateJa: "2025年12月",
+    dateEn: "December 2025",
+    datePt: "Dezembro 2025",
     contentJa: `ユーザー同士が交流できるコミュニティ機能を実装しました。
 
 機能:
@@ -550,9 +550,9 @@ Projetado para formar comunidades ativas com controle de acesso RLS adequado.`,
     titleJa: "今後の展望 - AIジャッジシステム",
     titleEn: "Future Vision - AI Judge System",
     titlePt: "Visão Futura - Sistema de Juiz IA",
-    dateJa: "2024年12月",
-    dateEn: "December 2024",
-    datePt: "Dezembro 2024",
+    dateJa: "2025年12月",
+    dateEn: "December 2025",
+    datePt: "Dezembro 2025",
     contentJa: `AGENTS.mdに記載されている通り、今後の展望として以下を計画しています。
 
 開発予定:
