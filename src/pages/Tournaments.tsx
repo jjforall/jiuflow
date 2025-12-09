@@ -441,23 +441,35 @@ const Tournaments = () => {
                 onError={() => setImageError(true)}
               />
               <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/30 to-transparent" />
-              {/* Participation Status Badge - Top Right */}
-              {isParticipating && !isPast && (
-                <div className="absolute top-2 right-2 z-10">
+              {/* Participation Button - Top Right */}
+              {!isPast && (
+                <button
+                  onClick={handleParticipationToggle}
+                  disabled={isMutating}
+                  className="absolute top-2 right-2 z-10"
+                >
                   <Badge 
-                    className={`px-2 py-1 text-xs font-semibold shadow-lg ${
-                      participationStatus === 'registered' 
-                        ? 'bg-green-500 text-white' 
-                        : 'bg-amber-500 text-white'
+                    className={`px-2 py-1 text-xs font-semibold shadow-lg cursor-pointer transition-all hover:scale-105 ${
+                      isParticipating
+                        ? participationStatus === 'registered' 
+                          ? 'bg-green-500 text-white hover:bg-green-600' 
+                          : 'bg-amber-500 text-white hover:bg-amber-600'
+                        : 'bg-primary/80 text-primary-foreground hover:bg-primary'
                     }`}
                   >
-                    {participationStatus === 'registered' ? (
-                      <><CheckCircle2 className="h-3 w-3 mr-1" />{language === 'ja' ? '済' : '✓'}</>
+                    {isMutating ? (
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                    ) : isParticipating ? (
+                      participationStatus === 'registered' ? (
+                        <><CheckCircle2 className="h-3 w-3 mr-1" />{language === 'ja' ? '済' : '✓'}</>
+                      ) : (
+                        <><CircleDashed className="h-3 w-3 mr-1" />{language === 'ja' ? '予定' : '○'}</>
+                      )
                     ) : (
-                      <><CircleDashed className="h-3 w-3 mr-1" />{language === 'ja' ? '予定' : '○'}</>
+                      <><UserPlus className="h-3 w-3 mr-1" />{language === 'ja' ? '参加' : '+'}</>
                     )}
                   </Badge>
-                </div>
+                </button>
               )}
               {tournament.venues && (
                 <div className="absolute bottom-2 left-2 right-2">
@@ -470,23 +482,35 @@ const Tournaments = () => {
           ) : (
             <div className="relative">
               <div className={`h-1.5 ${color.bg}`} />
-              {/* Participation Status Badge when no image */}
-              {isParticipating && !isPast && (
-                <div className="absolute -bottom-6 right-2 z-10">
+              {/* Participation Button when no image */}
+              {!isPast && (
+                <button
+                  onClick={handleParticipationToggle}
+                  disabled={isMutating}
+                  className="absolute top-2 right-2 z-10"
+                >
                   <Badge 
-                    className={`px-2 py-1 text-xs font-semibold shadow-lg ${
-                      participationStatus === 'registered' 
-                        ? 'bg-green-500 text-white' 
-                        : 'bg-amber-500 text-white'
+                    className={`px-2 py-1 text-xs font-semibold shadow-lg cursor-pointer transition-all hover:scale-105 ${
+                      isParticipating
+                        ? participationStatus === 'registered' 
+                          ? 'bg-green-500 text-white hover:bg-green-600' 
+                          : 'bg-amber-500 text-white hover:bg-amber-600'
+                        : 'bg-primary/80 text-primary-foreground hover:bg-primary'
                     }`}
                   >
-                    {participationStatus === 'registered' ? (
-                      <><CheckCircle2 className="h-3 w-3 mr-1" />{language === 'ja' ? '済' : '✓'}</>
+                    {isMutating ? (
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                    ) : isParticipating ? (
+                      participationStatus === 'registered' ? (
+                        <><CheckCircle2 className="h-3 w-3 mr-1" />{language === 'ja' ? '済' : '✓'}</>
+                      ) : (
+                        <><CircleDashed className="h-3 w-3 mr-1" />{language === 'ja' ? '予定' : '○'}</>
+                      )
                     ) : (
-                      <><CircleDashed className="h-3 w-3 mr-1" />{language === 'ja' ? '予定' : '○'}</>
+                      <><UserPlus className="h-3 w-3 mr-1" />{language === 'ja' ? '参加' : '+'}</>
                     )}
                   </Badge>
-                </div>
+                </button>
               )}
             </div>
           )}
@@ -567,43 +591,20 @@ const Tournaments = () => {
                 )}
               </div>
 
-              {/* Actions */}
-              {!isPast && (
-                <div className="pt-2 border-t border-border/50 flex items-center justify-between gap-2">
-                  {tournament.registration_url && (
-                    <button 
-                      className={`inline-flex items-center gap-1.5 text-xs font-medium ${color.text} hover:underline`}
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        window.open(tournament.registration_url!, '_blank', 'noopener,noreferrer');
-                      }}
-                    >
-                      <ExternalLink className="h-3 w-3" />
-                      {language === 'ja' ? 'エントリー' : 'Register'}
-                    </button>
-                  )}
-                  <Button
-                    variant={isParticipating ? "default" : "outline"}
-                    size="sm"
-                    className={`h-7 text-xs gap-1 ${isParticipating ? getStatusDisplay().className : ''}`}
-                    onClick={handleParticipationToggle}
-                    disabled={isMutating}
+              {/* Actions - Only registration link */}
+              {!isPast && tournament.registration_url && (
+                <div className="pt-2 border-t border-border/50">
+                  <button 
+                    className={`inline-flex items-center gap-1.5 text-xs font-medium ${color.text} hover:underline`}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      window.open(tournament.registration_url!, '_blank', 'noopener,noreferrer');
+                    }}
                   >
-                    {isMutating ? (
-                      <Loader2 className="h-3 w-3 animate-spin" />
-                    ) : isParticipating ? (
-                      <>
-                        <UserMinus className="h-3 w-3" />
-                        {getStatusDisplay().text}
-                      </>
-                    ) : (
-                      <>
-                        <UserPlus className="h-3 w-3" />
-                        {language === 'ja' ? '参加予定' : 'Plan'}
-                      </>
-                    )}
-                  </Button>
+                    <ExternalLink className="h-3 w-3" />
+                    {language === 'ja' ? 'エントリー' : 'Register'}
+                  </button>
                 </div>
               )}
             </div>

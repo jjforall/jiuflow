@@ -431,43 +431,69 @@ const TournamentDetail = () => {
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent" />
                 
-                {/* Participation Status Badge - Top Right */}
-                {user && isParticipating && !isPast && (
-                  <div className="absolute top-3 right-3 z-10">
+                {/* Participation Status Badge - Top Right (Clickable) */}
+                {user && !isPast && (
+                  <button
+                    onClick={() => isParticipating 
+                      ? (participationStatus === 'registered' ? setCancelDialogOpen(true) : leaveMutation.mutate())
+                      : setParticipationDialogOpen(true)
+                    }
+                    className="absolute top-3 right-3 z-10"
+                  >
                     <Badge 
-                      className={`px-3 py-1.5 text-sm font-semibold shadow-lg ${
-                        participationStatus === 'registered' 
-                          ? 'bg-green-500 text-white hover:bg-green-600' 
-                          : 'bg-amber-500 text-white hover:bg-amber-600'
+                      className={`px-3 py-1.5 text-sm font-semibold shadow-lg cursor-pointer transition-all hover:scale-105 ${
+                        isParticipating
+                          ? participationStatus === 'registered' 
+                            ? 'bg-green-500 text-white hover:bg-green-600' 
+                            : 'bg-amber-500 text-white hover:bg-amber-600'
+                          : 'bg-primary/80 text-primary-foreground hover:bg-primary'
                       }`}
                     >
-                      {participationStatus === 'registered' ? (
-                        <><CheckCircle2 className="h-4 w-4 mr-1.5" />{language === 'ja' ? 'エントリー済み' : 'Registered'}</>
+                      {isParticipating ? (
+                        participationStatus === 'registered' ? (
+                          <><CheckCircle2 className="h-4 w-4 mr-1.5" />{language === 'ja' ? 'エントリー済み' : 'Registered'}</>
+                        ) : (
+                          <><CircleDashed className="h-4 w-4 mr-1.5" />{language === 'ja' ? 'エントリー予定' : 'Planning'}</>
+                        )
                       ) : (
-                        <><CircleDashed className="h-4 w-4 mr-1.5" />{language === 'ja' ? 'エントリー予定' : 'Planning'}</>
+                        <><UserPlus className="h-4 w-4 mr-1.5" />{language === 'ja' ? '参加予定' : 'Join'}</>
                       )}
                     </Badge>
-                  </div>
+                  </button>
                 )}
               </div>
             )}
             
             {/* Participation Status Badge when no hero image */}
-            {!getVenueImage(tournament) && user && isParticipating && !isPast && (
-              <div className="absolute top-3 right-3 z-10">
-                <Badge 
-                  className={`px-3 py-1.5 text-sm font-semibold shadow-lg ${
-                    participationStatus === 'registered' 
-                      ? 'bg-green-500 text-white hover:bg-green-600' 
-                      : 'bg-amber-500 text-white hover:bg-amber-600'
-                  }`}
+            {!getVenueImage(tournament) && user && !isPast && (
+              <div className="relative">
+                <button
+                  onClick={() => isParticipating 
+                    ? (participationStatus === 'registered' ? setCancelDialogOpen(true) : leaveMutation.mutate())
+                    : setParticipationDialogOpen(true)
+                  }
+                  className="absolute top-3 right-3 z-10"
                 >
-                  {participationStatus === 'registered' ? (
-                    <><CheckCircle2 className="h-4 w-4 mr-1.5" />{language === 'ja' ? 'エントリー済み' : 'Registered'}</>
-                  ) : (
-                    <><CircleDashed className="h-4 w-4 mr-1.5" />{language === 'ja' ? 'エントリー予定' : 'Planning'}</>
-                  )}
-                </Badge>
+                  <Badge 
+                    className={`px-3 py-1.5 text-sm font-semibold shadow-lg cursor-pointer transition-all hover:scale-105 ${
+                      isParticipating
+                        ? participationStatus === 'registered' 
+                          ? 'bg-green-500 text-white hover:bg-green-600' 
+                          : 'bg-amber-500 text-white hover:bg-amber-600'
+                        : 'bg-primary/80 text-primary-foreground hover:bg-primary'
+                    }`}
+                  >
+                    {isParticipating ? (
+                      participationStatus === 'registered' ? (
+                        <><CheckCircle2 className="h-4 w-4 mr-1.5" />{language === 'ja' ? 'エントリー済み' : 'Registered'}</>
+                      ) : (
+                        <><CircleDashed className="h-4 w-4 mr-1.5" />{language === 'ja' ? 'エントリー予定' : 'Planning'}</>
+                      )
+                    ) : (
+                      <><UserPlus className="h-4 w-4 mr-1.5" />{language === 'ja' ? '参加予定' : 'Join'}</>
+                    )}
+                  </Badge>
+                </button>
               </div>
             )}
             <CardContent className={`${getVenueImage(tournament) ? '-mt-16 relative z-10' : ''} p-4 sm:p-6`}>
