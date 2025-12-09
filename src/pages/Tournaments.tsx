@@ -441,6 +441,24 @@ const Tournaments = () => {
                 onError={() => setImageError(true)}
               />
               <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/30 to-transparent" />
+              {/* Participation Status Badge - Top Right */}
+              {isParticipating && !isPast && (
+                <div className="absolute top-2 right-2 z-10">
+                  <Badge 
+                    className={`px-2 py-1 text-xs font-semibold shadow-lg ${
+                      participationStatus === 'registered' 
+                        ? 'bg-green-500 text-white' 
+                        : 'bg-amber-500 text-white'
+                    }`}
+                  >
+                    {participationStatus === 'registered' ? (
+                      <><CheckCircle2 className="h-3 w-3 mr-1" />{language === 'ja' ? '済' : '✓'}</>
+                    ) : (
+                      <><CircleDashed className="h-3 w-3 mr-1" />{language === 'ja' ? '予定' : '○'}</>
+                    )}
+                  </Badge>
+                </div>
+              )}
               {tournament.venues && (
                 <div className="absolute bottom-2 left-2 right-2">
                   <span className="text-[10px] text-foreground/80 bg-background/60 px-1.5 py-0.5 rounded backdrop-blur-sm">
@@ -450,7 +468,27 @@ const Tournaments = () => {
               )}
             </div>
           ) : (
-            <div className={`h-1.5 ${color.bg}`} />
+            <div className="relative">
+              <div className={`h-1.5 ${color.bg}`} />
+              {/* Participation Status Badge when no image */}
+              {isParticipating && !isPast && (
+                <div className="absolute -bottom-6 right-2 z-10">
+                  <Badge 
+                    className={`px-2 py-1 text-xs font-semibold shadow-lg ${
+                      participationStatus === 'registered' 
+                        ? 'bg-green-500 text-white' 
+                        : 'bg-amber-500 text-white'
+                    }`}
+                  >
+                    {participationStatus === 'registered' ? (
+                      <><CheckCircle2 className="h-3 w-3 mr-1" />{language === 'ja' ? '済' : '✓'}</>
+                    ) : (
+                      <><CircleDashed className="h-3 w-3 mr-1" />{language === 'ja' ? '予定' : '○'}</>
+                    )}
+                  </Badge>
+                </div>
+              )}
+            </div>
           )}
           
           <CardContent className="p-4">
