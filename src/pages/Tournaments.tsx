@@ -67,6 +67,7 @@ const Tournaments = () => {
   const [currentPage, setCurrentPage] = useState(() => parseInt(searchParams.get('page') || '1', 10));
   const [participationDialog, setParticipationDialog] = useState<{ open: boolean; tournamentId: string | null }>({ open: false, tournamentId: null });
   const [cancelDialog, setCancelDialog] = useState<{ open: boolean; tournamentId: string | null }>({ open: false, tournamentId: null });
+  const [isPublicParticipation, setIsPublicParticipation] = useState(true);
 
   // Sync state to URL params
   useEffect(() => {
@@ -166,21 +167,24 @@ const Tournaments = () => {
   });
 
   const joinMutation = useMutation({
-    mutationFn: async ({ tournamentId, status }: { tournamentId: string; status: 'registered' | 'planning' }) => {
+    mutationFn: async ({ tournamentId, status, isPublic }: { tournamentId: string; status: 'registered' | 'planning'; isPublic: boolean }) => {
       if (!user) throw new Error('Not authenticated');
       const { error } = await supabase
         .from('tournament_participants')
         .insert({
           tournament_id: tournamentId,
           user_id: user.id,
-          status: status
+          status: status,
+          is_public: isPublic
         });
       if (error) throw error;
     },
     onSuccess: (_, { status }) => {
       queryClient.invalidateQueries({ queryKey: ['user-tournament-participations'] });
       queryClient.invalidateQueries({ queryKey: ['tournament-participant-counts'] });
+      queryClient.invalidateQueries({ queryKey: ['tournament-public-participants'] });
       setParticipationDialog({ open: false, tournamentId: null });
+      setIsPublicParticipation(true); // Reset for next time
       toast.success(
         status === 'registered' 
           ? (language === 'ja' ? 'エントリー済みとして登録しました' : 'Registered as entered')
@@ -227,6 +231,37 @@ const Tournaments = () => {
         counts[p.tournament_id] = (counts[p.tournament_id] || 0) + 1;
       });
       return counts;
+    },
+    staleTime: 2 * 60 * 1000,
+  });
+
+  // Fetch public participants with avatars for display
+  const { data: publicParticipants } = useQuery({
+    queryKey: ['tournament-public-participants'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('tournament_participants')
+        .select(`
+          tournament_id,
+          profiles:user_id (
+            avatar_url,
+            display_name
+          )
+        `)
+        .eq('is_public', true)
+        .neq('status', 'canceled');
+      
+      if (error) throw error;
+      
+      // Group by tournament_id
+      const grouped: Record<string, Array<{ avatar_url: string | null; display_name: string | null }>> = {};
+      data?.forEach(p => {
+        if (!grouped[p.tournament_id]) grouped[p.tournament_id] = [];
+        if (p.profiles && grouped[p.tournament_id].length < 5) {
+          grouped[p.tournament_id].push(p.profiles as { avatar_url: string | null; display_name: string | null });
+        }
+      });
+      return grouped;
     },
     staleTime: 2 * 60 * 1000,
   });
@@ -370,6 +405,7 @@ const Tournaments = () => {
     const daysUntil = differenceInDays(tournamentDate, now);
     const showDaysLeft = !isPast && daysUntil >= 0 && daysUntil <= 14;
     const participantCount = participantCounts?.[tournament.id] || 0;
+    const participantAvatars = publicParticipants?.[tournament.id] || [];
     const color = getOrganizerColor(tournament.organizer);
     const participationStatus = userParticipations?.[tournament.id];
     const isParticipating = !!participationStatus;
@@ -563,11 +599,29 @@ const Tournaments = () => {
                 </div>
                 {participantCount > 0 && (
                   <div className="flex items-center gap-2">
-                    <div className={`p-1.5 rounded-md ${color.bg}/10`}>
-                      <Users className={`h-3.5 w-3.5 ${color.text}`} />
-                    </div>
-                    <span className={`font-medium ${color.text}`}>
-                      {participantCount} {language === 'ja' ? '人参加予定' : 'planning'}
+                    {/* Participant avatars */}
+                    {participantAvatars.length > 0 && (
+                      <div className="flex -space-x-2">
+                        {participantAvatars.slice(0, 4).map((p, idx) => (
+                          <div key={idx} className="h-6 w-6 rounded-full border-2 border-background overflow-hidden bg-muted">
+                            {p.avatar_url ? (
+                              <img src={p.avatar_url} alt="" className="h-full w-full object-cover" />
+                            ) : (
+                              <div className="h-full w-full flex items-center justify-center text-[10px] font-medium text-muted-foreground">
+                                {p.display_name?.charAt(0) || '?'}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    {participantAvatars.length === 0 && (
+                      <div className={`p-1.5 rounded-md ${color.bg}/10`}>
+                        <Users className={`h-3.5 w-3.5 ${color.text}`} />
+                      </div>
+                    )}
+                    <span className={`font-medium ${color.text} text-xs`}>
+                      {participantCount} {language === 'ja' ? '人' : ''}
                     </span>
                   </div>
                 )}
@@ -985,13 +1039,38 @@ const Tournaments = () => {
               </div>
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-3 pt-2">
+          <div className="space-y-4 pt-2">
+            {/* Privacy toggle */}
+            <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+              <div className="flex items-center gap-2">
+                {isPublicParticipation ? (
+                  <Globe className="h-4 w-4 text-primary" />
+                ) : (
+                  <UserMinus className="h-4 w-4 text-muted-foreground" />
+                )}
+                <div>
+                  <p className="text-sm font-medium">
+                    {language === 'ja' ? '参加を公開する' : 'Make participation public'}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {isPublicParticipation 
+                      ? (language === 'ja' ? '参加者一覧に表示されます' : 'Visible in participants list')
+                      : (language === 'ja' ? '他のユーザーには表示されません' : 'Hidden from other users')}
+                  </p>
+                </div>
+              </div>
+              <Switch 
+                checked={isPublicParticipation} 
+                onCheckedChange={setIsPublicParticipation} 
+              />
+            </div>
+
             <p className="text-sm text-muted-foreground">
               {language === 'ja' ? 'エントリー状況を教えてください：' : 'What is your entry status?'}
             </p>
             <Button
               className="w-full justify-start gap-3 h-auto py-3 bg-green-500 hover:bg-green-600"
-              onClick={() => participationDialog.tournamentId && joinMutation.mutate({ tournamentId: participationDialog.tournamentId, status: 'registered' })}
+              onClick={() => participationDialog.tournamentId && joinMutation.mutate({ tournamentId: participationDialog.tournamentId, status: 'registered', isPublic: isPublicParticipation })}
               disabled={joinMutation.isPending}
             >
               <CheckCircle2 className="h-5 w-5" />
@@ -1003,7 +1082,7 @@ const Tournaments = () => {
             <Button
               variant="outline"
               className="w-full justify-start gap-3 h-auto py-3 border-amber-500/50 text-amber-700 dark:text-amber-400 hover:bg-amber-500/10"
-              onClick={() => participationDialog.tournamentId && joinMutation.mutate({ tournamentId: participationDialog.tournamentId, status: 'planning' })}
+              onClick={() => participationDialog.tournamentId && joinMutation.mutate({ tournamentId: participationDialog.tournamentId, status: 'planning', isPublic: isPublicParticipation })}
               disabled={joinMutation.isPending}
             >
               <CircleDashed className="h-5 w-5" />

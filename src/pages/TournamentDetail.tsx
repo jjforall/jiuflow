@@ -15,6 +15,7 @@ import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Switch } from "@/components/ui/switch";
 import { Calendar, MapPin, Trophy, Info, ExternalLink, Building2, ArrowLeft, Globe, Users, UserPlus, UserMinus, AlertCircle, Clock, FileText, Train, DollarSign, ScrollText, Mail, Link as LinkIcon, Scale, ChevronDown, ChevronRight, CheckCircle2, CircleDashed, CalendarPlus } from "lucide-react";
 import { format, parseISO, isBefore } from "date-fns";
 import { ja, enUS, pt } from "date-fns/locale";
@@ -156,6 +157,7 @@ const TournamentDetail = () => {
   const [weightClassesOpen, setWeightClassesOpen] = useState(false);
   const [participationDialogOpen, setParticipationDialogOpen] = useState(false);
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
+  const [isPublicParticipation, setIsPublicParticipation] = useState(true);
   
   // Scroll to top on mount
   useEffect(() => {
@@ -253,20 +255,22 @@ const TournamentDetail = () => {
   const participationStatus = userParticipation?.status;
 
   const joinMutation = useMutation({
-    mutationFn: async (status: 'registered' | 'planning') => {
+    mutationFn: async ({ status, isPublic }: { status: 'registered' | 'planning'; isPublic: boolean }) => {
       if (!user || !tournament) throw new Error('Not authenticated');
       const { error } = await supabase
         .from('tournament_participants')
         .insert({
           tournament_id: tournament.id,
           user_id: user.id,
-          status: status
+          status: status,
+          is_public: isPublic
         });
       if (error) throw error;
     },
-    onSuccess: (_, status) => {
+    onSuccess: (_, { status }) => {
       queryClient.invalidateQueries({ queryKey: ['tournament-participants', tournament?.id] });
       setParticipationDialogOpen(false);
+      setIsPublicParticipation(true); // Reset for next time
       toast.success(
         status === 'registered' 
           ? (language === 'ja' ? 'エントリー済みとして登録しました' : 'Registered as entered')
@@ -963,13 +967,38 @@ const TournamentDetail = () => {
               </div>
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-3 pt-2">
+          <div className="space-y-4 pt-2">
+            {/* Privacy toggle */}
+            <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+              <div className="flex items-center gap-2">
+                {isPublicParticipation ? (
+                  <Globe className="h-4 w-4 text-primary" />
+                ) : (
+                  <UserMinus className="h-4 w-4 text-muted-foreground" />
+                )}
+                <div>
+                  <p className="text-sm font-medium">
+                    {language === 'ja' ? '参加を公開する' : 'Make participation public'}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {isPublicParticipation 
+                      ? (language === 'ja' ? '参加者一覧に表示されます' : 'Visible in participants list')
+                      : (language === 'ja' ? '他のユーザーには表示されません' : 'Hidden from other users')}
+                  </p>
+                </div>
+              </div>
+              <Switch 
+                checked={isPublicParticipation} 
+                onCheckedChange={setIsPublicParticipation} 
+              />
+            </div>
+
             <p className="text-sm text-muted-foreground">
               {language === 'ja' ? 'エントリー状況を教えてください：' : 'What is your entry status?'}
             </p>
             <Button
               className="w-full justify-start gap-3 h-auto py-3 bg-green-500 hover:bg-green-600"
-              onClick={() => joinMutation.mutate('registered')}
+              onClick={() => joinMutation.mutate({ status: 'registered', isPublic: isPublicParticipation })}
               disabled={joinMutation.isPending}
             >
               <CheckCircle2 className="h-5 w-5" />
@@ -981,7 +1010,7 @@ const TournamentDetail = () => {
             <Button
               variant="outline"
               className="w-full justify-start gap-3 h-auto py-3 border-amber-500/50 text-amber-700 dark:text-amber-400 hover:bg-amber-500/10"
-              onClick={() => joinMutation.mutate('planning')}
+              onClick={() => joinMutation.mutate({ status: 'planning', isPublic: isPublicParticipation })}
               disabled={joinMutation.isPending}
             >
               <CircleDashed className="h-5 w-5" />
