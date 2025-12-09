@@ -533,7 +533,7 @@ const Tournaments = () => {
                         <><CircleDashed className="h-3 w-3 mr-1" />{language === 'ja' ? '予定' : '○'}</>
                       )
                     ) : (
-                      <>{language === 'ja' ? '興味あり' : language === 'pt' ? 'Interesse' : 'Interested'}</>
+                      <><UserPlus className="h-3 w-3 mr-1" />{language === 'ja' ? '興味あり' : language === 'pt' ? 'Interesse' : 'Interested'}</>
                     )}
                   </Badge>
                 </button>
@@ -574,7 +574,7 @@ const Tournaments = () => {
                         <><CircleDashed className="h-3 w-3 mr-1" />{language === 'ja' ? '予定' : '○'}</>
                       )
                     ) : (
-                      <>{language === 'ja' ? '興味あり' : language === 'pt' ? 'Interesse' : 'Interested'}</>
+                      <><UserPlus className="h-3 w-3 mr-1" />{language === 'ja' ? '興味あり' : language === 'pt' ? 'Interesse' : 'Interested'}</>
                     )}
                   </Badge>
                 </button>
