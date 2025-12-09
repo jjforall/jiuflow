@@ -581,10 +581,31 @@ Projetado para formar comunidades ativas com controle de acesso RLS adequado.`,
 → 投稿は認証ユーザーのみ
 → 削除は作成者またはadminのみ
 
+【メッセージング】
+• messages（DM・グループメッセージ）
+→ 匿名アクセス完全禁止
+→ DMは送信者/受信者のみ閲覧可能
+→ グループメッセージはis_group_member()関数でメンバー確認
+→ 既読マークは受信者のみ更新可能
+→ 削除は送信者のみ
+
+• message_groups（グループチャット）
+→ 作成者のみ更新・削除可能
+→ メンバーのみグループ情報を閲覧可能
+
+• message_group_members（メンバー管理）
+→ グループ作成者または本人がメンバー追加/削除可能
+→ メンバーのみ他メンバー一覧を閲覧可能
+
+• message_read_receipts（既読確認）
+→ 本人のみ既読登録可能
+→ 送信者/受信者/グループメンバーのみ既読状態を閲覧可能
+
 ■ セキュリティ関数
 • get_profiles_masked(): 6ヶ月以上前のPII自動マスキング
 • get_subscriptions_masked(): Stripe ID部分隠蔽
 • log_admin_access(): 管理者アクセスの監査ログ
+• is_group_member(): グループメンバー確認（SECURITY DEFINER）
 
 ■ ストレージバケット
 • avatars, music-tracks: パブリック
@@ -619,10 +640,31 @@ Projetado para formar comunidades ativas com controle de acesso RLS adequado.`,
 → Only authenticated users can post
 → Only creators or admins can delete
 
+【Messaging】
+• messages (DM & group messages)
+→ Anonymous access completely blocked
+→ DMs visible only to sender/receiver
+→ Group messages verified via is_group_member() function
+→ Only receiver can mark as read
+→ Only sender can delete
+
+• message_groups (group chats)
+→ Only creator can update/delete
+→ Only members can view group info
+
+• message_group_members (member management)
+→ Group creator or self can add/remove members
+→ Only members can view member list
+
+• message_read_receipts (read status)
+→ Only self can register read status
+→ Sender/receiver/group members can view read status
+
 ■ Security Functions
 • get_profiles_masked(): Auto-mask PII older than 6 months
 • get_subscriptions_masked(): Partial Stripe ID hiding
 • log_admin_access(): Admin access audit logging
+• is_group_member(): Group membership check (SECURITY DEFINER)
 
 ■ Storage Buckets
 • avatars, music-tracks: Public
@@ -657,10 +699,31 @@ This design achieves flexible access control with robust security.`,
 → Apenas usuários autenticados podem postar
 → Apenas criadores ou admins podem deletar
 
+【Mensagens】
+• messages (DM e mensagens de grupo)
+→ Acesso anônimo completamente bloqueado
+→ DMs visíveis apenas para remetente/destinatário
+→ Mensagens de grupo verificadas via função is_group_member()
+→ Apenas destinatário pode marcar como lido
+→ Apenas remetente pode deletar
+
+• message_groups (chats em grupo)
+→ Apenas criador pode atualizar/deletar
+→ Apenas membros podem visualizar info do grupo
+
+• message_group_members (gerenciamento de membros)
+→ Criador do grupo ou próprio usuário pode adicionar/remover membros
+→ Apenas membros podem visualizar lista de membros
+
+• message_read_receipts (status de leitura)
+→ Apenas próprio usuário pode registrar status de leitura
+→ Remetente/destinatário/membros do grupo podem ver status de leitura
+
 ■ Funções de Segurança
 • get_profiles_masked(): Auto-mascarar PII mais antigo que 6 meses
 • get_subscriptions_masked(): Ocultação parcial de ID Stripe
 • log_admin_access(): Log de auditoria de acesso admin
+• is_group_member(): Verificação de membro do grupo (SECURITY DEFINER)
 
 ■ Buckets de Armazenamento
 • avatars, music-tracks: Público
