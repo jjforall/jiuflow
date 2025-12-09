@@ -626,7 +626,7 @@ const Tournaments = () => {
                     }}
                   >
                     <img src="/images/google-calendar-logo.png" alt="Google Calendar" className="h-4 w-4" />
-                    <span className="hidden sm:inline">{language === 'ja' ? 'カレンダー' : 'Calendar'}</span>
+                    <span className="hidden sm:inline">{language === 'ja' ? 'カレンダーに登録' : 'Add to Calendar'}</span>
                   </button>
                 </div>
               )}
