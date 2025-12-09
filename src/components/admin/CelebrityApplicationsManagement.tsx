@@ -17,7 +17,6 @@ interface CelebrityApplication {
   home_dojo: string | null;
   status: string;
   created_at: string;
-  email: string | null;
 }
 
 export const CelebrityApplicationsManagement = () => {
@@ -116,8 +115,8 @@ export const CelebrityApplicationsManagement = () => {
                       {app.display_name}
                     </CardTitle>
                     <CardDescription className="flex items-center gap-2">
-                      <Mail className="h-4 w-4" />
-                      {app.email}
+                      <User className="h-4 w-4" />
+                      @{app.username || '未設定'}
                     </CardDescription>
                   </div>
                   {getStatusBadge(app.status)}

@@ -1,0 +1,100 @@
+
+-- Update get_profiles_masked function to get email from auth.users instead of profiles
+CREATE OR REPLACE FUNCTION public.get_profiles_masked()
+ RETURNS TABLE(id uuid, display_name text, display_name_reading text, bio text, avatar_url text, cover_image_url text, username text, home_dojo text, hometown text, marital_status text, date_of_birth date, email text, stripe_customer_id text, organization_id uuid, is_public boolean, belt_history jsonb, training_locations jsonb, titles jsonb, education jsonb, work_experience jsonb, favorite_fighters jsonb, favorite_techniques jsonb, hobbies jsonb, social_links jsonb, created_at timestamp with time zone, updated_at timestamp with time zone)
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+    -- Log admin/staff access
+    IF has_role(auth.uid(), 'admin'::app_role) OR has_role(auth.uid(), 'staff'::app_role) THEN
+        INSERT INTO public.admin_audit_log (
+            admin_user_id,
+            action,
+            table_name,
+            details
+        ) VALUES (
+            auth.uid(),
+            'view_profiles',
+            'profiles',
+            jsonb_build_object('access_type', 'list', 'timestamp', now())
+        );
+    END IF;
+
+    RETURN QUERY
+    SELECT 
+        p.id,
+        p.display_name,
+        p.display_name_reading,
+        p.bio,
+        p.avatar_url,
+        p.cover_image_url,
+        p.username,
+        p.home_dojo,
+        p.hometown,
+        p.marital_status,
+        -- Mask date_of_birth for profiles older than 6 months (show only year)
+        CASE 
+            WHEN p.id = auth.uid() THEN p.date_of_birth
+            WHEN p.created_at > (now() - interval '6 months') THEN p.date_of_birth
+            ELSE make_date(EXTRACT(YEAR FROM p.date_of_birth)::int, 1, 1)
+        END as date_of_birth,
+        -- Get email from auth.users and mask for older profiles
+        CASE 
+            WHEN p.id = auth.uid() THEN au.email
+            WHEN p.created_at > (now() - interval '6 months') THEN au.email
+            ELSE CASE 
+                WHEN au.email IS NOT NULL 
+                THEN substring(au.email, 1, 2) || '***@' || split_part(au.email, '@', 2)
+                ELSE NULL
+            END
+        END as email,
+        -- Get stripe_customer_id from user_billing and mask for older profiles
+        CASE 
+            WHEN p.id = auth.uid() THEN ub.stripe_customer_id
+            WHEN p.created_at > (now() - interval '6 months') THEN ub.stripe_customer_id
+            ELSE CASE 
+                WHEN ub.stripe_customer_id IS NOT NULL 
+                THEN 'cus_***' || RIGHT(ub.stripe_customer_id, 4)
+                ELSE NULL
+            END
+        END as stripe_customer_id,
+        p.organization_id,
+        p.is_public,
+        p.belt_history,
+        p.training_locations,
+        p.titles,
+        p.education,
+        p.work_experience,
+        p.favorite_fighters,
+        p.favorite_techniques,
+        p.hobbies,
+        p.social_links,
+        p.created_at,
+        p.updated_at
+    FROM public.profiles p
+    LEFT JOIN auth.users au ON au.id = p.id
+    LEFT JOIN public.user_billing ub ON ub.user_id = p.id
+    WHERE 
+        -- Users can see their own profile (unmasked via CASE above)
+        p.id = auth.uid()
+        -- Admin/Staff can see all (masked for old records)
+        OR has_role(auth.uid(), 'admin'::app_role)
+        OR has_role(auth.uid(), 'staff'::app_role);
+END;
+$function$;
+
+-- Update handle_new_user to not set email (it no longer exists in profiles)
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+  INSERT INTO public.profiles (id)
+  VALUES (new.id);
+  RETURN new;
+END;
+$function$;

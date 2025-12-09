@@ -28,7 +28,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 interface UserPoints {
   user_id: string;
   points: number;
-  email: string;
+  display_name: string | null;
 }
 
 interface PointTransaction {
@@ -38,7 +38,7 @@ interface PointTransaction {
   transaction_type: string;
   description: string;
   created_at: string;
-  email?: string;
+  display_name?: string | null;
 }
 
 export const PointsManagement = () => {
@@ -64,7 +64,7 @@ export const PointsManagement = () => {
         .select(`
           user_id,
           points,
-          profiles!inner(email)
+          profiles!inner(display_name)
         `);
 
       if (pointsError) throw pointsError;
@@ -72,7 +72,7 @@ export const PointsManagement = () => {
       const usersWithPoints = pointsData?.map((p: any) => ({
         user_id: p.user_id,
         points: p.points,
-        email: p.profiles.email,
+        display_name: p.profiles.display_name,
       })) || [];
 
       setUsers(usersWithPoints);
@@ -82,19 +82,19 @@ export const PointsManagement = () => {
         .from("point_transactions")
         .select(`
           *,
-          profiles!inner(email)
+          profiles!inner(display_name)
         `)
         .order("created_at", { ascending: false })
         .limit(50);
 
       if (transError) throw transError;
 
-      const transWithEmail = transData?.map((t: any) => ({
+      const transWithName = transData?.map((t: any) => ({
         ...t,
-        email: t.profiles.email,
+        display_name: t.profiles.display_name,
       })) || [];
 
-      setTransactions(transWithEmail);
+      setTransactions(transWithName);
     } catch (error) {
       console.error("Error loading points data:", error);
       toast.error(language === "ja" ? "データの読み込みに失敗しました" : "Failed to load data");
@@ -221,7 +221,7 @@ export const PointsManagement = () => {
                   </option>
                   {users.map((user) => (
                     <option key={user.user_id} value={user.user_id}>
-                      {user.email} ({user.points}pt)
+                      {user.display_name || 'ユーザー'} ({user.points}pt)
                     </option>
                   ))}
                 </select>
@@ -263,14 +263,14 @@ export const PointsManagement = () => {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>{language === "ja" ? "メールアドレス" : "Email"}</TableHead>
+                <TableHead>{language === "ja" ? "ユーザー名" : "User"}</TableHead>
                 <TableHead className="text-right">{language === "ja" ? "ポイント" : "Points"}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {users.map((user) => (
                 <TableRow key={user.user_id}>
-                  <TableCell>{user.email}</TableCell>
+                  <TableCell>{user.display_name || '不明'}</TableCell>
                   <TableCell className="text-right font-mono">
                     {user.points.toLocaleString()}pt
                   </TableCell>
@@ -315,7 +315,7 @@ export const PointsManagement = () => {
                   <TableCell className="text-xs text-muted-foreground">
                     {new Date(trans.created_at).toLocaleString(language === "ja" ? "ja-JP" : "en-US")}
                   </TableCell>
-                  <TableCell className="text-sm">{trans.email}</TableCell>
+                  <TableCell className="text-sm">{trans.display_name || '不明'}</TableCell>
                   <TableCell>{getTransactionTypeBadge(trans.transaction_type)}</TableCell>
                   <TableCell className="text-right font-mono">
                     <span className={trans.amount > 0 ? "text-green-600" : "text-red-600"}>
