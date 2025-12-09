@@ -63,7 +63,19 @@ serve(async (req) => {
               console.log(`Migrating ${field}: ${url}`);
 
               try {
+                // Helper function to encode UTF-8 strings to Base64
+                const encodeBase64 = (str: string) => {
+                  const encoder = new TextEncoder();
+                  const bytes = encoder.encode(str);
+                  let binary = '';
+                  for (const byte of bytes) {
+                    binary += String.fromCharCode(byte);
+                  }
+                  return btoa(binary);
+                };
+
                 // Get TUS upload URL from Cloudflare
+                const videoName = `${technique.name_ja || technique.id} (${field})`;
                 const tusResponse = await fetch(
                   `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/stream?direct_user=true`,
                   {
@@ -72,7 +84,7 @@ serve(async (req) => {
                       'Authorization': `Bearer ${CLOUDFLARE_STREAM_API_TOKEN}`,
                       'Tus-Resumable': '1.0.0',
                       'Upload-Length': '0', // Will be determined during upload
-                      'Upload-Metadata': `name ${btoa(`${technique.name_ja} (${field})`)},requiresignedurls`
+                      'Upload-Metadata': `name ${encodeBase64(videoName)}`
                     },
                   }
                 );
