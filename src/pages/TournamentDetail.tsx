@@ -15,11 +15,12 @@ import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Calendar, MapPin, Trophy, Info, ExternalLink, Building2, ArrowLeft, Globe, Users, UserPlus, UserMinus, AlertCircle, Clock, FileText, Train, DollarSign, ScrollText, Mail, Link as LinkIcon, Scale, ChevronDown, ChevronRight, CheckCircle2, CircleDashed } from "lucide-react";
+import { Calendar, MapPin, Trophy, Info, ExternalLink, Building2, ArrowLeft, Globe, Users, UserPlus, UserMinus, AlertCircle, Clock, FileText, Train, DollarSign, ScrollText, Mail, Link as LinkIcon, Scale, ChevronDown, ChevronRight, CheckCircle2, CircleDashed, CalendarPlus } from "lucide-react";
 import { format, parseISO, isBefore } from "date-fns";
 import { ja, enUS, pt } from "date-fns/locale";
 import { toast } from "sonner";
 import komazawaVenue from "@/assets/venues/komazawa-olympic-park.jpg";
+import { generateGoogleCalendarUrl } from "@/utils/googleCalendar";
 
 interface Venue {
   id: string;
@@ -611,6 +612,30 @@ const TournamentDetail = () => {
                     </p>
                   </div>
                 </div>
+              )}
+
+              {/* Google Calendar Button */}
+              {!isPast && (
+                <Button
+                  variant="outline"
+                  className="w-full mt-4"
+                  onClick={() => {
+                    const calendarUrl = generateGoogleCalendarUrl({
+                      title: getName(tournament),
+                      startDate: tournament.date_start,
+                      endDate: tournament.date_end,
+                      location: `${getVenue(tournament) || ''} ${getLocation(tournament)}`.trim(),
+                      description: [
+                        tournament.registration_url ? `${language === 'ja' ? 'エントリー: ' : 'Registration: '}${tournament.registration_url}` : '',
+                        getDescription(tournament) || '',
+                      ].filter(Boolean).join('\n\n'),
+                    });
+                    window.open(calendarUrl, '_blank', 'noopener,noreferrer');
+                  }}
+                >
+                  <CalendarPlus className="h-4 w-4 mr-2" />
+                  {language === 'ja' ? 'Googleカレンダーに追加' : 'Add to Google Calendar'}
+                </Button>
               )}
             </CardContent>
           </Card>

@@ -12,11 +12,12 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Calendar, MapPin, Globe, Users, ChevronLeft, ChevronRight, CalendarDays, List, ExternalLink, Clock, ChevronsLeft, ChevronsRight, UserPlus, UserMinus, Loader2, CheckCircle2, CircleDashed, Info } from "lucide-react";
+import { Calendar, MapPin, Globe, Users, ChevronLeft, ChevronRight, CalendarDays, List, ExternalLink, Clock, ChevronsLeft, ChevronsRight, UserPlus, UserMinus, Loader2, CheckCircle2, CircleDashed, Info, CalendarPlus } from "lucide-react";
 import { format, parseISO, isAfter, isBefore, addMonths, differenceInDays, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addDays, getDay } from "date-fns";
 import { ja, enUS, pt } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { generateGoogleCalendarUrl } from "@/utils/googleCalendar";
 
 interface Venue {
   id: string;
@@ -591,19 +592,41 @@ const Tournaments = () => {
                 )}
               </div>
 
-              {/* Actions - Only registration link */}
-              {!isPast && tournament.registration_url && (
-                <div className="pt-2 border-t border-border/50">
+              {/* Actions - Registration link and Google Calendar */}
+              {!isPast && (
+                <div className="pt-2 border-t border-border/50 flex items-center gap-3">
+                  {tournament.registration_url && (
+                    <button 
+                      className={`inline-flex items-center gap-1.5 text-xs font-medium ${color.text} hover:underline`}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        window.open(tournament.registration_url!, '_blank', 'noopener,noreferrer');
+                      }}
+                    >
+                      <ExternalLink className="h-3 w-3" />
+                      {language === 'ja' ? 'エントリー' : 'Register'}
+                    </button>
+                  )}
                   <button 
-                    className={`inline-flex items-center gap-1.5 text-xs font-medium ${color.text} hover:underline`}
+                    className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-primary transition-colors"
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
-                      window.open(tournament.registration_url!, '_blank', 'noopener,noreferrer');
+                      const calendarUrl = generateGoogleCalendarUrl({
+                        title: getName(tournament),
+                        startDate: tournament.date_start,
+                        endDate: tournament.date_end,
+                        location: getLocation(tournament),
+                        description: tournament.registration_url 
+                          ? `${language === 'ja' ? 'エントリー: ' : 'Registration: '}${tournament.registration_url}`
+                          : undefined,
+                      });
+                      window.open(calendarUrl, '_blank', 'noopener,noreferrer');
                     }}
                   >
-                    <ExternalLink className="h-3 w-3" />
-                    {language === 'ja' ? 'エントリー' : 'Register'}
+                    <CalendarPlus className="h-3 w-3" />
+                    {language === 'ja' ? 'カレンダー' : 'Calendar'}
                   </button>
                 </div>
               )}
