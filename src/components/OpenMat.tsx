@@ -595,13 +595,13 @@ export const OpenMat = () => {
       const fileName = `${user?.id}/${Date.now()}.${fileExt}`;
       
       const { error: uploadError } = await supabase.storage
-        .from('user-videos')
+        .from('community-media')
         .upload(fileName, file);
 
       if (uploadError) throw uploadError;
 
       const { data: { publicUrl } } = supabase.storage
-        .from('user-videos')
+        .from('community-media')
         .getPublicUrl(fileName);
 
       const isVideo = file.type.startsWith('video/');
@@ -635,13 +635,13 @@ export const OpenMat = () => {
       const fileName = `${user?.id}/${Date.now()}.${fileExt}`;
       
       const { error: uploadError } = await supabase.storage
-        .from('user-videos')
+        .from('community-media')
         .upload(fileName, file);
 
       if (uploadError) throw uploadError;
 
       const { data: { publicUrl } } = supabase.storage
-        .from('user-videos')
+        .from('community-media')
         .getPublicUrl(fileName);
 
       const isVideo = file.type.startsWith('video/');
