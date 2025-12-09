@@ -1,34 +1,30 @@
-import { useEffect } from "react";
 import { ContactForm } from "@/components/ContactForm";
 import { useTranslation } from "@/hooks/useTranslation";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
+import { SEOHead } from "@/components/SEOHead";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 
 const Contact = () => {
   const { language } = useTranslation();
 
-  useEffect(() => {
-    const titles = {
-      ja: "お問い合わせ | jiuflow",
-      en: "Contact | jiuflow",
-      pt: "Contato | jiuflow"
-    };
-    
-    const descriptions = {
-      ja: "jiuflowへのお問い合わせ、技の共有、ご提案はこちらから。お気軽にご連絡ください。",
-      en: "Contact jiuflow for inquiries, technique sharing, or suggestions. Feel free to reach out.",
-      pt: "Entre em contato com jiuflow para dúvidas, compartilhamento de técnicas ou sugestões."
-    };
-    
-    document.title = titles[language] || titles.ja;
-    
-    const metaDescription = document.querySelector('meta[name="description"]');
-    if (metaDescription) {
-      metaDescription.setAttribute('content', descriptions[language] || descriptions.ja);
+  const seoData = {
+    ja: {
+      title: "お問い合わせ | JiuFlow - ブラジリアン柔術",
+      description: "JiuFlowへのお問い合わせ、技の共有、ご提案はこちらから。お気軽にご連絡ください。"
+    },
+    en: {
+      title: "Contact | JiuFlow - Brazilian Jiu-Jitsu",
+      description: "Contact JiuFlow for inquiries, technique sharing, or suggestions. Feel free to reach out."
+    },
+    pt: {
+      title: "Contato | JiuFlow - Jiu-Jitsu Brasileiro",
+      description: "Entre em contato com JiuFlow para dúvidas, compartilhamento de técnicas ou sugestões."
     }
-  }, [language]);
+  };
+
+  const currentSeo = seoData[language] || seoData.ja;
 
   const pageTitle = language === "ja" ? "お問い合わせ" : language === "pt" ? "Contato" : "Contact";
   const description = language === "ja" 
@@ -39,6 +35,11 @@ const Contact = () => {
 
   return (
     <div className="min-h-screen flex flex-col">
+      <SEOHead
+        title={currentSeo.title}
+        description={currentSeo.description}
+        canonicalUrl="https://jiuflow.lovableproject.com/contact"
+      />
       <Navigation />
       <main className="flex-grow pt-20 pb-16">
         <div className="container max-w-4xl mx-auto px-6 py-12">

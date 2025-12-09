@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
+import { SEOHead } from "@/components/SEOHead";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { translations } from "@/lib/translations";
 import { supabase } from "@/integrations/supabase/client";
@@ -83,26 +84,22 @@ const Map = () => {
   // Get favorite techniques data
   const favoriteTechniques = techniques.filter(tech => favorites.includes(tech.id));
 
-  useEffect(() => {
-    const titles = {
-      ja: "技術マップ | jiuflow",
-      en: "Technique Map | jiuflow",
-      pt: "Mapa de Técnicas | jiuflow"
-    };
-    
-    const descriptions = {
-      ja: "体系化されたブラジリアン柔術の技術マップ。プル、コントロール、サブミッション、コンバットベースの技を学べます。",
-      en: "Systematic Brazilian Jiu-Jitsu technique map. Learn pulls, controls, submissions, and combat base techniques.",
-      pt: "Mapa sistemático de técnicas de Jiu-Jitsu Brasileiro. Aprenda puxadas, controles, finalizações e base de combate."
-    };
-    
-    document.title = titles[language] || titles.ja;
-    
-    const metaDescription = document.querySelector('meta[name="description"]');
-    if (metaDescription) {
-      metaDescription.setAttribute('content', descriptions[language] || descriptions.ja);
+  const seoData = {
+    ja: {
+      title: "技術マップ | JiuFlow - ブラジリアン柔術テクニック",
+      description: "体系化されたブラジリアン柔術の技術マップ。プル、コントロール、サブミッション、コンバットベースの技を学べます。200以上のテクニック動画。"
+    },
+    en: {
+      title: "Technique Map | JiuFlow - Brazilian Jiu-Jitsu Techniques",
+      description: "Systematic Brazilian Jiu-Jitsu technique map. Learn pulls, controls, submissions, and combat base techniques. 200+ technique videos."
+    },
+    pt: {
+      title: "Mapa de Técnicas | JiuFlow - Técnicas de Jiu-Jitsu Brasileiro",
+      description: "Mapa sistemático de técnicas de Jiu-Jitsu Brasileiro. Aprenda puxadas, controles, finalizações e base de combate. Mais de 200 vídeos."
     }
-  }, [language]);
+  };
+
+  const currentSeo = seoData[language] || seoData.ja;
 
 
   const getTechniqueName = (tech: Technique) => {
@@ -319,6 +316,12 @@ const Map = () => {
 
   return (
     <div className="min-h-screen relative overflow-hidden">
+      <SEOHead
+        title={currentSeo.title}
+        description={currentSeo.description}
+        canonicalUrl="https://jiuflow.lovableproject.com/map"
+        keywords={["BJJ", "ブラジリアン柔術", "テクニック", "技術マップ", "サブミッション"]}
+      />
       {/* Background Image with Overlay */}
       <div className="fixed inset-0 -z-10">
         <div 

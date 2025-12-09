@@ -5,6 +5,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/hooks/useAuth";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
+import { SEOHead } from "@/components/SEOHead";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -187,8 +188,22 @@ const VenueDetail = () => {
   const upcomingTournaments = tournaments?.filter(t => new Date(t.date_start) >= new Date()) || [];
   const pastTournaments = tournaments?.filter(t => new Date(t.date_start) < new Date()) || [];
 
+  const seoTitle = language === 'ja' 
+    ? `${getName(venue)} | 会場情報 - JiuFlow`
+    : `${getName(venue)} | Venue Info - JiuFlow`;
+  const seoDescription = language === 'ja'
+    ? `${getName(venue)}の詳細情報。住所、収容人数、アクセス情報、開催大会一覧。${venue.city ? venue.city + '、' : ''}${countryNames[venue.country]?.ja || venue.country}`
+    : `${getName(venue)} venue details. Address, capacity, access info, and tournament list. ${venue.city ? venue.city + ', ' : ''}${countryNames[venue.country]?.en || venue.country}`;
+
   return (
     <div className="min-h-screen flex flex-col bg-background">
+      <SEOHead
+        title={seoTitle}
+        description={seoDescription}
+        ogImage={venue.image_url || undefined}
+        ogType="website"
+        canonicalUrl={`https://jiuflow.lovableproject.com/venue/${id}`}
+      />
       <Navigation />
       
       <main className="flex-1 container mx-auto px-4 py-6 pt-20 sm:pt-24">

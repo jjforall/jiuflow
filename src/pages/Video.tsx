@@ -2,6 +2,7 @@ import { useParams, Link, useNavigate, useSearchParams } from "react-router-dom"
 import { useState, useEffect, useCallback, useRef } from "react";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
+import { SEOHead } from "@/components/SEOHead";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { translations } from "@/lib/translations";
@@ -790,8 +791,26 @@ const Video = () => {
     );
   }
 
+  const videoSeoTitle = technique 
+    ? (language === 'ja' 
+        ? `${getTechniqueName(technique)} | JiuFlow テクニック動画`
+        : `${getTechniqueName(technique)} | JiuFlow Technique Video`)
+    : 'JiuFlow Technique Video';
+  const videoSeoDescription = technique
+    ? (language === 'ja'
+        ? `${getTechniqueName(technique)}の解説動画。${getTechniqueDescription(technique) || 'ブラジリアン柔術のテクニックを学ぼう。'}`
+        : `${getTechniqueName(technique)} tutorial video. ${getTechniqueDescription(technique) || 'Learn Brazilian Jiu-Jitsu techniques.'}`)
+    : 'Learn BJJ techniques';
+
   return (
     <div className="min-h-screen">
+      <SEOHead
+        title={videoSeoTitle}
+        description={videoSeoDescription.slice(0, 160)}
+        ogType="article"
+        canonicalUrl={`https://jiuflow.lovableproject.com/video/${id}`}
+        keywords={technique?.hashtags || ["BJJ", "柔術", "テクニック"]}
+      />
       <Navigation />
       
       <main className="pt-24 pb-20">

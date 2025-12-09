@@ -1,6 +1,7 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
+import { SEOHead } from "@/components/SEOHead";
 import { useTranslation } from "@/hooks/useTranslation";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -260,14 +261,22 @@ const Glossary = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
 
-  useEffect(() => {
-    const titles = {
-      ja: "柔術用語集 | jiuflow",
-      en: "BJJ Glossary | jiuflow",
-      pt: "Glossário de Jiu-Jitsu | jiuflow"
-    };
-    document.title = titles[language] || titles.ja;
-  }, [language]);
+  const seoData = {
+    ja: {
+      title: "柔術用語集 | JiuFlow - ブラジリアン柔術",
+      description: "ブラジリアン柔術の用語集。ガード、マウント、サブミッションなどBJJの基本用語を解説。"
+    },
+    en: {
+      title: "BJJ Glossary | JiuFlow - Brazilian Jiu-Jitsu",
+      description: "Brazilian Jiu-Jitsu glossary. Learn BJJ terminology including guards, mounts, submissions and more."
+    },
+    pt: {
+      title: "Glossário de Jiu-Jitsu | JiuFlow",
+      description: "Glossário de Jiu-Jitsu Brasileiro. Aprenda os termos do BJJ incluindo guardas, montadas e finalizações."
+    }
+  };
+
+  const currentSeo = seoData[language] || seoData.ja;
 
   const filteredTerms = useMemo(() => {
     return glossaryTerms.filter(term => {
@@ -314,6 +323,12 @@ const Glossary = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEOHead
+        title={currentSeo.title}
+        description={currentSeo.description}
+        canonicalUrl="https://jiuflow.lovableproject.com/glossary"
+        keywords={["BJJ用語", "柔術用語集", "グロッサリー"]}
+      />
       <Navigation />
       
       <main className="pt-24 pb-16 px-6">
