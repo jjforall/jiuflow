@@ -684,14 +684,19 @@ const Tournaments = () => {
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
+                      const tournamentUrl = `${window.location.origin}${getTournamentUrl(tournament)}`;
+                      const descriptionParts = [
+                        `${language === 'ja' ? '詳細: ' : 'Details: '}${tournamentUrl}`,
+                      ];
+                      if (tournament.registration_url) {
+                        descriptionParts.push(`${language === 'ja' ? 'エントリー: ' : language === 'pt' ? 'Inscrição: ' : 'Registration: '}${tournament.registration_url}`);
+                      }
                       const calendarUrl = generateGoogleCalendarUrl({
                         title: getName(tournament),
                         startDate: tournament.date_start,
                         endDate: tournament.date_end,
                         location: getLocation(tournament),
-                        description: tournament.registration_url 
-                          ? `${language === 'ja' ? 'エントリー: ' : 'Registration: '}${tournament.registration_url}`
-                          : undefined,
+                        description: descriptionParts.join('\n'),
                       });
                       window.open(calendarUrl, '_blank', 'noopener,noreferrer');
                     }}
