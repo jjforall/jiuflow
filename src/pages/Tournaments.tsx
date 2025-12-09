@@ -18,7 +18,7 @@ import { format, parseISO, isAfter, isBefore, addMonths, differenceInDays, start
 import { ja, enUS, pt } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { generateGoogleCalendarUrl } from "@/utils/googleCalendar";
+import { AddToCalendarButton } from "@/components/AddToCalendarButton";
 
 interface Venue {
   id: string;
@@ -677,34 +677,20 @@ const Tournaments = () => {
                 )}
               </div>
 
-              {/* Actions - Registration link and Google Calendar */}
+              {/* Actions - Registration link and Calendar */}
               {!isPast && (
                 <div className="pt-2 border-t border-border/50 flex items-center justify-between gap-3">
-                  <button 
-                    className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      const tournamentUrl = `${window.location.origin}${getTournamentUrl(tournament)}`;
-                      const descriptionParts = [
-                        `${language === 'ja' ? '詳細: ' : 'Details: '}${tournamentUrl}`,
-                      ];
-                      if (tournament.registration_url) {
-                        descriptionParts.push(`${language === 'ja' ? 'エントリー: ' : language === 'pt' ? 'Inscrição: ' : 'Registration: '}${tournament.registration_url}`);
-                      }
-                      const calendarUrl = generateGoogleCalendarUrl({
-                        title: getName(tournament),
-                        startDate: tournament.date_start,
-                        endDate: tournament.date_end,
-                        location: getLocation(tournament),
-                        description: descriptionParts.join('\n'),
-                      });
-                      window.open(calendarUrl, '_blank', 'noopener,noreferrer');
-                    }}
-                  >
-                    <img src="/images/google-calendar-logo.png" alt="Google Calendar" className="h-4 w-4" />
-                    <span className="hidden sm:inline">{language === 'ja' ? 'カレンダーに登録' : language === 'pt' ? 'Adicionar ao Calendário' : 'Add to Calendar'}</span>
-                  </button>
+                  <AddToCalendarButton
+                    title={getName(tournament)}
+                    startDate={tournament.date_start}
+                    endDate={tournament.date_end}
+                    location={getLocation(tournament)}
+                    description={[
+                      `${language === 'ja' ? '詳細: ' : 'Details: '}${window.location.origin}${getTournamentUrl(tournament)}`,
+                      tournament.registration_url ? `${language === 'ja' ? 'エントリー: ' : 'Registration: '}${tournament.registration_url}` : '',
+                    ].filter(Boolean).join('\n')}
+                    compact
+                  />
                   {tournament.registration_url && (
                     <button 
                       className={`inline-flex items-center gap-1.5 text-xs font-medium ${color.text} hover:underline`}

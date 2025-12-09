@@ -24,7 +24,7 @@ import { format, parseISO, isBefore } from "date-fns";
 import { ja, enUS, pt } from "date-fns/locale";
 import { toast } from "sonner";
 import komazawaVenue from "@/assets/venues/komazawa-olympic-park.jpg";
-import { generateGoogleCalendarUrl } from "@/utils/googleCalendar";
+import { AddToCalendarButton } from "@/components/AddToCalendarButton";
 
 interface Venue {
   id: string;
@@ -719,28 +719,20 @@ const TournamentDetail = () => {
                 </div>
               )}
 
-              {/* Google Calendar Button */}
+              {/* Calendar Button */}
               {!isPast && (
-                <Button
-                  variant="outline"
-                  className="w-full mt-4"
-                  onClick={() => {
-                    const calendarUrl = generateGoogleCalendarUrl({
-                      title: getName(tournament),
-                      startDate: tournament.date_start,
-                      endDate: tournament.date_end,
-                      location: `${getVenue(tournament) || ''} ${getLocation(tournament)}`.trim(),
-                      description: [
-                        tournament.registration_url ? `${language === 'ja' ? 'エントリー: ' : 'Registration: '}${tournament.registration_url}` : '',
-                        getDescription(tournament) || '',
-                      ].filter(Boolean).join('\n\n'),
-                    });
-                    window.open(calendarUrl, '_blank', 'noopener,noreferrer');
-                  }}
-                >
-                  <img src="/images/google-calendar-logo.png" alt="Google Calendar" className="h-5 w-5 mr-2" />
-                  {language === 'ja' ? 'Googleカレンダーに追加' : 'Add to Google Calendar'}
-                </Button>
+                <div className="mt-4">
+                  <AddToCalendarButton
+                    title={getName(tournament)}
+                    startDate={tournament.date_start}
+                    endDate={tournament.date_end}
+                    location={`${getVenue(tournament) || ''} ${getLocation(tournament)}`.trim()}
+                    description={[
+                      tournament.registration_url ? `${language === 'ja' ? 'エントリー: ' : 'Registration: '}${tournament.registration_url}` : '',
+                      getDescription(tournament) || '',
+                    ].filter(Boolean).join('\n\n')}
+                  />
+                </div>
               )}
             </CardContent>
           </Card>
