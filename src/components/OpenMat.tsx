@@ -74,7 +74,9 @@ export const OpenMat = () => {
   const [replies, setReplies] = useState<Record<string, Reply[]>>({});
   const [replyContent, setReplyContent] = useState<Record<string, string>>({});
   const [uploading, setUploading] = useState(false);
+  const [replyUploading, setReplyUploading] = useState<Record<string, boolean>>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const replyFileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
   const [refreshing, setRefreshing] = useState(false);
   const [myProfile, setMyProfile] = useState<UserProfile | null>(null);
   const [editingPostId, setEditingPostId] = useState<string | null>(null);
@@ -619,6 +621,49 @@ export const OpenMat = () => {
     }
   };
 
+  const handleReplyMediaUpload = async (postId: string, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 50 * 1024 * 1024) {
+      toast.error(language === "ja" ? "ファイルは50MB以下にしてください" : "File must be under 50MB");
+      return;
+    }
+
+    setReplyUploading(prev => ({ ...prev, [postId]: true }));
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user?.id}/${Date.now()}.${fileExt}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('user-videos')
+        .upload(fileName, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('user-videos')
+        .getPublicUrl(fileName);
+
+      const isVideo = file.type.startsWith('video/');
+      const markdown = isVideo 
+        ? `\n\n<video src="${publicUrl}" controls style="max-width:100%;border-radius:8px;"></video>\n`
+        : `\n\n![image](${publicUrl})\n`;
+      
+      setReplyContent(prev => ({ 
+        ...prev, 
+        [postId]: (prev[postId] || "") + markdown 
+      }));
+      toast.success(language === "ja" ? "アップロードしました" : "Uploaded");
+    } catch (error) {
+      console.error('Error uploading:', error);
+      toast.error(language === "ja" ? "アップロードに失敗しました" : "Failed to upload");
+    } finally {
+      setReplyUploading(prev => ({ ...prev, [postId]: false }));
+      e.target.value = '';
+    }
+  };
+
   const toggleExpand = (postId: string) => {
     if (expandedPost === postId) {
       setExpandedPost(null);
@@ -1083,22 +1128,52 @@ export const OpenMat = () => {
                               {myProfile?.display_name?.slice(0, 2) || user?.email?.slice(0, 2).toUpperCase() || "?"}
                             </AvatarFallback>
                           </Avatar>
-                          <div className="flex-1 flex gap-2">
+                          <div className="flex-1 space-y-2">
                             <Textarea
                               placeholder={language === "ja" ? "返信を書く..." : "Write a reply..."}
                               value={replyContent[post.id] || ""}
                               onChange={(e) => setReplyContent(prev => ({ ...prev, [post.id]: e.target.value }))}
-                              className="min-h-[60px] resize-none text-sm flex-1"
+                              className="min-h-[60px] resize-none text-sm"
                               rows={2}
                             />
-                            <Button
-                              size="icon"
-                              onClick={() => createReply(post.id)}
-                              disabled={submitting || !replyContent[post.id]?.trim()}
-                              className="shrink-0 self-end"
-                            >
-                              <Send className="h-4 w-4" />
-                            </Button>
+                            <div className="flex items-center justify-between">
+                              <div className="flex gap-1">
+                                <input
+                                  type="file"
+                                  ref={(el) => { replyFileInputRefs.current[post.id] = el; }}
+                                  onChange={(e) => handleReplyMediaUpload(post.id, e)}
+                                  accept="image/*,video/*"
+                                  className="hidden"
+                                />
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => replyFileInputRefs.current[post.id]?.click()}
+                                  disabled={replyUploading[post.id]}
+                                  className="h-7 px-2 text-muted-foreground hover:text-primary"
+                                >
+                                  <ImageIcon className="h-3.5 w-3.5" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => replyFileInputRefs.current[post.id]?.click()}
+                                  disabled={replyUploading[post.id]}
+                                  className="h-7 px-2 text-muted-foreground hover:text-primary"
+                                >
+                                  <Video className="h-3.5 w-3.5" />
+                                </Button>
+                              </div>
+                              <Button
+                                size="sm"
+                                onClick={() => createReply(post.id)}
+                                disabled={submitting || !replyContent[post.id]?.trim()}
+                                className="h-7"
+                              >
+                                <Send className="h-3.5 w-3.5 mr-1" />
+                                {language === "ja" ? "返信" : "Reply"}
+                              </Button>
+                            </div>
                           </div>
                         </div>
                       </div>
