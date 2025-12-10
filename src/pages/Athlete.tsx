@@ -16,7 +16,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { BeltBadge } from "@/components/ui/belt-badge";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { Star, MapPin, Trophy, Edit, Instagram, Twitter, Youtube, Globe, Languages, User, UserMinus, UserPlus, Camera, Image as ImageIcon, UserCheck } from "lucide-react";
+import { Star, MapPin, Trophy, Edit, Instagram, Twitter, Youtube, Globe, Languages, User, UserMinus, UserPlus, Camera, Image as ImageIcon, UserCheck, GitBranch } from "lucide-react";
 import { toast } from "sonner";
 import { UserVideoCard } from "@/components/UserVideoCard";
 import { LineageTree } from "@/components/LineageTree";
@@ -525,13 +525,20 @@ const Athlete = () => {
       <Navigation />
       
       <main className="pt-16 sm:pt-20 md:pt-24 pb-12 sm:pb-16">
-        {/* Back to List */}
-        <div className="max-w-6xl mx-auto px-3 sm:px-4 md:px-6 lg:px-12 pt-2 pb-2 sm:pt-3 sm:pb-3">
+        {/* Back to List and Lineage Link */}
+        <div className="max-w-6xl mx-auto px-3 sm:px-4 md:px-6 lg:px-12 pt-2 pb-2 sm:pt-3 sm:pb-3 flex justify-between items-center">
           <Link 
             to="/athletes" 
             className="inline-flex items-center gap-1 text-xs sm:text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
             ← {language === "ja" ? "選手一覧に戻る" : language === "pt" ? "Voltar para atletas" : "Back to Athletes"}
+          </Link>
+          <Link 
+            to="/lineage-tree" 
+            className="inline-flex items-center gap-1.5 text-xs sm:text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <GitBranch className="h-3.5 w-3.5" />
+            {language === "ja" ? "系譜ツリー" : language === "pt" ? "Árvore de Linhagem" : "Lineage Tree"}
           </Link>
         </div>
 
