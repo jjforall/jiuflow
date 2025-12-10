@@ -1,5 +1,6 @@
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
+import { SEOHead } from "@/components/SEOHead";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -1366,6 +1367,12 @@ const MyPage = () => {
 
   return (
     <div className="min-h-screen">
+      <SEOHead
+        title={language === 'ja' ? 'マイページ | JiuFlow' : language === 'pt' ? 'Minha Página | JiuFlow' : 'My Page | JiuFlow'}
+        description={language === 'ja' ? 'JiuFlowマイページ - プロフィール、練習記録、サブスクリプション管理' : 'JiuFlow My Page - Profile, practice records, subscription management'}
+        noindex={true}
+        ogImage={profile?.avatar_url || undefined}
+      />
       <Navigation />
       
       <main className="pt-20 sm:pt-32 pb-12 sm:pb-20 px-3 sm:px-6">
@@ -1375,7 +1382,7 @@ const MyPage = () => {
             <div className="h-32 sm:h-44 md:h-64 bg-gradient-to-r from-primary/30 via-primary/20 to-accent/30 rounded-xl sm:rounded-2xl shadow-lg relative overflow-hidden group">
               <img 
                 src={getCoverImageUrl(profile?.cover_image_url || null, user?.id || null)} 
-                alt="Cover" 
+                alt={language === 'ja' ? 'プロフィールカバー画像' : 'Profile cover image'}
                 className="w-full h-full object-cover"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-background/60 via-transparent to-transparent" />

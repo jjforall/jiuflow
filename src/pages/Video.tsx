@@ -808,7 +808,8 @@ const Video = () => {
         title={videoSeoTitle}
         description={videoSeoDescription.slice(0, 160)}
         ogType="article"
-        canonicalUrl={`https://jiuflow.lovableproject.com/video/${id}`}
+        ogImage={getTechniqueThumbnailUrl(technique) || undefined}
+        canonicalUrl={`/video/${id}`}
         keywords={technique?.hashtags || ["BJJ", "柔術", "テクニック"]}
       />
       <Navigation />
