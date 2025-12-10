@@ -70,49 +70,179 @@ const AdminDashboard = () => {
                       <span>統計ダッシュボード</span>
                     </Link>
                   </div>
-                  <div className="p-3 border-b">
+                  <div className="p-3 border-b max-h-[60vh] overflow-y-auto">
                     <p className="text-xs text-muted-foreground mb-2">管理メニュー</p>
-                    <div className="space-y-1">
-                      {[
-                        { id: "techniques", label: "テクニック管理" },
-                        { id: "video-lists", label: "動画リスト" },
-                        { id: "users", label: "会員管理" },
-                        { id: "dojos", label: "道場管理" },
-                        { id: "subscriptions", label: "サブスク管理" },
-                        { id: "plans", label: "プラン管理" },
-                        { id: "points", label: "ポイント管理" },
-                        { id: "belts", label: "帯管理" },
-                        { id: "celebrities", label: "有名選手" },
-                        { id: "lineage", label: "系統管理" },
-                        { id: "edit-requests", label: "編集リクエスト" },
-                        { id: "celebrity", label: "有名人申請" },
-                        { id: "tournaments", label: "大会管理" },
-                        { id: "venues", label: "施設管理" },
-                        { id: "events", label: "イベント管理" },
-                        { id: "user-videos", label: "ユーザー動画" },
-                        { id: "brothers", label: "Brothers申請" },
-                        { id: "printful", label: "商品管理" },
-                        { id: "contacts", label: "お問い合わせ" },
-                        { id: "logs", label: "ログ" },
-                        { id: "tips", label: "投げ銭" },
-                        { id: "music", label: "音楽管理" },
-                        { id: "community", label: "オープンマット" },
-                        { id: "weekly-topics", label: "週間お題" },
-                        { id: "api", label: "API管理" },
-                        { id: "settings", label: "設定" },
-                      ].map((item) => (
-                        <button
-                          key={item.id}
-                          onClick={() => setActiveTab(item.id)}
-                          className={`w-full text-left px-3 py-2 rounded text-sm ${
-                            activeTab === item.id
-                              ? "bg-primary/10 text-primary font-medium"
-                              : "text-foreground hover:bg-muted"
-                          }`}
-                        >
-                          {item.label}
-                        </button>
-                      ))}
+                    <div className="space-y-3">
+                      {/* コンテンツ */}
+                      <div>
+                        <p className="text-xs font-medium text-muted-foreground px-3 mb-1">コンテンツ</p>
+                        {[
+                          { id: "techniques", label: "テクニック管理" },
+                          { id: "video-lists", label: "動画リスト" },
+                          { id: "user-videos", label: "ユーザー動画" },
+                          { id: "music", label: "音楽管理" },
+                        ].map((item) => (
+                          <button
+                            key={item.id}
+                            onClick={() => setActiveTab(item.id)}
+                            className={`w-full text-left px-3 py-1.5 rounded text-sm ${
+                              activeTab === item.id
+                                ? "bg-primary/10 text-primary font-medium"
+                                : "text-foreground hover:bg-muted"
+                            }`}
+                          >
+                            {item.label}
+                          </button>
+                        ))}
+                      </div>
+                      {/* ユーザー */}
+                      <div>
+                        <p className="text-xs font-medium text-muted-foreground px-3 mb-1">ユーザー</p>
+                        {[
+                          { id: "users", label: "会員管理" },
+                          { id: "subscriptions", label: "サブスク管理" },
+                          { id: "plans", label: "プラン管理" },
+                          { id: "points", label: "ポイント管理" },
+                          { id: "belts", label: "帯管理" },
+                        ].map((item) => (
+                          <button
+                            key={item.id}
+                            onClick={() => setActiveTab(item.id)}
+                            className={`w-full text-left px-3 py-1.5 rounded text-sm ${
+                              activeTab === item.id
+                                ? "bg-primary/10 text-primary font-medium"
+                                : "text-foreground hover:bg-muted"
+                            }`}
+                          >
+                            {item.label}
+                          </button>
+                        ))}
+                      </div>
+                      {/* 道場・選手 */}
+                      <div>
+                        <p className="text-xs font-medium text-muted-foreground px-3 mb-1">道場・選手</p>
+                        {[
+                          { id: "dojos", label: "道場管理" },
+                          { id: "celebrities", label: "有名選手" },
+                          { id: "lineage", label: "系統管理" },
+                        ].map((item) => (
+                          <button
+                            key={item.id}
+                            onClick={() => setActiveTab(item.id)}
+                            className={`w-full text-left px-3 py-1.5 rounded text-sm ${
+                              activeTab === item.id
+                                ? "bg-primary/10 text-primary font-medium"
+                                : "text-foreground hover:bg-muted"
+                            }`}
+                          >
+                            {item.label}
+                          </button>
+                        ))}
+                      </div>
+                      {/* 大会・イベント */}
+                      <div>
+                        <p className="text-xs font-medium text-muted-foreground px-3 mb-1">大会・イベント</p>
+                        {[
+                          { id: "tournaments", label: "大会管理" },
+                          { id: "venues", label: "施設管理" },
+                          { id: "events", label: "イベント管理" },
+                        ].map((item) => (
+                          <button
+                            key={item.id}
+                            onClick={() => setActiveTab(item.id)}
+                            className={`w-full text-left px-3 py-1.5 rounded text-sm ${
+                              activeTab === item.id
+                                ? "bg-primary/10 text-primary font-medium"
+                                : "text-foreground hover:bg-muted"
+                            }`}
+                          >
+                            {item.label}
+                          </button>
+                        ))}
+                      </div>
+                      {/* コミュニティ */}
+                      <div>
+                        <p className="text-xs font-medium text-muted-foreground px-3 mb-1">コミュニティ</p>
+                        {[
+                          { id: "community", label: "オープンマット" },
+                          { id: "weekly-topics", label: "週間お題" },
+                        ].map((item) => (
+                          <button
+                            key={item.id}
+                            onClick={() => setActiveTab(item.id)}
+                            className={`w-full text-left px-3 py-1.5 rounded text-sm ${
+                              activeTab === item.id
+                                ? "bg-primary/10 text-primary font-medium"
+                                : "text-foreground hover:bg-muted"
+                            }`}
+                          >
+                            {item.label}
+                          </button>
+                        ))}
+                      </div>
+                      {/* 申請管理 */}
+                      <div>
+                        <p className="text-xs font-medium text-muted-foreground px-3 mb-1">申請管理</p>
+                        {[
+                          { id: "edit-requests", label: "編集リクエスト" },
+                          { id: "celebrity", label: "有名人申請" },
+                          { id: "brothers", label: "Brothers申請" },
+                        ].map((item) => (
+                          <button
+                            key={item.id}
+                            onClick={() => setActiveTab(item.id)}
+                            className={`w-full text-left px-3 py-1.5 rounded text-sm ${
+                              activeTab === item.id
+                                ? "bg-primary/10 text-primary font-medium"
+                                : "text-foreground hover:bg-muted"
+                            }`}
+                          >
+                            {item.label}
+                          </button>
+                        ))}
+                      </div>
+                      {/* ショップ */}
+                      <div>
+                        <p className="text-xs font-medium text-muted-foreground px-3 mb-1">ショップ</p>
+                        {[
+                          { id: "printful", label: "商品管理" },
+                          { id: "tips", label: "投げ銭" },
+                        ].map((item) => (
+                          <button
+                            key={item.id}
+                            onClick={() => setActiveTab(item.id)}
+                            className={`w-full text-left px-3 py-1.5 rounded text-sm ${
+                              activeTab === item.id
+                                ? "bg-primary/10 text-primary font-medium"
+                                : "text-foreground hover:bg-muted"
+                            }`}
+                          >
+                            {item.label}
+                          </button>
+                        ))}
+                      </div>
+                      {/* システム */}
+                      <div>
+                        <p className="text-xs font-medium text-muted-foreground px-3 mb-1">システム</p>
+                        {[
+                          { id: "contacts", label: "お問い合わせ" },
+                          { id: "logs", label: "ログ" },
+                          { id: "api", label: "API管理" },
+                          { id: "settings", label: "設定" },
+                        ].map((item) => (
+                          <button
+                            key={item.id}
+                            onClick={() => setActiveTab(item.id)}
+                            className={`w-full text-left px-3 py-1.5 rounded text-sm ${
+                              activeTab === item.id
+                                ? "bg-primary/10 text-primary font-medium"
+                                : "text-foreground hover:bg-muted"
+                            }`}
+                          >
+                            {item.label}
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   </div>
                   <div className="p-4">
