@@ -139,7 +139,7 @@ interface Profile {
   belt_history: Array<{belt: string; date?: string; instructor?: string}> | null;
   home_dojo: string | null;
   training_locations: Array<string> | null;
-  titles: Array<{title: string; rank?: string; organization?: string; customTitle?: string; weight_class?: string; belt?: string; year?: string}> | null;
+  titles: Array<{title: string; rank?: string; organization?: string; customTitle?: string; weight_class?: string; belt?: string; year?: string; age_division?: string}> | null;
   favorite_fighters: Array<string> | null;
   favorite_techniques: Array<string> | null;
   hometown: string | null;
@@ -2082,8 +2082,34 @@ const MyPage = () => {
                                   />
                                 )}
 
-                                {/* Row 3: Weight Class & Belt */}
+                                {/* Row 3: Age Division & Weight Class */}
                                 <div className="grid grid-cols-2 gap-2">
+                                  <Select
+                                    value={title.age_division || ''}
+                                    onValueChange={(value) => updateTitle(index, 'age_division', value)}
+                                  >
+                                    <SelectTrigger className="h-11">
+                                      <SelectValue placeholder={language === "ja" ? "世代" : "Age Division"} />
+                                    </SelectTrigger>
+                                    <SelectContent className="bg-popover z-50">
+                                      <SelectItem value="キッズ1">キッズ1 (4-5歳)</SelectItem>
+                                      <SelectItem value="キッズ2">キッズ2 (6-7歳)</SelectItem>
+                                      <SelectItem value="キッズ3">キッズ3 (8-9歳)</SelectItem>
+                                      <SelectItem value="プレジュブナイル">プレジュブナイル (10-11歳)</SelectItem>
+                                      <SelectItem value="ジュブナイル1">ジュブナイル1 (12-13歳)</SelectItem>
+                                      <SelectItem value="ジュブナイル2">ジュブナイル2 (14-15歳)</SelectItem>
+                                      <SelectItem value="ティーン">ティーン (16-17歳)</SelectItem>
+                                      <SelectItem value="アダルト">アダルト (18-29歳)</SelectItem>
+                                      <SelectItem value="マスター1">マスター1 (30-35歳)</SelectItem>
+                                      <SelectItem value="マスター2">マスター2 (36-40歳)</SelectItem>
+                                      <SelectItem value="マスター3">マスター3 (41-45歳)</SelectItem>
+                                      <SelectItem value="マスター4">マスター4 (46-50歳)</SelectItem>
+                                      <SelectItem value="マスター5">マスター5 (51-55歳)</SelectItem>
+                                      <SelectItem value="マスター6">マスター6 (56-60歳)</SelectItem>
+                                      <SelectItem value="マスター7">マスター7 (61歳以上)</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                  
                                   <Select
                                     value={title.weight_class || ''}
                                     onValueChange={(value) => updateTitle(index, 'weight_class', value)}
@@ -2104,7 +2130,10 @@ const MyPage = () => {
                                       <SelectItem value="オープンクラス">{language === "ja" ? "オープンクラス" : "Absolute"}</SelectItem>
                                     </SelectContent>
                                   </Select>
-                                  
+                                </div>
+
+                                {/* Row 4: Belt */}
+                                <div className="grid grid-cols-2 gap-2">
                                   <Select
                                     value={title.belt || ''}
                                     onValueChange={(value) => updateTitle(index, 'belt', value)}
@@ -2114,6 +2143,10 @@ const MyPage = () => {
                                     </SelectTrigger>
                                     <SelectContent className="bg-popover z-50">
                                       <SelectItem value="白帯">{language === "ja" ? "白帯" : "White"}</SelectItem>
+                                      <SelectItem value="灰帯">{language === "ja" ? "灰帯" : "Grey"}</SelectItem>
+                                      <SelectItem value="黄帯">{language === "ja" ? "黄帯" : "Yellow"}</SelectItem>
+                                      <SelectItem value="橙帯">{language === "ja" ? "橙帯" : "Orange"}</SelectItem>
+                                      <SelectItem value="緑帯">{language === "ja" ? "緑帯" : "Green"}</SelectItem>
                                       <SelectItem value="青帯">{language === "ja" ? "青帯" : "Blue"}</SelectItem>
                                       <SelectItem value="紫帯">{language === "ja" ? "紫帯" : "Purple"}</SelectItem>
                                       <SelectItem value="茶帯">{language === "ja" ? "茶帯" : "Brown"}</SelectItem>
@@ -2150,6 +2183,9 @@ const MyPage = () => {
                                       {title.year && <span className="text-xs">({title.year})</span>}
                                     </div>
                                     <div className="flex flex-wrap gap-2 mt-1">
+                                      {title.age_division && (
+                                        <Badge variant="default" className="text-xs">{title.age_division}</Badge>
+                                      )}
                                       {title.belt && (
                                         <BeltBadge belt={title.belt} className="text-xs" />
                                       )}
