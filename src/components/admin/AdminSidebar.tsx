@@ -22,6 +22,7 @@ import {
   MessageSquare,
   Trophy,
   ListVideo,
+  Key,
 } from "lucide-react";
 import {
   Sidebar,
@@ -66,6 +67,7 @@ const menuItems = [
   { id: "music", label: "音楽管理", icon: Music },
   { id: "community", label: "オープンマット", icon: MessageSquare },
   { id: "weekly-topics", label: "週間お題", icon: Trophy },
+  { id: "api", label: "API管理", icon: Key },
   { id: "settings", label: "設定", icon: Settings },
 ];
 
