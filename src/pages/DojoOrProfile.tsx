@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams, Navigate } from "react-router-dom";
+import { useParams, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import Dojo from "./Dojo";
 import UserProfile from "./UserProfile";
@@ -12,7 +12,12 @@ import Footer from "@/components/Footer";
  * and renders the appropriate component
  */
 export default function DojoOrProfile() {
-  const { slugOrUsername } = useParams<{ slugOrUsername: string }>();
+  const params = useParams<{ slugOrUsername?: string; lang?: string }>();
+  const location = useLocation();
+  
+  // Get the identifier from either slugOrUsername or lang param (when accessed via /:lang route)
+  const slugOrUsername = params.slugOrUsername || params.lang;
+  
   const [isLoading, setIsLoading] = useState(true);
   const [isDojo, setIsDojo] = useState<boolean | null>(null);
 

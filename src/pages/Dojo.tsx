@@ -80,7 +80,7 @@ interface Member {
 }
 
 export default function Dojo() {
-  const { id, slugOrUsername } = useParams<{ id?: string; slugOrUsername?: string }>();
+  const params = useParams<{ id?: string; slugOrUsername?: string; lang?: string }>();
   const { language } = useLanguage();
   const [dojo, setDojo] = useState<Dojo | null>(null);
   const [members, setMembers] = useState<Member[]>([]);
@@ -88,8 +88,8 @@ export default function Dojo() {
   const [userId, setUserId] = useState<string | null>(null);
   const [isFavorite, setIsFavorite] = useState(false);
 
-  // Determine if we're using an ID or slug
-  const identifier = id || slugOrUsername;
+  // Determine if we're using an ID, slug, or lang param (when accessed via /:lang route)
+  const identifier = params.id || params.slugOrUsername || params.lang;
 
   useEffect(() => {
     if (identifier) {

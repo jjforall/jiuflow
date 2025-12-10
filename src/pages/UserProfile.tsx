@@ -119,7 +119,9 @@ interface Profile {
 }
 
 export default function UserProfile() {
-  const { slugOrUsername: identifier } = useParams();
+  const params = useParams<{ slugOrUsername?: string; lang?: string }>();
+  // Get the identifier from either slugOrUsername or lang param (when accessed via /:lang route)
+  const identifier = params.slugOrUsername || params.lang;
   const { language } = useLanguage();
   const navigate = useNavigate();
   const [videos, setVideos] = useState<UserVideo[]>([]);
