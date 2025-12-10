@@ -531,7 +531,7 @@ const Athlete = () => {
             to="/athletes" 
             className="inline-flex items-center gap-1 text-xs sm:text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
-            ← {language === "ja" ? "一覧に戻る" : language === "pt" ? "Voltar" : "Back to List"}
+            ← {language === "ja" ? "選手一覧に戻る" : language === "pt" ? "Voltar para atletas" : "Back to Athletes"}
           </Link>
         </div>
 
