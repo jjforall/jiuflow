@@ -121,12 +121,21 @@
     <meta name="theme-color" content="#0A0E27" />
     <meta name="msapplication-TileColor" content="#0A0E27" />
     
-    <!-- Google Analytics 4 -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-PLACEHOLDER"></script>
+    <!-- Google Analytics 4 with Consent Mode v2 -->
     <script>
+      // Initialize dataLayer and gtag before GA loads
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
+      
+      // Set default consent state (GDPR compliant - denied by default)
+      gtag('consent', 'default', {
+        'analytics_storage': 'denied',
+        'ad_storage': 'denied',
+        'ad_user_data': 'denied',
+        'ad_personalization': 'denied',
+        'functionality_storage': 'granted',
+        'security_storage': 'granted'
+      });
     </script>
     
   
