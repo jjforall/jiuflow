@@ -49,9 +49,10 @@ async function validateApiKey(apiKey: string): Promise<{ valid: boolean; permiss
 
 // MCP Tool definitions
 const tools = [
+  // ========== Celebrity Tools ==========
   {
     name: "list_celebrities",
-    description: "選手（有名人）の一覧を取得します。検索やページネーションに対応しています。",
+    description: "選手（有名人）の一覧を取得します。検索やページネーションに対応。",
     inputSchema: {
       type: "object",
       properties: {
@@ -66,9 +67,7 @@ const tools = [
     description: "指定したIDの選手情報を取得します。",
     inputSchema: {
       type: "object",
-      properties: {
-        id: { type: "string", description: "選手ID（UUID）" },
-      },
+      properties: { id: { type: "string", description: "選手ID（UUID）" } },
       required: ["id"],
     },
   },
@@ -104,12 +103,12 @@ const tools = [
     description: "選手を削除します。（write権限必要）",
     inputSchema: {
       type: "object",
-      properties: {
-        id: { type: "string", description: "選手ID（UUID）" },
-      },
+      properties: { id: { type: "string", description: "選手ID（UUID）" } },
       required: ["id"],
     },
   },
+
+  // ========== Tournament Tools ==========
   {
     name: "list_tournaments",
     description: "大会の一覧を取得します。",
@@ -128,9 +127,7 @@ const tools = [
     description: "指定したIDの大会情報を取得します。",
     inputSchema: {
       type: "object",
-      properties: {
-        id: { type: "string", description: "大会ID（UUID）" },
-      },
+      properties: { id: { type: "string", description: "大会ID（UUID）" } },
       required: ["id"],
     },
   },
@@ -142,12 +139,14 @@ const tools = [
       properties: {
         name: { type: "string", description: "大会名（英語）" },
         name_ja: { type: "string", description: "大会名（日本語）" },
-        start_date: { type: "string", description: "開始日（YYYY-MM-DD）" },
-        end_date: { type: "string", description: "終了日（YYYY-MM-DD）" },
-        venue_id: { type: "string", description: "会場ID" },
-        series: { type: "string", description: "シリーズ名" },
+        date_start: { type: "string", description: "開始日（YYYY-MM-DD）" },
+        date_end: { type: "string", description: "終了日（YYYY-MM-DD）" },
+        location: { type: "string", description: "開催地（英語）" },
+        location_ja: { type: "string", description: "開催地（日本語）" },
+        organizer: { type: "string", description: "主催者" },
+        country: { type: "string", description: "国コード" },
       },
-      required: ["name", "name_ja", "start_date"],
+      required: ["name", "name_ja", "date_start", "location", "organizer"],
     },
   },
   {
@@ -159,8 +158,8 @@ const tools = [
         id: { type: "string", description: "大会ID（UUID）" },
         name: { type: "string", description: "大会名（英語）" },
         name_ja: { type: "string", description: "大会名（日本語）" },
-        start_date: { type: "string", description: "開始日" },
-        end_date: { type: "string", description: "終了日" },
+        date_start: { type: "string", description: "開始日" },
+        date_end: { type: "string", description: "終了日" },
       },
       required: ["id"],
     },
@@ -170,12 +169,12 @@ const tools = [
     description: "大会を削除します。（write権限必要）",
     inputSchema: {
       type: "object",
-      properties: {
-        id: { type: "string", description: "大会ID（UUID）" },
-      },
+      properties: { id: { type: "string", description: "大会ID（UUID）" } },
       required: ["id"],
     },
   },
+
+  // ========== Venue Tools ==========
   {
     name: "list_venues",
     description: "会場の一覧を取得します。",
@@ -194,9 +193,7 @@ const tools = [
     description: "指定したIDの会場情報を取得します。",
     inputSchema: {
       type: "object",
-      properties: {
-        id: { type: "string", description: "会場ID（UUID）" },
-      },
+      properties: { id: { type: "string", description: "会場ID（UUID）" } },
       required: ["id"],
     },
   },
@@ -213,7 +210,7 @@ const tools = [
         address: { type: "string", description: "住所" },
         capacity: { type: "number", description: "収容人数" },
       },
-      required: ["name", "name_ja"],
+      required: ["name", "country"],
     },
   },
   {
@@ -226,7 +223,7 @@ const tools = [
         name: { type: "string", description: "会場名（英語）" },
         name_ja: { type: "string", description: "会場名（日本語）" },
         city: { type: "string", description: "都市" },
-        address: { type: "string", description: "住所" },
+        capacity: { type: "number", description: "収容人数" },
       },
       required: ["id"],
     },
@@ -236,9 +233,404 @@ const tools = [
     description: "会場を削除します。（write権限必要）",
     inputSchema: {
       type: "object",
+      properties: { id: { type: "string", description: "会場ID（UUID）" } },
+      required: ["id"],
+    },
+  },
+
+  // ========== Technique Tools ==========
+  {
+    name: "list_techniques",
+    description: "テクニックの一覧を取得します。",
+    inputSchema: {
+      type: "object",
       properties: {
-        id: { type: "string", description: "会場ID（UUID）" },
+        search: { type: "string", description: "名前で検索" },
+        category: { type: "string", description: "カテゴリで絞り込み" },
+        limit: { type: "number", description: "取得件数" },
+        offset: { type: "number", description: "オフセット" },
       },
+    },
+  },
+  {
+    name: "get_technique",
+    description: "指定したIDのテクニック情報を取得します。",
+    inputSchema: {
+      type: "object",
+      properties: { id: { type: "string", description: "テクニックID（UUID）" } },
+      required: ["id"],
+    },
+  },
+  {
+    name: "create_technique",
+    description: "新しいテクニックを作成します。（write権限必要）",
+    inputSchema: {
+      type: "object",
+      properties: {
+        name: { type: "string", description: "テクニック名（英語）" },
+        name_ja: { type: "string", description: "テクニック名（日本語）" },
+        name_pt: { type: "string", description: "テクニック名（ポルトガル語）" },
+        category: { type: "string", description: "カテゴリ" },
+        description: { type: "string", description: "説明（英語）" },
+        description_ja: { type: "string", description: "説明（日本語）" },
+        video_url: { type: "string", description: "動画URL" },
+        is_sample: { type: "boolean", description: "サンプルかどうか" },
+      },
+      required: ["name", "name_ja", "name_pt", "category"],
+    },
+  },
+  {
+    name: "update_technique",
+    description: "テクニック情報を更新します。（write権限必要）",
+    inputSchema: {
+      type: "object",
+      properties: {
+        id: { type: "string", description: "テクニックID（UUID）" },
+        name: { type: "string", description: "テクニック名（英語）" },
+        name_ja: { type: "string", description: "テクニック名（日本語）" },
+        category: { type: "string", description: "カテゴリ" },
+        description_ja: { type: "string", description: "説明（日本語）" },
+      },
+      required: ["id"],
+    },
+  },
+  {
+    name: "delete_technique",
+    description: "テクニックを削除します。（write権限必要）",
+    inputSchema: {
+      type: "object",
+      properties: { id: { type: "string", description: "テクニックID（UUID）" } },
+      required: ["id"],
+    },
+  },
+
+  // ========== Dojo Tools ==========
+  {
+    name: "list_dojos",
+    description: "道場の一覧を取得します。",
+    inputSchema: {
+      type: "object",
+      properties: {
+        search: { type: "string", description: "名前で検索" },
+        limit: { type: "number", description: "取得件数" },
+        offset: { type: "number", description: "オフセット" },
+      },
+    },
+  },
+  {
+    name: "get_dojo",
+    description: "指定したIDの道場情報を取得します。",
+    inputSchema: {
+      type: "object",
+      properties: { id: { type: "string", description: "道場ID（UUID）" } },
+      required: ["id"],
+    },
+  },
+  {
+    name: "create_dojo",
+    description: "新しい道場を作成します。（write権限必要）",
+    inputSchema: {
+      type: "object",
+      properties: {
+        name: { type: "string", description: "道場名（英語）" },
+        name_ja: { type: "string", description: "道場名（日本語）" },
+        name_pt: { type: "string", description: "道場名（ポルトガル語）" },
+        location: { type: "string", description: "所在地" },
+        description: { type: "string", description: "説明（英語）" },
+        description_ja: { type: "string", description: "説明（日本語）" },
+        website: { type: "string", description: "ウェブサイト" },
+        email: { type: "string", description: "メールアドレス" },
+        phone: { type: "string", description: "電話番号" },
+      },
+      required: ["name", "name_ja", "name_pt"],
+    },
+  },
+  {
+    name: "update_dojo",
+    description: "道場情報を更新します。（write権限必要）",
+    inputSchema: {
+      type: "object",
+      properties: {
+        id: { type: "string", description: "道場ID（UUID）" },
+        name: { type: "string", description: "道場名（英語）" },
+        name_ja: { type: "string", description: "道場名（日本語）" },
+        location: { type: "string", description: "所在地" },
+        description_ja: { type: "string", description: "説明（日本語）" },
+      },
+      required: ["id"],
+    },
+  },
+  {
+    name: "delete_dojo",
+    description: "道場を削除します。（write権限必要）",
+    inputSchema: {
+      type: "object",
+      properties: { id: { type: "string", description: "道場ID（UUID）" } },
+      required: ["id"],
+    },
+  },
+
+  // ========== Event Tools ==========
+  {
+    name: "list_events",
+    description: "イベントの一覧を取得します。",
+    inputSchema: {
+      type: "object",
+      properties: {
+        search: { type: "string", description: "タイトルで検索" },
+        upcoming: { type: "boolean", description: "今後のイベントのみ取得" },
+        event_type: { type: "string", description: "イベントタイプで絞り込み" },
+        limit: { type: "number", description: "取得件数" },
+        offset: { type: "number", description: "オフセット" },
+      },
+    },
+  },
+  {
+    name: "get_event",
+    description: "指定したIDのイベント情報を取得します。",
+    inputSchema: {
+      type: "object",
+      properties: { id: { type: "string", description: "イベントID（UUID）" } },
+      required: ["id"],
+    },
+  },
+  {
+    name: "create_event",
+    description: "新しいイベントを作成します。（write権限必要）",
+    inputSchema: {
+      type: "object",
+      properties: {
+        title: { type: "string", description: "タイトル" },
+        description: { type: "string", description: "説明" },
+        event_date: { type: "string", description: "開催日時（ISO 8601形式）" },
+        event_type: { type: "string", description: "イベントタイプ" },
+        location: { type: "string", description: "開催場所" },
+        max_participants: { type: "number", description: "最大参加人数" },
+        price: { type: "number", description: "参加費" },
+        is_public: { type: "boolean", description: "公開するか" },
+      },
+      required: ["title", "event_date", "event_type"],
+    },
+  },
+  {
+    name: "update_event",
+    description: "イベント情報を更新します。（write権限必要）",
+    inputSchema: {
+      type: "object",
+      properties: {
+        id: { type: "string", description: "イベントID（UUID）" },
+        title: { type: "string", description: "タイトル" },
+        description: { type: "string", description: "説明" },
+        event_date: { type: "string", description: "開催日時" },
+        location: { type: "string", description: "開催場所" },
+      },
+      required: ["id"],
+    },
+  },
+  {
+    name: "delete_event",
+    description: "イベントを削除します。（write権限必要）",
+    inputSchema: {
+      type: "object",
+      properties: { id: { type: "string", description: "イベントID（UUID）" } },
+      required: ["id"],
+    },
+  },
+
+  // ========== Music Track Tools ==========
+  {
+    name: "list_music_tracks",
+    description: "音楽トラックの一覧を取得します。",
+    inputSchema: {
+      type: "object",
+      properties: {
+        search: { type: "string", description: "タイトルで検索" },
+        is_active: { type: "boolean", description: "有効なトラックのみ" },
+        limit: { type: "number", description: "取得件数" },
+        offset: { type: "number", description: "オフセット" },
+      },
+    },
+  },
+  {
+    name: "get_music_track",
+    description: "指定したIDの音楽トラック情報を取得します。",
+    inputSchema: {
+      type: "object",
+      properties: { id: { type: "string", description: "トラックID（UUID）" } },
+      required: ["id"],
+    },
+  },
+  {
+    name: "create_music_track",
+    description: "新しい音楽トラックを作成します。（write権限必要）",
+    inputSchema: {
+      type: "object",
+      properties: {
+        title: { type: "string", description: "タイトル" },
+        artist: { type: "string", description: "アーティスト" },
+        audio_url: { type: "string", description: "音声URL" },
+        thumbnail_url: { type: "string", description: "サムネイルURL" },
+        duration_seconds: { type: "number", description: "再生時間（秒）" },
+        is_active: { type: "boolean", description: "有効かどうか" },
+      },
+      required: ["title", "audio_url"],
+    },
+  },
+  {
+    name: "update_music_track",
+    description: "音楽トラック情報を更新します。（write権限必要）",
+    inputSchema: {
+      type: "object",
+      properties: {
+        id: { type: "string", description: "トラックID（UUID）" },
+        title: { type: "string", description: "タイトル" },
+        artist: { type: "string", description: "アーティスト" },
+        is_active: { type: "boolean", description: "有効かどうか" },
+      },
+      required: ["id"],
+    },
+  },
+  {
+    name: "delete_music_track",
+    description: "音楽トラックを削除します。（write権限必要）",
+    inputSchema: {
+      type: "object",
+      properties: { id: { type: "string", description: "トラックID（UUID）" } },
+      required: ["id"],
+    },
+  },
+
+  // ========== Organization Tools ==========
+  {
+    name: "list_organizations",
+    description: "団体の一覧を取得します。",
+    inputSchema: {
+      type: "object",
+      properties: {
+        search: { type: "string", description: "名前で検索" },
+        limit: { type: "number", description: "取得件数" },
+        offset: { type: "number", description: "オフセット" },
+      },
+    },
+  },
+  {
+    name: "get_organization",
+    description: "指定したIDの団体情報を取得します。",
+    inputSchema: {
+      type: "object",
+      properties: { id: { type: "string", description: "団体ID（UUID）" } },
+      required: ["id"],
+    },
+  },
+  {
+    name: "create_organization",
+    description: "新しい団体を作成します。（write権限必要）",
+    inputSchema: {
+      type: "object",
+      properties: {
+        name: { type: "string", description: "団体名（英語）" },
+        name_ja: { type: "string", description: "団体名（日本語）" },
+        name_pt: { type: "string", description: "団体名（ポルトガル語）" },
+        description: { type: "string", description: "説明" },
+        website: { type: "string", description: "ウェブサイト" },
+        logo_url: { type: "string", description: "ロゴURL" },
+      },
+      required: ["name", "name_ja", "name_pt"],
+    },
+  },
+  {
+    name: "update_organization",
+    description: "団体情報を更新します。（write権限必要）",
+    inputSchema: {
+      type: "object",
+      properties: {
+        id: { type: "string", description: "団体ID（UUID）" },
+        name: { type: "string", description: "団体名（英語）" },
+        name_ja: { type: "string", description: "団体名（日本語）" },
+        description: { type: "string", description: "説明" },
+      },
+      required: ["id"],
+    },
+  },
+  {
+    name: "delete_organization",
+    description: "団体を削除します。（write権限必要）",
+    inputSchema: {
+      type: "object",
+      properties: { id: { type: "string", description: "団体ID（UUID）" } },
+      required: ["id"],
+    },
+  },
+
+  // ========== Contact Message Tools ==========
+  {
+    name: "list_contact_messages",
+    description: "お問い合わせメッセージの一覧を取得します。（read権限必要）",
+    inputSchema: {
+      type: "object",
+      properties: {
+        status: { type: "string", description: "ステータスで絞り込み（unread/read/replied）" },
+        limit: { type: "number", description: "取得件数" },
+        offset: { type: "number", description: "オフセット" },
+      },
+    },
+  },
+  {
+    name: "get_contact_message",
+    description: "指定したIDのお問い合わせを取得します。",
+    inputSchema: {
+      type: "object",
+      properties: { id: { type: "string", description: "メッセージID（UUID）" } },
+      required: ["id"],
+    },
+  },
+  {
+    name: "update_contact_message_status",
+    description: "お問い合わせのステータスを更新します。（write権限必要）",
+    inputSchema: {
+      type: "object",
+      properties: {
+        id: { type: "string", description: "メッセージID（UUID）" },
+        status: { type: "string", description: "新しいステータス（unread/read/replied）" },
+      },
+      required: ["id", "status"],
+    },
+  },
+
+  // ========== Celebrity Lineage Tools ==========
+  {
+    name: "list_celebrity_lineage",
+    description: "選手の系統関係を取得します。",
+    inputSchema: {
+      type: "object",
+      properties: {
+        celebrity_id: { type: "string", description: "選手IDで絞り込み" },
+        limit: { type: "number", description: "取得件数" },
+        offset: { type: "number", description: "オフセット" },
+      },
+    },
+  },
+  {
+    name: "create_celebrity_lineage",
+    description: "選手間の師弟関係を作成します。（write権限必要）",
+    inputSchema: {
+      type: "object",
+      properties: {
+        instructor_id: { type: "string", description: "師匠の選手ID" },
+        student_id: { type: "string", description: "弟子の選手ID" },
+        belt_level: { type: "string", description: "授与した帯" },
+        started_at: { type: "string", description: "開始日" },
+        notes: { type: "string", description: "備考" },
+      },
+      required: ["instructor_id", "student_id"],
+    },
+  },
+  {
+    name: "delete_celebrity_lineage",
+    description: "選手間の師弟関係を削除します。（write権限必要）",
+    inputSchema: {
+      type: "object",
+      properties: { id: { type: "string", description: "系統ID（UUID）" } },
       required: ["id"],
     },
   },
@@ -248,59 +640,34 @@ async function executeTool(toolName: string, args: Record<string, unknown>, perm
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
   const hasWritePermission = permissions.includes('write') || permissions.includes('admin');
 
-  // Celebrity tools
+  // ========== Celebrity Tools ==========
   if (toolName === 'list_celebrities') {
     const limit = (args.limit as number) || 50;
     const offset = (args.offset as number) || 0;
-    let query = supabase
-      .from('celebrities')
-      .select('*', { count: 'exact' })
-      .order('display_name')
-      .range(offset, offset + limit - 1);
-    
-    if (args.search) {
-      query = query.or(`display_name.ilike.%${args.search}%,name_ja.ilike.%${args.search}%`);
-    }
-    
+    let query = supabase.from('celebrities').select('*', { count: 'exact' }).order('display_name').range(offset, offset + limit - 1);
+    if (args.search) query = query.or(`display_name.ilike.%${args.search}%,name_ja.ilike.%${args.search}%`);
     const { data, error, count } = await query;
     if (error) throw error;
     return { data, total: count, limit, offset };
   }
-  
   if (toolName === 'get_celebrity') {
-    const { data, error } = await supabase
-      .from('celebrities')
-      .select('*')
-      .eq('id', args.id)
-      .single();
+    const { data, error } = await supabase.from('celebrities').select('*').eq('id', args.id).single();
     if (error) throw error;
     return data;
   }
-  
   if (toolName === 'create_celebrity') {
     if (!hasWritePermission) throw new Error('Write permission required');
-    const { data, error } = await supabase
-      .from('celebrities')
-      .insert(args)
-      .select()
-      .single();
+    const { data, error } = await supabase.from('celebrities').insert(args).select().single();
     if (error) throw error;
     return data;
   }
-  
   if (toolName === 'update_celebrity') {
     if (!hasWritePermission) throw new Error('Write permission required');
     const { id, ...updateData } = args;
-    const { data, error } = await supabase
-      .from('celebrities')
-      .update(updateData)
-      .eq('id', id)
-      .select()
-      .single();
+    const { data, error } = await supabase.from('celebrities').update(updateData).eq('id', id).select().single();
     if (error) throw error;
     return data;
   }
-  
   if (toolName === 'delete_celebrity') {
     if (!hasWritePermission) throw new Error('Write permission required');
     const { error } = await supabase.from('celebrities').delete().eq('id', args.id);
@@ -308,62 +675,35 @@ async function executeTool(toolName: string, args: Record<string, unknown>, perm
     return { success: true };
   }
 
-  // Tournament tools
+  // ========== Tournament Tools ==========
   if (toolName === 'list_tournaments') {
     const limit = (args.limit as number) || 50;
     const offset = (args.offset as number) || 0;
-    let query = supabase
-      .from('tournaments')
-      .select('*, venue:venues(id, name, name_ja)', { count: 'exact' })
-      .order('start_date', { ascending: true })
-      .range(offset, offset + limit - 1);
-    
-    if (args.search) {
-      query = query.or(`name.ilike.%${args.search}%,name_ja.ilike.%${args.search}%`);
-    }
-    if (args.upcoming) {
-      query = query.gte('start_date', new Date().toISOString().split('T')[0]);
-    }
-    
+    let query = supabase.from('tournaments').select('*', { count: 'exact' }).order('date_start', { ascending: false }).range(offset, offset + limit - 1);
+    if (args.search) query = query.or(`name.ilike.%${args.search}%,name_ja.ilike.%${args.search}%`);
+    if (args.upcoming) query = query.gte('date_start', new Date().toISOString().split('T')[0]);
     const { data, error, count } = await query;
     if (error) throw error;
     return { data, total: count, limit, offset };
   }
-  
   if (toolName === 'get_tournament') {
-    const { data, error } = await supabase
-      .from('tournaments')
-      .select('*, venue:venues(*)')
-      .eq('id', args.id)
-      .single();
+    const { data, error } = await supabase.from('tournaments').select('*').eq('id', args.id).single();
     if (error) throw error;
     return data;
   }
-  
   if (toolName === 'create_tournament') {
     if (!hasWritePermission) throw new Error('Write permission required');
-    const { data, error } = await supabase
-      .from('tournaments')
-      .insert(args)
-      .select()
-      .single();
+    const { data, error } = await supabase.from('tournaments').insert(args).select().single();
     if (error) throw error;
     return data;
   }
-  
   if (toolName === 'update_tournament') {
     if (!hasWritePermission) throw new Error('Write permission required');
     const { id, ...updateData } = args;
-    const { data, error } = await supabase
-      .from('tournaments')
-      .update(updateData)
-      .eq('id', id)
-      .select()
-      .single();
+    const { data, error } = await supabase.from('tournaments').update(updateData).eq('id', id).select().single();
     if (error) throw error;
     return data;
   }
-  
   if (toolName === 'delete_tournament') {
     if (!hasWritePermission) throw new Error('Write permission required');
     const { error } = await supabase.from('tournaments').delete().eq('id', args.id);
@@ -371,65 +711,262 @@ async function executeTool(toolName: string, args: Record<string, unknown>, perm
     return { success: true };
   }
 
-  // Venue tools
+  // ========== Venue Tools ==========
   if (toolName === 'list_venues') {
     const limit = (args.limit as number) || 50;
     const offset = (args.offset as number) || 0;
-    let query = supabase
-      .from('venues')
-      .select('*', { count: 'exact' })
-      .order('name')
-      .range(offset, offset + limit - 1);
-    
-    if (args.search) {
-      query = query.or(`name.ilike.%${args.search}%,name_ja.ilike.%${args.search}%,city.ilike.%${args.search}%`);
-    }
-    if (args.country) {
-      query = query.eq('country', args.country);
-    }
-    
+    let query = supabase.from('venues').select('*', { count: 'exact' }).order('name').range(offset, offset + limit - 1);
+    if (args.search) query = query.or(`name.ilike.%${args.search}%,name_ja.ilike.%${args.search}%,city.ilike.%${args.search}%`);
+    if (args.country) query = query.eq('country', args.country);
     const { data, error, count } = await query;
     if (error) throw error;
     return { data, total: count, limit, offset };
   }
-  
   if (toolName === 'get_venue') {
-    const { data, error } = await supabase
-      .from('venues')
-      .select('*')
-      .eq('id', args.id)
-      .single();
+    const { data, error } = await supabase.from('venues').select('*').eq('id', args.id).single();
     if (error) throw error;
     return data;
   }
-  
   if (toolName === 'create_venue') {
     if (!hasWritePermission) throw new Error('Write permission required');
-    const { data, error } = await supabase
-      .from('venues')
-      .insert(args)
-      .select()
-      .single();
+    const { data, error } = await supabase.from('venues').insert(args).select().single();
     if (error) throw error;
     return data;
   }
-  
   if (toolName === 'update_venue') {
     if (!hasWritePermission) throw new Error('Write permission required');
     const { id, ...updateData } = args;
-    const { data, error } = await supabase
-      .from('venues')
-      .update(updateData)
-      .eq('id', id)
-      .select()
-      .single();
+    const { data, error } = await supabase.from('venues').update(updateData).eq('id', id).select().single();
     if (error) throw error;
     return data;
   }
-  
   if (toolName === 'delete_venue') {
     if (!hasWritePermission) throw new Error('Write permission required');
     const { error } = await supabase.from('venues').delete().eq('id', args.id);
+    if (error) throw error;
+    return { success: true };
+  }
+
+  // ========== Technique Tools ==========
+  if (toolName === 'list_techniques') {
+    const limit = (args.limit as number) || 50;
+    const offset = (args.offset as number) || 0;
+    let query = supabase.from('techniques').select('*', { count: 'exact' }).order('display_order').range(offset, offset + limit - 1);
+    if (args.search) query = query.or(`name.ilike.%${args.search}%,name_ja.ilike.%${args.search}%`);
+    if (args.category) query = query.eq('category', args.category);
+    const { data, error, count } = await query;
+    if (error) throw error;
+    return { data, total: count, limit, offset };
+  }
+  if (toolName === 'get_technique') {
+    const { data, error } = await supabase.from('techniques').select('*').eq('id', args.id).single();
+    if (error) throw error;
+    return data;
+  }
+  if (toolName === 'create_technique') {
+    if (!hasWritePermission) throw new Error('Write permission required');
+    const { data, error } = await supabase.from('techniques').insert(args).select().single();
+    if (error) throw error;
+    return data;
+  }
+  if (toolName === 'update_technique') {
+    if (!hasWritePermission) throw new Error('Write permission required');
+    const { id, ...updateData } = args;
+    const { data, error } = await supabase.from('techniques').update(updateData).eq('id', id).select().single();
+    if (error) throw error;
+    return data;
+  }
+  if (toolName === 'delete_technique') {
+    if (!hasWritePermission) throw new Error('Write permission required');
+    const { error } = await supabase.from('techniques').delete().eq('id', args.id);
+    if (error) throw error;
+    return { success: true };
+  }
+
+  // ========== Dojo Tools ==========
+  if (toolName === 'list_dojos') {
+    const limit = (args.limit as number) || 50;
+    const offset = (args.offset as number) || 0;
+    let query = supabase.from('dojos').select('*', { count: 'exact' }).order('name').range(offset, offset + limit - 1);
+    if (args.search) query = query.or(`name.ilike.%${args.search}%,name_ja.ilike.%${args.search}%`);
+    const { data, error, count } = await query;
+    if (error) throw error;
+    return { data, total: count, limit, offset };
+  }
+  if (toolName === 'get_dojo') {
+    const { data, error } = await supabase.from('dojos').select('*').eq('id', args.id).single();
+    if (error) throw error;
+    return data;
+  }
+  if (toolName === 'create_dojo') {
+    if (!hasWritePermission) throw new Error('Write permission required');
+    const { data, error } = await supabase.from('dojos').insert(args).select().single();
+    if (error) throw error;
+    return data;
+  }
+  if (toolName === 'update_dojo') {
+    if (!hasWritePermission) throw new Error('Write permission required');
+    const { id, ...updateData } = args;
+    const { data, error } = await supabase.from('dojos').update(updateData).eq('id', id).select().single();
+    if (error) throw error;
+    return data;
+  }
+  if (toolName === 'delete_dojo') {
+    if (!hasWritePermission) throw new Error('Write permission required');
+    const { error } = await supabase.from('dojos').delete().eq('id', args.id);
+    if (error) throw error;
+    return { success: true };
+  }
+
+  // ========== Event Tools ==========
+  if (toolName === 'list_events') {
+    const limit = (args.limit as number) || 50;
+    const offset = (args.offset as number) || 0;
+    let query = supabase.from('events').select('*', { count: 'exact' }).order('event_date', { ascending: false }).range(offset, offset + limit - 1);
+    if (args.search) query = query.ilike('title', `%${args.search}%`);
+    if (args.upcoming) query = query.gte('event_date', new Date().toISOString());
+    if (args.event_type) query = query.eq('event_type', args.event_type);
+    const { data, error, count } = await query;
+    if (error) throw error;
+    return { data, total: count, limit, offset };
+  }
+  if (toolName === 'get_event') {
+    const { data, error } = await supabase.from('events').select('*').eq('id', args.id).single();
+    if (error) throw error;
+    return data;
+  }
+  if (toolName === 'create_event') {
+    if (!hasWritePermission) throw new Error('Write permission required');
+    const { data, error } = await supabase.from('events').insert({ ...args, organizer_id: '00000000-0000-0000-0000-000000000000' }).select().single();
+    if (error) throw error;
+    return data;
+  }
+  if (toolName === 'update_event') {
+    if (!hasWritePermission) throw new Error('Write permission required');
+    const { id, ...updateData } = args;
+    const { data, error } = await supabase.from('events').update(updateData).eq('id', id).select().single();
+    if (error) throw error;
+    return data;
+  }
+  if (toolName === 'delete_event') {
+    if (!hasWritePermission) throw new Error('Write permission required');
+    const { error } = await supabase.from('events').delete().eq('id', args.id);
+    if (error) throw error;
+    return { success: true };
+  }
+
+  // ========== Music Track Tools ==========
+  if (toolName === 'list_music_tracks') {
+    const limit = (args.limit as number) || 50;
+    const offset = (args.offset as number) || 0;
+    let query = supabase.from('music_tracks').select('*', { count: 'exact' }).order('sort_order').range(offset, offset + limit - 1);
+    if (args.search) query = query.ilike('title', `%${args.search}%`);
+    if (args.is_active !== undefined) query = query.eq('is_active', args.is_active);
+    const { data, error, count } = await query;
+    if (error) throw error;
+    return { data, total: count, limit, offset };
+  }
+  if (toolName === 'get_music_track') {
+    const { data, error } = await supabase.from('music_tracks').select('*').eq('id', args.id).single();
+    if (error) throw error;
+    return data;
+  }
+  if (toolName === 'create_music_track') {
+    if (!hasWritePermission) throw new Error('Write permission required');
+    const { data, error } = await supabase.from('music_tracks').insert(args).select().single();
+    if (error) throw error;
+    return data;
+  }
+  if (toolName === 'update_music_track') {
+    if (!hasWritePermission) throw new Error('Write permission required');
+    const { id, ...updateData } = args;
+    const { data, error } = await supabase.from('music_tracks').update(updateData).eq('id', id).select().single();
+    if (error) throw error;
+    return data;
+  }
+  if (toolName === 'delete_music_track') {
+    if (!hasWritePermission) throw new Error('Write permission required');
+    const { error } = await supabase.from('music_tracks').delete().eq('id', args.id);
+    if (error) throw error;
+    return { success: true };
+  }
+
+  // ========== Organization Tools ==========
+  if (toolName === 'list_organizations') {
+    const limit = (args.limit as number) || 50;
+    const offset = (args.offset as number) || 0;
+    let query = supabase.from('organizations').select('*', { count: 'exact' }).order('name').range(offset, offset + limit - 1);
+    if (args.search) query = query.or(`name.ilike.%${args.search}%,name_ja.ilike.%${args.search}%`);
+    const { data, error, count } = await query;
+    if (error) throw error;
+    return { data, total: count, limit, offset };
+  }
+  if (toolName === 'get_organization') {
+    const { data, error } = await supabase.from('organizations').select('*').eq('id', args.id).single();
+    if (error) throw error;
+    return data;
+  }
+  if (toolName === 'create_organization') {
+    if (!hasWritePermission) throw new Error('Write permission required');
+    const { data, error } = await supabase.from('organizations').insert(args).select().single();
+    if (error) throw error;
+    return data;
+  }
+  if (toolName === 'update_organization') {
+    if (!hasWritePermission) throw new Error('Write permission required');
+    const { id, ...updateData } = args;
+    const { data, error } = await supabase.from('organizations').update(updateData).eq('id', id).select().single();
+    if (error) throw error;
+    return data;
+  }
+  if (toolName === 'delete_organization') {
+    if (!hasWritePermission) throw new Error('Write permission required');
+    const { error } = await supabase.from('organizations').delete().eq('id', args.id);
+    if (error) throw error;
+    return { success: true };
+  }
+
+  // ========== Contact Message Tools ==========
+  if (toolName === 'list_contact_messages') {
+    const limit = (args.limit as number) || 50;
+    const offset = (args.offset as number) || 0;
+    let query = supabase.from('contact_messages').select('*', { count: 'exact' }).order('created_at', { ascending: false }).range(offset, offset + limit - 1);
+    if (args.status) query = query.eq('status', args.status);
+    const { data, error, count } = await query;
+    if (error) throw error;
+    return { data, total: count, limit, offset };
+  }
+  if (toolName === 'get_contact_message') {
+    const { data, error } = await supabase.from('contact_messages').select('*').eq('id', args.id).single();
+    if (error) throw error;
+    return data;
+  }
+  if (toolName === 'update_contact_message_status') {
+    if (!hasWritePermission) throw new Error('Write permission required');
+    const { data, error } = await supabase.from('contact_messages').update({ status: args.status }).eq('id', args.id).select().single();
+    if (error) throw error;
+    return data;
+  }
+
+  // ========== Celebrity Lineage Tools ==========
+  if (toolName === 'list_celebrity_lineage') {
+    const limit = (args.limit as number) || 50;
+    const offset = (args.offset as number) || 0;
+    let query = supabase.from('celebrity_lineage').select('*, instructor:celebrities!instructor_id(*), student:celebrities!student_id(*)', { count: 'exact' }).range(offset, offset + limit - 1);
+    if (args.celebrity_id) query = query.or(`instructor_id.eq.${args.celebrity_id},student_id.eq.${args.celebrity_id}`);
+    const { data, error, count } = await query;
+    if (error) throw error;
+    return { data, total: count, limit, offset };
+  }
+  if (toolName === 'create_celebrity_lineage') {
+    if (!hasWritePermission) throw new Error('Write permission required');
+    const { data, error } = await supabase.from('celebrity_lineage').insert(args).select().single();
+    if (error) throw error;
+    return data;
+  }
+  if (toolName === 'delete_celebrity_lineage') {
+    if (!hasWritePermission) throw new Error('Write permission required');
+    const { error } = await supabase.from('celebrity_lineage').delete().eq('id', args.id);
     if (error) throw error;
     return { success: true };
   }
@@ -439,19 +976,11 @@ async function executeTool(toolName: string, args: Record<string, unknown>, perm
 
 // Create JSON-RPC response
 function createJsonRpcResponse(id: string | number | null, result: unknown) {
-  return {
-    jsonrpc: "2.0",
-    id,
-    result,
-  };
+  return { jsonrpc: "2.0", id, result };
 }
 
 function createJsonRpcError(id: string | number | null, code: number, message: string) {
-  return {
-    jsonrpc: "2.0",
-    id,
-    error: { code, message },
-  };
+  return { jsonrpc: "2.0", id, error: { code, message } };
 }
 
 serve(async (req) => {
@@ -486,15 +1015,12 @@ serve(async (req) => {
 
     // Handle GET requests for basic info
     if (req.method === 'GET') {
-      const url = new URL(req.url);
-      const path = url.pathname;
-      
-      // Return server info for any GET request
       return new Response(JSON.stringify({
         name: "jiuflow-mcp-server",
-        version: "1.0.0",
-        description: "JiuFlow MCP Server - 選手・大会・会場データを管理",
+        version: "2.0.0",
+        description: "JiuFlow MCP Server - 選手・大会・会場・テクニック・道場・イベント・音楽・団体を管理",
         protocolVersion: MCP_PROTOCOL_VERSION,
+        toolCount: tools.length,
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
@@ -507,7 +1033,6 @@ serve(async (req) => {
       
       const { method, params, id, jsonrpc } = body;
       
-      // Validate JSON-RPC format
       if (jsonrpc !== "2.0") {
         return new Response(
           JSON.stringify(createJsonRpcError(id, -32600, 'Invalid Request: must be JSON-RPC 2.0')),
@@ -520,24 +1045,16 @@ serve(async (req) => {
         console.log('[MCP Server] Handling initialize request');
         const response = createJsonRpcResponse(id, {
           protocolVersion: MCP_PROTOCOL_VERSION,
-          capabilities: {
-            tools: {},
-          },
-          serverInfo: {
-            name: "jiuflow-mcp-server",
-            version: "1.0.0",
-          },
+          capabilities: { tools: {} },
+          serverInfo: { name: "jiuflow-mcp-server", version: "2.0.0" },
         });
-        console.log('[MCP Server] Initialize response:', JSON.stringify(response));
         return new Response(JSON.stringify(response), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         });
       }
 
-      // Handle initialized notification (no response needed for notifications)
+      // Handle initialized notification
       if (method === 'notifications/initialized' || method === 'initialized') {
-        console.log('[MCP Server] Received initialized notification');
-        // Notifications don't require a response, but we'll send an empty success
         return new Response(JSON.stringify(createJsonRpcResponse(id, {})), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         });
@@ -567,12 +1084,7 @@ serve(async (req) => {
         try {
           const result = await executeTool(name, args || {}, permissions);
           const response = createJsonRpcResponse(id, {
-            content: [
-              {
-                type: "text",
-                text: JSON.stringify(result, null, 2),
-              },
-            ],
+            content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
           });
           return new Response(JSON.stringify(response), {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -582,12 +1094,7 @@ serve(async (req) => {
           console.error('[MCP Server] Tool execution error:', message);
           return new Response(
             JSON.stringify(createJsonRpcResponse(id, {
-              content: [
-                {
-                  type: "text",
-                  text: `Error: ${message}`,
-                },
-              ],
+              content: [{ type: "text", text: `Error: ${message}` }],
               isError: true,
             })),
             { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
