@@ -18,6 +18,9 @@ import { toast } from "sonner";
 interface Celebrity {
   id: string;
   display_name: string;
+  name_en: string | null;
+  name_ja: string | null;
+  name_pt: string | null;
   bio: string | null;
   bio_ja: string | null;
   bio_en: string | null;
@@ -47,6 +50,9 @@ interface Celebrity {
   instructors?: Array<{
     instructor: {
       display_name: string;
+      name_en: string | null;
+      name_ja: string | null;
+      name_pt: string | null;
       id: string;
       avatar_url: string | null;
     };
@@ -95,6 +101,9 @@ const Athletes = () => {
         .select(`
           id,
           display_name,
+          name_en,
+          name_ja,
+          name_pt,
           bio_ja,
           bio_en,
           bio_pt,
@@ -114,6 +123,9 @@ const Athletes = () => {
       // Set initial data immediately for fast render
       const initialData = (data || []).map(c => ({
         ...c,
+        name_en: c.name_en || null,
+        name_ja: c.name_ja || null,
+        name_pt: c.name_pt || null,
         bio: null,
         bio_es: null,
         bio_fr: null,
@@ -157,6 +169,9 @@ const Athletes = () => {
           instructor:celebrities!celebrity_lineage_instructor_id_fkey(
             id,
             display_name,
+            name_en,
+            name_ja,
+            name_pt,
             avatar_url
           )
         `);
@@ -236,6 +251,23 @@ const Athletes = () => {
     };
     
     return bioMap[language] || celebrity.bio_ja || celebrity.bio || null;
+  };
+
+  // Get native name for the celebrity (show name in their native language)
+  const getNativeName = (celebrity: Celebrity) => {
+    // If name_ja exists (Japanese person), show Japanese name
+    if (celebrity.name_ja) return celebrity.name_ja;
+    // If name_pt exists (Brazilian/Portuguese person), show Portuguese name
+    if (celebrity.name_pt) return celebrity.name_pt;
+    // Otherwise use English name or display_name
+    return celebrity.name_en || celebrity.display_name;
+  };
+
+  // Get native name for instructor
+  const getInstructorNativeName = (instructor: Celebrity['instructors'][0]['instructor']) => {
+    if (instructor.name_ja) return instructor.name_ja;
+    if (instructor.name_pt) return instructor.name_pt;
+    return instructor.name_en || instructor.display_name;
   };
 
   const loadFollowedCelebrities = async () => {
@@ -408,12 +440,12 @@ const Athletes = () => {
                         <Avatar className="h-14 w-14 md:h-20 md:w-20 border-2 border-border group-hover:border-primary transition-colors flex-shrink-0">
                           <AvatarImage src={celebrity.avatar_url || undefined} />
                           <AvatarFallback className="text-lg md:text-2xl">
-                            {celebrity.display_name[0]}
+                            {getNativeName(celebrity)[0]}
                           </AvatarFallback>
                         </Avatar>
                         <div className="flex-1 min-w-0">
                           <h3 className="text-base md:text-xl font-semibold group-hover:text-primary transition-colors break-words mb-1 md:mb-2">
-                            {celebrity.display_name}
+                            {getNativeName(celebrity)}
                           </h3>
                           {getBeltName(celebrity.belt_history) && (
                             <BeltBadge belt={getBeltName(celebrity.belt_history)!} className="mb-1 md:mb-2 text-[10px] md:text-xs px-1.5 md:px-2 py-0.5" />
@@ -470,11 +502,11 @@ const Athletes = () => {
                                   <Avatar className="h-5 w-5 md:h-6 md:w-6 border border-border">
                                     <AvatarImage src={i.instructor.avatar_url || undefined} />
                                     <AvatarFallback className="text-[8px] md:text-[10px]">
-                                      {i.instructor.display_name[0]}
+                                      {getInstructorNativeName(i.instructor)[0]}
                                     </AvatarFallback>
                                   </Avatar>
                                   <span className="font-medium text-xs">
-                                    {i.instructor.display_name}
+                                    {getInstructorNativeName(i.instructor)}
                                   </span>
                                   {idx < celebrity.instructors!.length - 1 && <span className="text-muted-foreground">,</span>}
                                 </Link>
