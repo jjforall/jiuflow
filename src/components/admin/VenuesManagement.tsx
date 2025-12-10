@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Table,
   TableBody,
@@ -28,8 +29,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2, Search, MapPin, Users } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, MapPin, Users, Phone, Mail, Train, Car } from "lucide-react";
 
 interface Venue {
   id: string;
@@ -47,11 +54,27 @@ interface Venue {
   google_maps_url: string | null;
   latitude: number | null;
   longitude: number | null;
+  // New fields
+  phone: string | null;
+  email: string | null;
+  parking_info: string | null;
+  parking_info_ja: string | null;
+  nearest_station: string | null;
+  nearest_station_ja: string | null;
+  facilities: string[];
+  mat_area_sqm: number | null;
+  spectator_capacity: number | null;
+  rental_cost: string | null;
+  rental_cost_ja: string | null;
+  notes: string | null;
+  notes_ja: string | null;
   created_at: string;
   updated_at: string;
 }
 
-const emptyVenue: Omit<Venue, 'id' | 'created_at' | 'updated_at'> = {
+type VenueFormData = Omit<Venue, 'id' | 'created_at' | 'updated_at'>;
+
+const emptyVenue: VenueFormData = {
   name: '',
   name_ja: '',
   address: '',
@@ -66,6 +89,19 @@ const emptyVenue: Omit<Venue, 'id' | 'created_at' | 'updated_at'> = {
   google_maps_url: '',
   latitude: null,
   longitude: null,
+  phone: '',
+  email: '',
+  parking_info: '',
+  parking_info_ja: '',
+  nearest_station: '',
+  nearest_station_ja: '',
+  facilities: [],
+  mat_area_sqm: null,
+  spectator_capacity: null,
+  rental_cost: '',
+  rental_cost_ja: '',
+  notes: '',
+  notes_ja: '',
 };
 
 const countries = [
@@ -86,13 +122,26 @@ const countries = [
   { code: 'TW', name: '台湾', flag: '🇹🇼' },
 ];
 
+const facilityOptions = [
+  { id: 'locker_room', label: '更衣室' },
+  { id: 'shower', label: 'シャワー' },
+  { id: 'air_conditioning', label: '空調' },
+  { id: 'wifi', label: 'Wi-Fi' },
+  { id: 'parking', label: '駐車場' },
+  { id: 'vending', label: '自動販売機' },
+  { id: 'cafeteria', label: '食堂/カフェ' },
+  { id: 'first_aid', label: '救護室' },
+  { id: 'wheelchair', label: 'バリアフリー' },
+  { id: 'spectator_seats', label: '観客席' },
+];
+
 export function VenuesManagement() {
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
   const [countryFilter, setCountryFilter] = useState<string>("all");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingVenue, setEditingVenue] = useState<Venue | null>(null);
-  const [formData, setFormData] = useState<Omit<Venue, 'id' | 'created_at' | 'updated_at'>>(emptyVenue);
+  const [formData, setFormData] = useState<VenueFormData>(emptyVenue);
 
   const { data: venues, isLoading } = useQuery({
     queryKey: ['admin-venues'],
@@ -107,7 +156,7 @@ export function VenuesManagement() {
   });
 
   const createMutation = useMutation({
-    mutationFn: async (data: Omit<Venue, 'id' | 'created_at' | 'updated_at'>) => {
+    mutationFn: async (data: VenueFormData) => {
       const { error } = await supabase.from('venues').insert(data);
       if (error) throw error;
     },
@@ -122,7 +171,7 @@ export function VenuesManagement() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: Omit<Venue, 'id' | 'created_at' | 'updated_at'> }) => {
+    mutationFn: async ({ id, data }: { id: string; data: VenueFormData }) => {
       const { error } = await supabase.from('venues').update(data).eq('id', id);
       if (error) throw error;
     },
@@ -179,6 +228,19 @@ export function VenuesManagement() {
       google_maps_url: venue.google_maps_url || '',
       latitude: venue.latitude,
       longitude: venue.longitude,
+      phone: venue.phone || '',
+      email: venue.email || '',
+      parking_info: venue.parking_info || '',
+      parking_info_ja: venue.parking_info_ja || '',
+      nearest_station: venue.nearest_station || '',
+      nearest_station_ja: venue.nearest_station_ja || '',
+      facilities: Array.isArray(venue.facilities) ? venue.facilities : [],
+      mat_area_sqm: venue.mat_area_sqm,
+      spectator_capacity: venue.spectator_capacity,
+      rental_cost: venue.rental_cost || '',
+      rental_cost_ja: venue.rental_cost_ja || '',
+      notes: venue.notes || '',
+      notes_ja: venue.notes_ja || '',
     });
     setIsDialogOpen(true);
   };
@@ -189,7 +251,7 @@ export function VenuesManagement() {
       return;
     }
 
-    const submitData = {
+    const submitData: VenueFormData = {
       ...formData,
       name_ja: formData.name_ja || null,
       address: formData.address || null,
@@ -203,12 +265,33 @@ export function VenuesManagement() {
       google_maps_url: formData.google_maps_url || null,
       latitude: formData.latitude || null,
       longitude: formData.longitude || null,
+      phone: formData.phone || null,
+      email: formData.email || null,
+      parking_info: formData.parking_info || null,
+      parking_info_ja: formData.parking_info_ja || null,
+      nearest_station: formData.nearest_station || null,
+      nearest_station_ja: formData.nearest_station_ja || null,
+      facilities: formData.facilities,
+      mat_area_sqm: formData.mat_area_sqm || null,
+      spectator_capacity: formData.spectator_capacity || null,
+      rental_cost: formData.rental_cost || null,
+      rental_cost_ja: formData.rental_cost_ja || null,
+      notes: formData.notes || null,
+      notes_ja: formData.notes_ja || null,
     };
 
     if (editingVenue) {
       updateMutation.mutate({ id: editingVenue.id, data: submitData });
     } else {
       createMutation.mutate(submitData);
+    }
+  };
+
+  const handleFacilityChange = (facilityId: string, checked: boolean) => {
+    if (checked) {
+      setFormData({ ...formData, facilities: [...formData.facilities, facilityId] });
+    } else {
+      setFormData({ ...formData, facilities: formData.facilities.filter(f => f !== facilityId) });
     }
   };
 
@@ -273,9 +356,10 @@ export function VenuesManagement() {
             <TableHeader>
               <TableRow>
                 <TableHead>施設名</TableHead>
-                <TableHead>都市</TableHead>
+                <TableHead className="hidden sm:table-cell">都市</TableHead>
                 <TableHead>国</TableHead>
-                <TableHead>収容人数</TableHead>
+                <TableHead className="hidden md:table-cell">収容人数</TableHead>
+                <TableHead className="hidden lg:table-cell">連絡先</TableHead>
                 <TableHead className="w-[100px]">操作</TableHead>
               </TableRow>
             </TableHeader>
@@ -303,13 +387,13 @@ export function VenuesManagement() {
                       </div>
                     </div>
                   </TableCell>
-                  <TableCell className="text-sm">
+                  <TableCell className="text-sm hidden sm:table-cell">
                     {venue.city || '-'}
                   </TableCell>
                   <TableCell>
                     <span className="text-lg">{getCountryFlag(venue.country)}</span>
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="hidden md:table-cell">
                     {venue.capacity ? (
                       <div className="flex items-center gap-1 text-sm">
                         <Users className="h-3 w-3" />
@@ -318,6 +402,13 @@ export function VenuesManagement() {
                     ) : (
                       <span className="text-muted-foreground">-</span>
                     )}
+                  </TableCell>
+                  <TableCell className="hidden lg:table-cell">
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      {venue.phone && <Phone className="h-3 w-3" />}
+                      {venue.email && <Mail className="h-3 w-3" />}
+                      {!venue.phone && !venue.email && '-'}
+                    </div>
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-1">
@@ -349,162 +440,337 @@ export function VenuesManagement() {
       )}
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               {editingVenue ? '施設を編集' : '新規施設を作成'}
             </DialogTitle>
           </DialogHeader>
 
-          <div className="space-y-4 py-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>施設名 (英語) *</Label>
-                <Input
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="Tokyo Dome"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>施設名 (日本語)</Label>
-                <Input
-                  value={formData.name_ja || ''}
-                  onChange={(e) => setFormData({ ...formData, name_ja: e.target.value })}
-                  placeholder="東京ドーム"
-                />
-              </div>
-            </div>
+          <Accordion type="multiple" defaultValue={["basic", "location"]} className="w-full">
+            {/* 基本情報 */}
+            <AccordionItem value="basic">
+              <AccordionTrigger>基本情報</AccordionTrigger>
+              <AccordionContent className="space-y-4 pt-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>施設名 (英語) *</Label>
+                    <Input
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      placeholder="Tokyo Dome"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>施設名 (日本語)</Label>
+                    <Input
+                      value={formData.name_ja || ''}
+                      onChange={(e) => setFormData({ ...formData, name_ja: e.target.value })}
+                      placeholder="東京ドーム"
+                    />
+                  </div>
+                </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>都市</Label>
-                <Input
-                  value={formData.city || ''}
-                  onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                  placeholder="Tokyo"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>国 *</Label>
-                <Select
-                  value={formData.country}
-                  onValueChange={(value) => setFormData({ ...formData, country: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {countries.map(c => (
-                      <SelectItem key={c.code} value={c.code}>{c.flag} {c.name}</SelectItem>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>都市</Label>
+                    <Input
+                      value={formData.city || ''}
+                      onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                      placeholder="Tokyo"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>国 *</Label>
+                    <Select
+                      value={formData.country}
+                      onValueChange={(value) => setFormData({ ...formData, country: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {countries.map(c => (
+                          <SelectItem key={c.code} value={c.code}>{c.flag} {c.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>画像URL</Label>
+                  <Input
+                    value={formData.image_url || ''}
+                    onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
+                    placeholder="https://..."
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>ウェブサイト</Label>
+                  <Input
+                    value={formData.website || ''}
+                    onChange={(e) => setFormData({ ...formData, website: e.target.value })}
+                    placeholder="https://www.tokyo-dome.co.jp"
+                  />
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+
+            {/* 所在地・アクセス */}
+            <AccordionItem value="location">
+              <AccordionTrigger>所在地・アクセス</AccordionTrigger>
+              <AccordionContent className="space-y-4 pt-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>住所 (英語)</Label>
+                    <Input
+                      value={formData.address || ''}
+                      onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                      placeholder="1-3-61 Koraku, Bunkyo-ku"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>住所 (日本語)</Label>
+                    <Input
+                      value={formData.address_ja || ''}
+                      onChange={(e) => setFormData({ ...formData, address_ja: e.target.value })}
+                      placeholder="文京区後楽1-3-61"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="flex items-center gap-2"><Train className="h-4 w-4" />最寄り駅 (英語)</Label>
+                    <Input
+                      value={formData.nearest_station || ''}
+                      onChange={(e) => setFormData({ ...formData, nearest_station: e.target.value })}
+                      placeholder="Suidobashi Station (5 min walk)"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="flex items-center gap-2"><Train className="h-4 w-4" />最寄り駅 (日本語)</Label>
+                    <Input
+                      value={formData.nearest_station_ja || ''}
+                      onChange={(e) => setFormData({ ...formData, nearest_station_ja: e.target.value })}
+                      placeholder="水道橋駅 (徒歩5分)"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="flex items-center gap-2"><Car className="h-4 w-4" />駐車場情報 (英語)</Label>
+                    <Textarea
+                      value={formData.parking_info || ''}
+                      onChange={(e) => setFormData({ ...formData, parking_info: e.target.value })}
+                      placeholder="400 spaces, ¥1000/day"
+                      rows={2}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="flex items-center gap-2"><Car className="h-4 w-4" />駐車場情報 (日本語)</Label>
+                    <Textarea
+                      value={formData.parking_info_ja || ''}
+                      onChange={(e) => setFormData({ ...formData, parking_info_ja: e.target.value })}
+                      placeholder="400台収容、1日1000円"
+                      rows={2}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>アクセス情報 (英語)</Label>
+                  <Textarea
+                    value={formData.access_info || ''}
+                    onChange={(e) => setFormData({ ...formData, access_info: e.target.value })}
+                    placeholder="5 min walk from Suidobashi Station"
+                    rows={2}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>アクセス情報 (日本語)</Label>
+                  <Textarea
+                    value={formData.access_info_ja || ''}
+                    onChange={(e) => setFormData({ ...formData, access_info_ja: e.target.value })}
+                    placeholder="水道橋駅より徒歩5分"
+                    rows={2}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Google Maps URL</Label>
+                  <Input
+                    value={formData.google_maps_url || ''}
+                    onChange={(e) => setFormData({ ...formData, google_maps_url: e.target.value })}
+                    placeholder="https://maps.google.com/..."
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>緯度</Label>
+                    <Input
+                      type="number"
+                      step="any"
+                      value={formData.latitude || ''}
+                      onChange={(e) => setFormData({ ...formData, latitude: e.target.value ? parseFloat(e.target.value) : null })}
+                      placeholder="35.7056"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>経度</Label>
+                    <Input
+                      type="number"
+                      step="any"
+                      value={formData.longitude || ''}
+                      onChange={(e) => setFormData({ ...formData, longitude: e.target.value ? parseFloat(e.target.value) : null })}
+                      placeholder="139.7518"
+                    />
+                  </div>
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+
+            {/* 連絡先 */}
+            <AccordionItem value="contact">
+              <AccordionTrigger>連絡先</AccordionTrigger>
+              <AccordionContent className="space-y-4 pt-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="flex items-center gap-2"><Phone className="h-4 w-4" />電話番号</Label>
+                    <Input
+                      value={formData.phone || ''}
+                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                      placeholder="03-1234-5678"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="flex items-center gap-2"><Mail className="h-4 w-4" />メールアドレス</Label>
+                    <Input
+                      type="email"
+                      value={formData.email || ''}
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      placeholder="info@venue.com"
+                    />
+                  </div>
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+
+            {/* キャパシティ・設備 */}
+            <AccordionItem value="facilities">
+              <AccordionTrigger>キャパシティ・設備</AccordionTrigger>
+              <AccordionContent className="space-y-4 pt-4">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                  <div className="space-y-2">
+                    <Label>総収容人数</Label>
+                    <Input
+                      type="number"
+                      value={formData.capacity || ''}
+                      onChange={(e) => setFormData({ ...formData, capacity: e.target.value ? parseInt(e.target.value) : null })}
+                      placeholder="5000"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>観客席数</Label>
+                    <Input
+                      type="number"
+                      value={formData.spectator_capacity || ''}
+                      onChange={(e) => setFormData({ ...formData, spectator_capacity: e.target.value ? parseInt(e.target.value) : null })}
+                      placeholder="3000"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>マット面積 (㎡)</Label>
+                    <Input
+                      type="number"
+                      value={formData.mat_area_sqm || ''}
+                      onChange={(e) => setFormData({ ...formData, mat_area_sqm: e.target.value ? parseInt(e.target.value) : null })}
+                      placeholder="500"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>設備</Label>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 pt-2">
+                    {facilityOptions.map((facility) => (
+                      <div key={facility.id} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={facility.id}
+                          checked={formData.facilities.includes(facility.id)}
+                          onCheckedChange={(checked) => handleFacilityChange(facility.id, !!checked)}
+                        />
+                        <label htmlFor={facility.id} className="text-sm cursor-pointer">
+                          {facility.label}
+                        </label>
+                      </div>
                     ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
+                  </div>
+                </div>
+              </AccordionContent>
+            </AccordionItem>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>住所 (英語)</Label>
-                <Input
-                  value={formData.address || ''}
-                  onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                  placeholder="1-3-61 Koraku, Bunkyo-ku"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>住所 (日本語)</Label>
-                <Input
-                  value={formData.address_ja || ''}
-                  onChange={(e) => setFormData({ ...formData, address_ja: e.target.value })}
-                  placeholder="文京区後楽1-3-61"
-                />
-              </div>
-            </div>
+            {/* レンタル情報 */}
+            <AccordionItem value="rental">
+              <AccordionTrigger>レンタル情報</AccordionTrigger>
+              <AccordionContent className="space-y-4 pt-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>レンタル料金 (英語)</Label>
+                    <Textarea
+                      value={formData.rental_cost || ''}
+                      onChange={(e) => setFormData({ ...formData, rental_cost: e.target.value })}
+                      placeholder="¥100,000/day (weekday), ¥150,000/day (weekend)"
+                      rows={2}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>レンタル料金 (日本語)</Label>
+                    <Textarea
+                      value={formData.rental_cost_ja || ''}
+                      onChange={(e) => setFormData({ ...formData, rental_cost_ja: e.target.value })}
+                      placeholder="平日10万円/日、休日15万円/日"
+                      rows={2}
+                    />
+                  </div>
+                </div>
+              </AccordionContent>
+            </AccordionItem>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>収容人数</Label>
-                <Input
-                  type="number"
-                  value={formData.capacity || ''}
-                  onChange={(e) => setFormData({ ...formData, capacity: e.target.value ? parseInt(e.target.value) : null })}
-                  placeholder="55000"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>画像URL</Label>
-                <Input
-                  value={formData.image_url || ''}
-                  onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
-                  placeholder="https://..."
-                />
-              </div>
-            </div>
+            {/* 備考 */}
+            <AccordionItem value="notes">
+              <AccordionTrigger>備考</AccordionTrigger>
+              <AccordionContent className="space-y-4 pt-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>備考 (英語)</Label>
+                    <Textarea
+                      value={formData.notes || ''}
+                      onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                      placeholder="Additional notes..."
+                      rows={3}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>備考 (日本語)</Label>
+                    <Textarea
+                      value={formData.notes_ja || ''}
+                      onChange={(e) => setFormData({ ...formData, notes_ja: e.target.value })}
+                      placeholder="その他の注意事項..."
+                      rows={3}
+                    />
+                  </div>
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
 
-            <div className="space-y-2">
-              <Label>ウェブサイト</Label>
-              <Input
-                value={formData.website || ''}
-                onChange={(e) => setFormData({ ...formData, website: e.target.value })}
-                placeholder="https://www.tokyo-dome.co.jp"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label>Google Maps URL</Label>
-              <Input
-                value={formData.google_maps_url || ''}
-                onChange={(e) => setFormData({ ...formData, google_maps_url: e.target.value })}
-                placeholder="https://maps.google.com/..."
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>緯度</Label>
-                <Input
-                  type="number"
-                  step="any"
-                  value={formData.latitude || ''}
-                  onChange={(e) => setFormData({ ...formData, latitude: e.target.value ? parseFloat(e.target.value) : null })}
-                  placeholder="35.7056"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>経度</Label>
-                <Input
-                  type="number"
-                  step="any"
-                  value={formData.longitude || ''}
-                  onChange={(e) => setFormData({ ...formData, longitude: e.target.value ? parseFloat(e.target.value) : null })}
-                  placeholder="139.7518"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label>アクセス情報 (英語)</Label>
-              <Textarea
-                value={formData.access_info || ''}
-                onChange={(e) => setFormData({ ...formData, access_info: e.target.value })}
-                placeholder="5 min walk from Suidobashi Station"
-                rows={2}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label>アクセス情報 (日本語)</Label>
-              <Textarea
-                value={formData.access_info_ja || ''}
-                onChange={(e) => setFormData({ ...formData, access_info_ja: e.target.value })}
-                placeholder="水道橋駅より徒歩5分"
-                rows={2}
-              />
-            </div>
-          </div>
-
-          <DialogFooter>
+          <DialogFooter className="mt-4">
             <Button variant="outline" onClick={handleCloseDialog}>
               キャンセル
             </Button>
