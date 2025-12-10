@@ -574,14 +574,14 @@ export const CelebritiesManagement = () => {
             <div className="space-y-2">
               <Label>所属団体</Label>
               <Select
-                value={formData.organization_id}
-                onValueChange={(value) => setFormData({ ...formData, organization_id: value })}
+                value={formData.organization_id || "none"}
+                onValueChange={(value) => setFormData({ ...formData, organization_id: value === "none" ? "" : value })}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="団体を選択" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">なし</SelectItem>
+                  <SelectItem value="none">なし</SelectItem>
                   {organizations.map((org) => (
                     <SelectItem key={org.id} value={org.id}>
                       {org.name_ja}
