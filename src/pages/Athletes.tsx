@@ -11,6 +11,7 @@ import { BeltBadge } from "@/components/ui/belt-badge";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Star, Heart, GitBranch } from "lucide-react";
@@ -45,6 +46,7 @@ interface Celebrity {
   user_id: string | null;
   organization_id?: string | null;
   death_date?: string | null;
+  birth_date?: string | null;
   organization: {
     name: string;
     name_ja: string;
@@ -71,6 +73,7 @@ const Athletes = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [followedCelebrities, setFollowedCelebrities] = useState<Set<string>>(new Set());
   const [showLivingOnly, setShowLivingOnly] = useState(false);
+  const [ageRange, setAgeRange] = useState<string>("all");
 
   useEffect(() => {
     loadCelebrities();
@@ -117,7 +120,8 @@ const Athletes = () => {
           sort_order,
           user_id,
           organization_id,
-          death_date
+          death_date,
+          birth_date
         `)
         .order('featured', { ascending: false })
         .order('sort_order', { ascending: true })
@@ -201,10 +205,40 @@ const Athletes = () => {
     }
   };
 
-  // Filter and sort celebrities
-  const filteredCelebrities = showLivingOnly 
-    ? celebrities.filter(c => !c.death_date)
-    : celebrities;
+  // Calculate age helper
+  const calculateAge = (birthDate: string, deathDate?: string | null) => {
+    const birth = new Date(birthDate);
+    const end = deathDate ? new Date(deathDate) : new Date();
+    let age = end.getFullYear() - birth.getFullYear();
+    const monthDiff = end.getMonth() - birth.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && end.getDate() < birth.getDate())) {
+      age--;
+    }
+    return age;
+  };
+
+  // Filter celebrities
+  const filteredCelebrities = celebrities.filter(c => {
+    // Living only filter
+    if (showLivingOnly && c.death_date) return false;
+    
+    // Age range filter
+    if (ageRange !== "all" && c.birth_date) {
+      const age = calculateAge(c.birth_date, c.death_date);
+      switch (ageRange) {
+        case "under30": if (age >= 30) return false; break;
+        case "30-39": if (age < 30 || age >= 40) return false; break;
+        case "40-49": if (age < 40 || age >= 50) return false; break;
+        case "50-59": if (age < 50 || age >= 60) return false; break;
+        case "60-69": if (age < 60 || age >= 70) return false; break;
+        case "70plus": if (age < 70) return false; break;
+      }
+    } else if (ageRange !== "all" && !c.birth_date) {
+      return false; // No birth date, can't filter by age
+    }
+    
+    return true;
+  });
 
   // Sort celebrities to show followed ones first
   const sortedCelebrities = [...filteredCelebrities].sort((a, b) => {
@@ -402,16 +436,46 @@ const Athletes = () => {
               {language === "ja" ? "系統図を見る" : language === "pt" ? "Ver Linhagem" : "View Lineage Tree"}
             </Button>
             
-            {/* Living Only Filter */}
-            <div className="flex items-center justify-center gap-2 mt-4">
-              <Checkbox
-                id="livingOnly"
-                checked={showLivingOnly}
-                onCheckedChange={(checked) => setShowLivingOnly(checked === true)}
-              />
-              <Label htmlFor="livingOnly" className="cursor-pointer text-sm text-muted-foreground">
-                {language === "ja" ? "生存者のみ" : language === "pt" ? "Apenas vivos" : "Living Only"}
-              </Label>
+            {/* Filters */}
+            <div className="flex flex-wrap items-center justify-center gap-4 mt-4">
+              {/* Living Only Filter */}
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="livingOnly"
+                  checked={showLivingOnly}
+                  onCheckedChange={(checked) => setShowLivingOnly(checked === true)}
+                />
+                <Label htmlFor="livingOnly" className="cursor-pointer text-sm text-muted-foreground">
+                  {language === "ja" ? "生存者のみ" : language === "pt" ? "Apenas vivos" : "Living Only"}
+                </Label>
+              </div>
+
+              {/* Age Range Filter */}
+              <div className="flex items-center gap-2">
+                <Label className="text-sm text-muted-foreground">
+                  {language === "ja" ? "年齢" : language === "pt" ? "Idade" : "Age"}:
+                </Label>
+                <Select value={ageRange} onValueChange={setAgeRange}>
+                  <SelectTrigger className="w-[120px] h-8 text-sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">
+                      {language === "ja" ? "すべて" : language === "pt" ? "Todos" : "All"}
+                    </SelectItem>
+                    <SelectItem value="under30">
+                      {language === "ja" ? "30歳未満" : language === "pt" ? "Menos de 30" : "Under 30"}
+                    </SelectItem>
+                    <SelectItem value="30-39">30-39</SelectItem>
+                    <SelectItem value="40-49">40-49</SelectItem>
+                    <SelectItem value="50-59">50-59</SelectItem>
+                    <SelectItem value="60-69">60-69</SelectItem>
+                    <SelectItem value="70plus">
+                      {language === "ja" ? "70歳以上" : language === "pt" ? "70+" : "70+"}
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
 
