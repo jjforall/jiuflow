@@ -10,8 +10,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { toast } from "sonner";
-import { Plus, Key, Copy, Trash2, Eye, EyeOff, Code, Book, Server } from "lucide-react";
+import { Plus, Key, Copy, Trash2, Eye, EyeOff, Code, Book, Server, AlertCircle } from "lucide-react";
 import { format } from "date-fns";
 
 interface ApiKey {
@@ -534,6 +535,16 @@ export function ApiManagement() {
                   このMCPサーバーを使うと、Claude DesktopやCursor等のAIツールから直接JiuFlowのデータを読み書きできます。
                 </p>
               </div>
+
+              <Alert>
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>必要条件</AlertTitle>
+                <AlertDescription>
+                  <code className="bg-muted px-1 rounded">mcp-remote</code> パッケージには <strong>Node.js v20.18.1以上</strong> が必要です。
+                  <br />
+                  <code className="bg-muted px-1 rounded">node -v</code> で確認し、古い場合は <code className="bg-muted px-1 rounded">nvm install 20 && nvm use 20</code> で更新してください。
+                </AlertDescription>
+              </Alert>
 
               <div>
                 <h3 className="font-semibold mb-2">MCPサーバーURL</h3>
