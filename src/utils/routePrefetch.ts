@@ -51,6 +51,12 @@ export const prefetchRoute = async (routePath: string) => {
       case '/athlete':
         await import('../pages/Athlete');
         break;
+      case '/tournaments':
+        await import('../pages/Tournaments');
+        break;
+      case '/tournament':
+        await import('../pages/TournamentDetail');
+        break;
       case '/admin':
         await import('../pages/AdminLogin');
         break;
@@ -66,6 +72,6 @@ export const prefetchRoute = async (routePath: string) => {
 
 // Prefetch multiple routes (for initial page load)
 export const prefetchCriticalRoutes = async () => {
-  const criticalRoutes = ['/', '/map', '/about', '/contact', '/join', '/login', '/mypage', '/admin/dashboard', '/dojos', '/athletes'];
+  const criticalRoutes = ['/', '/map', '/about', '/contact', '/join', '/login', '/mypage', '/admin/dashboard', '/dojos', '/athletes', '/tournaments', '/tournament'];
   await Promise.all(criticalRoutes.map(route => prefetchRoute(route)));
 };
