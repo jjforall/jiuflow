@@ -987,6 +987,19 @@ const MyPage = () => {
       } else if (field === 'username') {
         // Validate username
         const newUsername = editValues.username?.trim() || null;
+        
+        // Username must be at least 3 characters (to avoid conflict with 2-char language codes)
+        if (newUsername && newUsername.length < 3) {
+          toast.error(language === "ja" ? "ユーザー名は3文字以上で入力してください" : "Username must be at least 3 characters");
+          return;
+        }
+        
+        // Username format validation: alphanumeric, underscores, hyphens only
+        if (newUsername && !/^[a-zA-Z0-9_-]+$/.test(newUsername)) {
+          toast.error(language === "ja" ? "ユーザー名は英数字、アンダースコア、ハイフンのみ使用できます" : "Username can only contain letters, numbers, underscores, and hyphens");
+          return;
+        }
+        
         if (newUsername && newUsername !== profile.username) {
           // Check if username is already taken by another user
           const { data: existingUser, error: checkError } = await supabase
