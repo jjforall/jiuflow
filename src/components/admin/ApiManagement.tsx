@@ -554,22 +554,27 @@ export function ApiManagement() {
               <div>
                 <h3 className="font-semibold mb-2">Claude Desktop での設定</h3>
                 <p className="text-sm text-muted-foreground mb-2">
-                  <code className="bg-muted px-1 rounded">claude_desktop_config.json</code> に以下を追加：
+                  <code className="bg-muted px-1 rounded">~/Library/Application Support/Claude/claude_desktop_config.json</code> (Mac) または <code className="bg-muted px-1 rounded">%APPDATA%\Claude\claude_desktop_config.json</code> (Windows) に以下を追加：
                 </p>
                 <pre className="p-4 bg-muted rounded text-sm overflow-x-auto">
 {`{
   "mcpServers": {
     "jiuflow": {
       "command": "npx",
-      "args": ["-y", "@anthropic-ai/mcp-remote-client"],
-      "env": {
-        "MCP_REMOTE_URL": "${API_BASE_URL}/mcp-server",
-        "MCP_HEADERS": "x-api-key:YOUR_API_KEY"
-      }
+      "args": [
+        "-y",
+        "mcp-remote",
+        "${API_BASE_URL}/mcp-server",
+        "--header",
+        "x-api-key:YOUR_API_KEY"
+      ]
     }
   }
 }`}
                 </pre>
+                <p className="text-sm text-muted-foreground mt-2">
+                  ※ <code className="bg-muted px-1 rounded">YOUR_API_KEY</code> を上記で作成したAPIキーに置き換えてください。
+                </p>
               </div>
 
               <div>
@@ -581,14 +586,21 @@ export function ApiManagement() {
 {`{
   "mcpServers": {
     "jiuflow": {
-      "url": "${API_BASE_URL}/mcp-server",
-      "headers": {
-        "x-api-key": "YOUR_API_KEY"
-      }
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-remote",
+        "${API_BASE_URL}/mcp-server",
+        "--header",
+        "x-api-key:YOUR_API_KEY"
+      ]
     }
   }
 }`}
                 </pre>
+                <p className="text-sm text-muted-foreground mt-2">
+                  ※ <code className="bg-muted px-1 rounded">YOUR_API_KEY</code> を上記で作成したAPIキーに置き換えてください。
+                </p>
               </div>
 
               <div>
