@@ -30,6 +30,7 @@ import { PrintfulManagement } from "@/components/admin/PrintfulManagement";
 import { CommunityManagement } from "@/components/admin/CommunityManagement";
 import { WeeklyTopicsManagement } from "@/components/admin/WeeklyTopicsManagement";
 import { TournamentsManagement } from "@/components/admin/TournamentsManagement";
+import VideoListsManagement from "@/components/admin/VideoListsManagement";
 
 const AdminDashboard = () => {
   const { signOut } = useAuth();
@@ -72,6 +73,7 @@ const AdminDashboard = () => {
                     <div className="space-y-1">
                       {[
                         { id: "techniques", label: "テクニック管理" },
+                        { id: "video-lists", label: "動画リスト" },
                         { id: "users", label: "会員管理" },
                         { id: "dojos", label: "道場管理" },
                         { id: "subscriptions", label: "サブスク管理" },
@@ -141,6 +143,7 @@ const AdminDashboard = () => {
             <div className="max-w-7xl mx-auto">
               <div className="space-y-6">
                 {activeTab === "techniques" && <TechniquesManagement />}
+                {activeTab === "video-lists" && <VideoListsManagement />}
                 {activeTab === "users" && <UsersTab />}
                 {activeTab === "dojos" && <DojosManagement />}
                 {activeTab === "subscriptions" && <SubscriptionsTab />}

@@ -2659,6 +2659,90 @@ export type Database = {
         }
         Relationships: []
       }
+      video_list_items: {
+        Row: {
+          created_at: string
+          display_order: number | null
+          id: string
+          list_id: string
+          technique_id: string
+        }
+        Insert: {
+          created_at?: string
+          display_order?: number | null
+          id?: string
+          list_id: string
+          technique_id: string
+        }
+        Update: {
+          created_at?: string
+          display_order?: number | null
+          id?: string
+          list_id?: string
+          technique_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "video_list_items_list_id_fkey"
+            columns: ["list_id"]
+            isOneToOne: false
+            referencedRelation: "video_lists"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "video_list_items_technique_id_fkey"
+            columns: ["technique_id"]
+            isOneToOne: false
+            referencedRelation: "techniques"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      video_lists: {
+        Row: {
+          cover_image_url: string | null
+          created_at: string
+          description: string | null
+          description_ja: string | null
+          description_pt: string | null
+          display_order: number | null
+          id: string
+          name: string
+          name_ja: string | null
+          name_pt: string | null
+          updated_at: string
+          visibility: Database["public"]["Enums"]["video_list_visibility"]
+        }
+        Insert: {
+          cover_image_url?: string | null
+          created_at?: string
+          description?: string | null
+          description_ja?: string | null
+          description_pt?: string | null
+          display_order?: number | null
+          id?: string
+          name: string
+          name_ja?: string | null
+          name_pt?: string | null
+          updated_at?: string
+          visibility?: Database["public"]["Enums"]["video_list_visibility"]
+        }
+        Update: {
+          cover_image_url?: string | null
+          created_at?: string
+          description?: string | null
+          description_ja?: string | null
+          description_pt?: string | null
+          display_order?: number | null
+          id?: string
+          name?: string
+          name_ja?: string | null
+          name_pt?: string | null
+          updated_at?: string
+          visibility?: Database["public"]["Enums"]["video_list_visibility"]
+        }
+        Relationships: []
+      }
       video_purchases: {
         Row: {
           amount: number
@@ -3337,6 +3421,7 @@ export type Database = {
         | "renewal_pending"
         | "renewal_approved"
         | "renewal_rejected"
+      video_list_visibility: "public" | "unlisted" | "private"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -3473,6 +3558,7 @@ export const Constants = {
         "renewal_approved",
         "renewal_rejected",
       ],
+      video_list_visibility: ["public", "unlisted", "private"],
     },
   },
 } as const
