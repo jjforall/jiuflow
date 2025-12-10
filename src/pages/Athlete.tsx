@@ -596,21 +596,51 @@ const Athlete = () => {
                     )}
                   </div>
                   
-                  {/* Birth and Death dates */}
+                  {/* Birth and Death dates with Age */}
                   {(celebrity.birth_date || celebrity.death_date) && (
                     <div className="text-xs sm:text-sm text-muted-foreground mb-2 sm:mb-3 text-center sm:text-left">
-                      {celebrity.birth_date && celebrity.death_date ? (
-                        <span>
-                          {new Date(celebrity.birth_date).toLocaleDateString(language === 'ja' ? 'ja-JP' : language === 'pt' ? 'pt-BR' : 'en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
-                          {' — '}
-                          {new Date(celebrity.death_date).toLocaleDateString(language === 'ja' ? 'ja-JP' : language === 'pt' ? 'pt-BR' : 'en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
-                        </span>
-                      ) : celebrity.birth_date ? (
-                        <span>
-                          {language === 'ja' ? '生年月日: ' : language === 'pt' ? 'Nascimento: ' : 'Born: '}
-                          {new Date(celebrity.birth_date).toLocaleDateString(language === 'ja' ? 'ja-JP' : language === 'pt' ? 'pt-BR' : 'en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
-                        </span>
-                      ) : null}
+                      {(() => {
+                        const birthDate = celebrity.birth_date ? new Date(celebrity.birth_date) : null;
+                        const deathDate = celebrity.death_date ? new Date(celebrity.death_date) : null;
+                        const today = new Date();
+                        
+                        // Calculate age
+                        const calculateAge = (from: Date, to: Date) => {
+                          let age = to.getFullYear() - from.getFullYear();
+                          const monthDiff = to.getMonth() - from.getMonth();
+                          if (monthDiff < 0 || (monthDiff === 0 && to.getDate() < from.getDate())) {
+                            age--;
+                          }
+                          return age;
+                        };
+                        
+                        const formatDate = (date: Date) => date.toLocaleDateString(
+                          language === 'ja' ? 'ja-JP' : language === 'pt' ? 'pt-BR' : 'en-US', 
+                          { year: 'numeric', month: 'long', day: 'numeric' }
+                        );
+                        
+                        if (birthDate && deathDate) {
+                          const ageAtDeath = calculateAge(birthDate, deathDate);
+                          return (
+                            <span>
+                              {formatDate(birthDate)} — {formatDate(deathDate)}
+                              {' '}
+                              ({language === 'ja' ? `享年${ageAtDeath}歳` : language === 'pt' ? `${ageAtDeath} anos` : `aged ${ageAtDeath}`})
+                            </span>
+                          );
+                        } else if (birthDate) {
+                          const currentAge = calculateAge(birthDate, today);
+                          return (
+                            <span>
+                              {language === 'ja' ? '生年月日: ' : language === 'pt' ? 'Nascimento: ' : 'Born: '}
+                              {formatDate(birthDate)}
+                              {' '}
+                              ({language === 'ja' ? `${currentAge}歳` : language === 'pt' ? `${currentAge} anos` : `${currentAge} years old`})
+                            </span>
+                          );
+                        }
+                        return null;
+                      })()}
                     </div>
                   )}
 
