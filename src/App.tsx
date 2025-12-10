@@ -76,9 +76,9 @@ const App = () => (
                 <MusicProvider>
                 <RoutePrefetcher />
                 <Routes>
-                  {/* Language prefixed routes */}
+                  {/* Language prefixed routes - only match valid 2-letter language codes */}
                   <Route path="/:lang" element={<LanguageRoute />}>
-                    <Route path="" element={<SuspenseWrapper><Home /></SuspenseWrapper>} />
+                    <Route index element={<SuspenseWrapper><Home /></SuspenseWrapper>} />
                     <Route path="login" element={<SuspenseWrapper><Login /></SuspenseWrapper>} />
                     <Route path="logout" element={<SuspenseWrapper><Logout /></SuspenseWrapper>} />
                     <Route path="reset-password" element={<SuspenseWrapper><ResetPassword /></SuspenseWrapper>} />
