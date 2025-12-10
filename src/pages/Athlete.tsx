@@ -215,6 +215,7 @@ const Athlete = () => {
       const { data: instructorRelations } = await supabase
         .from('celebrity_lineage')
         .select(`
+          instructor_id,
           instructor:celebrities!celebrity_lineage_instructor_id_fkey(id, display_name, avatar_url)
         `)
         .eq('student_id', celebrityId);
@@ -228,10 +229,14 @@ const Athlete = () => {
         .eq('instructor_id', celebrityId);
 
       const related: RelatedCelebrity[] = [];
+      const addedIds = new Set<string>();
+      addedIds.add(celebrityId); // Exclude self
 
+      // Add instructors
       if (instructorRelations) {
         instructorRelations.forEach((rel: any) => {
-          if (rel.instructor) {
+          if (rel.instructor && !addedIds.has(rel.instructor.id)) {
+            addedIds.add(rel.instructor.id);
             related.push({
               id: rel.instructor.id,
               display_name: rel.instructor.display_name,
@@ -242,9 +247,11 @@ const Athlete = () => {
         });
       }
 
+      // Add students
       if (studentRelations) {
         studentRelations.forEach((rel: any) => {
-          if (rel.student) {
+          if (rel.student && !addedIds.has(rel.student.id)) {
+            addedIds.add(rel.student.id);
             related.push({
               id: rel.student.id,
               display_name: rel.student.display_name,
@@ -253,6 +260,37 @@ const Athlete = () => {
             });
           }
         });
+      }
+
+      // Get 同門 (siblings - other students of the same instructors)
+      if (instructorRelations && instructorRelations.length > 0) {
+        const instructorIds = instructorRelations
+          .map((rel: any) => rel.instructor_id)
+          .filter(Boolean);
+
+        if (instructorIds.length > 0) {
+          const { data: siblingRelations } = await supabase
+            .from('celebrity_lineage')
+            .select(`
+              student:celebrities!celebrity_lineage_student_id_fkey(id, display_name, avatar_url)
+            `)
+            .in('instructor_id', instructorIds)
+            .neq('student_id', celebrityId);
+
+          if (siblingRelations) {
+            siblingRelations.forEach((rel: any) => {
+              if (rel.student && !addedIds.has(rel.student.id)) {
+                addedIds.add(rel.student.id);
+                related.push({
+                  id: rel.student.id,
+                  display_name: rel.student.display_name,
+                  avatar_url: rel.student.avatar_url,
+                  relationship: language === 'ja' ? '同門' : 'Fellow Student'
+                });
+              }
+            });
+          }
+        }
       }
 
       setRelatedCelebrities(related);
