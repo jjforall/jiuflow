@@ -444,9 +444,14 @@ const Athletes = () => {
                           </AvatarFallback>
                         </Avatar>
                         <div className="flex-1 min-w-0">
-                          <h3 className="text-base md:text-xl font-semibold group-hover:text-primary transition-colors break-words mb-1 md:mb-2">
+                          <h3 className="text-base md:text-xl font-semibold group-hover:text-primary transition-colors break-words">
                             {getNativeName(celebrity)}
                           </h3>
+                          <p className="text-xs md:text-sm text-muted-foreground mb-1 md:mb-2">
+                            {language === 'en' 
+                              ? (celebrity.name_ja || celebrity.display_name)
+                              : (celebrity.name_en || celebrity.display_name)}
+                          </p>
                           {getBeltName(celebrity.belt_history) && (
                             <BeltBadge belt={getBeltName(celebrity.belt_history)!} className="mb-1 md:mb-2 text-[10px] md:text-xs px-1.5 md:px-2 py-0.5" />
                           )}
