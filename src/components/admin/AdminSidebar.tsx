@@ -21,6 +21,7 @@ import {
   PanelLeft,
   MessageSquare,
   Trophy,
+  ListVideo,
 } from "lucide-react";
 import {
   Sidebar,
@@ -43,6 +44,7 @@ interface AdminSidebarProps {
 
 const menuItems = [
   { id: "techniques", label: "テクニック管理", icon: Grid3X3 },
+  { id: "video-lists", label: "動画リスト", icon: ListVideo },
   { id: "users", label: "会員管理", icon: Users },
   { id: "dojos", label: "道場管理", icon: Building2 },
   { id: "subscriptions", label: "サブスク管理", icon: CreditCard },
