@@ -583,9 +583,11 @@ export function ApiManagement() {
   }
 }`}
                 </pre>
-                <p className="text-sm text-muted-foreground mt-2">
-                  ※ <code className="bg-muted px-1 rounded">YOUR_API_KEY</code> を上記で作成したAPIキーに置き換えてください。
-                </p>
+                <div className="text-sm text-muted-foreground mt-2 space-y-2">
+                  <p>※ <code className="bg-muted px-1 rounded">YOUR_API_KEY</code> を上記で作成したAPIキーに置き換えてください。</p>
+                  <p><strong>nvmを使用している場合:</strong> Claude Desktopがnvmの設定を読み込まないため、<code className="bg-muted px-1 rounded">"command"</code> にnpxのフルパスを指定してください:</p>
+                  <code className="block bg-muted px-2 py-1 rounded">"command": "/Users/[username]/.nvm/versions/node/v20.x.x/bin/npx"</code>
+                </div>
               </div>
 
               <div>
