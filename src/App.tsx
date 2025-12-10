@@ -17,6 +17,7 @@ import PageLoadingSkeleton from "@/components/PageLoadingSkeleton";
 import { SuspenseWrapper } from "@/components/SuspenseWrapper";
 import CookieConsentBanner from "./components/CookieConsentBanner";
 import { LanguageRoute } from "./components/LanguageRoute";
+import { GoogleAnalytics } from "./components/GoogleAnalytics";
 
 // Lazy load route components for better performance
 const Home = lazy(() => import("./pages/Home"));
@@ -75,6 +76,7 @@ const App = () => (
                 <FloatingVideoProvider>
                 <MusicProvider>
                 <RoutePrefetcher />
+                <GoogleAnalytics />
                 <Routes>
                   {/* Language prefixed routes - only match valid 2-letter language codes */}
                   <Route path="/:lang" element={<LanguageRoute />}>
