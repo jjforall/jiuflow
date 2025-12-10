@@ -46,7 +46,8 @@ const Home = () => {
         title={currentSeo.title}
         description={currentSeo.description}
         canonicalUrl="/"
-        keywords={['柔術', 'BJJ', 'ブラジリアン柔術', 'martial arts', '技術動画', '武道']}
+        ogImage="https://storage.googleapis.com/gpt-engineer-file-uploads/eKRz1NN3QtRy6vwWfmoNTmYXlqu2/social-images/social-1764815287708-Gemini_Generated_Image_o203l3o203l3o203.png"
+        keywords={['柔術', 'BJJ', 'ブラジリアン柔術', 'martial arts', '技術動画', '武道', '柔術教室', '格闘技']}
       />
       <Navigation />
       
@@ -83,7 +84,7 @@ const Home = () => {
                       >
                         <img 
                           src={image.url} 
-                          alt={`Jiu-Jitsu Training ${idx + 1}`}
+                          alt={language === 'ja' ? `ブラジリアン柔術トレーニング風景 ${idx + 1}` : language === 'pt' ? `Treino de Jiu-Jitsu Brasileiro ${idx + 1}` : `Brazilian Jiu-Jitsu Training Scene ${idx + 1}`}
                           className="w-full h-full object-cover"
                           loading="lazy"
                         />
@@ -147,7 +148,7 @@ const Home = () => {
                 <div className="relative rounded-2xl overflow-hidden shadow-xl">
                   <img 
                     src={kimuraLockImage} 
-                    alt="4K Overhead View - Kimura Lock"
+                    alt={language === 'ja' ? '4K上面撮影 - キムラロック（腕絡み）の技術解説' : language === 'pt' ? 'Filmagem 4K Aérea - Técnica Kimura Lock' : '4K Overhead View - Kimura Lock Technique Tutorial'}
                     className="w-full h-auto object-cover"
                   />
                 </div>
@@ -169,7 +170,7 @@ const Home = () => {
                     <div className="relative rounded-2xl overflow-hidden shadow-2xl">
                       <img 
                         src={murataImage} 
-                        alt="村田良蔵 - Ryozo Murata"
+                        alt={language === 'ja' ? '村田良蔵 - SJJIF世界選手権2連覇の柔術世界王者' : language === 'pt' ? 'Ryozo Murata - Bicampeão Mundial SJJIF de Jiu-Jitsu' : 'Ryozo Murata - 2x SJJIF World Champion BJJ Black Belt'}
                         className="w-full h-auto object-cover"
                         loading="lazy"
                       />

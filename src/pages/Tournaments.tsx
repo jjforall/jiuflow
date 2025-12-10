@@ -919,7 +919,8 @@ const Tournaments = () => {
         title={currentSeo.title}
         description={currentSeo.description}
         canonicalUrl="/tournaments"
-        keywords={['柔術', 'BJJ', '大会', 'トーナメント', 'JBJJF', 'ASJJF', 'IBJJF']}
+        ogImage="/images/venues/komazawa-olympic-park.webp"
+        keywords={['柔術', 'BJJ', '大会', 'トーナメント', 'JBJJF', 'ASJJF', 'IBJJF', '柔術大会', '格闘技大会']}
       />
       <Navigation />
       
