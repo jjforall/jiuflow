@@ -46,6 +46,8 @@ interface Celebrity {
   stats: any;
   featured: boolean;
   sort_order: number;
+  gallery: any;
+  achievements: any;
 }
 
 interface Organization {
@@ -84,6 +86,8 @@ export const CelebritiesManagement = () => {
     featured: false,
     belt_history: [] as Array<{ belt: string; year: string | null; organization: string }>,
     titles: [] as Array<{ title: string; year: string | null; event: string }>,
+    gallery: [] as Array<{ url: string; caption?: string; date?: string }>,
+    achievements: [] as Array<{ year: number; title: string; title_ja?: string; category?: string }>,
   });
 
   useEffect(() => {
@@ -148,6 +152,8 @@ export const CelebritiesManagement = () => {
         featured: celebrity.featured,
         belt_history: celebrity.belt_history || [],
         titles: celebrity.titles || [],
+        gallery: celebrity.gallery || [],
+        achievements: celebrity.achievements || [],
       });
     } else {
       setEditingCelebrity(null);
@@ -172,6 +178,8 @@ export const CelebritiesManagement = () => {
         featured: false,
         belt_history: [],
         titles: [],
+        gallery: [],
+        achievements: [],
       });
     }
     setIsDialogOpen(true);
@@ -205,6 +213,8 @@ export const CelebritiesManagement = () => {
             featured: formData.featured,
             belt_history: formData.belt_history,
             titles: formData.titles,
+            gallery: formData.gallery,
+            achievements: formData.achievements,
           })
           .eq('id', editingCelebrity.id);
 
@@ -234,6 +244,8 @@ export const CelebritiesManagement = () => {
             featured: formData.featured,
             belt_history: formData.belt_history,
             titles: formData.titles,
+            gallery: formData.gallery,
+            achievements: formData.achievements,
           });
 
         if (error) throw error;
@@ -627,6 +639,48 @@ export const CelebritiesManagement = () => {
               />
               <p className="text-xs text-muted-foreground">
                 例: {`[{"title": "World Champion", "year": "2010", "event": "IBJJF Worlds"}]`}
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label>戦績・実績（JSON形式）</Label>
+              <Textarea
+                value={JSON.stringify(formData.achievements, null, 2)}
+                onChange={(e) => {
+                  try {
+                    const parsed = JSON.parse(e.target.value);
+                    setFormData({ ...formData, achievements: parsed });
+                  } catch (err) {
+                    // Invalid JSON, don't update
+                  }
+                }}
+                placeholder='[{"year": 2020, "title": "IBJJF World Championship - Gold", "title_ja": "IBJJF世界選手権 優勝", "category": "competition"}]'
+                rows={4}
+                className="font-mono text-sm"
+              />
+              <p className="text-xs text-muted-foreground">
+                例: {`[{"year": 2020, "title": "IBJJF World Championship - Gold", "title_ja": "IBJJF世界選手権 優勝", "category": "competition"}]`}
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label>ギャラリー（JSON形式）</Label>
+              <Textarea
+                value={JSON.stringify(formData.gallery, null, 2)}
+                onChange={(e) => {
+                  try {
+                    const parsed = JSON.parse(e.target.value);
+                    setFormData({ ...formData, gallery: parsed });
+                  } catch (err) {
+                    // Invalid JSON, don't update
+                  }
+                }}
+                placeholder='[{"url": "https://...", "caption": "World Championship 2020", "date": "2020-06-01"}]'
+                rows={4}
+                className="font-mono text-sm"
+              />
+              <p className="text-xs text-muted-foreground">
+                例: {`[{"url": "https://...", "caption": "World Championship 2020", "date": "2020-06-01"}]`}
               </p>
             </div>
 

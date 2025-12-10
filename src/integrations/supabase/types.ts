@@ -126,6 +126,7 @@ export type Database = {
       }
       celebrities: {
         Row: {
+          achievements: Json | null
           avatar_url: string | null
           belt_history: Json | null
           bio: string | null
@@ -146,6 +147,7 @@ export type Database = {
           death_date: string | null
           display_name: string
           featured: boolean | null
+          gallery: Json | null
           home_dojo: string | null
           id: string
           name_ar: string | null
@@ -170,6 +172,7 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
+          achievements?: Json | null
           avatar_url?: string | null
           belt_history?: Json | null
           bio?: string | null
@@ -190,6 +193,7 @@ export type Database = {
           death_date?: string | null
           display_name: string
           featured?: boolean | null
+          gallery?: Json | null
           home_dojo?: string | null
           id?: string
           name_ar?: string | null
@@ -214,6 +218,7 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
+          achievements?: Json | null
           avatar_url?: string | null
           belt_history?: Json | null
           bio?: string | null
@@ -234,6 +239,7 @@ export type Database = {
           death_date?: string | null
           display_name?: string
           featured?: boolean | null
+          gallery?: Json | null
           home_dojo?: string | null
           id?: string
           name_ar?: string | null

@@ -16,7 +16,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { BeltBadge } from "@/components/ui/belt-badge";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { Star, MapPin, Trophy, Edit, Instagram, Twitter, Youtube, Globe, Languages, User, UserMinus, UserPlus, Camera, Image as ImageIcon, UserCheck, GitBranch } from "lucide-react";
+import { Star, MapPin, Trophy, Edit, Instagram, Twitter, Youtube, Globe, Languages, User, UserMinus, UserPlus, Camera, Image as ImageIcon, UserCheck, GitBranch, Share2, Award, Users, X } from "lucide-react";
 import { toast } from "sonner";
 import { UserVideoCard } from "@/components/UserVideoCard";
 import { LineageTree } from "@/components/LineageTree";
@@ -81,6 +81,15 @@ interface Celebrity {
   stats: any;
   birth_date: string | null;
   death_date: string | null;
+  gallery: any;
+  achievements: any;
+}
+
+interface RelatedCelebrity {
+  id: string;
+  display_name: string;
+  avatar_url: string | null;
+  relationship: string;
 }
 
 interface UserVideo {
@@ -118,6 +127,8 @@ const Athlete = () => {
   const [isImagePreviewOpen, setIsImagePreviewOpen] = useState(false);
   const [isClaimDialogOpen, setIsClaimDialogOpen] = useState(false);
   const [claimReason, setClaimReason] = useState("");
+  const [relatedCelebrities, setRelatedCelebrities] = useState<RelatedCelebrity[]>([]);
+  const [galleryIndex, setGalleryIndex] = useState<number | null>(null);
 
   useEffect(() => {
     loadCelebrity();
@@ -131,6 +142,7 @@ const Athlete = () => {
     }
     if (celebrity) {
       loadFollowCounts();
+      loadRelatedCelebrities(celebrity.id);
       if (celebrity.user_id) {
         loadUserVideos(celebrity.user_id);
       }
@@ -194,6 +206,58 @@ const Athlete = () => {
       console.error('Error loading celebrity:', error);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const loadRelatedCelebrities = async (celebrityId: string) => {
+    try {
+      // Get instructors (this celebrity's instructors)
+      const { data: instructorRelations } = await supabase
+        .from('celebrity_lineage')
+        .select(`
+          instructor:celebrities!celebrity_lineage_instructor_id_fkey(id, display_name, avatar_url)
+        `)
+        .eq('student_id', celebrityId);
+
+      // Get students (this celebrity's students)
+      const { data: studentRelations } = await supabase
+        .from('celebrity_lineage')
+        .select(`
+          student:celebrities!celebrity_lineage_student_id_fkey(id, display_name, avatar_url)
+        `)
+        .eq('instructor_id', celebrityId);
+
+      const related: RelatedCelebrity[] = [];
+
+      if (instructorRelations) {
+        instructorRelations.forEach((rel: any) => {
+          if (rel.instructor) {
+            related.push({
+              id: rel.instructor.id,
+              display_name: rel.instructor.display_name,
+              avatar_url: rel.instructor.avatar_url,
+              relationship: language === 'ja' ? '師匠' : 'Instructor'
+            });
+          }
+        });
+      }
+
+      if (studentRelations) {
+        studentRelations.forEach((rel: any) => {
+          if (rel.student) {
+            related.push({
+              id: rel.student.id,
+              display_name: rel.student.display_name,
+              avatar_url: rel.student.avatar_url,
+              relationship: language === 'ja' ? '弟子' : 'Student'
+            });
+          }
+        });
+      }
+
+      setRelatedCelebrities(related);
+    } catch (error) {
+      console.error('Error loading related celebrities:', error);
     }
   };
 
@@ -710,6 +774,24 @@ const Athlete = () => {
                       {language === "ja" ? "本人/代理人申請" : language === "pt" ? "Reivindicar" : "Claim Profile"}
                     </Button>
                   )}
+                  {/* Share button */}
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => {
+                      const url = window.location.href;
+                      const title = celebrity.display_name;
+                      if (navigator.share) {
+                        navigator.share({ title, url });
+                      } else {
+                        navigator.clipboard.writeText(url);
+                        toast.success(language === 'ja' ? 'リンクをコピーしました' : 'Link copied!');
+                      }
+                    }}
+                    className="h-9 sm:h-10 w-9 sm:w-10 active:scale-[0.98]"
+                  >
+                    <Share2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                  </Button>
                 </div>
               </div>
 
@@ -847,10 +929,105 @@ const Athlete = () => {
 
               {/* Lineage Tree */}
               <LineageTree celebrityId={celebrity.id} />
+
+              {/* Related Athletes */}
+              {relatedCelebrities.length > 0 && (
+                <Card>
+                  <CardHeader className="p-3 sm:p-4 md:p-6 pb-2 sm:pb-3">
+                    <CardTitle className="flex items-center gap-1.5 sm:gap-2 text-sm sm:text-base md:text-lg">
+                      <Users className="h-3.5 w-3.5 sm:h-4 sm:w-4 md:h-5 md:w-5" />
+                      {language === "ja" ? "関連選手" : language === "pt" ? "Atletas Relacionados" : "Related Athletes"}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-3 sm:p-4 md:p-6 pt-0">
+                    <div className="space-y-2">
+                      {relatedCelebrities.map((related) => (
+                        <Link
+                          key={related.id}
+                          to={`/athlete/${related.id}`}
+                          className="flex items-center gap-3 p-2 rounded-lg hover:bg-accent transition-colors"
+                        >
+                          <Avatar className="h-8 w-8">
+                            <AvatarImage src={related.avatar_url || undefined} />
+                            <AvatarFallback>{related.display_name[0]}</AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium truncate">{related.display_name}</p>
+                            <p className="text-xs text-muted-foreground">{related.relationship}</p>
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
             </div>
 
-            {/* Right Column - Videos */}
-            <div className="lg:col-span-2">
+            {/* Right Column - Content */}
+            <div className="lg:col-span-2 space-y-4">
+              {/* Achievements Timeline */}
+              {celebrity.achievements && celebrity.achievements.length > 0 && (
+                <Card>
+                  <CardHeader className="p-3 sm:p-4 md:p-6 pb-2 sm:pb-3">
+                    <CardTitle className="flex items-center gap-1.5 sm:gap-2 text-sm sm:text-base md:text-lg">
+                      <Award className="h-3.5 w-3.5 sm:h-4 sm:w-4 md:h-5 md:w-5" />
+                      {language === "ja" ? "戦績・実績" : language === "pt" ? "Conquistas" : "Achievements"}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-3 sm:p-4 md:p-6 pt-0">
+                    <div className="relative border-l-2 border-primary/30 pl-4 space-y-4">
+                      {celebrity.achievements
+                        .sort((a: any, b: any) => (b.year || 0) - (a.year || 0))
+                        .map((achievement: any, index: number) => (
+                          <div key={index} className="relative">
+                            <div className="absolute -left-[21px] w-3 h-3 rounded-full bg-primary border-2 border-background" />
+                            <div className="flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-3">
+                              {achievement.year && (
+                                <span className="text-xs sm:text-sm font-semibold text-primary min-w-[50px]">
+                                  {achievement.year}
+                                </span>
+                              )}
+                              <span className="text-xs sm:text-sm">
+                                {language === 'ja' && achievement.title_ja ? achievement.title_ja : achievement.title}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Gallery */}
+              {celebrity.gallery && celebrity.gallery.length > 0 && (
+                <Card>
+                  <CardHeader className="p-3 sm:p-4 md:p-6 pb-2 sm:pb-3">
+                    <CardTitle className="flex items-center gap-1.5 sm:gap-2 text-sm sm:text-base md:text-lg">
+                      <ImageIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4 md:h-5 md:w-5" />
+                      {language === "ja" ? "ギャラリー" : language === "pt" ? "Galeria" : "Gallery"}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-3 sm:p-4 md:p-6 pt-0">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                      {celebrity.gallery.map((photo: any, index: number) => (
+                        <div
+                          key={index}
+                          className="aspect-square rounded-lg overflow-hidden cursor-pointer hover:opacity-90 transition-opacity"
+                          onClick={() => setGalleryIndex(index)}
+                        >
+                          <img
+                            src={photo.url}
+                            alt={photo.caption || `Photo ${index + 1}`}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Videos */}
               {videos.length > 0 && (
                 <Card>
                   <CardHeader className="p-3 sm:p-4 md:p-6 pb-2 sm:pb-3">
@@ -905,6 +1082,47 @@ const Athlete = () => {
                   className="max-w-full max-h-[70vh] rounded-lg object-contain"
                 />
               </div>
+            </DialogContent>
+          </Dialog>
+
+          {/* Gallery Lightbox */}
+          <Dialog open={galleryIndex !== null} onOpenChange={(open) => !open && setGalleryIndex(null)}>
+            <DialogContent className="max-w-4xl p-2 sm:p-4">
+              {galleryIndex !== null && celebrity.gallery && celebrity.gallery[galleryIndex] && (
+                <div className="relative">
+                  <img
+                    src={celebrity.gallery[galleryIndex].url}
+                    alt={celebrity.gallery[galleryIndex].caption || ''}
+                    className="max-w-full max-h-[80vh] mx-auto rounded-lg object-contain"
+                  />
+                  {celebrity.gallery[galleryIndex].caption && (
+                    <p className="text-center text-sm text-muted-foreground mt-3">
+                      {celebrity.gallery[galleryIndex].caption}
+                    </p>
+                  )}
+                  <div className="flex justify-between mt-4">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setGalleryIndex(Math.max(0, galleryIndex - 1))}
+                      disabled={galleryIndex === 0}
+                    >
+                      ← {language === 'ja' ? '前' : 'Prev'}
+                    </Button>
+                    <span className="text-sm text-muted-foreground">
+                      {galleryIndex + 1} / {celebrity.gallery.length}
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setGalleryIndex(Math.min(celebrity.gallery.length - 1, galleryIndex + 1))}
+                      disabled={galleryIndex === celebrity.gallery.length - 1}
+                    >
+                      {language === 'ja' ? '次' : 'Next'} →
+                    </Button>
+                  </div>
+                </div>
+              )}
             </DialogContent>
           </Dialog>
 
