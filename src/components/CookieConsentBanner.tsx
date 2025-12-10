@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/dialog';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { updateGAConsent } from '@/hooks/useGoogleAnalytics';
 
 export const COOKIE_CONSENT_KEY = 'cookie_consent';
 
@@ -66,10 +67,8 @@ export const CookieConsentBanner = () => {
     setShowBanner(false);
     setShowSettings(false);
     
-    // Reload to apply analytics settings
-    if (accepted && prefs.analytics) {
-      window.location.reload();
-    }
+    // Update GA consent without page reload
+    updateGAConsent(prefs.analytics, prefs.marketing);
   };
 
   const handleAcceptAll = () => {

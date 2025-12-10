@@ -1,11 +1,12 @@
 import { CheckCircle, Award, Users, Video, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { trackConversion, trackPurchase } from "@/hooks/useGoogleAnalytics";
 
 type OnboardingStep = 'welcome' | 'experience' | 'style' | 'goal';
 
@@ -17,13 +18,39 @@ interface OnboardingChoice {
 
 const PaymentSuccess = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { language } = useLanguage();
   const [currentStep, setCurrentStep] = useState<OnboardingStep>('welcome');
   const [choices, setChoices] = useState<OnboardingChoice>({});
   
   useEffect(() => {
     window.scrollTo(0, 0);
-  }, []);
+    
+    // Track conversion
+    const sessionId = searchParams.get('session_id');
+    const planType = searchParams.get('plan') || 'subscription';
+    
+    trackConversion('subscription', {
+      plan_type: planType,
+      session_id: sessionId,
+    });
+    
+    // If we have a session ID, this is a real purchase
+    if (sessionId) {
+      trackPurchase({
+        transaction_id: sessionId,
+        value: 0, // Value will be tracked via Stripe webhook
+        currency: 'JPY',
+        items: [{
+          item_id: planType,
+          item_name: `JiuFlow ${planType}`,
+          price: 0,
+          quantity: 1,
+          item_category: 'subscription',
+        }],
+      });
+    }
+  }, [searchParams]);
 
   const getRecommendedCategory = (): string => {
     const { experience, style, goal } = choices;

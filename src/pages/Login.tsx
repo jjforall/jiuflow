@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { z } from "zod";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Mail, Lock, Sparkles, UserPlus, LogIn } from "lucide-react";
+import { trackConversion, trackEvent } from "@/hooks/useGoogleAnalytics";
 
 const emailSchema = z.object({
   email: z.string().trim().email({ message: "有効なメールアドレスを入力してください" }).max(255),
@@ -142,6 +143,9 @@ const Login = () => {
         return;
       }
 
+      // Track sign up conversion
+      trackConversion('sign_up', { method: 'email' });
+
       toast.success(
         language === "ja" 
           ? "アカウントを作成しました。ログインしてください。" 
@@ -164,6 +168,9 @@ const Login = () => {
 
   const handleGoogleLogin = async () => {
     try {
+      // Track Google login attempt
+      trackEvent('login_attempt', { method: 'google' });
+      
       const redirectUrl = `${window.location.origin}/map`;
       
       const { error } = await supabase.auth.signInWithOAuth({
