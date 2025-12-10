@@ -2127,6 +2127,86 @@ export type Database = {
           },
         ]
       }
+      tournament_results: {
+        Row: {
+          athlete_name: string
+          athlete_name_ja: string | null
+          celebrity_id: string | null
+          created_at: string
+          id: string
+          notes: string | null
+          notes_ja: string | null
+          position: number
+          team_name: string | null
+          team_name_ja: string | null
+          tournament_id: string
+          updated_at: string
+          user_id: string | null
+          weight_class: string
+        }
+        Insert: {
+          athlete_name: string
+          athlete_name_ja?: string | null
+          celebrity_id?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          notes_ja?: string | null
+          position?: number
+          team_name?: string | null
+          team_name_ja?: string | null
+          tournament_id: string
+          updated_at?: string
+          user_id?: string | null
+          weight_class: string
+        }
+        Update: {
+          athlete_name?: string
+          athlete_name_ja?: string | null
+          celebrity_id?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          notes_ja?: string | null
+          position?: number
+          team_name?: string | null
+          team_name_ja?: string | null
+          tournament_id?: string
+          updated_at?: string
+          user_id?: string | null
+          weight_class?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tournament_results_celebrity_id_fkey"
+            columns: ["celebrity_id"]
+            isOneToOne: false
+            referencedRelation: "celebrities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tournament_results_tournament_id_fkey"
+            columns: ["tournament_id"]
+            isOneToOne: false
+            referencedRelation: "tournaments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tournament_results_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tournament_results_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tournaments: {
         Row: {
           category: string | null
