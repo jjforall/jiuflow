@@ -11,6 +11,8 @@ import { BeltBadge } from "@/components/ui/belt-badge";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import { Star, Heart, GitBranch } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
@@ -42,6 +44,7 @@ interface Celebrity {
   sort_order: number;
   user_id: string | null;
   organization_id?: string | null;
+  death_date?: string | null;
   organization: {
     name: string;
     name_ja: string;
@@ -67,6 +70,7 @@ const Athletes = () => {
   const [celebrities, setCelebrities] = useState<Celebrity[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [followedCelebrities, setFollowedCelebrities] = useState<Set<string>>(new Set());
+  const [showLivingOnly, setShowLivingOnly] = useState(false);
 
   useEffect(() => {
     loadCelebrities();
@@ -112,7 +116,8 @@ const Athletes = () => {
           featured,
           sort_order,
           user_id,
-          organization_id
+          organization_id,
+          death_date
         `)
         .order('featured', { ascending: false })
         .order('sort_order', { ascending: true })
@@ -196,8 +201,13 @@ const Athletes = () => {
     }
   };
 
+  // Filter and sort celebrities
+  const filteredCelebrities = showLivingOnly 
+    ? celebrities.filter(c => !c.death_date)
+    : celebrities;
+
   // Sort celebrities to show followed ones first
-  const sortedCelebrities = [...celebrities].sort((a, b) => {
+  const sortedCelebrities = [...filteredCelebrities].sort((a, b) => {
     const aFollowed = followedCelebrities.has(a.id);
     const bFollowed = followedCelebrities.has(b.id);
     
@@ -391,6 +401,18 @@ const Athletes = () => {
               <GitBranch className="h-3 w-3 md:h-4 md:w-4" />
               {language === "ja" ? "系統図を見る" : language === "pt" ? "Ver Linhagem" : "View Lineage Tree"}
             </Button>
+            
+            {/* Living Only Filter */}
+            <div className="flex items-center justify-center gap-2 mt-4">
+              <Checkbox
+                id="livingOnly"
+                checked={showLivingOnly}
+                onCheckedChange={(checked) => setShowLivingOnly(checked === true)}
+              />
+              <Label htmlFor="livingOnly" className="cursor-pointer text-sm text-muted-foreground">
+                {language === "ja" ? "生存者のみ" : language === "pt" ? "Apenas vivos" : "Living Only"}
+              </Label>
+            </div>
           </div>
 
           {/* Athletes Grid */}
