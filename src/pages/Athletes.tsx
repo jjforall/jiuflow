@@ -446,7 +446,7 @@ const Athletes = () => {
                   onCheckedChange={(checked) => setShowLivingOnly(checked === true)}
                 />
                 <Label htmlFor="livingOnly" className="cursor-pointer text-sm text-muted-foreground">
-                  {language === "ja" ? "生存者のみ" : language === "pt" ? "Apenas vivos" : "Living Only"}
+                  {language === "ja" ? "故人を除く" : language === "pt" ? "Excluir falecidos" : "Exclude Deceased"}
                 </Label>
               </div>
 

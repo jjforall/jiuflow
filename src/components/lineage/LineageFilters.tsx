@@ -36,16 +36,16 @@ export function LineageFilters({
 
   const getLivingOnlyLabel = () => {
     switch (language) {
-      case 'ja': return '生存者のみ';
-      case 'pt': return 'Apenas vivos';
-      case 'es': return 'Solo vivos';
-      case 'fr': return 'Vivants seulement';
-      case 'de': return 'Nur Lebende';
-      case 'zh': return '仅显示在世者';
-      case 'ko': return '생존자만';
-      case 'it': return 'Solo viventi';
-      case 'ru': return 'Только живущие';
-      default: return 'Living Only';
+      case 'ja': return '故人を除く';
+      case 'pt': return 'Excluir falecidos';
+      case 'es': return 'Excluir fallecidos';
+      case 'fr': return 'Exclure les décédés';
+      case 'de': return 'Verstorbene ausschließen';
+      case 'zh': return '排除已故者';
+      case 'ko': return '고인 제외';
+      case 'it': return 'Escludi deceduti';
+      case 'ru': return 'Исключить умерших';
+      default: return 'Exclude Deceased';
     }
   };
 
