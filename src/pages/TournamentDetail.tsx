@@ -25,6 +25,7 @@ import { ja, enUS, pt } from "date-fns/locale";
 import { toast } from "sonner";
 import komazawaVenue from "@/assets/venues/komazawa-olympic-park.jpg";
 import { AddToCalendarButton } from "@/components/AddToCalendarButton";
+import { TournamentResults } from "@/components/TournamentResults";
 
 interface Venue {
   id: string;
@@ -1038,6 +1039,11 @@ const TournamentDetail = () => {
               )}
             </CardContent>
           </Card>
+
+          {/* Tournament Results */}
+          {isPast && tournament && (
+            <TournamentResults tournamentId={tournament.id} />
+          )}
         </div>
       </main>
 

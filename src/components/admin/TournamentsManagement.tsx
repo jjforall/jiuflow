@@ -30,8 +30,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2, Search, Calendar } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, Calendar, Trophy } from "lucide-react";
 import { format, parseISO } from "date-fns";
+import { TournamentResultsManagement } from "./TournamentResultsManagement";
 
 interface Tournament {
   id: string;
@@ -78,18 +79,29 @@ export function TournamentsManagement() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingTournament, setEditingTournament] = useState<Tournament | null>(null);
   const [formData, setFormData] = useState<Omit<Tournament, 'id'>>(emptyTournament);
+  const [managingResultsFor, setManagingResultsFor] = useState<Tournament | null>(null);
 
   const { data: tournaments, isLoading } = useQuery({
     queryKey: ['admin-tournaments'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('tournaments')
-        .select('*')
+        .select('*, weight_classes')
         .order('date_start', { ascending: false });
       if (error) throw error;
-      return data as Tournament[];
+      return data as (Tournament & { weight_classes: string[] | null })[];
     }
   });
+
+  // If managing results, show that component
+  if (managingResultsFor) {
+    return (
+      <TournamentResultsManagement 
+        tournament={managingResultsFor as Tournament & { weight_classes: string[] | null }}
+        onBack={() => setManagingResultsFor(null)}
+      />
+    );
+  }
 
   const createMutation = useMutation({
     mutationFn: async (data: Omit<Tournament, 'id'>) => {
@@ -296,6 +308,14 @@ export function TournamentsManagement() {
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setManagingResultsFor(tournament as Tournament & { weight_classes: string[] | null })}
+                        title="結果を管理"
+                      >
+                        <Trophy className="h-4 w-4 text-yellow-500" />
+                      </Button>
                       <Button
                         variant="ghost"
                         size="icon"
