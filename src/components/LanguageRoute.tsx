@@ -1,6 +1,7 @@
 import { useEffect } from "react";
-import { useParams, Outlet, Navigate } from "react-router-dom";
+import { useParams, Outlet } from "react-router-dom";
 import { useLanguage } from "@/contexts/LanguageContext";
+import DojoOrProfile from "@/pages/DojoOrProfile";
 
 type Language = "ja" | "en" | "pt" | "es" | "fr" | "de" | "zh" | "ko" | "it" | "ru" | "ar" | "hi";
 
@@ -10,7 +11,6 @@ export const LanguageRoute = () => {
   const { lang } = useParams<{ lang: string }>();
   const { setLanguage } = useLanguage();
 
-  // If lang is not a valid language code, redirect to /:slugOrUsername route
   const isValidLang = lang && SUPPORTED_LANGUAGES.includes(lang as Language);
 
   useEffect(() => {
@@ -19,9 +19,9 @@ export const LanguageRoute = () => {
     }
   }, [lang, isValidLang, setLanguage]);
 
-  // If not a valid language, let the default routes handle it
+  // If not a valid language code, treat this as a profile/dojo slug
   if (!isValidLang) {
-    return <Navigate to={`/${lang}`} replace />;
+    return <DojoOrProfile />;
   }
 
   return <Outlet />;
