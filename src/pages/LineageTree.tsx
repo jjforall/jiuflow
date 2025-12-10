@@ -3,7 +3,6 @@ import { supabase } from "@/integrations/supabase/client";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { SimpleLineageTree } from "@/components/lineage/SimpleLineageTree";
-import { LineageFilters } from "@/components/lineage/LineageFilters";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search, List } from "lucide-react";
@@ -60,8 +59,6 @@ export default function LineageTree() {
   const [allCelebrities, setAllCelebrities] = useState<Celebrity[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedBeltLevel, setSelectedBeltLevel] = useState<string | null>(null);
-  const [showLivingOnly, setShowLivingOnly] = useState(false);
 
   useEffect(() => {
     const titles = {
@@ -167,24 +164,9 @@ export default function LineageTree() {
             .toLowerCase()
             .includes(searchQuery.toLowerCase());
 
-        const matchesBelt =
-          !selectedBeltLevel ||
-          (node.celebrity.belt_history &&
-            Array.isArray(node.celebrity.belt_history) &&
-            node.celebrity.belt_history.some(
-              (belt: any) => belt.belt === selectedBeltLevel
-            ));
-
-        const matchesLiving =
-          !showLivingOnly || !node.celebrity.death_date;
-
         const filteredStudents = filterNodes(node.students);
 
-        if (
-          matchesSearch &&
-          matchesBelt &&
-          matchesLiving
-        ) {
+        if (matchesSearch) {
           return { ...node, students: filteredStudents };
         } else if (filteredStudents.length > 0) {
           return { ...node, students: filteredStudents };
@@ -196,16 +178,6 @@ export default function LineageTree() {
   };
 
   const filteredRoots = filterNodes(lineageRoots);
-
-  const beltLevels = [
-    "White",
-    "Blue",
-    "Purple",
-    "Brown",
-    "Black",
-    "Coral",
-    "Red",
-  ];
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -233,7 +205,7 @@ export default function LineageTree() {
           </div>
         </div>
 
-        <div className="mb-6 space-y-4 animate-fade-in" style={{ animationDelay: "0.1s" }}>
+        <div className="mb-6 animate-fade-in" style={{ animationDelay: "0.1s" }}>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
@@ -244,14 +216,6 @@ export default function LineageTree() {
               className="pl-10"
             />
           </div>
-
-          <LineageFilters
-            beltLevels={beltLevels}
-            selectedBeltLevel={selectedBeltLevel}
-            onBeltLevelChange={setSelectedBeltLevel}
-            showLivingOnly={showLivingOnly}
-            onShowLivingOnlyChange={setShowLivingOnly}
-          />
         </div>
 
         <SimpleLineageTree
