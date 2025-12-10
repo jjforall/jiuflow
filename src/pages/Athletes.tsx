@@ -546,6 +546,27 @@ const Athletes = () => {
                               {getOrganizationName(celebrity.organization)}
                             </p>
                           )}
+                          {celebrity.birth_date && (
+                            <p className="text-[10px] md:text-xs text-muted-foreground mt-1">
+                              {(() => {
+                                const age = calculateAge(celebrity.birth_date!, celebrity.death_date);
+                                const birthYear = new Date(celebrity.birth_date!).getFullYear();
+                                if (celebrity.death_date) {
+                                  return language === "ja" 
+                                    ? `${birthYear}年生 (享年${age}歳)`
+                                    : language === "pt"
+                                    ? `Nascido em ${birthYear} (${age} anos)`
+                                    : `Born ${birthYear} (aged ${age})`;
+                                } else {
+                                  return language === "ja" 
+                                    ? `${birthYear}年生 (${age}歳)`
+                                    : language === "pt"
+                                    ? `Nascido em ${birthYear} (${age} anos)`
+                                    : `Born ${birthYear} (${age} y/o)`;
+                                }
+                              })()}
+                            </p>
+                          )}
                         </div>
                         <Button
                           variant="ghost"
