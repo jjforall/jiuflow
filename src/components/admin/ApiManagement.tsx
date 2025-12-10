@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
-import { Plus, Key, Copy, Trash2, Eye, EyeOff, Code, Book } from "lucide-react";
+import { Plus, Key, Copy, Trash2, Eye, EyeOff, Code, Book, Server } from "lucide-react";
 import { format } from "date-fns";
 
 interface ApiKey {
@@ -277,7 +277,11 @@ export function ApiManagement() {
           </TabsTrigger>
           <TabsTrigger value="docs">
             <Book className="w-4 h-4 mr-2" />
-            ドキュメント
+            REST API
+          </TabsTrigger>
+          <TabsTrigger value="mcp">
+            <Server className="w-4 h-4 mr-2" />
+            MCP Server
           </TabsTrigger>
         </TabsList>
 
@@ -506,6 +510,162 @@ export function ApiManagement() {
   "error": "エラーメッセージ"
 }`}
                 </pre>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="mcp" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Server className="w-5 h-5" />
+                MCP Server (Model Context Protocol)
+              </CardTitle>
+              <CardDescription>
+                AIエージェント（Claude、Cursor等）からJiuFlowのデータを操作できます
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="p-4 bg-primary/10 border border-primary/20 rounded-lg">
+                <p className="text-sm font-medium mb-2">MCPサーバーとは？</p>
+                <p className="text-sm text-muted-foreground">
+                  MCP (Model Context Protocol) は、AIアシスタントが外部ツールやデータにアクセスするための標準プロトコルです。
+                  このMCPサーバーを使うと、Claude DesktopやCursor等のAIツールから直接JiuFlowのデータを読み書きできます。
+                </p>
+              </div>
+
+              <div>
+                <h3 className="font-semibold mb-2">MCPサーバーURL</h3>
+                <div className="flex gap-2">
+                  <code className="flex-1 p-2 bg-muted rounded text-sm font-mono break-all">
+                    {API_BASE_URL}/mcp-server
+                  </code>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => copyToClipboard(`${API_BASE_URL}/mcp-server`)}
+                  >
+                    <Copy className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+
+              <div>
+                <h3 className="font-semibold mb-2">Claude Desktop での設定</h3>
+                <p className="text-sm text-muted-foreground mb-2">
+                  <code className="bg-muted px-1 rounded">claude_desktop_config.json</code> に以下を追加：
+                </p>
+                <pre className="p-4 bg-muted rounded text-sm overflow-x-auto">
+{`{
+  "mcpServers": {
+    "jiuflow": {
+      "command": "npx",
+      "args": ["-y", "@anthropic-ai/mcp-remote-client"],
+      "env": {
+        "MCP_REMOTE_URL": "${API_BASE_URL}/mcp-server",
+        "MCP_HEADERS": "x-api-key:YOUR_API_KEY"
+      }
+    }
+  }
+}`}
+                </pre>
+              </div>
+
+              <div>
+                <h3 className="font-semibold mb-2">Cursor での設定</h3>
+                <p className="text-sm text-muted-foreground mb-2">
+                  <code className="bg-muted px-1 rounded">.cursor/mcp.json</code> に以下を追加：
+                </p>
+                <pre className="p-4 bg-muted rounded text-sm overflow-x-auto">
+{`{
+  "mcpServers": {
+    "jiuflow": {
+      "url": "${API_BASE_URL}/mcp-server",
+      "headers": {
+        "x-api-key": "YOUR_API_KEY"
+      }
+    }
+  }
+}`}
+                </pre>
+              </div>
+
+              <div>
+                <h3 className="font-semibold mb-2">利用可能なツール</h3>
+                <div className="space-y-3">
+                  <div className="border rounded-lg p-4">
+                    <h4 className="font-medium text-sm mb-2">選手管理</h4>
+                    <div className="text-sm text-muted-foreground space-y-1">
+                      <p><code className="bg-muted px-1 rounded">list_celebrities</code> - 選手一覧を取得</p>
+                      <p><code className="bg-muted px-1 rounded">get_celebrity</code> - 選手詳細を取得</p>
+                      <p><code className="bg-muted px-1 rounded">create_celebrity</code> - 選手を作成</p>
+                      <p><code className="bg-muted px-1 rounded">update_celebrity</code> - 選手を更新</p>
+                      <p><code className="bg-muted px-1 rounded">delete_celebrity</code> - 選手を削除</p>
+                    </div>
+                  </div>
+                  <div className="border rounded-lg p-4">
+                    <h4 className="font-medium text-sm mb-2">大会管理</h4>
+                    <div className="text-sm text-muted-foreground space-y-1">
+                      <p><code className="bg-muted px-1 rounded">list_tournaments</code> - 大会一覧を取得</p>
+                      <p><code className="bg-muted px-1 rounded">get_tournament</code> - 大会詳細を取得</p>
+                      <p><code className="bg-muted px-1 rounded">create_tournament</code> - 大会を作成</p>
+                      <p><code className="bg-muted px-1 rounded">update_tournament</code> - 大会を更新</p>
+                      <p><code className="bg-muted px-1 rounded">delete_tournament</code> - 大会を削除</p>
+                    </div>
+                  </div>
+                  <div className="border rounded-lg p-4">
+                    <h4 className="font-medium text-sm mb-2">会場管理</h4>
+                    <div className="text-sm text-muted-foreground space-y-1">
+                      <p><code className="bg-muted px-1 rounded">list_venues</code> - 会場一覧を取得</p>
+                      <p><code className="bg-muted px-1 rounded">get_venue</code> - 会場詳細を取得</p>
+                      <p><code className="bg-muted px-1 rounded">create_venue</code> - 会場を作成</p>
+                      <p><code className="bg-muted px-1 rounded">update_venue</code> - 会場を更新</p>
+                      <p><code className="bg-muted px-1 rounded">delete_venue</code> - 会場を削除</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <h3 className="font-semibold mb-2">使用例（AIへのプロンプト）</h3>
+                <div className="space-y-3">
+                  <div className="p-3 bg-muted rounded-lg">
+                    <p className="text-sm italic">"JiuFlowの選手一覧を取得して"</p>
+                  </div>
+                  <div className="p-3 bg-muted rounded-lg">
+                    <p className="text-sm italic">"今後の大会を検索して"</p>
+                  </div>
+                  <div className="p-3 bg-muted rounded-lg">
+                    <p className="text-sm italic">"新しい選手「山田太郎」を追加して。所属道場は「東京BJJ」"</p>
+                  </div>
+                  <div className="p-3 bg-muted rounded-lg">
+                    <p className="text-sm italic">"東京で開催される大会を作成して"</p>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <h3 className="font-semibold mb-2">直接APIコール（テスト用）</h3>
+                <div className="space-y-4">
+                  <div>
+                    <p className="text-sm font-medium mb-1">ツール一覧を取得:</p>
+                    <pre className="p-4 bg-muted rounded text-sm overflow-x-auto">
+{`curl -H "x-api-key: YOUR_API_KEY" \\
+  "${API_BASE_URL}/mcp-server/tools"`}
+                    </pre>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium mb-1">ツールを実行:</p>
+                    <pre className="p-4 bg-muted rounded text-sm overflow-x-auto">
+{`curl -X POST \\
+  -H "x-api-key: YOUR_API_KEY" \\
+  -H "Content-Type: application/json" \\
+  -d '{"name": "list_celebrities", "arguments": {"limit": 5}}' \\
+  "${API_BASE_URL}/mcp-server/call"`}
+                    </pre>
+                  </div>
+                </div>
               </div>
             </CardContent>
           </Card>
