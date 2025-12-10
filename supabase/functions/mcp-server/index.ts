@@ -3,12 +3,14 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-api-key',
-  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-api-key, accept',
+  'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
 };
 
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+
+const MCP_PROTOCOL_VERSION = "2024-11-05";
 
 async function validateApiKey(apiKey: string): Promise<{ valid: boolean; permissions: string[] }> {
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
@@ -435,7 +437,26 @@ async function executeTool(toolName: string, args: Record<string, unknown>, perm
   throw new Error(`Unknown tool: ${toolName}`);
 }
 
+// Create JSON-RPC response
+function createJsonRpcResponse(id: string | number | null, result: unknown) {
+  return {
+    jsonrpc: "2.0",
+    id,
+    result,
+  };
+}
+
+function createJsonRpcError(id: string | number | null, code: number, message: string) {
+  return {
+    jsonrpc: "2.0",
+    id,
+    error: { code, message },
+  };
+}
+
 serve(async (req) => {
+  console.log(`[MCP Server] ${req.method} request received`);
+  
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -444,8 +465,9 @@ serve(async (req) => {
     const apiKey = req.headers.get('x-api-key');
     
     if (!apiKey) {
+      console.log('[MCP Server] No API key provided');
       return new Response(
-        JSON.stringify({ error: 'API key required. Set x-api-key header.' }),
+        JSON.stringify(createJsonRpcError(null, -32000, 'API key required. Set x-api-key header.')),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -453,102 +475,151 @@ serve(async (req) => {
     const { valid, permissions } = await validateApiKey(apiKey);
     
     if (!valid) {
+      console.log('[MCP Server] Invalid API key');
       return new Response(
-        JSON.stringify({ error: 'Invalid or expired API key' }),
+        JSON.stringify(createJsonRpcError(null, -32000, 'Invalid or expired API key')),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    const url = new URL(req.url);
-    const path = url.pathname.split('/').pop();
+    console.log('[MCP Server] API key validated, permissions:', permissions);
 
-    // MCP Protocol endpoints
+    // Handle GET requests for basic info
     if (req.method === 'GET') {
-      // Server info endpoint
-      if (path === 'mcp-server' || path === '') {
-        return new Response(JSON.stringify({
-          name: "jiuflow-mcp-server",
-          version: "1.0.0",
-          description: "JiuFlow MCP Server - 選手・大会・会場データを管理",
-          capabilities: {
-            tools: true,
-          },
-        }), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        });
-      }
+      const url = new URL(req.url);
+      const path = url.pathname;
       
-      // List tools endpoint
-      if (path === 'tools') {
-        return new Response(JSON.stringify({ tools }), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        });
-      }
+      // Return server info for any GET request
+      return new Response(JSON.stringify({
+        name: "jiuflow-mcp-server",
+        version: "1.0.0",
+        description: "JiuFlow MCP Server - 選手・大会・会場データを管理",
+        protocolVersion: MCP_PROTOCOL_VERSION,
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
     }
 
+    // Handle POST requests - MCP JSON-RPC protocol
     if (req.method === 'POST') {
       const body = await req.json();
+      console.log('[MCP Server] Received JSON-RPC request:', JSON.stringify(body));
       
-      // Call tool endpoint
-      if (path === 'call' || body.method === 'tools/call') {
-        const { name, arguments: args } = body.params || body;
+      const { method, params, id, jsonrpc } = body;
+      
+      // Validate JSON-RPC format
+      if (jsonrpc !== "2.0") {
+        return new Response(
+          JSON.stringify(createJsonRpcError(id, -32600, 'Invalid Request: must be JSON-RPC 2.0')),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // Handle initialize method
+      if (method === 'initialize') {
+        console.log('[MCP Server] Handling initialize request');
+        const response = createJsonRpcResponse(id, {
+          protocolVersion: MCP_PROTOCOL_VERSION,
+          capabilities: {
+            tools: {},
+          },
+          serverInfo: {
+            name: "jiuflow-mcp-server",
+            version: "1.0.0",
+          },
+        });
+        console.log('[MCP Server] Initialize response:', JSON.stringify(response));
+        return new Response(JSON.stringify(response), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+
+      // Handle initialized notification (no response needed for notifications)
+      if (method === 'notifications/initialized' || method === 'initialized') {
+        console.log('[MCP Server] Received initialized notification');
+        // Notifications don't require a response, but we'll send an empty success
+        return new Response(JSON.stringify(createJsonRpcResponse(id, {})), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+
+      // Handle tools/list method
+      if (method === 'tools/list') {
+        console.log('[MCP Server] Handling tools/list request');
+        const response = createJsonRpcResponse(id, { tools });
+        return new Response(JSON.stringify(response), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+
+      // Handle tools/call method
+      if (method === 'tools/call') {
+        console.log('[MCP Server] Handling tools/call request');
+        const { name, arguments: args } = params || {};
         
         if (!name) {
           return new Response(
-            JSON.stringify({ error: 'Tool name required' }),
+            JSON.stringify(createJsonRpcError(id, -32602, 'Invalid params: tool name required')),
             { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
           );
         }
-        
-        const result = await executeTool(name, args || {}, permissions);
-        
-        return new Response(JSON.stringify({
-          content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
-        }), {
+
+        try {
+          const result = await executeTool(name, args || {}, permissions);
+          const response = createJsonRpcResponse(id, {
+            content: [
+              {
+                type: "text",
+                text: JSON.stringify(result, null, 2),
+              },
+            ],
+          });
+          return new Response(JSON.stringify(response), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          });
+        } catch (toolError: unknown) {
+          const message = toolError instanceof Error ? toolError.message : 'Unknown error';
+          console.error('[MCP Server] Tool execution error:', message);
+          return new Response(
+            JSON.stringify(createJsonRpcResponse(id, {
+              content: [
+                {
+                  type: "text",
+                  text: `Error: ${message}`,
+                },
+              ],
+              isError: true,
+            })),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+      }
+
+      // Handle ping method
+      if (method === 'ping') {
+        return new Response(JSON.stringify(createJsonRpcResponse(id, {})), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         });
       }
-      
-      // List tools (JSON-RPC style)
-      if (body.method === 'tools/list') {
-        return new Response(JSON.stringify({
-          jsonrpc: "2.0",
-          id: body.id,
-          result: { tools },
-        }), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        });
-      }
-      
-      // Initialize
-      if (body.method === 'initialize') {
-        return new Response(JSON.stringify({
-          jsonrpc: "2.0",
-          id: body.id,
-          result: {
-            protocolVersion: "2024-11-05",
-            capabilities: { tools: {} },
-            serverInfo: {
-              name: "jiuflow-mcp-server",
-              version: "1.0.0",
-            },
-          },
-        }), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        });
-      }
+
+      // Method not found
+      console.log('[MCP Server] Unknown method:', method);
+      return new Response(
+        JSON.stringify(createJsonRpcError(id, -32601, `Method not found: ${method}`)),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     return new Response(
-      JSON.stringify({ error: 'Not found' }),
-      { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify(createJsonRpcError(null, -32600, 'Invalid Request: method must be POST')),
+      { status: 405, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
-    
+
   } catch (error: unknown) {
-    console.error('MCP Server Error:', error);
+    console.error('[MCP Server] Error:', error);
     const message = error instanceof Error ? error.message : 'Unknown error';
     return new Response(
-      JSON.stringify({ error: message }),
+      JSON.stringify(createJsonRpcError(null, -32603, `Internal error: ${message}`)),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
