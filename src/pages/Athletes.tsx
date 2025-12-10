@@ -72,7 +72,7 @@ const Athletes = () => {
   const [celebrities, setCelebrities] = useState<Celebrity[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [followedCelebrities, setFollowedCelebrities] = useState<Set<string>>(new Set());
-  const [showLivingOnly, setShowLivingOnly] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<"all" | "living" | "deceased">("all");
   const [ageRange, setAgeRange] = useState<string>("all");
 
   useEffect(() => {
@@ -219,8 +219,9 @@ const Athletes = () => {
 
   // Filter celebrities
   const filteredCelebrities = celebrities.filter(c => {
-    // Living only filter
-    if (showLivingOnly && c.death_date) return false;
+    // Status filter
+    if (statusFilter === "living" && c.death_date) return false;
+    if (statusFilter === "deceased" && !c.death_date) return false;
     
     // Age range filter
     if (ageRange !== "all" && c.birth_date) {
@@ -438,16 +439,27 @@ const Athletes = () => {
             
             {/* Filters */}
             <div className="flex flex-wrap items-center justify-center gap-4 mt-4">
-              {/* Living Only Filter */}
+              {/* Status Filter */}
               <div className="flex items-center gap-2">
-                <Checkbox
-                  id="livingOnly"
-                  checked={showLivingOnly}
-                  onCheckedChange={(checked) => setShowLivingOnly(checked === true)}
-                />
-                <Label htmlFor="livingOnly" className="cursor-pointer text-sm text-muted-foreground">
-                  {language === "ja" ? "故人を除く" : language === "pt" ? "Excluir falecidos" : "Exclude Deceased"}
+                <Label className="text-sm text-muted-foreground">
+                  {language === "ja" ? "状態" : language === "pt" ? "Status" : "Status"}:
                 </Label>
+                <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as "all" | "living" | "deceased")}>
+                  <SelectTrigger className="w-[140px] h-8 text-sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">
+                      {language === "ja" ? "すべて" : language === "pt" ? "Todos" : "All"}
+                    </SelectItem>
+                    <SelectItem value="living">
+                      {language === "ja" ? "存命の人物" : language === "pt" ? "Vivos" : "Living"}
+                    </SelectItem>
+                    <SelectItem value="deceased">
+                      {language === "ja" ? "故人のみ" : language === "pt" ? "Falecidos" : "Deceased Only"}
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               {/* Age Range Filter */}

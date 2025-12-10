@@ -26,6 +26,8 @@ interface Celebrity {
   belt_history: any;
   organization_id: string | null;
   featured: boolean;
+  birth_date: string | null;
+  death_date: string | null;
 }
 
 interface LineageNode {
@@ -70,12 +72,47 @@ const getBeltTranslation = (belt: string, language: string): string => {
   return translations[belt]?.[language] || belt;
 };
 
+// Calculate age helper
+const calculateAge = (birthDate: string, deathDate?: string | null): number => {
+  const birth = new Date(birthDate);
+  const end = deathDate ? new Date(deathDate) : new Date();
+  let age = end.getFullYear() - birth.getFullYear();
+  const monthDiff = end.getMonth() - birth.getMonth();
+  if (monthDiff < 0 || (monthDiff === 0 && end.getDate() < birth.getDate())) {
+    age--;
+  }
+  return age;
+};
+
+// Format birth year
+const formatBirthInfo = (birthDate: string | null, deathDate: string | null, language: string): string | null => {
+  if (!birthDate) return null;
+  const birthYear = new Date(birthDate).getFullYear();
+  const age = calculateAge(birthDate, deathDate);
+  
+  if (deathDate) {
+    // 故人の場合
+    const deathYear = new Date(deathDate).getFullYear();
+    if (language === 'ja') {
+      return `${birthYear}年生 享年${age}歳`;
+    }
+    return `${birthYear}-${deathYear} (${age})`;
+  }
+  
+  // 存命の場合
+  if (language === 'ja') {
+    return `${birthYear}年生 (${age}歳)`;
+  }
+  return `b. ${birthYear} (${age})`;
+};
+
 function LineageNodeCard({ node, depth = 0, language }: { node: LineageNode; depth?: number; language: string }) {
   const [isExpanded, setIsExpanded] = useState(depth < 2);
   const belt = getBeltName(node.celebrity.belt_history);
   const beltStyle = getBeltStyle(belt);
-  const beltLabel = getBeltTranslation(belt, language);
   const hasStudents = node.students.length > 0;
+  const isDeceased = !!node.celebrity.death_date;
+  const birthInfo = formatBirthInfo(node.celebrity.birth_date, node.celebrity.death_date, language);
 
   // Get localized name based on current language
   const getLocalizedName = (): string | null => {
@@ -121,7 +158,8 @@ function LineageNodeCard({ node, depth = 0, language }: { node: LineageNode; dep
           className={cn(
             "flex items-center gap-3 p-2.5 md:p-3 rounded-xl border bg-card transition-all",
             hasStudents && "cursor-pointer hover:bg-accent/50",
-            node.celebrity.featured && "ring-2 ring-primary/30"
+            node.celebrity.featured && "ring-2 ring-primary/30",
+            isDeceased && "opacity-70 border-muted"
           )}
           onClick={() => hasStudents && setIsExpanded(!isExpanded)}
         >
@@ -144,10 +182,14 @@ function LineageNodeCard({ node, depth = 0, language }: { node: LineageNode; dep
             className="shrink-0 relative group"
             onClick={(e) => e.stopPropagation()}
           >
-            <Avatar className="h-10 w-10 md:h-12 md:w-12 border-2 border-border group-hover:border-primary transition-colors">
+            <Avatar className={cn(
+              "h-10 w-10 md:h-12 md:w-12 border-2 group-hover:border-primary transition-colors",
+              isDeceased ? "border-muted grayscale" : "border-border"
+            )}>
               <AvatarImage
                 src={node.celebrity.avatar_url || ""}
                 alt={node.celebrity.display_name}
+                className={isDeceased ? "grayscale" : ""}
               />
               <AvatarFallback className="text-xs md:text-sm font-medium">
                 {node.celebrity.display_name.slice(0, 2)}
@@ -160,13 +202,22 @@ function LineageNodeCard({ node, depth = 0, language }: { node: LineageNode; dep
                 beltStyle
               )}
             />
+            {/* Deceased indicator */}
+            {isDeceased && (
+              <div className="absolute -top-1 -right-1 w-4 h-4 bg-muted-foreground/80 rounded-full flex items-center justify-center">
+                <span className="text-[8px] text-background font-bold">†</span>
+              </div>
+            )}
           </Link>
 
           {/* Name and info */}
           <div className="flex-1 min-w-0">
             <Link 
               to={`/athlete/${node.celebrity.id}`}
-              className="font-medium text-sm md:text-base hover:text-primary transition-colors block"
+              className={cn(
+                "font-medium text-sm md:text-base hover:text-primary transition-colors block",
+                isDeceased && "text-muted-foreground"
+              )}
               onClick={(e) => e.stopPropagation()}
             >
               <span className="line-clamp-1">
@@ -176,6 +227,11 @@ function LineageNodeCard({ node, depth = 0, language }: { node: LineageNode; dep
             {showBothNames && (
               <div className="text-xs text-muted-foreground">
                 <span className="truncate max-w-[150px] block">{englishName}</span>
+              </div>
+            )}
+            {birthInfo && (
+              <div className="text-xs text-muted-foreground mt-0.5">
+                {birthInfo}
               </div>
             )}
           </div>
