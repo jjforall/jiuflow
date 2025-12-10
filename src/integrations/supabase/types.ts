@@ -2630,13 +2630,26 @@ export type Database = {
           city: string | null
           country: string
           created_at: string
+          email: string | null
+          facilities: Json | null
           google_maps_url: string | null
           id: string
           image_url: string | null
           latitude: number | null
           longitude: number | null
+          mat_area_sqm: number | null
           name: string
           name_ja: string | null
+          nearest_station: string | null
+          nearest_station_ja: string | null
+          notes: string | null
+          notes_ja: string | null
+          parking_info: string | null
+          parking_info_ja: string | null
+          phone: string | null
+          rental_cost: string | null
+          rental_cost_ja: string | null
+          spectator_capacity: number | null
           updated_at: string
           website: string | null
         }
@@ -2649,13 +2662,26 @@ export type Database = {
           city?: string | null
           country?: string
           created_at?: string
+          email?: string | null
+          facilities?: Json | null
           google_maps_url?: string | null
           id?: string
           image_url?: string | null
           latitude?: number | null
           longitude?: number | null
+          mat_area_sqm?: number | null
           name: string
           name_ja?: string | null
+          nearest_station?: string | null
+          nearest_station_ja?: string | null
+          notes?: string | null
+          notes_ja?: string | null
+          parking_info?: string | null
+          parking_info_ja?: string | null
+          phone?: string | null
+          rental_cost?: string | null
+          rental_cost_ja?: string | null
+          spectator_capacity?: number | null
           updated_at?: string
           website?: string | null
         }
@@ -2668,13 +2694,26 @@ export type Database = {
           city?: string | null
           country?: string
           created_at?: string
+          email?: string | null
+          facilities?: Json | null
           google_maps_url?: string | null
           id?: string
           image_url?: string | null
           latitude?: number | null
           longitude?: number | null
+          mat_area_sqm?: number | null
           name?: string
           name_ja?: string | null
+          nearest_station?: string | null
+          nearest_station_ja?: string | null
+          notes?: string | null
+          notes_ja?: string | null
+          parking_info?: string | null
+          parking_info_ja?: string | null
+          phone?: string | null
+          rental_cost?: string | null
+          rental_cost_ja?: string | null
+          spectator_capacity?: number | null
           updated_at?: string
           website?: string | null
         }
