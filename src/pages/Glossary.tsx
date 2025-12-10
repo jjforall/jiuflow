@@ -819,8 +819,9 @@ const Glossary = () => {
       <SEOHead
         title={currentSeo.title}
         description={currentSeo.description}
-        canonicalUrl="https://jiuflow.lovableproject.com/glossary"
-        keywords={["BJJ用語", "柔術用語集", "グロッサリー"]}
+        canonicalUrl="/glossary"
+        ogImage="/og-image-new.jpg"
+        keywords={["BJJ用語", "柔術用語集", "グロッサリー", "ブラジリアン柔術用語", "格闘技用語辞典"]}
       />
       <Navigation />
       

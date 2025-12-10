@@ -319,8 +319,9 @@ const Map = () => {
       <SEOHead
         title={currentSeo.title}
         description={currentSeo.description}
-        canonicalUrl="https://jiuflow.lovableproject.com/map"
-        keywords={["BJJ", "ブラジリアン柔術", "テクニック", "技術マップ", "サブミッション"]}
+        canonicalUrl="/map"
+        ogImage="/og-image-new.jpg"
+        keywords={["BJJ", "ブラジリアン柔術", "テクニック", "技術マップ", "サブミッション", "柔術技術", "格闘技テクニック"]}
       />
       {/* Background Image with Overlay */}
       <div className="fixed inset-0 -z-10">

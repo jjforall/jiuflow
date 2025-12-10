@@ -96,7 +96,8 @@ const About = () => {
         title={currentSeo.title}
         description={currentSeo.description}
         canonicalUrl="/about"
-        keywords={['柔術', 'BJJ', 'jiuflow', '村田良蔵', 'SJJIF世界チャンピオン']}
+        ogImage="/murata-ryozo-portrait.jpg"
+        keywords={['柔術', 'BJJ', 'jiuflow', '村田良蔵', 'SJJIF世界チャンピオン', 'ブラジリアン柔術', '柔術講師']}
       />
       {/* Animated Flow Background */}
       <div className="fixed inset-0 -z-10 overflow-hidden">
@@ -701,7 +702,7 @@ const About = () => {
                 <div className="my-8">
                   <img 
                     src={teamArt5Image} 
-                    alt="Team JiuFlow at ART 5 CEBU"
+                    alt={language === 'ja' ? 'Team JiuFlow ART 5 CEBU - フィリピン・セブ島での国際柔術大会' : language === 'pt' ? 'Team JiuFlow ART 5 CEBU - Competição Internacional de Jiu-Jitsu nas Filipinas' : 'Team JiuFlow at ART 5 CEBU - International Jiu-Jitsu Competition in Philippines'}
                     className="w-full max-w-2xl mx-auto rounded-lg shadow-xl"
                   />
                   <p className="text-sm text-muted-foreground mt-3">{t("about.team.message.photoCaption", "ART 5 CEBU - フィリピン・セブ島")}</p>

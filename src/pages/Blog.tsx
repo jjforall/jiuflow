@@ -849,7 +849,8 @@ const Blog = () => {
         title={currentSeo.title}
         description={currentSeo.description}
         canonicalUrl="/blog"
-        keywords={["JiuFlow", "開発ブログ", "Lovable.dev", "AI開発"]}
+        ogImage="/og-image-new.jpg"
+        keywords={["JiuFlow", "開発ブログ", "Lovable.dev", "AI開発", "柔術アプリ", "テック開発記録"]}
       />
       <Navigation />
       

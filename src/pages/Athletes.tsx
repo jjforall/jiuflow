@@ -409,7 +409,8 @@ const Athletes = () => {
         title={currentSeo.title}
         description={currentSeo.description}
         canonicalUrl="/athletes"
-        keywords={['柔術', 'BJJ', '選手', 'アスリート', 'ブラジリアン柔術']}
+        ogImage="/athletes/roger-gracie.jpg"
+        keywords={['柔術', 'BJJ', '選手', 'アスリート', 'ブラジリアン柔術', '世界チャンピオン', '柔術家']}
       />
       <Navigation />
       

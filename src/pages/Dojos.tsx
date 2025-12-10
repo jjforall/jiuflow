@@ -235,8 +235,9 @@ export default function Dojos() {
       <SEOHead
         title={currentSeo.title}
         description={currentSeo.description}
-        canonicalUrl="https://jiuflow.lovableproject.com/dojos"
-        keywords={["BJJ", "道場", "ジム", "アカデミー", "柔術"]}
+        canonicalUrl="/dojos"
+        ogImage="/dojos/flow-jiujitsu-morioka.jpg"
+        keywords={["BJJ", "道場", "ジム", "アカデミー", "柔術", "柔術道場", "ブラジリアン柔術道場"]}
       />
       <Navigation />
       <main className="flex-grow pt-16 sm:pt-20 pb-12 sm:pb-16">
@@ -321,8 +322,9 @@ export default function Dojos() {
                         <div className="h-32 sm:h-40 md:h-48 bg-gradient-to-br from-primary/20 to-primary/5 relative overflow-hidden">
                           <img
                             src={dojo.cover_image_url}
-                            alt={getDojoName(dojo)}
+                            alt={language === "ja" ? `${getDojoName(dojo)} - ブラジリアン柔術道場の施設写真` : language === "pt" ? `${getDojoName(dojo)} - Foto da academia de Jiu-Jitsu` : `${getDojoName(dojo)} - BJJ Academy Facility Photo`}
                             className="w-full h-full object-cover"
+                            loading="lazy"
                           />
                           {dojo.is_verified && (
                             <div className="absolute bottom-1.5 sm:bottom-2 left-1.5 sm:left-2 bg-muted/80 text-muted-foreground px-1.5 sm:px-2 py-0.5 rounded text-[10px] sm:text-xs">
