@@ -30,6 +30,7 @@ import { PrintfulManagement } from "@/components/admin/PrintfulManagement";
 import { CommunityManagement } from "@/components/admin/CommunityManagement";
 import { WeeklyTopicsManagement } from "@/components/admin/WeeklyTopicsManagement";
 import { TournamentsManagement } from "@/components/admin/TournamentsManagement";
+import { VenuesManagement } from "@/components/admin/VenuesManagement";
 import VideoListsManagement from "@/components/admin/VideoListsManagement";
 import { ApiManagement } from "@/components/admin/ApiManagement";
 
@@ -86,6 +87,7 @@ const AdminDashboard = () => {
                         { id: "edit-requests", label: "編集リクエスト" },
                         { id: "celebrity", label: "有名人申請" },
                         { id: "tournaments", label: "大会管理" },
+                        { id: "venues", label: "施設管理" },
                         { id: "events", label: "イベント管理" },
                         { id: "user-videos", label: "ユーザー動画" },
                         { id: "brothers", label: "Brothers申請" },
@@ -157,6 +159,7 @@ const AdminDashboard = () => {
                 {activeTab === "edit-requests" && <CelebrityEditRequestsManagement />}
                 {activeTab === "celebrity" && <CelebrityApplicationsManagement />}
                 {activeTab === "tournaments" && <TournamentsManagement />}
+                {activeTab === "venues" && <VenuesManagement />}
                 {activeTab === "events" && <EventsManagement />}
                 {activeTab === "user-videos" && <UserVideosManagement />}
                 {activeTab === "brothers" && <BrothersApplicationsManagement />}

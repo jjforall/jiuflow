@@ -23,6 +23,7 @@ import {
   Trophy,
   ListVideo,
   Key,
+  MapPin,
 } from "lucide-react";
 import {
   Sidebar,
@@ -57,6 +58,7 @@ const menuItems = [
   { id: "edit-requests", label: "編集リクエスト", icon: Star },
   { id: "celebrity", label: "有名人申請", icon: Star },
   { id: "tournaments", label: "大会管理", icon: Trophy },
+  { id: "venues", label: "施設管理", icon: MapPin },
   { id: "events", label: "イベント管理", icon: Calendar },
   { id: "user-videos", label: "ユーザー動画", icon: Video },
   { id: "brothers", label: "Brothers申請", icon: Award },
