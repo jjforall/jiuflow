@@ -31,6 +31,7 @@ import { CommunityManagement } from "@/components/admin/CommunityManagement";
 import { WeeklyTopicsManagement } from "@/components/admin/WeeklyTopicsManagement";
 import { TournamentsManagement } from "@/components/admin/TournamentsManagement";
 import VideoListsManagement from "@/components/admin/VideoListsManagement";
+import { ApiManagement } from "@/components/admin/ApiManagement";
 
 const AdminDashboard = () => {
   const { signOut } = useAuth();
@@ -95,6 +96,7 @@ const AdminDashboard = () => {
                         { id: "music", label: "音楽管理" },
                         { id: "community", label: "オープンマット" },
                         { id: "weekly-topics", label: "週間お題" },
+                        { id: "api", label: "API管理" },
                         { id: "settings", label: "設定" },
                       ].map((item) => (
                         <button
@@ -165,6 +167,7 @@ const AdminDashboard = () => {
                 {activeTab === "music" && <MusicManagement />}
                 {activeTab === "community" && <CommunityManagement />}
                 {activeTab === "weekly-topics" && <WeeklyTopicsManagement />}
+                {activeTab === "api" && <ApiManagement />}
                 {activeTab === "settings" && <SettingsManagement />}
               </div>
             </div>
