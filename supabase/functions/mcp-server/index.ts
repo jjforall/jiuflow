@@ -139,14 +139,20 @@ const tools = [
       properties: {
         name: { type: "string", description: "大会名（英語）" },
         name_ja: { type: "string", description: "大会名（日本語）" },
+        start_date: { type: "string", description: "開始日（YYYY-MM-DD）※date_startでも可" },
         date_start: { type: "string", description: "開始日（YYYY-MM-DD）" },
+        end_date: { type: "string", description: "終了日（YYYY-MM-DD）※date_endでも可" },
         date_end: { type: "string", description: "終了日（YYYY-MM-DD）" },
         location: { type: "string", description: "開催地（英語）" },
         location_ja: { type: "string", description: "開催地（日本語）" },
         organizer: { type: "string", description: "主催者" },
         country: { type: "string", description: "国コード" },
+        venue_id: { type: "string", description: "会場ID（UUID）" },
+        series: { type: "string", description: "大会シリーズ（例: IBJJF, JBJJF, ADCC）" },
+        category: { type: "string", description: "カテゴリ（world, national, regional, local）" },
+        notes: { type: "string", description: "備考" },
       },
-      required: ["name", "name_ja", "date_start", "location", "organizer"],
+      required: ["name", "name_ja"],
     },
   },
   {
@@ -693,8 +699,30 @@ async function executeTool(toolName: string, args: Record<string, unknown>, perm
   }
   if (toolName === 'create_tournament') {
     if (!hasWritePermission) throw new Error('Write permission required');
-    const { data, error } = await supabase.from('tournaments').insert(args).select().single();
-    if (error) throw error;
+    // Map alternative field names to DB column names
+    const tournamentData: Record<string, unknown> = { ...args };
+    if (args.start_date && !args.date_start) {
+      tournamentData.date_start = args.start_date;
+      delete tournamentData.start_date;
+    }
+    if (args.end_date && !args.date_end) {
+      tournamentData.date_end = args.end_date;
+      delete tournamentData.end_date;
+    }
+    // Set defaults for required fields if not provided
+    if (!tournamentData.location) tournamentData.location = 'TBD';
+    if (!tournamentData.organizer) tournamentData.organizer = 'TBD';
+    if (!tournamentData.slug) {
+      const nameSlug = (tournamentData.name as string || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+      const dateSlug = tournamentData.date_start ? `-${tournamentData.date_start}` : '';
+      tournamentData.slug = `${nameSlug}${dateSlug}`;
+    }
+    console.log('[MCP Server] Creating tournament with data:', JSON.stringify(tournamentData));
+    const { data, error } = await supabase.from('tournaments').insert(tournamentData).select().single();
+    if (error) {
+      console.error('[MCP Server] Tournament creation error:', JSON.stringify(error));
+      throw error;
+    }
     return data;
   }
   if (toolName === 'update_tournament') {
