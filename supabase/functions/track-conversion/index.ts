@@ -111,30 +111,50 @@ async function sendToMeta(data: ConversionData): Promise<void> {
   }
 }
 
-// Send to Google Ads Conversion API (simplified - offline conversion upload)
+// Send to Google Ads Enhanced Conversions API
 async function sendToGoogleAds(data: ConversionData): Promise<void> {
-  const clientId = Deno.env.get("GADS_CLIENT_ID");
-  const clientSecret = Deno.env.get("GADS_CLIENT_SECRET");
-  const developerToken = Deno.env.get("GADS_DEVELOPER_TOKEN");
-  const refreshToken = Deno.env.get("GADS_REFRESH_TOKEN");
-  const accountId = Deno.env.get("GADS_ACCOUNT_ID");
-  const conversionId = Deno.env.get("GADS_CONVERSION_ID");
+  const clientId = Deno.env.get("GADS_CLIENT_ID")?.trim();
+  const clientSecret = Deno.env.get("GADS_CLIENT_SECRET")?.trim();
+  const developerToken = Deno.env.get("GADS_DEVELOPER_TOKEN")?.trim();
+  const refreshToken = Deno.env.get("GADS_REFRESH_TOKEN")?.trim();
+  const accountId = Deno.env.get("GADS_ACCOUNT_ID")?.trim();
+  const conversionActionId = Deno.env.get("GADS_CONVERSION_ID")?.trim();
   
-  if (!clientId || !developerToken || !accountId) {
+  if (!clientId || !clientSecret || !refreshToken || !developerToken || !accountId || !conversionActionId) {
     console.log("[GADS] Credentials not fully configured, skipping");
+    console.log("[GADS] Missing:", {
+      clientId: !!clientId,
+      clientSecret: !!clientSecret,
+      refreshToken: !!refreshToken,
+      developerToken: !!developerToken,
+      accountId: !!accountId,
+      conversionActionId: !!conversionActionId,
+    });
+    return;
+  }
+
+  // Validate conversionActionId is numeric
+  const cleanConversionActionId = conversionActionId.replace(/\D/g, "");
+  if (!cleanConversionActionId) {
+    console.error("[GADS] GADS_CONVERSION_ID must be a numeric ID (e.g., '123456789'), got:", conversionActionId);
+    return;
+  }
+
+  if (!data.email) {
+    console.log("[GADS] Email required for Enhanced Conversions, skipping");
     return;
   }
 
   try {
-    // First, get access token using refresh token
+    // Step 1: Get access token using refresh token
     console.log("[GADS] Requesting access token...");
     const tokenResponse = await fetch("https://oauth2.googleapis.com/token", {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: new URLSearchParams({
         client_id: clientId,
-        client_secret: clientSecret || "",
-        refresh_token: refreshToken || "",
+        client_secret: clientSecret,
+        refresh_token: refreshToken,
         grant_type: "refresh_token",
       }),
     });
@@ -151,32 +171,53 @@ async function sendToGoogleAds(data: ConversionData): Promise<void> {
     }
     
     if (!tokenData.access_token) {
-      console.log("[GADS] Failed to get access token:", tokenData);
+      console.error("[GADS] Failed to get access token:", JSON.stringify(tokenData));
       return;
     }
     
     console.log("[GADS] Access token obtained successfully");
 
-    const hashedEmail = data.email ? await hashEmail(data.email) : undefined;
+    // Step 2: Prepare Enhanced Conversion data
     const customerId = accountId.replace(/-/g, "");
+    const hashedEmail = await hashEmail(data.email);
     
-    // Upload offline conversion
+    // Format datetime for Google Ads (yyyy-MM-dd HH:mm:ss+TZ)
+    const now = new Date();
+    const conversionDateTime = now.toISOString().replace("T", " ").split(".")[0] + "+09:00";
+    
+    // Generate a unique order_id if not provided
+    const orderId = data.transaction_id || `jiuflow_${data.user_id}_${Date.now()}`;
+    
+    // Enhanced Conversion payload with user identifiers
     const conversionPayload = {
       conversions: [{
-        conversionAction: `customers/${customerId}/conversionActions/${conversionId}`,
-        conversionDateTime: new Date().toISOString().replace("T", " ").split(".")[0] + "+09:00",
+        conversionAction: `customers/${customerId}/conversionActions/${cleanConversionActionId}`,
+        conversionDateTime: conversionDateTime,
         conversionValue: data.value,
         currencyCode: data.currency || "JPY",
-        userIdentifiers: hashedEmail ? [{
-          hashedEmail: hashedEmail
-        }] : undefined,
+        orderId: orderId,
+        // User identifiers for Enhanced Conversions
+        userIdentifiers: [
+          {
+            hashedEmail: hashedEmail,
+            userIdentifierSource: "FIRST_PARTY"
+          }
+        ],
+        // Consent settings (required for Enhanced Conversions)
+        consent: {
+          adUserData: "GRANTED",
+          adPersonalization: "GRANTED"
+        }
       }],
       partialFailure: true,
     };
 
-    const uploadUrl = `https://googleads.googleapis.com/v16/customers/${customerId}:uploadClickConversions`;
+    console.log("[GADS] Conversion payload:", JSON.stringify(conversionPayload, null, 2));
+
+    // Step 3: Upload Enhanced Conversion
+    const uploadUrl = `https://googleads.googleapis.com/v17/customers/${customerId}:uploadClickConversions`;
     
-    console.log(`[GADS] Uploading conversion to ${uploadUrl}`);
+    console.log(`[GADS] Uploading Enhanced Conversion to ${uploadUrl}`);
     
     const response = await fetch(uploadUrl, {
       method: "POST",
@@ -184,6 +225,7 @@ async function sendToGoogleAds(data: ConversionData): Promise<void> {
         "Authorization": `Bearer ${tokenData.access_token}`,
         "developer-token": developerToken,
         "Content-Type": "application/json",
+        "login-customer-id": customerId,
       },
       body: JSON.stringify(conversionPayload),
     });
@@ -193,7 +235,11 @@ async function sendToGoogleAds(data: ConversionData): Promise<void> {
     
     try {
       const result = JSON.parse(resultText);
-      console.log(`[GADS] Upload result:`, JSON.stringify(result));
+      if (response.ok) {
+        console.log("[GADS] Enhanced Conversion uploaded successfully:", JSON.stringify(result));
+      } else {
+        console.error("[GADS] Upload failed:", JSON.stringify(result));
+      }
     } catch {
       console.error("[GADS] Upload response is not JSON:", resultText.substring(0, 500));
     }
