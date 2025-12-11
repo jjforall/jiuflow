@@ -15,11 +15,7 @@ interface SEOHeadProps {
   author?: string;
   keywords?: string[];
   // Multi-language support
-  alternateLanguages?: {
-    ja?: { title: string; description: string; ogImage?: string };
-    en?: { title: string; description: string; ogImage?: string };
-    pt?: { title: string; description: string; ogImage?: string };
-  };
+  alternateLanguages?: Record<string, { title: string; description: string; ogImage?: string }>;
 }
 
 const BASE_URL = "https://jiuflow.lovableproject.com";
@@ -55,14 +51,35 @@ const OG_IMAGES = {
   },
 };
 
+// All supported languages
+const SUPPORTED_LANGUAGES = ["ja", "en", "pt", "es", "fr", "de", "zh", "ko", "it", "ru", "ar", "hi"];
+
 // Helper to get locale from language code
 const getOGLocale = (lang: string): string => {
   const locales: Record<string, string> = {
     ja: "ja_JP",
     en: "en_US",
     pt: "pt_BR",
+    es: "es_ES",
+    fr: "fr_FR",
+    de: "de_DE",
+    zh: "zh_CN",
+    ko: "ko_KR",
+    it: "it_IT",
+    ru: "ru_RU",
+    ar: "ar_SA",
+    hi: "hi_IN",
   };
   return locales[lang] || "ja_JP";
+};
+
+// Helper to generate all alternate language URLs for a page
+export const generateAlternateLanguages = (basePath: string) => {
+  const baseUrl = "https://jiuflow.lovableproject.com";
+  return SUPPORTED_LANGUAGES.map(lang => ({
+    lang,
+    url: lang === 'ja' ? `${baseUrl}${basePath}` : `${baseUrl}/${lang}${basePath === '/' ? '' : basePath}`
+  }));
 };
 
 export const SEOHead = ({
@@ -154,9 +171,8 @@ export const SEOHead = ({
       : `${BASE_URL}${currentPath}`;
     setLinkTag("canonical", fullCanonicalUrl);
 
-    // Alternate language links (hreflang)
-    const languages = ['ja', 'en', 'pt'];
-    languages.forEach(lang => {
+    // Alternate language links (hreflang) - all 12 languages
+    SUPPORTED_LANGUAGES.forEach(lang => {
       const langPath = lang === 'ja' ? basePath : `/${lang}${basePath === '/' ? '' : basePath}`;
       setLinkTag("alternate", `${BASE_URL}${langPath}`, { hreflang: lang });
     });
@@ -228,7 +244,7 @@ export const SEOHead = ({
   return null;
 };
 
-export { OG_IMAGES, getOGLocale, BASE_URL, DEFAULT_OG_IMAGE };
+export { OG_IMAGES, getOGLocale, BASE_URL, DEFAULT_OG_IMAGE, SUPPORTED_LANGUAGES };
 
 // Helper function to generate tournament structured data
 export const generateTournamentStructuredData = (tournament: {
