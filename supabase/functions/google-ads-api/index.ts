@@ -55,7 +55,7 @@ async function getCampaigns(accessToken: string, customerId: string, developerTo
   `;
 
   const response = await fetch(
-    `https://googleads.googleapis.com/v16/customers/${customerId}/googleAds:searchStream`,
+    `https://googleads.googleapis.com/v16/customers/${customerId}/googleAds:search`,
     {
       method: 'POST',
       headers: {
@@ -76,16 +76,8 @@ async function getCampaigns(accessToken: string, customerId: string, developerTo
   const data = await response.json();
   console.log('[GADS] Campaigns response:', JSON.stringify(data).slice(0, 500));
   
-  const campaigns: any[] = [];
-  if (data && Array.isArray(data)) {
-    for (const batch of data) {
-      if (batch.results) {
-        campaigns.push(...batch.results);
-      }
-    }
-  }
-  
-  return campaigns;
+  // :search endpoint returns { results: [...] } directly
+  return data.results || [];
 }
 
 async function getAccountPerformance(accessToken: string, customerId: string, developerToken: string, dateRange: string) {
@@ -133,7 +125,7 @@ async function getAccountPerformance(accessToken: string, customerId: string, de
   console.log('[GADS] Performance query:', query);
 
   const response = await fetch(
-    `https://googleads.googleapis.com/v16/customers/${customerId}/googleAds:searchStream`,
+    `https://googleads.googleapis.com/v16/customers/${customerId}/googleAds:search`,
     {
       method: 'POST',
       headers: {
@@ -154,16 +146,8 @@ async function getAccountPerformance(accessToken: string, customerId: string, de
   const data = await response.json();
   console.log('[GADS] Performance response:', JSON.stringify(data).slice(0, 500));
   
-  const results: any[] = [];
-  if (data && Array.isArray(data)) {
-    for (const batch of data) {
-      if (batch.results) {
-        results.push(...batch.results);
-      }
-    }
-  }
-  
-  return results;
+  // :search endpoint returns { results: [...] } directly
+  return data.results || [];
 }
 
 async function updateCampaignStatus(
