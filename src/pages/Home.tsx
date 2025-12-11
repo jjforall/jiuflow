@@ -10,7 +10,7 @@ import Footer from "@/components/Footer";
 import { Skeleton } from "@/components/ui/skeleton";
 import TechniqueFlowchart from "@/components/TechniqueFlowchart";
 import { Badge } from "@/components/ui/badge";
-import { Award, Play, BookOpen, FileText, CheckCircle } from "lucide-react";
+import { Award, BookOpen, FileText, CheckCircle } from "lucide-react";
 import { SEOHead, getOGLocale } from "@/components/SEOHead";
 import murataImage from "@/assets/murata-ryozo-portrait.jpg";
 import kimuraLockImage from "@/assets/kimura-lock-overhead.png";
@@ -229,33 +229,6 @@ const Home = () => {
               </div>
             </section>
 
-            {/* Demo Video Section */}
-            <section className="py-24 px-6">
-              <div className="max-w-5xl mx-auto">
-                <div className="text-center mb-12">
-                  <h2 className="text-4xl md:text-5xl font-light mb-4">
-                    {homeT.demo?.title || "技マップの使い方"}
-                  </h2>
-                  <p className="text-lg text-muted-foreground font-light">
-                    {homeT.demo?.subtitle || "実際の指導風景と、JiuFlowでの学び方をご覧ください"}
-                  </p>
-                </div>
-
-                {/* Video Placeholder */}
-                <div className="relative aspect-video rounded-2xl overflow-hidden bg-muted border border-border shadow-xl">
-                  <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-muted to-muted/80">
-                    <div className="text-center space-y-4">
-                      <div className="w-20 h-20 mx-auto rounded-full bg-primary/10 flex items-center justify-center cursor-pointer hover:bg-primary/20 transition-colors group">
-                        <Play className="w-8 h-8 text-primary group-hover:scale-110 transition-transform" />
-                      </div>
-                      <p className="text-muted-foreground">
-                        {homeT.demo?.placeholder || "デモ動画を再生"}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </section>
 
             {/* Technique Flowchart Section */}
             <section className="py-24 px-6 bg-muted/30">
