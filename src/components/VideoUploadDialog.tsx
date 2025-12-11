@@ -10,6 +10,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Upload, Loader2, CheckCircle, Video, AlertCircle, HardDrive } from "lucide-react";
 import { useStorageLimit } from "@/hooks/useStorageLimit";
+import { useUpload } from "@/contexts/UploadContext";
+
 interface VideoUploadDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -30,14 +32,13 @@ export function VideoUploadDialog({ open, onOpenChange, featuredUserId, featured
   const [videoType, setVideoType] = useState<"match" | "sparring" | "technique" | "other">("match");
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
   const [price, setPrice] = useState("");
   const [visibility, setVisibility] = useState<"public" | "unlisted" | "private">("public");
   const [uploadedVideoUrl, setUploadedVideoUrl] = useState<string | null>(null);
-  const [uploadedFileName, setUploadedFileName] = useState<string | null>(null);
   const [uploadedFileSize, setUploadedFileSize] = useState<number>(0);
   
   const { currentUsage, storageLimit, remaining, isSubscribed, checkCanUpload, formatBytes, refetch } = useStorageLimit();
+  const { startUpload, isUploading: globalUploading } = useUpload();
 
   // Auto-set title when video type changes
   useEffect(() => {
@@ -56,9 +57,7 @@ export function VideoUploadDialog({ open, onOpenChange, featuredUserId, featured
       setPrice("");
       setVisibility("public");
       setUploadedVideoUrl(null);
-      setUploadedFileName(null);
       setUploadedFileSize(0);
-      setUploadProgress(0);
       refetch();
     }
   }, [open, refetch]);
@@ -130,149 +129,18 @@ export function VideoUploadDialog({ open, onOpenChange, featuredUserId, featured
     }
 
     setUploading(true);
-    setUploadProgress(0);
-
-    try {
-      // Step 1: Create video in Bunny Stream
-      setUploadProgress(5);
-      const { data: createData, error: createError } = await supabase.functions.invoke(
-        'upload-to-bunny',
-        {
-          body: { action: 'create-video', title: title || `Video_${Date.now()}` }
-        }
-      );
-
-      if (createError || !createData?.videoId) {
-        throw new Error('Bunny.netへの接続に失敗しました');
-      }
-
-      const bunnyVideoId = createData.videoId;
-      const libraryId = createData.libraryId;
-
-      // Step 2: Get TUS upload credentials
-      setUploadProgress(10);
-      const { data: uploadData, error: uploadError } = await supabase.functions.invoke(
-        'upload-to-bunny',
-        {
-          body: { action: 'get-upload-url', videoId: bunnyVideoId }
-        }
-      );
-
-      if (uploadError || !uploadData?.tusEndpoint) {
-        throw new Error('アップロード情報の取得に失敗しました');
-      }
-
-      // Step 3: Upload using chunked TUS protocol for large files
-      setUploadProgress(15);
-      
-      const tusBaseUrl = `${uploadData.tusEndpoint}`;
-      const queryParams = `?VideoId=${uploadData.videoId}&LibraryId=${uploadData.libraryId}&AuthorizationSignature=${uploadData.signature}&AuthorizationExpire=${uploadData.expirationTime}`;
-      
-      // Step 3a: Create TUS upload session
-      const createResponse = await fetch(tusBaseUrl + queryParams, {
-        method: 'POST',
-        headers: {
-          'Tus-Resumable': '1.0.0',
-          'Upload-Length': file.size.toString(),
-        },
-      });
-
-      if (!createResponse.ok && createResponse.status !== 201) {
-        const errorText = await createResponse.text().catch(() => '');
-        console.error('TUS create error:', createResponse.status, errorText);
-        throw new Error('アップロードセッションの作成に失敗しました');
-      }
-
-      // Get the upload location from response
-      const uploadLocation = createResponse.headers.get('Location') || (tusBaseUrl + queryParams);
-      
-      // Step 3b: Upload file in chunks
-      const CHUNK_SIZE = 50 * 1024 * 1024; // 50MB chunks
-      let offset = 0;
-      const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
-      let chunkIndex = 0;
-
-      while (offset < file.size) {
-        const chunk = file.slice(offset, Math.min(offset + CHUNK_SIZE, file.size));
-        
-        const patchResponse = await fetch(uploadLocation, {
-          method: 'PATCH',
-          headers: {
-            'Tus-Resumable': '1.0.0',
-            'Upload-Offset': offset.toString(),
-            'Content-Type': 'application/offset+octet-stream',
-          },
-          body: chunk,
-        });
-
-        if (!patchResponse.ok) {
-          const errorText = await patchResponse.text();
-          console.error('TUS PATCH error:', patchResponse.status, errorText);
-          
-          // Retry logic for network errors
-          if (patchResponse.status >= 500 || patchResponse.status === 0) {
-            await new Promise(resolve => setTimeout(resolve, 2000));
-            continue; // Retry this chunk
-          }
-          
-          throw new Error('チャンクのアップロードに失敗しました');
-        }
-
-        const newOffset = patchResponse.headers.get('Upload-Offset');
-        offset = newOffset ? parseInt(newOffset, 10) : offset + chunk.size;
-        chunkIndex++;
-        
-        // Progress: 15-70% for upload
-        const uploadProgress = 15 + Math.floor((chunkIndex / totalChunks) * 55);
-        setUploadProgress(uploadProgress);
-      }
-
-      setUploadProgress(70);
-
-      // Step 4: Poll for video processing status
-      let attempts = 0;
-      const maxAttempts = 180; // 6 minutes timeout for large file processing
-      let videoReady = false;
-      let playbackUrl = '';
-
-      while (attempts < maxAttempts && !videoReady) {
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        
-        const { data: statusData } = await supabase.functions.invoke(
-          'upload-to-bunny',
-          {
-            body: { action: 'get-video-status', videoId: bunnyVideoId }
-          }
-        );
-
-        if (statusData?.ready && statusData?.hlsUrl) {
-          videoReady = true;
-          playbackUrl = statusData.hlsUrl;
-        } else if (statusData?.status === 5) {
-          throw new Error('動画の処理中にエラーが発生しました');
-        }
-        
-        attempts++;
-        // Progress: 70-95% for processing
-        setUploadProgress(70 + Math.min(25, Math.floor(attempts * 0.15)));
-      }
-
-      if (!videoReady) {
-        // Video still processing, use expected HLS URL
-        playbackUrl = `https://vz-${libraryId}.b-cdn.net/${bunnyVideoId}/playlist.m3u8`;
-      }
-
-      setUploadedVideoUrl(playbackUrl);
-      setUploadedFileName(bunnyVideoId);
-      setUploadProgress(100);
-      toast.success("動画のアップロードが完了しました！");
-    } catch (error) {
-      console.error('Upload error:', error);
-      toast.error(error instanceof Error ? error.message : "アップロードに失敗しました");
+    
+    // Use global upload context - upload continues even if dialog closes
+    const result = await startUpload(file, title || `Video_${Date.now()}`);
+    
+    if (result) {
+      setUploadedVideoUrl(result.videoUrl);
+      setUploadedFileSize(result.fileSize);
+    } else {
       setVideoFile(null);
-    } finally {
-      setUploading(false);
     }
+    
+    setUploading(false);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -406,13 +274,8 @@ export function VideoUploadDialog({ open, onOpenChange, featuredUserId, featured
                   {uploading ? (
                     <div className="text-center">
                       <Loader2 className="w-8 h-8 mx-auto mb-2 text-primary animate-spin" />
-                      <p className="text-sm text-muted-foreground">アップロード中... {uploadProgress}%</p>
-                      <div className="w-48 h-1.5 mt-2 bg-muted rounded-full overflow-hidden">
-                        <div 
-                          className="h-full bg-primary transition-all duration-300"
-                          style={{ width: `${uploadProgress}%` }}
-                        />
-                      </div>
+                      <p className="text-sm text-muted-foreground">アップロード中...</p>
+                      <p className="text-xs text-muted-foreground mt-1">進捗は右下で確認できます</p>
                     </div>
                   ) : (
                     <div className="text-center">

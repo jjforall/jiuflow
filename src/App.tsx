@@ -18,6 +18,8 @@ import { SuspenseWrapper } from "@/components/SuspenseWrapper";
 import CookieConsentBanner from "./components/CookieConsentBanner";
 import { LanguageRoute } from "./components/LanguageRoute";
 import { GoogleAnalytics } from "./components/GoogleAnalytics";
+import { UploadProvider } from "./contexts/UploadContext";
+import { GlobalUploadIndicator } from "./components/GlobalUploadIndicator";
 
 // Lazy load route components for better performance
 const Home = lazy(() => import("./pages/Home"));
@@ -76,6 +78,7 @@ const App = () => (
               <AuthProvider>
                 <FloatingVideoProvider>
                 <MusicProvider>
+                <UploadProvider>
                 <RoutePrefetcher />
                 <GoogleAnalytics />
                 <Routes>
@@ -271,7 +274,9 @@ const App = () => (
                 </Routes>
               <FloatingVideoPlayer />
               <GlobalMusicPlayer />
+              <GlobalUploadIndicator />
               <CookieConsentBanner />
+            </UploadProvider>
             </MusicProvider>
             </FloatingVideoProvider>
           </AuthProvider>
