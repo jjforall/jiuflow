@@ -174,17 +174,17 @@ async function updateCampaignStatus(
   status: 'ENABLED' | 'PAUSED'
 ) {
   const response = await fetch(
-    `https://googleads.googleapis.com/v16/customers/${customerId}/campaigns/${campaignId}`,
+    `https://googleads.googleapis.com/v16/customers/${customerId}/campaigns:mutate`,
     {
-      method: 'PATCH',
+      method: 'POST',
       headers: {
         'Authorization': `Bearer ${accessToken}`,
         'developer-token': developerToken,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        updateMask: 'status',
         operations: [{
+          updateMask: 'status',
           update: {
             resourceName: `customers/${customerId}/campaigns/${campaignId}`,
             status: status
@@ -200,6 +200,92 @@ async function updateCampaignStatus(
   }
 
   return await response.json();
+}
+
+async function createCampaign(
+  accessToken: string,
+  customerId: string,
+  developerToken: string,
+  name: string,
+  budgetAmountMicros: number,
+  advertisingChannelType: string = 'SEARCH'
+) {
+  // First, create a campaign budget
+  const budgetResponse = await fetch(
+    `https://googleads.googleapis.com/v16/customers/${customerId}/campaignBudgets:mutate`,
+    {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'developer-token': developerToken,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        operations: [{
+          create: {
+            name: `${name} - Budget`,
+            amountMicros: budgetAmountMicros.toString(),
+            deliveryMethod: 'STANDARD',
+          }
+        }]
+      }),
+    }
+  );
+
+  if (!budgetResponse.ok) {
+    const errorText = await budgetResponse.text();
+    console.error('[GADS] Budget creation error:', errorText);
+    throw new Error(`Failed to create budget: ${errorText}`);
+  }
+
+  const budgetResult = await budgetResponse.json();
+  const budgetResourceName = budgetResult.results?.[0]?.resourceName;
+  
+  if (!budgetResourceName) {
+    throw new Error('Failed to get budget resource name');
+  }
+
+  console.log('[GADS] Budget created:', budgetResourceName);
+
+  // Then create the campaign
+  const campaignResponse = await fetch(
+    `https://googleads.googleapis.com/v16/customers/${customerId}/campaigns:mutate`,
+    {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'developer-token': developerToken,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        operations: [{
+          create: {
+            name: name,
+            advertisingChannelType: advertisingChannelType,
+            status: 'PAUSED',
+            campaignBudget: budgetResourceName,
+            // Required for most campaign types
+            networkSettings: {
+              targetGoogleSearch: true,
+              targetSearchNetwork: true,
+              targetContentNetwork: false,
+              targetPartnerSearchNetwork: false,
+            },
+          }
+        }]
+      }),
+    }
+  );
+
+  if (!campaignResponse.ok) {
+    const errorText = await campaignResponse.text();
+    console.error('[GADS] Campaign creation error:', errorText);
+    throw new Error(`Failed to create campaign: ${errorText}`);
+  }
+
+  const result = await campaignResponse.json();
+  console.log('[GADS] Campaign created:', JSON.stringify(result).slice(0, 200));
+  return result;
 }
 
 serve(async (req) => {
@@ -241,6 +327,22 @@ serve(async (req) => {
           throw new Error('Campaign ID and status required');
         }
         result = await updateCampaignStatus(accessToken, customerId, developerToken, data.campaignId, data.status);
+        break;
+      
+      case 'createCampaign':
+        if (!data?.name || !data?.dailyBudget) {
+          throw new Error('Campaign name and daily budget required');
+        }
+        // Convert to micros (multiply by 1,000,000)
+        const budgetMicros = Math.round(data.dailyBudget * 1000000);
+        result = await createCampaign(
+          accessToken, 
+          customerId, 
+          developerToken, 
+          data.name, 
+          budgetMicros,
+          data.channelType || 'SEARCH'
+        );
         break;
       
       default:
