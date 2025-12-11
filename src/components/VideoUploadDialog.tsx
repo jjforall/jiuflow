@@ -67,9 +67,10 @@ export function VideoUploadDialog({ open, onOpenChange, featuredUserId, featured
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Check file size (max 500MB per file)
-    if (file.size > 500 * 1024 * 1024) {
-      toast.error("動画ファイルは500MB以下にしてください");
+    // Check file size (max 10GB per file)
+    const MAX_FILE_SIZE = 10 * 1024 * 1024 * 1024; // 10GB
+    if (file.size > MAX_FILE_SIZE) {
+      toast.error("動画ファイルは10GB以下にしてください");
       return;
     }
 
@@ -85,7 +86,16 @@ export function VideoUploadDialog({ open, onOpenChange, featuredUserId, featured
       return;
     }
 
-    // Check video duration
+    // For large files, skip duration check to avoid memory issues
+    if (file.size > 500 * 1024 * 1024) {
+      setVideoFile(file);
+      setUploadedFileSize(file.size);
+      toast.info("大容量ファイルのアップロードを開始します...");
+      await uploadVideo(file);
+      return;
+    }
+
+    // Check video duration for smaller files
     const video = document.createElement('video');
     video.preload = 'metadata';
     
@@ -93,15 +103,14 @@ export function VideoUploadDialog({ open, onOpenChange, featuredUserId, featured
       window.URL.revokeObjectURL(video.src);
       const duration = video.duration;
       
-      if (duration > 600) {
-        toast.error("動画は10分以内にしてください");
+      if (duration > 3600) { // 1 hour max
+        toast.error("動画は60分以内にしてください");
         e.target.value = '';
         return;
       }
       
       setVideoFile(file);
       setUploadedFileSize(file.size);
-      // Start upload immediately
       await uploadVideo(file);
     };
 
@@ -125,7 +134,7 @@ export function VideoUploadDialog({ open, onOpenChange, featuredUserId, featured
 
     try {
       // Step 1: Create video in Bunny Stream
-      setUploadProgress(10);
+      setUploadProgress(5);
       const { data: createData, error: createError } = await supabase.functions.invoke(
         'upload-to-bunny',
         {
@@ -141,7 +150,7 @@ export function VideoUploadDialog({ open, onOpenChange, featuredUserId, featured
       const libraryId = createData.libraryId;
 
       // Step 2: Get TUS upload credentials
-      setUploadProgress(20);
+      setUploadProgress(10);
       const { data: uploadData, error: uploadError } = await supabase.functions.invoke(
         'upload-to-bunny',
         {
@@ -153,34 +162,76 @@ export function VideoUploadDialog({ open, onOpenChange, featuredUserId, featured
         throw new Error('アップロード情報の取得に失敗しました');
       }
 
-      // Step 3: Upload using TUS protocol to Bunny Stream
-      setUploadProgress(30);
+      // Step 3: Upload using chunked TUS protocol for large files
+      setUploadProgress(15);
       
-      const tusUploadUrl = `${uploadData.tusEndpoint}?VideoId=${uploadData.videoId}&LibraryId=${uploadData.libraryId}&Signature=${uploadData.signature}&ExpirationTime=${uploadData.expirationTime}`;
+      const tusBaseUrl = `${uploadData.tusEndpoint}`;
+      const queryParams = `?VideoId=${uploadData.videoId}&LibraryId=${uploadData.libraryId}&Signature=${uploadData.signature}&ExpirationTime=${uploadData.expirationTime}`;
       
-      // Create upload using TUS protocol
-      const uploadResponse = await fetch(tusUploadUrl, {
+      // Step 3a: Create TUS upload session
+      const createResponse = await fetch(tusBaseUrl + queryParams, {
         method: 'POST',
         headers: {
           'Tus-Resumable': '1.0.0',
           'Upload-Length': file.size.toString(),
           'Content-Type': 'application/offset+octet-stream',
-          'Upload-Offset': '0',
         },
-        body: file,
       });
 
-      if (!uploadResponse.ok) {
-        const errorText = await uploadResponse.text();
-        console.error('Bunny TUS upload error:', uploadResponse.status, errorText);
-        throw new Error('Bunny.netへのアップロードに失敗しました');
+      if (!createResponse.ok && createResponse.status !== 201) {
+        console.error('TUS create error:', createResponse.status);
+        throw new Error('アップロードセッションの作成に失敗しました');
       }
 
-      setUploadProgress(60);
+      // Get the upload location from response
+      const uploadLocation = createResponse.headers.get('Location') || (tusBaseUrl + queryParams);
+      
+      // Step 3b: Upload file in chunks
+      const CHUNK_SIZE = 50 * 1024 * 1024; // 50MB chunks
+      let offset = 0;
+      const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
+      let chunkIndex = 0;
+
+      while (offset < file.size) {
+        const chunk = file.slice(offset, Math.min(offset + CHUNK_SIZE, file.size));
+        
+        const patchResponse = await fetch(uploadLocation, {
+          method: 'PATCH',
+          headers: {
+            'Tus-Resumable': '1.0.0',
+            'Upload-Offset': offset.toString(),
+            'Content-Type': 'application/offset+octet-stream',
+          },
+          body: chunk,
+        });
+
+        if (!patchResponse.ok) {
+          const errorText = await patchResponse.text();
+          console.error('TUS PATCH error:', patchResponse.status, errorText);
+          
+          // Retry logic for network errors
+          if (patchResponse.status >= 500 || patchResponse.status === 0) {
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            continue; // Retry this chunk
+          }
+          
+          throw new Error('チャンクのアップロードに失敗しました');
+        }
+
+        const newOffset = patchResponse.headers.get('Upload-Offset');
+        offset = newOffset ? parseInt(newOffset, 10) : offset + chunk.size;
+        chunkIndex++;
+        
+        // Progress: 15-70% for upload
+        const uploadProgress = 15 + Math.floor((chunkIndex / totalChunks) * 55);
+        setUploadProgress(uploadProgress);
+      }
+
+      setUploadProgress(70);
 
       // Step 4: Poll for video processing status
       let attempts = 0;
-      const maxAttempts = 60; // 60 seconds timeout for processing
+      const maxAttempts = 180; // 6 minutes timeout for large file processing
       let videoReady = false;
       let playbackUrl = '';
 
@@ -198,12 +249,12 @@ export function VideoUploadDialog({ open, onOpenChange, featuredUserId, featured
           videoReady = true;
           playbackUrl = statusData.hlsUrl;
         } else if (statusData?.status === 5) {
-          // Error status
           throw new Error('動画の処理中にエラーが発生しました');
         }
         
         attempts++;
-        setUploadProgress(60 + Math.min(35, Math.floor(attempts * 0.6)));
+        // Progress: 70-95% for processing
+        setUploadProgress(70 + Math.min(25, Math.floor(attempts * 0.15)));
       }
 
       if (!videoReady) {
@@ -214,7 +265,7 @@ export function VideoUploadDialog({ open, onOpenChange, featuredUserId, featured
       setUploadedVideoUrl(playbackUrl);
       setUploadedFileName(bunnyVideoId);
       setUploadProgress(100);
-      toast.success("動画のアップロードが完了しました（Bunny CDN配信）");
+      toast.success("動画のアップロードが完了しました！");
     } catch (error) {
       console.error('Upload error:', error);
       toast.error(error instanceof Error ? error.message : "アップロードに失敗しました");
@@ -367,7 +418,7 @@ export function VideoUploadDialog({ open, onOpenChange, featuredUserId, featured
                     <div className="text-center">
                       <Upload className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
                       <p className="text-sm text-muted-foreground">クリックして動画を選択</p>
-                      <p className="text-xs text-muted-foreground mt-1">最大500MB、10分以内</p>
+                      <p className="text-xs text-muted-foreground mt-1">最大10GB</p>
                     </div>
                   )}
                 </label>
