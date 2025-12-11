@@ -189,6 +189,7 @@ const Map = () => {
       const queryPromise = supabase
         .from("techniques")
         .select("*")
+        .or("visibility.eq.public,visibility.is.null")
         .order("series_prefix", { ascending: true, nullsFirst: false })
         .order("series_order", { ascending: true, nullsFirst: false })
         .order("display_order", { ascending: true });
