@@ -166,7 +166,7 @@ export function VideoUploadDialog({ open, onOpenChange, featuredUserId, featured
       setUploadProgress(15);
       
       const tusBaseUrl = `${uploadData.tusEndpoint}`;
-      const queryParams = `?VideoId=${uploadData.videoId}&LibraryId=${uploadData.libraryId}&Signature=${uploadData.signature}&ExpirationTime=${uploadData.expirationTime}`;
+      const queryParams = `?VideoId=${uploadData.videoId}&LibraryId=${uploadData.libraryId}&AuthorizationSignature=${uploadData.signature}&AuthorizationExpire=${uploadData.expirationTime}`;
       
       // Step 3a: Create TUS upload session
       const createResponse = await fetch(tusBaseUrl + queryParams, {
