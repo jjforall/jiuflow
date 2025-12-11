@@ -55,12 +55,13 @@ async function getCampaigns(accessToken: string, customerId: string, developerTo
   `;
 
   const response = await fetch(
-    `https://googleads.googleapis.com/v16/customers/${customerId}/googleAds:search`,
+    `https://googleads.googleapis.com/v22/customers/${customerId}/googleAds:search`,
     {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${accessToken}`,
         'developer-token': developerToken,
+        'login-customer-id': customerId,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ query }),
@@ -125,12 +126,13 @@ async function getAccountPerformance(accessToken: string, customerId: string, de
   console.log('[GADS] Performance query:', query);
 
   const response = await fetch(
-    `https://googleads.googleapis.com/v16/customers/${customerId}/googleAds:search`,
+    `https://googleads.googleapis.com/v22/customers/${customerId}/googleAds:search`,
     {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${accessToken}`,
         'developer-token': developerToken,
+        'login-customer-id': customerId,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ query }),
@@ -158,12 +160,13 @@ async function updateCampaignStatus(
   status: 'ENABLED' | 'PAUSED'
 ) {
   const response = await fetch(
-    `https://googleads.googleapis.com/v16/customers/${customerId}/campaigns:mutate`,
+    `https://googleads.googleapis.com/v22/customers/${customerId}/campaigns:mutate`,
     {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${accessToken}`,
         'developer-token': developerToken,
+        'login-customer-id': customerId,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -196,12 +199,13 @@ async function createCampaign(
 ) {
   // First, create a campaign budget
   const budgetResponse = await fetch(
-    `https://googleads.googleapis.com/v16/customers/${customerId}/campaignBudgets:mutate`,
+    `https://googleads.googleapis.com/v22/customers/${customerId}/campaignBudgets:mutate`,
     {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${accessToken}`,
         'developer-token': developerToken,
+        'login-customer-id': customerId,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -233,12 +237,13 @@ async function createCampaign(
 
   // Then create the campaign
   const campaignResponse = await fetch(
-    `https://googleads.googleapis.com/v16/customers/${customerId}/campaigns:mutate`,
+    `https://googleads.googleapis.com/v22/customers/${customerId}/campaigns:mutate`,
     {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${accessToken}`,
         'developer-token': developerToken,
+        'login-customer-id': customerId,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
