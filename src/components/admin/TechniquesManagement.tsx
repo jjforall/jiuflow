@@ -28,12 +28,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { useLanguage } from "@/contexts/LanguageContext";
-
-interface UploadProgress {
-  fileName: string;
-  progress: number;
-  status: 'uploading' | 'complete' | 'error';
-}
+import { useUpload } from "@/contexts/UploadContext";
 
 export const TechniquesManagement = () => {
   const { isAdmin } = useAuth();
@@ -46,8 +41,8 @@ export const TechniquesManagement = () => {
   const [sortBy, setSortBy] = useState<"order" | "name" | "category" | "series">("order");
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [editingTechnique, setEditingTechnique] = useState<Technique | null>(null);
-  const [uploadQueue, setUploadQueue] = useState<UploadProgress[]>([]);
   const [videoFile, setVideoFile] = useState<File | null>(null);
+  const { startStorageUpload, isUploading: globalUploading } = useUpload();
   const [isTranslating, setIsTranslating] = useState(false);
   const [isAutoTranslatingName, setIsAutoTranslatingName] = useState(false);
   const [isAutoTranslatingDesc, setIsAutoTranslatingDesc] = useState(false);
@@ -778,18 +773,11 @@ export const TechniquesManagement = () => {
   };
 
   const handleVideoUpload = async (file: File, techniqueId?: string) => {
-    const fileName = file.name;
-    const fileExt = fileName.split('.').pop();
+    const fileExt = file.name.split('.').pop();
     const timestamp = Date.now();
     const filePath = techniqueId 
       ? `${techniqueId}_${timestamp}.${fileExt}`
       : `${crypto.randomUUID()}.${fileExt}`;
-
-    setUploadQueue(prev => [...prev, {
-      fileName,
-      progress: 0,
-      status: 'uploading'
-    }]);
 
     try {
       // Delete old video file if updating
@@ -808,87 +796,52 @@ export const TechniquesManagement = () => {
               .remove([oldFile.name]);
           }
         }
-      }
-
-      // Simulate upload progress
-      const progressInterval = setInterval(() => {
-        setUploadQueue(prev => prev.map(item => 
-          item.fileName === fileName && item.status === 'uploading'
-            ? { ...item, progress: Math.min(item.progress + 10, 80) }
-            : item
-        ));
-      }, 500);
-
-      const { error: uploadError } = await supabase.storage
-        .from('technique-videos')
-        .upload(filePath, file, { 
-          upsert: false,
-          cacheControl: '604800', // 7 days cache for videos (longer since they rarely change)
-        });
-
-      clearInterval(progressInterval);
-
-      if (uploadError) throw uploadError;
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('technique-videos')
-        .getPublicUrl(filePath);
-      
-      // Add cache-busting query parameter
-      const videoUrlWithCacheBuster = `${publicUrl}?t=${timestamp}`;
-
-      // Generate thumbnail
-      setUploadQueue(prev => prev.map(item => 
-        item.fileName === fileName 
-          ? { ...item, progress: 90 }
-          : item
-      ));
-
-      let thumbnailUrl: string | null = null;
-      try {
-        // Delete old thumbnails first
-        if (techniqueId) {
-          const { data: thumbFiles } = await supabase.storage
-            .from('technique-videos')
-            .list('thumbnails', {
-              search: techniqueId
-            });
-          
-          if (thumbFiles && thumbFiles.length > 0) {
-            const oldThumbs = thumbFiles.filter(f => f.name.startsWith(techniqueId));
-            for (const oldThumb of oldThumbs) {
-              await supabase.storage
-                .from('technique-videos')
-                .remove([`thumbnails/${oldThumb.name}`]);
-            }
+        
+        // Delete old thumbnails
+        const { data: thumbFiles } = await supabase.storage
+          .from('technique-videos')
+          .list('thumbnails', {
+            search: techniqueId
+          });
+        
+        if (thumbFiles && thumbFiles.length > 0) {
+          const oldThumbs = thumbFiles.filter(f => f.name.startsWith(techniqueId));
+          for (const oldThumb of oldThumbs) {
+            await supabase.storage
+              .from('technique-videos')
+              .remove([`thumbnails/${oldThumb.name}`]);
           }
         }
-        
-        const thumbnailBlob = await generateThumbnail(videoUrlWithCacheBuster);
-        const tempId = techniqueId || crypto.randomUUID();
-        thumbnailUrl = await uploadThumbnail(thumbnailBlob, tempId);
-        // Add cache-busting to thumbnail URL
-        thumbnailUrl = `${thumbnailUrl}?t=${timestamp}`;
-      } catch (error: unknown) {
-        console.error('Failed to generate thumbnail:', error);
-        toast.error('サムネイル生成エラー', {
-          description: 'サムネイルの生成に失敗しましたが、動画はアップロードされました'
-        });
       }
 
-      setUploadQueue(prev => prev.map(item => 
-        item.fileName === fileName 
-          ? { ...item, progress: 100, status: 'complete' }
-          : item
-      ));
+      // Use global upload context for background upload
+      const result = await startStorageUpload(
+        file,
+        'technique-videos',
+        filePath,
+        async (videoUrl: string) => {
+          // Generate and upload thumbnail
+          try {
+            const thumbnailBlob = await generateThumbnail(videoUrl);
+            const tempId = techniqueId || crypto.randomUUID();
+            const thumbUrl = await uploadThumbnail(thumbnailBlob, tempId);
+            return `${thumbUrl}?t=${timestamp}`;
+          } catch (error) {
+            console.error('Failed to generate thumbnail:', error);
+            toast.error('サムネイル生成エラー', {
+              description: 'サムネイルの生成に失敗しましたが、動画はアップロードされました'
+            });
+            return null;
+          }
+        }
+      );
 
-      return { videoUrl: videoUrlWithCacheBuster, thumbnailUrl };
+      if (!result) {
+        throw new Error('アップロードに失敗しました');
+      }
+
+      return { videoUrl: result.videoUrl, thumbnailUrl: result.thumbnailUrl };
     } catch (error: unknown) {
-      setUploadQueue(prev => prev.map(item => 
-        item.fileName === fileName 
-          ? { ...item, status: 'error' }
-          : item
-      ));
       throw error;
     }
   };
@@ -2081,32 +2034,6 @@ export const TechniquesManagement = () => {
             setPage(1); // Reset to first page when changing page size
           }}
         />
-      )}
-
-      {/* Upload Progress */}
-      {uploadQueue.length > 0 && (
-        <div className="fixed bottom-4 right-4 w-80 space-y-2">
-          {uploadQueue.map((item, index) => (
-            <div key={index} className="bg-background border rounded-lg p-4 shadow-lg">
-              <div className="flex justify-between items-center mb-2">
-                <p className="text-sm font-medium truncate">{item.fileName}</p>
-                <span className="text-xs text-muted-foreground">
-                  {item.status === 'complete' ? '完了' : 
-                   item.status === 'error' ? 'エラー' : 
-                   `${item.progress}%`}
-                </span>
-              </div>
-              <div className="w-full bg-muted rounded-full h-2">
-                <div 
-                  className={`h-2 rounded-full transition-all ${
-                    item.status === 'error' ? 'bg-destructive' : 'bg-primary'
-                  }`}
-                  style={{ width: `${item.progress}%` }}
-                />
-              </div>
-            </div>
-          ))}
-        </div>
       )}
 
       {/* Video Preview Dialog */}
