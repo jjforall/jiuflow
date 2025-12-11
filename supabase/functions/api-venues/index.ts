@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { buildSafeIlikeFilter } from "../_shared/search-utils.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -98,8 +99,9 @@ serve(async (req) => {
           .order('name')
           .range(offset, offset + limit - 1);
         
-        if (search) {
-          query = query.or(`name.ilike.%${search}%,name_ja.ilike.%${search}%,city.ilike.%${search}%`);
+        const searchFilter = buildSafeIlikeFilter(['name', 'name_ja', 'city'], search);
+        if (searchFilter) {
+          query = query.or(searchFilter);
         }
         
         if (country) {
