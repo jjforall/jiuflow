@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
-import { SEOHead } from "@/components/SEOHead";
+import { SEOHead, getOGLocale } from "@/components/SEOHead";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { translations } from "@/lib/translations";
 import { supabase } from "@/integrations/supabase/client";
@@ -314,14 +314,22 @@ const Map = () => {
     };
   }, [hasMore, isLoadingMore, fetchTechniques]);
 
+  const langPath = language === 'ja' ? '' : `/${language}`;
+
   return (
     <div className="min-h-screen relative overflow-hidden">
       <SEOHead
         title={currentSeo.title}
         description={currentSeo.description}
-        canonicalUrl="/map"
-        ogImage="/og-image-new.jpg"
-        keywords={["BJJ", "ブラジリアン柔術", "テクニック", "技術マップ", "サブミッション", "柔術技術", "格闘技テクニック"]}
+        canonicalUrl={`${langPath}/map`}
+        ogImage="https://storage.googleapis.com/gpt-engineer-file-uploads/eKRz1NN3QtRy6vwWfmoNTmYXlqu2/social-images/social-1764815287708-Gemini_Generated_Image_o203l3o203l3o203.png"
+        locale={getOGLocale(language)}
+        keywords={language === 'ja'
+          ? ['BJJ', 'ブラジリアン柔術', 'テクニック', '技術マップ', 'サブミッション', '柔術技術', '格闘技テクニック']
+          : language === 'pt'
+          ? ['BJJ', 'jiu-jitsu brasileiro', 'técnicas', 'mapa de técnicas', 'finalizações', 'guarda']
+          : ['BJJ', 'brazilian jiu-jitsu', 'techniques', 'technique map', 'submissions', 'guard']}
+        alternateLanguages={seoData}
       />
       {/* Background Image with Overlay */}
       <div className="fixed inset-0 -z-10">

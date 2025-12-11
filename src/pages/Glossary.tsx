@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
-import { SEOHead } from "@/components/SEOHead";
+import { SEOHead, getOGLocale } from "@/components/SEOHead";
 import { useTranslation } from "@/hooks/useTranslation";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -814,14 +814,22 @@ const Glossary = () => {
   const pageSubtitle = language === 'ja' ? '初心者から上級者まで使える柔術用語辞典' : language === 'pt' ? 'Dicionário de termos de Jiu-Jitsu para todos os níveis' : 'A Jiu-Jitsu terminology dictionary for all levels';
   const searchPlaceholder = language === 'ja' ? '用語を検索...' : language === 'pt' ? 'Buscar termos...' : 'Search terms...';
 
+  const langPath = language === 'ja' ? '' : `/${language}`;
+
   return (
     <div className="min-h-screen bg-background">
       <SEOHead
         title={currentSeo.title}
         description={currentSeo.description}
-        canonicalUrl="/glossary"
-        ogImage="/og-image-new.jpg"
-        keywords={["BJJ用語", "柔術用語集", "グロッサリー", "ブラジリアン柔術用語", "格闘技用語辞典"]}
+        canonicalUrl={`${langPath}/glossary`}
+        ogImage="https://storage.googleapis.com/gpt-engineer-file-uploads/eKRz1NN3QtRy6vwWfmoNTmYXlqu2/social-images/social-1764815287708-Gemini_Generated_Image_o203l3o203l3o203.png"
+        locale={getOGLocale(language)}
+        keywords={language === 'ja'
+          ? ['BJJ用語', '柔術用語集', 'グロッサリー', 'ブラジリアン柔術用語', '格闘技用語辞典']
+          : language === 'pt'
+          ? ['termos BJJ', 'glossário jiu-jitsu', 'vocabulário BJJ', 'dicionário jiu-jitsu']
+          : ['BJJ terms', 'jiu-jitsu glossary', 'BJJ vocabulary', 'grappling terminology']}
+        alternateLanguages={seoData}
       />
       <Navigation />
       

@@ -6,7 +6,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/hooks/useAuth";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
-import { SEOHead } from "@/components/SEOHead";
+import { SEOHead, getOGLocale } from "@/components/SEOHead";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
@@ -912,15 +912,22 @@ const Tournaments = () => {
   };
 
   const currentSeo = seoContent[language] || seoContent.ja;
+  const langPath = language === 'ja' ? '' : `/${language}`;
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <SEOHead
         title={currentSeo.title}
         description={currentSeo.description}
-        canonicalUrl="/tournaments"
-        ogImage="/images/venues/komazawa-olympic-park.webp"
-        keywords={['柔術', 'BJJ', '大会', 'トーナメント', 'JBJJF', 'ASJJF', 'IBJJF', '柔術大会', '格闘技大会']}
+        canonicalUrl={`${langPath}/tournaments`}
+        ogImage="https://storage.googleapis.com/gpt-engineer-file-uploads/eKRz1NN3QtRy6vwWfmoNTmYXlqu2/social-images/social-1764815287708-Gemini_Generated_Image_o203l3o203l3o203.png"
+        locale={getOGLocale(language)}
+        keywords={language === 'ja' 
+          ? ['柔術', 'BJJ', '大会', 'トーナメント', 'JBJJF', 'ASJJF', 'IBJJF', '柔術大会', '格闘技大会']
+          : language === 'pt'
+          ? ['jiu-jitsu', 'BJJ', 'torneios', 'campeonatos', 'JBJJF', 'IBJJF', 'competições']
+          : ['jiu-jitsu', 'BJJ', 'tournaments', 'competitions', 'JBJJF', 'IBJJF', 'ADCC']}
+        alternateLanguages={seoContent}
       />
       <Navigation />
       

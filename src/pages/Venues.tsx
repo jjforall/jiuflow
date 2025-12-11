@@ -5,7 +5,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/hooks/useAuth";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
-import { SEOHead } from "@/components/SEOHead";
+import { SEOHead, getOGLocale } from "@/components/SEOHead";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -256,13 +256,22 @@ const Venues = () => {
 
   const currentSeo = seoData[language] || seoData.ja;
 
+  const langPath = language === 'ja' ? '' : `/${language}`;
+
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <SEOHead
         title={currentSeo.title}
         description={currentSeo.description}
-        canonicalUrl="https://jiuflow.lovableproject.com/venues"
-        keywords={["BJJ", "会場", "venue", "大会", "tournament"]}
+        canonicalUrl={`${langPath}/venues`}
+        ogImage="https://storage.googleapis.com/gpt-engineer-file-uploads/eKRz1NN3QtRy6vwWfmoNTmYXlqu2/social-images/social-1764815287708-Gemini_Generated_Image_o203l3o203l3o203.png"
+        locale={getOGLocale(language)}
+        keywords={language === 'ja'
+          ? ['BJJ', '会場', 'venue', '大会', 'tournament', '柔術大会会場']
+          : language === 'pt'
+          ? ['BJJ', 'local', 'arena', 'torneio', 'competição']
+          : ['BJJ', 'venue', 'arena', 'tournament', 'competition venue']}
+        alternateLanguages={seoData}
       />
       <Navigation />
       

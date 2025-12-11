@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
-import { SEOHead } from "@/components/SEOHead";
+import { SEOHead, getOGLocale } from "@/components/SEOHead";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -230,14 +230,22 @@ export default function Dojos() {
     return dojo.description;
   };
 
+  const langPath = language === 'ja' ? '' : `/${language}`;
+
   return (
     <div className="min-h-screen flex flex-col">
       <SEOHead
         title={currentSeo.title}
         description={currentSeo.description}
-        canonicalUrl="/dojos"
-        ogImage="/dojos/flow-jiujitsu-morioka.jpg"
-        keywords={["BJJ", "道場", "ジム", "アカデミー", "柔術", "柔術道場", "ブラジリアン柔術道場"]}
+        canonicalUrl={`${langPath}/dojos`}
+        ogImage="https://storage.googleapis.com/gpt-engineer-file-uploads/eKRz1NN3QtRy6vwWfmoNTmYXlqu2/social-images/social-1764815287708-Gemini_Generated_Image_o203l3o203l3o203.png"
+        locale={getOGLocale(language)}
+        keywords={language === 'ja'
+          ? ['BJJ', '道場', 'ジム', 'アカデミー', '柔術', '柔術道場', 'ブラジリアン柔術道場']
+          : language === 'pt'
+          ? ['BJJ', 'academia', 'dojo', 'jiu-jitsu', 'academia de jiu-jitsu']
+          : ['BJJ', 'gym', 'academy', 'dojo', 'jiu-jitsu', 'martial arts gym']}
+        alternateLanguages={seoData}
       />
       <Navigation />
       <main className="flex-grow pt-16 sm:pt-20 pb-12 sm:pb-16">

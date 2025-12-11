@@ -11,7 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import TechniqueFlowchart from "@/components/TechniqueFlowchart";
 import { Badge } from "@/components/ui/badge";
 import { Award, Play, BookOpen, FileText, CheckCircle } from "lucide-react";
-import { SEOHead } from "@/components/SEOHead";
+import { SEOHead, getOGLocale } from "@/components/SEOHead";
 import murataImage from "@/assets/murata-ryozo-portrait.jpg";
 import kimuraLockImage from "@/assets/kimura-lock-overhead.png";
 
@@ -25,29 +25,39 @@ const Home = () => {
 
   const seoContent = {
     ja: {
-      title: "jiuflow | 柔術を、体系で学ぶ",
-      description: "上面からの4K撮影、体系化された流れ、構造と意図の言語化。安全で、長く、そして強い一生モノの柔術を、あなたに。"
+      title: "JiuFlow | 柔術を、体系で学ぶ - ブラジリアン柔術技術動画",
+      description: "上面からの4K撮影、体系化された流れ、構造と意図の言語化。安全で、長く、そして強い一生モノの柔術を、あなたに。世界チャンピオン監修。",
+      ogImage: "https://storage.googleapis.com/gpt-engineer-file-uploads/eKRz1NN3QtRy6vwWfmoNTmYXlqu2/social-images/social-1764815287708-Gemini_Generated_Image_o203l3o203l3o203.png"
     },
     en: {
-      title: "jiuflow | Learn Jiu-Jitsu with Clarity",
-      description: "4K overhead filming, systematic flows, verbalized structure and intent. Safe, lasting, and strong lifelong Jiu-Jitsu for you."
+      title: "JiuFlow | Learn Jiu-Jitsu Systematically - BJJ Technique Videos",
+      description: "4K overhead filming, systematic flows, verbalized structure and intent. Safe, lasting, and strong lifelong Jiu-Jitsu for you. World Champion supervised.",
+      ogImage: "https://storage.googleapis.com/gpt-engineer-file-uploads/eKRz1NN3QtRy6vwWfmoNTmYXlqu2/social-images/social-1764815287708-Gemini_Generated_Image_o203l3o203l3o203.png"
     },
     pt: {
-      title: "jiuflow | Aprenda Jiu-Jitsu com Clareza",
-      description: "Filmagem aérea 4K, fluxos sistemáticos, estrutura e intenção verbalizadas. Jiu-Jitsu seguro, duradouro e forte para toda a vida."
+      title: "JiuFlow | Aprenda Jiu-Jitsu Sistematicamente - Vídeos de Técnicas BJJ",
+      description: "Filmagem aérea 4K, fluxos sistemáticos, estrutura e intenção verbalizadas. Jiu-Jitsu seguro, duradouro e forte. Supervisionado por Campeão Mundial.",
+      ogImage: "https://storage.googleapis.com/gpt-engineer-file-uploads/eKRz1NN3QtRy6vwWfmoNTmYXlqu2/social-images/social-1764815287708-Gemini_Generated_Image_o203l3o203l3o203.png"
     }
   };
 
   const currentSeo = seoContent[language] || seoContent.ja;
+  const langPath = language === 'ja' ? '' : `/${language}`;
 
   return (
     <div className="min-h-screen">
       <SEOHead
         title={currentSeo.title}
         description={currentSeo.description}
-        canonicalUrl="/"
-        ogImage="https://storage.googleapis.com/gpt-engineer-file-uploads/eKRz1NN3QtRy6vwWfmoNTmYXlqu2/social-images/social-1764815287708-Gemini_Generated_Image_o203l3o203l3o203.png"
-        keywords={['柔術', 'BJJ', 'ブラジリアン柔術', 'martial arts', '技術動画', '武道', '柔術教室', '格闘技']}
+        canonicalUrl={langPath || "/"}
+        ogImage={currentSeo.ogImage}
+        locale={getOGLocale(language)}
+        keywords={language === 'ja' 
+          ? ['柔術', 'BJJ', 'ブラジリアン柔術', '技術動画', '武道', '柔術教室', '格闘技', '世界チャンピオン']
+          : language === 'pt'
+          ? ['jiu-jitsu', 'BJJ', 'jiu-jitsu brasileiro', 'vídeos técnicos', 'artes marciais', 'academia']
+          : ['jiu-jitsu', 'BJJ', 'brazilian jiu-jitsu', 'technique videos', 'martial arts', 'grappling']}
+        alternateLanguages={seoContent}
       />
       <Navigation />
       
