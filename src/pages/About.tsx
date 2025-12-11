@@ -1,6 +1,6 @@
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
-import { SEOHead } from "@/components/SEOHead";
+import { SEOHead, getOGLocale } from "@/components/SEOHead";
 import { useTranslation } from "@/hooks/useTranslation";
 import { Button } from "@/components/ui/button";
 import { useNavigate, Link } from "react-router-dom";
@@ -90,14 +90,22 @@ const About = () => {
     loadTechniqueStats();
   }, []);
 
+  const langPath = language === 'ja' ? '' : `/${language}`;
+
   return (
     <div className="min-h-screen relative overflow-hidden">
       <SEOHead
         title={currentSeo.title}
         description={currentSeo.description}
-        canonicalUrl="/about"
-        ogImage="/murata-ryozo-portrait.jpg"
-        keywords={['柔術', 'BJJ', 'jiuflow', '村田良蔵', 'SJJIF世界チャンピオン', 'ブラジリアン柔術', '柔術講師']}
+        canonicalUrl={`${langPath}/about`}
+        ogImage="https://storage.googleapis.com/gpt-engineer-file-uploads/eKRz1NN3QtRy6vwWfmoNTmYXlqu2/social-images/social-1764815287708-Gemini_Generated_Image_o203l3o203l3o203.png"
+        locale={getOGLocale(language)}
+        keywords={language === 'ja'
+          ? ['柔術', 'BJJ', 'jiuflow', '村田良蔵', 'SJJIF世界チャンピオン', 'ブラジリアン柔術', '柔術講師']
+          : language === 'pt'
+          ? ['jiu-jitsu', 'BJJ', 'jiuflow', 'Ryozo Murata', 'campeão mundial SJJIF', 'instrutor']
+          : ['jiu-jitsu', 'BJJ', 'jiuflow', 'Ryozo Murata', 'SJJIF world champion', 'instructor']}
+        alternateLanguages={seoContent}
       />
       {/* Animated Flow Background */}
       <div className="fixed inset-0 -z-10 overflow-hidden">

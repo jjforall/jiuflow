@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { useLocation } from "react-router-dom";
 
 interface SEOHeadProps {
   title: string;
@@ -13,10 +14,56 @@ interface SEOHeadProps {
   modifiedTime?: string;
   author?: string;
   keywords?: string[];
+  // Multi-language support
+  alternateLanguages?: {
+    ja?: { title: string; description: string; ogImage?: string };
+    en?: { title: string; description: string; ogImage?: string };
+    pt?: { title: string; description: string; ogImage?: string };
+  };
 }
 
 const BASE_URL = "https://jiuflow.lovableproject.com";
 const DEFAULT_OG_IMAGE = "https://storage.googleapis.com/gpt-engineer-file-uploads/eKRz1NN3QtRy6vwWfmoNTmYXlqu2/social-images/social-1764815287708-Gemini_Generated_Image_o203l3o203l3o203.png";
+
+// Language-specific OG images
+const OG_IMAGES = {
+  default: DEFAULT_OG_IMAGE,
+  home: {
+    ja: "https://storage.googleapis.com/gpt-engineer-file-uploads/eKRz1NN3QtRy6vwWfmoNTmYXlqu2/social-images/social-1764815287708-Gemini_Generated_Image_o203l3o203l3o203.png",
+    en: "https://storage.googleapis.com/gpt-engineer-file-uploads/eKRz1NN3QtRy6vwWfmoNTmYXlqu2/social-images/social-1764815287708-Gemini_Generated_Image_o203l3o203l3o203.png",
+    pt: "https://storage.googleapis.com/gpt-engineer-file-uploads/eKRz1NN3QtRy6vwWfmoNTmYXlqu2/social-images/social-1764815287708-Gemini_Generated_Image_o203l3o203l3o203.png",
+  },
+  tournaments: {
+    ja: "https://storage.googleapis.com/gpt-engineer-file-uploads/eKRz1NN3QtRy6vwWfmoNTmYXlqu2/social-images/social-1764815287708-Gemini_Generated_Image_o203l3o203l3o203.png",
+    en: "https://storage.googleapis.com/gpt-engineer-file-uploads/eKRz1NN3QtRy6vwWfmoNTmYXlqu2/social-images/social-1764815287708-Gemini_Generated_Image_o203l3o203l3o203.png",
+    pt: "https://storage.googleapis.com/gpt-engineer-file-uploads/eKRz1NN3QtRy6vwWfmoNTmYXlqu2/social-images/social-1764815287708-Gemini_Generated_Image_o203l3o203l3o203.png",
+  },
+  athletes: {
+    ja: "https://storage.googleapis.com/gpt-engineer-file-uploads/eKRz1NN3QtRy6vwWfmoNTmYXlqu2/social-images/social-1764815287708-Gemini_Generated_Image_o203l3o203l3o203.png",
+    en: "https://storage.googleapis.com/gpt-engineer-file-uploads/eKRz1NN3QtRy6vwWfmoNTmYXlqu2/social-images/social-1764815287708-Gemini_Generated_Image_o203l3o203l3o203.png",
+    pt: "https://storage.googleapis.com/gpt-engineer-file-uploads/eKRz1NN3QtRy6vwWfmoNTmYXlqu2/social-images/social-1764815287708-Gemini_Generated_Image_o203l3o203l3o203.png",
+  },
+  dojos: {
+    ja: "https://storage.googleapis.com/gpt-engineer-file-uploads/eKRz1NN3QtRy6vwWfmoNTmYXlqu2/social-images/social-1764815287708-Gemini_Generated_Image_o203l3o203l3o203.png",
+    en: "https://storage.googleapis.com/gpt-engineer-file-uploads/eKRz1NN3QtRy6vwWfmoNTmYXlqu2/social-images/social-1764815287708-Gemini_Generated_Image_o203l3o203l3o203.png",
+    pt: "https://storage.googleapis.com/gpt-engineer-file-uploads/eKRz1NN3QtRy6vwWfmoNTmYXlqu2/social-images/social-1764815287708-Gemini_Generated_Image_o203l3o203l3o203.png",
+  },
+  map: {
+    ja: "https://storage.googleapis.com/gpt-engineer-file-uploads/eKRz1NN3QtRy6vwWfmoNTmYXlqu2/social-images/social-1764815287708-Gemini_Generated_Image_o203l3o203l3o203.png",
+    en: "https://storage.googleapis.com/gpt-engineer-file-uploads/eKRz1NN3QtRy6vwWfmoNTmYXlqu2/social-images/social-1764815287708-Gemini_Generated_Image_o203l3o203l3o203.png",
+    pt: "https://storage.googleapis.com/gpt-engineer-file-uploads/eKRz1NN3QtRy6vwWfmoNTmYXlqu2/social-images/social-1764815287708-Gemini_Generated_Image_o203l3o203l3o203.png",
+  },
+};
+
+// Helper to get locale from language code
+const getOGLocale = (lang: string): string => {
+  const locales: Record<string, string> = {
+    ja: "ja_JP",
+    en: "en_US",
+    pt: "pt_BR",
+  };
+  return locales[lang] || "ja_JP";
+};
 
 export const SEOHead = ({
   title,
@@ -31,7 +78,10 @@ export const SEOHead = ({
   modifiedTime,
   author,
   keywords,
+  alternateLanguages,
 }: SEOHeadProps) => {
+  const location = useLocation();
+  
   useEffect(() => {
     // Update document title
     document.title = title;
@@ -56,14 +106,22 @@ export const SEOHead = ({
     };
 
     // Helper function to update or create link tag
-    const setLinkTag = (rel: string, href: string) => {
-      let element = document.querySelector(`link[rel="${rel}"]`) as HTMLLinkElement;
+    const setLinkTag = (rel: string, href: string, extraAttrs?: Record<string, string>) => {
+      const selector = extraAttrs?.hreflang 
+        ? `link[rel="${rel}"][hreflang="${extraAttrs.hreflang}"]`
+        : `link[rel="${rel}"]`;
+      let element = document.querySelector(selector) as HTMLLinkElement;
       if (element) {
         element.href = href;
       } else {
         element = document.createElement("link");
         element.rel = rel;
         element.href = href;
+        if (extraAttrs) {
+          Object.entries(extraAttrs).forEach(([key, value]) => {
+            element.setAttribute(key, value);
+          });
+        }
         document.head.appendChild(element);
       }
     };
@@ -85,20 +143,43 @@ export const SEOHead = ({
       setMetaTag('meta[name="author"]', author);
     }
 
-    // Canonical URL
-    if (canonicalUrl) {
-      setLinkTag("canonical", canonicalUrl.startsWith("http") ? canonicalUrl : `${BASE_URL}${canonicalUrl}`);
-    }
+    // Determine current path and build language URLs
+    const currentPath = location.pathname;
+    const pathWithoutLang = currentPath.replace(/^\/(ja|en|pt)(\/|$)/, '/');
+    const basePath = pathWithoutLang === '' ? '/' : pathWithoutLang;
+    
+    // Canonical URL - use provided or generate from current path
+    const fullCanonicalUrl = canonicalUrl 
+      ? (canonicalUrl.startsWith("http") ? canonicalUrl : `${BASE_URL}${canonicalUrl}`)
+      : `${BASE_URL}${currentPath}`;
+    setLinkTag("canonical", fullCanonicalUrl);
+
+    // Alternate language links (hreflang)
+    const languages = ['ja', 'en', 'pt'];
+    languages.forEach(lang => {
+      const langPath = lang === 'ja' ? basePath : `/${lang}${basePath === '/' ? '' : basePath}`;
+      setLinkTag("alternate", `${BASE_URL}${langPath}`, { hreflang: lang });
+    });
+    // x-default for language negotiation
+    setLinkTag("alternate", `${BASE_URL}${basePath}`, { hreflang: "x-default" });
 
     // Open Graph Tags
     setMetaTag('meta[property="og:title"]', title);
     setMetaTag('meta[property="og:description"]', truncatedDescription);
     setMetaTag('meta[property="og:type"]', ogType);
     setMetaTag('meta[property="og:image"]', ogImage || DEFAULT_OG_IMAGE);
+    setMetaTag('meta[property="og:image:width"]', "1200");
+    setMetaTag('meta[property="og:image:height"]', "630");
     setMetaTag('meta[property="og:locale"]', locale);
-    
-    if (canonicalUrl) {
-      setMetaTag('meta[property="og:url"]', canonicalUrl.startsWith("http") ? canonicalUrl : `${BASE_URL}${canonicalUrl}`);
+    setMetaTag('meta[property="og:site_name"]', "JiuFlow");
+    setMetaTag('meta[property="og:url"]', fullCanonicalUrl);
+
+    // Alternate locales for OG
+    if (alternateLanguages) {
+      const altLocales = Object.keys(alternateLanguages).filter(l => getOGLocale(l) !== locale);
+      altLocales.forEach((lang, index) => {
+        setMetaTag(`meta[property="og:locale:alternate"][data-lang="${lang}"]`, getOGLocale(lang));
+      });
     }
 
     if (ogType === "article" || ogType === "event") {
@@ -115,6 +196,7 @@ export const SEOHead = ({
 
     // Twitter Card Tags
     setMetaTag('meta[name="twitter:card"]', "summary_large_image");
+    setMetaTag('meta[name="twitter:site"]', "@jiuflow");
     setMetaTag('meta[name="twitter:title"]', title);
     setMetaTag('meta[name="twitter:description"]', truncatedDescription);
     setMetaTag('meta[name="twitter:image"]', ogImage || DEFAULT_OG_IMAGE);
@@ -141,10 +223,12 @@ export const SEOHead = ({
         dynamicScript.remove();
       }
     };
-  }, [title, description, ogImage, ogType, canonicalUrl, noindex, structuredData, locale, publishedTime, modifiedTime, author, keywords]);
+  }, [title, description, ogImage, ogType, canonicalUrl, noindex, structuredData, locale, publishedTime, modifiedTime, author, keywords, alternateLanguages, location.pathname]);
 
   return null;
 };
+
+export { OG_IMAGES, getOGLocale, BASE_URL, DEFAULT_OG_IMAGE };
 
 // Helper function to generate tournament structured data
 export const generateTournamentStructuredData = (tournament: {

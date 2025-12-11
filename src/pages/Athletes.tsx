@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
-import { SEOHead } from "@/components/SEOHead";
+import { SEOHead, getOGLocale } from "@/components/SEOHead";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTranslation } from "@/hooks/useTranslation";
 import { supabase } from "@/integrations/supabase/client";
@@ -403,14 +403,22 @@ const Athletes = () => {
     }
   };
 
+  const langPath = language === 'ja' ? '' : `/${language}`;
+  
   return (
     <div className="min-h-screen bg-background">
       <SEOHead
         title={currentSeo.title}
         description={currentSeo.description}
-        canonicalUrl="/athletes"
-        ogImage="/athletes/roger-gracie.jpg"
-        keywords={['柔術', 'BJJ', '選手', 'アスリート', 'ブラジリアン柔術', '世界チャンピオン', '柔術家']}
+        canonicalUrl={`${langPath}/athletes`}
+        ogImage="https://storage.googleapis.com/gpt-engineer-file-uploads/eKRz1NN3QtRy6vwWfmoNTmYXlqu2/social-images/social-1764815287708-Gemini_Generated_Image_o203l3o203l3o203.png"
+        locale={getOGLocale(language)}
+        keywords={language === 'ja' 
+          ? ['柔術', 'BJJ', '選手', 'アスリート', 'ブラジリアン柔術', '世界チャンピオン', '柔術家']
+          : language === 'pt'
+          ? ['jiu-jitsu', 'BJJ', 'atletas', 'lutadores', 'campeões mundiais']
+          : ['jiu-jitsu', 'BJJ', 'athletes', 'fighters', 'world champions', 'grapplers']}
+        alternateLanguages={seoContent}
       />
       <Navigation />
       
