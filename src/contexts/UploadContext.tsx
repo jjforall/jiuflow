@@ -10,12 +10,15 @@ interface UploadTask {
   status: 'uploading' | 'processing' | 'completed' | 'error';
   videoUrl?: string;
   bunnyVideoId?: string;
+  thumbnailUrl?: string;
   error?: string;
+  type: 'bunny' | 'supabase';
 }
 
 interface UploadContextType {
   uploads: UploadTask[];
   startUpload: (file: File, title: string) => Promise<{ videoUrl: string; bunnyVideoId: string; fileSize: number } | null>;
+  startStorageUpload: (file: File, bucket: string, path: string, onThumbnail?: (url: string) => Promise<string | null>) => Promise<{ videoUrl: string; thumbnailUrl: string | null } | null>;
   cancelUpload: (id: string) => void;
   clearCompletedUploads: () => void;
   isUploading: boolean;
@@ -31,6 +34,7 @@ export function UploadProvider({ children }: { children: ReactNode }) {
     setUploads(prev => prev.map(u => u.id === id ? { ...u, ...updates } : u));
   }, []);
 
+  // Bunny.net TUS upload for user videos
   const startUpload = useCallback(async (file: File, title: string): Promise<{ videoUrl: string; bunnyVideoId: string; fileSize: number } | null> => {
     const uploadId = `upload_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     const abortController = new AbortController();
@@ -42,6 +46,7 @@ export function UploadProvider({ children }: { children: ReactNode }) {
       fileSize: file.size,
       progress: 0,
       status: 'uploading',
+      type: 'bunny',
     };
 
     setUploads(prev => [...prev, newUpload]);
@@ -198,6 +203,86 @@ export function UploadProvider({ children }: { children: ReactNode }) {
     }
   }, [updateUpload]);
 
+  // Supabase Storage upload for admin technique videos
+  const startStorageUpload = useCallback(async (
+    file: File, 
+    bucket: string, 
+    path: string,
+    onThumbnail?: (videoUrl: string) => Promise<string | null>
+  ): Promise<{ videoUrl: string; thumbnailUrl: string | null } | null> => {
+    const uploadId = `storage_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+    const newUpload: UploadTask = {
+      id: uploadId,
+      fileName: file.name,
+      fileSize: file.size,
+      progress: 0,
+      status: 'uploading',
+      type: 'supabase',
+    };
+
+    setUploads(prev => [...prev, newUpload]);
+
+    try {
+      // Simulate progress while uploading
+      const progressInterval = setInterval(() => {
+        setUploads(prev => prev.map(u => 
+          u.id === uploadId && u.status === 'uploading' && u.progress < 80
+            ? { ...u, progress: Math.min(u.progress + 10, 80) }
+            : u
+        ));
+      }, 500);
+
+      const { error: uploadError } = await supabase.storage
+        .from(bucket)
+        .upload(path, file, { 
+          upsert: false,
+          cacheControl: '604800',
+        });
+
+      clearInterval(progressInterval);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from(bucket)
+        .getPublicUrl(path);
+      
+      const timestamp = Date.now();
+      const videoUrl = `${publicUrl}?t=${timestamp}`;
+
+      updateUpload(uploadId, { progress: 90, videoUrl });
+
+      // Generate thumbnail if callback provided
+      let thumbnailUrl: string | null = null;
+      if (onThumbnail) {
+        try {
+          thumbnailUrl = await onThumbnail(videoUrl);
+          if (thumbnailUrl) {
+            updateUpload(uploadId, { thumbnailUrl });
+          }
+        } catch (error) {
+          console.error('Thumbnail generation failed:', error);
+        }
+      }
+
+      updateUpload(uploadId, { 
+        progress: 100, 
+        status: 'completed',
+        videoUrl,
+        thumbnailUrl: thumbnailUrl || undefined,
+      });
+
+      toast.success("動画のアップロードが完了しました！");
+      return { videoUrl, thumbnailUrl };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "アップロードに失敗しました";
+      updateUpload(uploadId, { status: 'error', error: errorMessage });
+      toast.error(errorMessage);
+      return null;
+    }
+  }, [updateUpload]);
+
   const cancelUpload = useCallback((id: string) => {
     const controller = abortControllers.current.get(id);
     if (controller) {
@@ -214,7 +299,7 @@ export function UploadProvider({ children }: { children: ReactNode }) {
   const isUploading = uploads.some(u => u.status === 'uploading' || u.status === 'processing');
 
   return (
-    <UploadContext.Provider value={{ uploads, startUpload, cancelUpload, clearCompletedUploads, isUploading }}>
+    <UploadContext.Provider value={{ uploads, startUpload, startStorageUpload, cancelUpload, clearCompletedUploads, isUploading }}>
       {children}
     </UploadContext.Provider>
   );
