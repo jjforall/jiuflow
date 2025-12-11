@@ -13,7 +13,36 @@ const logStep = (step: string, details?: unknown) => {
   console.log(`[STRIPE-WEBHOOK] ${step}${detailsStr}`);
 };
 
-// Function to create Printful order
+// Function to track conversion across GA4, Meta, and Google Ads
+async function trackConversion(data: {
+  event_name: string;
+  user_id?: string;
+  email?: string;
+  plan?: string;
+  value: number;
+  currency?: string;
+  transaction_id?: string;
+}) {
+  const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
+  
+  try {
+    const response = await fetch(`${supabaseUrl}/functions/v1/track-conversion`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+    
+    if (response.ok) {
+      logStep("Conversion tracked successfully", { event: data.event_name, value: data.value });
+    } else {
+      const errorText = await response.text();
+      logStep("ERROR tracking conversion", { status: response.status, error: errorText });
+    }
+  } catch (error) {
+    logStep("ERROR tracking conversion", { error: String(error) });
+  }
+}
+
 async function createPrintfulOrder(
   session: Stripe.Checkout.Session,
   cartItems: { variantId: number; quantity: number }[]
@@ -479,6 +508,22 @@ serve(async (req) => {
               logStep("Subscription record created successfully", { 
                 userId: user.id,
                 subscriptionId: subscription.id
+              });
+              
+              // Track conversion for advertising platforms
+              const priceAmount = subscription.items.data[0].price.unit_amount || 0;
+              const planName = subscription.items.data[0].price.nickname || 
+                              subscription.items.data[0].price.product || 
+                              "subscription";
+              
+              await trackConversion({
+                event_name: "purchase",
+                user_id: user.id,
+                email: customerEmail,
+                plan: String(planName),
+                value: priceAmount / 100,
+                currency: subscription.currency?.toUpperCase() || "JPY",
+                transaction_id: subscription.id,
               });
             }
           } else {
