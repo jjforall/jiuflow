@@ -265,6 +265,7 @@ export default function VideoListsManagement() {
       description_ja: "",
       description_pt: "",
       visibility: "private",
+      slug: "",
     });
   };
 
@@ -278,6 +279,7 @@ export default function VideoListsManagement() {
       description_ja: list.description_ja || "",
       description_pt: list.description_pt || "",
       visibility: list.visibility,
+      slug: list.slug || "",
     });
     setIsEditDialogOpen(true);
   };
