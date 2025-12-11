@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Progress } from "@/components/ui/progress";
 import {
   Collapsible,
   CollapsibleContent,
@@ -28,7 +29,7 @@ import {
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { ja } from "date-fns/locale";
-import { Video, Trash2, Eye, EyeOff, Search, BarChart3, ChevronDown, Cloud, Loader2 } from "lucide-react";
+import { Video, Trash2, Eye, EyeOff, Search, BarChart3, ChevronDown, Cloud, Loader2, X } from "lucide-react";
 import {
   Pagination,
   PaginationContent,
@@ -37,6 +38,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
+import { useUpload } from "@/contexts/UploadContext";
 
 export function UserVideosManagement() {
   const [videos, setVideos] = useState<any[]>([]);
@@ -49,6 +51,9 @@ export function UserVideosManagement() {
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [migrating, setMigrating] = useState(false);
   const itemsPerPage = 10;
+  
+  const { uploads, cancelUpload } = useUpload();
+  const activeUploads = uploads.filter(u => u.status === 'uploading' || u.status === 'processing');
 
   // Count videos still on Supabase Storage
   const supabaseStorageVideos = videos.filter(v => 
@@ -378,6 +383,53 @@ export function UserVideosManagement() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
+                    {/* Uploading videos - show at top */}
+                    {activeUploads.map((upload) => (
+                      <TableRow key={upload.id} className="bg-primary/5 border-l-2 border-l-primary">
+                        <TableCell>
+                          <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-3">
+                            <div className="w-12 h-9 bg-primary/10 rounded flex items-center justify-center flex-shrink-0 relative overflow-hidden">
+                              <Video className="w-4 h-4 text-primary" />
+                              <div 
+                                className="absolute bottom-0 left-0 right-0 bg-primary/30 transition-all"
+                                style={{ height: `${upload.progress}%` }}
+                              />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <div className="font-medium truncate">{upload.fileName}</div>
+                              <div className="flex items-center gap-2">
+                                <Progress value={upload.progress} className="h-1.5 flex-1" />
+                                <span className="text-xs text-muted-foreground whitespace-nowrap">
+                                  {upload.status === 'processing' ? '処理中...' : `${upload.progress}%`}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-sm text-muted-foreground">-</TableCell>
+                        <TableCell className="text-sm text-muted-foreground">-</TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="text-xs border-primary text-primary">
+                            {upload.status === 'processing' ? '処理中' : 'アップロード中'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-sm text-muted-foreground">-</TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0"
+                            onClick={() => cancelUpload(upload.id)}
+                            title="キャンセル"
+                          >
+                            <X className="w-4 h-4 text-destructive" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
                     {currentVideos.map((video) => (
                       <Collapsible key={video.id} open={expandedRows.has(video.id)} onOpenChange={() => toggleRow(video.id)}>
                         <TableRow className="group">
@@ -500,6 +552,44 @@ export function UserVideosManagement() {
 
               {/* スマホ用カード表示 */}
               <div className="md:hidden space-y-2">
+                {/* Uploading videos - show at top */}
+                {activeUploads.map((upload) => (
+                  <div key={upload.id} className="border-b border-primary/30 bg-primary/5 p-3">
+                    <div className="flex items-start gap-3">
+                      <div className="w-16 h-12 bg-primary/10 rounded flex items-center justify-center shrink-0 relative overflow-hidden">
+                        <Video className="w-6 h-6 text-primary" />
+                        <div 
+                          className="absolute bottom-0 left-0 right-0 bg-primary/30 transition-all"
+                          style={{ height: `${upload.progress}%` }}
+                        />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <h3 className="font-medium text-sm truncate">{upload.fileName}</h3>
+                        </div>
+                        <div className="flex items-center gap-2 mb-2">
+                          <Badge variant="outline" className="text-xs px-1.5 py-0 h-5 border-primary text-primary">
+                            {upload.status === 'processing' ? '処理中' : 'アップロード中'}
+                          </Badge>
+                          <span className="text-xs text-muted-foreground">
+                            {upload.status === 'processing' ? '処理中...' : `${upload.progress}%`}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Progress value={upload.progress} className="h-1.5 flex-1" />
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 w-6 p-0"
+                            onClick={() => cancelUpload(upload.id)}
+                          >
+                            <X className="w-3 h-3 text-destructive" />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
                 {currentVideos.map((video) => (
                   <div key={video.id} className="border-b border-border/50 last:border-0">
                     <Collapsible open={expandedRows.has(video.id)} onOpenChange={() => toggleRow(video.id)}>

@@ -42,6 +42,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Progress } from "@/components/ui/progress";
+import { useUpload } from "@/contexts/UploadContext";
 import hero1 from "@/assets/hero-1.jpg";
 import hero2 from "@/assets/hero-2.jpg";
 import hero3 from "@/assets/hero-3.jpg";
@@ -162,6 +164,8 @@ const MyPage = () => {
   const { language } = useLanguage();
   const navigate = useNavigate();
   const location = useLocation();
+  const { uploads, cancelUpload } = useUpload();
+  const activeUploads = uploads.filter(u => u.status === 'uploading' || u.status === 'processing');
   const [user, setUser] = useState<{ id: string; email?: string } | null>(null);
   const [subscription, setSubscription] = useState<SubscriptionStatus | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -3087,7 +3091,7 @@ const MyPage = () => {
                       </div>
                     ))}
                   </div>
-                ) : userVideos.length === 0 ? (
+                ) : userVideos.length === 0 && activeUploads.length === 0 ? (
                   <div className="text-center py-8 sm:py-12 border border-dashed border-border rounded-lg">
                     <Video className="w-10 h-10 sm:w-12 sm:h-12 mx-auto mb-3 sm:mb-4 text-muted-foreground" />
                     <p className="text-muted-foreground mb-3 sm:mb-4 text-sm sm:text-base">
@@ -3105,6 +3109,40 @@ const MyPage = () => {
                 ) : (
                   <>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
+                      {/* Uploading videos - show at top */}
+                      {activeUploads.map((upload) => (
+                        <div key={upload.id} className="border border-primary/30 bg-primary/5 rounded-lg p-3 sm:p-6 space-y-3 sm:space-y-4">
+                          <div className="aspect-video bg-primary/10 rounded flex items-center justify-center relative overflow-hidden">
+                            <Video className="w-8 h-8 sm:w-12 sm:h-12 text-primary" />
+                            <div 
+                              className="absolute bottom-0 left-0 right-0 bg-primary/30 transition-all"
+                              style={{ height: `${upload.progress}%` }}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <h3 className="font-medium text-sm sm:text-base truncate">{upload.fileName}</h3>
+                            <div className="flex items-center gap-2">
+                              <Progress value={upload.progress} className="h-2 flex-1" />
+                              <span className="text-xs text-muted-foreground whitespace-nowrap">
+                                {upload.status === 'processing' ? '処理中...' : `${upload.progress}%`}
+                              </span>
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <Badge variant="outline" className="text-xs border-primary text-primary">
+                                {upload.status === 'processing' ? '処理中' : 'アップロード中'}
+                              </Badge>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-6 text-xs text-destructive"
+                                onClick={() => cancelUpload(upload.id)}
+                              >
+                                キャンセル
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
                       {userVideos.slice(0, displayedVideosCount).map((video) => (
                         <UserVideoCard
                           key={video.id}
