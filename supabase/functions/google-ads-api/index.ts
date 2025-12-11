@@ -208,8 +208,8 @@ serve(async (req) => {
   }
 
   try {
-    const developerToken = Deno.env.get('GADS_DEVELOPER_TOKEN');
-    const customerId = Deno.env.get('GADS_ACCOUNT_ID')?.replace(/-/g, '');
+    const developerToken = Deno.env.get('GADS_DEVELOPER_TOKEN')?.trim();
+    const customerId = Deno.env.get('GADS_ACCOUNT_ID')?.replace(/-/g, '').trim();
 
     if (!developerToken || !customerId) {
       console.error('[GADS] Missing configuration');
@@ -220,7 +220,7 @@ serve(async (req) => {
     }
 
     const { action, data } = await req.json();
-    console.log('[GADS] Action:', action, 'Data:', JSON.stringify(data).slice(0, 200));
+    console.log('[GADS] Action:', action, 'Data:', data ? JSON.stringify(data).slice(0, 200) : 'none');
 
     const accessToken = await getAccessToken();
     console.log('[GADS] Access token obtained');
