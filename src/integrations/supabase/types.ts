@@ -2016,6 +2016,7 @@ export type Database = {
           video_url: string | null
           video_url_ja: string | null
           video_url_pt: string | null
+          visibility: string
         }
         Insert: {
           category: string
@@ -2041,6 +2042,7 @@ export type Database = {
           video_url?: string | null
           video_url_ja?: string | null
           video_url_pt?: string | null
+          visibility?: string
         }
         Update: {
           category?: string
@@ -2066,6 +2068,7 @@ export type Database = {
           video_url?: string | null
           video_url_ja?: string | null
           video_url_pt?: string | null
+          visibility?: string
         }
         Relationships: []
       }

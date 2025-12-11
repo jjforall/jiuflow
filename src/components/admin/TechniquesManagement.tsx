@@ -472,6 +472,7 @@ export const TechniquesManagement = () => {
     series_name: "" as string,
     series_order: null as number | null,
     series_prefix: "" as string,
+    visibility: "public" as "public" | "unlisted" | "private",
   });
   const [hashtagInput, setHashtagInput] = useState("");
   const [maxSeriesOrder, setMaxSeriesOrder] = useState<number | null>(null);
@@ -1359,6 +1360,7 @@ export const TechniquesManagement = () => {
       series_name: "",
       series_order: null,
       series_prefix: "",
+      visibility: "public",
     });
     setHashtagInput("");
     setVideoFile(null);
@@ -1380,6 +1382,7 @@ export const TechniquesManagement = () => {
       series_name: technique.series_name || "",
       series_order: technique.series_order,
       series_prefix: technique.series_prefix || "",
+      visibility: (technique as any).visibility || "public",
     });
     setShowEditDialog(true);
   };
@@ -2273,6 +2276,39 @@ export const TechniquesManagement = () => {
                   ))}
                 </div>
               </div>
+            </div>
+
+            <div>
+              <label className="text-sm font-medium">公開設定</label>
+              <Select
+                value={formData.visibility}
+                onValueChange={(value: "public" | "unlisted" | "private") => setFormData({ ...formData, visibility: value })}
+                disabled={!isAdmin}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="public">
+                    <div className="flex flex-col items-start">
+                      <span>🌍 一般公開</span>
+                      <span className="text-xs text-muted-foreground">誰でも検索・閲覧可能</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="unlisted">
+                    <div className="flex flex-col items-start">
+                      <span>🔗 限定公開</span>
+                      <span className="text-xs text-muted-foreground">URLを知っている人のみ閲覧可能</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="private">
+                    <div className="flex flex-col items-start">
+                      <span>🔒 非公開</span>
+                      <span className="text-xs text-muted-foreground">管理者のみ閲覧可能</span>
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             {isAdmin && (
