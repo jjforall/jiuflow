@@ -116,7 +116,7 @@ const App = () => (
                         <SuspenseWrapper variant="video"><Video /></SuspenseWrapper>
                       </ProtectedRoute>
                     } />
-                    <Route path="list/:slug" element={<SuspenseWrapper variant="map"><VideoList /></SuspenseWrapper>} />
+                    <Route path="lists/:slug" element={<SuspenseWrapper variant="map"><VideoList /></SuspenseWrapper>} />
                     <Route path="video-upload-info" element={
                       <ProtectedRoute>
                         <SuspenseWrapper variant="video"><VideoUploadInfo /></SuspenseWrapper>
@@ -230,6 +230,7 @@ const App = () => (
                   <Route path="/dojo/:id" element={<SuspenseWrapper variant="profile"><Dojo /></SuspenseWrapper>} />
                   <Route path="/athlete/:slugOrUsername" element={<SuspenseWrapper variant="profile"><Athlete /></SuspenseWrapper>} />
                   <Route path="/ryozo" element={<SuspenseWrapper variant="profile"><Athlete /></SuspenseWrapper>} />
+                  <Route path="/lists/:slug" element={<SuspenseWrapper variant="map"><VideoList /></SuspenseWrapper>} />
                   <Route path="/:slugOrUsername" element={<SuspenseWrapper variant="profile"><DojoOrProfile /></SuspenseWrapper>} />
                   <Route path="/practice-records" element={
                     <ProtectedRoute>

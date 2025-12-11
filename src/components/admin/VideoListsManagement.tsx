@@ -302,9 +302,8 @@ export default function VideoListsManagement() {
   };
 
   const getListUrl = (list: VideoList) => {
-    const baseUrl = window.location.origin;
     const slug = list.slug || list.id;
-    return `${baseUrl}/lists/${slug}`;
+    return `https://jiuflow.art/lists/${slug}`;
   };
 
   const copyListUrl = (list: VideoList) => {
