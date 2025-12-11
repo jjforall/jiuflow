@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, Play, Lock } from "lucide-react";
+import { ArrowLeft, Play, Lock, ListVideo, Eye } from "lucide-react";
 import { SEOHead } from "@/components/SEOHead";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/hooks/useAuth";
@@ -148,16 +148,39 @@ export default function VideoList() {
     return false;
   };
 
+  // Get cover image from list or first video
+  const getCoverImage = () => {
+    if (list?.cover_image_url) return list.cover_image_url;
+    if (items.length > 0 && items[0].technique?.thumbnail_url) {
+      return items[0].technique.thumbnail_url;
+    }
+    return null;
+  };
+
+  const getVisibilityLabel = () => {
+    if (!list) return "";
+    switch (list.visibility) {
+      case 'public': return "公開";
+      case 'unlisted': return "限定公開";
+      default: return "";
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
-        <div className="container max-w-4xl mx-auto px-4 py-8">
-          <Skeleton className="h-8 w-48 mb-4" />
-          <Skeleton className="h-4 w-96 mb-8" />
-          <div className="grid gap-4">
-            {[1, 2, 3, 4].map((i) => (
-              <Skeleton key={i} className="h-24 w-full" />
-            ))}
+        <div className="container max-w-6xl mx-auto px-4 py-8">
+          <div className="flex flex-col lg:flex-row gap-8">
+            <div className="lg:w-80 flex-shrink-0">
+              <Skeleton className="aspect-video w-full rounded-lg" />
+              <Skeleton className="h-8 w-48 mt-4" />
+              <Skeleton className="h-4 w-32 mt-2" />
+            </div>
+            <div className="flex-1 space-y-3">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <Skeleton key={i} className="h-20 w-full" />
+              ))}
+            </div>
           </div>
         </div>
       </div>
@@ -180,6 +203,8 @@ export default function VideoList() {
     );
   }
 
+  const coverImage = getCoverImage();
+
   return (
     <>
       <SEOHead
@@ -187,130 +212,181 @@ export default function VideoList() {
         description={getLocalizedDescription() || "JiuFlow動画リスト"}
       />
       <div className="min-h-screen bg-background">
-        <div className="container max-w-4xl mx-auto px-4 py-8">
-          {/* Header */}
-          <div className="mb-8">
-            <Button variant="ghost" asChild className="mb-4">
-              <Link to="/map">
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                テクニックマップへ戻る
-              </Link>
-            </Button>
-            
-            <h1 className="text-3xl font-bold mb-2">{getLocalizedListName()}</h1>
-            {getLocalizedDescription() && (
-              <p className="text-muted-foreground">{getLocalizedDescription()}</p>
-            )}
-            <p className="text-sm text-muted-foreground mt-2">
-              {items.length}本の動画
-            </p>
-          </div>
+        <div className="container max-w-6xl mx-auto px-4 py-8">
+          {/* Back button */}
+          <Button variant="ghost" asChild className="mb-6">
+            <Link to="/map">
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              テクニックマップへ戻る
+            </Link>
+          </Button>
 
-          {/* Video list */}
-          <div className="space-y-3">
-            {items.map((item, index) => {
-              const canView = canViewVideo(item.technique);
-              
-              return (
-                <Card 
-                  key={item.id} 
-                  className={`overflow-hidden transition-colors ${canView ? 'hover:bg-muted/50 cursor-pointer' : 'opacity-75'}`}
-                >
-                  {canView ? (
-                    <Link to={`/video/${item.technique.id}`}>
-                      <CardContent className="p-0">
-                        <div className="flex items-center gap-4">
-                          <div className="relative flex-shrink-0">
-                            <div className="w-32 h-20 bg-muted">
-                              {item.technique.thumbnail_url ? (
-                                <img
-                                  src={item.technique.thumbnail_url}
-                                  alt=""
-                                  className="w-full h-full object-cover"
-                                />
-                              ) : (
-                                <div className="w-full h-full flex items-center justify-center">
-                                  <Play className="w-6 h-6 text-muted-foreground" />
-                                </div>
-                              )}
+          <div className="flex flex-col lg:flex-row gap-8">
+            {/* Left: Hero / Cover section (YouTube style) */}
+            <div className="lg:w-80 flex-shrink-0">
+              <div className="sticky top-24">
+                {/* Cover image with gradient overlay */}
+                <div className="relative aspect-video w-full rounded-lg overflow-hidden bg-muted">
+                  {coverImage ? (
+                    <img
+                      src={coverImage}
+                      alt=""
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/20 to-primary/5">
+                      <ListVideo className="w-12 h-12 text-muted-foreground" />
+                    </div>
+                  )}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                  <div className="absolute bottom-0 left-0 right-0 p-4">
+                    <h1 className="text-xl font-bold text-white line-clamp-2">
+                      {getLocalizedListName()}
+                    </h1>
+                  </div>
+                </div>
+
+                {/* Meta info */}
+                <div className="mt-4 space-y-3">
+                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                    <span className="flex items-center gap-1">
+                      <ListVideo className="w-4 h-4" />
+                      再生リスト
+                    </span>
+                    <span>•</span>
+                    <span>{getVisibilityLabel()}</span>
+                  </div>
+
+                  <div className="text-sm text-muted-foreground">
+                    {items.length}本の動画
+                  </div>
+
+                  {getLocalizedDescription() && (
+                    <p className="text-sm text-muted-foreground line-clamp-4">
+                      {getLocalizedDescription()}
+                    </p>
+                  )}
+
+                  {/* Play all button */}
+                  {items.length > 0 && (
+                    <Button asChild className="w-full mt-4">
+                      <Link to={`/video/${items[0].technique.id}`}>
+                        <Play className="w-4 h-4 mr-2 fill-current" />
+                        すべて再生
+                      </Link>
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Right: Video list */}
+            <div className="flex-1">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-muted-foreground">並べ替え</span>
+                </div>
+              </div>
+
+              {/* Video items */}
+              <div className="space-y-2">
+                {items.map((item, index) => {
+                  const canView = canViewVideo(item.technique);
+                  
+                  return (
+                    <div
+                      key={item.id}
+                      className={`flex items-start gap-3 p-2 rounded-lg transition-colors ${
+                        canView ? 'hover:bg-muted/50' : 'opacity-60'
+                      }`}
+                    >
+                      {/* Index number */}
+                      <div className="w-6 flex-shrink-0 text-center text-sm text-muted-foreground pt-2">
+                        {index + 1}
+                      </div>
+
+                      {/* Thumbnail */}
+                      {canView ? (
+                        <Link 
+                          to={`/video/${item.technique.id}`}
+                          className="relative w-40 aspect-video flex-shrink-0 rounded overflow-hidden bg-muted group"
+                        >
+                          {item.technique.thumbnail_url ? (
+                            <img
+                              src={item.technique.thumbnail_url}
+                              alt=""
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center">
+                              <Play className="w-8 h-8 text-muted-foreground" />
                             </div>
-                            <div className="absolute bottom-1 left-1 bg-black/70 text-white text-xs px-1.5 py-0.5 rounded">
-                              {index + 1}
-                            </div>
+                          )}
+                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                            <Play className="w-10 h-10 text-white opacity-0 group-hover:opacity-100 transition-opacity fill-current" />
                           </div>
-                          
-                          <div className="flex-1 py-3 pr-4">
-                            <div className="flex items-center gap-2 mb-1">
-                              {item.technique.series_prefix && (
-                                <SeriesBadge 
-                                  prefix={item.technique.series_prefix} 
-                                  order={item.technique.series_order || 0}
-                                  className="scale-75 origin-left"
-                                />
-                              )}
+                        </Link>
+                      ) : (
+                        <div className="relative w-40 aspect-video flex-shrink-0 rounded overflow-hidden bg-muted">
+                          {item.technique.thumbnail_url ? (
+                            <img
+                              src={item.technique.thumbnail_url}
+                              alt=""
+                              className="w-full h-full object-cover grayscale"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center">
+                              <Lock className="w-6 h-6 text-muted-foreground" />
                             </div>
-                            <h3 className="font-medium line-clamp-2">
+                          )}
+                          <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+                            <Lock className="w-6 h-6 text-white" />
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Video info */}
+                      <div className="flex-1 min-w-0 py-1">
+                        {canView ? (
+                          <Link to={`/video/${item.technique.id}`}>
+                            <h3 className="font-medium line-clamp-2 hover:text-primary transition-colors">
                               {getLocalizedName(item.technique)}
                             </h3>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Link>
-                  ) : (
-                    <CardContent className="p-0">
-                      <div className="flex items-center gap-4">
-                        <div className="relative flex-shrink-0">
-                          <div className="w-32 h-20 bg-muted">
-                            {item.technique.thumbnail_url ? (
-                              <img
-                                src={item.technique.thumbnail_url}
-                                alt=""
-                                className="w-full h-full object-cover filter grayscale"
-                              />
-                            ) : (
-                              <div className="w-full h-full flex items-center justify-center">
-                                <Lock className="w-6 h-6 text-muted-foreground" />
-                              </div>
-                            )}
-                          </div>
-                          <div className="absolute inset-0 flex items-center justify-center bg-black/40">
-                            <Lock className="w-5 h-5 text-white" />
-                          </div>
-                          <div className="absolute bottom-1 left-1 bg-black/70 text-white text-xs px-1.5 py-0.5 rounded">
-                            {index + 1}
-                          </div>
-                        </div>
-                        
-                        <div className="flex-1 py-3 pr-4">
-                          <div className="flex items-center gap-2 mb-1">
-                            {item.technique.series_prefix && (
-                              <SeriesBadge 
-                                prefix={item.technique.series_prefix} 
-                                order={item.technique.series_order || 0}
-                                className="scale-75 origin-left"
-                              />
-                            )}
-                          </div>
+                          </Link>
+                        ) : (
                           <h3 className="font-medium line-clamp-2 text-muted-foreground">
                             {getLocalizedName(item.technique)}
                           </h3>
+                        )}
+                        
+                        <div className="flex items-center gap-2 mt-1">
+                          {item.technique.series_prefix && (
+                            <SeriesBadge 
+                              prefix={item.technique.series_prefix} 
+                              order={item.technique.series_order || 0}
+                              className="scale-90 origin-left"
+                            />
+                          )}
+                        </div>
+
+                        {!canView && (
                           <p className="text-xs text-muted-foreground mt-1">
                             有料会員限定
                           </p>
-                        </div>
+                        )}
                       </div>
-                    </CardContent>
-                  )}
-                </Card>
-              );
-            })}
-          </div>
+                    </div>
+                  );
+                })}
+              </div>
 
-          {items.length === 0 && (
-            <div className="text-center py-12 text-muted-foreground">
-              このリストには動画がありません
+              {items.length === 0 && (
+                <div className="text-center py-12 text-muted-foreground">
+                  このリストには動画がありません
+                </div>
+              )}
             </div>
-          )}
+          </div>
         </div>
       </div>
     </>

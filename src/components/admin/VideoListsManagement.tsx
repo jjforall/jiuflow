@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, Pencil, Trash2, Eye, EyeOff, Link2, GripVertical, X, Copy, ExternalLink, ChevronDown, ChevronUp } from "lucide-react";
+import { Plus, Pencil, Trash2, Eye, EyeOff, Link2, X, Copy, ExternalLink, ChevronDown, ChevronUp, Play } from "lucide-react";
 import { toast } from "sonner";
 
 interface VideoList {
@@ -90,7 +90,7 @@ export default function VideoListsManagement() {
       toast.error("リストの取得に失敗しました");
       console.error(error);
     } else {
-      // Get items for each list
+      // Get items for each list (up to 10 for preview)
       const listsWithItems = await Promise.all(
         (data || []).map(async (list) => {
           const { data: itemsData, count } = await supabase
@@ -98,7 +98,7 @@ export default function VideoListsManagement() {
             .select("*, technique:technique_id(id, name, name_ja, series_prefix, series_order, thumbnail_url)", { count: "exact" })
             .eq("list_id", list.id)
             .order("display_order", { ascending: true })
-            .limit(5);
+            .limit(10);
           
           const items = (itemsData || []).map((item: any) => ({
             ...item,
@@ -301,6 +301,29 @@ export default function VideoListsManagement() {
     );
   };
 
+  const getListUrl = (list: VideoList) => {
+    const baseUrl = window.location.origin;
+    const slug = list.slug || list.id;
+    return `${baseUrl}/lists/${slug}`;
+  };
+
+  const copyListUrl = (list: VideoList) => {
+    navigator.clipboard.writeText(getListUrl(list));
+    toast.success("URLをコピーしました");
+  };
+
+  const toggleExpanded = (listId: string) => {
+    setExpandedLists(prev => {
+      const next = new Set(prev);
+      if (next.has(listId)) {
+        next.delete(listId);
+      } else {
+        next.add(listId);
+      }
+      return next;
+    });
+  };
+
   const availableTechniques = allTechniques.filter(
     (t) => !listItems.some((item) => item.technique_id === t.id)
   );
@@ -393,71 +416,192 @@ export default function VideoListsManagement() {
         </Dialog>
       </div>
 
-      {/* Lists Table */}
+      {/* YouTube Studio style list view */}
       <Card>
         <CardContent className="p-0">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>リスト名</TableHead>
+                <TableHead className="w-12"></TableHead>
+                <TableHead>動画</TableHead>
                 <TableHead>公開設定</TableHead>
+                <TableHead>日付</TableHead>
                 <TableHead>動画数</TableHead>
-                <TableHead>作成日</TableHead>
                 <TableHead className="text-right">操作</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {lists.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                  <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
                     リストがありません
                   </TableCell>
                 </TableRow>
               ) : (
-                lists.map((list) => (
-                  <TableRow key={list.id}>
-                    <TableCell>
-                      <div>
-                        <div className="font-medium">{list.name_ja || list.name}</div>
-                        {list.description && (
-                          <div className="text-sm text-muted-foreground truncate max-w-xs">
-                            {list.description}
+                lists.map((list) => {
+                  const isExpanded = expandedLists.has(list.id);
+                  const coverItem = list.items?.[0];
+                  
+                  return (
+                    <>
+                      <TableRow key={list.id} className="hover:bg-muted/50">
+                        <TableCell>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => toggleExpanded(list.id)}
+                            disabled={!list.items?.length}
+                          >
+                            {isExpanded ? (
+                              <ChevronUp className="w-4 h-4" />
+                            ) : (
+                              <ChevronDown className="w-4 h-4" />
+                            )}
+                          </Button>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-3">
+                            {/* Cover image / first video thumbnail */}
+                            <div className="relative w-28 h-16 bg-muted rounded overflow-hidden flex-shrink-0">
+                              {list.cover_image_url || coverItem?.technique?.thumbnail_url ? (
+                                <img
+                                  src={list.cover_image_url || coverItem?.technique?.thumbnail_url || ''}
+                                  alt=""
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center">
+                                  <Play className="w-6 h-6 text-muted-foreground" />
+                                </div>
+                              )}
+                              {list.item_count && list.item_count > 0 && (
+                                <div className="absolute bottom-0 right-0 bg-black/80 text-white text-xs px-1.5 py-0.5">
+                                  {list.item_count}本
+                                </div>
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="font-medium truncate">{list.name_ja || list.name}</div>
+                              {list.description && (
+                                <div className="text-sm text-muted-foreground truncate max-w-xs">
+                                  {list.description}
+                                </div>
+                              )}
+                            </div>
                           </div>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell>{getVisibilityBadge(list.visibility)}</TableCell>
-                    <TableCell>{list.item_count || 0}本</TableCell>
-                    <TableCell>
-                      {new Date(list.created_at).toLocaleDateString("ja-JP")}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => openItemsDialog(list)}
-                        >
-                          動画管理
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => openEditDialog(list)}
-                        >
-                          <Pencil className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDelete(list.id)}
-                        >
-                          <Trash2 className="w-4 h-4 text-destructive" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))
+                        </TableCell>
+                        <TableCell>{getVisibilityBadge(list.visibility)}</TableCell>
+                        <TableCell>
+                          <div className="text-sm">
+                            {new Date(list.created_at).toLocaleDateString("ja-JP")}
+                          </div>
+                          <div className="text-xs text-muted-foreground">作成日</div>
+                        </TableCell>
+                        <TableCell>{list.item_count || 0}本</TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => copyListUrl(list)}
+                              title="URLをコピー"
+                            >
+                              <Copy className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => window.open(getListUrl(list), '_blank')}
+                              title="プレビュー"
+                            >
+                              <ExternalLink className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => openItemsDialog(list)}
+                            >
+                              動画管理
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => openEditDialog(list)}
+                            >
+                              <Pencil className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDelete(list.id)}
+                            >
+                              <Trash2 className="w-4 h-4 text-destructive" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                      
+                      {/* Expanded video items */}
+                      {isExpanded && list.items && list.items.length > 0 && (
+                        <TableRow key={`${list.id}-items`}>
+                          <TableCell colSpan={6} className="bg-muted/30 p-0">
+                            <div className="p-4">
+                              <div className="text-sm font-medium mb-3 text-muted-foreground">
+                                再生リストの動画
+                              </div>
+                              <div className="space-y-2">
+                                {list.items.map((item, index) => (
+                                  <div 
+                                    key={item.id}
+                                    className="flex items-center gap-3 p-2 bg-background rounded hover:bg-muted/50"
+                                  >
+                                    <div className="w-6 text-center text-sm text-muted-foreground">
+                                      {index + 1}
+                                    </div>
+                                    <div className="relative w-24 h-14 bg-muted rounded overflow-hidden flex-shrink-0">
+                                      {item.technique?.thumbnail_url ? (
+                                        <img
+                                          src={item.technique.thumbnail_url}
+                                          alt=""
+                                          className="w-full h-full object-cover"
+                                        />
+                                      ) : (
+                                        <div className="w-full h-full flex items-center justify-center">
+                                          <Play className="w-4 h-4 text-muted-foreground" />
+                                        </div>
+                                      )}
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                      <div className="text-sm font-medium truncate">
+                                        {item.technique?.name_ja || item.technique?.name || '動画'}
+                                      </div>
+                                      {item.technique?.series_prefix && (
+                                        <div className="text-xs text-muted-foreground">
+                                          {item.technique.series_prefix}-{item.technique.series_order}
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                ))}
+                                {list.item_count && list.item_count > 10 && (
+                                  <div className="text-center py-2">
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => openItemsDialog(list)}
+                                    >
+                                      他{list.item_count - 10}件を表示
+                                    </Button>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </>
+                  );
+                })
               )}
             </TableBody>
           </Table>
@@ -523,6 +667,28 @@ export default function VideoListsManagement() {
                 </SelectContent>
               </Select>
             </div>
+            
+            {/* URL copy section */}
+            {selectedList && (
+              <div className="pt-2 border-t">
+                <label className="text-sm font-medium">共有URL</label>
+                <div className="flex items-center gap-2 mt-1">
+                  <Input
+                    value={getListUrl(selectedList)}
+                    readOnly
+                    className="text-sm"
+                  />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => copyListUrl(selectedList)}
+                  >
+                    <Copy className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
+            
             <Button onClick={handleUpdate} className="w-full">
               更新
             </Button>
@@ -532,85 +698,112 @@ export default function VideoListsManagement() {
 
       {/* Items Management Dialog */}
       <Dialog open={isItemsDialogOpen} onOpenChange={setIsItemsDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden flex flex-col">
+        <DialogContent className="max-w-3xl max-h-[80vh] overflow-hidden flex flex-col">
           <DialogHeader>
             <DialogTitle>
-              「{selectedList?.name_ja || selectedList?.name}」の動画管理
+              {selectedList?.name_ja || selectedList?.name} の動画管理
             </DialogTitle>
           </DialogHeader>
-          <div className="flex-1 overflow-auto space-y-4">
-            {/* Current items */}
-            <div>
-              <h4 className="font-medium mb-2">リスト内の動画 ({listItems.length}本)</h4>
-              {listItems.length === 0 ? (
-                <p className="text-muted-foreground text-sm">動画がありません</p>
-              ) : (
-                <div className="space-y-2">
-                  {listItems.map((item, index) => (
-                    <div
-                      key={item.id}
-                      className="flex items-center gap-3 p-2 bg-muted rounded-lg"
-                    >
-                      <GripVertical className="w-4 h-4 text-muted-foreground" />
-                      <span className="text-sm font-medium w-8">{index + 1}.</span>
-                      {item.technique?.thumbnail_url && (
-                        <img
-                          src={item.technique.thumbnail_url}
-                          alt=""
-                          className="w-16 h-10 object-cover rounded"
-                        />
-                      )}
-                      <div className="flex-1">
-                        <span className="text-sm">
-                          {item.technique?.series_prefix && (
-                            <span className="text-muted-foreground mr-1">
-                              {item.technique.series_prefix}-{item.technique.series_order}
+          <div className="flex-1 overflow-y-auto">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Current items */}
+              <div className="space-y-2">
+                <h4 className="font-medium text-sm text-muted-foreground">
+                  リスト内の動画 ({listItems.length}本)
+                </h4>
+                <div className="border rounded-lg p-2 max-h-96 overflow-y-auto space-y-1">
+                  {listItems.length === 0 ? (
+                    <p className="text-sm text-muted-foreground p-4 text-center">
+                      動画がありません
+                    </p>
+                  ) : (
+                    listItems.map((item, index) => (
+                      <div
+                        key={item.id}
+                        className="flex items-center gap-2 p-2 bg-muted/50 rounded group"
+                      >
+                        <span className="text-xs text-muted-foreground w-5">{index + 1}</span>
+                        <div className="w-16 h-9 bg-muted rounded overflow-hidden flex-shrink-0">
+                          {item.technique?.thumbnail_url ? (
+                            <img
+                              src={item.technique.thumbnail_url}
+                              alt=""
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center">
+                              <Play className="w-3 h-3 text-muted-foreground" />
+                            </div>
+                          )}
+                        </div>
+                        <span className="flex-1 text-sm truncate">
+                          {item.technique?.name_ja || item.technique?.name || "動画"}
+                        </span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={() => handleRemoveItem(item.id)}
+                        >
+                          <X className="w-4 h-4 text-destructive" />
+                        </Button>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+
+              {/* Available items */}
+              <div className="space-y-2">
+                <h4 className="font-medium text-sm text-muted-foreground">
+                  追加可能な動画 ({availableTechniques.length}本)
+                </h4>
+                <div className="border rounded-lg p-2 max-h-96 overflow-y-auto space-y-1">
+                  {availableTechniques.length === 0 ? (
+                    <p className="text-sm text-muted-foreground p-4 text-center">
+                      追加可能な動画がありません
+                    </p>
+                  ) : (
+                    availableTechniques.map((technique) => (
+                      <div
+                        key={technique.id}
+                        className="flex items-center gap-2 p-2 hover:bg-muted/50 rounded cursor-pointer group"
+                        onClick={() => handleAddItem(technique.id)}
+                      >
+                        <div className="w-16 h-9 bg-muted rounded overflow-hidden flex-shrink-0">
+                          {technique.thumbnail_url ? (
+                            <img
+                              src={technique.thumbnail_url}
+                              alt=""
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center">
+                              <Play className="w-3 h-3 text-muted-foreground" />
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <span className="text-sm truncate block">
+                            {technique.name_ja || technique.name}
+                          </span>
+                          {technique.series_prefix && (
+                            <span className="text-xs text-muted-foreground">
+                              {technique.series_prefix}-{technique.series_order}
                             </span>
                           )}
-                          {item.technique?.name_ja || item.technique?.name}
-                        </span>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <Plus className="w-4 h-4" />
+                        </Button>
                       </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleRemoveItem(item.id)}
-                      >
-                        <X className="w-4 h-4 text-destructive" />
-                      </Button>
-                    </div>
-                  ))}
+                    ))
+                  )}
                 </div>
-              )}
-            </div>
-
-            {/* Add new items */}
-            <div>
-              <h4 className="font-medium mb-2">動画を追加</h4>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-64 overflow-auto">
-                {availableTechniques.map((technique) => (
-                  <div
-                    key={technique.id}
-                    className="flex items-center gap-2 p-2 border rounded-lg hover:bg-muted cursor-pointer"
-                    onClick={() => handleAddItem(technique.id)}
-                  >
-                    {technique.thumbnail_url && (
-                      <img
-                        src={technique.thumbnail_url}
-                        alt=""
-                        className="w-12 h-8 object-cover rounded"
-                      />
-                    )}
-                    <div className="flex-1 text-sm">
-                      {technique.series_prefix && (
-                        <span className="text-muted-foreground mr-1">
-                          {technique.series_prefix}-{technique.series_order}
-                        </span>
-                      )}
-                      {technique.name_ja || technique.name}
-                    </div>
-                    <Plus className="w-4 h-4 text-muted-foreground" />
-                  </div>
-                ))}
               </div>
             </div>
           </div>
