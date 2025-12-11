@@ -214,8 +214,8 @@ async function sendToGoogleAds(data: ConversionData): Promise<void> {
 
     console.log("[GADS] Conversion payload:", JSON.stringify(conversionPayload, null, 2));
 
-    // Step 3: Upload Enhanced Conversion
-    const uploadUrl = `https://googleads.googleapis.com/v17/customers/${customerId}:uploadClickConversions`;
+    // Step 3: Upload Enhanced Conversion (using v16 for stability)
+    const uploadUrl = `https://googleads.googleapis.com/v16/customers/${customerId}:uploadClickConversions`;
     
     console.log(`[GADS] Uploading Enhanced Conversion to ${uploadUrl}`);
     
