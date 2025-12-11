@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { buildSafeIlikeFilter, sanitizeSearchTerm } from "../_shared/search-utils.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -746,7 +747,8 @@ async function executeTool(toolName: string, args: Record<string, unknown>, perm
     const limit = (args.limit as number) || 50;
     const offset = (args.offset as number) || 0;
     let query = supabase.from('celebrities').select('*', { count: 'exact' }).order('display_name').range(offset, offset + limit - 1);
-    if (args.search) query = query.or(`display_name.ilike.%${args.search}%,name_ja.ilike.%${args.search}%`);
+    const celebrityFilter = buildSafeIlikeFilter(['display_name', 'name_ja'], args.search as string);
+    if (celebrityFilter) query = query.or(celebrityFilter);
     const { data, error, count } = await query;
     if (error) throw error;
     return { data, total: count, limit, offset };
@@ -781,7 +783,8 @@ async function executeTool(toolName: string, args: Record<string, unknown>, perm
     const limit = (args.limit as number) || 50;
     const offset = (args.offset as number) || 0;
     let query = supabase.from('tournaments').select('*', { count: 'exact' }).order('date_start', { ascending: false }).range(offset, offset + limit - 1);
-    if (args.search) query = query.or(`name.ilike.%${args.search}%,name_ja.ilike.%${args.search}%`);
+    const tournamentFilter = buildSafeIlikeFilter(['name', 'name_ja'], args.search as string);
+    if (tournamentFilter) query = query.or(tournamentFilter);
     if (args.upcoming) query = query.gte('date_start', new Date().toISOString().split('T')[0]);
     const { data, error, count } = await query;
     if (error) throw error;
@@ -853,7 +856,8 @@ async function executeTool(toolName: string, args: Record<string, unknown>, perm
     const limit = (args.limit as number) || 50;
     const offset = (args.offset as number) || 0;
     let query = supabase.from('venues').select('*', { count: 'exact' }).order('name').range(offset, offset + limit - 1);
-    if (args.search) query = query.or(`name.ilike.%${args.search}%,name_ja.ilike.%${args.search}%,city.ilike.%${args.search}%`);
+    const venueFilter = buildSafeIlikeFilter(['name', 'name_ja', 'city'], args.search as string);
+    if (venueFilter) query = query.or(venueFilter);
     if (args.country) query = query.eq('country', args.country);
     const { data, error, count } = await query;
     if (error) throw error;
@@ -889,7 +893,8 @@ async function executeTool(toolName: string, args: Record<string, unknown>, perm
     const limit = (args.limit as number) || 50;
     const offset = (args.offset as number) || 0;
     let query = supabase.from('techniques').select('*', { count: 'exact' }).order('display_order').range(offset, offset + limit - 1);
-    if (args.search) query = query.or(`name.ilike.%${args.search}%,name_ja.ilike.%${args.search}%`);
+    const techniqueFilter = buildSafeIlikeFilter(['name', 'name_ja'], args.search as string);
+    if (techniqueFilter) query = query.or(techniqueFilter);
     if (args.category) query = query.eq('category', args.category);
     const { data, error, count } = await query;
     if (error) throw error;
@@ -925,7 +930,8 @@ async function executeTool(toolName: string, args: Record<string, unknown>, perm
     const limit = (args.limit as number) || 50;
     const offset = (args.offset as number) || 0;
     let query = supabase.from('dojos').select('*', { count: 'exact' }).order('name').range(offset, offset + limit - 1);
-    if (args.search) query = query.or(`name.ilike.%${args.search}%,name_ja.ilike.%${args.search}%`);
+    const dojoFilter = buildSafeIlikeFilter(['name', 'name_ja'], args.search as string);
+    if (dojoFilter) query = query.or(dojoFilter);
     const { data, error, count } = await query;
     if (error) throw error;
     return { data, total: count, limit, offset };
@@ -960,7 +966,8 @@ async function executeTool(toolName: string, args: Record<string, unknown>, perm
     const limit = (args.limit as number) || 50;
     const offset = (args.offset as number) || 0;
     let query = supabase.from('events').select('*', { count: 'exact' }).order('event_date', { ascending: false }).range(offset, offset + limit - 1);
-    if (args.search) query = query.ilike('title', `%${args.search}%`);
+    const sanitizedEventSearch = sanitizeSearchTerm(args.search as string);
+    if (sanitizedEventSearch) query = query.ilike('title', `%${sanitizedEventSearch}%`);
     if (args.upcoming) query = query.gte('event_date', new Date().toISOString());
     if (args.event_type) query = query.eq('event_type', args.event_type);
     const { data, error, count } = await query;
@@ -997,7 +1004,8 @@ async function executeTool(toolName: string, args: Record<string, unknown>, perm
     const limit = (args.limit as number) || 50;
     const offset = (args.offset as number) || 0;
     let query = supabase.from('music_tracks').select('*', { count: 'exact' }).order('sort_order').range(offset, offset + limit - 1);
-    if (args.search) query = query.ilike('title', `%${args.search}%`);
+    const sanitizedMusicSearch = sanitizeSearchTerm(args.search as string);
+    if (sanitizedMusicSearch) query = query.ilike('title', `%${sanitizedMusicSearch}%`);
     if (args.is_active !== undefined) query = query.eq('is_active', args.is_active);
     const { data, error, count } = await query;
     if (error) throw error;
