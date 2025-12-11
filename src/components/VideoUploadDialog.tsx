@@ -174,12 +174,12 @@ export function VideoUploadDialog({ open, onOpenChange, featuredUserId, featured
         headers: {
           'Tus-Resumable': '1.0.0',
           'Upload-Length': file.size.toString(),
-          'Content-Type': 'application/offset+octet-stream',
         },
       });
 
       if (!createResponse.ok && createResponse.status !== 201) {
-        console.error('TUS create error:', createResponse.status);
+        const errorText = await createResponse.text().catch(() => '');
+        console.error('TUS create error:', createResponse.status, errorText);
         throw new Error('アップロードセッションの作成に失敗しました');
       }
 
