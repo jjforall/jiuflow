@@ -33,6 +33,7 @@ import { TournamentsManagement } from "@/components/admin/TournamentsManagement"
 import { VenuesManagement } from "@/components/admin/VenuesManagement";
 import VideoListsManagement from "@/components/admin/VideoListsManagement";
 import { ApiManagement } from "@/components/admin/ApiManagement";
+import { AdsManagement } from "@/components/admin/AdsManagement";
 
 const AdminDashboard = () => {
   const { signOut } = useAuth();
@@ -221,6 +222,25 @@ const AdminDashboard = () => {
                           </button>
                         ))}
                       </div>
+                      {/* マーケティング */}
+                      <div>
+                        <p className="text-xs font-medium text-muted-foreground px-3 mb-1">マーケティング</p>
+                        {[
+                          { id: "ads", label: "広告管理" },
+                        ].map((item) => (
+                          <button
+                            key={item.id}
+                            onClick={() => setActiveTab(item.id)}
+                            className={`w-full text-left px-3 py-1.5 rounded text-sm ${
+                              activeTab === item.id
+                                ? "bg-primary/10 text-primary font-medium"
+                                : "text-foreground hover:bg-muted"
+                            }`}
+                          >
+                            {item.label}
+                          </button>
+                        ))}
+                      </div>
                       {/* システム */}
                       <div>
                         <p className="text-xs font-medium text-muted-foreground px-3 mb-1">システム</p>
@@ -300,6 +320,7 @@ const AdminDashboard = () => {
                 {activeTab === "music" && <MusicManagement />}
                 {activeTab === "community" && <CommunityManagement />}
                 {activeTab === "weekly-topics" && <WeeklyTopicsManagement />}
+                {activeTab === "ads" && <AdsManagement />}
                 {activeTab === "api" && <ApiManagement />}
                 {activeTab === "settings" && <SettingsManagement />}
               </div>
