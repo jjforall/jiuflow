@@ -87,26 +87,25 @@ Deno.serve(async (req) => {
     }
 
     if (action === "get-upload-url") {
-      // Get TUS upload URL for the video
-      const response = await fetch(
-        `https://video.bunnycdn.com/library/${BUNNY_LIBRARY_ID}/videos/${videoId}`,
-        {
-          method: "GET",
-          headers: {
-            "AccessKey": BUNNY_API_KEY,
-          },
-        }
-      );
+      // Create a signature for TUS upload (expires in 24 hours)
+      const expirationTime = Math.floor(Date.now() / 1000) + 86400;
+      
+      // For Bunny Stream TUS uploads, we need to create an authorization signature
+      // The signature format is: SHA256(library_id + api_key + expiration_time + video_id)
+      const encoder = new TextEncoder();
+      const data = encoder.encode(BUNNY_LIBRARY_ID + BUNNY_API_KEY + expirationTime + videoId);
+      const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      const signature = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 
-      if (!response.ok) {
-        throw new Error(`Failed to get video info: ${response.status}`);
-      }
-
-      // Return the direct upload endpoint
+      // Return TUS upload endpoint with signature
       return new Response(
         JSON.stringify({
-          uploadUrl: `https://video.bunnycdn.com/library/${BUNNY_LIBRARY_ID}/videos/${videoId}`,
-          apiKey: BUNNY_API_KEY,
+          tusEndpoint: `https://video.bunnycdn.com/tusupload`,
+          videoId: videoId,
+          libraryId: BUNNY_LIBRARY_ID,
+          expirationTime: expirationTime,
+          signature: signature,
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );

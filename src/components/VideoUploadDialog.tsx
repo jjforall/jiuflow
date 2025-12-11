@@ -140,7 +140,7 @@ export function VideoUploadDialog({ open, onOpenChange, featuredUserId, featured
       const bunnyVideoId = createData.videoId;
       const libraryId = createData.libraryId;
 
-      // Step 2: Get upload URL and API key
+      // Step 2: Get TUS upload credentials
       setUploadProgress(20);
       const { data: uploadData, error: uploadError } = await supabase.functions.invoke(
         'upload-to-bunny',
@@ -149,25 +149,30 @@ export function VideoUploadDialog({ open, onOpenChange, featuredUserId, featured
         }
       );
 
-      if (uploadError || !uploadData?.uploadUrl) {
-        throw new Error('アップロードURLの取得に失敗しました');
+      if (uploadError || !uploadData?.tusEndpoint) {
+        throw new Error('アップロード情報の取得に失敗しました');
       }
 
-      // Step 3: Upload directly to Bunny Stream
+      // Step 3: Upload using TUS protocol to Bunny Stream
       setUploadProgress(30);
       
-      const uploadResponse = await fetch(uploadData.uploadUrl, {
-        method: 'PUT',
+      const tusUploadUrl = `${uploadData.tusEndpoint}?VideoId=${uploadData.videoId}&LibraryId=${uploadData.libraryId}&Signature=${uploadData.signature}&ExpirationTime=${uploadData.expirationTime}`;
+      
+      // Create upload using TUS protocol
+      const uploadResponse = await fetch(tusUploadUrl, {
+        method: 'POST',
         headers: {
-          'AccessKey': uploadData.apiKey,
-          'Content-Type': 'application/octet-stream',
+          'Tus-Resumable': '1.0.0',
+          'Upload-Length': file.size.toString(),
+          'Content-Type': 'application/offset+octet-stream',
+          'Upload-Offset': '0',
         },
         body: file,
       });
 
       if (!uploadResponse.ok) {
         const errorText = await uploadResponse.text();
-        console.error('Bunny upload error:', errorText);
+        console.error('Bunny TUS upload error:', uploadResponse.status, errorText);
         throw new Error('Bunny.netへのアップロードに失敗しました');
       }
 
