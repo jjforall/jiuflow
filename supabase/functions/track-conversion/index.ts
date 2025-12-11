@@ -127,6 +127,7 @@ async function sendToGoogleAds(data: ConversionData): Promise<void> {
 
   try {
     // First, get access token using refresh token
+    console.log("[GADS] Requesting access token...");
     const tokenResponse = await fetch("https://oauth2.googleapis.com/token", {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -138,11 +139,23 @@ async function sendToGoogleAds(data: ConversionData): Promise<void> {
       }),
     });
     
-    const tokenData = await tokenResponse.json();
+    const tokenText = await tokenResponse.text();
+    console.log(`[GADS] Token response status: ${tokenResponse.status}`);
+    
+    let tokenData;
+    try {
+      tokenData = JSON.parse(tokenText);
+    } catch {
+      console.error("[GADS] Token response is not JSON:", tokenText.substring(0, 200));
+      return;
+    }
+    
     if (!tokenData.access_token) {
       console.log("[GADS] Failed to get access token:", tokenData);
       return;
     }
+    
+    console.log("[GADS] Access token obtained successfully");
 
     const hashedEmail = data.email ? await hashEmail(data.email) : undefined;
     const customerId = accountId.replace(/-/g, "");
@@ -163,6 +176,8 @@ async function sendToGoogleAds(data: ConversionData): Promise<void> {
 
     const uploadUrl = `https://googleads.googleapis.com/v16/customers/${customerId}:uploadClickConversions`;
     
+    console.log(`[GADS] Uploading conversion to ${uploadUrl}`);
+    
     const response = await fetch(uploadUrl, {
       method: "POST",
       headers: {
@@ -173,8 +188,15 @@ async function sendToGoogleAds(data: ConversionData): Promise<void> {
       body: JSON.stringify(conversionPayload),
     });
     
-    const result = await response.json();
-    console.log(`[GADS] Upload result:`, result);
+    const resultText = await response.text();
+    console.log(`[GADS] Upload response status: ${response.status}`);
+    
+    try {
+      const result = JSON.parse(resultText);
+      console.log(`[GADS] Upload result:`, JSON.stringify(result));
+    } catch {
+      console.error("[GADS] Upload response is not JSON:", resultText.substring(0, 500));
+    }
   } catch (error) {
     console.error("[GADS] Error:", error);
   }
