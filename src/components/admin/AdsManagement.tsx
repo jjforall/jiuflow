@@ -8,6 +8,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { 
   TrendingUp, 
@@ -21,7 +24,8 @@ import {
   Play,
   ExternalLink,
   BarChart3,
-  Loader2
+  Loader2,
+  Plus
 } from "lucide-react";
 
 type DateRange = 'today' | 'last7days' | 'last30days' | 'thisMonth';
@@ -90,6 +94,14 @@ const getStatusBadge = (status: string) => {
 export function AdsManagement() {
   const [dateRange, setDateRange] = useState<DateRange>('last30days');
   const [activeTab, setActiveTab] = useState<'overview' | 'google' | 'meta'>('overview');
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [createPlatform, setCreatePlatform] = useState<'google' | 'meta'>('google');
+  const [newCampaign, setNewCampaign] = useState({
+    name: '',
+    dailyBudget: '',
+    objective: 'OUTCOME_TRAFFIC',
+    channelType: 'SEARCH',
+  });
   const queryClient = useQueryClient();
 
   // Google Ads データ取得
@@ -186,6 +198,69 @@ export function AdsManagement() {
     },
   });
 
+  // キャンペーン作成
+  const createGoogleCampaign = useMutation({
+    mutationFn: async (data: { name: string; dailyBudget: number; channelType: string }) => {
+      const { data: result, error } = await supabase.functions.invoke('google-ads-api', {
+        body: { action: 'createCampaign', data }
+      });
+      if (error) throw error;
+      if (result.error) throw new Error(result.error);
+      return result;
+    },
+    onSuccess: () => {
+      toast.success('Google Adsキャンペーンを作成しました');
+      queryClient.invalidateQueries({ queryKey: ['google-ads-campaigns'] });
+      setShowCreateDialog(false);
+      setNewCampaign({ name: '', dailyBudget: '', objective: 'OUTCOME_TRAFFIC', channelType: 'SEARCH' });
+    },
+    onError: (error: Error) => {
+      toast.error(`作成に失敗しました: ${error.message}`);
+    },
+  });
+
+  const createMetaCampaign = useMutation({
+    mutationFn: async (data: { name: string; dailyBudget: number; objective: string }) => {
+      const { data: result, error } = await supabase.functions.invoke('meta-ads-api', {
+        body: { action: 'createCampaign', data }
+      });
+      if (error) throw error;
+      if (result.error) throw new Error(result.error);
+      return result;
+    },
+    onSuccess: () => {
+      toast.success('Meta Adsキャンペーンを作成しました');
+      queryClient.invalidateQueries({ queryKey: ['meta-ads-campaigns'] });
+      setShowCreateDialog(false);
+      setNewCampaign({ name: '', dailyBudget: '', objective: 'OUTCOME_TRAFFIC', channelType: 'SEARCH' });
+    },
+    onError: (error: Error) => {
+      toast.error(`作成に失敗しました: ${error.message}`);
+    },
+  });
+
+  const handleCreateCampaign = () => {
+    const budget = parseFloat(newCampaign.dailyBudget);
+    if (!newCampaign.name || isNaN(budget) || budget <= 0) {
+      toast.error('キャンペーン名と日予算を入力してください');
+      return;
+    }
+
+    if (createPlatform === 'google') {
+      createGoogleCampaign.mutate({
+        name: newCampaign.name,
+        dailyBudget: budget,
+        channelType: newCampaign.channelType,
+      });
+    } else {
+      createMetaCampaign.mutate({
+        name: newCampaign.name,
+        dailyBudget: budget,
+        objective: newCampaign.objective,
+      });
+    }
+  };
+
   const handleRefresh = () => {
     refetchGoogle();
     refetchGooglePerf();
@@ -237,6 +312,97 @@ export function AdsManagement() {
           <Button variant="outline" size="icon" onClick={handleRefresh}>
             <RefreshCw className="h-4 w-4" />
           </Button>
+          <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="h-4 w-4 mr-2" />
+                キャンペーン作成
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>新規キャンペーン作成</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label>プラットフォーム</Label>
+                  <Select value={createPlatform} onValueChange={(v) => setCreatePlatform(v as 'google' | 'meta')}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="google">Google Ads</SelectItem>
+                      <SelectItem value="meta">Meta Ads</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>キャンペーン名</Label>
+                  <Input
+                    value={newCampaign.name}
+                    onChange={(e) => setNewCampaign(prev => ({ ...prev, name: e.target.value }))}
+                    placeholder="キャンペーン名を入力"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>日予算 (円)</Label>
+                  <Input
+                    type="number"
+                    value={newCampaign.dailyBudget}
+                    onChange={(e) => setNewCampaign(prev => ({ ...prev, dailyBudget: e.target.value }))}
+                    placeholder="1000"
+                  />
+                </div>
+                {createPlatform === 'google' ? (
+                  <div className="space-y-2">
+                    <Label>キャンペーンタイプ</Label>
+                    <Select value={newCampaign.channelType} onValueChange={(v) => setNewCampaign(prev => ({ ...prev, channelType: v }))}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="SEARCH">検索</SelectItem>
+                        <SelectItem value="DISPLAY">ディスプレイ</SelectItem>
+                        <SelectItem value="SHOPPING">ショッピング</SelectItem>
+                        <SelectItem value="VIDEO">動画</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <Label>キャンペーン目的</Label>
+                    <Select value={newCampaign.objective} onValueChange={(v) => setNewCampaign(prev => ({ ...prev, objective: v }))}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="OUTCOME_TRAFFIC">トラフィック</SelectItem>
+                        <SelectItem value="OUTCOME_AWARENESS">認知度</SelectItem>
+                        <SelectItem value="OUTCOME_ENGAGEMENT">エンゲージメント</SelectItem>
+                        <SelectItem value="OUTCOME_LEADS">リード</SelectItem>
+                        <SelectItem value="OUTCOME_SALES">売上</SelectItem>
+                        <SelectItem value="OUTCOME_APP_PROMOTION">アプリプロモーション</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setShowCreateDialog(false)}>
+                  キャンセル
+                </Button>
+                <Button 
+                  onClick={handleCreateCampaign}
+                  disabled={createGoogleCampaign.isPending || createMetaCampaign.isPending}
+                >
+                  {(createGoogleCampaign.isPending || createMetaCampaign.isPending) && (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  )}
+                  作成
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
 

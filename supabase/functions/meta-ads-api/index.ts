@@ -162,6 +162,46 @@ async function getAccountInfo(adAccountId: string, accessToken: string) {
   return await response.json();
 }
 
+async function createCampaign(
+  adAccountId: string, 
+  accessToken: string, 
+  name: string, 
+  objective: string, 
+  dailyBudget: number,
+  status: string = 'PAUSED'
+) {
+  const url = `https://graph.facebook.com/${META_API_VERSION}/act_${adAccountId}/campaigns`;
+  
+  // Budget in cents
+  const budgetInCents = Math.round(dailyBudget * 100);
+  
+  const body: Record<string, unknown> = {
+    access_token: accessToken,
+    name,
+    objective: objective.toUpperCase(),
+    status: status.toUpperCase(),
+    special_ad_categories: [],
+  };
+
+  console.log('[META] Creating campaign:', name, 'objective:', objective);
+  
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error('[META] Create campaign error:', errorText);
+    throw new Error(`Failed to create campaign: ${errorText}`);
+  }
+
+  const result = await response.json();
+  console.log('[META] Campaign created:', result.id);
+  return result;
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -217,6 +257,20 @@ serve(async (req) => {
           throw new Error('Campaign ID and daily budget required');
         }
         result = await updateCampaignBudget(adAccountId, accessToken, data.campaignId, data.dailyBudget);
+        break;
+      
+      case 'createCampaign':
+        if (!data?.name || !data?.objective || !data?.dailyBudget) {
+          throw new Error('Name, objective, and daily budget required');
+        }
+        result = await createCampaign(
+          adAccountId, 
+          accessToken, 
+          data.name, 
+          data.objective, 
+          data.dailyBudget,
+          data.status || 'PAUSED'
+        );
         break;
       
       default:
