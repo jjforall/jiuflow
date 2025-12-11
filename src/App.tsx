@@ -61,6 +61,7 @@ const OrganizationDetail = lazy(() => import("./pages/OrganizationDetail"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const Glossary = lazy(() => import("./pages/Glossary"));
 const Blog = lazy(() => import("./pages/Blog"));
+const VideoList = lazy(() => import("./pages/VideoList"));
 
 const queryClient = new QueryClient();
 
@@ -115,6 +116,7 @@ const App = () => (
                         <SuspenseWrapper variant="video"><Video /></SuspenseWrapper>
                       </ProtectedRoute>
                     } />
+                    <Route path="list/:slug" element={<SuspenseWrapper variant="map"><VideoList /></SuspenseWrapper>} />
                     <Route path="video-upload-info" element={
                       <ProtectedRoute>
                         <SuspenseWrapper variant="video"><VideoUploadInfo /></SuspenseWrapper>

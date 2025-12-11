@@ -2880,6 +2880,7 @@ export type Database = {
           name: string
           name_ja: string | null
           name_pt: string | null
+          slug: string | null
           updated_at: string
           visibility: Database["public"]["Enums"]["video_list_visibility"]
         }
@@ -2894,6 +2895,7 @@ export type Database = {
           name: string
           name_ja?: string | null
           name_pt?: string | null
+          slug?: string | null
           updated_at?: string
           visibility?: Database["public"]["Enums"]["video_list_visibility"]
         }
@@ -2908,6 +2910,7 @@ export type Database = {
           name?: string
           name_ja?: string | null
           name_pt?: string | null
+          slug?: string | null
           updated_at?: string
           visibility?: Database["public"]["Enums"]["video_list_visibility"]
         }

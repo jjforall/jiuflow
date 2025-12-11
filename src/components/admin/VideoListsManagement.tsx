@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, Pencil, Trash2, Eye, EyeOff, Link2, GripVertical, X } from "lucide-react";
+import { Plus, Pencil, Trash2, Eye, EyeOff, Link2, GripVertical, X, Copy, ExternalLink, ChevronDown, ChevronUp } from "lucide-react";
 import { toast } from "sonner";
 
 interface VideoList {
@@ -26,6 +26,8 @@ interface VideoList {
   created_at: string;
   updated_at: string;
   item_count?: number;
+  slug: string | null;
+  items?: VideoListItem[];
 }
 
 interface Technique {
@@ -60,6 +62,7 @@ export default function VideoListsManagement() {
   const [selectedList, setSelectedList] = useState<VideoList | null>(null);
   const [listItems, setListItems] = useState<VideoListItem[]>([]);
   const [allTechniques, setAllTechniques] = useState<Technique[]>([]);
+  const [expandedLists, setExpandedLists] = useState<Set<string>>(new Set());
   const [formData, setFormData] = useState({
     name: "",
     name_ja: "",
@@ -68,6 +71,7 @@ export default function VideoListsManagement() {
     description_ja: "",
     description_pt: "",
     visibility: "private" as 'public' | 'unlisted' | 'private',
+    slug: "",
   });
 
   useEffect(() => {
@@ -86,17 +90,25 @@ export default function VideoListsManagement() {
       toast.error("リストの取得に失敗しました");
       console.error(error);
     } else {
-      // Get item counts for each list
-      const listsWithCounts = await Promise.all(
+      // Get items for each list
+      const listsWithItems = await Promise.all(
         (data || []).map(async (list) => {
-          const { count } = await supabase
+          const { data: itemsData, count } = await supabase
             .from("video_list_items")
-            .select("*", { count: "exact", head: true })
-            .eq("list_id", list.id);
-          return { ...list, item_count: count || 0 };
+            .select("*, technique:technique_id(id, name, name_ja, series_prefix, series_order, thumbnail_url)", { count: "exact" })
+            .eq("list_id", list.id)
+            .order("display_order", { ascending: true })
+            .limit(5);
+          
+          const items = (itemsData || []).map((item: any) => ({
+            ...item,
+            technique: item.technique,
+          }));
+          
+          return { ...list, item_count: count || 0, items };
         })
       );
-      setLists(listsWithCounts);
+      setLists(listsWithItems);
     }
     setLoading(false);
   };
