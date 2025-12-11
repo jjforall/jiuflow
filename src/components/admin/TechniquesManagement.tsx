@@ -49,6 +49,8 @@ export const TechniquesManagement = () => {
   const [uploadQueue, setUploadQueue] = useState<UploadProgress[]>([]);
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [isTranslating, setIsTranslating] = useState(false);
+  const [isAutoTranslatingName, setIsAutoTranslatingName] = useState(false);
+  const [isAutoTranslatingDesc, setIsAutoTranslatingDesc] = useState(false);
   const [isGeneratingThumbnails, setIsGeneratingThumbnails] = useState(false);
   const [isBulkUpdating, setIsBulkUpdating] = useState(false);
   const [editingCell, setEditingCell] = useState<{ id: string; field: string } | null>(null);
@@ -517,6 +519,75 @@ export const TechniquesManagement = () => {
     
     fetchMaxSeriesOrder();
   }, [formData.series_prefix]);
+
+  // 日本語から英語・ポルトガル語への自動翻訳
+  const autoTranslateName = async () => {
+    if (!formData.name_ja.trim() || isAutoTranslatingName) return;
+    
+    setIsAutoTranslatingName(true);
+    try {
+      // 英語とポルトガル語に並列翻訳
+      const [enRes, ptRes] = await Promise.all([
+        supabase.functions.invoke('translate-technique', {
+          body: { text: formData.name_ja, targetLang: 'en' }
+        }),
+        supabase.functions.invoke('translate-technique', {
+          body: { text: formData.name_ja, targetLang: 'pt' }
+        })
+      ]);
+      
+      const updates: Partial<typeof formData> = {};
+      if (enRes.data?.translatedText && !formData.name) {
+        updates.name = enRes.data.translatedText;
+      }
+      if (ptRes.data?.translatedText && !formData.name_pt) {
+        updates.name_pt = ptRes.data.translatedText;
+      }
+      
+      if (Object.keys(updates).length > 0) {
+        setFormData(prev => ({ ...prev, ...updates }));
+        toast.success('名前を自動翻訳しました');
+      }
+    } catch (error) {
+      console.error('Auto translation error:', error);
+    } finally {
+      setIsAutoTranslatingName(false);
+    }
+  };
+
+  const autoTranslateDescription = async () => {
+    if (!formData.description_ja.trim() || isAutoTranslatingDesc) return;
+    
+    setIsAutoTranslatingDesc(true);
+    try {
+      const [enRes, ptRes] = await Promise.all([
+        supabase.functions.invoke('translate-technique', {
+          body: { text: formData.description_ja, targetLang: 'en' }
+        }),
+        supabase.functions.invoke('translate-technique', {
+          body: { text: formData.description_ja, targetLang: 'pt' }
+        })
+      ]);
+      
+      const updates: Partial<typeof formData> = {};
+      if (enRes.data?.translatedText && !formData.description) {
+        updates.description = enRes.data.translatedText;
+      }
+      if (ptRes.data?.translatedText && !formData.description_pt) {
+        updates.description_pt = ptRes.data.translatedText;
+      }
+      
+      if (Object.keys(updates).length > 0) {
+        setFormData(prev => ({ ...prev, ...updates }));
+        toast.success('説明を自動翻訳しました');
+      }
+    } catch (error) {
+      console.error('Auto translation error:', error);
+    } finally {
+      setIsAutoTranslatingDesc(false);
+    }
+  };
+
 
   const startEditing = async (id: string, field: string, currentValue: string, technique?: Technique) => {
     if (!isAdmin) return; // Staff cannot edit
@@ -2070,21 +2141,27 @@ export const TechniquesManagement = () => {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className="text-sm font-medium">English Name *</label>
+                <label className="text-sm font-medium flex items-center gap-2">
+                  Japanese Name *
+                  {isAutoTranslatingName && <Loader2 className="h-3 w-3 animate-spin" />}
+                </label>
                 <Input
-                  value={formData.name}
-                  onChange={(e) => setFormData({...formData, name: e.target.value})}
+                  value={formData.name_ja}
+                  onChange={(e) => setFormData({...formData, name_ja: e.target.value})}
+                  onBlur={autoTranslateName}
+                  placeholder="日本語で入力すると自動翻訳"
                   required
                   disabled={!isAdmin}
                 />
               </div>
               <div>
-                <label className="text-sm font-medium">Japanese Name *</label>
+                <label className="text-sm font-medium">English Name *</label>
                 <Input
-                  value={formData.name_ja}
-                  onChange={(e) => setFormData({...formData, name_ja: e.target.value})}
+                  value={formData.name}
+                  onChange={(e) => setFormData({...formData, name: e.target.value})}
+                  placeholder={isAutoTranslatingName ? "翻訳中..." : ""}
                   required
-                  disabled={!isAdmin}
+                  disabled={!isAdmin || isAutoTranslatingName}
                 />
               </div>
               <div>
@@ -2092,8 +2169,9 @@ export const TechniquesManagement = () => {
                 <Input
                   value={formData.name_pt}
                   onChange={(e) => setFormData({...formData, name_pt: e.target.value})}
+                  placeholder={isAutoTranslatingName ? "翻訳中..." : ""}
                   required
-                  disabled={!isAdmin}
+                  disabled={!isAdmin || isAutoTranslatingName}
                 />
               </div>
             </div>
@@ -2188,21 +2266,27 @@ export const TechniquesManagement = () => {
 
             <div className="space-y-4">
               <div>
-                <label className="text-sm font-medium">Description (English)</label>
+                <label className="text-sm font-medium flex items-center gap-2">
+                  説明 (Japanese)
+                  {isAutoTranslatingDesc && <Loader2 className="h-3 w-3 animate-spin" />}
+                </label>
                 <Textarea
-                  value={formData.description}
-                  onChange={(e) => setFormData({...formData, description: e.target.value})}
+                  value={formData.description_ja}
+                  onChange={(e) => setFormData({...formData, description_ja: e.target.value})}
+                  onBlur={autoTranslateDescription}
+                  placeholder="日本語で入力すると自動翻訳"
                   rows={3}
                   disabled={!isAdmin}
                 />
               </div>
               <div>
-                <label className="text-sm font-medium">説明 (Japanese)</label>
+                <label className="text-sm font-medium">Description (English)</label>
                 <Textarea
-                  value={formData.description_ja}
-                  onChange={(e) => setFormData({...formData, description_ja: e.target.value})}
+                  value={formData.description}
+                  onChange={(e) => setFormData({...formData, description: e.target.value})}
+                  placeholder={isAutoTranslatingDesc ? "翻訳中..." : ""}
                   rows={3}
-                  disabled={!isAdmin}
+                  disabled={!isAdmin || isAutoTranslatingDesc}
                 />
               </div>
               <div>
@@ -2210,8 +2294,9 @@ export const TechniquesManagement = () => {
                 <Textarea
                   value={formData.description_pt}
                   onChange={(e) => setFormData({...formData, description_pt: e.target.value})}
+                  placeholder={isAutoTranslatingDesc ? "翻訳中..." : ""}
                   rows={3}
-                  disabled={!isAdmin}
+                  disabled={!isAdmin || isAutoTranslatingDesc}
                 />
               </div>
             </div>
