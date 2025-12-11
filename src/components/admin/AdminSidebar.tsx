@@ -29,6 +29,7 @@ import {
   Layers,
   Store,
   Wrench,
+  Megaphone,
   type LucideIcon,
 } from "lucide-react";
 import {
@@ -134,6 +135,14 @@ const menuGroups: MenuGroup[] = [
     items: [
       { id: "printful", label: "商品管理", icon: ShoppingBag },
       { id: "tips", label: "投げ銭", icon: Gift },
+    ],
+  },
+  {
+    id: "marketing",
+    label: "マーケティング",
+    icon: Megaphone,
+    items: [
+      { id: "ads", label: "広告管理", icon: Megaphone },
     ],
   },
   {
