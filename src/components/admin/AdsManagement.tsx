@@ -33,6 +33,45 @@ import { OneClickAdCreator } from "./OneClickAdCreator";
 
 type DateRange = 'today' | 'last7days' | 'last30days' | 'thisMonth';
 
+// サンプルデータ
+const generateSampleGoogleCampaigns = (): GoogleCampaign[] => [
+  {
+    campaign: { id: 'sample-1', name: 'ブランド認知キャンペーン', status: 'ENABLED', advertisingChannelType: 'DISPLAY' },
+    campaignBudget: { amountMicros: '50000000000' },
+    metrics: { impressions: String(Math.floor(Math.random() * 50000 + 20000)), clicks: String(Math.floor(Math.random() * 2000 + 500)), costMicros: String(Math.floor(Math.random() * 30000000000 + 10000000000)), conversions: Math.floor(Math.random() * 50 + 10), conversionsValue: Math.floor(Math.random() * 100000 + 30000) }
+  },
+  {
+    campaign: { id: 'sample-2', name: '検索広告 - 柔術教室', status: 'ENABLED', advertisingChannelType: 'SEARCH' },
+    campaignBudget: { amountMicros: '30000000000' },
+    metrics: { impressions: String(Math.floor(Math.random() * 30000 + 10000)), clicks: String(Math.floor(Math.random() * 1500 + 300)), costMicros: String(Math.floor(Math.random() * 20000000000 + 5000000000)), conversions: Math.floor(Math.random() * 30 + 5), conversionsValue: Math.floor(Math.random() * 50000 + 15000) }
+  },
+  {
+    campaign: { id: 'sample-3', name: 'YouTube動画広告', status: 'PAUSED', advertisingChannelType: 'VIDEO' },
+    campaignBudget: { amountMicros: '20000000000' },
+    metrics: { impressions: String(Math.floor(Math.random() * 80000 + 30000)), clicks: String(Math.floor(Math.random() * 800 + 200)), costMicros: String(Math.floor(Math.random() * 15000000000 + 3000000000)), conversions: Math.floor(Math.random() * 20 + 3), conversionsValue: Math.floor(Math.random() * 30000 + 10000) }
+  },
+  {
+    campaign: { id: 'sample-4', name: 'リマーケティング', status: 'ENABLED', advertisingChannelType: 'DISPLAY' },
+    campaignBudget: { amountMicros: '15000000000' },
+    metrics: { impressions: String(Math.floor(Math.random() * 25000 + 8000)), clicks: String(Math.floor(Math.random() * 1000 + 200)), costMicros: String(Math.floor(Math.random() * 10000000000 + 2000000000)), conversions: Math.floor(Math.random() * 40 + 8), conversionsValue: Math.floor(Math.random() * 60000 + 20000) }
+  },
+];
+
+const generateSampleMetaCampaigns = (): MetaCampaign[] => [
+  {
+    id: 'meta-1', name: 'Instagram ストーリー広告', status: 'ACTIVE', objective: 'OUTCOME_TRAFFIC', daily_budget: '5000',
+    insights: { data: [{ impressions: String(Math.floor(Math.random() * 40000 + 15000)), clicks: String(Math.floor(Math.random() * 1800 + 400)), spend: String(Math.floor(Math.random() * 25000 + 8000)), reach: String(Math.floor(Math.random() * 35000 + 12000)), cpc: '45', ctr: '3.2' }] }
+  },
+  {
+    id: 'meta-2', name: 'Facebook リード獲得', status: 'ACTIVE', objective: 'OUTCOME_LEADS', daily_budget: '8000',
+    insights: { data: [{ impressions: String(Math.floor(Math.random() * 60000 + 20000)), clicks: String(Math.floor(Math.random() * 2500 + 600)), spend: String(Math.floor(Math.random() * 40000 + 12000)), reach: String(Math.floor(Math.random() * 50000 + 18000)), cpc: '38', ctr: '2.8' }] }
+  },
+  {
+    id: 'meta-3', name: 'カルーセル広告 - 新規会員', status: 'PAUSED', objective: 'OUTCOME_ENGAGEMENT', daily_budget: '3000',
+    insights: { data: [{ impressions: String(Math.floor(Math.random() * 20000 + 8000)), clicks: String(Math.floor(Math.random() * 600 + 150)), spend: String(Math.floor(Math.random() * 12000 + 4000)), reach: String(Math.floor(Math.random() * 18000 + 6000)), cpc: '52', ctr: '2.1' }] }
+  },
+];
+
 interface GoogleCampaign {
   campaign: {
     id: string;
@@ -105,8 +144,12 @@ export function AdsManagement() {
     objective: 'OUTCOME_TRAFFIC',
     channelType: 'SEARCH',
   });
+  const [useSampleData, setUseSampleData] = useState(true);
   const queryClient = useQueryClient();
 
+  // サンプルデータ (API エラー時に使用)
+  const sampleGoogleCampaigns = generateSampleGoogleCampaigns();
+  const sampleMetaCampaigns = generateSampleMetaCampaigns();
   // Google Ads データ取得
   const { data: googleCampaigns, isLoading: googleLoading, error: googleError, refetch: refetchGoogle } = useQuery({
     queryKey: ['google-ads-campaigns'],
@@ -272,28 +315,55 @@ export function AdsManagement() {
     toast.success('データを更新しました');
   };
 
+  // 表示用データ (APIエラー時はサンプルデータを使用)
+  const displayGoogleCampaigns = (googleError || !googleCampaigns?.length) && useSampleData ? sampleGoogleCampaigns : googleCampaigns;
+  const displayMetaCampaigns = (metaError || !metaCampaigns?.length) && useSampleData ? sampleMetaCampaigns : metaCampaigns;
+
   // 集計データ計算
-  const googleTotals = googleCampaigns?.reduce((acc, c) => ({
+  const googleTotals = displayGoogleCampaigns?.reduce((acc, c) => ({
     impressions: acc.impressions + parseInt(c.metrics?.impressions || '0'),
     clicks: acc.clicks + parseInt(c.metrics?.clicks || '0'),
     cost: acc.cost + parseInt(c.metrics?.costMicros || '0') / 1000000,
     conversions: acc.conversions + (c.metrics?.conversions || 0),
   }), { impressions: 0, clicks: 0, cost: 0, conversions: 0 });
 
-  const metaTotals = metaInsights ? {
-    impressions: parseInt(metaInsights.impressions || '0'),
-    clicks: parseInt(metaInsights.clicks || '0'),
-    cost: parseFloat(metaInsights.spend || '0'),
-    reach: parseInt(metaInsights.reach || '0'),
-  } : { impressions: 0, clicks: 0, cost: 0, reach: 0 };
+  const metaTotals = displayMetaCampaigns?.reduce((acc, c) => {
+    const insights = c.insights?.data?.[0];
+    return {
+      impressions: acc.impressions + parseInt(insights?.impressions || '0'),
+      clicks: acc.clicks + parseInt(insights?.clicks || '0'),
+      cost: acc.cost + parseFloat(insights?.spend || '0'),
+      reach: acc.reach + parseInt(insights?.reach || '0'),
+    };
+  }, { impressions: 0, clicks: 0, cost: 0, reach: 0 }) || { impressions: 0, clicks: 0, cost: 0, reach: 0 };
 
   const totalSpend = (googleTotals?.cost || 0) + metaTotals.cost;
   const totalImpressions = (googleTotals?.impressions || 0) + metaTotals.impressions;
   const totalClicks = (googleTotals?.clicks || 0) + metaTotals.clicks;
   const totalCTR = totalImpressions > 0 ? (totalClicks / totalImpressions * 100) : 0;
 
+  const isUsingSampleData = ((googleError || !googleCampaigns?.length) || (metaError || !metaCampaigns?.length)) && useSampleData;
+
   return (
     <div className="space-y-6">
+      {/* Sample Data Banner */}
+      {isUsingSampleData && (
+        <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-full bg-amber-500/20">
+              <BarChart3 className="h-5 w-5 text-amber-600" />
+            </div>
+            <div>
+              <p className="font-medium text-amber-700 dark:text-amber-400">サンプルデータを表示中</p>
+              <p className="text-sm text-muted-foreground">API接続後は実際のデータに切り替わります</p>
+            </div>
+          </div>
+          <Button variant="outline" size="sm" onClick={() => setUseSampleData(!useSampleData)}>
+            {useSampleData ? 'サンプルを非表示' : 'サンプルを表示'}
+          </Button>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
@@ -484,25 +554,15 @@ export function AdsManagement() {
                 <CardTitle className="flex items-center gap-2">
                   <img src="https://www.gstatic.com/images/branding/product/1x/ads_48dp.png" alt="Google Ads" className="h-5 w-5" />
                   Google Ads
+                  {isUsingSampleData && googleError && <Badge variant="outline" className="ml-2 text-xs">サンプル</Badge>}
                 </CardTitle>
                 <CardDescription>
-                  {googleCampaigns?.filter(c => c.campaign.status === 'ENABLED').length || 0} キャンペーン配信中
+                  {displayGoogleCampaigns?.filter(c => c.campaign.status === 'ENABLED').length || 0} キャンペーン配信中
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 {googleLoading ? (
                   <Skeleton className="h-24" />
-                ) : googleError ? (
-                  <div className="text-sm text-destructive space-y-2">
-                    {(googleError as Error).message?.includes('DEVELOPER_TOKEN_NOT_APPROVED') ? (
-                      <>
-                        <p className="font-medium">API アクセス権限エラー</p>
-                        <p>Google Ads API のデベロッパートークンがテストアカウント専用です。本番アカウントにアクセスするには、Google Ads API Center で Basic または Standard アクセスを申請してください。</p>
-                      </>
-                    ) : (
-                      <p>{(googleError as Error).message}</p>
-                    )}
-                  </div>
                 ) : (
                   <div className="space-y-2">
                     <div className="flex justify-between">
@@ -530,16 +590,15 @@ export function AdsManagement() {
                     <path d="M12 2.04c-5.5 0-10 4.49-10 10.02 0 5 3.66 9.15 8.44 9.9v-7H7.9v-2.9h2.54V9.85c0-2.51 1.49-3.89 3.78-3.89 1.09 0 2.23.19 2.23.19v2.47h-1.26c-1.24 0-1.63.77-1.63 1.56v1.88h2.78l-.45 2.9h-2.33v7a10 10 0 0 0 8.44-9.9c0-5.53-4.5-10.02-10-10.02z"/>
                   </svg>
                   Meta Ads
+                  {isUsingSampleData && metaError && <Badge variant="outline" className="ml-2 text-xs">サンプル</Badge>}
                 </CardTitle>
                 <CardDescription>
-                  {metaCampaigns?.filter(c => c.status === 'ACTIVE').length || 0} キャンペーン配信中
+                  {displayMetaCampaigns?.filter(c => c.status === 'ACTIVE').length || 0} キャンペーン配信中
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 {metaLoading ? (
                   <Skeleton className="h-24" />
-                ) : metaError ? (
-                  <p className="text-sm text-destructive">{(metaError as Error).message}</p>
                 ) : (
                   <div className="space-y-2">
                     <div className="flex justify-between">
@@ -604,21 +663,17 @@ export function AdsManagement() {
         <TabsContent value="google" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Google Ads キャンペーン</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                Google Ads キャンペーン
+                {isUsingSampleData && googleError && <Badge variant="outline" className="text-xs">サンプル</Badge>}
+              </CardTitle>
             </CardHeader>
             <CardContent>
               {googleLoading ? (
                 <div className="space-y-2">
                   {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-12" />)}
                 </div>
-              ) : googleError ? (
-                <div className="text-center py-8">
-                  <p className="text-destructive mb-2">{(googleError as Error).message}</p>
-                  <Button variant="outline" size="sm" onClick={() => refetchGoogle()}>
-                    再試行
-                  </Button>
-                </div>
-              ) : !googleCampaigns?.length ? (
+              ) : !displayGoogleCampaigns?.length ? (
                 <p className="text-center py-8 text-muted-foreground">キャンペーンがありません</p>
               ) : (
                 <Table>
@@ -633,7 +688,7 @@ export function AdsManagement() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {googleCampaigns.map((campaign) => (
+                    {displayGoogleCampaigns.map((campaign) => (
                       <TableRow key={campaign.campaign.id}>
                         <TableCell className="font-medium">{campaign.campaign.name}</TableCell>
                         <TableCell>{getStatusBadge(campaign.campaign.status)}</TableCell>
@@ -650,7 +705,7 @@ export function AdsManagement() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            disabled={updateGoogleStatus.isPending}
+                            disabled={updateGoogleStatus.isPending || isUsingSampleData}
                             onClick={() => updateGoogleStatus.mutate({
                               campaignId: campaign.campaign.id,
                               status: campaign.campaign.status === 'ENABLED' ? 'PAUSED' : 'ENABLED'
@@ -677,21 +732,17 @@ export function AdsManagement() {
         <TabsContent value="meta" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Meta Ads キャンペーン</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                Meta Ads キャンペーン
+                {isUsingSampleData && metaError && <Badge variant="outline" className="text-xs">サンプル</Badge>}
+              </CardTitle>
             </CardHeader>
             <CardContent>
               {metaLoading ? (
                 <div className="space-y-2">
                   {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-12" />)}
                 </div>
-              ) : metaError ? (
-                <div className="text-center py-8">
-                  <p className="text-destructive mb-2">{(metaError as Error).message}</p>
-                  <Button variant="outline" size="sm" onClick={() => refetchMeta()}>
-                    再試行
-                  </Button>
-                </div>
-              ) : !metaCampaigns?.length ? (
+              ) : !displayMetaCampaigns?.length ? (
                 <p className="text-center py-8 text-muted-foreground">キャンペーンがありません</p>
               ) : (
                 <Table>
@@ -706,7 +757,7 @@ export function AdsManagement() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {metaCampaigns.map((campaign) => {
+                    {displayMetaCampaigns.map((campaign) => {
                       const insights = campaign.insights?.data?.[0];
                       return (
                         <TableRow key={campaign.id}>
@@ -723,7 +774,7 @@ export function AdsManagement() {
                             <Button
                               variant="ghost"
                               size="sm"
-                              disabled={updateMetaStatus.isPending}
+                              disabled={updateMetaStatus.isPending || isUsingSampleData}
                               onClick={() => updateMetaStatus.mutate({
                                 campaignId: campaign.id,
                                 status: campaign.status === 'ACTIVE' ? 'PAUSED' : 'ACTIVE'
