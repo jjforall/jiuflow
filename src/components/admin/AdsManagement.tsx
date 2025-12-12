@@ -25,8 +25,10 @@ import {
   ExternalLink,
   BarChart3,
   Loader2,
-  Plus
+  Plus,
+  Zap
 } from "lucide-react";
+import { OneClickAdCreator } from "./OneClickAdCreator";
 
 type DateRange = 'today' | 'last7days' | 'last30days' | 'thisMonth';
 
@@ -93,7 +95,7 @@ const getStatusBadge = (status: string) => {
 
 export function AdsManagement() {
   const [dateRange, setDateRange] = useState<DateRange>('last30days');
-  const [activeTab, setActiveTab] = useState<'overview' | 'google' | 'meta'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'google' | 'meta' | 'oneclick'>('overview');
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [createPlatform, setCreatePlatform] = useState<'google' | 'meta'>('google');
   const [newCampaign, setNewCampaign] = useState({
@@ -467,6 +469,10 @@ export function AdsManagement() {
           <TabsTrigger value="overview">概要</TabsTrigger>
           <TabsTrigger value="google">Google Ads</TabsTrigger>
           <TabsTrigger value="meta">Meta Ads</TabsTrigger>
+          <TabsTrigger value="oneclick" className="flex items-center gap-1">
+            <Zap className="h-3 w-3" />
+            AI出稿
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-4">
@@ -709,6 +715,11 @@ export function AdsManagement() {
               )}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* One-Click Ad Creator Tab */}
+        <TabsContent value="oneclick">
+          <OneClickAdCreator />
         </TabsContent>
       </Tabs>
     </div>
