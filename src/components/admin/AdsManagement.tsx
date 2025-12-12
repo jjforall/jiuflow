@@ -492,7 +492,16 @@ export function AdsManagement() {
                 {googleLoading ? (
                   <Skeleton className="h-24" />
                 ) : googleError ? (
-                  <p className="text-sm text-destructive">{(googleError as Error).message}</p>
+                  <div className="text-sm text-destructive space-y-2">
+                    {(googleError as Error).message?.includes('DEVELOPER_TOKEN_NOT_APPROVED') ? (
+                      <>
+                        <p className="font-medium">API アクセス権限エラー</p>
+                        <p>Google Ads API のデベロッパートークンがテストアカウント専用です。本番アカウントにアクセスするには、Google Ads API Center で Basic または Standard アクセスを申請してください。</p>
+                      </>
+                    ) : (
+                      <p>{(googleError as Error).message}</p>
+                    )}
+                  </div>
                 ) : (
                   <div className="space-y-2">
                     <div className="flex justify-between">

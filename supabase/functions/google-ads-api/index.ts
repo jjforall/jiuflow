@@ -71,6 +71,12 @@ async function getCampaigns(accessToken: string, customerId: string, developerTo
   if (!response.ok) {
     const errorText = await response.text();
     console.error('[GADS] Campaign fetch error:', errorText);
+    
+    // Check for developer token not approved error
+    if (errorText.includes('DEVELOPER_TOKEN_NOT_APPROVED')) {
+      throw new Error('DEVELOPER_TOKEN_NOT_APPROVED: Your Google Ads API developer token only has test account access. Apply for Basic or Standard access in Google Ads API Center to use production accounts.');
+    }
+    
     throw new Error(`Failed to fetch campaigns: ${errorText}`);
   }
 
@@ -142,6 +148,12 @@ async function getAccountPerformance(accessToken: string, customerId: string, de
   if (!response.ok) {
     const errorText = await response.text();
     console.error('[GADS] Performance fetch error:', errorText);
+    
+    // Check for developer token not approved error
+    if (errorText.includes('DEVELOPER_TOKEN_NOT_APPROVED')) {
+      throw new Error('DEVELOPER_TOKEN_NOT_APPROVED: Your Google Ads API developer token only has test account access. Apply for Basic or Standard access in Google Ads API Center to use production accounts.');
+    }
+    
     throw new Error(`Failed to fetch performance: ${errorText}`);
   }
 
