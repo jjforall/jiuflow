@@ -26,7 +26,8 @@ import {
   BarChart3,
   Loader2,
   Plus,
-  Zap
+  Zap,
+  Sparkles
 } from "lucide-react";
 import { OneClickAdCreator } from "./OneClickAdCreator";
 
@@ -525,7 +526,9 @@ export function AdsManagement() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <img src="https://static.xx.fbcdn.net/rsrc.php/yD/r/d4ZIVX-5C-b.ico" alt="Meta" className="h-5 w-5" />
+                  <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2.04c-5.5 0-10 4.49-10 10.02 0 5 3.66 9.15 8.44 9.9v-7H7.9v-2.9h2.54V9.85c0-2.51 1.49-3.89 3.78-3.89 1.09 0 2.23.19 2.23.19v2.47h-1.26c-1.24 0-1.63.77-1.63 1.56v1.88h2.78l-.45 2.9h-2.33v7a10 10 0 0 0 8.44-9.9c0-5.53-4.5-10.02-10-10.02z"/>
+                  </svg>
                   Meta Ads
                 </CardTitle>
                 <CardDescription>
@@ -556,6 +559,25 @@ export function AdsManagement() {
               </CardContent>
             </Card>
           </div>
+
+          {/* AI One-Click Ad Banner */}
+          <Card className="bg-gradient-to-r from-primary/10 via-primary/5 to-transparent border-primary/20">
+            <CardContent className="flex items-center justify-between py-6">
+              <div className="flex items-center gap-4">
+                <div className="p-3 rounded-full bg-primary/10">
+                  <Zap className="h-6 w-6 text-primary" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-lg">AIワンクリック広告出稿</h3>
+                  <p className="text-sm text-muted-foreground">商品情報を入力するだけで、AIが広告文を自動生成して出稿します</p>
+                </div>
+              </div>
+              <Button onClick={() => setActiveTab('oneclick')} className="gap-2">
+                <Sparkles className="h-4 w-4" />
+                今すぐ作成
+              </Button>
+            </CardContent>
+          </Card>
 
           {/* Quick Links */}
           <Card>
