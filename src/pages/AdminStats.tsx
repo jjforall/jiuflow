@@ -49,6 +49,7 @@ const AdminStats = () => {
   const [topVideos, setTopVideos] = useState<TopVideo[]>([]);
   const [topViewers, setTopViewers] = useState<TopViewer[]>([]);
   const [videoStatsLoading, setVideoStatsLoading] = useState(true);
+  const [viewersLimit, setViewersLimit] = useState(10);
 
   useEffect(() => {
     fetchStats();
@@ -184,7 +185,7 @@ const AdminStats = () => {
       });
 
       topViewersData.sort((a, b) => b.total_views - a.total_views);
-      setTopViewers(topViewersData.slice(0, 10));
+      setTopViewers(topViewersData);
 
       setVideoStatsLoading(false);
     } catch (error) {
@@ -482,9 +483,21 @@ const AdminStats = () => {
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
                     <CardTitle className="text-base font-medium flex items-center gap-2">
                       <User className="h-5 w-5 text-primary" />
-                      アクティブ視聴者 TOP 10
+                      アクティブ視聴者 TOP {viewersLimit}
                     </CardTitle>
-                    <Badge variant="secondary">{topViewers.length} ユーザー</Badge>
+                    <div className="flex items-center gap-2">
+                      <select 
+                        value={viewersLimit} 
+                        onChange={(e) => setViewersLimit(Number(e.target.value))}
+                        className="text-xs border rounded px-2 py-1 bg-background"
+                      >
+                        <option value={10}>10件</option>
+                        <option value={20}>20件</option>
+                        <option value={50}>50件</option>
+                        <option value={100}>100件</option>
+                      </select>
+                      <Badge variant="secondary">{Math.min(topViewers.length, viewersLimit)} / {topViewers.length} ユーザー</Badge>
+                    </div>
                   </CardHeader>
                   <CardContent>
                     <ScrollArea className="h-[400px] pr-4">
@@ -506,7 +519,7 @@ const AdminStats = () => {
                         <p className="text-muted-foreground text-center py-8">視聴データがありません</p>
                       ) : (
                         <div className="space-y-3">
-                          {topViewers.map((viewer, index) => (
+                          {topViewers.slice(0, viewersLimit).map((viewer, index) => (
                             <div 
                               key={viewer.user_id} 
                               className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors"
