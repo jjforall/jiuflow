@@ -145,3 +145,6 @@ verify_jwt = false
 
 [functions.generate-ad-content]
 verify_jwt = true
+
+[functions.line-webhook]
+verify_jwt = false

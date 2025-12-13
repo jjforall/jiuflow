@@ -30,6 +30,7 @@ import {
   Store,
   Wrench,
   Megaphone,
+  MessageCircle,
   type LucideIcon,
 } from "lucide-react";
 import {
@@ -143,6 +144,7 @@ const menuGroups: MenuGroup[] = [
     icon: Megaphone,
     items: [
       { id: "ads", label: "広告管理", icon: Megaphone },
+      { id: "line", label: "LINE連携", icon: MessageCircle },
     ],
   },
   {
