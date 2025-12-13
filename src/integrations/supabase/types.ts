@@ -1451,6 +1451,7 @@ export type Database = {
           enabled: boolean
           groq_model: string
           id: string
+          lovable_model: string
           system_prompt: string
           updated_at: string
         }
@@ -1460,6 +1461,7 @@ export type Database = {
           enabled?: boolean
           groq_model?: string
           id?: string
+          lovable_model?: string
           system_prompt?: string
           updated_at?: string
         }
@@ -1469,6 +1471,7 @@ export type Database = {
           enabled?: boolean
           groq_model?: string
           id?: string
+          lovable_model?: string
           system_prompt?: string
           updated_at?: string
         }

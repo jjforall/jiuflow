@@ -31,6 +31,7 @@ interface LineSettings {
   ai_provider: 'lovable' | 'groq';
   system_prompt: string;
   groq_model: string;
+  lovable_model: string;
 }
 
 interface ChatLog {
@@ -50,6 +51,16 @@ const GROQ_MODELS = [
   { value: 'gemma2-9b-it', label: 'Gemma 2 9B' },
 ];
 
+const LOVABLE_MODELS = [
+  { value: 'google/gemini-3-pro-preview', label: 'Gemini 3 Pro (最新)', description: '次世代モデル' },
+  { value: 'google/gemini-2.5-pro', label: 'Gemini 2.5 Pro', description: '最高精度・複雑な推論' },
+  { value: 'google/gemini-2.5-flash', label: 'Gemini 2.5 Flash', description: 'バランス型（推奨）' },
+  { value: 'google/gemini-2.5-flash-lite', label: 'Gemini 2.5 Flash Lite', description: '高速・軽量' },
+  { value: 'openai/gpt-5', label: 'GPT-5', description: '高精度・長文対応' },
+  { value: 'openai/gpt-5-mini', label: 'GPT-5 Mini', description: 'コスト効率型' },
+  { value: 'openai/gpt-5-nano', label: 'GPT-5 Nano', description: '最高速' },
+];
+
 const DEFAULT_SYSTEM_PROMPT = `あなたはJiuFlowのアシスタントです。柔術に関する質問に日本語で答えてください。
 
 以下の機能を持っています：
@@ -66,7 +77,8 @@ export default function LineIntegrationManagement() {
     enabled: true,
     ai_provider: 'lovable',
     system_prompt: DEFAULT_SYSTEM_PROMPT,
-    groq_model: 'llama-3.3-70b-versatile'
+    groq_model: 'llama-3.3-70b-versatile',
+    lovable_model: 'google/gemini-2.5-flash'
   });
   const [chatLogs, setChatLogs] = useState<ChatLog[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -265,7 +277,7 @@ export default function LineIntegrationManagement() {
                     <SelectItem value="lovable">
                       <div className="flex items-center gap-2">
                         <Bot className="h-4 w-4 text-primary" />
-                        Lovable AI (Gemini 2.5 Flash)
+                        Lovable AI
                       </div>
                     </SelectItem>
                     <SelectItem value="groq">
@@ -282,6 +294,31 @@ export default function LineIntegrationManagement() {
                     : 'Groqは高速なLLM推論を提供します'}
                 </p>
               </div>
+
+              {/* Lovable Model */}
+              {settings.ai_provider === 'lovable' && (
+                <div className="space-y-2">
+                  <Label>Lovable AIモデル</Label>
+                  <Select
+                    value={settings.lovable_model}
+                    onValueChange={(value) => setSettings({ ...settings, lovable_model: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {LOVABLE_MODELS.map((model) => (
+                        <SelectItem key={model.value} value={model.value}>
+                          <div className="flex flex-col">
+                            <span>{model.label}</span>
+                            <span className="text-xs text-muted-foreground">{model.description}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
 
               {/* Groq Model */}
               {settings.ai_provider === 'groq' && (

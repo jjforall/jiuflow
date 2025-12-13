@@ -48,7 +48,8 @@ async function getLineSettings() {
       enabled: true,
       ai_provider: 'lovable',
       system_prompt: 'あなたはJiuFlowのアシスタントです。柔術に関する質問に日本語で答えてください。MCPサーバーの機能を使って、選手情報、大会情報、テクニック情報などを検索・管理できます。',
-      groq_model: 'llama-3.3-70b-versatile'
+      groq_model: 'llama-3.3-70b-versatile',
+      lovable_model: 'google/gemini-2.5-flash'
     };
   }
   
@@ -56,8 +57,8 @@ async function getLineSettings() {
 }
 
 // Call Lovable AI
-async function callLovableAI(message: string, systemPrompt: string) {
-  console.log('Calling Lovable AI with message:', message);
+async function callLovableAI(message: string, systemPrompt: string, model: string) {
+  console.log('Calling Lovable AI with message:', message, 'model:', model);
   
   const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
     method: 'POST',
@@ -66,7 +67,7 @@ async function callLovableAI(message: string, systemPrompt: string) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: 'google/gemini-2.5-flash',
+      model: model || 'google/gemini-2.5-flash',
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: message }
@@ -223,6 +224,7 @@ serve(async (req) => {
             ai_provider: settings.ai_provider,
             system_prompt: settings.system_prompt,
             groq_model: settings.groq_model,
+            lovable_model: settings.lovable_model,
             updated_at: new Date().toISOString()
           })
           .eq('id', existing.id);
@@ -233,7 +235,8 @@ serve(async (req) => {
             enabled: settings.enabled,
             ai_provider: settings.ai_provider,
             system_prompt: settings.system_prompt,
-            groq_model: settings.groq_model
+            groq_model: settings.groq_model,
+            lovable_model: settings.lovable_model
           });
       }
       
@@ -304,7 +307,7 @@ serve(async (req) => {
             if (provider === 'groq') {
               aiResponse = await callGroqAI(userMessage, settings.system_prompt, settings.groq_model);
             } else {
-              aiResponse = await callLovableAI(userMessage, settings.system_prompt);
+              aiResponse = await callLovableAI(userMessage, settings.system_prompt, settings.lovable_model);
             }
             
             // Log the conversation
