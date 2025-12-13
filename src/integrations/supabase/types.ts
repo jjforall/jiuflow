@@ -1417,6 +1417,33 @@ export type Database = {
         }
         Relationships: []
       }
+      line_chat_logs: {
+        Row: {
+          ai_provider: string
+          ai_response: string
+          created_at: string
+          id: string
+          user_id: string
+          user_message: string
+        }
+        Insert: {
+          ai_provider?: string
+          ai_response: string
+          created_at?: string
+          id?: string
+          user_id: string
+          user_message: string
+        }
+        Update: {
+          ai_provider?: string
+          ai_response?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+          user_message?: string
+        }
+        Relationships: []
+      }
       line_settings: {
         Row: {
           ai_provider: string
