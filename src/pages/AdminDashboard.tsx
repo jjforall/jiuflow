@@ -35,6 +35,7 @@ import VideoListsManagement from "@/components/admin/VideoListsManagement";
 import { ApiManagement } from "@/components/admin/ApiManagement";
 import { AdsManagement } from "@/components/admin/AdsManagement";
 import LineIntegrationManagement from "@/components/admin/LineIntegrationManagement";
+import McpChatManagement from "@/components/admin/McpChatManagement";
 
 const AdminDashboard = () => {
   const { signOut } = useAuth();
@@ -250,6 +251,7 @@ const AdminDashboard = () => {
                           { id: "logs", label: "ログ" },
                           { id: "api", label: "API管理" },
                           { id: "line", label: "LINE連携" },
+                          { id: "mcp-chat", label: "MCP チャット" },
                           { id: "settings", label: "設定" },
                         ].map((item) => (
                           <button
@@ -324,6 +326,7 @@ const AdminDashboard = () => {
                 {activeTab === "weekly-topics" && <WeeklyTopicsManagement />}
                 {activeTab === "ads" && <AdsManagement />}
                 {activeTab === "line" && <LineIntegrationManagement />}
+                {activeTab === "mcp-chat" && <McpChatManagement />}
                 {activeTab === "api" && <ApiManagement />}
                 {activeTab === "settings" && <SettingsManagement />}
               </div>
