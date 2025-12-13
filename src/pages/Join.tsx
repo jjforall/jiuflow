@@ -734,9 +734,9 @@ const Join = () => {
                     <div className="flex-1">
                       <ul className="space-y-3 text-base font-light">
                         <li className="flex items-start">
-                          <span className="mr-3 text-green-500 text-xl">✓</span>
-                          <span>{language === "ja" ? "毎日1本の動画視聴" : language === "pt" ? "1 vídeo por dia" : "1 video per day"}</span>
-                        </li>
+737:                           <span className="mr-3 text-green-500 text-xl">✓</span>
+738:                           <span>{language === "ja" ? "月1本の動画視聴" : language === "pt" ? "1 vídeo por mês" : "1 video per month"}</span>
+739:                         </li>
                         <li className="flex items-start">
                           <span className="mr-3 text-green-500 text-xl">✓</span>
                           <span>{language === "ja" ? "動画ストレージ100GB無料" : language === "pt" ? "100GB de armazenamento grátis" : "100GB video storage free"}</span>
