@@ -71,20 +71,26 @@ serve(async (req) => {
     };
     sessionConfig.payment_method_collection = 'always';
 
-    // Referrer codes that grant access to the 980 JPY/month Founder plan
+    // Referrer codes that grant access to the special Founder plan
     const REFERRER_CODES = ["MURATABJJ", "YUKIBJJ"];
-    const FOUNDER_REFERRAL_PRICE_ID = "price_1SR3ZmDqLakc8NxkNdqL5BtO"; // 980 JPY/month
+    const FOUNDER_REFERRAL_PRICE_ID_980 = "price_1SR3ZmDqLakc8NxkNdqL5BtO"; // 980 JPY/month (until Dec 2025)
+    const FOUNDER_REFERRAL_PRICE_ID_1480 = "price_1Sdu0rDqLakc8NxkBt73C3DL"; // 1480 JPY/month (from Jan 2026)
 
     // Check if referralCode is a special referrer code
     const isReferrerCode = referralCode && REFERRER_CODES.includes(referralCode.toUpperCase());
     
-    // If it's a referrer code, override the priceId to the 980 JPY plan
+    // If it's a referrer code, override the priceId based on date
     if (isReferrerCode) {
+      const now = new Date();
+      const jan2026 = new Date("2026-01-01T00:00:00+09:00"); // JST
+      const referralPriceId = now >= jan2026 ? FOUNDER_REFERRAL_PRICE_ID_1480 : FOUNDER_REFERRAL_PRICE_ID_980;
+      const priceAmount = now >= jan2026 ? "1480" : "980";
+      
       sessionConfig.line_items = [{
-        price: FOUNDER_REFERRAL_PRICE_ID,
+        price: referralPriceId,
         quantity: 1,
       }];
-      console.log("Referrer code detected, switching to Founder plan (980 JPY/month):", referralCode);
+      console.log(`Referrer code detected, switching to Founder plan (${priceAmount} JPY/month):`, referralCode);
     }
 
     const actualCouponId = couponCode || (!isReferrerCode ? referralCode : null);
