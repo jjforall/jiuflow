@@ -22,17 +22,28 @@ import {
   Terminal
 } from 'lucide-react';
 
+interface ToolCallDebug {
+  name: string;
+  args: Record<string, unknown>;
+  result: string;
+}
+
+interface DebugInfo {
+  requestTime: number;
+  toolsUsed?: string[];
+  toolCalls?: ToolCallDebug[];
+  aiCalls?: number;
+  rawResponses?: Array<{ type: string; hasToolCalls: boolean; contentLength: number }>;
+  error?: string;
+}
+
 interface Message {
   id: string;
   role: 'user' | 'assistant';
   content: string;
   provider?: string;
   timestamp: Date;
-  debugInfo?: {
-    requestTime: number;
-    toolsUsed?: string[];
-    error?: string;
-  };
+  debugInfo?: DebugInfo;
 }
 
 const AI_PROVIDERS = [
@@ -164,6 +175,7 @@ export default function McpChatManagement() {
         throw new Error(response.error.message || 'Failed to get response');
       }
 
+      const debugData = response.data.debug || {};
       const assistantMessage: Message = {
         id: crypto.randomUUID(),
         role: 'assistant',
@@ -172,7 +184,10 @@ export default function McpChatManagement() {
         timestamp: new Date(),
         debugInfo: {
           requestTime,
-          toolsUsed: response.data.toolsUsed,
+          toolsUsed: debugData.toolsUsed,
+          toolCalls: debugData.toolCalls,
+          aiCalls: debugData.aiCalls,
+          rawResponses: debugData.rawResponses,
         },
       };
 
@@ -335,18 +350,77 @@ export default function McpChatManagement() {
                           <p className="text-xs opacity-70 mt-1">{message.provider}</p>
                         )}
                         {showDebugInfo && message.debugInfo && (
-                          <div className="mt-2 pt-2 border-t border-border/50">
+                          <div className="mt-2 pt-2 border-t border-border/50 space-y-2">
                             <div className="flex items-center gap-1 text-xs opacity-70">
                               <Terminal className="h-3 w-3" />
-                              <span>Debug</span>
+                              <span>Debug Info</span>
                             </div>
-                            <div className="text-xs font-mono mt-1 space-y-0.5">
-                              <p>応答時間: {message.debugInfo.requestTime}ms</p>
+                            <div className="text-xs font-mono space-y-1 bg-background/30 rounded p-2">
+                              <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+                                <span className="text-muted-foreground">応答時間:</span>
+                                <span>{message.debugInfo.requestTime}ms</span>
+                                
+                                {message.debugInfo.aiCalls !== undefined && (
+                                  <>
+                                    <span className="text-muted-foreground">AI呼び出し回数:</span>
+                                    <span>{message.debugInfo.aiCalls}回</span>
+                                  </>
+                                )}
+                              </div>
+                              
                               {message.debugInfo.toolsUsed && message.debugInfo.toolsUsed.length > 0 && (
-                                <p>使用ツール: {message.debugInfo.toolsUsed.join(', ')}</p>
+                                <div className="pt-1 border-t border-border/30">
+                                  <span className="text-muted-foreground">使用ツール:</span>
+                                  <div className="flex flex-wrap gap-1 mt-1">
+                                    {message.debugInfo.toolsUsed.map((tool, i) => (
+                                      <Badge key={i} variant="outline" className="text-xs py-0">
+                                        {tool}
+                                      </Badge>
+                                    ))}
+                                  </div>
+                                </div>
                               )}
+                              
+                              {message.debugInfo.toolCalls && message.debugInfo.toolCalls.length > 0 && (
+                                <div className="pt-1 border-t border-border/30 space-y-2">
+                                  <span className="text-muted-foreground">ツール詳細:</span>
+                                  {message.debugInfo.toolCalls.map((tc, i) => (
+                                    <div key={i} className="bg-background/50 rounded p-2 space-y-1">
+                                      <div className="flex items-center gap-2">
+                                        <Badge variant="secondary" className="text-xs py-0">{tc.name}</Badge>
+                                      </div>
+                                      <div>
+                                        <span className="text-muted-foreground">引数: </span>
+                                        <code className="text-xs break-all">{JSON.stringify(tc.args)}</code>
+                                      </div>
+                                      <div>
+                                        <span className="text-muted-foreground">結果: </span>
+                                        <span className="text-xs break-all opacity-80">{tc.result.substring(0, 200)}{tc.result.length > 200 ? '...' : ''}</span>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                              
+                              {message.debugInfo.rawResponses && message.debugInfo.rawResponses.length > 0 && (
+                                <div className="pt-1 border-t border-border/30">
+                                  <span className="text-muted-foreground">API応答:</span>
+                                  <div className="mt-1 space-y-1">
+                                    {message.debugInfo.rawResponses.map((resp, i) => (
+                                      <div key={i} className="flex items-center gap-2 text-xs">
+                                        <Badge variant="outline" className="py-0">{resp.type}</Badge>
+                                        <span>ツール呼び出し: {resp.hasToolCalls ? '✓' : '✗'}</span>
+                                        <span>長さ: {resp.contentLength}文字</span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                              
                               {message.debugInfo.error && (
-                                <p className="text-destructive">エラー: {message.debugInfo.error}</p>
+                                <div className="pt-1 border-t border-border/30 text-destructive">
+                                  <span>エラー: {message.debugInfo.error}</span>
+                                </div>
                               )}
                             </div>
                           </div>
