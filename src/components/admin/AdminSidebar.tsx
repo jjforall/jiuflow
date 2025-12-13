@@ -144,7 +144,6 @@ const menuGroups: MenuGroup[] = [
     icon: Megaphone,
     items: [
       { id: "ads", label: "広告管理", icon: Megaphone },
-      { id: "line", label: "LINE連携", icon: MessageCircle },
     ],
   },
   {
@@ -155,6 +154,7 @@ const menuGroups: MenuGroup[] = [
       { id: "contacts", label: "お問い合わせ", icon: Mail, showBadge: true },
       { id: "logs", label: "ログ", icon: FileText },
       { id: "api", label: "API管理", icon: Key },
+      { id: "line", label: "LINE連携", icon: MessageCircle },
       { id: "settings", label: "設定", icon: Settings },
     ],
   },

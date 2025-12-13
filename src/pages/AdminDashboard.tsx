@@ -228,7 +228,6 @@ const AdminDashboard = () => {
                         <p className="text-xs font-medium text-muted-foreground px-3 mb-1">マーケティング</p>
                         {[
                           { id: "ads", label: "広告管理" },
-                          { id: "line", label: "LINE連携" },
                         ].map((item) => (
                           <button
                             key={item.id}
@@ -250,6 +249,7 @@ const AdminDashboard = () => {
                           { id: "contacts", label: "お問い合わせ" },
                           { id: "logs", label: "ログ" },
                           { id: "api", label: "API管理" },
+                          { id: "line", label: "LINE連携" },
                           { id: "settings", label: "設定" },
                         ].map((item) => (
                           <button
