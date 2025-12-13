@@ -3383,60 +3383,42 @@ export type Database = {
           avatar_url: string | null
           belt_history: Json | null
           bio: string | null
-          cover_image_url: string | null
           created_at: string | null
           display_name: string | null
           display_name_reading: string | null
-          favorite_fighters: Json | null
-          favorite_techniques: Json | null
-          hobbies: Json | null
           home_dojo: string | null
           id: string | null
           is_public: boolean | null
           organization_id: string | null
-          social_links: Json | null
           titles: Json | null
-          training_locations: Json | null
           username: string | null
         }
         Insert: {
           avatar_url?: string | null
           belt_history?: Json | null
           bio?: string | null
-          cover_image_url?: string | null
           created_at?: string | null
           display_name?: string | null
           display_name_reading?: string | null
-          favorite_fighters?: Json | null
-          favorite_techniques?: Json | null
-          hobbies?: Json | null
           home_dojo?: string | null
           id?: string | null
           is_public?: boolean | null
           organization_id?: string | null
-          social_links?: Json | null
           titles?: Json | null
-          training_locations?: Json | null
           username?: string | null
         }
         Update: {
           avatar_url?: string | null
           belt_history?: Json | null
           bio?: string | null
-          cover_image_url?: string | null
           created_at?: string | null
           display_name?: string | null
           display_name_reading?: string | null
-          favorite_fighters?: Json | null
-          favorite_techniques?: Json | null
-          hobbies?: Json | null
           home_dojo?: string | null
           id?: string | null
           is_public?: boolean | null
           organization_id?: string | null
-          social_links?: Json | null
           titles?: Json | null
-          training_locations?: Json | null
           username?: string | null
         }
         Relationships: [
@@ -3569,17 +3551,12 @@ export type Database = {
           created_at: string
           display_name: string
           display_name_reading: string
-          favorite_fighters: Json
-          favorite_techniques: Json
-          hobbies: Json
           home_dojo: string
-          hometown: string
           id: string
           is_public: boolean
           organization_id: string
           social_links: Json
           titles: Json
-          training_locations: Json
           username: string
         }[]
       }
