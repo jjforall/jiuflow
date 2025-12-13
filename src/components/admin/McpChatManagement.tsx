@@ -98,9 +98,22 @@ export default function McpChatManagement() {
       if (savedKeys) {
         const parsed = JSON.parse(savedKeys);
         if (Array.isArray(parsed)) {
-          // New format
+          // New format - map common key names to provider format
           parsed.forEach((k: { name: string; key: string }) => {
-            apiKeys[k.name] = k.key;
+            const normalizedName = k.name.toUpperCase().replace(/[\s-]/g, '_');
+            // Map to standard API key names
+            if (normalizedName.includes('OPENAI') || normalizedName.includes('GPT')) {
+              apiKeys['OPENAI_API_KEY'] = k.key;
+            } else if (normalizedName.includes('ANTHROPIC') || normalizedName.includes('CLAUDE')) {
+              apiKeys['ANTHROPIC_API_KEY'] = k.key;
+            } else if (normalizedName.includes('GROQ') || normalizedName.includes('LLAMA')) {
+              apiKeys['GROQ_API_KEY'] = k.key;
+            } else if (normalizedName.includes('PERPLEXITY') || normalizedName.includes('SONAR')) {
+              apiKeys['PERPLEXITY_API_KEY'] = k.key;
+            } else {
+              // Store with original name as fallback
+              apiKeys[k.name] = k.key;
+            }
           });
         } else {
           // Old format (object)
