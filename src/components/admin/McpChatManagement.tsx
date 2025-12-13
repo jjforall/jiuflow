@@ -9,6 +9,8 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { 
   Bot, 
   User, 
@@ -320,7 +322,15 @@ export default function McpChatManagement() {
                             : 'bg-muted'
                         }`}
                       >
-                        <p className="whitespace-pre-wrap text-sm">{message.content}</p>
+                        {message.role === 'assistant' ? (
+                          <div className="prose prose-sm dark:prose-invert max-w-none prose-p:my-1 prose-headings:my-2 prose-ul:my-1 prose-ol:my-1 prose-li:my-0 prose-pre:my-2 prose-code:bg-background/50 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-pre:bg-background/50 prose-pre:p-3 prose-table:my-2 prose-th:bg-background/30 prose-th:px-2 prose-th:py-1 prose-td:px-2 prose-td:py-1 prose-td:border-border prose-th:border-border">
+                            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                              {message.content}
+                            </ReactMarkdown>
+                          </div>
+                        ) : (
+                          <p className="whitespace-pre-wrap text-sm">{message.content}</p>
+                        )}
                         {message.provider && (
                           <p className="text-xs opacity-70 mt-1">{message.provider}</p>
                         )}
