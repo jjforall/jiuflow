@@ -71,17 +71,23 @@ serve(async (req) => {
     };
     sessionConfig.payment_method_collection = 'always';
 
-    // Referrer code to coupon mapping (multiple referrer codes can share one discount coupon)
-    const REFERRER_COUPON_MAP: Record<string, string> = {
-      "MURATABJJ": "JIUFLOW980",
-      "YUKIBJJ": "JIUFLOW980",
-    };
+    // Referrer codes that grant access to the 980 JPY/month Founder plan
+    const REFERRER_CODES = ["MURATABJJ", "YUKIBJJ"];
+    const FOUNDER_REFERRAL_PRICE_ID = "price_1SR3ZmDqLakc8NxkNdqL5BtO"; // 980 JPY/month
 
-    // Check if referralCode is a referrer code
-    const isReferrerCode = referralCode && REFERRER_COUPON_MAP[referralCode.toUpperCase()];
-    const actualCouponId = isReferrerCode 
-      ? REFERRER_COUPON_MAP[referralCode.toUpperCase()]
-      : (couponCode || referralCode);
+    // Check if referralCode is a special referrer code
+    const isReferrerCode = referralCode && REFERRER_CODES.includes(referralCode.toUpperCase());
+    
+    // If it's a referrer code, override the priceId to the 980 JPY plan
+    if (isReferrerCode) {
+      sessionConfig.line_items = [{
+        price: FOUNDER_REFERRAL_PRICE_ID,
+        quantity: 1,
+      }];
+      console.log("Referrer code detected, switching to Founder plan (980 JPY/month):", referralCode);
+    }
+
+    const actualCouponId = couponCode || (!isReferrerCode ? referralCode : null);
 
     // Add referrer code to metadata if provided (for tracking purposes)
     if (referralCode) {
