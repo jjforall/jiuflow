@@ -550,15 +550,33 @@ async function callPerplexity(messages: ChatMessage[], model: string, apiKey: st
   };
 }
 
+interface ProcessResult {
+  content: string;
+  debug: {
+    toolsUsed: string[];
+    toolCalls: Array<{ name: string; args: any; result: string }>;
+    aiCalls: number;
+    rawResponses: Array<{ type: string; hasToolCalls: boolean; contentLength: number }>;
+  };
+}
+
 async function processWithTools(
   messages: ChatMessage[], 
   provider: string, 
   model: string, 
   apiKeys: Record<string, string>
-): Promise<string> {
+): Promise<ProcessResult> {
+  const debug = {
+    toolsUsed: [] as string[],
+    toolCalls: [] as Array<{ name: string; args: any; result: string }>,
+    aiCalls: 0,
+    rawResponses: [] as Array<{ type: string; hasToolCalls: boolean; contentLength: number }>,
+  };
+
   let result: { content: string; tool_calls?: ToolCall[] };
   
   // First call to get initial response or tool calls
+  debug.aiCalls++;
   switch (provider) {
     case 'lovable':
       result = await callLovableAI(messages, model);
@@ -575,14 +593,21 @@ async function processWithTools(
     case 'perplexity':
       // Perplexity doesn't support tools
       const perplexityResult = await callPerplexity(messages, model, apiKeys.PERPLEXITY_API_KEY || '');
-      return perplexityResult.content;
+      debug.rawResponses.push({ type: 'initial', hasToolCalls: false, contentLength: perplexityResult.content.length });
+      return { content: perplexityResult.content, debug };
     default:
       throw new Error(`Unknown provider: ${provider}`);
   }
   
+  debug.rawResponses.push({ 
+    type: 'initial', 
+    hasToolCalls: !!(result.tool_calls && result.tool_calls.length > 0), 
+    contentLength: result.content?.length || 0 
+  });
+  
   // If no tool calls, return content directly
   if (!result.tool_calls || result.tool_calls.length === 0) {
-    return result.content;
+    return { content: result.content, debug };
   }
   
   // Execute tool calls
@@ -590,6 +615,13 @@ async function processWithTools(
   for (const toolCall of result.tool_calls) {
     const args = JSON.parse(toolCall.function.arguments);
     const toolResult = await executeTool(toolCall.function.name, args);
+    
+    debug.toolsUsed.push(toolCall.function.name);
+    debug.toolCalls.push({
+      name: toolCall.function.name,
+      args,
+      result: toolResult.substring(0, 500) + (toolResult.length > 500 ? '...' : ''),
+    });
     
     toolResults.push({
       role: 'tool',
@@ -606,6 +638,7 @@ async function processWithTools(
   ];
   
   // Make a follow-up call to get final response
+  debug.aiCalls++;
   let finalResult: { content: string; tool_calls?: ToolCall[] };
   
   switch (provider) {
@@ -625,7 +658,13 @@ async function processWithTools(
       throw new Error(`Unknown provider: ${provider}`);
   }
   
-  return finalResult.content;
+  debug.rawResponses.push({ 
+    type: 'final', 
+    hasToolCalls: !!(finalResult.tool_calls && finalResult.tool_calls.length > 0), 
+    contentLength: finalResult.content?.length || 0 
+  });
+  
+  return { content: finalResult.content, debug };
 }
 
 serve(async (req) => {
@@ -638,10 +677,13 @@ serve(async (req) => {
 
     console.log(`MCP Chat request - Provider: ${provider}, Model: ${model}`);
 
-    const content = await processWithTools(messages, provider, model, apiKeys);
+    const result = await processWithTools(messages, provider, model, apiKeys);
 
     return new Response(
-      JSON.stringify({ content }),
+      JSON.stringify({ 
+        content: result.content,
+        debug: result.debug,
+      }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
