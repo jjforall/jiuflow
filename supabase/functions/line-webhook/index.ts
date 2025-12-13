@@ -150,12 +150,19 @@ async function replyToLine(replyToken: string, message: string) {
 async function logLineMessage(userId: string, userMessage: string, aiResponse: string, provider: string) {
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
   
-  await supabase.from('line_chat_logs').insert({
-    line_user_id: userId,
-    user_message: userMessage,
-    ai_response: aiResponse,
-    ai_provider: provider
-  });
+  try {
+    const { error } = await supabase.from('line_chat_logs').insert({
+      user_id: userId,
+      user_message: userMessage,
+      ai_response: aiResponse,
+      ai_provider: provider
+    });
+    if (error) {
+      console.error('Error logging message:', error);
+    }
+  } catch (e) {
+    console.error('Failed to log message:', e);
+  }
 }
 
 // Verify LINE signature
@@ -310,6 +317,11 @@ serve(async (req) => {
               aiResponse = await callLovableAI(userMessage, settings.system_prompt, settings.lovable_model);
             }
             
+            // Check if response is empty
+            if (!aiResponse || aiResponse.trim() === '') {
+              aiResponse = 'すみません、回答を生成できませんでした。もう一度お試しください。';
+            }
+            
             // Log the conversation
             await logLineMessage(userId, userMessage, aiResponse, provider);
             
@@ -318,6 +330,7 @@ serve(async (req) => {
           } catch (error) {
             console.error('AI processing error:', error);
             const errorMessage = 'すみません、エラーが発生しました。しばらくしてからもう一度お試しください。';
+            await logLineMessage(userId, userMessage, errorMessage, provider);
             await replyToLine(event.replyToken, errorMessage);
           }
         }

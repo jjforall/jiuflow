@@ -36,7 +36,7 @@ interface LineSettings {
 
 interface ChatLog {
   id: string;
-  line_user_id: string;
+  user_id: string;
   user_message: string;
   ai_response: string;
   ai_provider: string;
@@ -444,7 +444,7 @@ export default function LineIntegrationManagement() {
                         </div>
                         
                         <div className="text-xs text-muted-foreground">
-                          User ID: {log.line_user_id.substring(0, 12)}...
+                          User ID: {log.user_id.substring(0, 12)}...
                         </div>
                       </div>
                     ))}
