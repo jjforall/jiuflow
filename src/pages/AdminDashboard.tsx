@@ -34,6 +34,7 @@ import { VenuesManagement } from "@/components/admin/VenuesManagement";
 import VideoListsManagement from "@/components/admin/VideoListsManagement";
 import { ApiManagement } from "@/components/admin/ApiManagement";
 import { AdsManagement } from "@/components/admin/AdsManagement";
+import LineIntegrationManagement from "@/components/admin/LineIntegrationManagement";
 
 const AdminDashboard = () => {
   const { signOut } = useAuth();
@@ -227,6 +228,7 @@ const AdminDashboard = () => {
                         <p className="text-xs font-medium text-muted-foreground px-3 mb-1">マーケティング</p>
                         {[
                           { id: "ads", label: "広告管理" },
+                          { id: "line", label: "LINE連携" },
                         ].map((item) => (
                           <button
                             key={item.id}
@@ -321,6 +323,7 @@ const AdminDashboard = () => {
                 {activeTab === "community" && <CommunityManagement />}
                 {activeTab === "weekly-topics" && <WeeklyTopicsManagement />}
                 {activeTab === "ads" && <AdsManagement />}
+                {activeTab === "line" && <LineIntegrationManagement />}
                 {activeTab === "api" && <ApiManagement />}
                 {activeTab === "settings" && <SettingsManagement />}
               </div>

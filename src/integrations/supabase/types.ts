@@ -1417,6 +1417,36 @@ export type Database = {
         }
         Relationships: []
       }
+      line_settings: {
+        Row: {
+          ai_provider: string
+          created_at: string
+          enabled: boolean
+          groq_model: string
+          id: string
+          system_prompt: string
+          updated_at: string
+        }
+        Insert: {
+          ai_provider?: string
+          created_at?: string
+          enabled?: boolean
+          groq_model?: string
+          id?: string
+          system_prompt?: string
+          updated_at?: string
+        }
+        Update: {
+          ai_provider?: string
+          created_at?: string
+          enabled?: boolean
+          groq_model?: string
+          id?: string
+          system_prompt?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       message_group_members: {
         Row: {
           group_id: string
