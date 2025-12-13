@@ -47,6 +47,7 @@ interface Subscription {
   current_period_end: string;
   created: string;
   trial_end?: string;
+  referral_code?: string | null;
 }
 
 export const SubscriptionsTab = () => {
@@ -344,7 +345,7 @@ export const SubscriptionsTab = () => {
                   <TableHead>プラン</TableHead>
                   <TableHead>ステータス</TableHead>
                   <TableHead className="text-right">金額</TableHead>
-                  <TableHead>期間</TableHead>
+                  <TableHead>紹介コード</TableHead>
                   <TableHead>次回請求日</TableHead>
                   <TableHead>開始日</TableHead>
                   <TableHead className="text-right">アクション</TableHead>
@@ -366,11 +367,15 @@ export const SubscriptionsTab = () => {
                       <span className="text-xs text-muted-foreground">/{sub.interval === 'month' ? '月' : '年'}</span>
                     </TableCell>
                     <TableCell>
-                      <div className="text-sm">
-                        {formatDate(sub.current_period_start)} ～ {formatDate(sub.current_period_end)}
-                      </div>
+                      {sub.referral_code ? (
+                        <Badge variant="outline" className="font-mono text-xs">
+                          {sub.referral_code}
+                        </Badge>
+                      ) : (
+                        <span className="text-muted-foreground text-sm">-</span>
+                      )}
                     </TableCell>
-                    <TableCell>{formatDate(sub.current_period_end)}</TableCell>
+                    <TableCell className="text-sm">{formatDate(sub.current_period_end)}</TableCell>
                     <TableCell className="text-sm text-muted-foreground">
                       {formatDate(sub.created)}
                     </TableCell>
@@ -437,6 +442,18 @@ export const SubscriptionsTab = () => {
                     <span className="font-medium">
                       {formatCurrency(sub.amount, sub.currency)}
                       <span className="text-xs text-muted-foreground">/{sub.interval === 'month' ? '月' : '年'}</span>
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">紹介コード:</span>
+                    <span>
+                      {sub.referral_code ? (
+                        <Badge variant="outline" className="font-mono text-xs">
+                          {sub.referral_code}
+                        </Badge>
+                      ) : (
+                        <span className="text-muted-foreground">-</span>
+                      )}
                     </span>
                   </div>
                   <div className="flex justify-between">

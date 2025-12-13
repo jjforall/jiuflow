@@ -119,6 +119,31 @@ serve(async (req) => {
     });
     logStep("Filtered to Jiuflow subscriptions", { count: jiuflowSubscriptions.length });
 
+    // Get referral code info from Supabase subscriptions table
+    const { data: supabaseSubscriptions } = await supabaseAdmin
+      .from('subscriptions')
+      .select(`
+        stripe_subscription_id,
+        referral_code_id,
+        referral_codes:referral_code_id (
+          code,
+          dojo_friends_code,
+          user_id
+        )
+      `)
+      .not('stripe_subscription_id', 'is', null);
+
+    // Create a map for quick lookup
+    const referralMap = new Map();
+    if (supabaseSubscriptions) {
+      for (const sub of supabaseSubscriptions) {
+        if (sub.stripe_subscription_id && sub.referral_codes) {
+          referralMap.set(sub.stripe_subscription_id, sub.referral_codes);
+        }
+      }
+    }
+    logStep("Fetched referral codes", { count: referralMap.size });
+
     // Map subscriptions and fetch product details separately
     const subscriptionList = await Promise.all(jiuflowSubscriptions.map(async (sub: Stripe.Subscription) => {
       const customer = sub.customer as Stripe.Customer;
@@ -139,6 +164,9 @@ serve(async (req) => {
 
       const isTrialing = sub.status === 'trialing' || (sub.trial_end && sub.trial_end * 1000 > Date.now());
       
+      // Get referral code info
+      const referralInfo = referralMap.get(sub.id);
+      
       return {
         id: sub.id,
         customer_email: customer.email || 'N/A',
@@ -154,6 +182,7 @@ serve(async (req) => {
         current_period_start: sub.current_period_start ? new Date(sub.current_period_start * 1000).toISOString() : new Date().toISOString(),
         current_period_end: sub.current_period_end ? new Date(sub.current_period_end * 1000).toISOString() : new Date().toISOString(),
         created: sub.created ? new Date(sub.created * 1000).toISOString() : new Date().toISOString(),
+        referral_code: referralInfo?.code || referralInfo?.dojo_friends_code || null,
       };
     }));
 
