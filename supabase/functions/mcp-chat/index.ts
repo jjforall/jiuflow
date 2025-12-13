@@ -573,7 +573,7 @@ async function executeTool(name: string, args: Record<string, unknown>): Promise
           case 'tournaments':
             ({ data, error } = await supabase
               .from('tournaments')
-              .select('id, name, name_ja, start_date, location')
+              .select('id, name, name_ja, date_start, location')
               .or(`name.ilike.%${searchQuery}%,name_ja.ilike.%${searchQuery}%`)
               .limit(10));
             break;
