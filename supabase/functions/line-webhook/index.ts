@@ -190,11 +190,12 @@ const tools = [
         properties: {
           name: { type: "string", description: "大会名" },
           name_ja: { type: "string", description: "大会名（日本語）" },
-          date: { type: "string", description: "開催日（YYYY-MM-DD形式）" },
-          venue_id: { type: "string", description: "会場ID" },
+          date_start: { type: "string", description: "開催開始日（YYYY-MM-DD形式）" },
+          date_end: { type: "string", description: "開催終了日（YYYY-MM-DD形式）" },
+          location: { type: "string", description: "開催場所" },
           description: { type: "string", description: "説明" }
         },
-        required: ["name", "name_ja", "date"]
+        required: ["name", "name_ja", "date_start"]
       }
     }
   },
@@ -278,8 +279,9 @@ const tools = [
           id: { type: "string", description: "大会ID" },
           name: { type: "string", description: "大会名" },
           name_ja: { type: "string", description: "大会名（日本語）" },
-          date: { type: "string", description: "開催日" },
-          venue_id: { type: "string", description: "会場ID" },
+          date_start: { type: "string", description: "開催開始日" },
+          date_end: { type: "string", description: "開催終了日" },
+          location: { type: "string", description: "開催場所" },
           description: { type: "string", description: "説明" }
         },
         required: ["id"]
@@ -409,14 +411,14 @@ async function executeTool(name: string, args: Record<string, unknown>): Promise
       }
       
       case "search_tournaments": {
-        let query = supabase.from('tournaments').select('id, name, name_ja, date, venue_id, description');
+        let query = supabase.from('tournaments').select('id, name, name_ja, date_start, date_end, location, location_ja');
         if (args.query) {
           query = query.or(`name.ilike.%${args.query}%,name_ja.ilike.%${args.query}%`);
         }
         if (args.upcoming) {
-          query = query.gte('date', new Date().toISOString().split('T')[0]);
+          query = query.gte('date_start', new Date().toISOString().split('T')[0]);
         }
-        const { data, error } = await query.order('date', { ascending: true }).limit(Number(args.limit) || 10);
+        const { data, error } = await query.order('date_start', { ascending: true }).limit(Number(args.limit) || 10);
         if (error) throw error;
         return JSON.stringify(data);
       }
@@ -516,8 +518,9 @@ async function executeTool(name: string, args: Record<string, unknown>): Promise
         const { data, error } = await supabase.from('tournaments').insert({
           name: args.name,
           name_ja: args.name_ja,
-          date: args.date,
-          venue_id: args.venue_id || null,
+          date_start: args.date_start || args.date,
+          date_end: args.date_end || args.date_start || args.date,
+          location: args.location || null,
           description: args.description || null
         }).select().single();
         if (error) throw error;
@@ -573,8 +576,9 @@ async function executeTool(name: string, args: Record<string, unknown>): Promise
         const updateData: Record<string, unknown> = {};
         if (args.name) updateData.name = args.name;
         if (args.name_ja) updateData.name_ja = args.name_ja;
-        if (args.date) updateData.date = args.date;
-        if (args.venue_id) updateData.venue_id = args.venue_id;
+        if (args.date_start || args.date) updateData.date_start = args.date_start || args.date;
+        if (args.date_end) updateData.date_end = args.date_end;
+        if (args.location) updateData.location = args.location;
         if (args.description) updateData.description = args.description;
         
         const { data, error } = await supabase.from('tournaments')
