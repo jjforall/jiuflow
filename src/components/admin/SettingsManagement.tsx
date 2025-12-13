@@ -5,10 +5,11 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Moon, Sun, Globe, Bell, Shield, Database, RefreshCw } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Moon, Sun, Globe, Shield, Database, RefreshCw, Key, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const languages = [
   { code: "ja", label: "🇯🇵", name: "日本語" },
@@ -25,10 +26,24 @@ const languages = [
   { code: "hi", label: "🇮🇳", name: "हिन्दी" },
 ];
 
+interface ApiKeyConfig {
+  name: string;
+  key: string;
+  description: string;
+  masked: boolean;
+}
+
 export function SettingsManagement() {
   const { theme, setTheme } = useTheme();
   const { language, setLanguage } = useLanguage();
   const [isClearing, setIsClearing] = useState(false);
+  const [apiKeys, setApiKeys] = useState<ApiKeyConfig[]>([
+    { name: 'OPENAI_API_KEY', key: '', description: 'OpenAI API Key', masked: true },
+    { name: 'ANTHROPIC_API_KEY', key: '', description: 'Anthropic API Key', masked: true },
+    { name: 'GROQ_API_KEY', key: '', description: 'Groq API Key', masked: true },
+  ]);
+  const [showKeys, setShowKeys] = useState<Record<string, boolean>>({});
+  const [isSavingKeys, setIsSavingKeys] = useState(false);
 
   const handleClearCache = async () => {
     setIsClearing(true);
@@ -45,9 +60,53 @@ export function SettingsManagement() {
       console.error('Cache clear error:', error);
       toast.error("キャッシュのクリアに失敗しました");
     } finally {
-      setIsClearing(false);
+    setIsClearing(false);
     }
   };
+
+  const updateApiKey = (name: string, value: string) => {
+    setApiKeys(prev => prev.map(k => k.name === name ? { ...k, key: value } : k));
+  };
+
+  const toggleShowKey = (name: string) => {
+    setShowKeys(prev => ({ ...prev, [name]: !prev[name] }));
+  };
+
+  const handleSaveApiKeys = async () => {
+    setIsSavingKeys(true);
+    try {
+      // ここでAPIキーをサーバーに保存するロジック
+      // 現在はローカルストレージに保存（デモ用）
+      const keysToSave = apiKeys.filter(k => k.key).reduce((acc, k) => {
+        acc[k.name] = k.key;
+        return acc;
+      }, {} as Record<string, string>);
+      
+      localStorage.setItem('mcp_api_keys', JSON.stringify(keysToSave));
+      toast.success("APIキーを保存しました");
+    } catch (error) {
+      console.error('API key save error:', error);
+      toast.error("APIキーの保存に失敗しました");
+    } finally {
+      setIsSavingKeys(false);
+    }
+  };
+
+  useEffect(() => {
+    // Load saved API keys from localStorage
+    try {
+      const saved = localStorage.getItem('mcp_api_keys');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        setApiKeys(prev => prev.map(k => ({
+          ...k,
+          key: parsed[k.name] || ''
+        })));
+      }
+    } catch (e) {
+      console.error('Failed to load API keys:', e);
+    }
+  }, []);
 
   return (
     <div className="space-y-6">
@@ -238,6 +297,70 @@ export function SettingsManagement() {
           </CardContent>
         </Card>
       </div>
+
+      {/* MCP APIキー設定 */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Key className="h-5 w-5" />
+            外部AI APIキー設定
+          </CardTitle>
+          <CardDescription>
+            MCP（Model Context Protocol）や外部AIサービスで使用するAPIキーを設定します
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {apiKeys.map((apiKey) => (
+            <div key={apiKey.name} className="space-y-2">
+              <Label htmlFor={apiKey.name}>{apiKey.description}</Label>
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <Input
+                    id={apiKey.name}
+                    type={showKeys[apiKey.name] ? "text" : "password"}
+                    value={apiKey.key}
+                    onChange={(e) => updateApiKey(apiKey.name, e.target.value)}
+                    placeholder={`${apiKey.name}を入力`}
+                    className="pr-10"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 p-0"
+                    onClick={() => toggleShowKey(apiKey.name)}
+                  >
+                    {showKeys[apiKey.name] ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          ))}
+          <div className="pt-4">
+            <Button 
+              onClick={handleSaveApiKeys} 
+              disabled={isSavingKeys}
+              className="w-full sm:w-auto"
+            >
+              {isSavingKeys ? (
+                <>
+                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                  保存中...
+                </>
+              ) : (
+                "APIキーを保存"
+              )}
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            ※ APIキーはブラウザのローカルストレージに保存されます。セキュリティ上の理由から、本番環境ではサーバーサイドでの管理を推奨します。
+          </p>
+        </CardContent>
+      </Card>
 
       {/* アプリ情報 */}
       <Card>
