@@ -10,7 +10,7 @@ import Footer from "@/components/Footer";
 import { Skeleton } from "@/components/ui/skeleton";
 import TechniqueFlowchart from "@/components/TechniqueFlowchart";
 import { Badge } from "@/components/ui/badge";
-import { Award, BookOpen, FileText, CheckCircle } from "lucide-react";
+import { Award, BookOpen, FileText, CheckCircle, Users, Trophy } from "lucide-react";
 import { SEOHead, getOGLocale } from "@/components/SEOHead";
 import murataImage from "@/assets/murata-ryozo-portrait.jpg";
 import kimuraLockImage from "@/assets/kimura-lock-overhead.png";
@@ -245,46 +245,71 @@ const Home = () => {
               </div>
             </section>
 
-            {/* SEO Section - Blog & Glossary */}
-            <section className="py-24 px-6">
-              <div className="max-w-5xl mx-auto">
-                <div className="text-center mb-16">
-                  <h2 className="text-4xl md:text-5xl font-light mb-4">
+            {/* SEO Section - Explore Jiu-Jitsu */}
+            <section className="py-20 px-6">
+              <div className="max-w-6xl mx-auto">
+                <div className="text-center mb-12">
+                  <h2 className="text-3xl md:text-4xl font-light mb-3">
                     {homeT.seo?.title || "柔術を深く学ぶ"}
                   </h2>
+                  <p className="text-muted-foreground">
+                    {language === 'ja' ? '選手・大会情報から用語まで、柔術の世界を探索' : 
+                     language === 'pt' ? 'Explore o mundo do Jiu-Jitsu: atletas, torneios e terminologia' : 
+                     'Explore the world of Jiu-Jitsu: athletes, tournaments, and terminology'}
+                  </p>
                 </div>
 
-                <div className="grid md:grid-cols-2 gap-8">
-                  {/* Blog Card */}
-                  <Link to="/blog" className="group relative bg-card rounded-2xl border border-border p-8 hover:border-primary/50 transition-colors block">
-                    <div className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center mb-6 group-hover:bg-primary/20 transition-colors">
-                      <FileText className="w-7 h-7 text-primary" />
+                <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {/* Athletes Card */}
+                  <Link to="/athletes" className="group bg-card rounded-xl border border-border p-5 hover:border-primary/50 transition-colors block">
+                    <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
+                      <Users className="w-5 h-5 text-primary" />
                     </div>
-                    <h3 className="text-2xl font-medium mb-3">
-                      {homeT.seo?.blogTitle || "JiuFlow Blog"}
+                    <h3 className="text-lg font-medium mb-1">
+                      {language === 'ja' ? '選手一覧' : language === 'pt' ? 'Atletas' : 'Athletes'}
                     </h3>
-                    <p className="text-muted-foreground mb-6">
-                      {homeT.seo?.blogDesc || "開発記録 - Lovable.devで構築した柔術プラットフォーム"}
+                    <p className="text-sm text-muted-foreground">
+                      {language === 'ja' ? '世界の柔術家プロフィール' : language === 'pt' ? 'Perfis de lutadores mundiais' : 'World fighter profiles'}
                     </p>
-                    <Button variant="outline" className="group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
-                      {homeT.seo?.blogCta || "ブログを読む"}
-                    </Button>
+                  </Link>
+
+                  {/* Tournaments Card */}
+                  <Link to="/tournaments" className="group bg-card rounded-xl border border-border p-5 hover:border-primary/50 transition-colors block">
+                    <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
+                      <Trophy className="w-5 h-5 text-primary" />
+                    </div>
+                    <h3 className="text-lg font-medium mb-1">
+                      {language === 'ja' ? '大会一覧' : language === 'pt' ? 'Torneios' : 'Tournaments'}
+                    </h3>
+                    <p className="text-sm text-muted-foreground">
+                      {language === 'ja' ? '国内外の大会スケジュール' : language === 'pt' ? 'Calendário de competições' : 'Competition calendar'}
+                    </p>
+                  </Link>
+
+                  {/* Blog Card */}
+                  <Link to="/blog" className="group bg-card rounded-xl border border-border p-5 hover:border-primary/50 transition-colors block">
+                    <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
+                      <FileText className="w-5 h-5 text-primary" />
+                    </div>
+                    <h3 className="text-lg font-medium mb-1">
+                      {homeT.seo?.blogTitle || "ブログ"}
+                    </h3>
+                    <p className="text-sm text-muted-foreground">
+                      {language === 'ja' ? '開発記録・お知らせ' : language === 'pt' ? 'Atualizações e notícias' : 'Updates and news'}
+                    </p>
                   </Link>
 
                   {/* Glossary Card */}
-                  <Link to="/glossary" className="group relative bg-card rounded-2xl border border-border p-8 hover:border-primary/50 transition-colors block">
-                    <div className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center mb-6 group-hover:bg-primary/20 transition-colors">
-                      <BookOpen className="w-7 h-7 text-primary" />
+                  <Link to="/glossary" className="group bg-card rounded-xl border border-border p-5 hover:border-primary/50 transition-colors block">
+                    <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
+                      <BookOpen className="w-5 h-5 text-primary" />
                     </div>
-                    <h3 className="text-2xl font-medium mb-3">
-                      {homeT.seo?.glossaryTitle || "柔術用語集"}
+                    <h3 className="text-lg font-medium mb-1">
+                      {homeT.seo?.glossaryTitle || "用語集"}
                     </h3>
-                    <p className="text-muted-foreground mb-6">
-                      {homeT.seo?.glossaryDesc || "初心者から上級者まで使える柔術用語辞典"}
+                    <p className="text-sm text-muted-foreground">
+                      {language === 'ja' ? '柔術用語辞典' : language === 'pt' ? 'Dicionário de termos' : 'Terminology dictionary'}
                     </p>
-                    <Button variant="outline" className="group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
-                      {homeT.seo?.glossaryCta || "用語集を見る"}
-                    </Button>
                   </Link>
                 </div>
               </div>
