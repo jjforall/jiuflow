@@ -41,6 +41,7 @@ export function SettingsManagement() {
     { name: 'OPENAI_API_KEY', key: '', description: 'OpenAI API Key', masked: true },
     { name: 'ANTHROPIC_API_KEY', key: '', description: 'Anthropic API Key', masked: true },
     { name: 'GROQ_API_KEY', key: '', description: 'Groq API Key', masked: true },
+    { name: 'PERPLEXITY_API_KEY', key: '', description: 'Perplexity API Key', masked: true },
   ]);
   const [showKeys, setShowKeys] = useState<Record<string, boolean>>({});
   const [isSavingKeys, setIsSavingKeys] = useState(false);

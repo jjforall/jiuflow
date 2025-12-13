@@ -155,6 +155,7 @@ const menuGroups: MenuGroup[] = [
       { id: "logs", label: "ログ", icon: FileText },
       { id: "api", label: "API管理", icon: Key },
       { id: "line", label: "LINE連携", icon: MessageCircle },
+      { id: "mcp-chat", label: "MCP チャット", icon: MessageSquare },
       { id: "settings", label: "設定", icon: Settings },
     ],
   },

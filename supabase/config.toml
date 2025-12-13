@@ -148,3 +148,6 @@ verify_jwt = true
 
 [functions.line-webhook]
 verify_jwt = false
+
+[functions.mcp-chat]
+verify_jwt = false
