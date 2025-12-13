@@ -92,9 +92,21 @@ export default function McpChatManagement() {
     setIsLoading(true);
 
     try {
-      // Get API keys from localStorage
+      // Get API keys from localStorage (new format: array of {name, key})
       const savedKeys = localStorage.getItem('mcp_api_keys');
-      const apiKeys = savedKeys ? JSON.parse(savedKeys) : {};
+      let apiKeys: Record<string, string> = {};
+      if (savedKeys) {
+        const parsed = JSON.parse(savedKeys);
+        if (Array.isArray(parsed)) {
+          // New format
+          parsed.forEach((k: { name: string; key: string }) => {
+            apiKeys[k.name] = k.key;
+          });
+        } else {
+          // Old format (object)
+          apiKeys = parsed;
+        }
+      }
 
       const response = await supabase.functions.invoke('mcp-chat', {
         body: {
