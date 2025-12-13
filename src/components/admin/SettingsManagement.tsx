@@ -6,7 +6,7 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Moon, Sun, Globe, Shield, Database, RefreshCw, Key, Eye, EyeOff } from "lucide-react";
+import { Moon, Sun, Globe, Shield, Database, RefreshCw, Key, Eye, EyeOff, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
@@ -26,31 +26,25 @@ const languages = [
   { code: "hi", label: "🇮🇳", name: "हिन्दी" },
 ];
 
-interface ApiKeyConfig {
+interface McpApiKey {
+  id: string;
   name: string;
   key: string;
-  description: string;
-  masked: boolean;
 }
 
 export function SettingsManagement() {
   const { theme, setTheme } = useTheme();
   const { language, setLanguage } = useLanguage();
   const [isClearing, setIsClearing] = useState(false);
-  const [apiKeys, setApiKeys] = useState<ApiKeyConfig[]>([
-    { name: 'OPENAI_API_KEY', key: '', description: 'OpenAI API Key', masked: true },
-    { name: 'ANTHROPIC_API_KEY', key: '', description: 'Anthropic API Key', masked: true },
-    { name: 'GROQ_API_KEY', key: '', description: 'Groq API Key', masked: true },
-    { name: 'PERPLEXITY_API_KEY', key: '', description: 'Perplexity API Key', masked: true },
-  ]);
+  const [mcpKeys, setMcpKeys] = useState<McpApiKey[]>([]);
   const [showKeys, setShowKeys] = useState<Record<string, boolean>>({});
   const [isSavingKeys, setIsSavingKeys] = useState(false);
+  const [newKeyName, setNewKeyName] = useState('');
 
   const handleClearCache = async () => {
     setIsClearing(true);
     try {
-      // Clear local storage cache (except essential items)
-      const essentialKeys = ['language', 'theme'];
+      const essentialKeys = ['language', 'theme', 'mcp_api_keys'];
       const keysToRemove = Object.keys(localStorage).filter(
         key => !essentialKeys.includes(key) && !key.startsWith('sb-')
       );
@@ -61,28 +55,42 @@ export function SettingsManagement() {
       console.error('Cache clear error:', error);
       toast.error("キャッシュのクリアに失敗しました");
     } finally {
-    setIsClearing(false);
+      setIsClearing(false);
     }
   };
 
-  const updateApiKey = (name: string, value: string) => {
-    setApiKeys(prev => prev.map(k => k.name === name ? { ...k, key: value } : k));
+  const addNewKey = () => {
+    if (!newKeyName.trim()) {
+      toast.error("キー名を入力してください");
+      return;
+    }
+    const sanitizedName = newKeyName.trim().toUpperCase().replace(/[^A-Z0-9_]/g, '_');
+    if (mcpKeys.some(k => k.name === sanitizedName)) {
+      toast.error("同じ名前のキーが既に存在します");
+      return;
+    }
+    setMcpKeys(prev => [...prev, { id: crypto.randomUUID(), name: sanitizedName, key: '' }]);
+    setNewKeyName('');
+    toast.success(`${sanitizedName} を追加しました`);
   };
 
-  const toggleShowKey = (name: string) => {
-    setShowKeys(prev => ({ ...prev, [name]: !prev[name] }));
+  const updateKeyValue = (id: string, value: string) => {
+    setMcpKeys(prev => prev.map(k => k.id === id ? { ...k, key: value } : k));
+  };
+
+  const deleteKey = (id: string) => {
+    setMcpKeys(prev => prev.filter(k => k.id !== id));
+    toast.success("キーを削除しました");
+  };
+
+  const toggleShowKey = (id: string) => {
+    setShowKeys(prev => ({ ...prev, [id]: !prev[id] }));
   };
 
   const handleSaveApiKeys = async () => {
     setIsSavingKeys(true);
     try {
-      // ここでAPIキーをサーバーに保存するロジック
-      // 現在はローカルストレージに保存（デモ用）
-      const keysToSave = apiKeys.filter(k => k.key).reduce((acc, k) => {
-        acc[k.name] = k.key;
-        return acc;
-      }, {} as Record<string, string>);
-      
+      const keysToSave = mcpKeys.map(k => ({ name: k.name, key: k.key }));
       localStorage.setItem('mcp_api_keys', JSON.stringify(keysToSave));
       toast.success("APIキーを保存しました");
     } catch (error) {
@@ -94,15 +102,25 @@ export function SettingsManagement() {
   };
 
   useEffect(() => {
-    // Load saved API keys from localStorage
     try {
       const saved = localStorage.getItem('mcp_api_keys');
       if (saved) {
         const parsed = JSON.parse(saved);
-        setApiKeys(prev => prev.map(k => ({
-          ...k,
-          key: parsed[k.name] || ''
-        })));
+        if (Array.isArray(parsed)) {
+          setMcpKeys(parsed.map((k: { name: string; key: string }) => ({
+            id: crypto.randomUUID(),
+            name: k.name,
+            key: k.key
+          })));
+        } else {
+          // Old format migration
+          const migrated = Object.entries(parsed).map(([name, key]) => ({
+            id: crypto.randomUUID(),
+            name,
+            key: key as string
+          }));
+          setMcpKeys(migrated);
+        }
       }
     } catch (e) {
       console.error('Failed to load API keys:', e);
@@ -304,48 +322,79 @@ export function SettingsManagement() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Key className="h-5 w-5" />
-            外部AI APIキー設定
+            MCP APIキー設定
           </CardTitle>
           <CardDescription>
-            MCP（Model Context Protocol）や外部AIサービスで使用するAPIキーを設定します
+            MCP（Model Context Protocol）で使用するAPIキーを自由に追加・管理できます
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {apiKeys.map((apiKey) => (
-            <div key={apiKey.name} className="space-y-2">
-              <Label htmlFor={apiKey.name}>{apiKey.description}</Label>
-              <div className="flex gap-2">
-                <div className="relative flex-1">
-                  <Input
-                    id={apiKey.name}
-                    type={showKeys[apiKey.name] ? "text" : "password"}
-                    value={apiKey.key}
-                    onChange={(e) => updateApiKey(apiKey.name, e.target.value)}
-                    placeholder={`${apiKey.name}を入力`}
-                    className="pr-10"
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 p-0"
-                    onClick={() => toggleShowKey(apiKey.name)}
-                  >
-                    {showKeys[apiKey.name] ? (
-                      <EyeOff className="h-4 w-4" />
-                    ) : (
-                      <Eye className="h-4 w-4" />
-                    )}
-                  </Button>
+          {/* 新しいキーを追加 */}
+          <div className="flex gap-2">
+            <Input
+              value={newKeyName}
+              onChange={(e) => setNewKeyName(e.target.value)}
+              placeholder="キー名を入力 (例: MY_API_KEY)"
+              className="flex-1"
+              onKeyDown={(e) => e.key === 'Enter' && addNewKey()}
+            />
+            <Button onClick={addNewKey} variant="outline">
+              <Plus className="h-4 w-4 mr-2" />
+              追加
+            </Button>
+          </div>
+
+          {/* 既存のキー一覧 */}
+          {mcpKeys.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-4">
+              APIキーがありません。上のフォームから追加してください。
+            </p>
+          ) : (
+            <div className="space-y-3">
+              {mcpKeys.map((mcpKey) => (
+                <div key={mcpKey.id} className="space-y-1">
+                  <Label className="text-sm font-medium">{mcpKey.name}</Label>
+                  <div className="flex gap-2">
+                    <div className="relative flex-1">
+                      <Input
+                        type={showKeys[mcpKey.id] ? "text" : "password"}
+                        value={mcpKey.key}
+                        onChange={(e) => updateKeyValue(mcpKey.id, e.target.value)}
+                        placeholder="APIキーを入力"
+                        className="pr-10"
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 p-0"
+                        onClick={() => toggleShowKey(mcpKey.id)}
+                      >
+                        {showKeys[mcpKey.id] ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => deleteKey(mcpKey.id)}
+                      className="text-destructive hover:text-destructive"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
-              </div>
+              ))}
             </div>
-          ))}
-          <div className="pt-4">
+          )}
+
+          <div className="pt-4 flex gap-2">
             <Button 
               onClick={handleSaveApiKeys} 
               disabled={isSavingKeys}
-              className="w-full sm:w-auto"
             >
               {isSavingKeys ? (
                 <>
@@ -358,7 +407,7 @@ export function SettingsManagement() {
             </Button>
           </div>
           <p className="text-xs text-muted-foreground">
-            ※ APIキーはブラウザのローカルストレージに保存されます。セキュリティ上の理由から、本番環境ではサーバーサイドでの管理を推奨します。
+            ※ APIキーはブラウザのローカルストレージに保存されます。MCPチャットで使用できます。
           </p>
         </CardContent>
       </Card>
