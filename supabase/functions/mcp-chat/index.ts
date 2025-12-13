@@ -31,6 +31,7 @@ interface ChatRequest {
 
 // Define available tools for database operations
 const tools = [
+  // === 読み取り系ツール ===
   {
     type: "function",
     function: {
@@ -103,13 +104,54 @@ const tools = [
   {
     type: "function",
     function: {
+      name: "list_users",
+      description: "ユーザー（会員）一覧を取得します。プロフィール情報を返します。",
+      parameters: {
+        type: "object",
+        properties: {
+          limit: { type: "number", description: "取得件数（デフォルト: 20）" },
+          public_only: { type: "boolean", description: "公開プロフィールのみ表示" }
+        }
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "list_subscriptions",
+      description: "サブスクリプション一覧を取得します。有料会員の情報を返します。",
+      parameters: {
+        type: "object",
+        properties: {
+          limit: { type: "number", description: "取得件数（デフォルト: 20）" },
+          status: { type: "string", enum: ["active", "trialing", "canceled", "past_due"], description: "ステータスでフィルタ" }
+        }
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "list_organizations",
+      description: "組織・団体一覧を取得します。",
+      parameters: {
+        type: "object",
+        properties: {
+          limit: { type: "number", description: "取得件数（デフォルト: 20）" }
+        }
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
       name: "search_database",
       description: "データベースを検索します。選手名、大会名、道場名などで検索できます。",
       parameters: {
         type: "object",
         properties: {
           query: { type: "string", description: "検索キーワード" },
-          table: { type: "string", enum: ["celebrities", "tournaments", "techniques", "dojos", "venues"], description: "検索対象テーブル" }
+          table: { type: "string", enum: ["celebrities", "tournaments", "techniques", "dojos", "venues", "profiles"], description: "検索対象テーブル" }
         },
         required: ["query"]
       }
@@ -123,6 +165,276 @@ const tools = [
       parameters: {
         type: "object",
         properties: {}
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_record_by_id",
+      description: "IDを指定して特定のレコードを取得します。",
+      parameters: {
+        type: "object",
+        properties: {
+          table: { type: "string", enum: ["celebrities", "tournaments", "techniques", "dojos", "venues", "profiles", "organizations"], description: "テーブル名" },
+          id: { type: "string", description: "レコードのUUID" }
+        },
+        required: ["table", "id"]
+      }
+    }
+  },
+  // === 作成系ツール ===
+  {
+    type: "function",
+    function: {
+      name: "create_tournament",
+      description: "新しい大会を作成します。",
+      parameters: {
+        type: "object",
+        properties: {
+          name: { type: "string", description: "大会名（英語）" },
+          name_ja: { type: "string", description: "大会名（日本語）" },
+          date_start: { type: "string", description: "開催日（YYYY-MM-DD形式）" },
+          date_end: { type: "string", description: "終了日（YYYY-MM-DD形式、任意）" },
+          location: { type: "string", description: "開催地（英語）" },
+          location_ja: { type: "string", description: "開催地（日本語）" },
+          organizer: { type: "string", description: "主催者" },
+          category: { type: "string", description: "カテゴリ（gi/nogi/both）" },
+          country: { type: "string", description: "国コード（例: JP）" }
+        },
+        required: ["name", "date_start", "location", "organizer"]
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "create_celebrity",
+      description: "新しい選手を登録します。",
+      parameters: {
+        type: "object",
+        properties: {
+          display_name: { type: "string", description: "表示名（英語）" },
+          name_ja: { type: "string", description: "名前（日本語）" },
+          bio: { type: "string", description: "経歴・プロフィール（英語）" },
+          bio_ja: { type: "string", description: "経歴・プロフィール（日本語）" },
+          home_dojo: { type: "string", description: "所属道場" },
+          birth_date: { type: "string", description: "生年月日（YYYY-MM-DD形式）" },
+          featured: { type: "boolean", description: "注目選手として表示" }
+        },
+        required: ["display_name"]
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "create_technique",
+      description: "新しいテクニックを登録します。",
+      parameters: {
+        type: "object",
+        properties: {
+          name: { type: "string", description: "テクニック名（英語）" },
+          name_ja: { type: "string", description: "テクニック名（日本語）" },
+          name_pt: { type: "string", description: "テクニック名（ポルトガル語）" },
+          category: { type: "string", description: "カテゴリ" },
+          description: { type: "string", description: "説明（英語）" },
+          description_ja: { type: "string", description: "説明（日本語）" },
+          visibility: { type: "string", enum: ["public", "members", "premium"], description: "公開範囲" }
+        },
+        required: ["name", "name_ja", "name_pt", "category"]
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "create_dojo",
+      description: "新しい道場を登録します。",
+      parameters: {
+        type: "object",
+        properties: {
+          name: { type: "string", description: "道場名（英語）" },
+          name_ja: { type: "string", description: "道場名（日本語）" },
+          name_pt: { type: "string", description: "道場名（ポルトガル語）" },
+          location: { type: "string", description: "住所" },
+          description: { type: "string", description: "説明（英語）" },
+          description_ja: { type: "string", description: "説明（日本語）" },
+          website: { type: "string", description: "ウェブサイトURL" },
+          email: { type: "string", description: "メールアドレス" },
+          phone: { type: "string", description: "電話番号" },
+          instagram: { type: "string", description: "Instagram" }
+        },
+        required: ["name", "name_ja", "name_pt"]
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "create_venue",
+      description: "新しい会場を登録します。",
+      parameters: {
+        type: "object",
+        properties: {
+          name: { type: "string", description: "会場名（英語）" },
+          name_ja: { type: "string", description: "会場名（日本語）" },
+          address: { type: "string", description: "住所（英語）" },
+          address_ja: { type: "string", description: "住所（日本語）" },
+          city: { type: "string", description: "都市名" },
+          country: { type: "string", description: "国コード（例: JP）" },
+          capacity: { type: "number", description: "収容人数" }
+        },
+        required: ["name", "country"]
+      }
+    }
+  },
+  // === 更新系ツール ===
+  {
+    type: "function",
+    function: {
+      name: "update_tournament",
+      description: "既存の大会情報を更新します。",
+      parameters: {
+        type: "object",
+        properties: {
+          id: { type: "string", description: "大会のUUID" },
+          name: { type: "string", description: "大会名（英語）" },
+          name_ja: { type: "string", description: "大会名（日本語）" },
+          date_start: { type: "string", description: "開催日" },
+          date_end: { type: "string", description: "終了日" },
+          location: { type: "string", description: "開催地（英語）" },
+          location_ja: { type: "string", description: "開催地（日本語）" },
+          category: { type: "string", description: "カテゴリ" }
+        },
+        required: ["id"]
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "update_celebrity",
+      description: "既存の選手情報を更新します。",
+      parameters: {
+        type: "object",
+        properties: {
+          id: { type: "string", description: "選手のUUID" },
+          display_name: { type: "string", description: "表示名" },
+          name_ja: { type: "string", description: "名前（日本語）" },
+          bio: { type: "string", description: "経歴（英語）" },
+          bio_ja: { type: "string", description: "経歴（日本語）" },
+          home_dojo: { type: "string", description: "所属道場" },
+          featured: { type: "boolean", description: "注目選手として表示" }
+        },
+        required: ["id"]
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "update_technique",
+      description: "既存のテクニック情報を更新します。",
+      parameters: {
+        type: "object",
+        properties: {
+          id: { type: "string", description: "テクニックのUUID" },
+          name: { type: "string", description: "テクニック名（英語）" },
+          name_ja: { type: "string", description: "テクニック名（日本語）" },
+          category: { type: "string", description: "カテゴリ" },
+          description: { type: "string", description: "説明（英語）" },
+          description_ja: { type: "string", description: "説明（日本語）" },
+          visibility: { type: "string", enum: ["public", "members", "premium"], description: "公開範囲" }
+        },
+        required: ["id"]
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "update_dojo",
+      description: "既存の道場情報を更新します。",
+      parameters: {
+        type: "object",
+        properties: {
+          id: { type: "string", description: "道場のUUID" },
+          name: { type: "string", description: "道場名（英語）" },
+          name_ja: { type: "string", description: "道場名（日本語）" },
+          location: { type: "string", description: "住所" },
+          website: { type: "string", description: "ウェブサイト" },
+          email: { type: "string", description: "メール" }
+        },
+        required: ["id"]
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "update_venue",
+      description: "既存の会場情報を更新します。",
+      parameters: {
+        type: "object",
+        properties: {
+          id: { type: "string", description: "会場のUUID" },
+          name: { type: "string", description: "会場名（英語）" },
+          name_ja: { type: "string", description: "会場名（日本語）" },
+          address: { type: "string", description: "住所（英語）" },
+          address_ja: { type: "string", description: "住所（日本語）" },
+          capacity: { type: "number", description: "収容人数" }
+        },
+        required: ["id"]
+      }
+    }
+  },
+  // === 削除系ツール ===
+  {
+    type: "function",
+    function: {
+      name: "delete_record",
+      description: "レコードを削除します。注意: この操作は取り消せません。",
+      parameters: {
+        type: "object",
+        properties: {
+          table: { type: "string", enum: ["celebrities", "tournaments", "techniques", "dojos", "venues"], description: "テーブル名" },
+          id: { type: "string", description: "削除するレコードのUUID" },
+          confirm: { type: "boolean", description: "削除を確認（trueを指定）" }
+        },
+        required: ["table", "id", "confirm"]
+      }
+    }
+  },
+  // === 特殊操作ツール ===
+  {
+    type: "function",
+    function: {
+      name: "bulk_update",
+      description: "複数のレコードを一括更新します。",
+      parameters: {
+        type: "object",
+        properties: {
+          table: { type: "string", enum: ["celebrities", "tournaments", "techniques", "dojos", "venues"], description: "テーブル名" },
+          filter_column: { type: "string", description: "フィルタ列名" },
+          filter_value: { type: "string", description: "フィルタ値" },
+          updates: { type: "object", description: "更新内容（キーと値のオブジェクト）" }
+        },
+        required: ["table", "updates"]
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "execute_sql_query",
+      description: "カスタムSQLクエリを実行します（読み取り専用）。複雑な集計やJOINが必要な場合に使用。",
+      parameters: {
+        type: "object",
+        properties: {
+          description: { type: "string", description: "何を取得したいかの説明" }
+        },
+        required: ["description"]
       }
     }
   }
@@ -300,12 +612,14 @@ async function executeTool(name: string, args: Record<string, unknown>): Promise
       }
       
       case 'get_statistics': {
-        const [celebrities, tournaments, techniques, dojos, venues] = await Promise.all([
+        const [celebrities, tournaments, techniques, dojos, venues, profiles, subscriptions] = await Promise.all([
           supabase.from('celebrities').select('id', { count: 'exact', head: true }),
           supabase.from('tournaments').select('id', { count: 'exact', head: true }),
           supabase.from('techniques').select('id', { count: 'exact', head: true }),
           supabase.from('dojos').select('id', { count: 'exact', head: true }),
           supabase.from('venues').select('id', { count: 'exact', head: true }),
+          supabase.from('profiles').select('id', { count: 'exact', head: true }),
+          supabase.from('subscriptions').select('id', { count: 'exact', head: true }).eq('status', 'active'),
         ]);
         
         return JSON.stringify({
@@ -314,7 +628,313 @@ async function executeTool(name: string, args: Record<string, unknown>): Promise
           techniques: techniques.count || 0,
           dojos: dojos.count || 0,
           venues: venues.count || 0,
+          profiles: profiles.count || 0,
+          active_subscriptions: subscriptions.count || 0,
         }, null, 2);
+      }
+      
+      case 'list_users': {
+        const limit = (args.limit as number) || 20;
+        let query = supabase
+          .from('profiles')
+          .select('id, display_name, username, avatar_url, home_dojo, is_public, belt_history, created_at')
+          .order('created_at', { ascending: false })
+          .limit(limit);
+        
+        if (args.public_only) {
+          query = query.eq('is_public', true);
+        }
+        
+        const { data, error } = await query;
+        if (error) throw error;
+        
+        return JSON.stringify(data || [], null, 2);
+      }
+      
+      case 'list_subscriptions': {
+        const limit = (args.limit as number) || 20;
+        let query = supabase
+          .from('subscriptions')
+          .select('id, user_id, plan_type, status, current_period_end, created_at')
+          .order('created_at', { ascending: false })
+          .limit(limit);
+        
+        if (args.status) {
+          query = query.eq('status', args.status as string);
+        }
+        
+        const { data, error } = await query;
+        if (error) throw error;
+        
+        return JSON.stringify(data || [], null, 2);
+      }
+      
+      case 'list_organizations': {
+        const limit = (args.limit as number) || 20;
+        const { data, error } = await supabase
+          .from('organizations')
+          .select('id, name, name_ja, description, website, logo_url')
+          .limit(limit);
+        
+        if (error) throw error;
+        return JSON.stringify(data || [], null, 2);
+      }
+      
+      case 'get_record_by_id': {
+        const table = args.table as string;
+        const id = args.id as string;
+        
+        const { data, error } = await supabase
+          .from(table)
+          .select('*')
+          .eq('id', id)
+          .single();
+        
+        if (error) throw error;
+        return JSON.stringify(data, null, 2);
+      }
+      
+      // === 作成系 ===
+      case 'create_tournament': {
+        const { data, error } = await supabase
+          .from('tournaments')
+          .insert({
+            name: args.name as string,
+            name_ja: args.name_ja as string || args.name as string,
+            date_start: args.date_start as string,
+            date_end: args.date_end as string,
+            location: args.location as string,
+            location_ja: args.location_ja as string || args.location as string,
+            organizer: args.organizer as string,
+            category: args.category as string || 'gi',
+            country: args.country as string || 'JP',
+          })
+          .select()
+          .single();
+        
+        if (error) throw error;
+        return `大会「${args.name}」を作成しました。ID: ${data.id}`;
+      }
+      
+      case 'create_celebrity': {
+        const { data, error } = await supabase
+          .from('celebrities')
+          .insert({
+            display_name: args.display_name as string,
+            name_ja: args.name_ja as string,
+            bio: args.bio as string,
+            bio_ja: args.bio_ja as string,
+            home_dojo: args.home_dojo as string,
+            birth_date: args.birth_date as string,
+            featured: args.featured as boolean || false,
+          })
+          .select()
+          .single();
+        
+        if (error) throw error;
+        return `選手「${args.display_name}」を登録しました。ID: ${data.id}`;
+      }
+      
+      case 'create_technique': {
+        const { data, error } = await supabase
+          .from('techniques')
+          .insert({
+            name: args.name as string,
+            name_ja: args.name_ja as string,
+            name_pt: args.name_pt as string || args.name as string,
+            category: args.category as string,
+            description: args.description as string,
+            description_ja: args.description_ja as string,
+            visibility: args.visibility as string || 'public',
+          })
+          .select()
+          .single();
+        
+        if (error) throw error;
+        return `テクニック「${args.name}」を登録しました。ID: ${data.id}`;
+      }
+      
+      case 'create_dojo': {
+        const { data, error } = await supabase
+          .from('dojos')
+          .insert({
+            name: args.name as string,
+            name_ja: args.name_ja as string,
+            name_pt: args.name_pt as string || args.name as string,
+            location: args.location as string,
+            description: args.description as string,
+            description_ja: args.description_ja as string,
+            website: args.website as string,
+            email: args.email as string,
+            phone: args.phone as string,
+            instagram: args.instagram as string,
+          })
+          .select()
+          .single();
+        
+        if (error) throw error;
+        return `道場「${args.name}」を登録しました。ID: ${data.id}`;
+      }
+      
+      case 'create_venue': {
+        const { data, error } = await supabase
+          .from('venues')
+          .insert({
+            name: args.name as string,
+            name_ja: args.name_ja as string,
+            address: args.address as string,
+            address_ja: args.address_ja as string,
+            city: args.city as string,
+            country: args.country as string,
+            capacity: args.capacity as number,
+          })
+          .select()
+          .single();
+        
+        if (error) throw error;
+        return `会場「${args.name}」を登録しました。ID: ${data.id}`;
+      }
+      
+      // === 更新系 ===
+      case 'update_tournament': {
+        const id = args.id as string;
+        const updates: Record<string, unknown> = {};
+        
+        if (args.name) updates.name = args.name;
+        if (args.name_ja) updates.name_ja = args.name_ja;
+        if (args.date_start) updates.date_start = args.date_start;
+        if (args.date_end) updates.date_end = args.date_end;
+        if (args.location) updates.location = args.location;
+        if (args.location_ja) updates.location_ja = args.location_ja;
+        if (args.category) updates.category = args.category;
+        
+        const { error } = await supabase
+          .from('tournaments')
+          .update(updates)
+          .eq('id', id);
+        
+        if (error) throw error;
+        return `大会（ID: ${id}）を更新しました。`;
+      }
+      
+      case 'update_celebrity': {
+        const id = args.id as string;
+        const updates: Record<string, unknown> = {};
+        
+        if (args.display_name) updates.display_name = args.display_name;
+        if (args.name_ja) updates.name_ja = args.name_ja;
+        if (args.bio) updates.bio = args.bio;
+        if (args.bio_ja) updates.bio_ja = args.bio_ja;
+        if (args.home_dojo) updates.home_dojo = args.home_dojo;
+        if (args.featured !== undefined) updates.featured = args.featured;
+        
+        const { error } = await supabase
+          .from('celebrities')
+          .update(updates)
+          .eq('id', id);
+        
+        if (error) throw error;
+        return `選手（ID: ${id}）を更新しました。`;
+      }
+      
+      case 'update_technique': {
+        const id = args.id as string;
+        const updates: Record<string, unknown> = {};
+        
+        if (args.name) updates.name = args.name;
+        if (args.name_ja) updates.name_ja = args.name_ja;
+        if (args.category) updates.category = args.category;
+        if (args.description) updates.description = args.description;
+        if (args.description_ja) updates.description_ja = args.description_ja;
+        if (args.visibility) updates.visibility = args.visibility;
+        
+        const { error } = await supabase
+          .from('techniques')
+          .update(updates)
+          .eq('id', id);
+        
+        if (error) throw error;
+        return `テクニック（ID: ${id}）を更新しました。`;
+      }
+      
+      case 'update_dojo': {
+        const id = args.id as string;
+        const updates: Record<string, unknown> = {};
+        
+        if (args.name) updates.name = args.name;
+        if (args.name_ja) updates.name_ja = args.name_ja;
+        if (args.location) updates.location = args.location;
+        if (args.website) updates.website = args.website;
+        if (args.email) updates.email = args.email;
+        
+        const { error } = await supabase
+          .from('dojos')
+          .update(updates)
+          .eq('id', id);
+        
+        if (error) throw error;
+        return `道場（ID: ${id}）を更新しました。`;
+      }
+      
+      case 'update_venue': {
+        const id = args.id as string;
+        const updates: Record<string, unknown> = {};
+        
+        if (args.name) updates.name = args.name;
+        if (args.name_ja) updates.name_ja = args.name_ja;
+        if (args.address) updates.address = args.address;
+        if (args.address_ja) updates.address_ja = args.address_ja;
+        if (args.capacity) updates.capacity = args.capacity;
+        
+        const { error } = await supabase
+          .from('venues')
+          .update(updates)
+          .eq('id', id);
+        
+        if (error) throw error;
+        return `会場（ID: ${id}）を更新しました。`;
+      }
+      
+      // === 削除系 ===
+      case 'delete_record': {
+        const table = args.table as string;
+        const id = args.id as string;
+        const confirm = args.confirm as boolean;
+        
+        if (!confirm) {
+          return "削除を実行するには confirm: true を指定してください。";
+        }
+        
+        const { error } = await supabase
+          .from(table)
+          .delete()
+          .eq('id', id);
+        
+        if (error) throw error;
+        return `${table}からレコード（ID: ${id}）を削除しました。`;
+      }
+      
+      // === 一括更新 ===
+      case 'bulk_update': {
+        const table = args.table as string;
+        const updates = args.updates as Record<string, unknown>;
+        
+        let query = supabase.from(table).update(updates);
+        
+        if (args.filter_column && args.filter_value) {
+          query = query.eq(args.filter_column as string, args.filter_value);
+        }
+        
+        const { error, count } = await query;
+        
+        if (error) throw error;
+        return `${table}で${count || 0}件のレコードを更新しました。`;
+      }
+      
+      case 'execute_sql_query': {
+        // This is a placeholder - we don't execute raw SQL for security
+        return `SQLクエリの直接実行はセキュリティ上の理由からサポートされていません。代わりに他のツールを使用してください。
+要求内容: ${args.description}`;
       }
       
       default:
