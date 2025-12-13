@@ -1,10 +1,12 @@
 import { useState, useRef, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { 
@@ -14,7 +16,8 @@ import {
   Trash2, 
   RefreshCw,
   Settings,
-  Sparkles
+  Sparkles,
+  Terminal
 } from 'lucide-react';
 
 interface Message {
@@ -23,6 +26,11 @@ interface Message {
   content: string;
   provider?: string;
   timestamp: Date;
+  debugInfo?: {
+    requestTime: number;
+    toolsUsed?: string[];
+    error?: string;
+  };
 }
 
 const AI_PROVIDERS = [
@@ -58,6 +66,7 @@ export default function McpChatManagement() {
   const [isLoading, setIsLoading] = useState(false);
   const [provider, setProvider] = useState('lovable');
   const [model, setModel] = useState('google/gemini-2.5-flash');
+  const [showDebugInfo, setShowDebugInfo] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const currentProvider = AI_PROVIDERS.find(p => p.value === provider);
@@ -90,6 +99,8 @@ export default function McpChatManagement() {
     setMessages(prev => [...prev, userMessage]);
     setInput('');
     setIsLoading(true);
+
+    const startTime = Date.now();
 
     try {
       // Get API keys from localStorage (new format: array of {name, key})
@@ -133,7 +144,21 @@ export default function McpChatManagement() {
         },
       });
 
+      const requestTime = Date.now() - startTime;
+
       if (response.error) {
+        const errorMessage: Message = {
+          id: crypto.randomUUID(),
+          role: 'assistant',
+          content: response.error.message || 'エラーが発生しました',
+          provider: `${provider}/${model}`,
+          timestamp: new Date(),
+          debugInfo: {
+            requestTime,
+            error: response.error.message,
+          },
+        };
+        setMessages(prev => [...prev, errorMessage]);
         throw new Error(response.error.message || 'Failed to get response');
       }
 
@@ -143,6 +168,10 @@ export default function McpChatManagement() {
         content: response.data.content || 'No response received',
         provider: `${provider}/${model}`,
         timestamp: new Date(),
+        debugInfo: {
+          requestTime,
+          toolsUsed: response.data.toolsUsed,
+        },
       };
 
       setMessages(prev => [...prev, assistantMessage]);
@@ -232,6 +261,15 @@ export default function McpChatManagement() {
               履歴クリア
             </Button>
 
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="debug-mode"
+                checked={showDebugInfo}
+                onCheckedChange={setShowDebugInfo}
+              />
+              <Label htmlFor="debug-mode" className="text-sm">デバッグ情報</Label>
+            </div>
+
             {provider !== 'lovable' && (
               <p className="text-xs text-muted-foreground">
                 ※ 外部プロバイダーを使用するには、設定画面でAPIキーを設定してください
@@ -285,6 +323,23 @@ export default function McpChatManagement() {
                         <p className="whitespace-pre-wrap text-sm">{message.content}</p>
                         {message.provider && (
                           <p className="text-xs opacity-70 mt-1">{message.provider}</p>
+                        )}
+                        {showDebugInfo && message.debugInfo && (
+                          <div className="mt-2 pt-2 border-t border-border/50">
+                            <div className="flex items-center gap-1 text-xs opacity-70">
+                              <Terminal className="h-3 w-3" />
+                              <span>Debug</span>
+                            </div>
+                            <div className="text-xs font-mono mt-1 space-y-0.5">
+                              <p>応答時間: {message.debugInfo.requestTime}ms</p>
+                              {message.debugInfo.toolsUsed && message.debugInfo.toolsUsed.length > 0 && (
+                                <p>使用ツール: {message.debugInfo.toolsUsed.join(', ')}</p>
+                              )}
+                              {message.debugInfo.error && (
+                                <p className="text-destructive">エラー: {message.debugInfo.error}</p>
+                              )}
+                            </div>
+                          </div>
                         )}
                       </div>
                       {message.role === 'user' && (
