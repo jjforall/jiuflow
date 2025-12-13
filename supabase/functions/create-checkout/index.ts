@@ -71,21 +71,39 @@ serve(async (req) => {
     };
     sessionConfig.payment_method_collection = 'always';
 
-    // Add referral code to metadata if provided
-    if (referralCode) {
-      // Verify referral code exists
-      const { data: referralCodeData } = await supabaseClient
-        .from("referral_codes")
-        .select("id, user_id")
-        .eq("code", referralCode)
-        .maybeSingle();
+    // Referrer code to coupon mapping (multiple referrer codes can share one discount coupon)
+    const REFERRER_COUPON_MAP: Record<string, string> = {
+      "MURATABJJ": "JIUFLOW980",
+      "YUKIBJJ": "JIUFLOW980",
+    };
 
-      if (referralCodeData) {
-        sessionConfig.subscription_data.metadata.referral_code_id = referralCodeData.id;
-        sessionConfig.subscription_data.metadata.referral_code = referralCode;
-        console.log("Referral code verified and added to metadata:", referralCodeData.id);
+    // Check if referralCode is a referrer code
+    const isReferrerCode = referralCode && REFERRER_COUPON_MAP[referralCode.toUpperCase()];
+    const actualCouponId = isReferrerCode 
+      ? REFERRER_COUPON_MAP[referralCode.toUpperCase()]
+      : (couponCode || referralCode);
+
+    // Add referrer code to metadata if provided (for tracking purposes)
+    if (referralCode) {
+      if (isReferrerCode) {
+        // Store the referrer code in metadata for tracking who referred
+        sessionConfig.subscription_data.metadata.referrer_code = referralCode.toUpperCase();
+        console.log("Referrer code added to metadata:", referralCode.toUpperCase());
       } else {
-        console.warn("Referral code not found in database:", referralCode);
+        // Check if it's a user referral code from the database
+        const { data: referralCodeData } = await supabaseClient
+          .from("referral_codes")
+          .select("id, user_id")
+          .eq("code", referralCode)
+          .maybeSingle();
+
+        if (referralCodeData) {
+          sessionConfig.subscription_data.metadata.referral_code_id = referralCodeData.id;
+          sessionConfig.subscription_data.metadata.referral_code = referralCode;
+          console.log("Referral code verified and added to metadata:", referralCodeData.id);
+        } else {
+          console.warn("Referral code not found in database:", referralCode);
+        }
       }
     }
 
@@ -94,18 +112,19 @@ serve(async (req) => {
       sessionConfig.customer_email = email;
     }
 
-    // Validate and add coupon/discount code if provided
-    if (discountCode) {
+    // Validate and add coupon if provided or mapped from referrer code
+    if (actualCouponId) {
       try {
-        const coupon = await stripe.coupons.retrieve(discountCode);
+        const coupon = await stripe.coupons.retrieve(actualCouponId);
         console.log("Coupon found:", coupon.id, "Valid:", coupon.valid);
         if (coupon.valid) {
-          sessionConfig.discounts = [{ coupon: discountCode }];
+          sessionConfig.discounts = [{ coupon: actualCouponId }];
+          console.log("Applied coupon:", actualCouponId, isReferrerCode ? `(from referrer: ${referralCode})` : "");
         } else {
-          console.warn("Coupon is not valid:", discountCode);
+          console.warn("Coupon is not valid:", actualCouponId);
         }
       } catch (couponError) {
-        console.error("Coupon not found or invalid:", discountCode, couponError);
+        console.error("Coupon not found or invalid:", actualCouponId, couponError);
         // Continue without coupon if it's invalid
       }
     }

@@ -52,18 +52,38 @@ serve(async (req) => {
       sessionConfig.customer_email = email;
     }
 
-    // Validate and add referral code as coupon if provided
-    if (referralCode) {
+    // Referrer code to coupon mapping (multiple referrer codes can share one discount coupon)
+    const REFERRER_COUPON_MAP: Record<string, string> = {
+      "MURATABJJ": "JIUFLOW980",
+      "YUKIBJJ": "JIUFLOW980",
+    };
+
+    // Check if referralCode is a referrer code
+    const isReferrerCode = referralCode && REFERRER_COUPON_MAP[referralCode.toUpperCase()];
+    const actualCouponId = isReferrerCode 
+      ? REFERRER_COUPON_MAP[referralCode.toUpperCase()]
+      : referralCode;
+
+    // Validate and add coupon if provided or mapped from referrer code
+    if (actualCouponId) {
       try {
-        const coupon = await stripe.coupons.retrieve(referralCode);
-        console.log("Referral code coupon found:", coupon.id, "Valid:", coupon.valid);
+        const coupon = await stripe.coupons.retrieve(actualCouponId);
+        console.log("Coupon found:", coupon.id, "Valid:", coupon.valid);
         if (coupon.valid) {
-          sessionConfig.discounts = [{ coupon: referralCode }];
+          sessionConfig.discounts = [{ coupon: actualCouponId }];
+          // Store referrer info in metadata for tracking
+          if (isReferrerCode) {
+            sessionConfig.metadata = {
+              ...sessionConfig.metadata,
+              referrer_code: referralCode.toUpperCase(),
+            };
+            console.log("Applied coupon:", actualCouponId, "from referrer:", referralCode);
+          }
         } else {
-          console.warn("Referral code coupon is not valid:", referralCode);
+          console.warn("Coupon is not valid:", actualCouponId);
         }
       } catch (couponError) {
-        console.error("Referral code coupon not found or invalid:", referralCode, couponError);
+        console.error("Coupon not found or invalid:", actualCouponId, couponError);
         // Continue without coupon if it's invalid
       }
     }
