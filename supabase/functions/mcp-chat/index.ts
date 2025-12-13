@@ -145,12 +145,12 @@ async function executeTool(name: string, args: Record<string, unknown>): Promise
         const limit = (args.limit as number) || 20;
         let query = supabase
           .from('tournaments')
-          .select('id, name, name_ja, start_date, end_date, location, series, status')
-          .order('start_date', { ascending: false })
+          .select('id, name, name_ja, date_start, date_end, location, location_ja, category, country')
+          .order('date_start', { ascending: false })
           .limit(limit);
         
         if (args.upcoming_only) {
-          query = query.gte('start_date', new Date().toISOString().split('T')[0]);
+          query = query.gte('date_start', new Date().toISOString().split('T')[0]);
         }
         
         const { data, error } = await query;
