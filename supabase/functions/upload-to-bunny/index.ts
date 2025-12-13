@@ -139,8 +139,8 @@ Deno.serve(async (req) => {
       
       // Use library ID for embed URL (this is correct format)
       const embedUrl = `https://iframe.mediadelivery.net/embed/${BUNNY_LIBRARY_ID}/${videoId}`;
-      // For HLS/thumbnail, Bunny uses a specific CDN format
-      const cdnBase = `https://vz-558812.b-cdn.net`;
+      // For HLS/thumbnail, Bunny uses a CDN format with library ID
+      const cdnBase = `https://vz-${BUNNY_LIBRARY_ID}.b-cdn.net`;
       
       return new Response(
         JSON.stringify({
