@@ -42,7 +42,8 @@ serve(async (req) => {
 
     console.log(`[CLOUDFLARE-STREAM] User authenticated: ${user.id}`);
 
-    const { action } = await req.json();
+    const body = await req.json();
+    const { action, videoId } = body;
 
     if (action === "get-upload-url") {
       // Get a direct upload URL from Cloudflare Stream
@@ -89,8 +90,6 @@ serve(async (req) => {
     }
 
     if (action === "get-video-status") {
-      const { videoId } = await req.json();
-      
       if (!videoId) {
         throw new Error("videoId is required");
       }
