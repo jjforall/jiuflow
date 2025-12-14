@@ -34,7 +34,7 @@ export function UploadProvider({ children }: { children: ReactNode }) {
     setUploads(prev => prev.map(u => u.id === id ? { ...u, ...updates } : u));
   }, []);
 
-  // Cloudflare Stream upload for user videos
+  // Bunny.net TUS upload for user videos
   const startUpload = useCallback(async (file: File, title: string): Promise<{ videoUrl: string; bunnyVideoId: string; fileSize: number } | null> => {
     const uploadId = `upload_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     const abortController = new AbortController();
@@ -46,13 +46,13 @@ export function UploadProvider({ children }: { children: ReactNode }) {
       fileSize: file.size,
       progress: 0,
       status: 'uploading',
-      type: 'bunny', // Keep type name for backwards compatibility
+      type: 'bunny',
     };
 
     setUploads(prev => [...prev, newUpload]);
 
     try {
-      // Step 1: Get direct upload URL from Cloudflare Stream
+      // Step 1: Create video in Bunny Stream
       updateUpload(uploadId, { progress: 5 });
       
       const { data: { session } } = await supabase.auth.getSession();
@@ -60,46 +60,106 @@ export function UploadProvider({ children }: { children: ReactNode }) {
         throw new Error('ログインが必要です');
       }
 
-      const { data: uploadData, error: uploadError } = await supabase.functions.invoke(
-        'upload-to-cloudflare-stream',
+      const { data: createData, error: createError } = await supabase.functions.invoke(
+        'upload-to-bunny',
         {
-          body: { action: 'get-upload-url' }
+          body: { action: 'create-video', title: title || `Video_${Date.now()}` }
         }
       );
 
-      if (uploadError || !uploadData?.uploadUrl) {
-        console.error('Cloudflare Stream error:', uploadError, uploadData);
-        throw new Error('アップロードURLの取得に失敗しました');
+      if (createError || !createData?.videoId) {
+        console.error('Bunny create error:', createError, createData);
+        throw new Error('Bunny.netへの接続に失敗しました');
       }
 
-      const cloudflareVideoId = uploadData.videoId;
-      updateUpload(uploadId, { progress: 10, bunnyVideoId: cloudflareVideoId });
+      const bunnyVideoId = createData.videoId;
+      const libraryId = createData.libraryId;
 
-      // Step 2: Upload file directly to Cloudflare using their direct upload URL
+      // Step 2: Get TUS upload credentials
+      updateUpload(uploadId, { progress: 10, bunnyVideoId });
+      const { data: uploadData, error: uploadError } = await supabase.functions.invoke(
+        'upload-to-bunny',
+        {
+          body: { action: 'get-upload-url', videoId: bunnyVideoId }
+        }
+      );
+
+      if (uploadError || !uploadData?.tusEndpoint) {
+        console.error('Bunny upload URL error:', uploadError, uploadData);
+        throw new Error('アップロード情報の取得に失敗しました');
+      }
+
+      // Step 3: Upload using chunked TUS protocol
       updateUpload(uploadId, { progress: 15 });
-
-      const formData = new FormData();
-      formData.append('file', file);
-
-      const uploadResponse = await fetch(uploadData.uploadUrl, {
+      
+      const tusBaseUrl = `${uploadData.tusEndpoint}`;
+      const queryParams = `?VideoId=${uploadData.videoId}&LibraryId=${uploadData.libraryId}&AuthorizationSignature=${uploadData.signature}&AuthorizationExpire=${uploadData.expirationTime}`;
+      
+      // Step 3a: Create TUS upload session
+      const createResponse = await fetch(tusBaseUrl + queryParams, {
         method: 'POST',
-        body: formData,
+        headers: {
+          'Tus-Resumable': '1.0.0',
+          'Upload-Length': file.size.toString(),
+        },
         signal: abortController.signal,
       });
 
-      if (!uploadResponse.ok) {
-        const errorText = await uploadResponse.text();
-        console.error('Upload failed:', errorText);
-        throw new Error('動画のアップロードに失敗しました');
+      if (!createResponse.ok && createResponse.status !== 201) {
+        console.error('TUS create failed:', createResponse.status);
+        throw new Error('アップロードセッションの作成に失敗しました');
+      }
+
+      const uploadLocation = createResponse.headers.get('Location') || (tusBaseUrl + queryParams);
+      
+      // Step 3b: Upload file in chunks
+      const CHUNK_SIZE = 50 * 1024 * 1024; // 50MB chunks
+      let offset = 0;
+      const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
+      let chunkIndex = 0;
+
+      while (offset < file.size) {
+        if (abortController.signal.aborted) {
+          throw new Error('アップロードがキャンセルされました');
+        }
+
+        const chunk = file.slice(offset, Math.min(offset + CHUNK_SIZE, file.size));
+        
+        const patchResponse = await fetch(uploadLocation, {
+          method: 'PATCH',
+          headers: {
+            'Tus-Resumable': '1.0.0',
+            'Upload-Offset': offset.toString(),
+            'Content-Type': 'application/offset+octet-stream',
+          },
+          body: chunk,
+          signal: abortController.signal,
+        });
+
+        if (!patchResponse.ok) {
+          if (patchResponse.status >= 500 || patchResponse.status === 0) {
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            continue;
+          }
+          console.error('Chunk upload failed:', patchResponse.status);
+          throw new Error('チャンクのアップロードに失敗しました');
+        }
+
+        const newOffset = patchResponse.headers.get('Upload-Offset');
+        offset = newOffset ? parseInt(newOffset, 10) : offset + chunk.size;
+        chunkIndex++;
+        
+        const uploadProgress = 15 + Math.floor((chunkIndex / totalChunks) * 55);
+        updateUpload(uploadId, { progress: uploadProgress });
       }
 
       updateUpload(uploadId, { progress: 70, status: 'processing' });
 
-      // Step 3: Poll for video processing status
+      // Step 4: Poll for video processing status
       let attempts = 0;
       const maxAttempts = 180;
       let videoReady = false;
-      let playbackUrl = uploadData.playbackUrl;
+      let playbackUrl = '';
 
       while (attempts < maxAttempts && !videoReady) {
         if (abortController.signal.aborted) {
@@ -108,21 +168,17 @@ export function UploadProvider({ children }: { children: ReactNode }) {
 
         await new Promise(resolve => setTimeout(resolve, 2000));
         
-        const { data: statusData, error: statusError } = await supabase.functions.invoke(
-          'upload-to-cloudflare-stream',
+        const { data: statusData } = await supabase.functions.invoke(
+          'upload-to-bunny',
           {
-            body: { action: 'get-video-status', videoId: cloudflareVideoId }
+            body: { action: 'get-video-status', videoId: bunnyVideoId }
           }
         );
 
-        if (statusError) {
-          console.error('Status check error:', statusError);
-        }
-
-        if (statusData?.ready && statusData?.playbackUrl) {
+        if (statusData?.ready && statusData?.hlsUrl) {
           videoReady = true;
-          playbackUrl = statusData.playbackUrl;
-        } else if (statusData?.status === 'error') {
+          playbackUrl = statusData.hlsUrl;
+        } else if (statusData?.status === 5) {
           throw new Error('動画の処理中にエラーが発生しました');
         }
         
@@ -130,20 +186,20 @@ export function UploadProvider({ children }: { children: ReactNode }) {
         updateUpload(uploadId, { progress: 70 + Math.min(25, Math.floor(attempts * 0.15)) });
       }
 
-      // Use iframe URL for playback
-      const embedUrl = `https://customer-${cloudflareVideoId.split('-')[0] || 'stream'}.cloudflarestream.com/${cloudflareVideoId}/iframe`;
-      const finalUrl = playbackUrl || embedUrl;
+      if (!videoReady) {
+        playbackUrl = `https://vz-${libraryId}.b-cdn.net/${bunnyVideoId}/playlist.m3u8`;
+      }
 
       updateUpload(uploadId, { 
         progress: 100, 
         status: 'completed', 
-        videoUrl: finalUrl 
+        videoUrl: playbackUrl 
       });
 
       abortControllers.current.delete(uploadId);
       toast.success("動画のアップロードが完了しました！");
 
-      return { videoUrl: finalUrl, bunnyVideoId: cloudflareVideoId, fileSize: file.size };
+      return { videoUrl: playbackUrl, bunnyVideoId, fileSize: file.size };
     } catch (error) {
       if (error instanceof Error && error.name === 'AbortError') {
         updateUpload(uploadId, { status: 'error', error: 'キャンセルされました' });
