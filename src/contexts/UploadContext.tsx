@@ -113,10 +113,14 @@ export function UploadProvider({ children }: { children: ReactNode }) {
       const uploadLocation = createResponse.headers.get('Location') || (tusBaseUrl + queryParams);
       
       // Step 3b: Upload file in chunks
-      const CHUNK_SIZE = 50 * 1024 * 1024; // 50MB chunks
+      // Use smaller chunks for better mobile compatibility (10MB for mobile, 25MB for desktop)
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+      const CHUNK_SIZE = isMobile ? 10 * 1024 * 1024 : 25 * 1024 * 1024;
       let offset = 0;
       const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
       let chunkIndex = 0;
+      let retryCount = 0;
+      const MAX_RETRIES = 5;
 
       while (offset < file.size) {
         if (abortController.signal.aborted) {
@@ -125,32 +129,48 @@ export function UploadProvider({ children }: { children: ReactNode }) {
 
         const chunk = file.slice(offset, Math.min(offset + CHUNK_SIZE, file.size));
         
-        const patchResponse = await fetch(uploadLocation, {
-          method: 'PATCH',
-          headers: {
-            'Tus-Resumable': '1.0.0',
-            'Upload-Offset': offset.toString(),
-            'Content-Type': 'application/offset+octet-stream',
-          },
-          body: chunk,
-          signal: abortController.signal,
-        });
+        try {
+          const patchResponse = await fetch(uploadLocation, {
+            method: 'PATCH',
+            headers: {
+              'Tus-Resumable': '1.0.0',
+              'Upload-Offset': offset.toString(),
+              'Content-Type': 'application/offset+octet-stream',
+            },
+            body: chunk,
+            signal: abortController.signal,
+          });
 
-        if (!patchResponse.ok) {
-          if (patchResponse.status >= 500 || patchResponse.status === 0) {
-            await new Promise(resolve => setTimeout(resolve, 2000));
+          if (!patchResponse.ok) {
+            if ((patchResponse.status >= 500 || patchResponse.status === 0) && retryCount < MAX_RETRIES) {
+              retryCount++;
+              console.log(`Chunk upload retry ${retryCount}/${MAX_RETRIES}`);
+              await new Promise(resolve => setTimeout(resolve, 2000 * retryCount));
+              continue;
+            }
+            console.error('Chunk upload failed:', patchResponse.status);
+            throw new Error('チャンクのアップロードに失敗しました');
+          }
+
+          const newOffset = patchResponse.headers.get('Upload-Offset');
+          offset = newOffset ? parseInt(newOffset, 10) : offset + chunk.size;
+          chunkIndex++;
+          retryCount = 0; // Reset retry count on success
+          
+          const uploadProgress = 15 + Math.floor((chunkIndex / totalChunks) * 55);
+          updateUpload(uploadId, { progress: uploadProgress });
+        } catch (error) {
+          if (error instanceof Error && error.name === 'AbortError') {
+            throw error;
+          }
+          if (retryCount < MAX_RETRIES) {
+            retryCount++;
+            console.log(`Chunk upload error, retry ${retryCount}/${MAX_RETRIES}:`, error);
+            await new Promise(resolve => setTimeout(resolve, 2000 * retryCount));
             continue;
           }
-          console.error('Chunk upload failed:', patchResponse.status);
-          throw new Error('チャンクのアップロードに失敗しました');
+          throw error;
         }
-
-        const newOffset = patchResponse.headers.get('Upload-Offset');
-        offset = newOffset ? parseInt(newOffset, 10) : offset + chunk.size;
-        chunkIndex++;
-        
-        const uploadProgress = 15 + Math.floor((chunkIndex / totalChunks) * 55);
-        updateUpload(uploadId, { progress: uploadProgress });
       }
 
       updateUpload(uploadId, { progress: 70, status: 'processing' });

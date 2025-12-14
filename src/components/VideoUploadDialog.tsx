@@ -85,20 +85,33 @@ export function VideoUploadDialog({ open, onOpenChange, featuredUserId, featured
       return;
     }
 
-    // For large files, skip duration check to avoid memory issues
-    if (file.size > 500 * 1024 * 1024) {
+    // For files over 100MB, skip duration check (iPhone/mobile compatibility)
+    // Duration check can fail on mobile browsers for various video formats
+    if (file.size > 100 * 1024 * 1024) {
       setVideoFile(file);
       setUploadedFileSize(file.size);
-      toast.info("大容量ファイルのアップロードを開始します...");
+      toast.info("動画のアップロードを開始します...");
       await uploadVideo(file);
       return;
     }
 
-    // Check video duration for smaller files
+    // Check video duration for smaller files with timeout fallback
     const video = document.createElement('video');
     video.preload = 'metadata';
     
+    // Timeout fallback for mobile devices where metadata loading may fail
+    const timeoutId = setTimeout(async () => {
+      window.URL.revokeObjectURL(video.src);
+      video.onloadedmetadata = null;
+      video.onerror = null;
+      // Proceed without duration check
+      setVideoFile(file);
+      setUploadedFileSize(file.size);
+      await uploadVideo(file);
+    }, 5000);
+    
     video.onloadedmetadata = async function() {
+      clearTimeout(timeoutId);
       window.URL.revokeObjectURL(video.src);
       const duration = video.duration;
       
@@ -113,9 +126,13 @@ export function VideoUploadDialog({ open, onOpenChange, featuredUserId, featured
       await uploadVideo(file);
     };
 
-    video.onerror = function() {
-      toast.error("動画ファイルの読み込みに失敗しました");
-      e.target.value = '';
+    video.onerror = async function() {
+      clearTimeout(timeoutId);
+      window.URL.revokeObjectURL(video.src);
+      // On error, still allow upload (mobile compatibility)
+      setVideoFile(file);
+      setUploadedFileSize(file.size);
+      await uploadVideo(file);
     };
 
     video.src = URL.createObjectURL(file);
