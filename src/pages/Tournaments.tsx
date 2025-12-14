@@ -752,11 +752,19 @@ const Tournaments = () => {
   );
 
   const TournamentSection = ({ title, tournaments, icon, loading = false, paginated = false }: { title: string; tournaments: Tournament[] | undefined; icon: React.ReactNode; loading?: boolean; paginated?: boolean }) => {
+    // Split tournaments into participating and others
+    const myTournaments = tournaments?.filter(t => userParticipations?.[t.id]) || [];
+    const otherTournaments = tournaments?.filter(t => !userParticipations?.[t.id]) || [];
+    
     const totalItems = tournaments?.length || 0;
     const totalPages = Math.ceil(totalItems / PAGE_SIZE);
     const paginatedTournaments = paginated && tournaments 
       ? tournaments.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
       : tournaments;
+
+    // For paginated view, split the paginated results
+    const paginatedMyTournaments = paginatedTournaments?.filter(t => userParticipations?.[t.id]) || [];
+    const paginatedOtherTournaments = paginatedTournaments?.filter(t => !userParticipations?.[t.id]) || [];
 
     return (
       <div className="space-y-4">
@@ -772,12 +780,49 @@ const Tournaments = () => {
             ))}
           </div>
         ) : paginatedTournaments && paginatedTournaments.length > 0 ? (
-          <>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {paginatedTournaments.map((t) => (
-                <TournamentCard key={t.id} tournament={t} />
-              ))}
-            </div>
+          <div className="space-y-6">
+            {/* My participating tournaments section */}
+            {user && paginatedMyTournaments.length > 0 && (
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 px-3 py-2 bg-primary/10 border border-primary/20 rounded-lg">
+                  <CheckCircle2 className="h-4 w-4 text-primary" />
+                  <span className="text-sm font-semibold text-primary">
+                    {language === 'ja' ? 'あなたの参加予定' : 'Your Planned Tournaments'}
+                  </span>
+                  <Badge variant="default" className="ml-auto text-xs">
+                    {paginated ? paginatedMyTournaments.length : myTournaments.length}
+                  </Badge>
+                </div>
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  {paginatedMyTournaments.map((t) => (
+                    <TournamentCard key={t.id} tournament={t} />
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            {/* Other tournaments section */}
+            {paginatedOtherTournaments.length > 0 && (
+              <div className="space-y-3">
+                {user && paginatedMyTournaments.length > 0 && (
+                  <div className="flex items-center gap-2 px-3 py-2 bg-muted/50 border border-border/50 rounded-lg">
+                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm font-medium text-muted-foreground">
+                      {language === 'ja' ? 'その他の大会' : 'Other Tournaments'}
+                    </span>
+                    <Badge variant="secondary" className="ml-auto text-xs">
+                      {paginated ? paginatedOtherTournaments.length : otherTournaments.length}
+                    </Badge>
+                  </div>
+                )}
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  {paginatedOtherTournaments.map((t) => (
+                    <TournamentCard key={t.id} tournament={t} />
+                  ))}
+                </div>
+              </div>
+            )}
+            
             {paginated && totalPages > 1 && (
               <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t">
                 <div className="text-sm text-muted-foreground">
@@ -824,7 +869,7 @@ const Tournaments = () => {
                 </div>
               </div>
             )}
-          </>
+          </div>
         ) : (
           <Card className="border-dashed">
             <CardContent className="py-12 text-center text-muted-foreground">
