@@ -229,28 +229,28 @@ const AdminStats = () => {
       });
 
       subscriptions.forEach((sub: any) => {
-        // Use start date from Stripe subscription or created_at as fallback
-        const startDateStr = sub.start_date || sub.created_at;
-        if (!startDateStr) return;
-        
-        const startDate = new Date(startDateStr * 1000); // Stripe uses unix timestamp
-        const trialEnd = sub.trial_end ? new Date(sub.trial_end * 1000) : null;
-        
-        dateMap.forEach((value, dateStr) => {
-          const targetDate = new Date(dateStr);
-          targetDate.setHours(23, 59, 59, 999); // End of day
+        if (sub.created) {
+          const createdDate = new Date(sub.created);
+          const trialEnd = sub.trial_end ? new Date(sub.trial_end) : null;
           
-          // Only count if subscription started on or before target date
-          if (startDate <= targetDate) {
-            // Check if subscription is/was in trial on the target date
-            if (trialEnd && targetDate < trialEnd) {
-              value.trial++;
-            } else if (sub.status === 'active') {
-              // Trial ended and subscription is active = paid
-              value.paid++;
+          dateMap.forEach((value, dateStr) => {
+            const targetDate = new Date(dateStr);
+            targetDate.setHours(23, 59, 59, 999); // End of day
+            
+            // Only count if subscription was created on or before target date
+            if (createdDate <= targetDate) {
+              // Check if subscription was in trial on the target date
+              const wasInTrial = trialEnd && targetDate < trialEnd;
+              
+              if (wasInTrial) {
+                value.trial++;
+              } else if (sub.status === 'active' || sub.status === 'trialing') {
+                // Subscription exists and trial has ended (or no trial) = paid
+                value.paid++;
+              }
             }
-          }
-        });
+          });
+        }
       });
 
       const chartArray = Array.from(dateMap.entries()).map(([date, counts]) => ({
