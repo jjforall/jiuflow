@@ -344,7 +344,20 @@ const Tournaments = () => {
     return list.filter(t => isAfter(parseISO(t.date_start), now));
   };
 
-  const upcomingTournaments = filterByOrganizer(tournaments?.filter(t => isAfter(parseISO(t.date_start), now) && isBefore(parseISO(t.date_start), threeMonthsLater)));
+  // Sort tournaments with user's participations first
+  const sortWithUserParticipationsFirst = (list: Tournament[] | undefined) => {
+    if (!list || !userParticipations) return list;
+    return [...list].sort((a, b) => {
+      const aParticipating = !!userParticipations[a.id];
+      const bParticipating = !!userParticipations[b.id];
+      if (aParticipating && !bParticipating) return -1;
+      if (!aParticipating && bParticipating) return 1;
+      // If both participating or both not, sort by date
+      return new Date(a.date_start).getTime() - new Date(b.date_start).getTime();
+    });
+  };
+
+  const upcomingTournaments = sortWithUserParticipationsFirst(filterByOrganizer(tournaments?.filter(t => isAfter(parseISO(t.date_start), now) && isBefore(parseISO(t.date_start), threeMonthsLater))));
   
   const tournamentsByCountry = tournaments?.reduce((acc, t) => {
     const country = t.country || 'OTHER';
@@ -1057,7 +1070,7 @@ const Tournaments = () => {
               <TabsContent key={countryCode} value={`country-${countryCode}`}>
                 <TournamentSection 
                   title={`${getCountryFlag(countryCode)} ${getCountryName(countryCode)}`}
-                  tournaments={filterByOrganizer(filterByDate(tournamentsByCountry[countryCode]))}
+                  tournaments={sortWithUserParticipationsFirst(filterByOrganizer(filterByDate(tournamentsByCountry[countryCode])))}
                   icon={<span className="text-xl">{getCountryFlag(countryCode)}</span>}
                   loading={isLoading}
                 />
@@ -1067,7 +1080,7 @@ const Tournaments = () => {
             <TabsContent value="all">
               <TournamentSection 
                 title={language === 'ja' ? 'すべての大会' : 'All Tournaments'}
-                tournaments={filterByOrganizer(filterByDate(tournaments))}
+                tournaments={sortWithUserParticipationsFirst(filterByOrganizer(filterByDate(tournaments)))}
                 icon={<Globe className="h-5 w-5 text-primary" />}
                 loading={isLoading}
                 paginated
