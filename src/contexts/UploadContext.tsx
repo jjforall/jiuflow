@@ -96,6 +96,7 @@ export function UploadProvider({ children }: { children: ReactNode }) {
       const queryParams = `?VideoId=${uploadData.videoId}&LibraryId=${uploadData.libraryId}&AuthorizationSignature=${uploadData.signature}&AuthorizationExpire=${uploadData.expirationTime}`;
       
       // Step 3a: Create TUS upload session
+      console.log(`TUS upload: file size ${file.size} bytes (${(file.size / 1024 / 1024 / 1024).toFixed(2)} GB)`);
       const createResponse = await fetch(tusBaseUrl + queryParams, {
         method: 'POST',
         headers: {
@@ -106,8 +107,13 @@ export function UploadProvider({ children }: { children: ReactNode }) {
       });
 
       if (!createResponse.ok && createResponse.status !== 201) {
-        console.error('TUS create failed:', createResponse.status);
-        throw new Error('アップロードセッションの作成に失敗しました');
+        const errorText = await createResponse.text();
+        console.error('TUS create failed:', createResponse.status, errorText);
+        // Check for specific error messages
+        if (errorText.includes('exceeded') || errorText.includes('maximum')) {
+          throw new Error('ファイルサイズが大きすぎます。Bunny.netの設定を確認してください。');
+        }
+        throw new Error(`アップロードセッションの作成に失敗しました (${createResponse.status})`);
       }
 
       const uploadLocation = createResponse.headers.get('Location') || (tusBaseUrl + queryParams);
