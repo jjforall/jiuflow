@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { InputWithSuggestions } from "@/components/ui/input-with-suggestions";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Upload, Trash2, Search, Check, X, Languages, ExternalLink, ChevronDown, Cloud, Loader2 } from "lucide-react";
+import { Upload, Trash2, Search, Check, X, Languages, ExternalLink, ChevronDown, Cloud, Loader2, RefreshCw } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   Collapsible,
@@ -83,6 +83,7 @@ export const TechniquesManagement = () => {
   const [seriesMapping, setSeriesMapping] = useState<Array<{ series_name: string; series_prefix: string }>>([]);
   const [isMigrating, setIsMigrating] = useState(false);
   const [supabaseStorageCount, setSupabaseStorageCount] = useState(0);
+  const [reEncodingIds, setReEncodingIds] = useState<Set<string>>(new Set());
 
 
   // すべての言語（カウント用）
@@ -887,6 +888,60 @@ export const TechniquesManagement = () => {
     
     // Refresh the list
     window.location.reload();
+  };
+
+  // Re-encode video for adaptive bitrate streaming
+  const handleReencodeVideo = async (technique: Technique) => {
+    if (!technique.video_url) {
+      toast.error('動画URLがありません');
+      return;
+    }
+
+    setReEncodingIds(prev => new Set(prev).add(technique.id));
+
+    try {
+      const videoUrl = technique.video_url;
+      
+      // Check if it's a Bunny video
+      if (videoUrl.includes('b-cdn.net') || videoUrl.includes('bunnycdn')) {
+        // Extract video ID from Bunny URL
+        const urlParts = videoUrl.split('/');
+        const videoId = urlParts[urlParts.length - 2]; // Format: .../{videoId}/playlist.m3u8
+        
+        const { data, error } = await supabase.functions.invoke('upload-to-bunny', {
+          body: { action: 'reencode-video', videoId }
+        });
+
+        if (error) throw error;
+        
+        toast.success('再エンコード開始', {
+          description: `「${technique.name_ja}」の再エンコードを開始しました。完了まで数分かかります。`
+        });
+      } 
+      // Cloudflare Stream videos
+      else if (videoUrl.includes('cloudflarestream.com')) {
+        toast.error('Cloudflare動画は再エンコードできません', {
+          description: '元の動画ファイルを再アップロードしてください。編集ボタンから動画を差し替えできます。'
+        });
+      }
+      // Supabase storage or other
+      else {
+        toast.info('この動画は再エンコードに対応していません', {
+          description: '編集ボタンから動画を再アップロードしてください。'
+        });
+      }
+    } catch (error) {
+      console.error('Re-encode error:', error);
+      toast.error('再エンコードエラー', {
+        description: error instanceof Error ? error.message : '不明なエラー'
+      });
+    } finally {
+      setReEncodingIds(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(technique.id);
+        return newSet;
+      });
+    }
   };
 
   const capitalizeWords = (text: string): string => {
@@ -1827,7 +1882,7 @@ export const TechniquesManagement = () => {
                             </div>
                           </div>
                           {isAdmin && (
-                            <div className="pt-2 border-t">
+                            <div className="pt-2 border-t flex gap-2">
                               <Button
                                 size="sm"
                                 variant="outline"
@@ -1835,6 +1890,21 @@ export const TechniquesManagement = () => {
                               >
                                 編集
                               </Button>
+                              {technique.video_url && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleReencodeVideo(technique as any)}
+                                  disabled={reEncodingIds.has(technique.id)}
+                                >
+                                  {reEncodingIds.has(technique.id) ? (
+                                    <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                                  ) : (
+                                    <RefreshCw className="h-4 w-4 mr-1" />
+                                  )}
+                                  再エンコード
+                                </Button>
+                              )}
                             </div>
                           )}
                         </div>
