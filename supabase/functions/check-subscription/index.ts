@@ -77,21 +77,24 @@ serve(async (req) => {
     const customerId = customers.data[0].id;
     logStep("Found Stripe customer", { customerId });
 
-    // Save Stripe Customer ID to profiles table if not already saved
+    // Save Stripe Customer ID to user_billing table if not already saved
     if (userId) {
       try {
-        const { error: updateError } = await supabaseClient
-          .from('profiles')
-          .update({ stripe_customer_id: customerId })
-          .eq('id', userId);
+        // Use upsert to handle both insert and update cases
+        const { error: upsertError } = await supabaseClient
+          .from('user_billing')
+          .upsert(
+            { user_id: userId, stripe_customer_id: customerId },
+            { onConflict: 'user_id' }
+          );
         
-        if (updateError) {
-          logStep("Failed to update stripe_customer_id", { error: updateError.message });
+        if (upsertError) {
+          logStep("Failed to upsert stripe_customer_id", { error: upsertError.message });
         } else {
-          logStep("Successfully updated stripe_customer_id in profiles");
+          logStep("Successfully saved stripe_customer_id in user_billing");
         }
       } catch (updateErr) {
-        logStep("Error updating profiles", { error: updateErr instanceof Error ? updateErr.message : String(updateErr) });
+        logStep("Error updating user_billing", { error: updateErr instanceof Error ? updateErr.message : String(updateErr) });
       }
     }
 
