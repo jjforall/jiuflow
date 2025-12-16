@@ -124,6 +124,100 @@ serve(async (req) => {
       );
     }
 
+    if (action === "get-video-details") {
+      // Get detailed video info including encoding qualities
+      if (!videoId) {
+        throw new Error("videoId is required");
+      }
+
+      const response = await fetch(
+        `https://api.cloudflare.com/client/v4/accounts/${accountId}/stream/${videoId}`,
+        {
+          headers: {
+            "Authorization": `Bearer ${apiToken}`,
+          },
+        }
+      );
+
+      const result = await response.json();
+
+      if (!result.success) {
+        throw new Error(result.errors?.[0]?.message || "Failed to get video details");
+      }
+
+      const video = result.result;
+      
+      console.log(`[CLOUDFLARE-STREAM] Video details for ${videoId}:`, JSON.stringify(video, null, 2));
+
+      return new Response(
+        JSON.stringify({
+          videoId: video.uid,
+          status: video.status,
+          readyToStream: video.readyToStream,
+          input: video.input,
+          playback: video.playback,
+          size: video.size,
+          duration: video.duration,
+          created: video.created,
+          modified: video.modified,
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (action === "get-download-url") {
+      // Get downloadable URL for migration to Bunny
+      if (!videoId) {
+        throw new Error("videoId is required");
+      }
+
+      const response = await fetch(
+        `https://api.cloudflare.com/client/v4/accounts/${accountId}/stream/${videoId}/downloads`,
+        {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${apiToken}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      const result = await response.json();
+
+      if (!result.success) {
+        // Try to get existing download URL
+        const getResponse = await fetch(
+          `https://api.cloudflare.com/client/v4/accounts/${accountId}/stream/${videoId}`,
+          {
+            headers: {
+              "Authorization": `Bearer ${apiToken}`,
+            },
+          }
+        );
+        const getResult = await getResponse.json();
+        
+        if (getResult.success && getResult.result?.preview) {
+          return new Response(
+            JSON.stringify({
+              downloadUrl: getResult.result.preview,
+              message: "Using preview URL",
+            }),
+            { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+        
+        throw new Error(result.errors?.[0]?.message || "Failed to get download URL");
+      }
+
+      return new Response(
+        JSON.stringify({
+          downloadUrl: result.result?.default?.url || null,
+          status: result.result?.default?.status || "unknown",
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     throw new Error(`Unknown action: ${action}`);
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
