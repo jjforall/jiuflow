@@ -492,6 +492,25 @@ const Navigation = () => {
                           </Button>
                         </Link>
                       )}
+                      
+                      <Separator className="my-4" />
+                      
+                      <Button 
+                        variant="ghost" 
+                        className="w-full justify-start gap-3 h-12 hover:bg-destructive/10 text-destructive active:scale-95 active:opacity-70 transition-all duration-150"
+                        onClick={(e) => {
+                          e.currentTarget.classList.add('scale-95', 'opacity-70');
+                          setTimeout(() => {
+                            handleLogout();
+                            setIsOpen(false);
+                          }, 100);
+                        }}
+                      >
+                        <LogOut className="h-5 w-5" />
+                        <span className="text-base">
+                          {t.nav.logout || (language === "ja" ? "ログアウト" : language === "pt" ? "Sair" : "Logout")}
+                        </span>
+                      </Button>
                     </>
                   ) : (
                     <Link 
