@@ -104,16 +104,37 @@ serve(async (req) => {
     });
     logStep("Stripe initialized");
 
-    // Get all subscriptions with customer expansion only
-    const subscriptions = await stripe.subscriptions.list({
-      status: 'all',
-      limit: 100,
-      expand: ['data.customer'],
-    });
-    logStep("Fetched subscriptions", { count: subscriptions.data.length });
+    // Get ALL subscriptions using pagination (Stripe default limit is 100)
+    let allSubscriptions: Stripe.Subscription[] = [];
+    let hasMore = true;
+    let startingAfter: string | undefined = undefined;
+
+    while (hasMore) {
+      const params: Stripe.SubscriptionListParams = {
+        status: 'all',
+        limit: 100,
+        expand: ['data.customer'],
+      };
+      if (startingAfter) {
+        params.starting_after = startingAfter;
+      }
+
+      const subscriptions = await stripe.subscriptions.list(params);
+      allSubscriptions = allSubscriptions.concat(subscriptions.data);
+      hasMore = subscriptions.has_more;
+      
+      if (subscriptions.data.length > 0) {
+        startingAfter = subscriptions.data[subscriptions.data.length - 1].id;
+      } else {
+        hasMore = false;
+      }
+      
+      logStep("Fetched subscription page", { pageCount: subscriptions.data.length, totalSoFar: allSubscriptions.length });
+    }
+    logStep("Fetched all subscriptions", { totalCount: allSubscriptions.length });
 
     // Filter subscriptions to only include Jiuflow ones
-    const jiuflowSubscriptions = subscriptions.data.filter((sub: Stripe.Subscription) => {
+    const jiuflowSubscriptions = allSubscriptions.filter((sub: Stripe.Subscription) => {
       const priceId = sub.items.data[0]?.price?.id;
       return JIUFLOW_PRICE_IDS.includes(priceId);
     });
