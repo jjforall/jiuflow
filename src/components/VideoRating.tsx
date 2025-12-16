@@ -54,11 +54,17 @@ export const VideoRating = ({ videoId, userId }: VideoRatingProps) => {
     try {
       const { error } = await supabase
         .from("video_ratings")
-        .upsert({
-          user_id: userId,
-          video_id: videoId,
-          rating,
-        });
+        .upsert(
+          {
+            user_id: userId,
+            video_id: videoId,
+            rating,
+            updated_at: new Date().toISOString(),
+          },
+          {
+            onConflict: 'user_id,video_id',
+          }
+        );
 
       if (error) throw error;
 

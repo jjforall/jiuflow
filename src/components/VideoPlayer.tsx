@@ -548,11 +548,14 @@ export const VideoPlayer = ({ videoUrl, autoPlay = true, thumbnailUrl, onPlay }:
         </div>
       )}
       
-      {/* Buffering indicator during playback */}
+      {/* Buffering indicator during playback - positioned at bottom-left to not block video content */}
       {isBuffering && hasStarted && (
-        <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
-          <div className="bg-black/60 backdrop-blur-sm rounded-full p-4">
-            <Loader2 className="w-10 h-10 text-white animate-spin" />
+        <div className="absolute bottom-16 left-4 z-10 pointer-events-none">
+          <div className="bg-black/70 backdrop-blur-sm rounded-lg px-3 py-2 flex items-center gap-2">
+            <Loader2 className="w-5 h-5 text-white animate-spin" />
+            <span className="text-white text-sm font-medium">
+              {language === "ja" ? "読み込み中..." : language === "pt" ? "Carregando..." : "Loading..."}
+            </span>
           </div>
         </div>
       )}
