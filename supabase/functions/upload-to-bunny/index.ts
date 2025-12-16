@@ -53,7 +53,7 @@ Deno.serve(async (req) => {
     const { action, videoId, title } = body;
 
     if (action === "create-video") {
-      // Create a new video in Bunny Stream library
+      // Create a new video in Bunny Stream library with transcoding enabled
       const response = await fetch(
         `https://video.bunnycdn.com/library/${BUNNY_LIBRARY_ID}/videos`,
         {
@@ -64,6 +64,8 @@ Deno.serve(async (req) => {
           },
           body: JSON.stringify({
             title: title || `Video_${Date.now()}`,
+            // Ensure transcoding is enabled for adaptive bitrate streaming
+            enabledResolutions: "240p,360p,480p,720p,1080p",
           }),
         }
       );
@@ -75,12 +77,41 @@ Deno.serve(async (req) => {
       }
 
       const videoData = await response.json();
-      console.log("Created Bunny video:", videoData.guid);
+      console.log("Created Bunny video with transcoding:", videoData.guid, "resolutions:", videoData.enabledResolutions);
 
       return new Response(
         JSON.stringify({
           videoId: videoData.guid,
           libraryId: BUNNY_LIBRARY_ID,
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (action === "reencode-video") {
+      // Re-encode existing video to ensure all resolutions are available
+      const response = await fetch(
+        `https://video.bunnycdn.com/library/${BUNNY_LIBRARY_ID}/videos/${videoId}/reencode`,
+        {
+          method: "POST",
+          headers: {
+            "AccessKey": BUNNY_API_KEY,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Bunny reencode error:", errorText);
+        throw new Error(`Failed to reencode video: ${response.status}`);
+      }
+
+      console.log("Re-encoding started for video:", videoId);
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          message: "Re-encoding started",
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
