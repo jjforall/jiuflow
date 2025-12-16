@@ -92,32 +92,87 @@ export function UploadProvider({ children }: { children: ReactNode }) {
       // Step 3: Upload using chunked TUS protocol
       updateUpload(uploadId, { progress: 15 });
       
-      const tusBaseUrl = `${uploadData.tusEndpoint}`;
-      const queryParams = `?VideoId=${uploadData.videoId}&LibraryId=${uploadData.libraryId}&AuthorizationSignature=${uploadData.signature}&AuthorizationExpire=${uploadData.expirationTime}`;
-      
-      // Step 3a: Create TUS upload session
-      console.log(`TUS upload: file size ${file.size} bytes (${(file.size / 1024 / 1024 / 1024).toFixed(2)} GB)`);
-      const createResponse = await fetch(tusBaseUrl + queryParams, {
-        method: 'POST',
-        headers: {
-          'Tus-Resumable': '1.0.0',
-          'Upload-Length': file.size.toString(),
-        },
-        signal: abortController.signal,
-      });
+      const tusEndpoint = String(uploadData.tusEndpoint);
 
-      if (!createResponse.ok && createResponse.status !== 201) {
-        const errorText = await createResponse.text();
-        console.error('TUS create failed:', createResponse.status, errorText);
-        // Check for specific error messages
-        if (errorText.includes('exceeded') || errorText.includes('maximum')) {
-          throw new Error('ファイルサイズが大きすぎます。Bunny.netの設定を確認してください。');
+      // Bunny TUS requires auth headers (not query params)
+      const tusAuthHeaders: Record<string, string> = {
+        AuthorizationSignature: String(uploadData.signature),
+        AuthorizationExpire: String(uploadData.expirationTime),
+        VideoId: String(uploadData.videoId),
+        LibraryId: String(uploadData.libraryId),
+      };
+
+      // Step 3a: Create TUS upload session (with retry for unstable networks)
+      console.log(
+        `TUS upload: file size ${file.size} bytes (${(file.size / 1024 / 1024 / 1024).toFixed(2)} GB)`
+      );
+
+      let createResponse: Response | null = null;
+      let lastCreateErrorText = "";
+
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        if (abortController.signal.aborted) {
+          throw new Error("アップロードがキャンセルされました");
         }
-        throw new Error(`アップロードセッションの作成に失敗しました (${createResponse.status})`);
+
+        try {
+          const res = await fetch(tusEndpoint, {
+            method: "POST",
+            headers: {
+              "Tus-Resumable": "1.0.0",
+              "Upload-Length": file.size.toString(),
+              ...tusAuthHeaders,
+            },
+            signal: abortController.signal,
+          });
+
+          // Bunny returns 201 Created for successful TUS creation
+          if (res.ok && res.status === 201) {
+            createResponse = res;
+            break;
+          }
+
+          const errorText = await res.text();
+          lastCreateErrorText = errorText;
+          console.error("TUS create failed:", res.status, errorText);
+
+          // Retry only on transient-like failures
+          const shouldRetry = res.status === 0 || res.status >= 500;
+          if (shouldRetry && attempt < 3) {
+            await new Promise((r) => setTimeout(r, 1500 * attempt));
+            continue;
+          }
+
+          // Non-retryable: throw immediately
+          if (errorText.includes("exceeded") || errorText.includes("maximum")) {
+            throw new Error("ファイルサイズが大きすぎます。アップロード上限を確認してください。");
+          }
+
+          throw new Error(`アップロードセッションの作成に失敗しました (${res.status})`);
+        } catch (err) {
+          // Network errors (poor connection) -> retry
+          if (attempt < 3) {
+            console.log(`TUS create error, retry ${attempt}/3:`, err);
+            await new Promise((r) => setTimeout(r, 1500 * attempt));
+            continue;
+          }
+
+          // Final failure
+          throw err;
+        }
       }
 
-      const uploadLocation = createResponse.headers.get('Location') || (tusBaseUrl + queryParams);
-      
+      if (!createResponse) {
+        throw new Error(`アップロードセッションの作成に失敗しました: ${lastCreateErrorText || "unknown"}`);
+      }
+
+      const locationHeader = createResponse.headers.get("Location");
+      if (!locationHeader) {
+        throw new Error("アップロードセッションの作成に失敗しました (Locationヘッダーなし)");
+      }
+
+      const uploadLocation = new URL(locationHeader, tusEndpoint).toString();
+
       // Step 3b: Upload file in chunks
       // Use smaller chunks for better mobile compatibility (10MB for mobile, 25MB for desktop)
       const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
@@ -134,7 +189,7 @@ export function UploadProvider({ children }: { children: ReactNode }) {
         }
 
         const chunk = file.slice(offset, Math.min(offset + CHUNK_SIZE, file.size));
-        
+
         try {
           const patchResponse = await fetch(uploadLocation, {
             method: 'PATCH',
@@ -142,6 +197,7 @@ export function UploadProvider({ children }: { children: ReactNode }) {
               'Tus-Resumable': '1.0.0',
               'Upload-Offset': offset.toString(),
               'Content-Type': 'application/offset+octet-stream',
+              ...tusAuthHeaders,
             },
             body: chunk,
             signal: abortController.signal,
@@ -162,7 +218,7 @@ export function UploadProvider({ children }: { children: ReactNode }) {
           offset = newOffset ? parseInt(newOffset, 10) : offset + chunk.size;
           chunkIndex++;
           retryCount = 0; // Reset retry count on success
-          
+
           const uploadProgress = 15 + Math.floor((chunkIndex / totalChunks) * 55);
           updateUpload(uploadId, { progress: uploadProgress });
         } catch (error) {
