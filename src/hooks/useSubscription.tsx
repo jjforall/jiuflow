@@ -53,7 +53,7 @@ const fetchSubscription = async (): Promise<Omit<SubscriptionStatus, 'loading'>>
 
   try {
     const timeoutPromise = new Promise((_, reject) => 
-      setTimeout(() => reject(new Error('Subscription check timeout')), 10000)
+      setTimeout(() => reject(new Error('Subscription check timeout')), 20000)
     );
     
     const sessionPromise = supabase.auth.getSession();

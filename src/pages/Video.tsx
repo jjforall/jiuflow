@@ -66,7 +66,7 @@ const Video = () => {
   const t = translations[language] || translations.ja;
   const navigate = useNavigate();
   const { subscribed, loading: subscriptionLoading } = useSubscription();
-  const { isAdmin, isStaff, user } = useAuth();
+  const { isAdmin, isStaff, user, isLoading: authLoading } = useAuth();
   const { isFavorite, toggleFavorite } = useFavoriteTechniques();
   const { setFloatingVideo } = useFloatingVideo();
   const { play, isPlaying, volume, setVolume, playlist, loadPlaylist } = useMusic();
@@ -631,9 +631,8 @@ const Video = () => {
     }
   };
 
-  // 統合ローディング - テクニックデータがない時のみスケルトン表示
-  // サブスクリプションはキャッシュされるので待たない
-  if (!isReady) {
+  // 統合ローディング - 認証やテクニックデータ読み込み中はスケルトン表示
+  if (!isReady || authLoading) {
     return (
       <div className="min-h-screen">
         <Navigation />
@@ -665,7 +664,9 @@ const Video = () => {
     );
   }
 
-  if (!subscribed && !isAdmin && !isStaff) {
+  // Only show membership page to non-authenticated users
+  // Logged-in users can view regardless of subscription status per memory features/subscription-access-logic
+  if (!user) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/20">
         <Navigation />

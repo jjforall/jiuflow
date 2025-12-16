@@ -181,9 +181,9 @@ const Map = () => {
     }
 
     try {
-      // Add timeout to prevent hanging forever
+      // Add timeout to prevent hanging forever (longer timeout for slow networks)
       const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Request timeout')), 15000)
+        setTimeout(() => reject(new Error('Request timeout')), 30000)
       );
       
       const queryPromise = supabase
