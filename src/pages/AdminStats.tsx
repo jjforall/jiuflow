@@ -222,6 +222,7 @@ const AdminStats = () => {
         const createdDate = new Date(profile.created_at);
         dateMap.forEach((value, dateStr) => {
           const targetDate = new Date(dateStr);
+          targetDate.setHours(23, 59, 59, 999); // End of day
           if (createdDate <= targetDate) {
             value.total++;
           }
