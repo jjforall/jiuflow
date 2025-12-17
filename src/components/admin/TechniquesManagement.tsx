@@ -84,6 +84,27 @@ export const TechniquesManagement = () => {
   const [isMigrating, setIsMigrating] = useState(false);
   const [supabaseStorageCount, setSupabaseStorageCount] = useState(0);
   const [reEncodingIds, setReEncodingIds] = useState<Set<string>>(new Set());
+  const [isCheckingEncoding, setIsCheckingEncoding] = useState(false);
+  const [encodingResults, setEncodingResults] = useState<{
+    total: number;
+    properlyEncoded: number;
+    notEncoded: number;
+    notEncodedVideos: Array<{
+      techniqueId: string;
+      name: string;
+      seriesPrefix: string;
+      seriesOrder: number | null;
+      cloudflareVideoId: string;
+      status: string;
+      readyToStream: boolean;
+      inputWidth: number;
+      inputHeight: number;
+      duration: number;
+      isProperlyEncoded: boolean;
+      error?: string;
+    }>;
+  } | null>(null);
+  const [reEncodingCloudflareIds, setReEncodingCloudflareIds] = useState<Set<string>>(new Set());
 
 
   // すべての言語（カウント用）
@@ -239,6 +260,88 @@ export const TechniquesManagement = () => {
       toast.error(error instanceof Error ? error.message : "動画の移行に失敗しました");
     } finally {
       setIsMigrating(false);
+    }
+  };
+
+  // Check video encoding status
+  const handleCheckEncoding = async () => {
+    setIsCheckingEncoding(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error("ログインが必要です");
+        return;
+      }
+
+      const response = await supabase.functions.invoke('check-video-encoding', {
+        body: { action: 'check-all' },
+      });
+
+      if (response.error) {
+        throw new Error(response.error.message);
+      }
+
+      const result = response.data;
+      setEncodingResults(result);
+      
+      if (result.notEncoded === 0) {
+        toast.success(`全${result.total}件の動画が正常にエンコードされています`);
+      } else {
+        toast.warning(`${result.notEncoded}件の動画が未エンコードです`, {
+          description: '下のリストから再エンコードを実行できます'
+        });
+      }
+    } catch (error) {
+      console.error("Encoding check error:", error);
+      toast.error(error instanceof Error ? error.message : "エンコードチェックに失敗しました");
+    } finally {
+      setIsCheckingEncoding(false);
+    }
+  };
+
+  // Re-encode Cloudflare video
+  const handleReEncodeCloudflare = async (cloudflareVideoId: string, techniqueName: string) => {
+    setReEncodingCloudflareIds(prev => new Set(prev).add(cloudflareVideoId));
+    
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error("ログインが必要です");
+        return;
+      }
+
+      const response = await supabase.functions.invoke('check-video-encoding', {
+        body: { action: 're-encode', videoId: cloudflareVideoId },
+      });
+
+      if (response.error) {
+        throw new Error(response.error.message);
+      }
+
+      const result = response.data;
+      
+      if (result.success) {
+        toast.success('再エンコード開始', {
+          description: `「${techniqueName}」の新しい動画ID: ${result.newVideoId}`,
+        });
+        
+        // Note: The new video URL needs to be manually updated in the database
+        toast.info('新しい動画URLをDBに反映してください', {
+          description: result.newPlaybackUrl,
+          duration: 10000,
+        });
+      } else {
+        toast.warning(result.message || '再エンコードを開始できませんでした');
+      }
+    } catch (error) {
+      console.error("Re-encode error:", error);
+      toast.error(error instanceof Error ? error.message : "再エンコードに失敗しました");
+    } finally {
+      setReEncodingCloudflareIds(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(cloudflareVideoId);
+        return newSet;
+      });
     }
   };
   
@@ -1539,6 +1642,78 @@ export const TechniquesManagement = () => {
               )}
             </Button>
           </div>
+        </div>
+      )}
+
+      {/* Encoding Check Section */}
+      {isAdmin && (
+        <div className="mb-6 p-4 border border-blue-500/50 bg-blue-500/5 rounded-lg">
+          <div className="flex items-center justify-between gap-4 flex-wrap mb-4">
+            <div className="flex items-center gap-3">
+              <RefreshCw className="w-8 h-8 text-blue-500" />
+              <div>
+                <p className="font-medium">動画エンコードチェック</p>
+                <p className="text-sm text-muted-foreground">
+                  Cloudflare動画のエンコード状態を確認・再エンコード
+                </p>
+              </div>
+            </div>
+            <Button 
+              onClick={handleCheckEncoding}
+              disabled={isCheckingEncoding}
+              variant="outline"
+              className="border-blue-500 text-blue-500 hover:bg-blue-500/10"
+            >
+              {isCheckingEncoding ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  チェック中...
+                </>
+              ) : (
+                <>
+                  <Search className="w-4 h-4 mr-2" />
+                  エンコードチェック
+                </>
+              )}
+            </Button>
+          </div>
+          
+          {encodingResults && (
+            <div className="mt-4">
+              <div className="flex gap-4 mb-4 text-sm">
+                <span className="text-green-500">✓ 正常: {encodingResults.properlyEncoded}</span>
+                <span className="text-red-500">✗ 未エンコード: {encodingResults.notEncoded}</span>
+              </div>
+              
+              {encodingResults.notEncodedVideos.length > 0 && (
+                <div className="space-y-2 max-h-60 overflow-y-auto">
+                  {encodingResults.notEncodedVideos.map((video) => (
+                    <div key={video.cloudflareVideoId} className="flex items-center justify-between p-2 bg-background rounded border">
+                      <div className="text-sm">
+                        <span className="font-medium">{video.seriesPrefix}-{video.seriesOrder}</span>
+                        <span className="ml-2">{video.name}</span>
+                        <span className="ml-2 text-muted-foreground text-xs">
+                          ({video.status}, {video.inputWidth}x{video.inputHeight})
+                        </span>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleReEncodeCloudflare(video.cloudflareVideoId, video.name)}
+                        disabled={reEncodingCloudflareIds.has(video.cloudflareVideoId)}
+                      >
+                        {reEncodingCloudflareIds.has(video.cloudflareVideoId) ? (
+                          <Loader2 className="w-3 h-3 animate-spin" />
+                        ) : (
+                          '再エンコード'
+                        )}
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
 

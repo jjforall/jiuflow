@@ -151,3 +151,6 @@ verify_jwt = false
 
 [functions.mcp-chat]
 verify_jwt = false
+
+[functions.check-video-encoding]
+verify_jwt = true
