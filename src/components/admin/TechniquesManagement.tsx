@@ -1023,9 +1023,35 @@ export const TechniquesManagement = () => {
       } 
       // Cloudflare Stream videos
       else if (videoUrl.includes('cloudflarestream.com')) {
-        toast.error('Cloudflare動画は再エンコードできません', {
-          description: '元の動画ファイルを再アップロードしてください。編集ボタンから動画を差し替えできます。'
+        // Extract video ID from Cloudflare URL
+        const match = videoUrl.match(/cloudflarestream\.com\/([a-f0-9]+)\//);
+        if (!match) {
+          toast.error('動画IDを取得できません', {
+            description: 'URLの形式が不正です。'
+          });
+          return;
+        }
+        
+        const cloudflareVideoId = match[1];
+        
+        const { data, error } = await supabase.functions.invoke('check-video-encoding', {
+          body: { action: 're-encode', videoId: cloudflareVideoId }
         });
+
+        if (error) throw error;
+        
+        if (data.success) {
+          toast.success('再エンコード開始', {
+            description: `新しい動画ID: ${data.newVideoId}\nデータベースのvideo_urlを手動で更新してください。`,
+            duration: 10000,
+          });
+          console.log('Re-encode result:', data);
+        } else {
+          toast.warning('再エンコード準備中', {
+            description: data.message || 'ダウンロードURLの準備中です。しばらく待ってから再試行してください。',
+            duration: 8000,
+          });
+        }
       }
       // Supabase storage or other
       else {
