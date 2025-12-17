@@ -218,6 +218,200 @@ serve(async (req) => {
       );
     }
 
+    if (action === "list-all-videos") {
+      // List all videos in the account with their encoding status
+      const response = await fetch(
+        `https://api.cloudflare.com/client/v4/accounts/${accountId}/stream?include_counts=true`,
+        {
+          headers: {
+            "Authorization": `Bearer ${apiToken}`,
+          },
+        }
+      );
+
+      const result = await response.json();
+
+      if (!result.success) {
+        throw new Error(result.errors?.[0]?.message || "Failed to list videos");
+      }
+
+      const videos = result.result.map((video: any) => ({
+        videoId: video.uid,
+        name: video.meta?.name || "Unknown",
+        status: video.status,
+        readyToStream: video.readyToStream,
+        input: video.input,
+        duration: video.duration,
+        created: video.created,
+        size: video.size,
+      }));
+
+      console.log(`[CLOUDFLARE-STREAM] Listed ${videos.length} videos`);
+
+      return new Response(
+        JSON.stringify({
+          total: result.result_info?.total_count || videos.length,
+          videos,
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (action === "re-encode-video") {
+      // Re-encode by copying the video from its download URL
+      if (!videoId) {
+        throw new Error("videoId is required");
+      }
+
+      // First, enable downloads for the video
+      console.log(`[CLOUDFLARE-STREAM] Enabling downloads for video: ${videoId}`);
+      const downloadResponse = await fetch(
+        `https://api.cloudflare.com/client/v4/accounts/${accountId}/stream/${videoId}/downloads`,
+        {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${apiToken}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      const downloadResult = await downloadResponse.json();
+      console.log(`[CLOUDFLARE-STREAM] Download enable result:`, JSON.stringify(downloadResult));
+
+      // Get the video details to find download URL
+      const videoResponse = await fetch(
+        `https://api.cloudflare.com/client/v4/accounts/${accountId}/stream/${videoId}`,
+        {
+          headers: {
+            "Authorization": `Bearer ${apiToken}`,
+          },
+        }
+      );
+
+      const videoResult = await videoResponse.json();
+      
+      if (!videoResult.success) {
+        throw new Error(videoResult.errors?.[0]?.message || "Failed to get video details");
+      }
+
+      const video = videoResult.result;
+      
+      // Check if downloads are ready
+      if (!downloadResult.success && !video.downloads?.default?.url) {
+        return new Response(
+          JSON.stringify({
+            message: "Downloads not ready yet. Try again in a few minutes.",
+            videoId,
+            downloadStatus: downloadResult,
+          }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      const downloadUrl = video.downloads?.default?.url || downloadResult.result?.default?.url;
+      
+      if (!downloadUrl) {
+        return new Response(
+          JSON.stringify({
+            message: "Download URL not available. Video may need to be re-uploaded manually.",
+            videoId,
+            video: {
+              status: video.status,
+              readyToStream: video.readyToStream,
+              input: video.input,
+            },
+          }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // Copy the video to create a new encoded version
+      console.log(`[CLOUDFLARE-STREAM] Copying video from: ${downloadUrl}`);
+      const copyResponse = await fetch(
+        `https://api.cloudflare.com/client/v4/accounts/${accountId}/stream/copy`,
+        {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${apiToken}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            url: downloadUrl,
+            meta: {
+              name: video.meta?.name || `Re-encoded from ${videoId}`,
+              originalVideoId: videoId,
+              reEncodedAt: new Date().toISOString(),
+            },
+          }),
+        }
+      );
+
+      const copyResult = await copyResponse.json();
+
+      if (!copyResult.success) {
+        throw new Error(copyResult.errors?.[0]?.message || "Failed to copy video");
+      }
+
+      console.log(`[CLOUDFLARE-STREAM] Video copied successfully. New ID: ${copyResult.result.uid}`);
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          originalVideoId: videoId,
+          newVideoId: copyResult.result.uid,
+          newPlaybackUrl: copyResult.result.playback?.hls,
+          status: copyResult.result.status,
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (action === "check-encoding-status") {
+      // Check encoding status for a specific video
+      if (!videoId) {
+        throw new Error("videoId is required");
+      }
+
+      const response = await fetch(
+        `https://api.cloudflare.com/client/v4/accounts/${accountId}/stream/${videoId}`,
+        {
+          headers: {
+            "Authorization": `Bearer ${apiToken}`,
+          },
+        }
+      );
+
+      const result = await response.json();
+
+      if (!result.success) {
+        throw new Error(result.errors?.[0]?.message || "Failed to get video");
+      }
+
+      const video = result.result;
+      
+      // Check if properly encoded (has multiple quality levels)
+      const isProperlyEncoded = video.readyToStream && 
+        video.status?.state === "ready" && 
+        video.input?.width > 0;
+
+      return new Response(
+        JSON.stringify({
+          videoId: video.uid,
+          name: video.meta?.name || "Unknown",
+          isProperlyEncoded,
+          status: video.status,
+          readyToStream: video.readyToStream,
+          input: video.input,
+          duration: video.duration,
+          size: video.size,
+          created: video.created,
+          playback: video.playback,
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     throw new Error(`Unknown action: ${action}`);
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
