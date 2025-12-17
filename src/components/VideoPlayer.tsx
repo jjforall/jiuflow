@@ -58,6 +58,7 @@ export const VideoPlayer = ({ videoUrl, autoPlay = true, thumbnailUrl, onPlay }:
   const [isBuffering, setIsBuffering] = useState(false);
   const [hasStarted, setHasStarted] = useState(false);
   const [showSkipIndicator, setShowSkipIndicator] = useState<'forward' | 'backward' | null>(null);
+  const [availableLevels, setAvailableLevels] = useState<{ height: number; bitrate: number }[]>([]);
   const [showQualityMenu, setShowQualityMenu] = useState(false);
   const [showQualityLabel, setShowQualityLabel] = useState(true);
   const [isVisible, setIsVisible] = useState(false);
@@ -241,6 +242,10 @@ export const VideoPlayer = ({ videoUrl, autoPlay = true, thumbnailUrl, onPlay }:
 
       hls.on(Hls.Events.MANIFEST_PARSED, () => {
         console.log('HLS manifest parsed, qualities available:', hls.levels);
+        // Update state to trigger re-render with quality levels
+        if (hls.levels && hls.levels.length > 0) {
+          setAvailableLevels(hls.levels.map(level => ({ height: level.height, bitrate: level.bitrate })));
+        }
         if (autoPlay) {
           // Start muted for guaranteed autoplay, unmute after start
           video.muted = true;
@@ -503,9 +508,8 @@ export const VideoPlayer = ({ videoUrl, autoPlay = true, thumbnailUrl, onPlay }:
   }, []);
 
   const getQualityLevels = useCallback(() => {
-    if (!hlsRef.current) return [];
-    return hlsRef.current.levels;
-  }, []);
+    return availableLevels;
+  }, [availableLevels]);
 
   return (
     <div ref={containerRef} className="relative bg-black aspect-video">
@@ -601,7 +605,7 @@ export const VideoPlayer = ({ videoUrl, autoPlay = true, thumbnailUrl, onPlay }:
       )}
       
       {/* Quality selector button */}
-      {hlsRef.current && hlsRef.current.levels.length > 1 && (
+      {availableLevels.length > 1 && (
         <div className="absolute top-4 right-4 z-30">
           <DropdownMenu open={showQualityMenu} onOpenChange={setShowQualityMenu}>
             <DropdownMenuTrigger asChild>
