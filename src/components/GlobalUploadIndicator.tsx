@@ -20,6 +20,33 @@ export function GlobalUploadIndicator() {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
   };
 
+  const formatTime = (seconds: number) => {
+    if (seconds < 60) return `${Math.round(seconds)}秒`;
+    if (seconds < 3600) return `${Math.floor(seconds / 60)}分${Math.round(seconds % 60)}秒`;
+    return `${Math.floor(seconds / 3600)}時間${Math.floor((seconds % 3600) / 60)}分`;
+  };
+
+  const calculateETA = (upload: typeof uploads[0]) => {
+    if (upload.uploadedBytes === 0 || upload.status !== 'uploading') return null;
+    
+    const elapsedMs = Date.now() - upload.startTime;
+    if (elapsedMs < 2000) return null; // Wait at least 2 seconds for stable calculation
+    
+    const bytesPerMs = upload.uploadedBytes / elapsedMs;
+    if (bytesPerMs <= 0) return null;
+    
+    const remainingBytes = upload.fileSize - upload.uploadedBytes;
+    const remainingMs = remainingBytes / bytesPerMs;
+    
+    return remainingMs / 1000; // Return seconds
+  };
+
+  const getActualProgress = (upload: typeof uploads[0]) => {
+    if (upload.status === 'processing') return upload.progress;
+    // Calculate real percentage from uploaded bytes
+    return Math.round((upload.uploadedBytes / upload.fileSize) * 100);
+  };
+
   return (
     <div className="fixed bottom-4 right-4 z-50 w-80 bg-card border rounded-lg shadow-lg overflow-hidden">
       <div className="bg-muted px-4 py-2 flex items-center justify-between border-b">
@@ -43,61 +70,77 @@ export function GlobalUploadIndicator() {
       </div>
 
       <div className="max-h-64 overflow-y-auto">
-        {uploads.map((upload) => (
-          <div
-            key={upload.id}
-            className={cn(
-              "px-4 py-3 border-b last:border-b-0",
-              upload.status === 'error' && "bg-destructive/5"
-            )}
-          >
-            <div className="flex items-start justify-between gap-2 mb-2">
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate">{upload.fileName}</p>
-                <p className="text-xs text-muted-foreground">
-                  {formatBytes(upload.fileSize)}
-                </p>
+        {uploads.map((upload) => {
+          const actualProgress = getActualProgress(upload);
+          const eta = calculateETA(upload);
+          
+          return (
+            <div
+              key={upload.id}
+              className={cn(
+                "px-4 py-3 border-b last:border-b-0",
+                upload.status === 'error' && "bg-destructive/5"
+              )}
+            >
+              <div className="flex items-start justify-between gap-2 mb-2">
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate">{upload.fileName}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {upload.status === 'uploading' ? (
+                      <>
+                        {formatBytes(upload.uploadedBytes)} / {formatBytes(upload.fileSize)}
+                      </>
+                    ) : (
+                      formatBytes(upload.fileSize)
+                    )}
+                  </p>
+                </div>
+                <div className="flex items-center gap-1">
+                  {upload.status === 'uploading' && (
+                    <Loader2 className="w-4 h-4 text-primary animate-spin" />
+                  )}
+                  {upload.status === 'processing' && (
+                    <Loader2 className="w-4 h-4 text-amber-500 animate-spin" />
+                  )}
+                  {upload.status === 'completed' && (
+                    <CheckCircle className="w-4 h-4 text-green-500" />
+                  )}
+                  {upload.status === 'error' && (
+                    <AlertCircle className="w-4 h-4 text-destructive" />
+                  )}
+                  {(upload.status === 'uploading' || upload.status === 'processing') && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6"
+                      onClick={() => cancelUpload(upload.id)}
+                    >
+                      <X className="w-3 h-3" />
+                    </Button>
+                  )}
+                </div>
               </div>
-              <div className="flex items-center gap-1">
-                {upload.status === 'uploading' && (
-                  <Loader2 className="w-4 h-4 text-primary animate-spin" />
-                )}
-                {upload.status === 'processing' && (
-                  <Loader2 className="w-4 h-4 text-amber-500 animate-spin" />
-                )}
-                {upload.status === 'completed' && (
-                  <CheckCircle className="w-4 h-4 text-green-500" />
-                )}
-                {upload.status === 'error' && (
-                  <AlertCircle className="w-4 h-4 text-destructive" />
-                )}
-                {(upload.status === 'uploading' || upload.status === 'processing') && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6"
-                    onClick={() => cancelUpload(upload.id)}
-                  >
-                    <X className="w-3 h-3" />
-                  </Button>
-                )}
-              </div>
+
+              {(upload.status === 'uploading' || upload.status === 'processing') && (
+                <div className="space-y-1">
+                  <Progress value={actualProgress} className="h-1.5" />
+                  <div className="flex justify-between text-xs text-muted-foreground">
+                    <span>
+                      {upload.status === 'processing' ? '処理中...' : `${actualProgress}%`}
+                    </span>
+                    {upload.status === 'uploading' && eta !== null && (
+                      <span>残り {formatTime(eta)}</span>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {upload.status === 'error' && upload.error && (
+                <p className="text-xs text-destructive">{upload.error}</p>
+              )}
             </div>
-
-            {(upload.status === 'uploading' || upload.status === 'processing') && (
-              <div className="space-y-1">
-                <Progress value={upload.progress} className="h-1.5" />
-                <p className="text-xs text-muted-foreground text-right">
-                  {upload.status === 'processing' ? '処理中...' : `${upload.progress}%`}
-                </p>
-              </div>
-            )}
-
-            {upload.status === 'error' && upload.error && (
-              <p className="text-xs text-destructive">{upload.error}</p>
-            )}
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
