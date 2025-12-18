@@ -6,6 +6,7 @@ interface UploadTask {
   id: string;
   fileName: string;
   fileSize: number;
+  uploadedBytes: number;
   progress: number;
   status: 'uploading' | 'processing' | 'completed' | 'error';
   videoUrl?: string;
@@ -13,6 +14,7 @@ interface UploadTask {
   thumbnailUrl?: string;
   error?: string;
   type: 'bunny' | 'supabase';
+  startTime: number;
 }
 
 interface UploadContextType {
@@ -44,9 +46,11 @@ export function UploadProvider({ children }: { children: ReactNode }) {
       id: uploadId,
       fileName: file.name,
       fileSize: file.size,
+      uploadedBytes: 0,
       progress: 0,
       status: 'uploading',
       type: 'bunny',
+      startTime: Date.now(),
     };
 
     setUploads(prev => [...prev, newUpload]);
@@ -219,8 +223,8 @@ export function UploadProvider({ children }: { children: ReactNode }) {
           chunkIndex++;
           retryCount = 0; // Reset retry count on success
 
-          const uploadProgress = 15 + Math.floor((chunkIndex / totalChunks) * 55);
-          updateUpload(uploadId, { progress: uploadProgress });
+          const uploadProgress = 15 + Math.floor((offset / file.size) * 55);
+          updateUpload(uploadId, { progress: uploadProgress, uploadedBytes: offset });
         } catch (error) {
           if (error instanceof Error && error.name === 'AbortError') {
             throw error;
@@ -308,9 +312,11 @@ export function UploadProvider({ children }: { children: ReactNode }) {
       id: uploadId,
       fileName: file.name,
       fileSize: file.size,
+      uploadedBytes: 0,
       progress: 0,
       status: 'uploading',
       type: 'supabase',
+      startTime: Date.now(),
     };
 
     setUploads(prev => [...prev, newUpload]);
