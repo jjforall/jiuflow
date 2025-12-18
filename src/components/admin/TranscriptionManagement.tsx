@@ -101,7 +101,20 @@ export const TranscriptionManagement = () => {
         },
       });
 
-      if (error) throw error;
+      if (error) {
+        // Try to extract server error body for better debugging
+        let message = error.message;
+        const anyErr = error as any;
+        if (anyErr?.context?.json) {
+          try {
+            const body = await anyErr.context.json();
+            if (body?.error) message = body.error;
+          } catch {
+            // ignore
+          }
+        }
+        throw new Error(message);
+      }
 
       toast.success(`「${technique.name_ja || technique.name}」の文字起こしが完了しました`);
       fetchData();
