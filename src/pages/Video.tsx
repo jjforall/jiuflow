@@ -826,7 +826,8 @@ const Video = () => {
                   <VideoPlayer 
                     videoUrl={getTechniqueVideoUrl(technique)!} 
                     thumbnailUrl={getTechniqueThumbnailUrl(technique)}
-                    autoPlay 
+                    autoPlay
+                    techniqueId={technique.id}
                   />
                 ) : (
                   <div className="aspect-video flex items-center justify-center">

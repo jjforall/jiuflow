@@ -3109,6 +3109,47 @@ export type Database = {
           },
         ]
       }
+      video_subtitles: {
+        Row: {
+          created_at: string
+          id: string
+          language_code: string
+          status: string
+          subtitle_url: string | null
+          transcription_id: string
+          updated_at: string
+          vtt_content: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          language_code: string
+          status?: string
+          subtitle_url?: string | null
+          transcription_id: string
+          updated_at?: string
+          vtt_content?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          language_code?: string
+          status?: string
+          subtitle_url?: string | null
+          transcription_id?: string
+          updated_at?: string
+          vtt_content?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "video_subtitles_transcription_id_fkey"
+            columns: ["transcription_id"]
+            isOneToOne: false
+            referencedRelation: "video_transcriptions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       video_tips: {
         Row: {
           amount: number
@@ -3138,6 +3179,60 @@ export type Database = {
           video_id?: string
         }
         Relationships: []
+      }
+      video_transcriptions: {
+        Row: {
+          created_at: string
+          edited_text: string | null
+          id: string
+          language_code: string
+          original_text: string
+          segments: Json | null
+          status: string
+          technique_id: string | null
+          updated_at: string
+          user_video_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          edited_text?: string | null
+          id?: string
+          language_code?: string
+          original_text: string
+          segments?: Json | null
+          status?: string
+          technique_id?: string | null
+          updated_at?: string
+          user_video_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          edited_text?: string | null
+          id?: string
+          language_code?: string
+          original_text?: string
+          segments?: Json | null
+          status?: string
+          technique_id?: string | null
+          updated_at?: string
+          user_video_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "video_transcriptions_technique_id_fkey"
+            columns: ["technique_id"]
+            isOneToOne: false
+            referencedRelation: "techniques"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "video_transcriptions_user_video_id_fkey"
+            columns: ["user_video_id"]
+            isOneToOne: false
+            referencedRelation: "user_videos"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       video_views: {
         Row: {

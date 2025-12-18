@@ -36,6 +36,7 @@ import { ApiManagement } from "@/components/admin/ApiManagement";
 import { AdsManagement } from "@/components/admin/AdsManagement";
 import LineIntegrationManagement from "@/components/admin/LineIntegrationManagement";
 import McpChatManagement from "@/components/admin/McpChatManagement";
+import { TranscriptionManagement } from "@/components/admin/TranscriptionManagement";
 
 const AdminDashboard = () => {
   const { signOut } = useAuth();
@@ -301,6 +302,7 @@ const AdminDashboard = () => {
             <div className="max-w-7xl mx-auto">
               <div className="space-y-6">
                 {activeTab === "techniques" && <TechniquesManagement />}
+                {activeTab === "transcriptions" && <TranscriptionManagement />}
                 {activeTab === "video-lists" && <VideoListsManagement />}
                 {activeTab === "users" && <UsersTab />}
                 {activeTab === "dojos" && <DojosManagement />}
