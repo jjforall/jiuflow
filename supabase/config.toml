@@ -154,3 +154,6 @@ verify_jwt = false
 
 [functions.check-video-encoding]
 verify_jwt = true
+
+[functions.transcribe-video]
+verify_jwt = true

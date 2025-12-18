@@ -31,6 +31,7 @@ import {
   Wrench,
   Megaphone,
   MessageCircle,
+  FileText as FileTextIcon,
   type LucideIcon,
 } from "lucide-react";
 import {
@@ -73,6 +74,7 @@ const menuGroups: MenuGroup[] = [
     icon: Layers,
     items: [
       { id: "techniques", label: "テクニック管理", icon: Grid3X3 },
+      { id: "transcriptions", label: "文字起こし・字幕", icon: FileTextIcon },
       { id: "video-lists", label: "動画リスト", icon: ListVideo },
       { id: "user-videos", label: "ユーザー動画", icon: Video },
       { id: "music", label: "音楽管理", icon: Music },

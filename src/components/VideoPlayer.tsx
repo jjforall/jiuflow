@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import Hls from "hls.js";
 import { toast } from "sonner";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { Loader2, SkipForward, SkipBack, Settings } from "lucide-react";
+import { Loader2, SkipForward, SkipBack, Settings, Subtitles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -10,12 +10,15 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { supabase } from "@/integrations/supabase/client";
 
 interface VideoPlayerProps {
   videoUrl: string;
   autoPlay?: boolean;
   thumbnailUrl?: string | null;
   onPlay?: () => void;
+  techniqueId?: string;
+  userVideoId?: string;
 }
 
 // Get Cloudflare Stream thumbnail URL for placeholder
@@ -48,7 +51,7 @@ const getConnectionQuality = (): 'slow' | 'medium' | 'fast' => {
   return 'fast';
 };
 
-export const VideoPlayer = ({ videoUrl, autoPlay = true, thumbnailUrl, onPlay }: VideoPlayerProps) => {
+export const VideoPlayer = ({ videoUrl, autoPlay = true, thumbnailUrl, onPlay, techniqueId, userVideoId }: VideoPlayerProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const hlsRef = useRef<Hls | null>(null);
   
@@ -68,6 +71,12 @@ export const VideoPlayer = ({ videoUrl, autoPlay = true, thumbnailUrl, onPlay }:
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const qualityLabelTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const bufferingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // Subtitle state
+  const [subtitlesEnabled, setSubtitlesEnabled] = useState(false);
+  const [availableSubtitles, setAvailableSubtitles] = useState<{ language_code: string; vtt_content: string }[]>([]);
+  const [selectedSubtitleLang, setSelectedSubtitleLang] = useState<string | null>(null);
+  const [showSubtitleMenu, setShowSubtitleMenu] = useState(false);
   
   // Get thumbnail for placeholder
   const effectiveThumbnail = thumbnailUrl || getCloudflareStreamThumbnail(videoUrl);
@@ -97,6 +106,102 @@ export const VideoPlayer = ({ videoUrl, autoPlay = true, thumbnailUrl, onPlay }:
       return () => observer.disconnect();
     }
   }, [autoPlay]);
+
+  // Fetch available subtitles
+  useEffect(() => {
+    const fetchSubtitles = async () => {
+      if (!techniqueId && !userVideoId) return;
+
+      try {
+        // First get transcription ID
+        const { data: transcription, error: transError } = await supabase
+          .from('video_transcriptions')
+          .select('id')
+          .eq(techniqueId ? 'technique_id' : 'user_video_id', techniqueId || userVideoId)
+          .single();
+
+        if (transError || !transcription) return;
+
+        // Then get subtitles
+        const { data: subtitles, error: subError } = await supabase
+          .from('video_subtitles')
+          .select('language_code, vtt_content')
+          .eq('transcription_id', transcription.id)
+          .eq('status', 'completed');
+
+        if (subError || !subtitles) return;
+
+        setAvailableSubtitles(subtitles);
+        
+        // Auto-select subtitle based on current language
+        const matchingLang = subtitles.find(s => s.language_code === language);
+        if (matchingLang) {
+          setSelectedSubtitleLang(language);
+        } else if (subtitles.length > 0) {
+          setSelectedSubtitleLang(subtitles[0].language_code);
+        }
+      } catch (error) {
+        console.error('Error fetching subtitles:', error);
+      }
+    };
+
+    fetchSubtitles();
+  }, [techniqueId, userVideoId, language]);
+
+  // Apply subtitles to video
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video || !shouldLoad) return;
+
+    // Remove existing tracks
+    const existingTracks = video.querySelectorAll('track');
+    existingTracks.forEach(track => track.remove());
+
+    if (subtitlesEnabled && selectedSubtitleLang) {
+      const subtitle = availableSubtitles.find(s => s.language_code === selectedSubtitleLang);
+      if (subtitle?.vtt_content) {
+        // Create blob URL from VTT content
+        const blob = new Blob([subtitle.vtt_content], { type: 'text/vtt' });
+        const url = URL.createObjectURL(blob);
+        
+        const track = document.createElement('track');
+        track.kind = 'subtitles';
+        track.label = getLanguageLabel(selectedSubtitleLang);
+        track.srclang = selectedSubtitleLang;
+        track.src = url;
+        track.default = true;
+        
+        video.appendChild(track);
+        
+        // Enable the track
+        if (video.textTracks[0]) {
+          video.textTracks[0].mode = 'showing';
+        }
+      }
+    }
+  }, [subtitlesEnabled, selectedSubtitleLang, availableSubtitles, shouldLoad]);
+
+  const getLanguageLabel = (code: string): string => {
+    const labels: Record<string, string> = {
+      ja: '日本語',
+      en: 'English',
+      pt: 'Português',
+      es: 'Español',
+      fr: 'Français',
+      de: 'Deutsch',
+      zh: '中文',
+      ko: '한국어',
+    };
+    return labels[code] || code;
+  };
+
+  const toggleSubtitles = useCallback(() => {
+    if (availableSubtitles.length === 0) {
+      toast.info(language === 'ja' ? '字幕がありません' : 'No subtitles available');
+      return;
+    }
+    setSubtitlesEnabled(prev => !prev);
+  }, [availableSubtitles.length, language]);
   
   // Handle manual play trigger
   const handlePlayClick = useCallback(() => {
@@ -604,9 +709,51 @@ export const VideoPlayer = ({ videoUrl, autoPlay = true, thumbnailUrl, onPlay }:
         </video>
       )}
       
-      {/* Quality selector button */}
-      {availableLevels.length > 1 && (
-        <div className="absolute top-4 right-4 z-30">
+      {/* Control buttons container */}
+      <div className="absolute top-4 right-4 z-30 flex items-center gap-2">
+        {/* Subtitle toggle button */}
+        {availableSubtitles.length > 0 && (
+          <DropdownMenu open={showSubtitleMenu} onOpenChange={setShowSubtitleMenu}>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="secondary"
+                size="icon"
+                className={`bg-background/90 backdrop-blur-sm border border-border hover:bg-background/95 w-9 ${subtitlesEnabled ? 'ring-2 ring-primary' : ''}`}
+              >
+                <Subtitles className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="min-w-[150px]">
+              <DropdownMenuItem
+                onClick={() => setSubtitlesEnabled(false)}
+                className={!subtitlesEnabled ? 'bg-primary/10 font-semibold' : ''}
+              >
+                <span className="flex items-center justify-between w-full">
+                  {language === "ja" ? "字幕OFF" : "Off"}
+                  {!subtitlesEnabled && <span className="ml-2">✓</span>}
+                </span>
+              </DropdownMenuItem>
+              {availableSubtitles.map((subtitle) => (
+                <DropdownMenuItem
+                  key={subtitle.language_code}
+                  onClick={() => {
+                    setSelectedSubtitleLang(subtitle.language_code);
+                    setSubtitlesEnabled(true);
+                  }}
+                  className={subtitlesEnabled && selectedSubtitleLang === subtitle.language_code ? 'bg-primary/10 font-semibold' : ''}
+                >
+                  <span className="flex items-center justify-between w-full">
+                    {getLanguageLabel(subtitle.language_code)}
+                    {subtitlesEnabled && selectedSubtitleLang === subtitle.language_code && <span className="ml-2">✓</span>}
+                  </span>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
+        
+        {/* Quality selector button */}
+        {availableLevels.length > 1 && (
           <DropdownMenu open={showQualityMenu} onOpenChange={setShowQualityMenu}>
             <DropdownMenuTrigger asChild>
               <Button
@@ -649,8 +796,8 @@ export const VideoPlayer = ({ videoUrl, autoPlay = true, thumbnailUrl, onPlay }:
               ))}
             </DropdownMenuContent>
           </DropdownMenu>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 };
