@@ -51,6 +51,46 @@ serve(async (req) => {
     console.log("Media content-type:", contentType);
     if (contentLength) console.log("Media content-length:", contentLength);
 
+    // Avoid function crashes: OpenAI Whisper has strict size limits and the runtime has tight memory.
+    const MAX_MEDIA_BYTES = 24 * 1024 * 1024; // 24MB
+    const sizeBytes = contentLength ? Number.parseInt(contentLength, 10) : null;
+    if (!sizeBytes || Number.isNaN(sizeBytes)) {
+      try {
+        await mediaResponse.body?.cancel();
+      } catch {
+        // ignore
+      }
+      return new Response(
+        JSON.stringify({
+          error:
+            "動画サイズを判定できませんでした（content-lengthなし）。文字起こし用に軽量な音声/動画にしてください。",
+        }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
+    }
+
+    if (sizeBytes > MAX_MEDIA_BYTES) {
+      console.warn("Media too large for transcription:", { sizeBytes, MAX_MEDIA_BYTES });
+      try {
+        await mediaResponse.body?.cancel();
+      } catch {
+        // ignore
+      }
+      return new Response(
+        JSON.stringify({
+          error:
+            `動画ファイルが大きすぎます（${Math.round(sizeBytes / 1024 / 1024)}MB）。文字起こし用に25MB未満の音声/動画にしてください。`,
+        }),
+        {
+          status: 413,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
+    }
+
     if (!mediaResponse.body) {
       throw new Error("Media response body is empty");
     }
