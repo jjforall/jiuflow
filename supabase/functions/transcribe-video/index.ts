@@ -28,16 +28,25 @@ serve(async (req) => {
       throw new Error('OPENAI_API_KEY is not configured');
     }
 
-    console.log('Downloading video from:', videoUrl);
-    
-    // Download video file
-    const videoResponse = await fetch(videoUrl);
+    console.log('Resolving downloadable media URL for:', videoUrl);
+
+    const downloadUrl = resolveDownloadUrl(videoUrl);
+    console.log('Downloading media from:', downloadUrl);
+
+    // Download media file (must be an actual media file, not an HLS manifest)
+    const videoResponse = await fetch(downloadUrl, {
+      headers: {
+        // Some CDNs may behave differently without a browser-ish UA
+        'User-Agent': 'Mozilla/5.0 (Lovable; Transcription Bot)',
+        'Accept': '*/*',
+      },
+    });
     if (!videoResponse.ok) {
-      throw new Error(`Failed to download video: ${videoResponse.status}`);
+      throw new Error(`Failed to download media: ${videoResponse.status}`);
     }
-    
+
     const videoBlob = await videoResponse.blob();
-    console.log('Video downloaded, size:', videoBlob.size);
+    console.log('Media downloaded, size:', videoBlob.size);
     
     // Prepare form data for Whisper API
     const formData = new FormData();
@@ -138,7 +147,7 @@ serve(async (req) => {
 
 function generateVTT(segments: any[]): string {
   let vtt = 'WEBVTT\n\n';
-  
+
   segments.forEach((segment, index) => {
     const startTime = formatVTTTime(segment.start);
     const endTime = formatVTTTime(segment.end);
@@ -146,7 +155,7 @@ function generateVTT(segments: any[]): string {
     vtt += `${startTime} --> ${endTime}\n`;
     vtt += `${segment.text.trim()}\n\n`;
   });
-  
+
   return vtt;
 }
 
@@ -155,6 +164,40 @@ function formatVTTTime(seconds: number): string {
   const minutes = Math.floor((seconds % 3600) / 60);
   const secs = Math.floor(seconds % 60);
   const ms = Math.floor((seconds % 1) * 1000);
-  
+
   return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}.${String(ms).padStart(3, '0')}`;
+}
+
+function resolveDownloadUrl(videoUrl: string): string {
+  // Whisper requires an actual media file (mp3/mp4/wav/etc). If we receive an HLS manifest URL,
+  // convert to a downloadable MP4 URL when possible.
+  const u = new URL(videoUrl);
+
+  // If already a file URL (not a manifest), keep as-is
+  const lowerPath = u.pathname.toLowerCase();
+  const looksLikeManifest = lowerPath.endsWith('.m3u8') || lowerPath.includes('/manifest/');
+  if (!looksLikeManifest) return videoUrl;
+
+  // Try Cloudflare Stream-style download URL patterns
+  // e.g. https://.../<uid>/manifest/video.m3u8 -> https://.../<uid>/downloads/default.mp4
+  const downloadPath = u.pathname
+    .replace(/\/manifest\/video\.m3u8$/i, '/downloads/default.mp4')
+    .replace(/\.m3u8$/i, '.mp4');
+
+  const candidates: string[] = [];
+  // same origin
+  candidates.push(`${u.origin}${downloadPath}${u.search}`);
+
+  // If it's a cloudflare stream custom domain, also try videodelivery.net
+  const parts = u.pathname.split('/').filter(Boolean);
+  const uid = parts[0];
+  if (uid && (u.hostname.includes('cloudflarestream.com') || u.hostname.includes('videodelivery.net'))) {
+    candidates.push(`https://videodelivery.net/${uid}/downloads/default.mp4${u.search}`);
+  }
+
+  // Fallback to original (will likely fail, but keeps behavior explicit)
+  candidates.push(videoUrl);
+
+  // Pick first candidate; the caller will fetch and validate status.
+  return candidates[0];
 }
