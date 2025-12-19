@@ -1,10 +1,11 @@
 import { useState, useEffect, Fragment } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { InputWithSuggestions } from "@/components/ui/input-with-suggestions";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Upload, Trash2, Search, Check, X, Languages, ExternalLink, ChevronDown, Cloud, Loader2, RefreshCw } from "lucide-react";
+import { Upload, Trash2, Search, Check, X, Languages, ExternalLink, ChevronDown, Cloud, Loader2, RefreshCw, FileText, Link } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   Collapsible,
@@ -31,6 +32,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { useUpload } from "@/contexts/UploadContext";
 
 export const TechniquesManagement = () => {
+  const navigate = useNavigate();
   const { isAdmin } = useAuth();
   const { language } = useLanguage();
   const [page, setPage] = useState(1);
@@ -105,6 +107,8 @@ export const TechniquesManagement = () => {
     }>;
   } | null>(null);
   const [reEncodingCloudflareIds, setReEncodingCloudflareIds] = useState<Set<string>>(new Set());
+  const [transcribingIds, setTranscribingIds] = useState<Set<string>>(new Set());
+  const [transcriptionMap, setTranscriptionMap] = useState<Record<string, { id: string; status: string }>>({});
 
 
   // すべての言語（カウント用）
@@ -185,9 +189,29 @@ export const TechniquesManagement = () => {
       setSupabaseStorageCount(count);
     };
     
+    const fetchTranscriptions = async () => {
+      const { data, error } = await supabase
+        .from('video_transcriptions')
+        .select('id, technique_id, status');
+      
+      if (error) {
+        console.error('Error fetching transcriptions:', error);
+        return;
+      }
+      
+      const map: Record<string, { id: string; status: string }> = {};
+      data?.forEach(t => {
+        if (t.technique_id) {
+          map[t.technique_id] = { id: t.id, status: t.status };
+        }
+      });
+      setTranscriptionMap(map);
+    };
+    
     fetchCategories();
     fetchSeriesNames();
     fetchSupabaseStorageCount();
+    fetchTranscriptions();
   }, []);
 
   // シリーズ名リストを再取得する関数
@@ -992,6 +1016,57 @@ export const TechniquesManagement = () => {
     // Refresh the list
     window.location.reload();
   };
+
+  // Start transcription for a technique
+  const handleStartTranscription = async (technique: Technique) => {
+    if (!technique.video_url) {
+      toast.error('動画URLがありません');
+      return;
+    }
+
+    setTranscribingIds(prev => new Set(prev).add(technique.id));
+
+    try {
+      const { data, error } = await supabase.functions.invoke('transcribe-video', {
+        body: { 
+          videoUrl: technique.video_url,
+          techniqueId: technique.id
+        }
+      });
+
+      if (error) throw error;
+
+      if (data?.success && data?.transcription) {
+        toast.success('文字起こし完了', {
+          description: `「${technique.name_ja}」の文字起こしが完了しました`,
+          action: {
+            label: '詳細を見る',
+            onClick: () => navigate(`/admin/transcription/${data.transcription.id}`)
+          }
+        });
+        
+        // Update transcription map
+        setTranscriptionMap(prev => ({
+          ...prev,
+          [technique.id]: { id: data.transcription.id, status: 'completed' }
+        }));
+      } else {
+        throw new Error(data?.error || '文字起こしに失敗しました');
+      }
+    } catch (error) {
+      console.error('Transcription error:', error);
+      toast.error('文字起こし失敗', {
+        description: error instanceof Error ? error.message : '不明なエラー'
+      });
+    } finally {
+      setTranscribingIds(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(technique.id);
+        return newSet;
+      });
+    }
+  };
+
 
   // Re-encode video for adaptive bitrate streaming
   const handleReencodeVideo = async (technique: Technique) => {
@@ -2083,7 +2158,7 @@ export const TechniquesManagement = () => {
                             </div>
                           </div>
                           {isAdmin && (
-                            <div className="pt-2 border-t flex gap-2">
+                            <div className="pt-2 border-t flex flex-wrap gap-2">
                               <Button
                                 size="sm"
                                 variant="outline"
@@ -2092,19 +2167,46 @@ export const TechniquesManagement = () => {
                                 編集
                               </Button>
                               {technique.video_url && (
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => handleReencodeVideo(technique as any)}
-                                  disabled={reEncodingIds.has(technique.id)}
-                                >
-                                  {reEncodingIds.has(technique.id) ? (
-                                    <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                                <>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => handleReencodeVideo(technique as any)}
+                                    disabled={reEncodingIds.has(technique.id)}
+                                  >
+                                    {reEncodingIds.has(technique.id) ? (
+                                      <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                                    ) : (
+                                      <RefreshCw className="h-4 w-4 mr-1" />
+                                    )}
+                                    再エンコード
+                                  </Button>
+                                  {/* Transcription button */}
+                                  {transcriptionMap[technique.id] ? (
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => navigate(`/admin/transcription/${transcriptionMap[technique.id].id}`)}
+                                    >
+                                      <Link className="h-4 w-4 mr-1" />
+                                      文字起こし詳細
+                                    </Button>
                                   ) : (
-                                    <RefreshCw className="h-4 w-4 mr-1" />
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => handleStartTranscription(technique as any)}
+                                      disabled={transcribingIds.has(technique.id)}
+                                    >
+                                      {transcribingIds.has(technique.id) ? (
+                                        <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                                      ) : (
+                                        <FileText className="h-4 w-4 mr-1" />
+                                      )}
+                                      文字起こし
+                                    </Button>
                                   )}
-                                  再エンコード
-                                </Button>
+                                </>
                               )}
                             </div>
                           )}
