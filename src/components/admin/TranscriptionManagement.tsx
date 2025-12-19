@@ -222,32 +222,71 @@ export const TranscriptionManagement = () => {
     }));
   };
 
-  // Split long text into lines of max ~18 characters for Japanese readability
-  const splitTextForSubtitle = (text: string, maxCharsPerLine: number = 18): string => {
+  // Split long text into lines for Japanese readability
+  // Priority: 1. 句読点(。、！？) 2. 助詞(て、に、を、は、が、で、と、も、へ、や、か等) 3. 長音・記号
+  const splitTextForSubtitle = (text: string, maxCharsPerLine: number = 20): string => {
     const trimmed = text.trim().replace(/\s+/g, ''); // Remove spaces for Japanese
     if (trimmed.length <= maxCharsPerLine) return trimmed;
     
-    // Try to split at natural break points (punctuation)
-    const breakPoints = ['。', '、', '！', '？', 'ー', '…'];
+    // Priority 1: Punctuation - always good break points (split AFTER these)
+    const punctuation = ['。', '、', '！', '？', '…', '）', '」', '』', '】'];
+    // Priority 2: Particles - common Japanese particles that often end phrases
+    const particles = ['て', 'に', 'を', 'は', 'が', 'で', 'と', 'も', 'へ', 'や', 'か', 'ね', 'よ', 'な', 'ら', 'け', 'ば', 'の'];
+    // Priority 3: Other break points
+    const otherBreaks = ['ー', 'り', 'れ', 'る'];
+    
     const lines: string[] = [];
     let remaining = trimmed;
     
-    while (remaining.length > 0) {
+    while (remaining.length > 0 && lines.length < 2) {
       if (remaining.length <= maxCharsPerLine) {
         lines.push(remaining);
         break;
       }
       
-      // Look for natural break point within the maxCharsPerLine range
       let breakIndex = -1;
-      for (let i = Math.min(maxCharsPerLine - 1, remaining.length - 1); i >= maxCharsPerLine / 2; i--) {
-        if (breakPoints.includes(remaining[i])) {
-          breakIndex = i + 1;
+      const searchEnd = Math.min(maxCharsPerLine, remaining.length);
+      const searchStart = Math.max(Math.floor(maxCharsPerLine * 0.4), 6); // Don't break too early
+      
+      // Priority 1: Look for punctuation (best break points)
+      for (let i = searchEnd - 1; i >= searchStart; i--) {
+        if (punctuation.includes(remaining[i])) {
+          breakIndex = i + 1; // Break AFTER punctuation
           break;
         }
       }
       
-      // If no natural break found, just split at maxCharsPerLine
+      // Priority 2: Look for particles
+      if (breakIndex === -1) {
+        for (let i = searchEnd - 1; i >= searchStart; i--) {
+          if (particles.includes(remaining[i])) {
+            // Check next character to avoid breaking mid-word
+            const nextChar = remaining[i + 1];
+            // Good to break if: next is kanji, katakana, punctuation, or end of string
+            const isNextKanji = nextChar && /[\u4E00-\u9FAF]/.test(nextChar);
+            const isNextKatakana = nextChar && /[\u30A0-\u30FF]/.test(nextChar);
+            const isNextPunctuation = nextChar && punctuation.includes(nextChar);
+            const isEnd = !nextChar;
+            
+            if (isNextKanji || isNextKatakana || isNextPunctuation || isEnd) {
+              breakIndex = i + 1; // Break AFTER particle
+              break;
+            }
+          }
+        }
+      }
+      
+      // Priority 3: Look for other break points
+      if (breakIndex === -1) {
+        for (let i = searchEnd - 1; i >= searchStart; i--) {
+          if (otherBreaks.includes(remaining[i])) {
+            breakIndex = i + 1;
+            break;
+          }
+        }
+      }
+      
+      // Last resort: break at maxCharsPerLine
       if (breakIndex === -1) {
         breakIndex = maxCharsPerLine;
       }
@@ -256,9 +295,13 @@ export const TranscriptionManagement = () => {
       remaining = remaining.slice(breakIndex);
     }
     
-    // Limit to 2 lines max for readability
-    if (lines.length > 2) {
-      return lines.slice(0, 2).join('\n');
+    // Handle remaining text (append to last line if we hit 2 line limit)
+    if (remaining.length > 0) {
+      if (lines.length < 2) {
+        lines.push(remaining);
+      } else {
+        lines[1] = lines[1] + remaining;
+      }
     }
     
     return lines.join('\n');
