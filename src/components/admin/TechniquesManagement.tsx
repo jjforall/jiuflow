@@ -2012,28 +2012,68 @@ export const TechniquesManagement = () => {
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex justify-center">
-                        {technique.thumbnail_url ? (
-                          <img
-                            src={technique.thumbnail_url}
-                            className="w-24 h-14 object-cover rounded cursor-pointer hover:opacity-80 transition-opacity shadow-sm"
-                            loading="lazy"
-                            alt={technique.name}
-                            onClick={() => {
-                              if (technique.video_url) {
-                                setPreviewVideoUrl(technique.video_url);
-                                setShowVideoPreview(true);
+                        {(() => {
+                          // Get effective thumbnail URL (fallback to Cloudflare auto-generated)
+                          const getEffectiveThumbnail = (thumbnailUrl: string | null, videoUrl: string | null): string | null => {
+                            if (thumbnailUrl) return thumbnailUrl;
+                            if (!videoUrl) return null;
+                            // Try to extract Cloudflare Stream thumbnail
+                            const patterns = [
+                              /cloudflarestream\.com\/([a-zA-Z0-9]+)/,
+                              /videodelivery\.net\/([a-zA-Z0-9]+)/,
+                              /watch\.cloudflarestream\.com\/([a-zA-Z0-9]+)/,
+                            ];
+                            for (const pattern of patterns) {
+                              const match = videoUrl.match(pattern);
+                              if (match) {
+                                return `https://videodelivery.net/${match[1]}/thumbnails/thumbnail.jpg?time=1s&width=640&height=360`;
                               }
-                            }}
-                            onError={(e) => {
-                              const target = e.target as HTMLImageElement;
-                              target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="96" height="64"%3E%3Crect fill="%23ddd" width="96" height="64"/%3E%3Ctext fill="%23999" x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle"%3ENo Image%3C/text%3E%3C/svg%3E';
-                            }}
-                          />
-                        ) : (
-                          <div className="w-24 h-14 bg-muted rounded flex items-center justify-center text-xs text-muted-foreground">
-                            未登録
-                          </div>
-                        )}
+                            }
+                            return null;
+                          };
+                          const effectiveThumbnail = getEffectiveThumbnail(technique.thumbnail_url, technique.video_url);
+                          
+                          if (effectiveThumbnail) {
+                            return (
+                              <img
+                                src={effectiveThumbnail}
+                                className="w-24 h-14 object-cover rounded cursor-pointer hover:opacity-80 transition-opacity shadow-sm"
+                                loading="lazy"
+                                alt={technique.name}
+                                onClick={() => {
+                                  if (technique.video_url) {
+                                    setPreviewVideoUrl(technique.video_url);
+                                    setShowVideoPreview(true);
+                                  }
+                                }}
+                                onError={(e) => {
+                                  const target = e.target as HTMLImageElement;
+                                  target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="96" height="64"%3E%3Crect fill="%23ddd" width="96" height="64"/%3E%3Ctext fill="%23999" x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle"%3ENo Image%3C/text%3E%3C/svg%3E';
+                                }}
+                              />
+                            );
+                          } else if (technique.video_url) {
+                            return (
+                              <div 
+                                className="w-24 h-14 bg-muted rounded flex items-center justify-center text-xs text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors"
+                                onClick={() => {
+                                  setPreviewVideoUrl(technique.video_url);
+                                  setShowVideoPreview(true);
+                                }}
+                                title="クリックして動画を再生"
+                              >
+                                <ExternalLink className="h-4 w-4 mr-1" />
+                                再生
+                              </div>
+                            );
+                          } else {
+                            return (
+                              <div className="w-24 h-14 bg-muted rounded flex items-center justify-center text-xs text-muted-foreground">
+                                未登録
+                              </div>
+                            );
+                          }
+                        })()}
                       </div>
                     </td>
                     <td className="px-4 py-3 text-center">
