@@ -177,6 +177,18 @@ export function VideoUploadDialog({ open, onOpenChange, featuredUserId, featured
     setUploading(true);
 
     try {
+      // Generate share token for unlisted videos
+      const shareToken = visibility === 'unlisted' ? crypto.randomUUID() : null;
+      
+      // Extract thumbnail from Cloudflare Stream URL
+      let thumbnailUrl: string | null = null;
+      if (uploadedVideoUrl) {
+        const cfMatch = uploadedVideoUrl.match(/customer-[a-z0-9]+\.cloudflarestream\.com\/([a-f0-9-]+)/);
+        if (cfMatch) {
+          thumbnailUrl = `https://customer-2kgl0glr4sfyi3k4.cloudflarestream.com/${cfMatch[1]}/thumbnails/thumbnail.jpg`;
+        }
+      }
+
       const { error: dbError } = await supabase
         .from('user_videos')
         .insert({
@@ -185,16 +197,31 @@ export function VideoUploadDialog({ open, onOpenChange, featuredUserId, featured
           description: description || null,
           video_type: videoType,
           video_url: uploadedVideoUrl,
+          thumbnail_url: thumbnailUrl,
           price: price ? Number(price) : 0,
           is_public: visibility === 'public',
           visibility,
           featured_user_id: featuredUserId || null,
-          file_size: uploadedFileSize
+          file_size: uploadedFileSize,
+          share_token: shareToken
         });
 
       if (dbError) throw dbError;
 
-      toast.success("動画を投稿しました！");
+      if (visibility === 'unlisted' && shareToken) {
+        const shareUrl = `${window.location.origin}/shared/${shareToken}`;
+        toast.success(
+          <div>
+            <p>動画を投稿しました！</p>
+            <p className="text-xs mt-1">共有URL: {shareUrl}</p>
+          </div>,
+          { duration: 10000 }
+        );
+        // Copy to clipboard
+        navigator.clipboard.writeText(shareUrl).catch(() => {});
+      } else {
+        toast.success("動画を投稿しました！");
+      }
       refetch(); // Refresh storage info
       onOpenChange(false);
     } catch (error) {
