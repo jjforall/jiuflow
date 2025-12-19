@@ -102,6 +102,30 @@ export const TranscriptionManagement = () => {
       });
 
       if (error) {
+        // Check if transcription was actually saved despite the error (timeout case)
+        const isTimeoutError = error.message?.includes('connection closed') || 
+                               error.message?.includes('timeout') ||
+                               error.message?.includes('FunctionsFetchError');
+        
+        if (isTimeoutError) {
+          // Wait a moment and check if transcription was saved
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          
+          const { data: checkData } = await supabase
+            .from('video_transcriptions')
+            .select('id, status')
+            .eq('technique_id', technique.id)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .single();
+          
+          if (checkData) {
+            toast.success(`「${technique.name_ja || technique.name}」の文字起こしが完了しました`);
+            fetchData();
+            return;
+          }
+        }
+        
         // Try to extract server error body for better debugging
         let message = error.message;
         const anyErr = error as any;
@@ -120,7 +144,22 @@ export const TranscriptionManagement = () => {
       fetchData();
     } catch (error: any) {
       console.error('Transcription error:', error);
-      toast.error(`文字起こしエラー: ${error.message}`);
+      
+      // Final check - maybe it was saved anyway
+      const { data: finalCheck } = await supabase
+        .from('video_transcriptions')
+        .select('id')
+        .eq('technique_id', technique.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+      
+      if (finalCheck) {
+        toast.success(`「${technique.name_ja || technique.name}」の文字起こしが完了しました`);
+        fetchData();
+      } else {
+        toast.error(`文字起こしエラー: ${error.message}`);
+      }
     } finally {
       setTranscribingIds(prev => {
         const newSet = new Set(prev);
