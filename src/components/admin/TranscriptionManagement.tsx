@@ -222,6 +222,30 @@ export const TranscriptionManagement = () => {
     }));
   };
 
+  const collapseRepeatedPunctuation = (s: string) => s.replace(/([。、！？…])\1+/g, "$1");
+
+  // Remove immediate duplicated tails like "やっていきます。やっていきます。".
+  // This guards against occasional ASR/VTT generation artifacts where the cue tail repeats.
+  const removeImmediateTailRepeat = (s: string): string => {
+    const str = s;
+    const maxLen = Math.min(60, Math.floor(str.length / 2));
+    for (let len = maxLen; len >= 4; len--) {
+      const suffix = str.slice(str.length - len);
+      if (suffix.trim().length < 3) continue;
+      if (str.endsWith(suffix + suffix)) {
+        return str.slice(0, str.length - len);
+      }
+    }
+    return str;
+  };
+
+  const normalizeSubtitleText = (raw: string): string => {
+    let t = raw.trim().replace(/\s+/g, '');
+    t = collapseRepeatedPunctuation(t);
+    t = removeImmediateTailRepeat(t);
+    return t;
+  };
+
   // Split long text into lines for Japanese readability.
   // Prefer: 1) 句読点 2) 接続語(なので/だから/でも/けど等) 3) 助詞(は/が/を/に/で/と等) 4) 最後は文字数で。
   const splitTextForSubtitle = (text: string, maxCharsPerLine: number = 18): string => {
