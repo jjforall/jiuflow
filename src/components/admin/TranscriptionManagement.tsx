@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { FileText, Languages, Mic, Edit, Save, X, Loader2, RefreshCw } from "lucide-react";
+import { FileText, Languages, Mic, Edit, Save, X, Loader2, RefreshCw, RotateCcw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useTranslation } from "@/hooks/useTranslation";
@@ -39,6 +39,7 @@ export const TranscriptionManagement = () => {
   const [transcriptions, setTranscriptions] = useState<Record<string, Transcription>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [transcribingIds, setTranscribingIds] = useState<Set<string>>(new Set());
+  const [regeneratingIds, setRegeneratingIds] = useState<Set<string>>(new Set());
   const [editingTranscription, setEditingTranscription] = useState<Transcription | null>(null);
   const [editedText, setEditedText] = useState("");
   const [isSaving, setIsSaving] = useState(false);
@@ -221,15 +222,79 @@ export const TranscriptionManagement = () => {
     }));
   };
 
+  // Split long text into lines of max ~20 characters for Japanese readability
+  const splitTextForSubtitle = (text: string, maxCharsPerLine: number = 20): string => {
+    const trimmed = text.trim().replace(/\s+/g, ''); // Remove spaces for Japanese
+    if (trimmed.length <= maxCharsPerLine) return trimmed;
+    
+    const lines: string[] = [];
+    let remaining = trimmed;
+    
+    while (remaining.length > 0) {
+      if (remaining.length <= maxCharsPerLine) {
+        lines.push(remaining);
+        break;
+      }
+      lines.push(remaining.slice(0, maxCharsPerLine));
+      remaining = remaining.slice(maxCharsPerLine);
+    }
+    
+    // Limit to 2 lines max for readability
+    if (lines.length > 2) {
+      return lines.slice(0, 2).join('\n');
+    }
+    
+    return lines.join('\n');
+  };
+
   const generateVTT = (segments: any[]): string => {
     let vtt = 'WEBVTT\n\n';
-    segments.forEach((segment, index) => {
-      const startTime = formatVTTTime(segment.start);
-      const endTime = formatVTTTime(segment.end);
-      vtt += `${index + 1}\n`;
-      vtt += `${startTime} --> ${endTime}\n`;
-      vtt += `${segment.text.trim()}\n\n`;
-    });
+    let cueIndex = 1;
+    
+    // Split long segments into smaller chunks for subtitle display
+    const maxSegmentDuration = 5; // Max 5 seconds per subtitle
+    const maxChars = 40; // Max chars per subtitle (before line breaking)
+
+    for (const segment of segments) {
+      const text = segment.text.trim().replace(/\s+/g, ''); // Clean up for Japanese
+      const duration = segment.end - segment.start;
+      
+      // If segment is short enough, output as single cue
+      if (duration <= maxSegmentDuration && text.length <= maxChars) {
+        const startTime = formatVTTTime(segment.start);
+        const endTime = formatVTTTime(segment.end);
+        vtt += `${cueIndex}\n`;
+        vtt += `${startTime} --> ${endTime}\n`;
+        vtt += `${splitTextForSubtitle(text)}\n\n`;
+        cueIndex++;
+        continue;
+      }
+      
+      // Split long segment by character count and duration
+      const charsPerSecond = text.length / duration;
+      const targetChunkDuration = Math.min(maxSegmentDuration, maxChars / charsPerSecond);
+      const numChunks = Math.ceil(duration / targetChunkDuration);
+      const chunkDuration = duration / numChunks;
+      const charsPerChunk = Math.ceil(text.length / numChunks);
+      
+      for (let i = 0; i < numChunks; i++) {
+        const chunkStart = segment.start + (i * chunkDuration);
+        const chunkEnd = Math.min(chunkStart + chunkDuration, segment.end);
+        const textStart = i * charsPerChunk;
+        const textEnd = Math.min(textStart + charsPerChunk, text.length);
+        const chunkText = text.slice(textStart, textEnd);
+        
+        if (chunkText.length > 0) {
+          const startTime = formatVTTTime(chunkStart);
+          const endTime = formatVTTTime(chunkEnd);
+          vtt += `${cueIndex}\n`;
+          vtt += `${startTime} --> ${endTime}\n`;
+          vtt += `${splitTextForSubtitle(chunkText)}\n\n`;
+          cueIndex++;
+        }
+      }
+    }
+    
     return vtt;
   };
 
@@ -239,6 +304,40 @@ export const TranscriptionManagement = () => {
     const secs = Math.floor(seconds % 60);
     const ms = Math.floor((seconds % 1) * 1000);
     return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}.${String(ms).padStart(3, '0')}`;
+  };
+
+  const handleRegenerateSubtitles = async (transcription: Transcription) => {
+    if (!transcription.technique_id) return;
+    
+    setRegeneratingIds(prev => new Set(prev).add(transcription.technique_id!));
+    
+    try {
+      // Generate new VTT from existing segments
+      const vttContent = generateVTT(transcription.segments || []);
+      
+      // Update subtitle in database
+      const { error } = await supabase
+        .from('video_subtitles')
+        .upsert({
+          transcription_id: transcription.id,
+          language_code: 'ja',
+          vtt_content: vttContent,
+          status: 'completed',
+        }, { onConflict: 'transcription_id,language_code' });
+      
+      if (error) throw error;
+      
+      toast.success('字幕を再生成しました');
+    } catch (error: any) {
+      console.error('Regenerate error:', error);
+      toast.error(`再生成エラー: ${error.message}`);
+    } finally {
+      setRegeneratingIds(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(transcription.technique_id!);
+        return newSet;
+      });
+    }
   };
 
   const filteredTechniques = techniques.filter(t => {
@@ -286,6 +385,7 @@ export const TranscriptionManagement = () => {
         {filteredTechniques.map((technique) => {
           const transcription = transcriptions[technique.id];
           const isTranscribing = transcribingIds.has(technique.id);
+          const isRegenerating = regeneratingIds.has(technique.id);
 
           return (
             <Card key={technique.id} className="overflow-hidden">
@@ -316,6 +416,19 @@ export const TranscriptionManagement = () => {
                           <FileText className="h-3 w-3 mr-1" />
                           完了
                         </Badge>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleRegenerateSubtitles(transcription)}
+                          disabled={isRegenerating}
+                        >
+                          {isRegenerating ? (
+                            <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                          ) : (
+                            <RotateCcw className="h-4 w-4 mr-1" />
+                          )}
+                          字幕再生成
+                        </Button>
                         <Button
                           variant="outline"
                           size="sm"
