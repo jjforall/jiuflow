@@ -135,8 +135,8 @@ const TranscriptionDetail = () => {
     setTempEditText(editedSegments[index].text);
   };
 
-  const saveSegmentEdit = () => {
-    if (editingSegmentIndex === null) return;
+  const saveSegmentEdit = async () => {
+    if (editingSegmentIndex === null || !transcription) return;
     
     const newSegments = [...editedSegments];
     newSegments[editingSegmentIndex] = {
@@ -146,6 +146,48 @@ const TranscriptionDetail = () => {
     setEditedSegments(newSegments);
     setEditingSegmentIndex(null);
     setTempEditText('');
+
+    // Immediately save to database
+    try {
+      const fullText = newSegments.map(s => s.text).join(' ');
+      const segmentsJson = newSegments.map(s => ({
+        start: s.start,
+        end: s.end,
+        text: s.text
+      }));
+      
+      const { error } = await supabase
+        .from('video_transcriptions')
+        .update({
+          segments: segmentsJson,
+          edited_text: fullText,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', transcription.id);
+
+      if (error) throw error;
+
+      // Update VTT subtitle
+      const vttContent = generateVTT(newSegments);
+      await supabase
+        .from('video_subtitles')
+        .update({
+          vtt_content: vttContent,
+          updated_at: new Date().toISOString()
+        })
+        .eq('transcription_id', transcription.id);
+
+      toast.success('保存しました');
+      
+      setTranscription({
+        ...transcription,
+        segments: newSegments,
+        edited_text: fullText
+      });
+    } catch (error) {
+      console.error('Error saving:', error);
+      toast.error('保存に失敗しました');
+    }
   };
 
   const cancelSegmentEdit = () => {
