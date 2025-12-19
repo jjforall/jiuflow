@@ -15,11 +15,11 @@ export const ProtectedRoute = ({
   requireAdmin = false,
   redirectTo = '/login'
 }: ProtectedRouteProps) => {
-  const { user, isLoading, isAdmin, isStaff } = useAuth();
+  const { user, isLoading, isAdmin, isStaff, rolesChecked } = useAuth();
   const location = useLocation();
 
-  // Show loading state while checking authentication
-  if (isLoading) {
+  // Show loading state while checking authentication or roles
+  if (isLoading || (user && requireAdmin && !rolesChecked)) {
     return (
       <div className="min-h-screen">
         <Navigation />

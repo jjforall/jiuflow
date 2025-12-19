@@ -10,6 +10,7 @@ interface AuthContextType {
   isLoading: boolean;
   isAdmin: boolean;
   isStaff: boolean;
+  rolesChecked: boolean;
   signOut: () => Promise<void>;
 }
 
@@ -20,7 +21,33 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isStaff, setIsStaff] = useState(false);
+  const [rolesChecked, setRolesChecked] = useState(false);
   const navigate = useNavigate();
+
+  const checkUserRoles = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', userId);
+
+      if (error) {
+        console.error('Error checking user roles:', error);
+        setIsAdmin(false);
+        setIsStaff(false);
+      } else {
+        const roles = data?.map(r => r.role) || [];
+        setIsAdmin(roles.includes('admin'));
+        setIsStaff(roles.includes('staff'));
+      }
+    } catch (error) {
+      console.error('Error in checkUserRoles:', error);
+      setIsAdmin(false);
+      setIsStaff(false);
+    } finally {
+      setRolesChecked(true);
+    }
+  };
 
   useEffect(() => {
     // Check active sessions and sets the user
@@ -37,15 +64,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         
         setUser(session?.user ?? null);
         if (session?.user) {
-          // Defer role check to prevent deadlock
-          setTimeout(() => {
-            checkUserRoles(session.user.id);
-          }, 0);
+          // Check roles immediately (await to ensure completion before loading ends)
+          await checkUserRoles(session.user.id);
+        } else {
+          setRolesChecked(true);
         }
       } catch (error) {
         console.error('Error initializing auth:', error);
         // On timeout or error, set user to null to allow page to proceed
         setUser(null);
+        setRolesChecked(true);
       } finally {
         setIsLoading(false);
       }
@@ -54,48 +82,23 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     initializeAuth();
 
     // Listen for changes on auth state (sign in, sign out, etc.)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       // Only synchronous state updates here to prevent Safari issues
       setUser(session?.user ?? null);
       
       if (session?.user) {
-        // Defer Supabase calls with setTimeout to prevent deadlock
-        setTimeout(() => {
-          checkUserRoles(session.user.id);
-        }, 0);
+        // Check roles
+        await checkUserRoles(session.user.id);
       } else {
         setIsAdmin(false);
         setIsStaff(false);
+        setRolesChecked(true);
       }
       setIsLoading(false);
     });
 
     return () => subscription.unsubscribe();
   }, []);
-
-  const checkUserRoles = async (userId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', userId);
-
-      if (error) {
-        console.error('Error checking user roles:', error);
-        setIsAdmin(false);
-        setIsStaff(false);
-        return;
-      }
-
-      const roles = data?.map(r => r.role) || [];
-      setIsAdmin(roles.includes('admin'));
-      setIsStaff(roles.includes('staff'));
-    } catch (error) {
-      console.error('Error in checkUserRoles:', error);
-      setIsAdmin(false);
-      setIsStaff(false);
-    }
-  };
 
   const signOut = async () => {
     try {
@@ -135,6 +138,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     isLoading,
     isAdmin,
     isStaff,
+    rolesChecked,
     signOut,
   };
 
