@@ -1,7 +1,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Edit2, Trash2, Eye, Lock } from "lucide-react";
+import { Edit2, Trash2, Eye, Lock, Share2 } from "lucide-react";
 
 interface UserVideoCardProps {
   video: {
@@ -15,10 +15,12 @@ interface UserVideoCardProps {
     price: number;
     is_public: boolean;
     created_at: string;
+    share_token?: string | null;
   };
   onEdit?: (video: any) => void;
   onDelete?: (videoId: string) => void;
   onPurchase?: (videoId: string) => void;
+  onShare?: (video: any) => void;
   isOwner?: boolean;
   isPurchased?: boolean;
 }
@@ -28,6 +30,7 @@ export function UserVideoCard({
   onEdit, 
   onDelete, 
   onPurchase,
+  onShare,
   isOwner = false,
   isPurchased = false 
 }: UserVideoCardProps) {
@@ -98,6 +101,14 @@ export function UserVideoCard({
             >
               <Edit2 className="h-4 w-4 mr-1" />
               編集
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onShare?.(video)}
+              title="共有"
+            >
+              <Share2 className="h-4 w-4" />
             </Button>
             <Button
               variant="outline"

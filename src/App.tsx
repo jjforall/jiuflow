@@ -65,6 +65,7 @@ const Glossary = lazy(() => import("./pages/Glossary"));
 const Blog = lazy(() => import("./pages/Blog"));
 const VideoList = lazy(() => import("./pages/VideoList"));
 const TranscriptionDetail = lazy(() => import("./pages/TranscriptionDetail"));
+const SharedVideo = lazy(() => import("./pages/SharedVideo"));
 
 const queryClient = new QueryClient();
 
@@ -279,6 +280,9 @@ const App = () => (
                       <SuspenseWrapper variant="admin"><GenerateImages /></SuspenseWrapper>
                     </ProtectedRoute>
                   } />
+
+                  {/* Shared Video - public access via share token */}
+                  <Route path="/shared/:token" element={<SuspenseWrapper variant="video"><SharedVideo /></SuspenseWrapper>} />
 
                   {/* 404 */}
                   <Route path="*" element={<SuspenseWrapper><NotFound /></SuspenseWrapper>} />

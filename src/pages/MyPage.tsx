@@ -23,6 +23,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { toast } from "sonner";
 import { VideoUploadDialog } from "@/components/VideoUploadDialog";
 import { VideoEditDialog } from "@/components/VideoEditDialog";
+import { VideoShareDialog } from "@/components/VideoShareDialog";
 import { UserVideoCard } from "@/components/UserVideoCard";
 import { Badge } from "@/components/ui/badge";
 import { ExternalLink } from "lucide-react";
@@ -128,6 +129,7 @@ interface UserVideo {
   price: number;
   is_public: boolean;
   created_at: string;
+  share_token: string | null;
 }
 
 interface Profile {
@@ -210,6 +212,8 @@ const MyPage = () => {
   const [coverUploadOpen, setCoverUploadOpen] = useState(false);
   const [showCancelSubscriptionDialog, setShowCancelSubscriptionDialog] = useState(false);
   const [isCancellingSubscription, setIsCancellingSubscription] = useState(false);
+  const [sharingVideo, setSharingVideo] = useState<UserVideo | null>(null);
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
 
   const handleCancelSubscription = async () => {
     if (!subscription?.stripe_subscription_id) {
@@ -830,6 +834,22 @@ const MyPage = () => {
   const handleDeleteVideo = (videoId: string) => {
     setDeletingVideoId(videoId);
     setDeleteDialogOpen(true);
+  };
+
+  const handleShareVideo = (video: UserVideo) => {
+    setSharingVideo(video);
+    setShareDialogOpen(true);
+  };
+
+  const handleShareTokenUpdated = (newToken: string) => {
+    if (sharingVideo) {
+      setUserVideos(prev => prev.map(v => 
+        v.id === sharingVideo.id 
+          ? { ...v, share_token: newToken || null }
+          : v
+      ));
+      setSharingVideo(prev => prev ? { ...prev, share_token: newToken || null } : null);
+    }
   };
 
   const confirmDeleteVideo = async () => {
@@ -3149,6 +3169,7 @@ const MyPage = () => {
                           video={video}
                           onEdit={handleEditVideo}
                           onDelete={handleDeleteVideo}
+                          onShare={handleShareVideo}
                           isOwner={true}
                         />
                       ))}
@@ -3548,6 +3569,15 @@ const MyPage = () => {
         video={editingVideo}
         onSuccess={loadUserVideos}
       />
+
+      {sharingVideo && (
+        <VideoShareDialog
+          open={shareDialogOpen}
+          onOpenChange={setShareDialogOpen}
+          video={sharingVideo}
+          onTokenUpdated={handleShareTokenUpdated}
+        />
+      )}
 
       <AvatarUploadDialog
         open={avatarDialogOpen}
