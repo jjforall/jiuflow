@@ -321,14 +321,19 @@ const TranscriptionDetail = () => {
       <Navigation />
       <div className="container mx-auto px-4 py-6">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between mb-6 bg-card border rounded-lg p-4">
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              戻る
+            <Button 
+              variant="outline" 
+              size="default" 
+              onClick={() => navigate('/admin?tab=techniques')}
+              className="flex items-center gap-2"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              テクニック管理に戻る
             </Button>
             <div>
-              <h1 className="text-xl font-bold">文字起こし</h1>
+              <h1 className="text-xl font-bold">文字起こし編集</h1>
               {technique && (
                 <p className="text-sm text-muted-foreground">{technique.name_ja || technique.name}</p>
               )}
