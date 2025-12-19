@@ -294,8 +294,11 @@ async function getCloudflareDownloadUrl(
   accountId: string,
   apiToken: string,
 ): Promise<string> {
-  // Ensure downloads are enabled (idempotent)
+  console.log("getCloudflareDownloadUrl called with videoId:", videoId);
+  
+  // First, try to enable downloads (this is idempotent)
   try {
+    console.log("Attempting to enable downloads for video...");
     const enableRes = await fetch(
       `https://api.cloudflare.com/client/v4/accounts/${accountId}/stream/${videoId}/downloads`,
       {
@@ -308,15 +311,42 @@ async function getCloudflareDownloadUrl(
     );
 
     const enableJson = await enableRes.json().catch(() => null);
+    console.log("Enable downloads response:", JSON.stringify(enableJson));
+    
     if (enableJson?.success && enableJson?.result?.default?.url) {
-      console.log("Cloudflare downloads enabled, got URL.");
+      console.log("Got download URL from enable response");
       return enableJson.result.default.url;
     }
   } catch (e) {
-    console.log("Cloudflare downloads enable failed (continuing):", e);
+    console.log("Enable downloads request failed:", e);
   }
 
-  // Fetch video details (may include downloads URL)
+  // Try GET to check if downloads are already enabled
+  try {
+    console.log("Checking existing downloads status...");
+    const downloadStatusRes = await fetch(
+      `https://api.cloudflare.com/client/v4/accounts/${accountId}/stream/${videoId}/downloads`,
+      {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${apiToken}`,
+        },
+      },
+    );
+
+    const downloadStatusJson = await downloadStatusRes.json().catch(() => null);
+    console.log("Download status response:", JSON.stringify(downloadStatusJson));
+    
+    if (downloadStatusJson?.success && downloadStatusJson?.result?.default?.url) {
+      console.log("Got download URL from status check");
+      return downloadStatusJson.result.default.url;
+    }
+  } catch (e) {
+    console.log("Download status check failed:", e);
+  }
+
+  // Fetch video details as fallback
+  console.log("Fetching video details...");
   const detailsRes = await fetch(
     `https://api.cloudflare.com/client/v4/accounts/${accountId}/stream/${videoId}`,
     {
@@ -327,17 +357,39 @@ async function getCloudflareDownloadUrl(
   );
 
   const detailsJson = await detailsRes.json();
+  console.log("Video details response:", JSON.stringify(detailsJson));
+  
   if (detailsJson?.success && detailsJson?.result) {
     const video = detailsJson.result;
-    const url = video?.downloads?.default?.url;
-    if (url) return url;
+    
+    // Check for download URL
+    if (video?.downloads?.default?.url) {
+      console.log("Got download URL from video details");
+      return video.downloads.default.url;
+    }
 
-    // preview is sometimes present; try as fallback
-    if (video?.preview) return video.preview;
+    // Use preview URL as fallback (this is a direct video URL)
+    if (video?.preview) {
+      console.log("Using preview URL as fallback");
+      return video.preview;
+    }
+    
+    // Use playback HLS and try to convert
+    if (video?.playback?.hls) {
+      // HLS URL format: https://customer-xxx.cloudflarestream.com/videoId/manifest/video.m3u8
+      // Try the MP4 download path
+      const hlsUrl = video.playback.hls;
+      const mp4Url = hlsUrl.replace(/\/manifest\/video\.m3u8$/, "/downloads/default.mp4");
+      console.log("Trying MP4 URL derived from HLS:", mp4Url);
+      return mp4Url;
+    }
   }
 
-  // Final fallback: public pattern (may still fail, but we tried)
-  return `https://customer-${accountId}.cloudflarestream.com/${videoId}/downloads/default.mp4`;
+  // Final fallback: construct URL based on known pattern
+  // Note: This requires downloads to be enabled for the video
+  const fallbackUrl = `https://videodelivery.net/${videoId}/downloads/default.mp4`;
+  console.log("Using fallback URL pattern:", fallbackUrl);
+  return fallbackUrl;
 }
 
 async function uploadToAssemblyAiFromUrl(apiKey: string, fileUrl: string): Promise<string> {
