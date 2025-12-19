@@ -29,14 +29,71 @@ serve(async (req) => {
       throw new Error("ASSEMBLYAI_API_KEY is not configured");
     }
 
+    const cloudflareAccountId = Deno.env.get("CLOUDFLARE_ACCOUNT_ID");
+    const cloudflareApiToken = Deno.env.get("CLOUDFLARE_STREAM_API_TOKEN");
+
     console.log("Starting transcription with AssemblyAI for:", videoUrl);
     
-    // Resolve downloadable URL (convert HLS manifest to direct download if needed)
-    const downloadUrl = resolveDownloadUrl(videoUrl);
-    console.log("Using download URL:", downloadUrl);
+    // Get a downloadable URL - for Cloudflare Stream, we need to use the API
+    let downloadUrl = videoUrl;
+    
+    // Check if this is a Cloudflare Stream URL and get proper download URL
+    const cfMatch = videoUrl.match(/cloudflarestream\.com\/([a-f0-9-]+)/);
+    if (cfMatch && cloudflareAccountId && cloudflareApiToken) {
+      const videoId = cfMatch[1];
+      console.log("Detected Cloudflare Stream video, getting download URL for:", videoId);
+      
+      // Enable downloads for the video
+      const enableDownloadResponse = await fetch(
+        `https://api.cloudflare.com/client/v4/accounts/${cloudflareAccountId}/stream/${videoId}/downloads`,
+        {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${cloudflareApiToken}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      const downloadResult = await enableDownloadResponse.json();
+      console.log("Download enable result:", JSON.stringify(downloadResult));
+      
+      // Get video details including download URL
+      const videoResponse = await fetch(
+        `https://api.cloudflare.com/client/v4/accounts/${cloudflareAccountId}/stream/${videoId}`,
+        {
+          headers: {
+            "Authorization": `Bearer ${cloudflareApiToken}`,
+          },
+        }
+      );
+      const videoResult = await videoResponse.json();
+      
+      if (videoResult.success && videoResult.result) {
+        const video = videoResult.result;
+        // Use the download URL if available, otherwise try preview
+        if (video.downloads?.default?.url) {
+          downloadUrl = video.downloads.default.url;
+          console.log("Using Cloudflare download URL:", downloadUrl);
+        } else if (downloadResult.success && downloadResult.result?.default?.url) {
+          downloadUrl = downloadResult.result.default.url;
+          console.log("Using newly enabled download URL:", downloadUrl);
+        } else if (video.preview) {
+          downloadUrl = video.preview;
+          console.log("Using Cloudflare preview URL:", downloadUrl);
+        } else {
+          // Construct signed URL pattern
+          downloadUrl = `https://customer-${cloudflareAccountId}.cloudflarestream.com/${videoId}/downloads/default.mp4`;
+          console.log("Using constructed download URL:", downloadUrl);
+        }
+      }
+    } else {
+      // For non-Cloudflare URLs, try to resolve download URL
+      downloadUrl = resolveDownloadUrl(videoUrl);
+    }
+    
+    console.log("Final download URL:", downloadUrl);
 
     // Step 1: Submit transcription job to AssemblyAI
-    // AssemblyAI will download the file from the URL - no need to download locally
     console.log("Submitting transcription job to AssemblyAI...");
     
     const transcriptResponse = await fetch("https://api.assemblyai.com/v2/transcript", {
