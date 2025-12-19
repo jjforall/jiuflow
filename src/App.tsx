@@ -64,6 +64,7 @@ const NotFound = lazy(() => import("./pages/NotFound"));
 const Glossary = lazy(() => import("./pages/Glossary"));
 const Blog = lazy(() => import("./pages/Blog"));
 const VideoList = lazy(() => import("./pages/VideoList"));
+const TranscriptionDetail = lazy(() => import("./pages/TranscriptionDetail"));
 
 const queryClient = new QueryClient();
 
@@ -164,6 +165,11 @@ const App = () => (
                         <SuspenseWrapper variant="admin"><AdminDashboard /></SuspenseWrapper>
                       </ProtectedRoute>
                     } />
+                    <Route path="admin/transcription/:id" element={
+                      <ProtectedRoute requireAdmin>
+                        <SuspenseWrapper variant="admin"><TranscriptionDetail /></SuspenseWrapper>
+                      </ProtectedRoute>
+                    } />
                     <Route path="generate-images" element={
                       <ProtectedRoute requireAdmin>
                         <SuspenseWrapper variant="admin"><GenerateImages /></SuspenseWrapper>
@@ -261,6 +267,11 @@ const App = () => (
                   <Route path="/admin/techniques" element={
                     <ProtectedRoute requireAdmin>
                       <SuspenseWrapper variant="admin"><AdminDashboard /></SuspenseWrapper>
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/admin/transcription/:id" element={
+                    <ProtectedRoute requireAdmin>
+                      <SuspenseWrapper variant="admin"><TranscriptionDetail /></SuspenseWrapper>
                     </ProtectedRoute>
                   } />
                   <Route path="/generate-images" element={
