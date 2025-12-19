@@ -240,16 +240,103 @@ function convertToSegments(words: any[]): any[] {
   return segments;
 }
 
+// Split long text into lines of max ~30 characters for readability
+function splitTextForSubtitle(text: string, maxCharsPerLine: number = 30): string {
+  const trimmed = text.trim();
+  if (trimmed.length <= maxCharsPerLine) return trimmed;
+  
+  const words = trimmed.split(/\s+/);
+  const lines: string[] = [];
+  let currentLine = "";
+  
+  for (const word of words) {
+    if (currentLine.length === 0) {
+      currentLine = word;
+    } else if ((currentLine + " " + word).length <= maxCharsPerLine) {
+      currentLine += " " + word;
+    } else {
+      lines.push(currentLine);
+      currentLine = word;
+    }
+  }
+  
+  if (currentLine) {
+    lines.push(currentLine);
+  }
+  
+  // Limit to 2 lines max for readability
+  if (lines.length > 2) {
+    return lines.slice(0, 2).join("\n");
+  }
+  
+  return lines.join("\n");
+}
+
 function generateVTT(segments: any[]): string {
   let vtt = "WEBVTT\n\n";
+  let cueIndex = 1;
+  
+  // Split long segments into smaller chunks for subtitle display
+  const maxSegmentDuration = 5; // Max 5 seconds per subtitle
+  const maxChars = 60; // Max chars per subtitle (before line breaking)
 
-  segments.forEach((segment, index) => {
-    const startTime = formatVTTTime(segment.start);
-    const endTime = formatVTTTime(segment.end);
-    vtt += `${index + 1}\n`;
-    vtt += `${startTime} --> ${endTime}\n`;
-    vtt += `${segment.text.trim()}\n\n`;
-  });
+  for (const segment of segments) {
+    const text = segment.text.trim();
+    const duration = segment.end - segment.start;
+    
+    // If segment is short enough, output as single cue
+    if (duration <= maxSegmentDuration && text.length <= maxChars) {
+      const startTime = formatVTTTime(segment.start);
+      const endTime = formatVTTTime(segment.end);
+      vtt += `${cueIndex}\n`;
+      vtt += `${startTime} --> ${endTime}\n`;
+      vtt += `${splitTextForSubtitle(text)}\n\n`;
+      cueIndex++;
+      continue;
+    }
+    
+    // Split long segment by character count and duration
+    const words = text.split(/\s+/);
+    const avgTimePerWord = duration / words.length;
+    
+    let currentStart = segment.start;
+    let currentWords: string[] = [];
+    let currentCharCount = 0;
+    
+    for (let i = 0; i < words.length; i++) {
+      const word = words[i];
+      
+      if (currentWords.length > 0 && 
+          (currentCharCount + word.length + 1 > maxChars || 
+           currentWords.length * avgTimePerWord > maxSegmentDuration)) {
+        // Output current chunk
+        const chunkEnd = Math.min(currentStart + currentWords.length * avgTimePerWord, segment.end);
+        const startTime = formatVTTTime(currentStart);
+        const endTime = formatVTTTime(chunkEnd);
+        vtt += `${cueIndex}\n`;
+        vtt += `${startTime} --> ${endTime}\n`;
+        vtt += `${splitTextForSubtitle(currentWords.join(" "))}\n\n`;
+        cueIndex++;
+        
+        currentStart = chunkEnd;
+        currentWords = [];
+        currentCharCount = 0;
+      }
+      
+      currentWords.push(word);
+      currentCharCount += word.length + 1;
+    }
+    
+    // Output remaining words
+    if (currentWords.length > 0) {
+      const startTime = formatVTTTime(currentStart);
+      const endTime = formatVTTTime(segment.end);
+      vtt += `${cueIndex}\n`;
+      vtt += `${startTime} --> ${endTime}\n`;
+      vtt += `${splitTextForSubtitle(currentWords.join(" "))}\n\n`;
+      cueIndex++;
+    }
+  }
 
   return vtt;
 }
