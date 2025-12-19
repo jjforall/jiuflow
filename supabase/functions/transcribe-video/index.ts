@@ -1,4 +1,3 @@
-import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
@@ -25,82 +24,89 @@ serve(async (req) => {
       throw new Error("Either techniqueId or userVideoId is required");
     }
 
-    const openaiApiKey = Deno.env.get("OPENAI_API_KEY");
-    if (!openaiApiKey) {
-      throw new Error("OPENAI_API_KEY is not configured");
+    const assemblyAiApiKey = Deno.env.get("ASSEMBLYAI_API_KEY");
+    if (!assemblyAiApiKey) {
+      throw new Error("ASSEMBLYAI_API_KEY is not configured");
     }
 
-    console.log("Resolving downloadable media URL for:", videoUrl);
+    console.log("Starting transcription with AssemblyAI for:", videoUrl);
+    
+    // Resolve downloadable URL (convert HLS manifest to direct download if needed)
     const downloadUrl = resolveDownloadUrl(videoUrl);
-    console.log("Downloading media from:", downloadUrl);
+    console.log("Using download URL:", downloadUrl);
 
-    // Download media file (must be an actual media file, not an HLS manifest)
-    const mediaResponse = await fetch(downloadUrl, {
+    // Step 1: Submit transcription job to AssemblyAI
+    // AssemblyAI will download the file from the URL - no need to download locally
+    console.log("Submitting transcription job to AssemblyAI...");
+    
+    const transcriptResponse = await fetch("https://api.assemblyai.com/v2/transcript", {
+      method: "POST",
       headers: {
-        "User-Agent": "Mozilla/5.0 (Lovable; Transcription Bot)",
-        Accept: "*/*",
+        "Authorization": assemblyAiApiKey,
+        "Content-Type": "application/json",
       },
+      body: JSON.stringify({
+        audio_url: downloadUrl,
+        language_code: "ja",
+        punctuate: true,
+        format_text: true,
+      }),
     });
 
-    if (!mediaResponse.ok) {
-      throw new Error(`Failed to download media: ${mediaResponse.status}`);
+    if (!transcriptResponse.ok) {
+      const errorText = await transcriptResponse.text();
+      console.error("AssemblyAI submit error:", errorText);
+      throw new Error(`AssemblyAI submit error: ${transcriptResponse.status} - ${errorText}`);
     }
 
-    const contentType = mediaResponse.headers.get("content-type") || "video/mp4";
-    const contentLength = mediaResponse.headers.get("content-length");
-    console.log("Media content-type:", contentType);
-    if (contentLength) console.log("Media content-length:", contentLength);
+    const transcriptData = await transcriptResponse.json();
+    const transcriptId = transcriptData.id;
+    console.log("Transcription job submitted, ID:", transcriptId);
 
-    // Log file size for debugging (no size limit enforced - user responsibility)
-    const sizeBytes = contentLength ? Number.parseInt(contentLength, 10) : null;
-    if (sizeBytes) {
-      console.log(`Processing media file: ${Math.round(sizeBytes / 1024 / 1024)}MB`);
-    }
+    // Step 2: Poll for completion (AssemblyAI processes asynchronously)
+    let transcriptionResult: any = null;
+    const maxWaitMs = 30 * 60 * 1000; // 30 minutes max wait for large files
+    const pollIntervalMs = 5000; // Poll every 5 seconds
+    const startTime = Date.now();
 
-    if (!mediaResponse.body) {
-      throw new Error("Media response body is empty");
-    }
+    while (Date.now() - startTime < maxWaitMs) {
+      await new Promise((resolve) => setTimeout(resolve, pollIntervalMs));
 
-    console.log("Streaming media to Whisper API...");
-
-    const fileName = contentType.startsWith("audio/") ? "audio" : "video.mp4";
-    const { body: whisperBody, contentTypeHeader } = createMultipartBody({
-      fileStream: mediaResponse.body,
-      fileName,
-      fileContentType: contentType,
-      fields: [
-        ["model", "whisper-1"],
-        ["language", "ja"],
-        ["response_format", "verbose_json"],
-        ["timestamp_granularities[]", "segment"],
-      ],
-    });
-
-    const whisperResponse = await fetch(
-      "https://api.openai.com/v1/audio/transcriptions",
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${openaiApiKey}`,
-          "Content-Type": contentTypeHeader,
-        },
-        body: whisperBody,
-      },
-    );
-
-    if (!whisperResponse.ok) {
-      const errorText = await whisperResponse.text();
-      console.error("Whisper API error:", errorText);
-      throw new Error(
-        `Whisper API error: ${whisperResponse.status} - ${errorText}`,
+      const statusResponse = await fetch(
+        `https://api.assemblyai.com/v2/transcript/${transcriptId}`,
+        {
+          headers: {
+            "Authorization": assemblyAiApiKey,
+          },
+        }
       );
+
+      if (!statusResponse.ok) {
+        const errorText = await statusResponse.text();
+        console.error("AssemblyAI status check error:", errorText);
+        throw new Error(`AssemblyAI status error: ${statusResponse.status}`);
+      }
+
+      const statusData = await statusResponse.json();
+      console.log("Transcription status:", statusData.status);
+
+      if (statusData.status === "completed") {
+        transcriptionResult = statusData;
+        break;
+      } else if (statusData.status === "error") {
+        throw new Error(`AssemblyAI transcription failed: ${statusData.error}`);
+      }
+      // Continue polling if status is "queued" or "processing"
     }
 
-    const transcriptionResult = await whisperResponse.json();
-    console.log(
-      "Transcription completed:",
-      transcriptionResult.text?.substring(0, 100),
-    );
+    if (!transcriptionResult) {
+      throw new Error("Transcription timed out after 30 minutes");
+    }
+
+    console.log("Transcription completed:", transcriptionResult.text?.substring(0, 100));
+
+    // Convert AssemblyAI words to segments (group by sentences/pauses)
+    const segments = convertToSegments(transcriptionResult.words || []);
 
     // Initialize Supabase client
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
@@ -115,7 +121,7 @@ serve(async (req) => {
         user_video_id: userVideoId || null,
         language_code: "ja",
         original_text: transcriptionResult.text,
-        segments: transcriptionResult.segments || [],
+        segments: segments,
         status: "completed",
       })
       .select()
@@ -129,7 +135,7 @@ serve(async (req) => {
     console.log("Transcription saved with ID:", transcription.id);
 
     // Generate VTT subtitle content
-    const vttContent = generateVTT(transcriptionResult.segments || []);
+    const vttContent = generateVTT(segments);
 
     // Store Japanese subtitle
     const { error: subtitleError } = await supabase
@@ -151,7 +157,7 @@ serve(async (req) => {
         transcription: {
           id: transcription.id,
           text: transcriptionResult.text,
-          segments: transcriptionResult.segments,
+          segments: segments,
         },
       }),
       {
@@ -167,6 +173,51 @@ serve(async (req) => {
     });
   }
 });
+
+// Convert AssemblyAI word-level timestamps to segment format
+function convertToSegments(words: any[]): any[] {
+  if (!words || words.length === 0) return [];
+
+  const segments: any[] = [];
+  let currentSegment: any = null;
+  let lastEndTime = 0;
+
+  for (const word of words) {
+    const wordStart = word.start / 1000; // Convert ms to seconds
+    const wordEnd = word.end / 1000;
+    const pauseThreshold = 1.5; // 1.5 second pause = new segment
+
+    // Start new segment if:
+    // - No current segment
+    // - Long pause between words
+    // - Current segment is getting long (>30 seconds)
+    if (
+      !currentSegment ||
+      wordStart - lastEndTime > pauseThreshold ||
+      (currentSegment && wordEnd - currentSegment.start > 30)
+    ) {
+      if (currentSegment) {
+        segments.push(currentSegment);
+      }
+      currentSegment = {
+        start: wordStart,
+        end: wordEnd,
+        text: word.text,
+      };
+    } else {
+      currentSegment.end = wordEnd;
+      currentSegment.text += " " + word.text;
+    }
+
+    lastEndTime = wordEnd;
+  }
+
+  if (currentSegment) {
+    segments.push(currentSegment);
+  }
+
+  return segments;
+}
 
 function generateVTT(segments: any[]): string {
   let vtt = "WEBVTT\n\n";
@@ -192,96 +243,27 @@ function formatVTTTime(seconds: number): string {
 }
 
 function resolveDownloadUrl(videoUrl: string): string {
-  // Whisper requires an actual media file (mp3/mp4/wav/etc). If we receive an HLS manifest URL,
-  // convert to a downloadable MP4 URL when possible.
+  // AssemblyAI can handle most URLs directly, but convert HLS manifests to MP4 when possible
   const u = new URL(videoUrl);
 
-  // If already a file URL (not a manifest), keep as-is
   const lowerPath = u.pathname.toLowerCase();
   const looksLikeManifest = lowerPath.endsWith(".m3u8") || lowerPath.includes("/manifest/");
   if (!looksLikeManifest) return videoUrl;
 
   // Try Cloudflare Stream-style download URL patterns
-  // e.g. https://.../<uid>/manifest/video.m3u8 -> https://.../<uid>/downloads/default.mp4
   const downloadPath = u.pathname
     .replace(/\/manifest\/video\.m3u8$/i, "/downloads/default.mp4")
     .replace(/\.m3u8$/i, ".mp4");
 
   const candidates: string[] = [];
-  // same origin
   candidates.push(`${u.origin}${downloadPath}${u.search}`);
 
-  // If it's a cloudflare stream custom domain, also try videodelivery.net
   const parts = u.pathname.split("/").filter(Boolean);
   const uid = parts[0];
   if (uid && (u.hostname.includes("cloudflarestream.com") || u.hostname.includes("videodelivery.net"))) {
     candidates.push(`https://videodelivery.net/${uid}/downloads/default.mp4${u.search}`);
   }
 
-  // Fallback to original (will likely fail, but keeps behavior explicit)
   candidates.push(videoUrl);
-
-  // Pick first candidate; the caller will fetch and validate status.
   return candidates[0];
-}
-
-function createMultipartBody(params: {
-  fileStream: ReadableStream<Uint8Array>;
-  fileName: string;
-  fileContentType: string;
-  fields: Array<[string, string]>;
-}): { body: ReadableStream<Uint8Array>; contentTypeHeader: string } {
-  const boundary = `----lovable-${crypto.randomUUID()}`;
-  const encoder = new TextEncoder();
-
-  const encode = (s: string) => encoder.encode(s);
-
-  const fieldParts = params.fields.map(([name, value]) =>
-    encode(
-      `--${boundary}\r\n` +
-        `Content-Disposition: form-data; name="${name}"\r\n\r\n` +
-        `${value}\r\n`,
-    ),
-  );
-
-  const fileHeader = encode(
-    `--${boundary}\r\n` +
-      `Content-Disposition: form-data; name="file"; filename="${params.fileName}"\r\n` +
-      `Content-Type: ${params.fileContentType}\r\n\r\n`,
-  );
-
-  const fileFooterAndClose = encode(`\r\n--${boundary}--\r\n`);
-
-  const body = new ReadableStream<Uint8Array>({
-    async start(controller) {
-      for (const part of fieldParts) controller.enqueue(part);
-      controller.enqueue(fileHeader);
-
-      const reader = params.fileStream.getReader();
-      try {
-        while (true) {
-          const { value, done } = await reader.read();
-          if (done) break;
-          if (value) controller.enqueue(value);
-        }
-      } finally {
-        try {
-          reader.releaseLock();
-        } catch {
-          // ignore
-        }
-      }
-
-      controller.enqueue(fileFooterAndClose);
-      controller.close();
-    },
-    cancel() {
-      // no-op
-    },
-  });
-
-  return {
-    body,
-    contentTypeHeader: `multipart/form-data; boundary=${boundary}`,
-  };
 }
