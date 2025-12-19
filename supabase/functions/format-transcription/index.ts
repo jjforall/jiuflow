@@ -18,6 +18,11 @@ serve(async (req) => {
       throw new Error('segments array is required');
     }
 
+    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+    if (!LOVABLE_API_KEY) {
+      throw new Error('LOVABLE_API_KEY is not configured');
+    }
+
     // Process segments in batches to avoid rate limits
     const formattedSegments = [];
     
@@ -45,12 +50,11 @@ ${segment.text}
 
 Output only the formatted text:`;
 
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${Deno.env.get('LOVABLE_AI_API_KEY')}`,
+          'Authorization': `Bearer ${LOVABLE_API_KEY}`,
           'Content-Type': 'application/json',
-          'X-Lovable-API-Version': '1.0.0',
         },
         body: JSON.stringify({
           model: 'google/gemini-2.5-flash',
@@ -72,6 +76,8 @@ Output only the formatted text:`;
 
       const data = await response.json();
       const formattedText = data.choices?.[0]?.message?.content?.trim() || segment.text;
+
+      console.log(`Formatted: "${segment.text.substring(0, 30)}..." -> "${formattedText.substring(0, 30)}..."`);
 
       formattedSegments.push({
         ...segment,
