@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { ArrowLeft, Save, Play, Pause, Edit2, Check, X, Loader2 } from 'lucide-react';
+import { ArrowLeft, Save, Play, Pause, Edit2, Check, X, Loader2, Sparkles, Wand2 } from 'lucide-react';
 import { VideoPlayer } from '@/components/VideoPlayer';
 import { useAuth } from '@/hooks/useAuth';
 import Navigation from '@/components/Navigation';
@@ -46,6 +46,8 @@ const TranscriptionDetail = () => {
   const [technique, setTechnique] = useState<Technique | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isFormatting, setIsFormatting] = useState(false);
+  const [formattingProgress, setFormattingProgress] = useState(0);
   const [editingSegmentIndex, setEditingSegmentIndex] = useState<number | null>(null);
   const [editedSegments, setEditedSegments] = useState<Segment[]>([]);
   const [tempEditText, setTempEditText] = useState('');
@@ -149,6 +151,69 @@ const TranscriptionDetail = () => {
   const cancelSegmentEdit = () => {
     setEditingSegmentIndex(null);
     setTempEditText('');
+  };
+
+  const handleFormatAll = async () => {
+    if (editedSegments.length === 0) return;
+
+    setIsFormatting(true);
+    setFormattingProgress(0);
+
+    try {
+      // Process in batches of 5 segments
+      const batchSize = 5;
+      const formattedSegments: Segment[] = [];
+      
+      for (let i = 0; i < editedSegments.length; i += batchSize) {
+        const batch = editedSegments.slice(i, i + batchSize);
+        
+        const { data, error } = await supabase.functions.invoke('format-transcription', {
+          body: { 
+            segments: batch,
+            language: transcription?.language_code || 'ja'
+          }
+        });
+
+        if (error) throw error;
+        
+        formattedSegments.push(...(data.segments || batch));
+        setFormattingProgress(Math.round(((i + batch.length) / editedSegments.length) * 100));
+      }
+
+      setEditedSegments(formattedSegments);
+      toast.success('文字起こしをAIで整形しました');
+    } catch (error) {
+      console.error('Format error:', error);
+      toast.error('整形に失敗しました');
+    } finally {
+      setIsFormatting(false);
+      setFormattingProgress(0);
+    }
+  };
+
+  const handleFormatSingle = async (index: number) => {
+    const segment = editedSegments[index];
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('format-transcription', {
+        body: { 
+          segments: [segment],
+          language: transcription?.language_code || 'ja'
+        }
+      });
+
+      if (error) throw error;
+      
+      if (data.segments?.[0]) {
+        const newSegments = [...editedSegments];
+        newSegments[index] = data.segments[0];
+        setEditedSegments(newSegments);
+        toast.success('セグメントを整形しました');
+      }
+    } catch (error) {
+      console.error('Format error:', error);
+      toast.error('整形に失敗しました');
+    }
   };
 
   const handleSaveAll = async () => {
@@ -270,14 +335,33 @@ const TranscriptionDetail = () => {
             </div>
           </div>
           {isAdmin && (
-            <Button onClick={handleSaveAll} disabled={isSaving}>
-              {isSaving ? (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              ) : (
-                <Save className="h-4 w-4 mr-2" />
-              )}
-              保存
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button 
+                variant="outline" 
+                onClick={handleFormatAll} 
+                disabled={isFormatting || isSaving || editedSegments.length === 0}
+              >
+                {isFormatting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    整形中... {formattingProgress}%
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="h-4 w-4 mr-2" />
+                    AIで整形
+                  </>
+                )}
+              </Button>
+              <Button onClick={handleSaveAll} disabled={isSaving || isFormatting}>
+                {isSaving ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <Save className="h-4 w-4 mr-2" />
+                )}
+                保存
+              </Button>
+            </div>
           )}
         </div>
 
@@ -350,17 +434,32 @@ const TranscriptionDetail = () => {
                     </div>
                     
                     {isAdmin && editingSegmentIndex !== index && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-6 w-6 p-0 shrink-0"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          startEditSegment(index);
-                        }}
-                      >
-                        <Edit2 className="h-3 w-3" />
-                      </Button>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 w-6 p-0"
+                          title="AIで整形"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleFormatSingle(index);
+                          }}
+                        >
+                          <Wand2 className="h-3 w-3" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 w-6 p-0"
+                          title="編集"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            startEditSegment(index);
+                          }}
+                        >
+                          <Edit2 className="h-3 w-3" />
+                        </Button>
+                      </div>
                     )}
                   </div>
 
