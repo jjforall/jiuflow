@@ -5,10 +5,9 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { translations } from "@/lib/translations";
 import { prefetchRoute } from "@/utils/routePrefetch";
 import { Button } from "@/components/ui/button";
-import { Menu, LogIn, User, LogOut, ShieldCheck, Moon, Sun, Home, Map, Info, UserPlus, X, ClipboardList, Users, Bell, Trophy } from "lucide-react";
+import { Menu, LogIn, User, LogOut, ShieldCheck, Moon, Sun, Home, Map, Info, UserPlus, ClipboardList, Users, Bell, Trophy } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { supabase } from "@/integrations/supabase/client";
-import { User as SupabaseUser } from "@supabase/supabase-js";
+import { useAuth } from "@/hooks/useAuth";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,11 +25,12 @@ const Navigation = () => {
   const { language, setLanguage } = useLanguage();
   const t = translations[language] || translations.ja; // Fallback to Japanese
   const [isOpen, setIsOpen] = useState(false);
-  const [user, setUser] = useState<SupabaseUser | null>(null);
-  const [canAccessAdmin, setCanAccessAdmin] = useState(false);
+  const { user, isAdmin, isStaff, signOut } = useAuth();
   const { subscribed, loading: subscriptionLoading } = useSubscription();
   const [showOpenMatBadge, setShowOpenMatBadge] = useState(false);
   const [hasUnreadNotifications, setHasUnreadNotifications] = useState(false); // Will be true when there are actual notifications
+
+  const canAccessAdmin = isAdmin || isStaff;
 
   // Check if user has seen the Open Mat notification
   useEffect(() => {
@@ -45,87 +45,9 @@ const Navigation = () => {
     setShowOpenMatBadge(false);
   }, []);
 
-  useEffect(() => {
-    // Set up auth state listener FIRST
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        // Only synchronous state updates here to prevent deadlock
-        setUser(session?.user ?? null);
-        if (session?.user) {
-          // Defer Supabase calls with setTimeout to prevent deadlock
-          setTimeout(() => {
-            checkAdminStatus(session.user.id);
-          }, 0);
-        } else {
-          setCanAccessAdmin(false);
-        }
-      }
-    );
-
-    // THEN check for existing session with timeout
-    const checkSession = async () => {
-      try {
-        const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Session timeout')), 8000)
-        );
-        
-        const sessionPromise = supabase.auth.getSession();
-        const result = await Promise.race([sessionPromise, timeoutPromise]) as any;
-        const session = result?.data?.session;
-        
-        setUser(session?.user ?? null);
-        if (session?.user) {
-          setTimeout(() => {
-            checkAdminStatus(session.user.id);
-          }, 0);
-        }
-      } catch (error) {
-        console.error('Navigation: Error getting session:', error);
-        // On timeout, try to continue without blocking
-        setUser(null);
-      }
-    };
-    
-    checkSession();
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  const checkAdminStatus = async (userId: string) => {
-    try {
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Admin check timeout')), 5000)
-      );
-      
-      const queryPromise = supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", userId)
-        .in("role", ["admin", "staff"]);
-
-      const { data, error } = await Promise.race([queryPromise, timeoutPromise]) as any;
-
-      if (error) {
-        console.error("Error checking admin/staff status:", error);
-        setCanAccessAdmin(false);
-        return;
-      }
-      setCanAccessAdmin(!!data && data.length > 0);
-    } catch (error) {
-      console.error("Admin status check failed:", error);
-      setCanAccessAdmin(false);
-    }
-  };
-
   const handleLogout = async () => {
     try {
-      const { error } = await supabase.auth.signOut();
-      if (error && error.message !== "Session not found") {
-        toast.error(t.nav.logoutError || "ログアウトに失敗しました");
-        return;
-      }
-      toast.success(t.nav.logoutSuccess || "ログアウトしました");
-      navigate("/");
+      await signOut();
     } catch (error) {
       console.error('Error signing out:', error);
       toast.error(t.nav.logoutError || "ログアウトに失敗しました");
