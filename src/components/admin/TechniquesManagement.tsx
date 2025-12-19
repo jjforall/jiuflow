@@ -1034,7 +1034,19 @@ export const TechniquesManagement = () => {
         }
       });
 
-      if (error) throw error;
+      if (error) {
+        let message = error.message;
+        const anyErr = error as any;
+        if (anyErr?.context?.json) {
+          try {
+            const body = await anyErr.context.json();
+            if (body?.error) message = body.error;
+          } catch {
+            // ignore
+          }
+        }
+        throw new Error(message);
+      }
 
       if (data?.success && data?.transcription) {
         toast.success('文字起こし完了', {

@@ -36,66 +36,30 @@ serve(async (req) => {
     
     // Get a downloadable URL - for Cloudflare Stream, we need to use the API
     let downloadUrl = videoUrl;
-    
+
     // Check if this is a Cloudflare Stream URL and get proper download URL
     const cfMatch = videoUrl.match(/cloudflarestream\.com\/([a-f0-9-]+)/);
-    if (cfMatch && cloudflareAccountId && cloudflareApiToken) {
-      const videoId = cfMatch[1];
-      console.log("Detected Cloudflare Stream video, getting download URL for:", videoId);
-      
-      // Enable downloads for the video
-      const enableDownloadResponse = await fetch(
-        `https://api.cloudflare.com/client/v4/accounts/${cloudflareAccountId}/stream/${videoId}/downloads`,
-        {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${cloudflareApiToken}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-      const downloadResult = await enableDownloadResponse.json();
-      console.log("Download enable result:", JSON.stringify(downloadResult));
-      
-      // Get video details including download URL
-      const videoResponse = await fetch(
-        `https://api.cloudflare.com/client/v4/accounts/${cloudflareAccountId}/stream/${videoId}`,
-        {
-          headers: {
-            "Authorization": `Bearer ${cloudflareApiToken}`,
-          },
-        }
-      );
-      const videoResult = await videoResponse.json();
-      
-      if (videoResult.success && videoResult.result) {
-        const video = videoResult.result;
-        // Use the download URL if available, otherwise try preview
-        if (video.downloads?.default?.url) {
-          downloadUrl = video.downloads.default.url;
-          console.log("Using Cloudflare download URL:", downloadUrl);
-        } else if (downloadResult.success && downloadResult.result?.default?.url) {
-          downloadUrl = downloadResult.result.default.url;
-          console.log("Using newly enabled download URL:", downloadUrl);
-        } else if (video.preview) {
-          downloadUrl = video.preview;
-          console.log("Using Cloudflare preview URL:", downloadUrl);
-        } else {
-          // Construct signed URL pattern
-          downloadUrl = `https://customer-${cloudflareAccountId}.cloudflarestream.com/${videoId}/downloads/default.mp4`;
-          console.log("Using constructed download URL:", downloadUrl);
-        }
-      }
+    const isCloudflare = Boolean(cfMatch && cloudflareAccountId && cloudflareApiToken);
+
+    if (isCloudflare) {
+      const videoId = cfMatch![1];
+      console.log("Detected Cloudflare Stream video, preparing download URL for:", videoId);
+      downloadUrl = await getCloudflareDownloadUrl(videoId, cloudflareAccountId!, cloudflareApiToken!);
     } else {
       // For non-Cloudflare URLs, try to resolve download URL
       downloadUrl = resolveDownloadUrl(videoUrl);
     }
-    
+
     console.log("Final download URL:", downloadUrl);
+
+    // For Cloudflare Stream, upload to AssemblyAI first so AssemblyAI doesn't need direct access
+    const assemblyAudioUrl = isCloudflare
+      ? await uploadToAssemblyAiFromUrl(assemblyAiApiKey, downloadUrl)
+      : downloadUrl;
 
     // Step 1: Submit transcription job to AssemblyAI
     console.log("Submitting transcription job to AssemblyAI...");
-    
+
     const transcriptResponse = await fetch("https://api.assemblyai.com/v2/transcript", {
       method: "POST",
       headers: {
@@ -103,7 +67,7 @@ serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        audio_url: downloadUrl,
+        audio_url: assemblyAudioUrl,
         language_code: "ja",
         punctuate: true,
         format_text: true,
@@ -324,3 +288,90 @@ function resolveDownloadUrl(videoUrl: string): string {
   candidates.push(videoUrl);
   return candidates[0];
 }
+
+async function getCloudflareDownloadUrl(
+  videoId: string,
+  accountId: string,
+  apiToken: string,
+): Promise<string> {
+  // Ensure downloads are enabled (idempotent)
+  try {
+    const enableRes = await fetch(
+      `https://api.cloudflare.com/client/v4/accounts/${accountId}/stream/${videoId}/downloads`,
+      {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${apiToken}`,
+          "Content-Type": "application/json",
+        },
+      },
+    );
+
+    const enableJson = await enableRes.json().catch(() => null);
+    if (enableJson?.success && enableJson?.result?.default?.url) {
+      console.log("Cloudflare downloads enabled, got URL.");
+      return enableJson.result.default.url;
+    }
+  } catch (e) {
+    console.log("Cloudflare downloads enable failed (continuing):", e);
+  }
+
+  // Fetch video details (may include downloads URL)
+  const detailsRes = await fetch(
+    `https://api.cloudflare.com/client/v4/accounts/${accountId}/stream/${videoId}`,
+    {
+      headers: {
+        "Authorization": `Bearer ${apiToken}`,
+      },
+    },
+  );
+
+  const detailsJson = await detailsRes.json();
+  if (detailsJson?.success && detailsJson?.result) {
+    const video = detailsJson.result;
+    const url = video?.downloads?.default?.url;
+    if (url) return url;
+
+    // preview is sometimes present; try as fallback
+    if (video?.preview) return video.preview;
+  }
+
+  // Final fallback: public pattern (may still fail, but we tried)
+  return `https://customer-${accountId}.cloudflarestream.com/${videoId}/downloads/default.mp4`;
+}
+
+async function uploadToAssemblyAiFromUrl(apiKey: string, fileUrl: string): Promise<string> {
+  console.log("Uploading audio to AssemblyAI (server-side) ...");
+
+  const audioRes = await fetch(fileUrl, {
+    redirect: "follow",
+  });
+
+  if (!audioRes.ok || !audioRes.body) {
+    const text = await audioRes.text().catch(() => "");
+    throw new Error(`Failed to download media for upload: ${audioRes.status} ${text}`);
+  }
+
+  const uploadRes = await fetch("https://api.assemblyai.com/v2/upload", {
+    method: "POST",
+    headers: {
+      "Authorization": apiKey,
+      "Content-Type": "application/octet-stream",
+    },
+    body: audioRes.body,
+  });
+
+  if (!uploadRes.ok) {
+    const errText = await uploadRes.text().catch(() => "");
+    throw new Error(`AssemblyAI upload error: ${uploadRes.status} - ${errText}`);
+  }
+
+  const uploadJson = await uploadRes.json();
+  if (!uploadJson?.upload_url) {
+    throw new Error("AssemblyAI upload did not return upload_url");
+  }
+
+  console.log("AssemblyAI upload complete.");
+  return uploadJson.upload_url;
+}
+
