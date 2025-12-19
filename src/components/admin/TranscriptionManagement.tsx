@@ -222,11 +222,13 @@ export const TranscriptionManagement = () => {
     }));
   };
 
-  // Split long text into lines of max ~20 characters for Japanese readability
-  const splitTextForSubtitle = (text: string, maxCharsPerLine: number = 20): string => {
+  // Split long text into lines of max ~18 characters for Japanese readability
+  const splitTextForSubtitle = (text: string, maxCharsPerLine: number = 18): string => {
     const trimmed = text.trim().replace(/\s+/g, ''); // Remove spaces for Japanese
     if (trimmed.length <= maxCharsPerLine) return trimmed;
     
+    // Try to split at natural break points (punctuation)
+    const breakPoints = ['。', '、', '！', '？', 'ー', '…'];
     const lines: string[] = [];
     let remaining = trimmed;
     
@@ -235,8 +237,23 @@ export const TranscriptionManagement = () => {
         lines.push(remaining);
         break;
       }
-      lines.push(remaining.slice(0, maxCharsPerLine));
-      remaining = remaining.slice(maxCharsPerLine);
+      
+      // Look for natural break point within the maxCharsPerLine range
+      let breakIndex = -1;
+      for (let i = Math.min(maxCharsPerLine - 1, remaining.length - 1); i >= maxCharsPerLine / 2; i--) {
+        if (breakPoints.includes(remaining[i])) {
+          breakIndex = i + 1;
+          break;
+        }
+      }
+      
+      // If no natural break found, just split at maxCharsPerLine
+      if (breakIndex === -1) {
+        breakIndex = maxCharsPerLine;
+      }
+      
+      lines.push(remaining.slice(0, breakIndex));
+      remaining = remaining.slice(breakIndex);
     }
     
     // Limit to 2 lines max for readability
@@ -248,12 +265,24 @@ export const TranscriptionManagement = () => {
   };
 
   const generateVTT = (segments: any[]): string => {
-    let vtt = 'WEBVTT\n\n';
+    // VTT header with STYLE block for consistent subtitle appearance
+    let vtt = `WEBVTT
+
+STYLE
+::cue {
+  background-color: rgba(0, 0, 0, 0.8);
+  color: white;
+  font-size: 1.1em;
+  line-height: 1.4;
+  text-shadow: 1px 1px 2px black;
+}
+
+`;
     let cueIndex = 1;
     
     // Split long segments into smaller chunks for subtitle display
-    const maxSegmentDuration = 5; // Max 5 seconds per subtitle
-    const maxChars = 40; // Max chars per subtitle (before line breaking)
+    const maxSegmentDuration = 4; // Max 4 seconds per subtitle
+    const maxChars = 30; // Max chars per subtitle (before line breaking)
 
     for (const segment of segments) {
       const text = segment.text.trim().replace(/\s+/g, ''); // Clean up for Japanese
@@ -264,8 +293,9 @@ export const TranscriptionManagement = () => {
         const startTime = formatVTTTime(segment.start);
         const endTime = formatVTTTime(segment.end);
         vtt += `${cueIndex}\n`;
-        vtt += `${startTime} --> ${endTime}\n`;
-        vtt += `${splitTextForSubtitle(text)}\n\n`;
+        // Position at bottom 15% of video using line:85%
+        vtt += `${startTime} --> ${endTime} line:85% position:50% align:center\n`;
+        vtt += `${splitTextForSubtitle(text, 18)}\n\n`;
         cueIndex++;
         continue;
       }
@@ -288,8 +318,9 @@ export const TranscriptionManagement = () => {
           const startTime = formatVTTTime(chunkStart);
           const endTime = formatVTTTime(chunkEnd);
           vtt += `${cueIndex}\n`;
-          vtt += `${startTime} --> ${endTime}\n`;
-          vtt += `${splitTextForSubtitle(chunkText)}\n\n`;
+          // Position at bottom 15% of video using line:85%
+          vtt += `${startTime} --> ${endTime} line:85% position:50% align:center\n`;
+          vtt += `${splitTextForSubtitle(chunkText, 18)}\n\n`;
           cueIndex++;
         }
       }
