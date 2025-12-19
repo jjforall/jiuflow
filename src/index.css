@@ -104,32 +104,16 @@ All colors MUST be HSL.
     transition: var(--transition-smooth);
   }
   
-  /* Video subtitle styling */
+  /* Video subtitle styling - semi-transparent black background with white text */
   video::cue {
-    background-color: rgba(0, 0, 0, 0.75);
-    color: white;
-    font-size: 1rem;
-    line-height: 1.4;
-    padding: 0.25em 0.5em;
-    border-radius: 4px;
+    background-color: rgba(0, 0, 0, 0.8) !important;
+    color: white !important;
+    font-size: 1.1rem;
+    line-height: 1.5;
+    padding: 0.3em 0.6em;
     font-weight: 500;
-    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, 1);
     white-space: pre-wrap;
-  }
-  
-  /* Position subtitles at bottom 20% of video */
-  video::-webkit-media-text-track-container {
-    bottom: 80% !important;
-    transform: translateY(100%);
-  }
-  
-  video::-webkit-media-text-track-display {
-    position: absolute !important;
-    bottom: 15% !important;
-    left: 50% !important;
-    transform: translateX(-50%) !important;
-    max-width: 90% !important;
-    text-align: center !important;
   }
   
   /* Flow animations for jiu-jitsu background */
