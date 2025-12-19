@@ -222,89 +222,142 @@ export const TranscriptionManagement = () => {
     }));
   };
 
-  // Split long text into lines for Japanese readability
-  // Priority: 1. 句読点(。、！？) 2. 助詞(て、に、を、は、が、で、と、も、へ、や、か等) 3. 長音・記号
-  const splitTextForSubtitle = (text: string, maxCharsPerLine: number = 20): string => {
-    const trimmed = text.trim().replace(/\s+/g, ''); // Remove spaces for Japanese
+  // Split long text into lines for Japanese readability.
+  // Prefer: 1) 句読点 2) 接続語(なので/だから/でも/けど等) 3) 助詞(は/が/を/に/で/と等) 4) 最後は文字数で。
+  const splitTextForSubtitle = (text: string, maxCharsPerLine: number = 18): string => {
+    const trimmed = text.trim().replace(/\s+/g, '');
     if (trimmed.length <= maxCharsPerLine) return trimmed;
-    
-    // Priority 1: Punctuation - always good break points (split AFTER these)
-    const punctuation = ['。', '、', '！', '？', '…', '）', '」', '』', '】'];
-    // Priority 2: Particles - common Japanese particles that often end phrases
-    const particles = ['て', 'に', 'を', 'は', 'が', 'で', 'と', 'も', 'へ', 'や', 'か', 'ね', 'よ', 'な', 'ら', 'け', 'ば', 'の'];
-    // Priority 3: Other break points
-    const otherBreaks = ['ー', 'り', 'れ', 'る'];
-    
+
+    const punctuation = ['。', '、', '！', '？', '…', '」', '』', '）', '】'];
+    const connectors = ['なので', 'だから', 'ですが', 'けど', 'けれど', 'でも', 'そして', 'それで', 'しかし', 'それから', 'つまり', 'ちなみに', 'あと'];
+    const particles = ['は', 'が', 'を', 'に', 'で', 'と', 'も', 'へ', 'や', 'か', 'ね', 'よ'];
+
+    const isHiragana = (ch?: string) => !!ch && /[\u3040-\u309F]/.test(ch);
+
+    const findPreferredBreakIndex = (s: string, targetLen: number): number => {
+      const searchEnd = Math.min(targetLen, s.length);
+      const minLen = Math.max(6, Math.floor(targetLen * 0.45));
+
+      // 1) punctuation (break AFTER punctuation)
+      for (let i = searchEnd - 1; i >= minLen; i--) {
+        if (punctuation.includes(s[i])) return i + 1;
+      }
+
+      // 2) connector words (break BEFORE connector so it starts the next line)
+      let bestConnectorIdx = -1;
+      for (const w of connectors) {
+        const idx = s.lastIndexOf(w, searchEnd - 1);
+        if (idx >= minLen && idx > bestConnectorIdx) bestConnectorIdx = idx;
+      }
+      if (bestConnectorIdx !== -1) return bestConnectorIdx;
+
+      // 3) particles (break AFTER particle)
+      for (let i = searchEnd - 1; i >= minLen; i--) {
+        if (!particles.includes(s[i])) continue;
+
+        const prev = s[i - 1];
+        const next = s[i + 1];
+
+        // Avoid breaking inside pure-hiragana words like "こと"/"ながら" etc.
+        // But allow common pronoun+particle patterns like "それは" even though they are hiragana.
+        const prevH = isHiragana(prev);
+        const nextH = isHiragana(next);
+        if (prevH && nextH) {
+          const twoBefore = s.slice(Math.max(0, i - 2), i);
+          const allow = ['それ', 'これ', 'あれ', 'どれ'].includes(twoBefore) && (s[i] === 'は' || s[i] === 'が');
+          if (!allow) continue;
+        }
+
+        return i + 1;
+      }
+
+      // 4) fallback
+      return searchEnd;
+    };
+
     const lines: string[] = [];
     let remaining = trimmed;
-    
+
     while (remaining.length > 0 && lines.length < 2) {
       if (remaining.length <= maxCharsPerLine) {
         lines.push(remaining);
         break;
       }
-      
-      let breakIndex = -1;
-      const searchEnd = Math.min(maxCharsPerLine, remaining.length);
-      const searchStart = Math.max(Math.floor(maxCharsPerLine * 0.4), 6); // Don't break too early
-      
-      // Priority 1: Look for punctuation (best break points)
-      for (let i = searchEnd - 1; i >= searchStart; i--) {
-        if (punctuation.includes(remaining[i])) {
-          breakIndex = i + 1; // Break AFTER punctuation
-          break;
-        }
-      }
-      
-      // Priority 2: Look for particles
-      if (breakIndex === -1) {
-        for (let i = searchEnd - 1; i >= searchStart; i--) {
-          if (particles.includes(remaining[i])) {
-            // Check next character to avoid breaking mid-word
-            const nextChar = remaining[i + 1];
-            // Good to break if: next is kanji, katakana, punctuation, or end of string
-            const isNextKanji = nextChar && /[\u4E00-\u9FAF]/.test(nextChar);
-            const isNextKatakana = nextChar && /[\u30A0-\u30FF]/.test(nextChar);
-            const isNextPunctuation = nextChar && punctuation.includes(nextChar);
-            const isEnd = !nextChar;
-            
-            if (isNextKanji || isNextKatakana || isNextPunctuation || isEnd) {
-              breakIndex = i + 1; // Break AFTER particle
-              break;
-            }
-          }
-        }
-      }
-      
-      // Priority 3: Look for other break points
-      if (breakIndex === -1) {
-        for (let i = searchEnd - 1; i >= searchStart; i--) {
-          if (otherBreaks.includes(remaining[i])) {
-            breakIndex = i + 1;
-            break;
-          }
-        }
-      }
-      
-      // Last resort: break at maxCharsPerLine
-      if (breakIndex === -1) {
-        breakIndex = maxCharsPerLine;
-      }
-      
-      lines.push(remaining.slice(0, breakIndex));
-      remaining = remaining.slice(breakIndex);
+
+      const breakAt = Math.max(1, findPreferredBreakIndex(remaining, maxCharsPerLine));
+      lines.push(remaining.slice(0, breakAt));
+      remaining = remaining.slice(breakAt);
     }
-    
-    // Handle remaining text (append to last line if we hit 2 line limit)
+
+    // 2行に収める（残りは2行目に足す）
     if (remaining.length > 0) {
-      if (lines.length < 2) {
-        lines.push(remaining);
-      } else {
-        lines[1] = lines[1] + remaining;
-      }
+      if (lines.length === 0) return remaining;
+      if (lines.length === 1) return `${lines[0]}\n${remaining}`;
+      lines[1] = lines[1] + remaining;
     }
-    
+
     return lines.join('\n');
+  };
+
+  // Split a long Japanese string into `numChunks` chunks for cue-level splitting.
+  // This avoids the current "文字数でぶつ切り" problem.
+  const splitTextIntoCueChunks = (text: string, numChunks: number, maxCharsPerChunk: number): string[] => {
+    const t = text.trim().replace(/\s+/g, '');
+    if (numChunks <= 1 || t.length <= maxCharsPerChunk) return [t];
+
+    const punctuation = ['。', '、', '！', '？', '…', '」', '』', '）', '】'];
+    const connectors = ['なので', 'だから', 'ですが', 'けど', 'けれど', 'でも', 'そして', 'それで', 'しかし', 'それから', 'つまり', 'ちなみに', 'あと'];
+    const particles = ['は', 'が', 'を', 'に', 'で', 'と', 'も', 'へ', 'や', 'か', 'ね', 'よ'];
+
+    const isHiragana = (ch?: string) => !!ch && /[\u3040-\u309F]/.test(ch);
+
+    const findPreferredBreakIndex = (s: string, targetLen: number): number => {
+      const searchEnd = Math.min(targetLen, s.length);
+      const minLen = Math.max(8, Math.floor(targetLen * 0.5));
+
+      for (let i = searchEnd - 1; i >= minLen; i--) {
+        if (punctuation.includes(s[i])) return i + 1;
+      }
+
+      let bestConnectorIdx = -1;
+      for (const w of connectors) {
+        const idx = s.lastIndexOf(w, searchEnd - 1);
+        if (idx >= minLen && idx > bestConnectorIdx) bestConnectorIdx = idx;
+      }
+      if (bestConnectorIdx !== -1) return bestConnectorIdx;
+
+      for (let i = searchEnd - 1; i >= minLen; i--) {
+        if (!particles.includes(s[i])) continue;
+
+        const prevH = isHiragana(s[i - 1]);
+        const nextH = isHiragana(s[i + 1]);
+        if (prevH && nextH) {
+          const twoBefore = s.slice(Math.max(0, i - 2), i);
+          const allow = ['それ', 'これ', 'あれ', 'どれ'].includes(twoBefore) && (s[i] === 'は' || s[i] === 'が');
+          if (!allow) continue;
+        }
+
+        return i + 1;
+      }
+
+      return searchEnd;
+    };
+
+    const chunks: string[] = [];
+    let remaining = t;
+
+    while (chunks.length < numChunks - 1 && remaining.length > 0) {
+      const remainingChunks = numChunks - chunks.length;
+      const idealLen = Math.ceil(remaining.length / remainingChunks);
+      const targetLen = Math.min(maxCharsPerChunk, Math.max(10, idealLen));
+
+      const breakAt = Math.max(1, findPreferredBreakIndex(remaining, targetLen));
+      chunks.push(remaining.slice(0, breakAt));
+      remaining = remaining.slice(breakAt);
+    }
+
+    if (remaining.length > 0) chunks.push(remaining);
+    return chunks;
   };
 
   const generateVTT = (segments: any[]): string => {
@@ -322,53 +375,50 @@ STYLE
 
 `;
     let cueIndex = 1;
-    
+
     // Split long segments into smaller chunks for subtitle display
-    const maxSegmentDuration = 4; // Max 4 seconds per subtitle
-    const maxChars = 30; // Max chars per subtitle (before line breaking)
+    const maxSegmentDuration = 4; // Max seconds per subtitle
+    const maxChars = 30; // Target chars per subtitle cue (before 2-line wrapping)
 
     for (const segment of segments) {
       const text = segment.text.trim().replace(/\s+/g, ''); // Clean up for Japanese
       const duration = segment.end - segment.start;
-      
+
       // If segment is short enough, output as single cue
       if (duration <= maxSegmentDuration && text.length <= maxChars) {
         const startTime = formatVTTTime(segment.start);
         const endTime = formatVTTTime(segment.end);
         vtt += `${cueIndex}\n`;
-        // Position at bottom 15% of video using line:85%
         vtt += `${startTime} --> ${endTime} line:85% position:50% align:center\n`;
         vtt += `${splitTextForSubtitle(text, 18)}\n\n`;
         cueIndex++;
         continue;
       }
-      
-      // Split long segment by character count and duration
-      const charsPerSecond = text.length / duration;
-      const targetChunkDuration = Math.min(maxSegmentDuration, maxChars / charsPerSecond);
-      const numChunks = Math.ceil(duration / targetChunkDuration);
-      const chunkDuration = duration / numChunks;
-      const charsPerChunk = Math.ceil(text.length / numChunks);
-      
-      for (let i = 0; i < numChunks; i++) {
-        const chunkStart = segment.start + (i * chunkDuration);
+
+      // Determine how many cues we need (duration + text length), then split text at natural breakpoints.
+      const desiredByDuration = Math.ceil(duration / maxSegmentDuration);
+      const desiredByText = Math.ceil(Math.max(1, text.length) / maxChars);
+      const numChunks = Math.max(desiredByDuration, desiredByText);
+
+      const chunkTexts = splitTextIntoCueChunks(text, numChunks, maxChars);
+      const chunkDuration = duration / chunkTexts.length;
+
+      for (let i = 0; i < chunkTexts.length; i++) {
+        const chunkStart = segment.start + i * chunkDuration;
         const chunkEnd = Math.min(chunkStart + chunkDuration, segment.end);
-        const textStart = i * charsPerChunk;
-        const textEnd = Math.min(textStart + charsPerChunk, text.length);
-        const chunkText = text.slice(textStart, textEnd);
-        
-        if (chunkText.length > 0) {
-          const startTime = formatVTTTime(chunkStart);
-          const endTime = formatVTTTime(chunkEnd);
-          vtt += `${cueIndex}\n`;
-          // Position at bottom 15% of video using line:85%
-          vtt += `${startTime} --> ${endTime} line:85% position:50% align:center\n`;
-          vtt += `${splitTextForSubtitle(chunkText, 18)}\n\n`;
-          cueIndex++;
-        }
+        const chunkText = chunkTexts[i];
+
+        if (!chunkText) continue;
+
+        const startTime = formatVTTTime(chunkStart);
+        const endTime = formatVTTTime(chunkEnd);
+        vtt += `${cueIndex}\n`;
+        vtt += `${startTime} --> ${endTime} line:85% position:50% align:center\n`;
+        vtt += `${splitTextForSubtitle(chunkText, 18)}\n\n`;
+        cueIndex++;
       }
     }
-    
+
     return vtt;
   };
 
