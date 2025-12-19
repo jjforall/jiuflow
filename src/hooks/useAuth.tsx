@@ -82,13 +82,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     initializeAuth();
 
     // Listen for changes on auth state (sign in, sign out, etc.)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      // Only synchronous state updates here to prevent Safari issues
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      // Only synchronous state updates here to prevent Safari issues and deadlocks
       setUser(session?.user ?? null);
       
       if (session?.user) {
-        // Check roles
-        await checkUserRoles(session.user.id);
+        // Defer Supabase calls with setTimeout to prevent deadlock
+        setTimeout(() => {
+          checkUserRoles(session.user.id);
+        }, 0);
       } else {
         setIsAdmin(false);
         setIsStaff(false);
