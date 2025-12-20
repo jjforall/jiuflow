@@ -405,7 +405,7 @@ STYLE
     const maxChars = 30; // Target chars per subtitle cue (before 2-line wrapping)
 
     for (const segment of segments) {
-      const text = segment.text.trim().replace(/\s+/g, ''); // Clean up for Japanese
+      const text = normalizeSubtitleText(segment.text); // Clean up and remove repetitions
       const duration = segment.end - segment.start;
 
       // If segment is short enough, output as single cue
@@ -430,7 +430,7 @@ STYLE
       for (let i = 0; i < chunkTexts.length; i++) {
         const chunkStart = segment.start + i * chunkDuration;
         const chunkEnd = Math.min(chunkStart + chunkDuration, segment.end);
-        const chunkText = chunkTexts[i];
+        const chunkText = normalizeSubtitleText(chunkTexts[i]);
 
         if (!chunkText) continue;
 
