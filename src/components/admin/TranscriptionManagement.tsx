@@ -225,28 +225,52 @@ export const TranscriptionManagement = () => {
 
   const collapseRepeatedPunctuation = (s: string) => s.replace(/([。、！？…])\1+/g, "$1");
 
-  // Remove immediate duplicated tails like:
-  // - "やっていきます。やっていきます。" (exact)
-  // - "なるようになるように" (overlap where the 2nd occurrence continues a bit)
-  // This guards against occasional ASR/VTT generation artifacts.
+  // Remove duplicated tail phrases like:
+  // - "やっていきます。やっていきます。" (exact: AB where A==B)
+  // - "なるようになるように" (overlap: the tail "なるように" appears twice with shared characters)
+  // The key insight: look for a phrase P that appears twice in the string,
+  // where the second occurrence is at or near the end.
   const removeTailRepeat = (s: string): string => {
     const str = s;
-    const maxUnitLen = Math.min(60, Math.floor(str.length / 2));
-    const maxExtraLen = 3; // e.g. "に" "を" "が" "は" etc.
+    if (str.length < 8) return str;
 
-    for (let unitLen = maxUnitLen; unitLen >= 4; unitLen--) {
-      for (let extraLen = maxExtraLen; extraLen >= 0; extraLen--) {
-        const need = unitLen * 2 + extraLen;
-        if (str.length < need) continue;
-
-        const keep = str.slice(str.length - (unitLen + extraLen)); // unit + extra
-        const unit = keep.slice(0, unitLen);
-        const extra = keep.slice(unitLen);
-
-        if (unit.trim().length < 3) continue;
-        if (str.endsWith(unit + unit + extra)) {
-          const prefix = str.slice(0, str.length - need);
-          return prefix + keep; // drop the first repeated unit, keep the more complete tail
+    // Strategy: For each possible tail length, check if that tail appears earlier in the string
+    // If so, we have a repetition and should remove one occurrence.
+    const maxTailLen = Math.min(30, Math.floor(str.length / 2) + 5);
+    
+    for (let tailLen = maxTailLen; tailLen >= 4; tailLen--) {
+      const tail = str.slice(-tailLen);
+      if (tail.trim().length < 3) continue;
+      
+      // Look for this tail appearing earlier in the string
+      // The earlier occurrence should end before the current tail starts
+      const searchArea = str.slice(0, str.length - tailLen + 2); // allow slight overlap
+      const earlierPos = searchArea.lastIndexOf(tail);
+      
+      if (earlierPos >= 0) {
+        // Found repetition! Remove the first occurrence, keep the tail
+        // Result: everything before the first occurrence + everything from after first occurrence
+        const beforeFirst = str.slice(0, earlierPos);
+        const afterFirst = str.slice(earlierPos + tail.length);
+        return beforeFirst + afterFirst;
+      }
+      
+      // Also check for partial overlap pattern like "なるようになるように"
+      // where we have "なるように" + "なるように" with "に" shared
+      for (let overlap = 1; overlap <= Math.min(3, tailLen - 3); overlap++) {
+        const extendedTail = str.slice(-(tailLen + overlap));
+        if (str.length < tailLen * 2 - overlap) continue;
+        
+        // Check if pattern is: X + tail[0:overlap] + tail = X + extendedTail
+        // And tail appears at position len - tailLen - overlap as well
+        const checkStart = str.length - tailLen * 2 + overlap - overlap;
+        if (checkStart < 0) continue;
+        
+        const firstOccurrence = str.slice(checkStart, checkStart + tailLen);
+        if (firstOccurrence === tail) {
+          // Pattern found: ...firstOccurrence + (some overlap) + tail
+          // Remove the first occurrence
+          return str.slice(0, checkStart) + str.slice(checkStart + tailLen);
         }
       }
     }
