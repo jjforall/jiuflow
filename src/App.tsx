@@ -66,6 +66,7 @@ const Blog = lazy(() => import("./pages/Blog"));
 const VideoList = lazy(() => import("./pages/VideoList"));
 const TranscriptionDetail = lazy(() => import("./pages/TranscriptionDetail"));
 const SharedVideo = lazy(() => import("./pages/SharedVideo"));
+const OAuthAuthorize = lazy(() => import("./pages/OAuthAuthorize"));
 
 const queryClient = new QueryClient();
 
