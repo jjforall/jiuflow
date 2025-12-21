@@ -61,8 +61,18 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Validate redirect_uri is registered
-    if (!oauthClient.redirect_uris.includes(redirectUri)) {
+    // Validate redirect_uri is registered (supports exact match or prefix match)
+    const normalizeUri = (uri: string) => uri.replace(/\/$/, ''); // Remove trailing slash
+    const normalizedRedirect = normalizeUri(redirectUri);
+    const isValidRedirect = oauthClient.redirect_uris.some((registeredUri: string) => {
+      const normalizedRegistered = normalizeUri(registeredUri);
+      // Exact match after normalization, or the request URI starts with a registered URI
+      return normalizedRedirect === normalizedRegistered || 
+             normalizedRedirect.startsWith(normalizedRegistered);
+    });
+    
+    if (!isValidRedirect) {
+      console.error('Invalid redirect_uri:', redirectUri, 'Registered:', oauthClient.redirect_uris);
       return new Response(JSON.stringify({
         error: 'invalid_request',
         error_description: 'Redirect URI is not registered for this client',
