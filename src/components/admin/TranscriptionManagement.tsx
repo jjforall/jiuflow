@@ -225,6 +225,41 @@ export const TranscriptionManagement = () => {
 
   const collapseRepeatedPunctuation = (s: string) => s.replace(/([。、！？…])\1+/g, "$1");
 
+  // Remove inline repeated phrases like "それでそれで" or "という風にという風に"
+  // Detects patterns where a phrase is immediately followed by itself.
+  const removeInlineRepeats = (s: string): string => {
+    // Strategy: for each position, check if a substring of length L starting at i
+    // is identical to the substring of length L starting at i+L.
+    // If so, remove one occurrence.
+    let result = s;
+    let changed = true;
+    let iterations = 0;
+    const maxIterations = 10; // Prevent infinite loops
+
+    while (changed && iterations < maxIterations) {
+      changed = false;
+      iterations++;
+      
+      // Check for repeated phrases from longest to shortest
+      for (let len = Math.min(20, Math.floor(result.length / 2)); len >= 3; len--) {
+        for (let i = 0; i <= result.length - len * 2; i++) {
+          const phrase = result.slice(i, i + len);
+          const nextPhrase = result.slice(i + len, i + len * 2);
+          
+          if (phrase === nextPhrase && phrase.trim().length >= 2) {
+            // Found a repeat! Remove one occurrence
+            result = result.slice(0, i) + result.slice(i + len);
+            changed = true;
+            break;
+          }
+        }
+        if (changed) break;
+      }
+    }
+    
+    return result;
+  };
+
   // Remove duplicated tail phrases like:
   // - "やっていきます。やっていきます。" (exact: AB where A==B)
   // - "なるようになるように" (overlap: the tail "なるように" appears twice with shared characters)
@@ -281,6 +316,9 @@ export const TranscriptionManagement = () => {
   const normalizeSubtitleText = (raw: string): string => {
     let t = raw.trim().replace(/\s+/g, '');
     t = collapseRepeatedPunctuation(t);
+
+    // Remove inline repeated phrases (e.g., "それでそれで" -> "それで")
+    t = removeInlineRepeats(t);
 
     // Apply a few times in case repetition exists multiple times at the end.
     for (let i = 0; i < 3; i++) {
