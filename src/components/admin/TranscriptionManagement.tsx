@@ -43,6 +43,7 @@ export const TranscriptionManagement = () => {
   const [editingTranscription, setEditingTranscription] = useState<Transcription | null>(null);
   const [editedText, setEditedText] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const [isRegeneratingAll, setIsRegeneratingAll] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
@@ -488,6 +489,58 @@ STYLE
     }
   };
 
+  const handleRegenerateAllSubtitles = async () => {
+    const transcriptionList = Object.values(transcriptions);
+    if (transcriptionList.length === 0) {
+      toast.error('再生成する文字起こしがありません');
+      return;
+    }
+
+    setIsRegeneratingAll(true);
+    let successCount = 0;
+    let errorCount = 0;
+
+    try {
+      for (const transcription of transcriptionList) {
+        if (!transcription.segments || transcription.segments.length === 0) continue;
+
+        try {
+          const vttContent = generateVTT(transcription.segments);
+          
+          const { error } = await supabase
+            .from('video_subtitles')
+            .upsert({
+              transcription_id: transcription.id,
+              language_code: 'ja',
+              vtt_content: vttContent,
+              status: 'completed',
+            }, { onConflict: 'transcription_id,language_code' });
+          
+          if (error) {
+            console.error('Error regenerating subtitle for', transcription.id, error);
+            errorCount++;
+          } else {
+            successCount++;
+          }
+        } catch (e) {
+          console.error('Error processing transcription', transcription.id, e);
+          errorCount++;
+        }
+      }
+
+      if (errorCount === 0) {
+        toast.success(`${successCount}件の字幕を再生成しました`);
+      } else {
+        toast.warning(`${successCount}件成功、${errorCount}件失敗`);
+      }
+    } catch (error: any) {
+      console.error('Regenerate all error:', error);
+      toast.error(`一括再生成エラー: ${error.message}`);
+    } finally {
+      setIsRegeneratingAll(false);
+    }
+  };
+
   const filteredTechniques = techniques.filter(t => {
     const query = searchQuery.toLowerCase();
     return (
@@ -511,10 +564,24 @@ STYLE
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold">文字起こし管理</h2>
-        <Button variant="outline" onClick={fetchData}>
-          <RefreshCw className="h-4 w-4 mr-2" />
-          更新
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button 
+            variant="outline" 
+            onClick={handleRegenerateAllSubtitles}
+            disabled={isRegeneratingAll || Object.keys(transcriptions).length === 0}
+          >
+            {isRegeneratingAll ? (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <RotateCcw className="h-4 w-4 mr-2" />
+            )}
+            全て再生成
+          </Button>
+          <Button variant="outline" onClick={fetchData}>
+            <RefreshCw className="h-4 w-4 mr-2" />
+            更新
+          </Button>
+        </div>
       </div>
 
       <div className="flex items-center gap-4">
