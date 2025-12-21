@@ -240,6 +240,90 @@ function convertToSegments(words: any[]): any[] {
   return segments;
 }
 
+// Collapse repeated punctuation (e.g., "。。。" -> "。")
+function collapseRepeatedPunctuation(s: string): string {
+  return s.replace(/([。、！？…])\1+/g, "$1");
+}
+
+// Remove inline repeated phrases like "それでそれで" or "という風にという風に"
+function removeInlineRepeats(s: string): string {
+  let result = s;
+  let changed = true;
+  let iterations = 0;
+  const maxIterations = 10;
+
+  while (changed && iterations < maxIterations) {
+    changed = false;
+    iterations++;
+    
+    for (let len = Math.min(20, Math.floor(result.length / 2)); len >= 3; len--) {
+      for (let i = 0; i <= result.length - len * 2; i++) {
+        const phrase = result.slice(i, i + len);
+        const nextPhrase = result.slice(i + len, i + len * 2);
+        
+        if (phrase === nextPhrase && phrase.trim().length >= 2) {
+          result = result.slice(0, i) + result.slice(i + len);
+          changed = true;
+          break;
+        }
+      }
+      if (changed) break;
+    }
+  }
+  
+  return result;
+}
+
+// Remove duplicated tail phrases like "やっていきます。やっていきます。"
+function removeTailRepeat(s: string): string {
+  if (s.length < 8) return s;
+
+  const maxTailLen = Math.min(30, Math.floor(s.length / 2) + 5);
+  
+  for (let tailLen = maxTailLen; tailLen >= 4; tailLen--) {
+    const tail = s.slice(-tailLen);
+    if (tail.trim().length < 3) continue;
+    
+    const searchArea = s.slice(0, s.length - tailLen + 2);
+    const earlierPos = searchArea.lastIndexOf(tail);
+    
+    if (earlierPos >= 0) {
+      const beforeFirst = s.slice(0, earlierPos);
+      const afterFirst = s.slice(earlierPos + tail.length);
+      return beforeFirst + afterFirst;
+    }
+    
+    for (let overlap = 1; overlap <= Math.min(3, tailLen - 3); overlap++) {
+      if (s.length < tailLen * 2 - overlap) continue;
+      
+      const checkStart = s.length - tailLen * 2 + overlap - overlap;
+      if (checkStart < 0) continue;
+      
+      const firstOccurrence = s.slice(checkStart, checkStart + tailLen);
+      if (firstOccurrence === tail) {
+        return s.slice(0, checkStart) + s.slice(checkStart + tailLen);
+      }
+    }
+  }
+
+  return s;
+}
+
+// Normalize subtitle text: remove whitespace, repeated punctuation, inline/tail repeats
+function normalizeSubtitleText(raw: string): string {
+  let t = raw.trim().replace(/\s+/g, '');
+  t = collapseRepeatedPunctuation(t);
+  t = removeInlineRepeats(t);
+  
+  for (let i = 0; i < 3; i++) {
+    const next = removeTailRepeat(t);
+    if (next === t) break;
+    t = next;
+  }
+  
+  return t;
+}
+
 // Split long text into lines of max ~30 characters for readability
 function splitTextForSubtitle(text: string, maxCharsPerLine: number = 30): string {
   const trimmed = text.trim();
@@ -281,7 +365,7 @@ function generateVTT(segments: any[]): string {
   const maxChars = 60; // Max chars per subtitle (before line breaking)
 
   for (const segment of segments) {
-    const text = segment.text.trim();
+    const text = normalizeSubtitleText(segment.text); // Apply normalization
     const duration = segment.end - segment.start;
     
     // If segment is short enough, output as single cue
