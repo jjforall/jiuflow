@@ -225,25 +225,46 @@ export const TranscriptionManagement = () => {
 
   const collapseRepeatedPunctuation = (s: string) => s.replace(/([。、！？…])\1+/g, "$1");
 
-  // Remove immediate duplicated tails like "やっていきます。やっていきます。".
-  // This guards against occasional ASR/VTT generation artifacts where the cue tail repeats.
-  const removeImmediateTailRepeat = (s: string): string => {
+  // Remove immediate duplicated tails like:
+  // - "やっていきます。やっていきます。" (exact)
+  // - "なるようになるように" (overlap where the 2nd occurrence continues a bit)
+  // This guards against occasional ASR/VTT generation artifacts.
+  const removeTailRepeat = (s: string): string => {
     const str = s;
-    const maxLen = Math.min(60, Math.floor(str.length / 2));
-    for (let len = maxLen; len >= 4; len--) {
-      const suffix = str.slice(str.length - len);
-      if (suffix.trim().length < 3) continue;
-      if (str.endsWith(suffix + suffix)) {
-        return str.slice(0, str.length - len);
+    const maxUnitLen = Math.min(60, Math.floor(str.length / 2));
+    const maxExtraLen = 3; // e.g. "に" "を" "が" "は" etc.
+
+    for (let unitLen = maxUnitLen; unitLen >= 4; unitLen--) {
+      for (let extraLen = maxExtraLen; extraLen >= 0; extraLen--) {
+        const need = unitLen * 2 + extraLen;
+        if (str.length < need) continue;
+
+        const keep = str.slice(str.length - (unitLen + extraLen)); // unit + extra
+        const unit = keep.slice(0, unitLen);
+        const extra = keep.slice(unitLen);
+
+        if (unit.trim().length < 3) continue;
+        if (str.endsWith(unit + unit + extra)) {
+          const prefix = str.slice(0, str.length - need);
+          return prefix + keep; // drop the first repeated unit, keep the more complete tail
+        }
       }
     }
+
     return str;
   };
 
   const normalizeSubtitleText = (raw: string): string => {
     let t = raw.trim().replace(/\s+/g, '');
     t = collapseRepeatedPunctuation(t);
-    t = removeImmediateTailRepeat(t);
+
+    // Apply a few times in case repetition exists multiple times at the end.
+    for (let i = 0; i < 3; i++) {
+      const next = removeTailRepeat(t);
+      if (next === t) break;
+      t = next;
+    }
+
     return t;
   };
 
