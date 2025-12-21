@@ -113,12 +113,14 @@ export const VideoPlayer = ({ videoUrl, autoPlay = true, thumbnailUrl, onPlay, t
       if (!techniqueId && !userVideoId) return;
 
       try {
-        // First get transcription ID
+        // First get latest transcription ID (avoid stale rows when multiple exist)
         const { data: transcription, error: transError } = await supabase
           .from('video_transcriptions')
           .select('id')
           .eq(techniqueId ? 'technique_id' : 'user_video_id', techniqueId || userVideoId)
-          .single();
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
 
         if (transError || !transcription) return;
 

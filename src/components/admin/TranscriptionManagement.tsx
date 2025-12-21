@@ -64,17 +64,18 @@ export const TranscriptionManagement = () => {
       if (techError) throw techError;
       setTechniques(techniquesData || []);
 
-      // Fetch existing transcriptions
+      // Fetch existing transcriptions (latest first so we pick the newest per technique)
       const { data: transcriptionsData, error: transError } = await supabase
         .from('video_transcriptions')
-        .select('*');
+        .select('*')
+        .order('created_at', { ascending: false });
 
       if (transError) throw transError;
 
-      // Map transcriptions by technique_id
+      // Map latest transcription by technique_id
       const transMap: Record<string, Transcription> = {};
       transcriptionsData?.forEach(t => {
-        if (t.technique_id) {
+        if (t.technique_id && !transMap[t.technique_id]) {
           transMap[t.technique_id] = t;
         }
       });
