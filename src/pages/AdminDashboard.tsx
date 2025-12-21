@@ -37,6 +37,7 @@ import { AdsManagement } from "@/components/admin/AdsManagement";
 import LineIntegrationManagement from "@/components/admin/LineIntegrationManagement";
 import McpChatManagement from "@/components/admin/McpChatManagement";
 import { TranscriptionManagement } from "@/components/admin/TranscriptionManagement";
+import OAuthClientsManagement from "@/components/admin/OAuthClientsManagement";
 
 const AdminDashboard = () => {
   const { signOut } = useAuth();
@@ -251,6 +252,7 @@ const AdminDashboard = () => {
                           { id: "contacts", label: "お問い合わせ" },
                           { id: "logs", label: "ログ" },
                           { id: "api", label: "API管理" },
+                          { id: "oauth-clients", label: "OAuthクライアント" },
                           { id: "line", label: "LINE連携" },
                           { id: "mcp-chat", label: "MCP チャット" },
                           { id: "settings", label: "設定" },
@@ -330,6 +332,7 @@ const AdminDashboard = () => {
                 {activeTab === "line" && <LineIntegrationManagement />}
                 {activeTab === "mcp-chat" && <McpChatManagement />}
                 {activeTab === "api" && <ApiManagement />}
+                {activeTab === "oauth-clients" && <OAuthClientsManagement />}
                 {activeTab === "settings" && <SettingsManagement />}
               </div>
             </div>
