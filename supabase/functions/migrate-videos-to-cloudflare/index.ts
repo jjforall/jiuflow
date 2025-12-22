@@ -32,12 +32,11 @@ serve(async (req) => {
     let results: { id: string; name: string; success: boolean; error?: string }[] = [];
 
     if (tableType === 'techniques') {
-      // Get techniques with Supabase Storage URLs - process only 1 at a time to avoid memory limits
+      // Get all techniques with Supabase Storage URLs
       const { data: techniques, error: fetchError } = await supabase
         .from('techniques')
         .select('id, name_ja, video_url, video_url_ja, video_url_pt')
-        .or('video_url.like.%supabase.co/storage%,video_url_ja.like.%supabase.co/storage%,video_url_pt.like.%supabase.co/storage%')
-        .limit(1);
+        .or('video_url.like.%supabase.co/storage%,video_url_ja.like.%supabase.co/storage%,video_url_pt.like.%supabase.co/storage%');
 
       if (fetchError) throw fetchError;
 
@@ -48,7 +47,7 @@ serve(async (req) => {
         );
       }
 
-      console.log(`Found ${techniques.length} technique to migrate`);
+      console.log(`Found ${techniques.length} techniques to migrate`);
 
       for (const technique of techniques) {
         try {
