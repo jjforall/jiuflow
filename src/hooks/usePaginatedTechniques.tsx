@@ -19,7 +19,7 @@ interface TechniqueFilters {
   search?: string;
   category?: string;
   series?: string;
-  sortBy?: 'order' | 'name' | 'category' | 'series';
+  sortBy?: 'order' | 'name' | 'category' | 'series' | 'created';
   sortDirection?: 'asc' | 'desc';
 }
 
@@ -59,10 +59,14 @@ export const usePaginatedTechniques = (
         'order': 'display_order',
         'name': 'name',
         'category': 'category',
-        'series': 'series_prefix'
+        'series': 'series_prefix',
+        'created': 'created_at'
       };
       const sortColumn = sortByMapping[filters.sortBy as keyof typeof sortByMapping] || 'display_order';
-      const sortDirection = filters.sortDirection || 'asc';
+      // For created_at, default to descending (newest first)
+      const sortDirection = filters.sortBy === 'created' 
+        ? (filters.sortDirection || 'desc')
+        : (filters.sortDirection || 'asc');
       query = query.order(sortColumn, { ascending: sortDirection === 'asc' });
 
       // Apply pagination
