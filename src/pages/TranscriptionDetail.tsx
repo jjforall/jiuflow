@@ -312,11 +312,40 @@ const TranscriptionDetail = () => {
   const generateVTT = (segments: Segment[]): string => {
     let vtt = "WEBVTT\n\n";
 
-    segments.forEach((segment, index) => {
-      const startTime = formatVTTTime(segment.start);
-      const endTime = formatVTTTime(segment.end);
+    // Sort segments by start time and fix overlapping timestamps
+    const sortedSegments = [...segments].sort((a, b) => a.start - b.start);
+    
+    sortedSegments.forEach((segment, index) => {
+      let startTime = segment.start;
+      let endTime = segment.end;
+      
+      // Ensure start time doesn't overlap with previous segment's end
+      if (index > 0) {
+        const prevEnd = sortedSegments[index - 1].end;
+        if (startTime < prevEnd) {
+          // Adjust start time to be at or after previous segment's end
+          startTime = prevEnd + 0.001; // Add 1ms gap
+        }
+      }
+      
+      // Ensure end time is after start time
+      if (endTime <= startTime) {
+        endTime = startTime + 0.5; // Minimum 0.5s duration
+      }
+      
+      // Ensure this segment's end doesn't overlap with next segment's start
+      if (index < sortedSegments.length - 1) {
+        const nextStart = sortedSegments[index + 1].start;
+        if (endTime > nextStart) {
+          endTime = nextStart - 0.001; // End 1ms before next segment
+        }
+      }
+      
+      const startStr = formatVTTTime(Math.max(0, startTime));
+      const endStr = formatVTTTime(Math.max(startTime + 0.1, endTime));
+      
       vtt += `${index + 1}\n`;
-      vtt += `${startTime} --> ${endTime}\n`;
+      vtt += `${startStr} --> ${endStr}\n`;
       vtt += `${segment.text.trim()}\n\n`;
     });
 
@@ -332,8 +361,32 @@ const TranscriptionDetail = () => {
     return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(secs).padStart(2, "0")}.${String(ms).padStart(3, "0")}`;
   };
 
-  const isSegmentActive = (segment: Segment): boolean => {
-    return currentTime >= segment.start && currentTime < segment.end;
+  // Find the single active segment (only one at a time, no overlap)
+  const getActiveSegmentIndex = (): number => {
+    // Sort by start time and find the first segment that contains currentTime
+    const sortedWithIndex = editedSegments
+      .map((seg, idx) => ({ seg, idx }))
+      .sort((a, b) => a.seg.start - b.seg.start);
+    
+    for (let i = 0; i < sortedWithIndex.length; i++) {
+      const { seg, idx } = sortedWithIndex[i];
+      const nextStart = i < sortedWithIndex.length - 1 
+        ? sortedWithIndex[i + 1].seg.start 
+        : Infinity;
+      
+      // Active if currentTime is >= start and < next segment's start (or < end if no next)
+      const effectiveEnd = Math.min(seg.end, nextStart);
+      if (currentTime >= seg.start && currentTime < effectiveEnd) {
+        return idx;
+      }
+    }
+    return -1;
+  };
+
+  const activeSegmentIndex = getActiveSegmentIndex();
+  
+  const isSegmentActive = (segment: Segment, index: number): boolean => {
+    return index === activeSegmentIndex;
   };
 
   if (isLoading) {
@@ -452,7 +505,7 @@ const TranscriptionDetail = () => {
                 <div
                   key={index}
                   className={`p-4 rounded-lg border transition-all cursor-pointer ${
-                    isSegmentActive(segment)
+                    isSegmentActive(segment, index)
                       ? 'bg-primary/10 border-primary'
                       : 'bg-card hover:bg-accent/50'
                   }`}
@@ -472,7 +525,7 @@ const TranscriptionDetail = () => {
                           handleSegmentClick(segment);
                         }}
                       >
-                        {isPlaying && isSegmentActive(segment) ? (
+                        {isPlaying && isSegmentActive(segment, index) ? (
                           <Pause className="h-3 w-3" />
                         ) : (
                           <Play className="h-3 w-3" />
