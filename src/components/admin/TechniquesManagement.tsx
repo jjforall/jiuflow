@@ -40,7 +40,7 @@ export const TechniquesManagement = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [seriesFilter, setSeriesFilter] = useState<string>("all");
-  const [sortBy, setSortBy] = useState<"order" | "name" | "category" | "series">("order");
+  const [sortBy, setSortBy] = useState<"order" | "name" | "category" | "series" | "created">("order");
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [editingTechnique, setEditingTechnique] = useState<Technique | null>(null);
   const [videoFile, setVideoFile] = useState<File | null>(null);
@@ -1953,6 +1953,7 @@ export const TechniquesManagement = () => {
               <SelectItem value="name">名前順</SelectItem>
               <SelectItem value="category">カテゴリー順</SelectItem>
               <SelectItem value="series">シリーズ順</SelectItem>
+              <SelectItem value="created">追加日順</SelectItem>
             </SelectContent>
           </Select>
         </div>
