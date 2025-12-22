@@ -309,44 +309,157 @@ const TranscriptionDetail = () => {
     }
   };
 
+  // Split long text into readable chunks (max ~35 characters for Japanese)
+  const splitTextIntoChunks = (text: string, maxLength: number = 35): string[] => {
+    const trimmed = text.trim();
+    if (trimmed.length <= maxLength) {
+      return [trimmed];
+    }
+
+    const chunks: string[] = [];
+    let remaining = trimmed;
+
+    while (remaining.length > 0) {
+      if (remaining.length <= maxLength) {
+        chunks.push(remaining);
+        break;
+      }
+
+      // Find natural break points within maxLength
+      let breakPoint = -1;
+      const searchRange = remaining.substring(0, maxLength + 5); // Look slightly beyond for better breaks
+      
+      // Priority 1: Sentence endings (。！？)
+      const sentenceEnd = searchRange.search(/[。！？]/);
+      if (sentenceEnd !== -1 && sentenceEnd <= maxLength) {
+        breakPoint = sentenceEnd + 1;
+      }
+      
+      // Priority 2: Comma or pause (、)
+      if (breakPoint === -1) {
+        const commaPos = searchRange.lastIndexOf('、', maxLength);
+        if (commaPos !== -1 && commaPos > maxLength * 0.4) {
+          breakPoint = commaPos + 1;
+        }
+      }
+      
+      // Priority 3: Particles and conjunctions
+      if (breakPoint === -1) {
+        const particles = ['は', 'が', 'を', 'に', 'で', 'と', 'も', 'から', 'まで', 'より', 'へ', 'の'];
+        for (const particle of particles) {
+          const pos = searchRange.lastIndexOf(particle, maxLength);
+          if (pos !== -1 && pos > maxLength * 0.5) {
+            breakPoint = pos + particle.length;
+            break;
+          }
+        }
+      }
+      
+      // Priority 4: Space (for English/mixed content)
+      if (breakPoint === -1) {
+        const spacePos = searchRange.lastIndexOf(' ', maxLength);
+        if (spacePos !== -1 && spacePos > maxLength * 0.4) {
+          breakPoint = spacePos + 1;
+        }
+      }
+      
+      // Fallback: Hard cut at maxLength
+      if (breakPoint === -1 || breakPoint > maxLength) {
+        breakPoint = maxLength;
+      }
+
+      const chunk = remaining.substring(0, breakPoint).trim();
+      if (chunk.length > 0) {
+        chunks.push(chunk);
+      }
+      remaining = remaining.substring(breakPoint).trim();
+    }
+
+    return chunks.filter(c => c.length > 0);
+  };
+
   const generateVTT = (segments: Segment[]): string => {
     let vtt = "WEBVTT\n\n";
 
-    // Sort segments by start time and fix overlapping timestamps
+    // Sort segments by start time
     const sortedSegments = [...segments].sort((a, b) => a.start - b.start);
     
-    sortedSegments.forEach((segment, index) => {
-      let startTime = segment.start;
-      let endTime = segment.end;
+    // Expand segments into sub-cues with proper timing
+    interface SubCue {
+      start: number;
+      end: number;
+      text: string;
+    }
+    
+    const allCues: SubCue[] = [];
+    
+    sortedSegments.forEach((segment) => {
+      const chunks = splitTextIntoChunks(segment.text);
+      const duration = segment.end - segment.start;
       
-      // Ensure start time doesn't overlap with previous segment's end
-      if (index > 0) {
-        const prevEnd = sortedSegments[index - 1].end;
-        if (startTime < prevEnd) {
-          // Adjust start time to be at or after previous segment's end
-          startTime = prevEnd + 0.001; // Add 1ms gap
+      if (chunks.length === 1) {
+        allCues.push({
+          start: segment.start,
+          end: segment.end,
+          text: chunks[0]
+        });
+      } else {
+        // Distribute time proportionally based on text length
+        const totalChars = chunks.reduce((sum, c) => sum + c.length, 0);
+        let currentStart = segment.start;
+        
+        chunks.forEach((chunk, i) => {
+          const proportion = chunk.length / totalChars;
+          const chunkDuration = duration * proportion;
+          const chunkEnd = i === chunks.length - 1 
+            ? segment.end 
+            : currentStart + chunkDuration;
+          
+          allCues.push({
+            start: currentStart,
+            end: chunkEnd,
+            text: chunk
+          });
+          
+          currentStart = chunkEnd;
+        });
+      }
+    });
+    
+    // Fix any overlapping timestamps between cues
+    for (let i = 0; i < allCues.length; i++) {
+      const cue = allCues[i];
+      
+      // Ensure start time doesn't overlap with previous cue's end
+      if (i > 0) {
+        const prevEnd = allCues[i - 1].end;
+        if (cue.start < prevEnd) {
+          cue.start = prevEnd + 0.001;
         }
       }
       
       // Ensure end time is after start time
-      if (endTime <= startTime) {
-        endTime = startTime + 0.5; // Minimum 0.5s duration
+      if (cue.end <= cue.start) {
+        cue.end = cue.start + 0.5;
       }
       
-      // Ensure this segment's end doesn't overlap with next segment's start
-      if (index < sortedSegments.length - 1) {
-        const nextStart = sortedSegments[index + 1].start;
-        if (endTime > nextStart) {
-          endTime = nextStart - 0.001; // End 1ms before next segment
+      // Ensure this cue's end doesn't overlap with next cue's start
+      if (i < allCues.length - 1) {
+        const nextStart = allCues[i + 1].start;
+        if (cue.end > nextStart) {
+          cue.end = nextStart - 0.001;
         }
       }
-      
-      const startStr = formatVTTTime(Math.max(0, startTime));
-      const endStr = formatVTTTime(Math.max(startTime + 0.1, endTime));
+    }
+    
+    // Generate VTT output
+    allCues.forEach((cue, index) => {
+      const startStr = formatVTTTime(Math.max(0, cue.start));
+      const endStr = formatVTTTime(Math.max(cue.start + 0.1, cue.end));
       
       vtt += `${index + 1}\n`;
       vtt += `${startStr} --> ${endStr}\n`;
-      vtt += `${segment.text.trim()}\n\n`;
+      vtt += `${cue.text}\n\n`;
     });
 
     return vtt;
