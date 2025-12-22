@@ -1017,6 +1017,87 @@ export const TechniquesManagement = () => {
     window.location.reload();
   };
 
+  // Auto transcription with AI formatting after video upload
+  const startAutoTranscription = async (techniqueId: string, videoUrl: string, techniqueName: string) => {
+    setTranscribingIds(prev => new Set(prev).add(techniqueId));
+    
+    toast.info('自動文字起こしを開始...', {
+      description: `「${techniqueName}」の文字起こしをバックグラウンドで処理中`,
+    });
+
+    try {
+      // Step 1: Transcribe
+      const { data: transcribeData, error: transcribeError } = await supabase.functions.invoke('transcribe-video', {
+        body: { 
+          videoUrl,
+          techniqueId
+        }
+      });
+
+      if (transcribeError) {
+        throw new Error(transcribeError.message);
+      }
+
+      if (!transcribeData?.success || !transcribeData?.transcription) {
+        throw new Error(transcribeData?.error || '文字起こしに失敗しました');
+      }
+
+      const transcriptionId = transcribeData.transcription.id;
+      const segments = transcribeData.transcription.segments;
+
+      // Step 2: AI formatting
+      toast.info('AI整形処理中...', {
+        description: `「${techniqueName}」の文字起こしを整形しています`,
+      });
+
+      const { data: formatData, error: formatError } = await supabase.functions.invoke('format-transcription', {
+        body: { 
+          segments,
+          language: 'ja'
+        }
+      });
+
+      if (formatError) {
+        console.error('AI formatting error:', formatError);
+        // Formatting failed but transcription succeeded - still consider it a success
+      } else if (formatData?.segments) {
+        // Update the transcription with formatted segments
+        await supabase
+          .from('video_transcriptions')
+          .update({ 
+            segments: formatData.segments,
+            original_text: formatData.segments.map((s: any) => s.text).join(' ')
+          })
+          .eq('id', transcriptionId);
+      }
+
+      toast.success('自動文字起こし完了', {
+        description: `「${techniqueName}」の文字起こしとAI整形が完了しました`,
+        action: {
+          label: '詳細を見る',
+          onClick: () => navigate(`/admin/transcription/${transcriptionId}`)
+        }
+      });
+      
+      // Update transcription map
+      setTranscriptionMap(prev => ({
+        ...prev,
+        [techniqueId]: { id: transcriptionId, status: 'completed' }
+      }));
+    } catch (error) {
+      console.error('Auto transcription error:', error);
+      toast.error('自動文字起こし失敗', {
+        description: error instanceof Error ? error.message : '不明なエラー'
+      });
+    } finally {
+      setTranscribingIds(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(techniqueId);
+        return newSet;
+      });
+    }
+  };
+
   // Start transcription for a technique
   const handleStartTranscription = async (technique: Technique) => {
     if (!technique.video_url) {
@@ -1049,6 +1130,32 @@ export const TechniquesManagement = () => {
       }
 
       if (data?.success && data?.transcription) {
+        // AI formatting
+        toast.info('AI整形処理中...', {
+          description: `「${technique.name_ja}」の文字起こしを整形しています`,
+        });
+
+        try {
+          const { data: formatData, error: formatError } = await supabase.functions.invoke('format-transcription', {
+            body: { 
+              segments: data.transcription.segments,
+              language: 'ja'
+            }
+          });
+
+          if (!formatError && formatData?.segments) {
+            await supabase
+              .from('video_transcriptions')
+              .update({ 
+                segments: formatData.segments,
+                original_text: formatData.segments.map((s: any) => s.text).join(' ')
+              })
+              .eq('id', data.transcription.id);
+          }
+        } catch (formatErr) {
+          console.error('Format error:', formatErr);
+        }
+
         toast.success('文字起こし完了', {
           description: `「${technique.name_ja}」の文字起こしが完了しました`,
           action: {
@@ -1312,9 +1419,19 @@ export const TechniquesManagement = () => {
         toast.success("技術を更新しました", {
           description: videoFile ? "動画を差し替えました" : undefined
         });
+        
+        // 動画がアップロードされた場合、自動で文字起こしを開始
+        if (videoFile && videoUrl) {
+          startAutoTranscription(editingTechnique.id, videoUrl, formData.name_ja);
+        }
       } else {
-        await createTechnique.mutateAsync(techniqueData);
+        const created = await createTechnique.mutateAsync(techniqueData);
         toast.success("技術を作成しました");
+        
+        // 新規作成時に動画がある場合、自動で文字起こしを開始
+        if (videoFile && videoUrl && created?.id) {
+          startAutoTranscription(created.id, videoUrl, formData.name_ja);
+        }
       }
 
       // シリーズ名が更新された場合はリストを再取得
@@ -2096,6 +2213,39 @@ export const TechniquesManagement = () => {
                       <div className="flex gap-1 justify-center">
                         {isAdmin ? (
                           <>
+                            {/* Transcription link */}
+                            {transcriptionMap[technique.id] ? (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-8 w-8 p-0"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  navigate(`/admin/transcription/${transcriptionMap[technique.id].id}`);
+                                }}
+                                title="文字起こし詳細"
+                              >
+                                <FileText className="h-4 w-4 text-green-600" />
+                              </Button>
+                            ) : technique.video_url ? (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-8 w-8 p-0"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleStartTranscription(technique as any);
+                                }}
+                                disabled={transcribingIds.has(technique.id)}
+                                title="文字起こしを開始"
+                              >
+                                {transcribingIds.has(technique.id) ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <FileText className="h-4 w-4 text-muted-foreground" />
+                                )}
+                              </Button>
+                            ) : null}
                             {technique.video_url && (
                               <Button
                                 size="sm"
