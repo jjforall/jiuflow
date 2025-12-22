@@ -18,7 +18,43 @@ interface VideoStatus {
   inputHeight: number;
   duration: number;
   isProperlyEncoded: boolean;
+  qualityLevels: number;
+  qualityHeights: number[];
   error?: string;
+}
+
+// Parse HLS manifest to count quality levels
+async function parseHlsManifest(videoId: string): Promise<{ levels: number; heights: number[] }> {
+  try {
+    const manifestUrl = `https://customer-f33zs165nr7g2k3y.cloudflarestream.com/${videoId}/manifest/video.m3u8`;
+    const response = await fetch(manifestUrl);
+    
+    if (!response.ok) {
+      console.log(`[CHECK-ENCODING] Failed to fetch manifest for ${videoId}: ${response.status}`);
+      return { levels: 0, heights: [] };
+    }
+    
+    const manifest = await response.text();
+    
+    // Parse RESOLUTION tags from HLS manifest
+    const resolutionMatches = manifest.matchAll(/RESOLUTION=\d+x(\d+)/g);
+    const heights: number[] = [];
+    
+    for (const match of resolutionMatches) {
+      const height = parseInt(match[1]);
+      if (!heights.includes(height)) {
+        heights.push(height);
+      }
+    }
+    
+    heights.sort((a, b) => b - a); // Sort descending
+    
+    console.log(`[CHECK-ENCODING] Video ${videoId} has ${heights.length} quality levels: ${heights.join(', ')}`);
+    return { levels: heights.length, heights };
+  } catch (error) {
+    console.error(`[CHECK-ENCODING] Error parsing manifest for ${videoId}:`, error);
+    return { levels: 0, heights: [] };
+  }
 }
 
 serve(async (req) => {
@@ -113,6 +149,8 @@ serve(async (req) => {
             inputHeight: 0,
             duration: 0,
             isProperlyEncoded: false,
+            qualityLevels: 0,
+            qualityHeights: [],
             error: 'Could not extract video ID from URL',
           });
           continue;
@@ -145,16 +183,25 @@ serve(async (req) => {
               inputHeight: 0,
               duration: 0,
               isProperlyEncoded: false,
+              qualityLevels: 0,
+              qualityHeights: [],
               error: result.errors?.[0]?.message || 'API error',
             });
             continue;
           }
 
           const video = result.result;
+          
+          // Parse HLS manifest to check actual quality levels
+          const manifestInfo = await parseHlsManifest(cfVideoId);
+          
           const isProperlyEncoded = video.readyToStream && 
             video.status?.state === "ready" && 
             video.input?.width > 0 &&
             video.input?.height > 0;
+          
+          // Consider it has ABR if it has more than 1 quality level
+          const hasMultipleQualities = manifestInfo.levels > 1;
 
           const status: VideoStatus = {
             techniqueId: technique.id,
@@ -167,12 +214,14 @@ serve(async (req) => {
             inputWidth: video.input?.width || 0,
             inputHeight: video.input?.height || 0,
             duration: video.duration || 0,
-            isProperlyEncoded,
+            isProperlyEncoded: isProperlyEncoded && hasMultipleQualities,
+            qualityLevels: manifestInfo.levels,
+            qualityHeights: manifestInfo.heights,
           };
 
           results.push(status);
 
-          if (!isProperlyEncoded) {
+          if (!status.isProperlyEncoded) {
             notEncoded.push(status);
           }
 
@@ -192,6 +241,8 @@ serve(async (req) => {
             inputHeight: 0,
             duration: 0,
             isProperlyEncoded: false,
+            qualityLevels: 0,
+            qualityHeights: [],
             error: error instanceof Error ? error.message : String(error),
           });
         }
