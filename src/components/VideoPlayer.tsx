@@ -22,20 +22,35 @@ interface VideoPlayerProps {
 }
 
 // Get Cloudflare Stream thumbnail URL for placeholder
-const getCloudflareStreamThumbnail = (videoUrl: string, time = 1): string | null => {
+const extractCloudflareStreamId = (videoUrl: string): string | null => {
   const patterns = [
     /cloudflarestream\.com\/([a-zA-Z0-9]+)/,
-    /videodelivery\.net\/([a-zA-Z0-9]+)/,
     /watch\.cloudflarestream\.com\/([a-zA-Z0-9]+)/,
+    /videodelivery\.net\/([a-zA-Z0-9]+)/,
+    /iframe\.videodelivery\.net\/([a-zA-Z0-9]+)/,
+    /customer-[a-z0-9]+\.cloudflarestream\.com\/([a-zA-Z0-9]+)/,
   ];
-  
+
   for (const pattern of patterns) {
     const match = videoUrl.match(pattern);
-    if (match) {
-      return `https://videodelivery.net/${match[1]}/thumbnails/thumbnail.jpg?time=${time}s&width=640&height=360`;
-    }
+    if (match?.[1]) return match[1];
   }
+
   return null;
+};
+
+const getCloudflareStreamThumbnail = (videoUrl: string, time = 1): string | null => {
+  const id = extractCloudflareStreamId(videoUrl);
+  if (!id) return null;
+  return `https://videodelivery.net/${id}/thumbnails/thumbnail.jpg?time=${time}s&width=640&height=360`;
+};
+
+// If the URL is a Cloudflare Stream playback URL (not .m3u8), convert it to the HLS manifest URL
+const getCloudflareStreamHlsUrl = (videoUrl: string): string | null => {
+  if (videoUrl.includes('.m3u8')) return videoUrl;
+  const id = extractCloudflareStreamId(videoUrl);
+  if (!id) return null;
+  return `https://videodelivery.net/${id}/manifest/video.m3u8`;
 };
 
 // Network Information API - detect connection quality for adaptive settings
@@ -210,6 +225,17 @@ export const VideoPlayer = ({ videoUrl, autoPlay = true, thumbnailUrl, onPlay, t
     setShouldLoad(true);
   }, []);
 
+  // Reset quality UI when switching videos (prevents stale selector state)
+  useEffect(() => {
+    setAvailableLevels([]);
+    setQuality("auto");
+    setShowQualityMenu(false);
+    setShowQualityLabel(true);
+    setIsLoading(true);
+    setIsBuffering(false);
+    setHasStarted(false);
+  }, [videoUrl]);
+
   useEffect(() => {
     // Don't load video until visible and shouldLoad is true
     if (!shouldLoad) return;
@@ -288,8 +314,11 @@ export const VideoPlayer = ({ videoUrl, autoPlay = true, thumbnailUrl, onPlay, t
     video.addEventListener('seeked', handleSeeked);
     video.addEventListener('timeupdate', handleTimeUpdate);
 
+    // Resolve Cloudflare Stream URLs to an HLS manifest when possible
+    const playbackUrl = getCloudflareStreamHlsUrl(videoUrl) ?? videoUrl;
+
     // Check if the video URL is an HLS stream (.m3u8)
-    const isHLS = videoUrl.includes('.m3u8');
+    const isHLS = playbackUrl.includes('.m3u8');
 
     if (isHLS && Hls.isSupported()) {
       console.log('Initializing HLS.js...');
@@ -344,7 +373,7 @@ export const VideoPlayer = ({ videoUrl, autoPlay = true, thumbnailUrl, onPlay, t
 
       hlsRef.current = hls;
 
-      hls.loadSource(videoUrl);
+      hls.loadSource(playbackUrl);
       hls.attachMedia(video);
 
       hls.on(Hls.Events.MANIFEST_PARSED, () => {
@@ -369,10 +398,9 @@ export const VideoPlayer = ({ videoUrl, autoPlay = true, thumbnailUrl, onPlay, t
 
       // Also listen for LEVEL_LOADED as a backup to ensure levels are captured
       hls.on(Hls.Events.LEVEL_LOADED, () => {
-        if (hls.levels && hls.levels.length > 0 && availableLevels.length === 0) {
+        if (hls.levels && hls.levels.length > 0) {
           const levels = hls.levels.map(level => ({ height: level.height, bitrate: level.bitrate }));
-          console.log('LEVEL_LOADED - Setting available levels:', levels);
-          setAvailableLevels(levels);
+          setAvailableLevels(prev => (prev.length > 0 ? prev : levels));
         }
       });
 
@@ -474,7 +502,7 @@ export const VideoPlayer = ({ videoUrl, autoPlay = true, thumbnailUrl, onPlay, t
       };
     } else if (isHLS && video.canPlayType('application/vnd.apple.mpegurl')) {
       // Native HLS support (Safari) - use metadata preload for faster start
-      video.src = videoUrl;
+      video.src = playbackUrl;
       video.preload = 'metadata'; // Only load metadata, not full video
       if (autoPlay) {
         video.muted = true;
@@ -484,7 +512,7 @@ export const VideoPlayer = ({ videoUrl, autoPlay = true, thumbnailUrl, onPlay, t
       }
     } else {
       // Regular video file - use metadata preload
-      video.src = videoUrl;
+      video.src = playbackUrl;
       video.preload = 'metadata'; // Only load metadata for faster initial load
       if (autoPlay) {
         video.muted = true;
@@ -618,11 +646,22 @@ export const VideoPlayer = ({ videoUrl, autoPlay = true, thumbnailUrl, onPlay, t
   }, []);
 
   const changeQuality = useCallback((levelIndex: number) => {
-    if (hlsRef.current) {
-      hlsRef.current.currentLevel = levelIndex;
-      setQuality(levelIndex === -1 ? 'auto' : `${hlsRef.current.levels[levelIndex].height}p`);
-      setShowQualityMenu(false);
+    const hls = hlsRef.current;
+    if (!hls) return;
+
+    if (levelIndex === -1) {
+      // Back to ABR
+      hls.currentLevel = -1;
+      hls.nextLevel = -1;
+    } else {
+      // Force manual level (current + next) so it actually switches
+      hls.currentLevel = levelIndex;
+      hls.nextLevel = levelIndex;
+      hls.loadLevel = levelIndex;
     }
+
+    setQuality(levelIndex === -1 ? 'auto' : `${hls.levels[levelIndex].height}p`);
+    setShowQualityMenu(false);
   }, []);
 
   const getQualityLevels = useCallback(() => {
