@@ -24,37 +24,63 @@ interface VideoStatus {
 }
 
 // Parse HLS manifest to count quality levels
-async function parseHlsManifest(videoId: string): Promise<{ levels: number; heights: number[] }> {
+async function parseHlsManifest(
+  manifestUrl: string,
+  videoIdForLog: string
+): Promise<{ levels: number; heights: number[]; ok: boolean; status?: number }>
+{
   try {
-    const manifestUrl = `https://customer-f33zs165nr7g2k3y.cloudflarestream.com/${videoId}/manifest/video.m3u8`;
     const response = await fetch(manifestUrl);
-    
+
     if (!response.ok) {
-      console.log(`[CHECK-ENCODING] Failed to fetch manifest for ${videoId}: ${response.status}`);
-      return { levels: 0, heights: [] };
+      console.log(
+        `[CHECK-ENCODING] Failed to fetch manifest for ${videoIdForLog}: ${response.status} (${manifestUrl})`
+      );
+      return { levels: 0, heights: [], ok: false, status: response.status };
     }
-    
+
     const manifest = await response.text();
-    
-    // Parse RESOLUTION tags from HLS manifest
+
+    // Parse RESOLUTION tags from HLS master manifest
     const resolutionMatches = manifest.matchAll(/RESOLUTION=\d+x(\d+)/g);
     const heights: number[] = [];
-    
+
     for (const match of resolutionMatches) {
       const height = parseInt(match[1]);
-      if (!heights.includes(height)) {
+      if (!Number.isNaN(height) && !heights.includes(height)) {
         heights.push(height);
       }
     }
-    
+
     heights.sort((a, b) => b - a); // Sort descending
-    
-    console.log(`[CHECK-ENCODING] Video ${videoId} has ${heights.length} quality levels: ${heights.join(', ')}`);
-    return { levels: heights.length, heights };
+
+    console.log(
+      `[CHECK-ENCODING] Video ${videoIdForLog} has ${heights.length} quality levels: ${heights.join(", ")}`
+    );
+
+    return { levels: heights.length, heights, ok: true };
   } catch (error) {
-    console.error(`[CHECK-ENCODING] Error parsing manifest for ${videoId}:`, error);
-    return { levels: 0, heights: [] };
+    console.error(
+      `[CHECK-ENCODING] Error parsing manifest for ${videoIdForLog}:`,
+      error
+    );
+    return { levels: 0, heights: [], ok: false };
   }
+}
+
+function extractCloudflareVideoId(videoUrl: string): string | null {
+  const patterns = [
+    /cloudflarestream\.com\/([a-f0-9]{32})\//i,
+    /videodelivery\.net\/([a-f0-9]{32})\//i,
+    /iframe\.videodelivery\.net\/([a-f0-9]{32})/i,
+  ];
+
+  for (const pattern of patterns) {
+    const match = videoUrl.match(pattern);
+    if (match?.[1]) return match[1];
+  }
+
+  return null;
 }
 
 serve(async (req) => {
@@ -120,7 +146,7 @@ serve(async (req) => {
         .from('techniques')
         .select('id, name_ja, series_prefix, series_order, video_url')
         .not('video_url', 'is', null)
-        .ilike('video_url', '%cloudflarestream.com%')
+        .or('video_url.ilike.%cloudflarestream.com%,video_url.ilike.%videodelivery.net%')
         .order('series_prefix')
         .order('series_order');
 
@@ -135,8 +161,10 @@ serve(async (req) => {
 
       for (const technique of techniques || []) {
         // Extract video ID from URL
-        const match = technique.video_url.match(/cloudflarestream\.com\/([a-f0-9]+)\//);
-        if (!match) {
+        const videoUrl = String(technique.video_url || '');
+        const cfVideoId = extractCloudflareVideoId(videoUrl);
+
+        if (!cfVideoId) {
           results.push({
             techniqueId: technique.id,
             name: technique.name_ja,
@@ -155,9 +183,6 @@ serve(async (req) => {
           });
           continue;
         }
-
-        const cfVideoId = match[1];
-
         try {
           const response = await fetch(
             `https://api.cloudflare.com/client/v4/accounts/${accountId}/stream/${cfVideoId}`,
@@ -191,17 +216,24 @@ serve(async (req) => {
           }
 
           const video = result.result;
-          
-          // Parse HLS manifest to check actual quality levels
-          const manifestInfo = await parseHlsManifest(cfVideoId);
-          
-          const isProperlyEncoded = video.readyToStream && 
-            video.status?.state === "ready" && 
+
+          // Use the technique URL (or fallback) to fetch the HLS master manifest and count variants
+          const manifestUrl =
+            (typeof technique.video_url === "string" && technique.video_url.includes(".m3u8")
+              ? technique.video_url
+              : `https://videodelivery.net/${cfVideoId}/manifest/video.m3u8`);
+
+          const manifestInfo = await parseHlsManifest(manifestUrl, cfVideoId);
+
+          const isStreamReady =
+            video.readyToStream &&
+            video.status?.state === "ready" &&
             video.input?.width > 0 &&
             video.input?.height > 0;
-          
+
           // Consider it has ABR if it has more than 1 quality level
           const hasMultipleQualities = manifestInfo.levels > 1;
+          const isProperlyEncoded = isStreamReady && hasMultipleQualities;
 
           const status: VideoStatus = {
             techniqueId: technique.id,
@@ -214,9 +246,14 @@ serve(async (req) => {
             inputWidth: video.input?.width || 0,
             inputHeight: video.input?.height || 0,
             duration: video.duration || 0,
-            isProperlyEncoded: isProperlyEncoded && hasMultipleQualities,
+            isProperlyEncoded,
             qualityLevels: manifestInfo.levels,
             qualityHeights: manifestInfo.heights,
+            ...(manifestInfo.ok
+              ? {}
+              : {
+                  error: `manifest_fetch_failed${manifestInfo.status ? ` (${manifestInfo.status})` : ''}`,
+                }),
           };
 
           results.push(status);
@@ -370,7 +407,7 @@ serve(async (req) => {
           success: true,
           originalVideoId: videoId,
           newVideoId: copyResult.result.uid,
-          newPlaybackUrl: `https://customer-${accountId}.cloudflarestream.com/${copyResult.result.uid}/manifest/video.m3u8`,
+          newPlaybackUrl: `https://videodelivery.net/${copyResult.result.uid}/manifest/video.m3u8`,
           status: copyResult.result.status,
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
