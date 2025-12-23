@@ -348,10 +348,12 @@ export const VideoPlayer = ({ videoUrl, autoPlay = true, thumbnailUrl, onPlay, t
       hls.attachMedia(video);
 
       hls.on(Hls.Events.MANIFEST_PARSED, () => {
-        console.log('HLS manifest parsed, qualities available:', hls.levels);
+        console.log('HLS manifest parsed, qualities available:', hls.levels?.length);
         // Update state to trigger re-render with quality levels
         if (hls.levels && hls.levels.length > 0) {
-          setAvailableLevels(hls.levels.map(level => ({ height: level.height, bitrate: level.bitrate })));
+          const levels = hls.levels.map(level => ({ height: level.height, bitrate: level.bitrate }));
+          console.log('Setting available levels:', levels);
+          setAvailableLevels(levels);
         }
         if (autoPlay) {
           // Start muted for guaranteed autoplay, unmute after start
@@ -362,6 +364,15 @@ export const VideoPlayer = ({ videoUrl, autoPlay = true, thumbnailUrl, onPlay, t
               video.muted = false;
             }, 100);
           }).catch(e => console.log('Autoplay prevented:', e));
+        }
+      });
+
+      // Also listen for LEVEL_LOADED as a backup to ensure levels are captured
+      hls.on(Hls.Events.LEVEL_LOADED, () => {
+        if (hls.levels && hls.levels.length > 0 && availableLevels.length === 0) {
+          const levels = hls.levels.map(level => ({ height: level.height, bitrate: level.bitrate }));
+          console.log('LEVEL_LOADED - Setting available levels:', levels);
+          setAvailableLevels(levels);
         }
       });
 
