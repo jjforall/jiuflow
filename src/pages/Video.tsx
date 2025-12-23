@@ -431,9 +431,9 @@ const Video = () => {
     // まずvideo_metadataをチェック
     if (tech.video_metadata) {
       const metadata = tech.video_metadata[language];
-      if (metadata?.video_url) {
-        return metadata.video_url;
-      }
+    if (metadata?.video_url) {
+      return metadata.video_url.includes('/storage/v1/object/public/technique-videos/') && metadata.video_url.endsWith('.mp4') && typeof tech.video_url === 'string' && (tech.video_url.includes('.m3u8') || tech.video_url.includes('cloudflarestream.com') || tech.video_url.includes('videodelivery.net')) ? tech.video_url : metadata.video_url;
+    }
     }
     
     // 従来のフィールドをチェック
@@ -824,7 +824,7 @@ const Video = () => {
               <div className="w-full bg-muted rounded-lg overflow-hidden">
                 {getTechniqueVideoUrl(technique) ? (
                   <VideoPlayer 
-                    videoUrl={getTechniqueVideoUrl(technique)!} 
+                    key={getTechniqueVideoUrl(technique)!} videoUrl={getTechniqueVideoUrl(technique)!} 
                     thumbnailUrl={getTechniqueThumbnailUrl(technique)}
                     autoPlay
                     techniqueId={technique.id}
