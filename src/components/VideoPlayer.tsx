@@ -76,7 +76,7 @@ export const VideoPlayer = ({ videoUrl, autoPlay = true, thumbnailUrl, onPlay, t
   const [isBuffering, setIsBuffering] = useState(false);
   const [hasStarted, setHasStarted] = useState(false);
   const [showSkipIndicator, setShowSkipIndicator] = useState<'forward' | 'backward' | null>(null);
-  const [availableLevels, setAvailableLevels] = useState<{ height: number; bitrate: number }[]>([]);
+  const [availableLevels, setAvailableLevels] = useState<{ index: number; height: number; bitrate: number }[]>([]);
   const [showQualityMenu, setShowQualityMenu] = useState(false);
   const [showQualityLabel, setShowQualityLabel] = useState(true);
   const [isVisible, setIsVisible] = useState(false);
@@ -380,7 +380,7 @@ export const VideoPlayer = ({ videoUrl, autoPlay = true, thumbnailUrl, onPlay, t
         console.log('HLS manifest parsed, qualities available:', hls.levels?.length);
         // Update state to trigger re-render with quality levels
         if (hls.levels && hls.levels.length > 0) {
-          const levels = hls.levels.map(level => ({ height: level.height, bitrate: level.bitrate }));
+          const levels = hls.levels.map((level, index) => ({ index, height: level.height, bitrate: level.bitrate }));
           console.log('Setting available levels:', levels);
           setAvailableLevels(levels);
         }
@@ -399,7 +399,7 @@ export const VideoPlayer = ({ videoUrl, autoPlay = true, thumbnailUrl, onPlay, t
       // Also listen for LEVEL_LOADED as a backup to ensure levels are captured
       hls.on(Hls.Events.LEVEL_LOADED, () => {
         if (hls.levels && hls.levels.length > 0) {
-          const levels = hls.levels.map(level => ({ height: level.height, bitrate: level.bitrate }));
+          const levels = hls.levels.map((level, index) => ({ index, height: level.height, bitrate: level.bitrate }));
           setAvailableLevels(prev => (prev.length > 0 ? prev : levels));
         }
       });
@@ -660,7 +660,7 @@ export const VideoPlayer = ({ videoUrl, autoPlay = true, thumbnailUrl, onPlay, t
       hls.loadLevel = levelIndex;
     }
 
-    setQuality(levelIndex === -1 ? 'auto' : `${hls.levels[levelIndex].height}p`);
+    setQuality(levelIndex === -1 ? 'auto' : (hls.levels[levelIndex] ? `${hls.levels[levelIndex].height}p` : 'auto'));
     setShowQualityMenu(false);
   }, []);
 
@@ -834,10 +834,10 @@ export const VideoPlayer = ({ videoUrl, autoPlay = true, thumbnailUrl, onPlay, t
                   {quality === 'auto' && <span className="ml-2">✓</span>}
                 </span>
               </DropdownMenuItem>
-              {getQualityLevels().map((level, index) => (
+              {getQualityLevels().map((level) => (
                 <DropdownMenuItem
-                  key={index}
-                  onClick={() => changeQuality(index)}
+                  key={level.index}
+                  onClick={() => changeQuality(level.index)}
                   className={quality === `${level.height}p` ? 'bg-primary/10 font-semibold' : ''}
                 >
                   <span className="flex items-center justify-between w-full">
