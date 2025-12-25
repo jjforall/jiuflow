@@ -824,10 +824,17 @@ const Video = () => {
               <div className="w-full bg-muted rounded-lg overflow-hidden">
                 {getTechniqueVideoUrl(technique) ? (
                   <VideoPlayer 
-                    key={getTechniqueVideoUrl(technique)!} videoUrl={getTechniqueVideoUrl(technique)!} 
+                    key={getTechniqueVideoUrl(technique)!} 
+                    videoUrl={getTechniqueVideoUrl(technique)!} 
                     thumbnailUrl={getTechniqueThumbnailUrl(technique)}
                     autoPlay
                     techniqueId={technique.id}
+                    onVideoEnded={() => {
+                      // Increment view count on repeat play
+                      if (user?.id) {
+                        recordVideoView(technique.id, user.id);
+                      }
+                    }}
                   />
                 ) : (
                   <div className="aspect-video flex items-center justify-center">
