@@ -17,6 +17,7 @@ interface VideoPlayerProps {
   autoPlay?: boolean;
   thumbnailUrl?: string | null;
   onPlay?: () => void;
+  onVideoEnded?: () => void;
   techniqueId?: string;
   userVideoId?: string;
 }
@@ -66,7 +67,7 @@ const getConnectionQuality = (): 'slow' | 'medium' | 'fast' => {
   return 'fast';
 };
 
-export const VideoPlayer = ({ videoUrl, autoPlay = true, thumbnailUrl, onPlay, techniqueId, userVideoId }: VideoPlayerProps) => {
+export const VideoPlayer = ({ videoUrl, autoPlay = true, thumbnailUrl, onPlay, onVideoEnded, techniqueId, userVideoId }: VideoPlayerProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const hlsRef = useRef<Hls | null>(null);
   
@@ -305,6 +306,14 @@ export const VideoPlayer = ({ videoUrl, autoPlay = true, thumbnailUrl, onPlay, t
       }
     };
 
+    // Handle video ended event for repeat play counting
+    const handleEnded = () => {
+      console.log('Video ended (will loop)');
+      if (onVideoEnded) {
+        onVideoEnded();
+      }
+    };
+
     video.addEventListener('loadstart', handleLoadStart);
     video.addEventListener('canplay', handleCanPlay);
     video.addEventListener('canplaythrough', handleCanPlayThrough);
@@ -313,6 +322,7 @@ export const VideoPlayer = ({ videoUrl, autoPlay = true, thumbnailUrl, onPlay, t
     video.addEventListener('stalled', handleStalled);
     video.addEventListener('seeked', handleSeeked);
     video.addEventListener('timeupdate', handleTimeUpdate);
+    video.addEventListener('ended', handleEnded);
 
     // Resolve Cloudflare Stream URLs to an HLS manifest when possible
     const playbackUrl = getCloudflareStreamHlsUrl(videoUrl) ?? videoUrl;
@@ -531,6 +541,7 @@ export const VideoPlayer = ({ videoUrl, autoPlay = true, thumbnailUrl, onPlay, t
       video.removeEventListener('stalled', handleStalled);
       video.removeEventListener('seeked', handleSeeked);
       video.removeEventListener('timeupdate', handleTimeUpdate);
+      video.removeEventListener('ended', handleEnded);
       if (saveTimeoutRef.current) {
         clearTimeout(saveTimeoutRef.current);
       }
@@ -538,7 +549,7 @@ export const VideoPlayer = ({ videoUrl, autoPlay = true, thumbnailUrl, onPlay, t
         clearTimeout(bufferingTimeoutRef.current);
       }
     };
-  }, [videoUrl, autoPlay, language, onPlay, shouldLoad]);
+  }, [videoUrl, autoPlay, language, onPlay, onVideoEnded, shouldLoad]);
 
   useEffect(() => {
     const video = videoRef.current;
