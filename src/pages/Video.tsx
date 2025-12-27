@@ -80,6 +80,8 @@ const Video = () => {
   const [translationStatus, setTranslationStatus] = useState<"none" | "pending" | "translating" | "completed">("none");
   const [translationProjectId, setTranslationProjectId] = useState<string | null>(null);
   const [isTranslating, setIsTranslating] = useState(false);
+  const [currentAudioLanguage, setCurrentAudioLanguage] = useState<string>("ja");
+  const [pendingSeekTime, setPendingSeekTime] = useState<number | null>(null);
   const [formData, setFormData] = useState({
     practice_date: new Date(),
     proficiency_level: "1",
@@ -459,6 +461,67 @@ const Video = () => {
     }
   };
 
+  // 利用可能な音声言語のリストを作成
+  const getAvailableAudioLanguages = (tech: Technique) => {
+    const languages: { code: string; label: string; videoUrl: string }[] = [];
+    
+    // 日本語（オリジナル）
+    const jaUrl = tech.video_url_ja || tech.video_url;
+    if (jaUrl) {
+      languages.push({ code: "ja", label: "日本語", videoUrl: jaUrl });
+    }
+    
+    // 英語
+    if (tech.video_metadata?.en?.video_url) {
+      languages.push({ code: "en", label: "English", videoUrl: tech.video_metadata.en.video_url });
+    } else if (tech.video_url && tech.video_url !== tech.video_url_ja) {
+      // video_urlが英語版の場合
+      languages.push({ code: "en", label: "English", videoUrl: tech.video_url });
+    }
+    
+    // ポルトガル語
+    if (tech.video_metadata?.pt?.video_url) {
+      languages.push({ code: "pt", label: "Português", videoUrl: tech.video_metadata.pt.video_url });
+    } else if (tech.video_url_pt) {
+      languages.push({ code: "pt", label: "Português", videoUrl: tech.video_url_pt });
+    }
+    
+    return languages;
+  };
+
+  // 現在の音声言語に基づいて動画URLを取得
+  const getCurrentVideoUrl = (tech: Technique) => {
+    const availableLangs = getAvailableAudioLanguages(tech);
+    const current = availableLangs.find(l => l.code === currentAudioLanguage);
+    if (current) return current.videoUrl;
+    
+    // フォールバック: 日本語 → 言語設定 → 元動画
+    return getTechniqueVideoUrl(tech);
+  };
+
+  // 音声言語切り替えハンドラ
+  const handleAudioLanguageChange = (langCode: string, currentTime: number) => {
+    if (!technique) return;
+    
+    // 新しい動画URLを取得
+    const availableLangs = getAvailableAudioLanguages(technique);
+    const targetLang = availableLangs.find(l => l.code === langCode);
+    if (!targetLang) return;
+    
+    // 現在の再生位置を新しい動画URL用のキーで保存
+    const newProgressKey = `video-progress:${targetLang.videoUrl}`;
+    sessionStorage.setItem(newProgressKey, currentTime.toString());
+    
+    setCurrentAudioLanguage(langCode);
+    
+    toast.success(
+      langCode === "ja" ? "日本語に切り替えました" :
+      langCode === "en" ? "Switched to English" :
+      langCode === "pt" ? "Mudou para Português" :
+      "Language changed"
+    );
+  };
+
   // 翻訳を開始
   const startTranslation = async () => {
     if (!technique || !user) return;
@@ -822,13 +885,16 @@ const Video = () => {
             <div className="flex-1">
               {/* Video Player */}
               <div className="w-full bg-muted rounded-lg overflow-hidden">
-                {getTechniqueVideoUrl(technique) ? (
+                {getCurrentVideoUrl(technique) ? (
                   <VideoPlayer 
-                    key={getTechniqueVideoUrl(technique)!} 
-                    videoUrl={getTechniqueVideoUrl(technique)!} 
+                    key={`${technique.id}-${currentAudioLanguage}`} 
+                    videoUrl={getCurrentVideoUrl(technique)!} 
                     thumbnailUrl={getTechniqueThumbnailUrl(technique)}
                     autoPlay
                     techniqueId={technique.id}
+                    availableLanguages={getAvailableAudioLanguages(technique)}
+                    currentAudioLanguage={currentAudioLanguage}
+                    onAudioLanguageChange={handleAudioLanguageChange}
                     onVideoEnded={() => {
                       // Increment view count on repeat play
                       if (user?.id) {
