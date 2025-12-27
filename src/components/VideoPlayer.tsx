@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import Hls from "hls.js";
 import { toast } from "sonner";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { Loader2, SkipForward, SkipBack, Settings, Subtitles } from "lucide-react";
+import { Loader2, SkipForward, SkipBack, Settings, Subtitles, Volume2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -12,6 +12,12 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { supabase } from "@/integrations/supabase/client";
 
+interface AvailableLanguage {
+  code: string;
+  label: string;
+  videoUrl: string;
+}
+
 interface VideoPlayerProps {
   videoUrl: string;
   autoPlay?: boolean;
@@ -20,6 +26,9 @@ interface VideoPlayerProps {
   onVideoEnded?: () => void;
   techniqueId?: string;
   userVideoId?: string;
+  availableLanguages?: AvailableLanguage[];
+  currentAudioLanguage?: string;
+  onAudioLanguageChange?: (langCode: string, currentTime: number) => void;
 }
 
 // Get Cloudflare Stream thumbnail URL for placeholder
@@ -67,7 +76,18 @@ const getConnectionQuality = (): 'slow' | 'medium' | 'fast' => {
   return 'fast';
 };
 
-export const VideoPlayer = ({ videoUrl, autoPlay = true, thumbnailUrl, onPlay, onVideoEnded, techniqueId, userVideoId }: VideoPlayerProps) => {
+export const VideoPlayer = ({ 
+  videoUrl, 
+  autoPlay = true, 
+  thumbnailUrl, 
+  onPlay, 
+  onVideoEnded, 
+  techniqueId, 
+  userVideoId,
+  availableLanguages = [],
+  currentAudioLanguage,
+  onAudioLanguageChange
+}: VideoPlayerProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const hlsRef = useRef<Hls | null>(null);
   
@@ -93,6 +113,9 @@ export const VideoPlayer = ({ videoUrl, autoPlay = true, thumbnailUrl, onPlay, o
   const [availableSubtitles, setAvailableSubtitles] = useState<{ language_code: string; vtt_content: string }[]>([]);
   const [selectedSubtitleLang, setSelectedSubtitleLang] = useState<string | null>(null);
   const [showSubtitleMenu, setShowSubtitleMenu] = useState(false);
+  
+  // Audio language state
+  const [showAudioMenu, setShowAudioMenu] = useState(false);
   
   // Get thumbnail for placeholder
   const effectiveThumbnail = thumbnailUrl || getCloudflareStreamThumbnail(videoUrl);
@@ -774,6 +797,48 @@ export const VideoPlayer = ({ videoUrl, autoPlay = true, thumbnailUrl, onPlay, o
       
       {/* Control buttons container */}
       <div className="absolute top-4 right-4 z-30 flex items-center gap-2">
+        {/* Audio language selector button */}
+        {availableLanguages.length > 1 && (
+          <DropdownMenu open={showAudioMenu} onOpenChange={setShowAudioMenu}>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="secondary"
+                size="sm"
+                className="bg-background/90 backdrop-blur-sm border border-border hover:bg-background/95 gap-1.5 px-2.5 h-8"
+              >
+                <Volume2 className="h-4 w-4" />
+                <span className="text-xs font-medium">
+                  {currentAudioLanguage === 'ja' ? '🇯🇵' : currentAudioLanguage === 'en' ? '🇺🇸' : currentAudioLanguage === 'pt' ? '🇧🇷' : '🌐'}
+                </span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="min-w-[180px]">
+              <div className="px-2 py-1.5 text-xs text-muted-foreground font-medium border-b mb-1">
+                {language === "ja" ? "音声言語" : language === "pt" ? "Idioma do áudio" : "Audio Language"}
+              </div>
+              {availableLanguages.map((lang) => (
+                <DropdownMenuItem
+                  key={lang.code}
+                  onClick={() => {
+                    if (onAudioLanguageChange && videoRef.current) {
+                      onAudioLanguageChange(lang.code, videoRef.current.currentTime);
+                    }
+                  }}
+                  className={currentAudioLanguage === lang.code ? 'bg-primary/10 font-semibold' : ''}
+                >
+                  <span className="flex items-center justify-between w-full">
+                    <span className="flex items-center gap-2">
+                      <span>{lang.code === 'ja' ? '🇯🇵' : lang.code === 'en' ? '🇺🇸' : lang.code === 'pt' ? '🇧🇷' : '🌐'}</span>
+                      <span>{lang.label}</span>
+                    </span>
+                    {currentAudioLanguage === lang.code && <span className="ml-2">✓</span>}
+                  </span>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
+        
         {/* Subtitle toggle button */}
         {availableSubtitles.length > 0 && (
           <DropdownMenu open={showSubtitleMenu} onOpenChange={setShowSubtitleMenu}>
