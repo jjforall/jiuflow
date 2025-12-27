@@ -57,6 +57,23 @@ interface SeriesTechniques {
   };
 }
 
+// シリーズ名の多言語翻訳マッピング
+const seriesNameTranslations: Record<string, { en: string; pt: string }> = {
+  "クローズドガード": { en: "Closed Guard", pt: "Guarda Fechada" },
+  "クローズドガードブレイク": { en: "Closed Guard Break", pt: "Passagem de Guarda Fechada" },
+  "コンバットベース": { en: "Combat Base", pt: "Base de Combate" },
+  "マウント": { en: "Mount", pt: "Montada" },
+  "引き込み": { en: "Guard Pull", pt: "Puxada de Guarda" },
+  "その他の技": { en: "Other Techniques", pt: "Outras Técnicas" },
+};
+
+const getTranslatedSeriesName = (seriesName: string, language: string): string => {
+  if (language === "ja") return seriesName;
+  const translation = seriesNameTranslations[seriesName];
+  if (!translation) return seriesName;
+  return language === "pt" ? translation.pt : translation.en;
+};
+
 const Map = () => {
   const { language } = useLanguage();
   const t = translations[language] || translations.ja; // Fallback to Japanese
@@ -636,7 +653,7 @@ const Map = () => {
                             </div>
                             <div>
                               <h3 className="text-base md:text-lg font-semibold text-foreground">
-                                {seriesName}
+                                {getTranslatedSeriesName(seriesName, language)}
                               </h3>
                               <p className="text-xs md:text-sm text-muted-foreground mt-0.5">
                                 {language === "ja" 

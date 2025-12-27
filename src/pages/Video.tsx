@@ -59,6 +59,23 @@ interface Technique {
   updated_at?: string;
 }
 
+// シリーズ名の多言語翻訳マッピング
+const seriesNameTranslations: Record<string, { en: string; pt: string }> = {
+  "クローズドガード": { en: "Closed Guard", pt: "Guarda Fechada" },
+  "クローズドガードブレイク": { en: "Closed Guard Break", pt: "Passagem de Guarda Fechada" },
+  "コンバットベース": { en: "Combat Base", pt: "Base de Combate" },
+  "マウント": { en: "Mount", pt: "Montada" },
+  "引き込み": { en: "Guard Pull", pt: "Puxada de Guarda" },
+};
+
+const getTranslatedSeriesName = (seriesName: string | null, language: string): string => {
+  if (!seriesName) return "";
+  if (language === "ja") return seriesName;
+  const translation = seriesNameTranslations[seriesName];
+  if (!translation) return seriesName;
+  return language === "pt" ? translation.pt : translation.en;
+};
+
 const Video = () => {
   const { id } = useParams<{ id: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -1215,8 +1232,8 @@ const Video = () => {
                     {language === "ja" 
                       ? `${seriesLetter}. ${technique.series_name}シリーズ` 
                       : language === "pt" 
-                      ? `${seriesLetter}. Série ${technique.series_name}` 
-                      : `${seriesLetter}. ${technique.series_name} Series`}
+                      ? `${seriesLetter}. Série ${getTranslatedSeriesName(technique.series_name, language)}` 
+                      : `${seriesLetter}. ${getTranslatedSeriesName(technique.series_name, language)} Series`}
                   </h2>
                   <div className="space-y-3 max-h-[calc(100vh-200px)] overflow-y-auto pr-2 scrollbar-thin">
                     {seriesVideos.map((video) => (
