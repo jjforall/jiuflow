@@ -128,88 +128,86 @@ const GlobalMusicPlayer = () => {
       onTouchStart={handleTouchStart}
     >
       <div className="relative group">
-        {/* Glow effect */}
+        {/* Outer glow effect */}
         {isPlaying && (
-          <div className="absolute inset-0 bg-primary/30 rounded-full blur-xl animate-pulse" />
+          <div className="absolute -inset-2 bg-gradient-to-r from-emerald-500/40 via-cyan-500/40 to-emerald-500/40 rounded-2xl blur-xl animate-pulse" />
         )}
 
-        {/* Main button */}
-        <button
-          className="relative h-16 w-16 rounded-full shadow-2xl hover:scale-110 transition-all duration-300 overflow-hidden ring-2 ring-primary/20 hover:ring-primary/50"
-          onClick={togglePlay}
-        >
-          {currentTrack?.thumbnail_url ? (
-            <img
-              src={currentTrack.thumbnail_url}
-              alt={currentTrack.title}
-              className={`w-full h-full object-cover ${isPlaying ? "animate-spin-slow" : ""}`}
-              style={{ animationDuration: "8s" }}
-            />
-          ) : (
-            <div className="w-full h-full bg-gradient-to-br from-primary via-primary/80 to-primary/60 flex items-center justify-center">
-              <Music className="h-7 w-7 text-primary-foreground" />
+        {/* Main container - pill shape */}
+        <div className="relative flex items-center gap-2 bg-gradient-to-br from-zinc-900/95 via-zinc-800/95 to-zinc-900/95 backdrop-blur-xl rounded-2xl p-1.5 shadow-2xl border border-white/10">
+          {/* Album art / Music icon */}
+          <div className="relative h-12 w-12 rounded-xl overflow-hidden flex-shrink-0">
+            {currentTrack?.thumbnail_url ? (
+              <img
+                src={currentTrack.thumbnail_url}
+                alt={currentTrack.title}
+                className={`w-full h-full object-cover ${isPlaying ? "animate-spin-slow" : ""}`}
+                style={{ animationDuration: "8s" }}
+              />
+            ) : (
+              <div className="w-full h-full bg-gradient-to-br from-emerald-500 via-cyan-500 to-emerald-600 flex items-center justify-center">
+                <Music className="h-6 w-6 text-white" />
+              </div>
+            )}
+            
+            {/* Progress overlay */}
+            <div 
+              className="absolute bottom-0 left-0 right-0 h-1 bg-black/30"
+            >
+              <div 
+                className="h-full bg-gradient-to-r from-emerald-400 to-cyan-400 transition-all duration-300"
+                style={{ width: `${progressPercent}%` }}
+              />
+            </div>
+          </div>
+
+          {/* Controls */}
+          <div className="flex items-center gap-1 pr-1">
+            {/* Previous */}
+            <button
+              className="h-8 w-8 flex items-center justify-center rounded-lg text-zinc-400 hover:text-white hover:bg-white/10 transition-all"
+              onClick={previous}
+            >
+              <SkipBack className="h-4 w-4" />
+            </button>
+
+            {/* Play/Pause */}
+            <button
+              className="h-10 w-10 flex items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-cyan-500 text-white shadow-lg hover:shadow-emerald-500/25 hover:scale-105 transition-all"
+              onClick={togglePlay}
+            >
+              {isPlaying ? (
+                <Pause className="h-5 w-5" />
+              ) : (
+                <Play className="h-5 w-5 ml-0.5" />
+              )}
+            </button>
+
+            {/* Next */}
+            <button
+              className="h-8 w-8 flex items-center justify-center rounded-lg text-zinc-400 hover:text-white hover:bg-white/10 transition-all"
+              onClick={next}
+            >
+              <SkipForward className="h-4 w-4" />
+            </button>
+          </div>
+
+          {/* Sound wave visualization when playing */}
+          {isPlaying && (
+            <div className="absolute -top-1 -right-1 flex items-end gap-[2px] h-3 px-1 py-0.5 bg-emerald-500/20 rounded-full">
+              <span className="w-[3px] bg-emerald-400 rounded-full animate-bounce" style={{ height: '6px', animationDelay: '0ms', animationDuration: '0.6s' }} />
+              <span className="w-[3px] bg-cyan-400 rounded-full animate-bounce" style={{ height: '10px', animationDelay: '150ms', animationDuration: '0.6s' }} />
+              <span className="w-[3px] bg-emerald-400 rounded-full animate-bounce" style={{ height: '4px', animationDelay: '300ms', animationDuration: '0.6s' }} />
+              <span className="w-[3px] bg-cyan-400 rounded-full animate-bounce" style={{ height: '8px', animationDelay: '450ms', animationDuration: '0.6s' }} />
             </div>
           )}
-          <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity">
-            {isPlaying ? (
-              <Pause className="h-7 w-7 text-white drop-shadow-lg" />
-            ) : (
-              <Play className="h-7 w-7 text-white ml-1 drop-shadow-lg" />
-            )}
+
+          {/* Music label - always visible */}
+          <div className="absolute -bottom-5 left-1/2 -translate-x-1/2 flex items-center gap-1 text-[10px] text-zinc-400 whitespace-nowrap">
+            <Music className="h-2.5 w-2.5" />
+            <span>{isPlaying ? 'Playing' : 'Music'}</span>
           </div>
-
-          {/* Progress ring */}
-          <svg className="absolute inset-0 w-full h-full -rotate-90">
-            <circle
-              cx="32"
-              cy="32"
-              r="30"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              className="text-primary/20"
-            />
-            <circle
-              cx="32"
-              cy="32"
-              r="30"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              className="text-primary"
-              strokeDasharray={`${progressPercent * 1.885} 188.5`}
-            />
-          </svg>
-        </button>
-
-        {/* Skip buttons on hover */}
-        <Button
-          variant="secondary"
-          size="icon"
-          className="absolute -left-10 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
-          onClick={previous}
-        >
-          <SkipBack className="h-4 w-4" />
-        </Button>
-
-        <Button
-          variant="secondary"
-          size="icon"
-          className="absolute -right-10 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
-          onClick={next}
-        >
-          <SkipForward className="h-4 w-4" />
-        </Button>
-
-        {/* Playing indicator */}
-        {isPlaying && (
-          <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 flex gap-0.5">
-            <span className="w-1 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
-            <span className="w-1 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
-            <span className="w-1 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
-          </div>
-        )}
+        </div>
       </div>
     </div>
   );
