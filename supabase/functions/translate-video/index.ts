@@ -36,6 +36,32 @@ async function getOAuthToken(clientId: string, clientSecret: string): Promise<st
   return data.access_token;
 }
 
+// HLS URL (.m3u8) を MP4 ダウンロードURLに変換
+function convertToMp4Url(url: string): string {
+  // Cloudflare Stream HLS URL pattern: 
+  // https://customer-xxx.cloudflarestream.com/{video_id}/manifest/video.m3u8
+  // Convert to download URL:
+  // https://customer-xxx.cloudflarestream.com/{video_id}/downloads/default.mp4
+  
+  if (url.includes("cloudflarestream.com") && url.includes("/manifest/video.m3u8")) {
+    return url.replace("/manifest/video.m3u8", "/downloads/default.mp4");
+  }
+  
+  // Bunny CDN or other direct MP4 URLs - return as is
+  if (url.endsWith(".mp4")) {
+    return url;
+  }
+  
+  // For other HLS URLs, try to get MP4 variant
+  if (url.includes(".m3u8")) {
+    // Try common patterns
+    return url.replace(/\/manifest\/video\.m3u8$/, "/downloads/default.mp4")
+              .replace(/\.m3u8$/, ".mp4");
+  }
+  
+  return url;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -50,6 +76,10 @@ serve(async (req) => {
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+
+    // HLS URLをMP4に変換
+    const mp4Url = convertToMp4Url(videoUrl);
+    console.log("Converting video URL:", { original: videoUrl, converted: mp4Url });
 
     const RASK_AI_CLIENT_ID = Deno.env.get("RASK_AI_CLIENT_ID");
     const RASK_AI_CLIENT_SECRET = Deno.env.get("RASK_AI_CLIENT_SECRET");
@@ -94,13 +124,13 @@ serve(async (req) => {
       );
     }
 
-    console.log("Starting video translation:", { videoUrl, srcLang, dstLang, techniqueId });
+    console.log("Starting video translation:", { originalUrl: videoUrl, mp4Url, srcLang, dstLang, techniqueId });
 
     // Get OAuth2 access token
     const accessToken = await getOAuthToken(RASK_AI_CLIENT_ID, RASK_AI_CLIENT_SECRET);
 
-    // Step 1: Upload media by link (正しいエンドポイント)
-    console.log("Step 1: Uploading media by link...");
+    // Step 1: Upload media by link (MP4 URLを使用)
+    console.log("Step 1: Uploading media by link with MP4 URL:", mp4Url);
     const uploadResponse = await fetch("https://api.rask.ai/api/library/v1/media/link", {
       method: "POST",
       headers: {
@@ -108,7 +138,7 @@ serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        link: videoUrl,
+        link: mp4Url,  // MP4 URLを使用
         kind: "video",
         name: `Technique ${techniqueId}`,
       }),
