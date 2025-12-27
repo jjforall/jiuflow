@@ -38,28 +38,54 @@ async function getOAuthToken(clientId: string, clientSecret: string): Promise<st
 
 // HLS URL (.m3u8) を MP4 ダウンロードURLに変換
 function convertToMp4Url(url: string): string {
-  // Cloudflare Stream HLS URL pattern: 
+  // Cloudflare Stream HLS URL pattern:
   // https://customer-xxx.cloudflarestream.com/{video_id}/manifest/video.m3u8
   // Convert to download URL:
   // https://customer-xxx.cloudflarestream.com/{video_id}/downloads/default.mp4
-  
+
   if (url.includes("cloudflarestream.com") && url.includes("/manifest/video.m3u8")) {
     return url.replace("/manifest/video.m3u8", "/downloads/default.mp4");
   }
-  
+
   // Bunny CDN or other direct MP4 URLs - return as is
-  if (url.endsWith(".mp4")) {
+  if (url.toLowerCase().endsWith(".mp4")) {
     return url;
   }
-  
+
   // For other HLS URLs, try to get MP4 variant
   if (url.includes(".m3u8")) {
     // Try common patterns
-    return url.replace(/\/manifest\/video\.m3u8$/, "/downloads/default.mp4")
-              .replace(/\.m3u8$/, ".mp4");
+    return url
+      .replace(/\/manifest\/video\.m3u8$/, "/downloads/default.mp4")
+      .replace(/\.m3u8$/, ".mp4");
   }
-  
+
   return url;
+}
+
+async function probeContentType(url: string): Promise<{ ok: boolean; status: number; contentType: string | null }> {
+  // Some CDNs don't support HEAD for signed/download URLs, so we fallback to a tiny Range GET.
+  try {
+    let resp = await fetch(url, { method: "HEAD", redirect: "follow" });
+
+    if (!resp.ok || resp.status === 405) {
+      resp = await fetch(url, {
+        method: "GET",
+        redirect: "follow",
+        headers: {
+          Range: "bytes=0-0",
+        },
+      });
+    }
+
+    return {
+      ok: resp.ok,
+      status: resp.status,
+      contentType: resp.headers.get("content-type"),
+    };
+  } catch (_e) {
+    return { ok: false, status: 0, contentType: null };
+  }
 }
 
 serve(async (req) => {
@@ -80,6 +106,20 @@ serve(async (req) => {
     // HLS URLをMP4に変換
     const mp4Url = convertToMp4Url(videoUrl);
     console.log("Converting video URL:", { original: videoUrl, converted: mp4Url });
+
+    // MP4 URL が実際に video/* を返すか確認（text/plain 等のエラーページを弾く）
+    const probe = await probeContentType(mp4Url);
+    const ct = (probe.contentType || "").toLowerCase();
+    if (!probe.ok || !ct.startsWith("video/")) {
+      console.error("MP4 URL probe failed:", probe);
+      return new Response(
+        JSON.stringify({
+          error: "Video source is not a downloadable MP4",
+          details: `Expected content-type video/* but got '${probe.contentType ?? "unknown"}' (HTTP ${probe.status}). Please provide a direct MP4 URL or enable MP4 downloads for this video source.`,
+        }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     const RASK_AI_CLIENT_ID = Deno.env.get("RASK_AI_CLIENT_ID");
     const RASK_AI_CLIENT_SECRET = Deno.env.get("RASK_AI_CLIENT_SECRET");
