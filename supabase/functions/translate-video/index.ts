@@ -36,56 +36,105 @@ async function getOAuthToken(clientId: string, clientSecret: string): Promise<st
   return data.access_token;
 }
 
-// HLS URL (.m3u8) を MP4 ダウンロードURLに変換
-function convertToMp4Url(url: string): string {
-  // Cloudflare Stream HLS URL pattern:
-  // https://customer-xxx.cloudflarestream.com/{video_id}/manifest/video.m3u8
-  // Convert to download URL:
-  // https://customer-xxx.cloudflarestream.com/{video_id}/downloads/default.mp4
-
-  if (url.includes("cloudflarestream.com") && url.includes("/manifest/video.m3u8")) {
-    return url.replace("/manifest/video.m3u8", "/downloads/default.mp4");
-  }
-
-  // Bunny CDN or other direct MP4 URLs - return as is
-  if (url.toLowerCase().endsWith(".mp4")) {
-    return url;
-  }
-
-  // For other HLS URLs, try to get MP4 variant
-  if (url.includes(".m3u8")) {
-    // Try common patterns
-    return url
-      .replace(/\/manifest\/video\.m3u8$/, "/downloads/default.mp4")
-      .replace(/\.m3u8$/, ".mp4");
-  }
-
-  return url;
+// Cloudflare Stream から video_id を抽出
+function extractCloudflareVideoId(url: string): string | null {
+  // Pattern: https://customer-xxx.cloudflarestream.com/{video_id}/manifest/video.m3u8
+  const match = url.match(/cloudflarestream\.com\/([a-zA-Z0-9]+)\//);
+  return match ? match[1] : null;
 }
 
-async function probeContentType(url: string): Promise<{ ok: boolean; status: number; contentType: string | null }> {
-  // Some CDNs don't support HEAD for signed/download URLs, so we fallback to a tiny Range GET.
-  try {
-    let resp = await fetch(url, { method: "HEAD", redirect: "follow" });
+// Cloudflare Stream API で署名付きダウンロードURLを取得
+async function getCloudflareDownloadUrl(videoId: string): Promise<string | null> {
+  const accountId = Deno.env.get("CLOUDFLARE_ACCOUNT_ID");
+  const apiToken = Deno.env.get("CLOUDFLARE_STREAM_API_TOKEN");
 
-    if (!resp.ok || resp.status === 405) {
-      resp = await fetch(url, {
-        method: "GET",
-        redirect: "follow",
+  if (!accountId || !apiToken) {
+    console.error("Cloudflare credentials not configured");
+    return null;
+  }
+
+  try {
+    // Cloudflare Stream API でダウンロードを有効化
+    const enableResponse = await fetch(
+      `https://api.cloudflare.com/client/v4/accounts/${accountId}/stream/${videoId}/downloads`,
+      {
+        method: "POST",
         headers: {
-          Range: "bytes=0-0",
+          "Authorization": `Bearer ${apiToken}`,
+          "Content-Type": "application/json",
         },
-      });
+      }
+    );
+
+    if (!enableResponse.ok) {
+      const errorText = await enableResponse.text();
+      console.log("Enable downloads response:", enableResponse.status, errorText);
+      // 既にダウンロードが有効な場合は 409 が返ることがある
     }
 
-    return {
-      ok: resp.ok,
-      status: resp.status,
-      contentType: resp.headers.get("content-type"),
-    };
-  } catch (_e) {
-    return { ok: false, status: 0, contentType: null };
+    // ダウンロードURLを取得
+    const getResponse = await fetch(
+      `https://api.cloudflare.com/client/v4/accounts/${accountId}/stream/${videoId}/downloads`,
+      {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${apiToken}`,
+        },
+      }
+    );
+
+    if (!getResponse.ok) {
+      const errorText = await getResponse.text();
+      console.error("Get downloads error:", getResponse.status, errorText);
+      return null;
+    }
+
+    const data = await getResponse.json();
+    console.log("Cloudflare downloads response:", JSON.stringify(data));
+
+    // default download URL を返す
+    if (data.result?.default?.url) {
+      return data.result.default.url;
+    }
+
+    return null;
+  } catch (error) {
+    console.error("Cloudflare API error:", error);
+    return null;
   }
+}
+
+// HLS URL (.m3u8) を MP4 ダウンロードURLに変換
+async function getDownloadableUrl(url: string): Promise<{ url: string; error?: string }> {
+  // Bunny CDN or other direct MP4 URLs - return as is
+  if (url.toLowerCase().endsWith(".mp4")) {
+    return { url };
+  }
+
+  // Cloudflare Stream の場合は API で署名付きURLを取得
+  const cfVideoId = extractCloudflareVideoId(url);
+  if (cfVideoId) {
+    console.log("Detected Cloudflare Stream video:", cfVideoId);
+    const downloadUrl = await getCloudflareDownloadUrl(cfVideoId);
+    if (downloadUrl) {
+      console.log("Got Cloudflare download URL:", downloadUrl);
+      return { url: downloadUrl };
+    }
+    return { 
+      url: url, 
+      error: "Failed to get Cloudflare download URL. Please ensure MP4 downloads are enabled for this video." 
+    };
+  }
+
+  // その他の m3u8 は変換を試みる
+  if (url.includes(".m3u8")) {
+    const converted = url
+      .replace(/\/manifest\/video\.m3u8$/, "/downloads/default.mp4")
+      .replace(/\.m3u8$/, ".mp4");
+    return { url: converted };
+  }
+
+  return { url };
 }
 
 serve(async (req) => {
@@ -103,23 +152,20 @@ serve(async (req) => {
       );
     }
 
-    // HLS URLをMP4に変換
-    const mp4Url = convertToMp4Url(videoUrl);
-    console.log("Converting video URL:", { original: videoUrl, converted: mp4Url });
-
-    // MP4 URL が実際に video/* を返すか確認（text/plain 等のエラーページを弾く）
-    const probe = await probeContentType(mp4Url);
-    const ct = (probe.contentType || "").toLowerCase();
-    if (!probe.ok || !ct.startsWith("video/")) {
-      console.error("MP4 URL probe failed:", probe);
+    // HLS URLをダウンロード可能なURLに変換
+    const downloadResult = await getDownloadableUrl(videoUrl);
+    if (downloadResult.error) {
+      console.error("Failed to get downloadable URL:", downloadResult.error);
       return new Response(
         JSON.stringify({
-          error: "Video source is not a downloadable MP4",
-          details: `Expected content-type video/* but got '${probe.contentType ?? "unknown"}' (HTTP ${probe.status}). Please provide a direct MP4 URL or enable MP4 downloads for this video source.`,
+          error: "Video source is not downloadable",
+          details: downloadResult.error,
         }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+    const mp4Url = downloadResult.url;
+    console.log("Converting video URL:", { original: videoUrl, converted: mp4Url });
 
     const RASK_AI_CLIENT_ID = Deno.env.get("RASK_AI_CLIENT_ID");
     const RASK_AI_CLIENT_SECRET = Deno.env.get("RASK_AI_CLIENT_SECRET");

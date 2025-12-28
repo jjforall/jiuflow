@@ -119,8 +119,8 @@ const GlobalMusicPlayer = () => {
       ref={dragRef}
       className="fixed z-50 animate-scale-in touch-none"
       style={{
-        left: position.x,
-        top: position.y,
+        left: Math.min(position.x, window.innerWidth - 30),
+        top: Math.min(position.y, window.innerHeight - 30),
         transform: "translate(-50%, -50%)",
         cursor: isDragging ? "grabbing" : "grab",
       }}
@@ -130,13 +130,13 @@ const GlobalMusicPlayer = () => {
       <div className="relative group">
         {/* Outer glow effect */}
         {isPlaying && (
-          <div className="absolute -inset-2 bg-gradient-to-r from-emerald-500/40 via-cyan-500/40 to-emerald-500/40 rounded-2xl blur-xl animate-pulse" />
+          <div className="absolute -inset-1.5 bg-gradient-to-r from-emerald-500/30 via-cyan-500/30 to-emerald-500/30 rounded-xl blur-lg animate-pulse" />
         )}
 
-        {/* Main container - pill shape */}
-        <div className="relative flex items-center gap-2 bg-gradient-to-br from-zinc-900/95 via-zinc-800/95 to-zinc-900/95 backdrop-blur-xl rounded-2xl p-1.5 shadow-2xl border border-white/10">
-          {/* Album art / Music icon */}
-          <div className="relative h-12 w-12 rounded-xl overflow-hidden flex-shrink-0">
+        {/* Main container - compact pill shape */}
+        <div className="relative flex items-center gap-1 bg-gradient-to-br from-zinc-900/95 via-zinc-800/95 to-zinc-900/95 backdrop-blur-xl rounded-xl p-1 shadow-2xl border border-white/10">
+          {/* Album art / Music icon - smaller */}
+          <div className="relative h-8 w-8 rounded-lg overflow-hidden flex-shrink-0">
             {currentTrack?.thumbnail_url ? (
               <img
                 src={currentTrack.thumbnail_url}
@@ -146,14 +146,12 @@ const GlobalMusicPlayer = () => {
               />
             ) : (
               <div className="w-full h-full bg-gradient-to-br from-emerald-500 via-cyan-500 to-emerald-600 flex items-center justify-center">
-                <Music className="h-6 w-6 text-white" />
+                <Music className="h-4 w-4 text-white" />
               </div>
             )}
             
             {/* Progress overlay */}
-            <div 
-              className="absolute bottom-0 left-0 right-0 h-1 bg-black/30"
-            >
+            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-black/30">
               <div 
                 className="h-full bg-gradient-to-r from-emerald-400 to-cyan-400 transition-all duration-300"
                 style={{ width: `${progressPercent}%` }}
@@ -161,52 +159,45 @@ const GlobalMusicPlayer = () => {
             </div>
           </div>
 
-          {/* Controls */}
-          <div className="flex items-center gap-1 pr-1">
+          {/* Controls - smaller */}
+          <div className="flex items-center gap-0.5 pr-0.5">
             {/* Previous */}
             <button
-              className="h-8 w-8 flex items-center justify-center rounded-lg text-zinc-400 hover:text-white hover:bg-white/10 transition-all"
+              className="h-6 w-6 flex items-center justify-center rounded-md text-zinc-400 hover:text-white hover:bg-white/10 transition-all"
               onClick={previous}
             >
-              <SkipBack className="h-4 w-4" />
+              <SkipBack className="h-3 w-3" />
             </button>
 
             {/* Play/Pause */}
             <button
-              className="h-10 w-10 flex items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-cyan-500 text-white shadow-lg hover:shadow-emerald-500/25 hover:scale-105 transition-all"
+              className="h-7 w-7 flex items-center justify-center rounded-lg bg-gradient-to-br from-emerald-500 to-cyan-500 text-white shadow-lg hover:shadow-emerald-500/25 hover:scale-105 transition-all"
               onClick={togglePlay}
             >
               {isPlaying ? (
-                <Pause className="h-5 w-5" />
+                <Pause className="h-3.5 w-3.5" />
               ) : (
-                <Play className="h-5 w-5 ml-0.5" />
+                <Play className="h-3.5 w-3.5 ml-0.5" />
               )}
             </button>
 
             {/* Next */}
             <button
-              className="h-8 w-8 flex items-center justify-center rounded-lg text-zinc-400 hover:text-white hover:bg-white/10 transition-all"
+              className="h-6 w-6 flex items-center justify-center rounded-md text-zinc-400 hover:text-white hover:bg-white/10 transition-all"
               onClick={next}
             >
-              <SkipForward className="h-4 w-4" />
+              <SkipForward className="h-3 w-3" />
             </button>
           </div>
 
-          {/* Sound wave visualization when playing */}
+          {/* Sound wave visualization when playing - smaller */}
           {isPlaying && (
-            <div className="absolute -top-1 -right-1 flex items-end gap-[2px] h-3 px-1 py-0.5 bg-emerald-500/20 rounded-full">
-              <span className="w-[3px] bg-emerald-400 rounded-full animate-bounce" style={{ height: '6px', animationDelay: '0ms', animationDuration: '0.6s' }} />
-              <span className="w-[3px] bg-cyan-400 rounded-full animate-bounce" style={{ height: '10px', animationDelay: '150ms', animationDuration: '0.6s' }} />
-              <span className="w-[3px] bg-emerald-400 rounded-full animate-bounce" style={{ height: '4px', animationDelay: '300ms', animationDuration: '0.6s' }} />
-              <span className="w-[3px] bg-cyan-400 rounded-full animate-bounce" style={{ height: '8px', animationDelay: '450ms', animationDuration: '0.6s' }} />
+            <div className="absolute -top-0.5 -right-0.5 flex items-end gap-[1px] h-2 px-0.5 py-0.5 bg-emerald-500/20 rounded-full">
+              <span className="w-[2px] bg-emerald-400 rounded-full animate-bounce" style={{ height: '4px', animationDelay: '0ms', animationDuration: '0.6s' }} />
+              <span className="w-[2px] bg-cyan-400 rounded-full animate-bounce" style={{ height: '6px', animationDelay: '150ms', animationDuration: '0.6s' }} />
+              <span className="w-[2px] bg-emerald-400 rounded-full animate-bounce" style={{ height: '3px', animationDelay: '300ms', animationDuration: '0.6s' }} />
             </div>
           )}
-
-          {/* Music label - always visible */}
-          <div className="absolute -bottom-5 left-1/2 -translate-x-1/2 flex items-center gap-1 text-[10px] text-zinc-400 whitespace-nowrap">
-            <Music className="h-2.5 w-2.5" />
-            <span>{isPlaying ? 'Playing' : 'Music'}</span>
-          </div>
         </div>
       </div>
     </div>
