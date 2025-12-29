@@ -1,40 +1,9 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
-
-async function getOAuthToken(clientId: string, clientSecret: string): Promise<string> {
-  const tokenEndpoint = "https://rask-prod.auth.us-east-2.amazoncognito.com/oauth2/token";
-  
-  const body = new URLSearchParams({
-    grant_type: "client_credentials",
-    client_id: clientId,
-    client_secret: clientSecret,
-    scope: "api/source api/input api/output api/limit",
-  });
-
-  console.log("Fetching OAuth2 token from Rask.ai...");
-  const response = await fetch(tokenEndpoint, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/x-www-form-urlencoded",
-    },
-    body: body.toString(),
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    console.error("OAuth2 token error:", response.status, errorText);
-    throw new Error(`Failed to get OAuth2 token: ${errorText}`);
-  }
-
-  const data = await response.json();
-  console.log("OAuth2 token obtained successfully");
-  return data.access_token;
-}
 
 // Cloudflare Stream から video_id を抽出
 function extractCloudflareVideoId(url: string): string | null {
@@ -167,116 +136,102 @@ serve(async (req) => {
     const mp4Url = downloadResult.url;
     console.log("Converting video URL:", { original: videoUrl, converted: mp4Url });
 
-    const RASK_AI_CLIENT_ID = Deno.env.get("RASK_AI_CLIENT_ID");
-    const RASK_AI_CLIENT_SECRET = Deno.env.get("RASK_AI_CLIENT_SECRET");
+    const ELEVENLABS_API_KEY = Deno.env.get("ELEVENLABS_API_KEY");
     
-    if (!RASK_AI_CLIENT_ID || !RASK_AI_CLIENT_SECRET) {
+    if (!ELEVENLABS_API_KEY) {
       return new Response(
-        JSON.stringify({ error: "RASK_AI_CLIENT_ID and RASK_AI_CLIENT_SECRET not configured" }),
+        JSON.stringify({ error: "ELEVENLABS_API_KEY not configured" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // ターゲット言語のみRask正式コードにマッピング（destination languages）
-    const DST_LANGUAGE_MAP: Record<string, string> = {
-      ja: "ja-jp",
-      en: "en-us",
-      pt: "pt-br",
-      es: "es-es",
-      fr: "fr-fr",
-      de: "de-de",
-      zh: "zh-cn",
-      ko: "ko-kr",
-      it: "it-it",
-      ru: "ru-ru",
-      ar: "ar-ae",
-      hi: "hi-in",
+    // ElevenLabs言語コードマッピング（ISO 639-1）
+    const LANGUAGE_MAP: Record<string, string> = {
+      ja: "ja",
+      en: "en",
+      pt: "pt",
+      es: "es",
+      fr: "fr",
+      de: "de",
+      zh: "zh",
+      ko: "ko",
+      it: "it",
+      ru: "ru",
+      ar: "ar",
+      hi: "hi",
+      nl: "nl",
+      pl: "pl",
+      tr: "tr",
+      sv: "sv",
+      id: "id",
+      ms: "ms",
+      ro: "ro",
+      uk: "uk",
+      el: "el",
+      cs: "cs",
+      da: "da",
+      fi: "fi",
+      bg: "bg",
+      hr: "hr",
+      sk: "sk",
+      ta: "ta",
     };
 
-    // ソース言語は2文字コード（Rask source languages）
-    const srcLang = (sourceLanguage || "ja").toLowerCase();
-    
-    // ターゲット言語はRaskの地域コード
-    const targetLangBase = targetLanguage.toLowerCase();
-    const dstLang = DST_LANGUAGE_MAP[targetLangBase];
+    const srcLang = LANGUAGE_MAP[(sourceLanguage || "ja").toLowerCase()] || "ja";
+    const tgtLang = LANGUAGE_MAP[targetLanguage.toLowerCase()];
 
-    if (!dstLang) {
+    if (!tgtLang) {
       return new Response(
         JSON.stringify({
           error: "Unsupported translation language",
-          details: `Rask API does not support language code: ${targetLanguage}`,
+          details: `ElevenLabs Dubbing API does not support language code: ${targetLanguage}`,
         }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    console.log("Starting video translation:", { originalUrl: videoUrl, mp4Url, srcLang, dstLang, techniqueId });
+    console.log("Starting video translation with ElevenLabs:", { originalUrl: videoUrl, mp4Url, srcLang, tgtLang, techniqueId });
 
-    // Get OAuth2 access token
-    const accessToken = await getOAuthToken(RASK_AI_CLIENT_ID, RASK_AI_CLIENT_SECRET);
+    // ElevenLabs Dubbing API を呼び出し（source_url を使用）
+    const formData = new FormData();
+    formData.append("source_url", mp4Url);
+    formData.append("target_lang", tgtLang);
+    formData.append("source_lang", srcLang);
+    formData.append("name", `Technique ${techniqueId} - ${targetLanguage}`);
+    formData.append("num_speakers", "0"); // 自動検出
+    formData.append("watermark", "false");
+    formData.append("highest_resolution", "true");
 
-    // Step 1: Upload media by link (MP4 URLを使用)
-    console.log("Step 1: Uploading media by link with MP4 URL:", mp4Url);
-    const uploadResponse = await fetch("https://api.rask.ai/api/library/v1/media/link", {
+    console.log("Calling ElevenLabs Dubbing API...");
+    const dubbingResponse = await fetch("https://api.elevenlabs.io/v1/dubbing", {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${accessToken}`,
-        "Content-Type": "application/json",
+        "xi-api-key": ELEVENLABS_API_KEY,
       },
-      body: JSON.stringify({
-        link: mp4Url,  // MP4 URLを使用
-        kind: "video",
-        name: `Technique ${techniqueId}`,
-      }),
+      body: formData,
     });
 
-    if (!uploadResponse.ok) {
-      const errorText = await uploadResponse.text();
-      console.error("Rask.ai upload error:", uploadResponse.status, errorText);
+    if (!dubbingResponse.ok) {
+      const errorText = await dubbingResponse.text();
+      console.error("ElevenLabs dubbing error:", dubbingResponse.status, errorText);
       return new Response(
-        JSON.stringify({ error: "Failed to upload video to Rask.ai", details: errorText }),
+        JSON.stringify({ error: "Failed to start dubbing with ElevenLabs", details: errorText }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    const uploadData = await uploadResponse.json();
-    const videoId = uploadData.id;
-    console.log("Media uploaded successfully:", videoId);
-
-    // Step 2: Create project (正しいエンドポイント)
-    console.log("Step 2: Creating project...");
-    const createProjectResponse = await fetch("https://api.rask.ai/v2/projects", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${accessToken}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        video_id: videoId,
-        name: `Technique ${techniqueId} - ${targetLanguage}`,
-        src_lang: srcLang,
-        dst_lang: dstLang,
-      }),
-    });
-
-    if (!createProjectResponse.ok) {
-      const errorText = await createProjectResponse.text();
-      console.error("Rask.ai project creation error:", createProjectResponse.status, errorText);
-      return new Response(
-        JSON.stringify({ error: "Failed to create project in Rask.ai", details: errorText }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    const projectData = await createProjectResponse.json();
-    const projectId = projectData.id;
-    console.log("Project created successfully:", projectId);
+    const dubbingData = await dubbingResponse.json();
+    const dubbingId = dubbingData.dubbing_id;
+    const expectedDuration = dubbingData.expected_duration_sec;
+    
+    console.log("Dubbing started successfully:", { dubbingId, expectedDuration });
 
     return new Response(
       JSON.stringify({
         success: true,
-        projectId,
-        message: "Translation started successfully",
+        projectId: dubbingId,
+        expectedDuration,
+        message: "Translation started successfully with ElevenLabs",
         targetLanguage,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
