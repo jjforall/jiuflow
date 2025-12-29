@@ -6,36 +6,6 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-async function getOAuthToken(clientId: string, clientSecret: string): Promise<string> {
-  const tokenEndpoint = "https://rask-prod.auth.us-east-2.amazoncognito.com/oauth2/token";
-  
-  const body = new URLSearchParams({
-    grant_type: "client_credentials",
-    client_id: clientId,
-    client_secret: clientSecret,
-    scope: "api/source api/input api/output api/limit",
-  });
-
-  console.log("Fetching OAuth2 token from Rask.ai...");
-  const response = await fetch(tokenEndpoint, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/x-www-form-urlencoded",
-    },
-    body: body.toString(),
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    console.error("OAuth2 token error:", response.status, errorText);
-    throw new Error(`Failed to get OAuth2 token: ${errorText}`);
-  }
-
-  const data = await response.json();
-  console.log("OAuth2 token obtained successfully");
-  return data.access_token;
-}
-
 async function uploadToCloudflare(
   videoUrl: string,
   videoName: string,
@@ -83,36 +53,31 @@ serve(async (req) => {
 
     if (!projectId) {
       return new Response(
-        JSON.stringify({ error: "projectId is required" }),
+        JSON.stringify({ error: "projectId (dubbing_id) is required" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    const RASK_AI_CLIENT_ID = Deno.env.get("RASK_AI_CLIENT_ID");
-    const RASK_AI_CLIENT_SECRET = Deno.env.get("RASK_AI_CLIENT_SECRET");
+    const ELEVENLABS_API_KEY = Deno.env.get("ELEVENLABS_API_KEY");
     const CLOUDFLARE_ACCOUNT_ID = Deno.env.get("CLOUDFLARE_ACCOUNT_ID");
     const CLOUDFLARE_STREAM_API_TOKEN = Deno.env.get("CLOUDFLARE_STREAM_API_TOKEN");
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     
-    if (!RASK_AI_CLIENT_ID || !RASK_AI_CLIENT_SECRET) {
+    if (!ELEVENLABS_API_KEY) {
       return new Response(
-        JSON.stringify({ error: "RASK_AI_CLIENT_ID and RASK_AI_CLIENT_SECRET not configured" }),
+        JSON.stringify({ error: "ELEVENLABS_API_KEY not configured" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    console.log("Checking status for project:", projectId);
+    console.log("Checking dubbing status for:", projectId);
 
-    // Get OAuth2 access token
-    const accessToken = await getOAuthToken(RASK_AI_CLIENT_ID, RASK_AI_CLIENT_SECRET);
-
-    // Get project status
-    const statusRes = await fetch(`https://api.rask.ai/v2/projects/${projectId}`, {
+    // Get dubbing status from ElevenLabs
+    const statusRes = await fetch(`https://api.elevenlabs.io/v1/dubbing/${projectId}`, {
       method: "GET",
       headers: {
-        "Authorization": `Bearer ${accessToken}`,
-        "Content-Type": "application/json",
+        "xi-api-key": ELEVENLABS_API_KEY,
       },
     });
 
@@ -125,87 +90,146 @@ serve(async (req) => {
       );
     }
 
-    const projectData = await statusRes.json();
-    console.log("Project status:", projectData.status);
-    console.log("Project progress:", projectData.progress);
-    console.log("Full project data:", JSON.stringify(projectData, null, 2));
+    const dubbingData = await statusRes.json();
+    console.log("Dubbing status:", dubbingData.status);
+    console.log("Full dubbing data:", JSON.stringify(dubbingData, null, 2));
 
-    // Check if completed
-    const isCompleted = projectData.status === "completed" || 
-                       projectData.status === "done" || 
-                       projectData.status === "merging_done";
+    // ElevenLabs dubbing statuses: "dubbing", "dubbed", "failed"
+    const isCompleted = dubbingData.status === "dubbed";
+    const isFailed = dubbingData.status === "failed";
     
-    // Get translated video URL
-    let videoUrl = isCompleted 
-      ? (projectData.translated_video || projectData.output_url || projectData.video_url)
-      : null;
-    
-    const progress = projectData.progress || (isCompleted ? 100 : 0);
-    
-    console.log("Video URL extracted:", videoUrl);
+    // Calculate progress based on status
+    let progress = 0;
+    if (isCompleted) {
+      progress = 100;
+    } else if (dubbingData.status === "dubbing") {
+      // Estimate progress based on expected duration
+      progress = 50; // Default to 50% while dubbing
+    }
 
-    // If completed and we have a video URL, upload to Cloudflare
-    if (isCompleted && videoUrl && techniqueId && targetLanguage) {
-      if (!CLOUDFLARE_ACCOUNT_ID || !CLOUDFLARE_STREAM_API_TOKEN) {
-        console.error("Cloudflare credentials not configured");
-      } else {
-        try {
-          const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-          
-          // Get technique name for video title
-          const { data: technique } = await supabase
-            .from('techniques')
-            .select('name_ja')
-            .eq('id', techniqueId)
-            .single();
+    let videoUrl = null;
 
-          const videoName = `${technique?.name_ja || techniqueId} (${targetLanguage})`;
-          
-          // Upload to Cloudflare Stream
-          const cloudflareUrl = await uploadToCloudflare(
-            videoUrl,
-            videoName,
-            CLOUDFLARE_ACCOUNT_ID,
-            CLOUDFLARE_STREAM_API_TOKEN
-          );
-          
-          console.log(`Cloudflare URL: ${cloudflareUrl}`);
-
-          // Determine which field to update based on target language
-          const fieldMap: Record<string, string> = {
-            ja: 'video_url_ja',
-            en: 'video_url',
-            pt: 'video_url_pt',
-          };
-          const updateField = fieldMap[targetLanguage] || `video_url_${targetLanguage}`;
-
-          // Update technique with Cloudflare URL
-          const { error: updateError } = await supabase
-            .from('techniques')
-            .update({ [updateField]: cloudflareUrl })
-            .eq('id', techniqueId);
-
-          if (updateError) {
-            console.error("Failed to update technique:", updateError);
-          } else {
-            console.log(`Updated technique ${techniqueId} ${updateField} with Cloudflare URL`);
-            videoUrl = cloudflareUrl; // Return the Cloudflare URL
+    // If completed, get the dubbed audio/video file
+    if (isCompleted && targetLanguage) {
+      try {
+        // Get dubbed file from ElevenLabs
+        const audioRes = await fetch(
+          `https://api.elevenlabs.io/v1/dubbing/${projectId}/audio/${targetLanguage}`,
+          {
+            method: "GET",
+            headers: {
+              "xi-api-key": ELEVENLABS_API_KEY,
+            },
           }
-        } catch (cloudflareError) {
-          console.error("Cloudflare upload error:", cloudflareError);
-          // Continue with original URL if Cloudflare upload fails
+        );
+
+        if (audioRes.ok) {
+          // ElevenLabs returns the audio/video directly
+          // We need to upload it to a storage location and get a URL
+          // For now, we'll use a signed URL approach or direct streaming
+          
+          // Check if there's a media_metadata with video
+          const mediaMetadata = dubbingData.media_metadata;
+          console.log("Media metadata:", JSON.stringify(mediaMetadata, null, 2));
+
+          // Try to get video URL if available
+          // ElevenLabs may provide a download URL or we need to stream it
+          if (CLOUDFLARE_ACCOUNT_ID && CLOUDFLARE_STREAM_API_TOKEN && techniqueId) {
+            const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+            
+            // Get technique name for video title
+            const { data: technique } = await supabase
+              .from('techniques')
+              .select('name_ja')
+              .eq('id', techniqueId)
+              .single();
+
+            const videoName = `${technique?.name_ja || techniqueId} (${targetLanguage})`;
+
+            // For ElevenLabs, we need to download the audio and upload to Cloudflare
+            // The audio endpoint returns the dubbed audio directly
+            // For video with preserved original video track, we may need a different approach
+            
+            // Check content type to determine if it's video or audio
+            const contentType = audioRes.headers.get("content-type");
+            console.log("Content type from ElevenLabs:", contentType);
+
+            if (contentType?.includes("video") || contentType?.includes("mp4")) {
+              // It's a video file, upload directly to Cloudflare
+              const audioBuffer = await audioRes.arrayBuffer();
+              
+              // Create a Blob URL or use a temporary storage
+              // For now, let's try direct upload using the stream
+              console.log("Received video file, size:", audioBuffer.byteLength);
+              
+              // Upload to Cloudflare using direct upload
+              const uploadFormData = new FormData();
+              uploadFormData.append("file", new Blob([audioBuffer], { type: "video/mp4" }), "dubbed_video.mp4");
+              
+              const cfUploadRes = await fetch(
+                `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/stream`,
+                {
+                  method: "POST",
+                  headers: {
+                    "Authorization": `Bearer ${CLOUDFLARE_STREAM_API_TOKEN}`,
+                  },
+                  body: uploadFormData,
+                }
+              );
+
+              if (cfUploadRes.ok) {
+                const cfData = await cfUploadRes.json();
+                const cloudflareVideoId = cfData.result.uid;
+                videoUrl = `https://customer-${CLOUDFLARE_ACCOUNT_ID}.cloudflarestream.com/${cloudflareVideoId}/manifest/video.m3u8`;
+                console.log("Uploaded to Cloudflare:", videoUrl);
+
+                // Update technique with Cloudflare URL
+                const fieldMap: Record<string, string> = {
+                  ja: 'video_url_ja',
+                  en: 'video_url',
+                  pt: 'video_url_pt',
+                };
+                const updateField = fieldMap[targetLanguage] || `video_url_${targetLanguage}`;
+
+                const { error: updateError } = await supabase
+                  .from('techniques')
+                  .update({ [updateField]: videoUrl })
+                  .eq('id', techniqueId);
+
+                if (updateError) {
+                  console.error("Failed to update technique:", updateError);
+                } else {
+                  console.log(`Updated technique ${techniqueId} ${updateField} with Cloudflare URL`);
+                }
+              } else {
+                const cfError = await cfUploadRes.text();
+                console.error("Cloudflare upload failed:", cfError);
+              }
+            } else {
+              console.log("Received audio-only file, content type:", contentType);
+              // Audio-only response - may need to merge with original video
+              // For now, log and continue
+            }
+          }
+        } else {
+          const audioError = await audioRes.text();
+          console.error("Failed to get dubbed file:", audioError);
         }
+      } catch (dubbedFileError) {
+        console.error("Error getting dubbed file:", dubbedFileError);
       }
     }
 
     return new Response(
       JSON.stringify({
-        status: projectData.status,
+        status: dubbingData.status,
         videoUrl,
         progress,
         message: isCompleted 
           ? "Translation completed" 
-          : `Translation in progress: ${projectData.status}`,
+          : isFailed
+            ? `Translation failed: ${dubbingData.error || "Unknown error"}`
+            : `Translation in progress: ${dubbingData.status}`,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
