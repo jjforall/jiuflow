@@ -1247,6 +1247,7 @@ const Video = () => {
                           <div className="flex-shrink-0 w-40 h-24 relative">
                             <VideoThumbnail
                               videoUrl={getTechniqueVideoUrl(video)}
+                              thumbnailUrl={getTechniqueThumbnailUrl(video)}
                               className="w-full h-full object-cover rounded"
                               showPlayButton
                             />

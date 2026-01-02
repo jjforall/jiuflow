@@ -11,9 +11,6 @@ interface VideoThumbnailProps {
   fallbackText?: string;
 }
 
-// Known broken Cloudflare account that returns 404 for thumbnails
-const BROKEN_CLOUDFLARE_ACCOUNT = 'customer-46bf2542468db352a9741f14b84d2744';
-
 // Extract Cloudflare Stream video ID from various URL formats
 const getCloudflareVideoId = (url: string): string | null => {
   // Format: https://customer-xxx.cloudflarestream.com/VIDEO_ID/...
@@ -33,11 +30,6 @@ const getCloudflareVideoId = (url: string): string | null => {
 
 // Get Cloudflare Stream thumbnail URL
 const getCloudflareStreamThumbnail = (videoUrl: string, time = 1): string | null => {
-  // Skip thumbnail generation for broken Cloudflare account URLs - they return 404
-  if (videoUrl.includes(BROKEN_CLOUDFLARE_ACCOUNT)) {
-    return null;
-  }
-  
   const videoId = getCloudflareVideoId(videoUrl);
   if (!videoId) return null;
   

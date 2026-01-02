@@ -85,7 +85,9 @@ export const TechniquesManagement = () => {
   const [seriesMapping, setSeriesMapping] = useState<Array<{ series_name: string; series_prefix: string }>>([]);
   const [isMigrating, setIsMigrating] = useState(false);
   const [isRepairing, setIsRepairing] = useState(false);
+  const [isFixingThumbnails, setIsFixingThumbnails] = useState(false);
   const [brokenVideoCount, setBrokenVideoCount] = useState(0);
+  const [missingThumbnailCount, setMissingThumbnailCount] = useState(0);
   const [supabaseStorageCount, setSupabaseStorageCount] = useState(0);
   const [reEncodingIds, setReEncodingIds] = useState<Set<string>>(new Set());
   const [isCheckingEncoding, setIsCheckingEncoding] = useState(false);
@@ -175,7 +177,7 @@ export const TechniquesManagement = () => {
     const fetchSupabaseStorageCount = async () => {
       const { data, error } = await supabase
         .from('techniques')
-        .select('id, video_url, video_url_ja, video_url_pt');
+        .select('id, video_url, video_url_ja, video_url_pt, thumbnail_url');
       
       if (error) {
         console.error('Error fetching storage count:', error);
@@ -184,6 +186,7 @@ export const TechniquesManagement = () => {
       
       let storageCount = 0;
       let brokenCount = 0;
+      let missingThumbCount = 0;
       data?.forEach(t => {
         if (t.video_url?.includes('supabase.co/storage')) storageCount++;
         if (t.video_url_ja?.includes('supabase.co/storage')) storageCount++;
@@ -191,9 +194,12 @@ export const TechniquesManagement = () => {
         // Count broken Cloudflare URLs
         if (t.video_url?.includes('customer-46bf2542468db352a9741f14b84d2744')) brokenCount++;
         if (t.video_url_ja?.includes('customer-46bf2542468db352a9741f14b84d2744')) brokenCount++;
+        // Count missing thumbnails
+        if (!t.thumbnail_url && t.video_url) missingThumbCount++;
       });
       setSupabaseStorageCount(storageCount);
       setBrokenVideoCount(brokenCount);
+      setMissingThumbnailCount(missingThumbCount);
     };
     
     const fetchTranscriptions = async () => {

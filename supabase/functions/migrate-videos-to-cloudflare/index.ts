@@ -25,11 +25,11 @@ serve(async (req) => {
     // Parse request to check table type
     const body = await req.json().catch(() => ({}));
     const tableType = body.table || 'techniques'; // Default to techniques
-    const action = body.action || 'migrate'; // 'migrate' or 'repair-broken'
+    const action = body.action || 'migrate'; // 'migrate', 'repair-broken', or 'fix-thumbnails'
 
     console.log(`Starting ${action} for table: ${tableType}`);
 
-    const needsCloudflareApi = action !== 'repair-broken';
+    const needsCloudflareApi = action !== 'repair-broken' && action !== 'fix-thumbnails';
     if (needsCloudflareApi && (!CLOUDFLARE_ACCOUNT_ID || !CLOUDFLARE_STREAM_API_TOKEN)) {
       throw new Error('Cloudflare credentials not configured');
     }
@@ -133,6 +133,111 @@ serve(async (req) => {
           success: true, 
           message: `Repair complete: ${repaired} repaired, ${failed} failed`,
           repaired,
+          failed,
+          results 
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Fix missing thumbnails by extracting Cloudflare video ID from video_url and generating thumbnail URL
+    if (action === 'fix-thumbnails') {
+      // Get techniques with missing thumbnails but valid video URLs
+      const { data: techniques, error: fetchError } = await supabase
+        .from('techniques')
+        .select('id, name_ja, video_url, video_url_ja, thumbnail_url, thumbnail_url_ja')
+        .is('thumbnail_url', null)
+        .not('video_url', 'is', null);
+
+      if (fetchError) throw fetchError;
+
+      if (!techniques || techniques.length === 0) {
+        return new Response(
+          JSON.stringify({ success: true, message: 'No techniques with missing thumbnails found', fixed: 0 }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      console.log(`Found ${techniques.length} techniques with missing thumbnails`);
+
+      // Helper to extract Cloudflare video ID
+      const extractVideoId = (url: string): string | null => {
+        const patterns = [
+          /cloudflarestream\.com\/([a-zA-Z0-9]+)/,
+          /videodelivery\.net\/([a-zA-Z0-9]+)/,
+        ];
+        for (const pattern of patterns) {
+          const match = url.match(pattern);
+          if (match?.[1]) return match[1];
+        }
+        return null;
+      };
+
+      for (const technique of techniques) {
+        try {
+          const videoUrl = technique.video_url_ja || technique.video_url;
+          if (!videoUrl) {
+            results.push({ 
+              id: technique.id, 
+              name: technique.name_ja, 
+              success: false, 
+              error: 'No video URL' 
+            });
+            continue;
+          }
+
+          const videoId = extractVideoId(videoUrl);
+          if (!videoId) {
+            results.push({ 
+              id: technique.id, 
+              name: technique.name_ja, 
+              success: false, 
+              error: 'Could not extract video ID from URL' 
+            });
+            continue;
+          }
+
+          // Generate Cloudflare Stream thumbnail URL
+          const thumbnailUrl = `https://videodelivery.net/${videoId}/thumbnails/thumbnail.jpg?time=5s&width=640&height=360`;
+          
+          // Update the database
+          const { error: updateError } = await supabase
+            .from('techniques')
+            .update({ 
+              thumbnail_url: thumbnailUrl,
+              thumbnail_url_ja: thumbnailUrl
+            })
+            .eq('id', technique.id);
+
+          if (updateError) throw updateError;
+          
+          console.log(`Fixed thumbnail for ${technique.id}: ${thumbnailUrl}`);
+          results.push({ 
+            id: technique.id, 
+            name: technique.name_ja, 
+            success: true, 
+            newUrl: thumbnailUrl 
+          });
+
+        } catch (techError) {
+          console.error(`Failed to fix thumbnail for ${technique.id}:`, techError);
+          results.push({ 
+            id: technique.id, 
+            name: technique.name_ja, 
+            success: false, 
+            error: techError instanceof Error ? techError.message : 'Unknown error' 
+          });
+        }
+      }
+
+      const fixed = results.filter(r => r.success).length;
+      const failed = results.filter(r => !r.success).length;
+
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          message: `Thumbnail fix complete: ${fixed} fixed, ${failed} failed`,
+          fixed,
           failed,
           results 
         }),
