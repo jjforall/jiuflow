@@ -112,6 +112,7 @@ export const VideoPlayer = ({
   const hasAutoPlayedRef = useRef(false);
   // Store time before tab switch to restore on visibility change
   const savedTimeOnHideRef = useRef<number | null>(null);
+  const wasPlayingOnHideRef = useRef(false);
   
   // Subtitle state
   const [subtitlesEnabled, setSubtitlesEnabled] = useState(false);
@@ -267,27 +268,80 @@ export const VideoPlayer = ({
     savedTimeOnHideRef.current = null;
   }, [videoUrl]);
   
-  // Handle visibility change to prevent video restart on tab switch
+  // Handle visibility change to avoid tab-switch resets (pause + restore)
   useEffect(() => {
-    const video = videoRef.current;
-    if (!video || !shouldLoad) return;
-    
+    if (!shouldLoad) return;
+
     const handleVisibilityChange = () => {
+      const video = videoRef.current;
+      if (!video) return;
+
       if (document.hidden) {
-        // Tab is being hidden - save current time
         savedTimeOnHideRef.current = video.currentTime;
-      } else {
-        // Tab is visible again - restore time if needed
-        if (savedTimeOnHideRef.current !== null && Math.abs(video.currentTime - savedTimeOnHideRef.current) > 0.5) {
-          console.log('Restoring video position after tab switch:', savedTimeOnHideRef.current);
-          video.currentTime = savedTimeOnHideRef.current;
+        wasPlayingOnHideRef.current = !video.paused && !video.ended;
+
+        try {
+          video.pause();
+        } catch {
+          // ignore
         }
+
+        // Stop fetching segments while hidden (reduces memory/CPU)
+        try {
+          hlsRef.current?.stopLoad();
+        } catch {
+          // ignore
+        }
+      } else {
+        const saved = savedTimeOnHideRef.current;
+        const shouldResume = wasPlayingOnHideRef.current;
+
         savedTimeOnHideRef.current = null;
+        wasPlayingOnHideRef.current = false;
+
+        // Resume HLS loading
+        try {
+          if (typeof saved === "number") {
+            hlsRef.current?.startLoad(saved);
+          } else {
+            hlsRef.current?.startLoad();
+          }
+        } catch {
+          // ignore
+        }
+
+        if (typeof saved === "number") {
+          const apply = () => {
+            try {
+              if (Math.abs(video.currentTime - saved) > 0.5) {
+                video.currentTime = saved;
+              }
+            } catch {
+              // ignore
+            }
+
+            if (shouldResume) {
+              video.play().catch(() => {
+                // user gesture might be required
+              });
+            }
+          };
+
+          if (video.readyState < 1) {
+            const onLoadedMetadata = () => {
+              video.removeEventListener("loadedmetadata", onLoadedMetadata);
+              apply();
+            };
+            video.addEventListener("loadedmetadata", onLoadedMetadata);
+          } else {
+            apply();
+          }
+        }
       }
     };
-    
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
   }, [shouldLoad]);
 
   useEffect(() => {
