@@ -294,14 +294,18 @@ export const VideoPlayer = ({
       if (typeof saved !== "number" || saved < 0.5) return;
 
       const apply = () => {
+        // If the video kept playing in the background, currentTime will be ahead of `saved`.
+        // We only need to restore when the browser reset us backwards (often to ~0).
         try {
-          if (Math.abs(video.currentTime - saved) > 0.5) {
+          const delta = saved - video.currentTime;
+          if (delta > 0.75) {
             video.currentTime = saved;
           }
         } catch {
           // ignore
         }
 
+        // Only resume if it got paused unexpectedly.
         if (shouldResume && video.paused && !video.ended) {
           video.play().catch(() => {
             // user gesture might be required
