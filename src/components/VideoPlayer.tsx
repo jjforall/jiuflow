@@ -55,12 +55,13 @@ const getCloudflareStreamThumbnail = (videoUrl: string, time = 1): string | null
   return `https://videodelivery.net/${id}/thumbnails/thumbnail.jpg?time=${time}s&width=640&height=360`;
 };
 
-// If the URL is a Cloudflare Stream playback URL (not .m3u8), convert it to the HLS manifest URL
+// Convert any Cloudflare Stream playback URL to the stable videodelivery.net HLS manifest URL
+// (customer-*.cloudflarestream.com can vary by account/subdomain and may 404)
 const getCloudflareStreamHlsUrl = (videoUrl: string): string | null => {
-  if (videoUrl.includes('.m3u8')) return videoUrl;
   const id = extractCloudflareStreamId(videoUrl);
-  if (!id) return null;
-  return `https://videodelivery.net/${id}/manifest/video.m3u8`;
+  if (id) return `https://videodelivery.net/${id}/manifest/video.m3u8`;
+  if (videoUrl.includes('.m3u8')) return videoUrl;
+  return null;
 };
 
 // Network Information API - detect connection quality for adaptive settings

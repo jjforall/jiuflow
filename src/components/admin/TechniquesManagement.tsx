@@ -296,7 +296,7 @@ export const TechniquesManagement = () => {
 
   // Repair broken videos (404) from video_metadata backup
   const handleRepairBrokenVideos = async () => {
-    if (!confirm(`${brokenVideoCount}件の壊れた動画URLをバックアップから修復しますか？この処理には時間がかかる場合があります。`)) return;
+    if (!confirm(`${brokenVideoCount}件の動画URLを安定した再生URLに変換しますか？`)) return;
     
     setIsRepairing(true);
     try {
@@ -1934,9 +1934,9 @@ export const TechniquesManagement = () => {
             <div className="flex items-center gap-3">
               <AlertTriangle className="w-8 h-8 text-red-500" />
               <div>
-                <p className="font-medium">動画URL修復が必要</p>
+                <p className="font-medium">動画URLの正規化</p>
                 <p className="text-sm text-muted-foreground">
-                  {brokenVideoCount}件の動画URLが壊れています（404エラー）。バックアップから修復できます。
+                  {brokenVideoCount}件の動画URLが旧形式のため、安定した再生URLに変換できます
                 </p>
               </div>
             </div>
