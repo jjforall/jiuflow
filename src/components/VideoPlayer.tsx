@@ -269,11 +269,25 @@ export const VideoPlayer = ({
     wasPlayingOnHideRef.current = false;
   }, [videoUrl]);
 
-  // Handle visibility change:
-  // - Do NOT pause/stop loading (user expects background playback)
-  // - Only restore position if the browser resets playback on tab switch
+  // Handle visibility/tab lifecycle:
+  // Root cause:
+  // - Some browsers discard/recreate the media pipeline (or even the whole tab) when backgrounded.
+  // - We must *flush* currentTime immediately on hide/pagehide, and restore only if playback jumped backwards.
   useEffect(() => {
     if (!shouldLoad) return;
+
+    const progressKey = `video-progress:${videoUrl}`;
+
+    const saveNow = () => {
+      const video = videoRef.current;
+      if (!video) return;
+      try {
+        if (!Number.isFinite(video.currentTime) || video.currentTime <= 0) return;
+        sessionStorage.setItem(progressKey, video.currentTime.toString());
+      } catch {
+        // ignore
+      }
+    };
 
     const handleVisibilityChange = () => {
       const video = videoRef.current;
@@ -282,6 +296,7 @@ export const VideoPlayer = ({
       if (document.hidden) {
         savedTimeOnHideRef.current = video.currentTime;
         wasPlayingOnHideRef.current = !video.paused && !video.ended;
+        saveNow(); // important: survives tab discard/reload
         return;
       }
 
@@ -294,8 +309,8 @@ export const VideoPlayer = ({
       if (typeof saved !== "number" || saved < 0.5) return;
 
       const apply = () => {
-        // If the video kept playing in the background, currentTime will be ahead of `saved`.
-        // We only need to restore when the browser reset us backwards (often to ~0).
+        // If background playback continued, currentTime will be ahead.
+        // Restore only when the browser jumped *backwards* (commonly to ~0).
         try {
           const delta = saved - video.currentTime;
           if (delta > 0.75) {
@@ -305,7 +320,6 @@ export const VideoPlayer = ({
           // ignore
         }
 
-        // Only resume if it got paused unexpectedly.
         if (shouldResume && video.paused && !video.ended) {
           video.play().catch(() => {
             // user gesture might be required
@@ -324,9 +338,19 @@ export const VideoPlayer = ({
       }
     };
 
+    const handlePageHide = () => {
+      // Fires even when the browser is about to put the page into BFCache or discard it.
+      saveNow();
+    };
+
     document.addEventListener("visibilitychange", handleVisibilityChange);
-    return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
-  }, [shouldLoad]);
+    window.addEventListener("pagehide", handlePageHide);
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("pagehide", handlePageHide);
+    };
+  }, [shouldLoad, videoUrl]);
 
   useEffect(() => {
     // Don't load video until visible and shouldLoad is true
