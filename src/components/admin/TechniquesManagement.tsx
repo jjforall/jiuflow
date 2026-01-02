@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { InputWithSuggestions } from "@/components/ui/input-with-suggestions";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Upload, Trash2, Search, Check, X, Languages, ExternalLink, ChevronDown, Cloud, Loader2, RefreshCw, FileText, Link, AlertTriangle } from "lucide-react";
+import { Upload, Trash2, Search, Check, X, Languages, ExternalLink, ChevronDown, Cloud, Loader2, RefreshCw, FileText, Link, AlertTriangle, ImageIcon } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   Collapsible,
@@ -345,7 +345,50 @@ export const TechniquesManagement = () => {
     }
   };
 
-  // Check video encoding status
+  // Fix missing thumbnails
+  const handleFixThumbnails = async () => {
+    if (!confirm(`${missingThumbnailCount}件の動画にサムネイルURLを設定しますか？`)) return;
+    
+    setIsFixingThumbnails(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error("ログインが必要です");
+        return;
+      }
+
+      const response = await supabase.functions.invoke('migrate-videos-to-cloudflare', {
+        body: { action: 'fix-thumbnails' },
+      });
+
+      if (response.error) {
+        throw new Error(response.error.message);
+      }
+
+      const result = response.data;
+      if (result.success) {
+        toast.success(result.message);
+        // Refresh missing thumbnail count
+        const { data } = await supabase
+          .from('techniques')
+          .select('id, video_url, thumbnail_url');
+        
+        let count = 0;
+        data?.forEach(t => {
+          if (!t.thumbnail_url && t.video_url) count++;
+        });
+        setMissingThumbnailCount(count);
+      } else {
+        throw new Error(result.error || 'サムネイル修復に失敗しました');
+      }
+    } catch (error) {
+      console.error("サムネイル修復エラー:", error);
+      toast.error(error instanceof Error ? error.message : "サムネイル修復に失敗しました");
+    } finally {
+      setIsFixingThumbnails(false);
+    }
+  };
+
   const handleCheckEncoding = async () => {
     setIsCheckingEncoding(true);
     try {
@@ -1961,6 +2004,41 @@ export const TechniquesManagement = () => {
                 <>
                   <RefreshCw className="w-4 h-4 mr-2" />
                   修復実行
+                </>
+              )}
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Missing Thumbnails Card */}
+      {missingThumbnailCount > 0 && isAdmin && (
+        <div className="mb-6 p-4 border border-amber-500/50 bg-amber-500/5 rounded-lg">
+          <div className="flex items-center justify-between gap-4 flex-wrap">
+            <div className="flex items-center gap-3">
+              <ImageIcon className="w-8 h-8 text-amber-500" />
+              <div>
+                <p className="font-medium">サムネイル修復</p>
+                <p className="text-sm text-muted-foreground">
+                  {missingThumbnailCount}件の動画にサムネイルURLが設定されていません
+                </p>
+              </div>
+            </div>
+            <Button 
+              onClick={handleFixThumbnails}
+              disabled={isFixingThumbnails}
+              variant="outline"
+              className="border-amber-500 text-amber-500 hover:bg-amber-500/10"
+            >
+              {isFixingThumbnails ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  修復中...
+                </>
+              ) : (
+                <>
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  サムネイル設定
                 </>
               )}
             </Button>
