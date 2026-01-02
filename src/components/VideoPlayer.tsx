@@ -108,6 +108,10 @@ export const VideoPlayer = ({
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const qualityLabelTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const bufferingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  // Prevent duplicate autoplay calls
+  const hasAutoPlayedRef = useRef(false);
+  // Store time before tab switch to restore on visibility change
+  const savedTimeOnHideRef = useRef<number | null>(null);
   
   // Subtitle state
   const [subtitlesEnabled, setSubtitlesEnabled] = useState(false);
@@ -259,7 +263,32 @@ export const VideoPlayer = ({
     setIsLoading(true);
     setIsBuffering(false);
     setHasStarted(false);
+    hasAutoPlayedRef.current = false;
+    savedTimeOnHideRef.current = null;
   }, [videoUrl]);
+  
+  // Handle visibility change to prevent video restart on tab switch
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video || !shouldLoad) return;
+    
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        // Tab is being hidden - save current time
+        savedTimeOnHideRef.current = video.currentTime;
+      } else {
+        // Tab is visible again - restore time if needed
+        if (savedTimeOnHideRef.current !== null && Math.abs(video.currentTime - savedTimeOnHideRef.current) > 0.5) {
+          console.log('Restoring video position after tab switch:', savedTimeOnHideRef.current);
+          video.currentTime = savedTimeOnHideRef.current;
+        }
+        savedTimeOnHideRef.current = null;
+      }
+    };
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [shouldLoad]);
 
   useEffect(() => {
     // Don't load video until visible and shouldLoad is true
@@ -418,7 +447,9 @@ export const VideoPlayer = ({
           console.log('Setting available levels:', levels);
           setAvailableLevels(levels);
         }
-        if (autoPlay) {
+        // Only trigger autoplay once to prevent restart glitch
+        if (autoPlay && !hasAutoPlayedRef.current) {
+          hasAutoPlayedRef.current = true;
           // Start muted for guaranteed autoplay, unmute after start
           video.muted = true;
           video.play().then(() => {
@@ -538,7 +569,8 @@ export const VideoPlayer = ({
       // Native HLS support (Safari) - use metadata preload for faster start
       video.src = playbackUrl;
       video.preload = 'metadata'; // Only load metadata, not full video
-      if (autoPlay) {
+      if (autoPlay && !hasAutoPlayedRef.current) {
+        hasAutoPlayedRef.current = true;
         video.muted = true;
         video.play().then(() => {
           setTimeout(() => { video.muted = false; }, 100);
@@ -548,7 +580,8 @@ export const VideoPlayer = ({
       // Regular video file - use metadata preload
       video.src = playbackUrl;
       video.preload = 'metadata'; // Only load metadata for faster initial load
-      if (autoPlay) {
+      if (autoPlay && !hasAutoPlayedRef.current) {
+        hasAutoPlayedRef.current = true;
         video.muted = true;
         video.play().then(() => {
           setTimeout(() => { video.muted = false; }, 100);
@@ -776,6 +809,7 @@ export const VideoPlayer = ({
       )}
       
       {/* Only render video when shouldLoad is true */}
+      {/* Note: autoPlay and muted are handled programmatically by HLS.js to prevent double-start glitch */}
       {shouldLoad && (
         <video
           ref={videoRef}
@@ -785,8 +819,6 @@ export const VideoPlayer = ({
           playsInline
           preload="metadata"
           loop
-          muted={autoPlay}
-          autoPlay={autoPlay}
           poster={effectiveThumbnail || undefined}
           onContextMenu={(e) => e.preventDefault()}
           disablePictureInPicture
