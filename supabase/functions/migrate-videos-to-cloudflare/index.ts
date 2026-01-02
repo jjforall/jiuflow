@@ -17,9 +17,8 @@ serve(async (req) => {
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
-    if (!CLOUDFLARE_ACCOUNT_ID || !CLOUDFLARE_STREAM_API_TOKEN) {
-      throw new Error('Cloudflare credentials not configured');
-    }
+    // Cloudflare credentials are only required for actions that call Cloudflare APIs.
+    // For 'repair-broken' we only normalize playback URLs and don't need Cloudflare access.
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
@@ -29,6 +28,11 @@ serve(async (req) => {
     const action = body.action || 'migrate'; // 'migrate' or 'repair-broken'
 
     console.log(`Starting ${action} for table: ${tableType}`);
+
+    const needsCloudflareApi = action !== 'repair-broken';
+    if (needsCloudflareApi && (!CLOUDFLARE_ACCOUNT_ID || !CLOUDFLARE_STREAM_API_TOKEN)) {
+      throw new Error('Cloudflare credentials not configured');
+    }
 
     let results: { id: string; name: string; success: boolean; error?: string; newUrl?: string }[] = [];
 
@@ -68,84 +72,26 @@ serve(async (req) => {
           for (const [dbField, metaKey] of Object.entries(fieldMap)) {
             const currentUrl = technique[dbField as keyof typeof technique] as string | null;
             
-            // Only repair if URL is broken (contains the bad account ID)
+            // Only repair if URL is broken (contains the bad customer subdomain)
             if (currentUrl && currentUrl.includes('customer-46bf2542468db352a9741f14b84d2744')) {
-              // Get backup URL from video_metadata
+              // Best fix: normalize to videodelivery.net (works even if customer subdomain 404s)
+              const match = currentUrl.match(/cloudflarestream\.com\/([a-zA-Z0-9]+)\//);
+              const videoId = match?.[1];
+
+              if (videoId) {
+                const normalizedUrl = `https://videodelivery.net/${videoId}/manifest/video.m3u8`;
+                updates[dbField] = normalizedUrl;
+                console.log(`Normalized ${dbField}: ${currentUrl} -> ${normalizedUrl}`);
+                continue;
+              }
+
+              // Fallback: use backup URL from video_metadata (usually Supabase Storage)
               const backupUrl = metadata?.[metaKey]?.video_url;
-              
               if (backupUrl && backupUrl.includes('supabase.co/storage')) {
-                console.log(`Found backup for ${dbField}: ${backupUrl}`);
-                
-                // Re-upload to Cloudflare from backup
-                const copyResponse = await fetch(
-                  `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/stream/copy`,
-                  {
-                    method: 'POST',
-                    headers: {
-                      'Authorization': `Bearer ${CLOUDFLARE_STREAM_API_TOKEN}`,
-                      'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                      url: backupUrl,
-                      meta: { 
-                        name: `${technique.name_ja || technique.id} (${dbField})`,
-                        original_id: technique.id,
-                        field: dbField,
-                        repaired_at: new Date().toISOString()
-                      },
-                    }),
-                  }
-                );
-
-                if (!copyResponse.ok) {
-                  const errorText = await copyResponse.text();
-                  console.error(`Cloudflare copy failed for ${dbField}:`, errorText);
-                  continue;
-                }
-
-                const copyData = await copyResponse.json();
-                const videoUid = copyData.result.uid;
-                console.log(`Cloudflare copying video, UID: ${videoUid}`);
-
-                // Wait for video to be ready
-                let playbackUrl = '';
-                let attempts = 0;
-                const maxAttempts = 30;
-                
-                while (attempts < maxAttempts) {
-                  await new Promise(resolve => setTimeout(resolve, 2000));
-                  
-                  const statusResponse = await fetch(
-                    `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/stream/${videoUid}`,
-                    {
-                      headers: {
-                        'Authorization': `Bearer ${CLOUDFLARE_STREAM_API_TOKEN}`,
-                      },
-                    }
-                  );
-                  
-                  if (statusResponse.ok) {
-                    const statusData = await statusResponse.json();
-                    if (statusData.result?.playback?.hls) {
-                      playbackUrl = statusData.result.playback.hls;
-                      console.log(`Got correct playback URL: ${playbackUrl}`);
-                      break;
-                    }
-                    if (statusData.result?.readyToStream) {
-                      playbackUrl = `https://videodelivery.net/${videoUid}/manifest/video.m3u8`;
-                      break;
-                    }
-                  }
-                  attempts++;
-                }
-                
-                if (!playbackUrl) {
-                  playbackUrl = `https://videodelivery.net/${videoUid}/manifest/video.m3u8`;
-                }
-                
-                updates[dbField] = playbackUrl;
+                updates[dbField] = backupUrl;
+                console.log(`Fallback to backup for ${dbField}: ${backupUrl}`);
               } else {
-                console.log(`No backup found for ${dbField}`);
+                console.log(`No usable videoId or backup found for ${dbField}`);
               }
             }
           }
