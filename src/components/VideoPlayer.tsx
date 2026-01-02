@@ -266,9 +266,12 @@ export const VideoPlayer = ({
     setHasStarted(false);
     hasAutoPlayedRef.current = false;
     savedTimeOnHideRef.current = null;
+    wasPlayingOnHideRef.current = false;
   }, [videoUrl]);
-  
-  // Handle visibility change to avoid tab-switch resets (pause + restore)
+
+  // Handle visibility change:
+  // - Do NOT pause/stop loading (user expects background playback)
+  // - Only restore position if the browser resets playback on tab switch
   useEffect(() => {
     if (!shouldLoad) return;
 
@@ -279,64 +282,41 @@ export const VideoPlayer = ({
       if (document.hidden) {
         savedTimeOnHideRef.current = video.currentTime;
         wasPlayingOnHideRef.current = !video.paused && !video.ended;
+        return;
+      }
 
+      const saved = savedTimeOnHideRef.current;
+      const shouldResume = wasPlayingOnHideRef.current;
+
+      savedTimeOnHideRef.current = null;
+      wasPlayingOnHideRef.current = false;
+
+      if (typeof saved !== "number" || saved < 0.5) return;
+
+      const apply = () => {
         try {
-          video.pause();
+          if (Math.abs(video.currentTime - saved) > 0.5) {
+            video.currentTime = saved;
+          }
         } catch {
           // ignore
         }
 
-        // Stop fetching segments while hidden (reduces memory/CPU)
-        try {
-          hlsRef.current?.stopLoad();
-        } catch {
-          // ignore
+        if (shouldResume && video.paused && !video.ended) {
+          video.play().catch(() => {
+            // user gesture might be required
+          });
         }
+      };
+
+      if (video.readyState < 1) {
+        const onLoadedMetadata = () => {
+          video.removeEventListener("loadedmetadata", onLoadedMetadata);
+          apply();
+        };
+        video.addEventListener("loadedmetadata", onLoadedMetadata);
       } else {
-        const saved = savedTimeOnHideRef.current;
-        const shouldResume = wasPlayingOnHideRef.current;
-
-        savedTimeOnHideRef.current = null;
-        wasPlayingOnHideRef.current = false;
-
-        // Resume HLS loading
-        try {
-          if (typeof saved === "number") {
-            hlsRef.current?.startLoad(saved);
-          } else {
-            hlsRef.current?.startLoad();
-          }
-        } catch {
-          // ignore
-        }
-
-        if (typeof saved === "number") {
-          const apply = () => {
-            try {
-              if (Math.abs(video.currentTime - saved) > 0.5) {
-                video.currentTime = saved;
-              }
-            } catch {
-              // ignore
-            }
-
-            if (shouldResume) {
-              video.play().catch(() => {
-                // user gesture might be required
-              });
-            }
-          };
-
-          if (video.readyState < 1) {
-            const onLoadedMetadata = () => {
-              video.removeEventListener("loadedmetadata", onLoadedMetadata);
-              apply();
-            };
-            video.addEventListener("loadedmetadata", onLoadedMetadata);
-          } else {
-            apply();
-          }
-        }
+        apply();
       }
     };
 
