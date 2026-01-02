@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { InputWithSuggestions } from "@/components/ui/input-with-suggestions";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Upload, Trash2, Search, Check, X, Languages, ExternalLink, ChevronDown, Cloud, Loader2, RefreshCw, FileText, Link } from "lucide-react";
+import { Upload, Trash2, Search, Check, X, Languages, ExternalLink, ChevronDown, Cloud, Loader2, RefreshCw, FileText, Link, AlertTriangle } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   Collapsible,
@@ -84,6 +84,8 @@ export const TechniquesManagement = () => {
   const [showVideoPreview, setShowVideoPreview] = useState(false);
   const [seriesMapping, setSeriesMapping] = useState<Array<{ series_name: string; series_prefix: string }>>([]);
   const [isMigrating, setIsMigrating] = useState(false);
+  const [isRepairing, setIsRepairing] = useState(false);
+  const [brokenVideoCount, setBrokenVideoCount] = useState(0);
   const [supabaseStorageCount, setSupabaseStorageCount] = useState(0);
   const [reEncodingIds, setReEncodingIds] = useState<Set<string>>(new Set());
   const [isCheckingEncoding, setIsCheckingEncoding] = useState(false);
@@ -180,13 +182,18 @@ export const TechniquesManagement = () => {
         return;
       }
       
-      let count = 0;
+      let storageCount = 0;
+      let brokenCount = 0;
       data?.forEach(t => {
-        if (t.video_url?.includes('supabase.co/storage')) count++;
-        if (t.video_url_ja?.includes('supabase.co/storage')) count++;
-        if (t.video_url_pt?.includes('supabase.co/storage')) count++;
+        if (t.video_url?.includes('supabase.co/storage')) storageCount++;
+        if (t.video_url_ja?.includes('supabase.co/storage')) storageCount++;
+        if (t.video_url_pt?.includes('supabase.co/storage')) storageCount++;
+        // Count broken Cloudflare URLs
+        if (t.video_url?.includes('customer-46bf2542468db352a9741f14b84d2744')) brokenCount++;
+        if (t.video_url_ja?.includes('customer-46bf2542468db352a9741f14b84d2744')) brokenCount++;
       });
-      setSupabaseStorageCount(count);
+      setSupabaseStorageCount(storageCount);
+      setBrokenVideoCount(brokenCount);
     };
     
     const fetchTranscriptions = async () => {
@@ -284,6 +291,51 @@ export const TechniquesManagement = () => {
       toast.error(error instanceof Error ? error.message : "動画の移行に失敗しました");
     } finally {
       setIsMigrating(false);
+    }
+  };
+
+  // Repair broken videos (404) from video_metadata backup
+  const handleRepairBrokenVideos = async () => {
+    if (!confirm(`${brokenVideoCount}件の壊れた動画URLをバックアップから修復しますか？この処理には時間がかかる場合があります。`)) return;
+    
+    setIsRepairing(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error("ログインが必要です");
+        return;
+      }
+
+      const response = await supabase.functions.invoke('migrate-videos-to-cloudflare', {
+        body: { action: 'repair-broken' },
+      });
+
+      if (response.error) {
+        throw new Error(response.error.message);
+      }
+
+      const result = response.data;
+      if (result.success) {
+        toast.success(result.message);
+        // Refresh broken count
+        const { data } = await supabase
+          .from('techniques')
+          .select('id, video_url, video_url_ja');
+        
+        let count = 0;
+        data?.forEach(t => {
+          if (t.video_url?.includes('customer-46bf2542468db352a9741f14b84d2744')) count++;
+          if (t.video_url_ja?.includes('customer-46bf2542468db352a9741f14b84d2744')) count++;
+        });
+        setBrokenVideoCount(count);
+      } else {
+        throw new Error(result.error || '修復に失敗しました');
+      }
+    } catch (error) {
+      console.error("修復エラー:", error);
+      toast.error(error instanceof Error ? error.message : "動画の修復に失敗しました");
+    } finally {
+      setIsRepairing(false);
     }
   };
 
@@ -1868,6 +1920,41 @@ export const TechniquesManagement = () => {
                 <>
                   <Cloud className="w-4 h-4 mr-2" />
                   移行実行
+                </>
+              )}
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Broken Video Repair Card */}
+      {brokenVideoCount > 0 && isAdmin && (
+        <div className="mb-6 p-4 border border-red-500/50 bg-red-500/5 rounded-lg">
+          <div className="flex items-center justify-between gap-4 flex-wrap">
+            <div className="flex items-center gap-3">
+              <AlertTriangle className="w-8 h-8 text-red-500" />
+              <div>
+                <p className="font-medium">動画URL修復が必要</p>
+                <p className="text-sm text-muted-foreground">
+                  {brokenVideoCount}件の動画URLが壊れています（404エラー）。バックアップから修復できます。
+                </p>
+              </div>
+            </div>
+            <Button 
+              onClick={handleRepairBrokenVideos}
+              disabled={isRepairing}
+              variant="outline"
+              className="border-red-500 text-red-500 hover:bg-red-500/10"
+            >
+              {isRepairing ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  修復中...
+                </>
+              ) : (
+                <>
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  修復実行
                 </>
               )}
             </Button>

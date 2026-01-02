@@ -26,10 +26,173 @@ serve(async (req) => {
     // Parse request to check table type
     const body = await req.json().catch(() => ({}));
     const tableType = body.table || 'techniques'; // Default to techniques
+    const action = body.action || 'migrate'; // 'migrate' or 'repair-broken'
 
-    console.log(`Starting migration for table: ${tableType}`);
+    console.log(`Starting ${action} for table: ${tableType}`);
 
-    let results: { id: string; name: string; success: boolean; error?: string }[] = [];
+    let results: { id: string; name: string; success: boolean; error?: string; newUrl?: string }[] = [];
+
+    // Repair broken videos (404) from video_metadata backup
+    if (action === 'repair-broken') {
+      // Get techniques with broken Cloudflare URLs (customer-46bf2542468db352a9741f14b84d2744)
+      const { data: techniques, error: fetchError } = await supabase
+        .from('techniques')
+        .select('id, name_ja, video_url, video_url_ja, video_url_pt, video_metadata')
+        .or('video_url.like.%customer-46bf2542468db352a9741f14b84d2744%,video_url_ja.like.%customer-46bf2542468db352a9741f14b84d2744%');
+
+      if (fetchError) throw fetchError;
+
+      if (!techniques || techniques.length === 0) {
+        return new Response(
+          JSON.stringify({ success: true, message: 'No broken videos found', repaired: 0 }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      console.log(`Found ${techniques.length} techniques with broken URLs to repair`);
+
+      for (const technique of techniques) {
+        try {
+          console.log(`Repairing technique: ${technique.id} - ${technique.name_ja}`);
+          
+          const metadata = technique.video_metadata as Record<string, { video_url?: string }> | null;
+          const updates: Record<string, string> = {};
+          
+          // Check each language field
+          const fieldMap = {
+            video_url_ja: 'ja',
+            video_url: 'en',
+            video_url_pt: 'pt'
+          } as const;
+
+          for (const [dbField, metaKey] of Object.entries(fieldMap)) {
+            const currentUrl = technique[dbField as keyof typeof technique] as string | null;
+            
+            // Only repair if URL is broken (contains the bad account ID)
+            if (currentUrl && currentUrl.includes('customer-46bf2542468db352a9741f14b84d2744')) {
+              // Get backup URL from video_metadata
+              const backupUrl = metadata?.[metaKey]?.video_url;
+              
+              if (backupUrl && backupUrl.includes('supabase.co/storage')) {
+                console.log(`Found backup for ${dbField}: ${backupUrl}`);
+                
+                // Re-upload to Cloudflare from backup
+                const copyResponse = await fetch(
+                  `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/stream/copy`,
+                  {
+                    method: 'POST',
+                    headers: {
+                      'Authorization': `Bearer ${CLOUDFLARE_STREAM_API_TOKEN}`,
+                      'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                      url: backupUrl,
+                      meta: { 
+                        name: `${technique.name_ja || technique.id} (${dbField})`,
+                        original_id: technique.id,
+                        field: dbField,
+                        repaired_at: new Date().toISOString()
+                      },
+                    }),
+                  }
+                );
+
+                if (!copyResponse.ok) {
+                  const errorText = await copyResponse.text();
+                  console.error(`Cloudflare copy failed for ${dbField}:`, errorText);
+                  continue;
+                }
+
+                const copyData = await copyResponse.json();
+                const videoUid = copyData.result.uid;
+                console.log(`Cloudflare copying video, UID: ${videoUid}`);
+
+                // Wait for video to be ready
+                let playbackUrl = '';
+                let attempts = 0;
+                const maxAttempts = 30;
+                
+                while (attempts < maxAttempts) {
+                  await new Promise(resolve => setTimeout(resolve, 2000));
+                  
+                  const statusResponse = await fetch(
+                    `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/stream/${videoUid}`,
+                    {
+                      headers: {
+                        'Authorization': `Bearer ${CLOUDFLARE_STREAM_API_TOKEN}`,
+                      },
+                    }
+                  );
+                  
+                  if (statusResponse.ok) {
+                    const statusData = await statusResponse.json();
+                    if (statusData.result?.playback?.hls) {
+                      playbackUrl = statusData.result.playback.hls;
+                      console.log(`Got correct playback URL: ${playbackUrl}`);
+                      break;
+                    }
+                    if (statusData.result?.readyToStream) {
+                      playbackUrl = `https://videodelivery.net/${videoUid}/manifest/video.m3u8`;
+                      break;
+                    }
+                  }
+                  attempts++;
+                }
+                
+                if (!playbackUrl) {
+                  playbackUrl = `https://videodelivery.net/${videoUid}/manifest/video.m3u8`;
+                }
+                
+                updates[dbField] = playbackUrl;
+              } else {
+                console.log(`No backup found for ${dbField}`);
+              }
+            }
+          }
+
+          if (Object.keys(updates).length > 0) {
+            const { error: updateError } = await supabase
+              .from('techniques')
+              .update(updates)
+              .eq('id', technique.id);
+
+            if (updateError) throw updateError;
+            console.log(`Successfully repaired technique ${technique.id}:`, updates);
+            results.push({ id: technique.id, name: technique.name_ja, success: true, newUrl: Object.values(updates)[0] });
+          } else {
+            results.push({ 
+              id: technique.id, 
+              name: technique.name_ja,
+              success: false, 
+              error: 'No backup URLs found in video_metadata' 
+            });
+          }
+
+        } catch (techError) {
+          console.error(`Failed to repair technique ${technique.id}:`, techError);
+          results.push({ 
+            id: technique.id, 
+            name: technique.name_ja,
+            success: false, 
+            error: techError instanceof Error ? techError.message : 'Unknown error' 
+          });
+        }
+      }
+
+      const repaired = results.filter(r => r.success).length;
+      const failed = results.filter(r => !r.success).length;
+
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          message: `Repair complete: ${repaired} repaired, ${failed} failed`,
+          repaired,
+          failed,
+          results 
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     if (tableType === 'techniques') {
       // Get all techniques with Supabase Storage URLs
@@ -106,8 +269,46 @@ serve(async (req) => {
                 const videoUid = copyData.result.uid;
                 console.log(`Cloudflare is copying video, UID: ${videoUid}`);
 
-                // Use HLS manifest URL
-                const playbackUrl = `https://customer-${CLOUDFLARE_ACCOUNT_ID}.cloudflarestream.com/${videoUid}/manifest/video.m3u8`;
+                // Wait for video to be ready and get the correct playback URL
+                let playbackUrl = '';
+                let attempts = 0;
+                const maxAttempts = 30; // Wait up to 60 seconds
+                
+                while (attempts < maxAttempts) {
+                  await new Promise(resolve => setTimeout(resolve, 2000));
+                  
+                  const statusResponse = await fetch(
+                    `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/stream/${videoUid}`,
+                    {
+                      headers: {
+                        'Authorization': `Bearer ${CLOUDFLARE_STREAM_API_TOKEN}`,
+                      },
+                    }
+                  );
+                  
+                  if (statusResponse.ok) {
+                    const statusData = await statusResponse.json();
+                    if (statusData.result?.playback?.hls) {
+                      playbackUrl = statusData.result.playback.hls;
+                      console.log(`Got correct playback URL: ${playbackUrl}`);
+                      break;
+                    }
+                    if (statusData.result?.readyToStream) {
+                      // Fallback to constructing URL with the correct subdomain format
+                      playbackUrl = `https://videodelivery.net/${videoUid}/manifest/video.m3u8`;
+                      console.log(`Using videodelivery.net URL: ${playbackUrl}`);
+                      break;
+                    }
+                  }
+                  attempts++;
+                }
+                
+                if (!playbackUrl) {
+                  // Final fallback - use videodelivery.net which always works
+                  playbackUrl = `https://videodelivery.net/${videoUid}/manifest/video.m3u8`;
+                  console.log(`Timeout - using fallback URL: ${playbackUrl}`);
+                }
+                
                 updates[field] = playbackUrl;
               } catch (fieldError) {
                 console.error(`Error processing ${field}:`, fieldError);
@@ -185,7 +386,12 @@ serve(async (req) => {
 
           const uploadData = await uploadResponse.json();
           const videoUid = uploadData.result.uid;
-          const playbackUrl = `https://customer-${CLOUDFLARE_ACCOUNT_ID}.cloudflarestream.com/${videoUid}/manifest/video.m3u8`;
+          
+          // Wait for playback URL from API response or use videodelivery.net
+          let playbackUrl = uploadData.result.playback?.hls;
+          if (!playbackUrl) {
+            playbackUrl = `https://videodelivery.net/${videoUid}/manifest/video.m3u8`;
+          }
 
           await supabase
             .from('user_videos')

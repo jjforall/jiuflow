@@ -76,14 +76,14 @@ serve(async (req) => {
 
       console.log(`[CLOUDFLARE-STREAM] Upload URL created for video: ${result.result.uid}`);
 
-      // Create playback URL with account ID
-      const playbackUrl = `https://customer-${accountId}.cloudflarestream.com/${result.result.uid}/manifest/video.m3u8`;
-
+      // Note: The actual playback URL will be obtained after upload completes
+      // by calling get-video-status action which returns the correct playback.hls URL
+      // The videoId is returned so client can poll for status
       return new Response(
         JSON.stringify({
           uploadUrl: result.result.uploadURL,
           videoId: result.result.uid,
-          playbackUrl: playbackUrl,
+          // Don't return playbackUrl here - it must be fetched after upload completes
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
