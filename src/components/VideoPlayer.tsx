@@ -31,9 +31,6 @@ interface VideoPlayerProps {
   onAudioLanguageChange?: (langCode: string, currentTime: number) => void;
 }
 
-// Known broken Cloudflare account that returns 404 for thumbnails
-const BROKEN_CLOUDFLARE_ACCOUNT = 'customer-46bf2542468db352a9741f14b84d2744';
-
 // Get Cloudflare Stream thumbnail URL for placeholder
 const extractCloudflareStreamId = (videoUrl: string): string | null => {
   const patterns = [
@@ -53,11 +50,6 @@ const extractCloudflareStreamId = (videoUrl: string): string | null => {
 };
 
 const getCloudflareStreamThumbnail = (videoUrl: string, time = 1): string | null => {
-  // Skip thumbnail generation for broken Cloudflare account URLs - they return 404
-  if (videoUrl.includes(BROKEN_CLOUDFLARE_ACCOUNT)) {
-    return null;
-  }
-  
   const id = extractCloudflareStreamId(videoUrl);
   if (!id) return null;
   return `https://videodelivery.net/${id}/thumbnails/thumbnail.jpg?time=${time}s&width=640&height=360`;
