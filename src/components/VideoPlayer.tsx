@@ -270,65 +270,33 @@ export const VideoPlayer = ({
   }, [videoUrl]);
 
   // Handle visibility/tab lifecycle:
-  // Goal: Let video continue playing in background WITHOUT interference.
-  // Only save progress for disaster recovery (tab discard), but do NOT actively manipulate
-  // playback on visibility change - this causes the "reload" feel.
+  // CRITICAL FIX: Do NOTHING on visibility change.
+  // Any manipulation (even just saving/restoring currentTime) can cause the "reload" feel.
+  // Let the browser handle background playback 100% naturally.
+  // Only save progress on pagehide (for bfcache/tab discard) - no restoration on visibility.
   useEffect(() => {
     if (!shouldLoad) return;
 
     const progressKey = `video-progress:${videoUrl}`;
 
-    const saveNow = () => {
+    const handlePageHide = () => {
+      // Fires when the browser is about to put the page into BFCache or discard it.
+      // Save progress ONLY here, not on visibilitychange.
       const video = videoRef.current;
       if (!video) return;
       try {
-        if (!Number.isFinite(video.currentTime) || video.currentTime <= 0) return;
-        sessionStorage.setItem(progressKey, video.currentTime.toString());
+        if (Number.isFinite(video.currentTime) && video.currentTime > 0.5) {
+          sessionStorage.setItem(progressKey, video.currentTime.toString());
+        }
       } catch {
         // ignore
       }
     };
 
-    const handleVisibilityChange = () => {
-      const video = videoRef.current;
-      if (!video) return;
-
-      if (document.hidden) {
-        // Tab going to background: just save progress for crash recovery.
-        // Do NOT pause, do NOT store wasPlaying - let browser handle naturally.
-        savedTimeOnHideRef.current = video.currentTime;
-        saveNow();
-        // Do NOT return early or manipulate playback state
-      } else {
-        // Tab returning to foreground:
-        // Check if browser actually reset the video (rare: tab discard).
-        // Only restore if currentTime jumped backwards significantly.
-        const saved = savedTimeOnHideRef.current;
-        savedTimeOnHideRef.current = null;
-        
-        if (typeof saved === "number" && saved > 1) {
-          // Only intervene if currentTime went backwards by >2 seconds
-          // (indicates browser reset, not just normal background playback)
-          const current = video.currentTime;
-          if (saved - current > 2) {
-            console.log(`Tab returned: restoring from ${current.toFixed(1)}s to ${saved.toFixed(1)}s`);
-            video.currentTime = saved;
-          }
-        }
-        // Do NOT call play() - let the video continue naturally
-      }
-    };
-
-    const handlePageHide = () => {
-      // Fires even when the browser is about to put the page into BFCache or discard it.
-      saveNow();
-    };
-
-    document.addEventListener("visibilitychange", handleVisibilityChange);
+    // NO visibilitychange listener - this was causing the "reload" feel
     window.addEventListener("pagehide", handlePageHide);
 
     return () => {
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
       window.removeEventListener("pagehide", handlePageHide);
     };
   }, [shouldLoad, videoUrl]);
