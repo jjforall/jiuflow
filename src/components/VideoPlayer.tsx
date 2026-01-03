@@ -270,9 +270,9 @@ export const VideoPlayer = ({
   }, [videoUrl]);
 
   // Handle visibility/tab lifecycle:
-  // Root cause:
-  // - Some browsers discard/recreate the media pipeline (or even the whole tab) when backgrounded.
-  // - We must *flush* currentTime immediately on hide/pagehide, and restore only if playback jumped backwards.
+  // Goal: Let video continue playing in background WITHOUT interference.
+  // Only save progress for disaster recovery (tab discard), but do NOT actively manipulate
+  // playback on visibility change - this causes the "reload" feel.
   useEffect(() => {
     if (!shouldLoad) return;
 
@@ -294,47 +294,28 @@ export const VideoPlayer = ({
       if (!video) return;
 
       if (document.hidden) {
+        // Tab going to background: just save progress for crash recovery.
+        // Do NOT pause, do NOT store wasPlaying - let browser handle naturally.
         savedTimeOnHideRef.current = video.currentTime;
-        wasPlayingOnHideRef.current = !video.paused && !video.ended;
-        saveNow(); // important: survives tab discard/reload
-        return;
-      }
-
-      const saved = savedTimeOnHideRef.current;
-      const shouldResume = wasPlayingOnHideRef.current;
-
-      savedTimeOnHideRef.current = null;
-      wasPlayingOnHideRef.current = false;
-
-      if (typeof saved !== "number" || saved < 0.5) return;
-
-      const apply = () => {
-        // If background playback continued, currentTime will be ahead.
-        // Restore only when the browser jumped *backwards* (commonly to ~0).
-        try {
-          const delta = saved - video.currentTime;
-          if (delta > 0.75) {
+        saveNow();
+        // Do NOT return early or manipulate playback state
+      } else {
+        // Tab returning to foreground:
+        // Check if browser actually reset the video (rare: tab discard).
+        // Only restore if currentTime jumped backwards significantly.
+        const saved = savedTimeOnHideRef.current;
+        savedTimeOnHideRef.current = null;
+        
+        if (typeof saved === "number" && saved > 1) {
+          // Only intervene if currentTime went backwards by >2 seconds
+          // (indicates browser reset, not just normal background playback)
+          const current = video.currentTime;
+          if (saved - current > 2) {
+            console.log(`Tab returned: restoring from ${current.toFixed(1)}s to ${saved.toFixed(1)}s`);
             video.currentTime = saved;
           }
-        } catch {
-          // ignore
         }
-
-        if (shouldResume && video.paused && !video.ended) {
-          video.play().catch(() => {
-            // user gesture might be required
-          });
-        }
-      };
-
-      if (video.readyState < 1) {
-        const onLoadedMetadata = () => {
-          video.removeEventListener("loadedmetadata", onLoadedMetadata);
-          apply();
-        };
-        video.addEventListener("loadedmetadata", onLoadedMetadata);
-      } else {
-        apply();
+        // Do NOT call play() - let the video continue naturally
       }
     };
 
