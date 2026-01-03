@@ -453,47 +453,48 @@ export const VideoPlayer = ({
       const connectionQuality = getConnectionQuality();
       const isSlow = connectionQuality === 'slow' || (isMobile && connectionQuality === 'medium');
       
+      // Stable settings tuned for: (1) fast start, (2) reliable background playback.
+      // Previous ultra-small buffers could stall when the tab is backgrounded (browser throttles timers/network),
+      // making playback stop and “reload” on return.
       const hls = new Hls({
         enableWorker: true,
-        lowLatencyMode: true,
-        // EXTREME settings for instant playback
-        maxBufferLength: isSlow ? 2 : 4,
-        maxBufferSize: isSlow ? 3 * 1000 * 1000 : 8 * 1000 * 1000,
-        maxMaxBufferLength: isSlow ? 3 : 8,
-        backBufferLength: 0, // No back buffer needed
-        // INSTANT START - force lowest quality
+        lowLatencyMode: false, // VOD playback: favor stability over low-latency
+
+        // Buffering (key for background reliability)
+        maxBufferLength: isSlow ? 15 : 30, // seconds
+        maxMaxBufferLength: isSlow ? 30 : 60,
+        backBufferLength: 30,
+        maxBufferSize: isSlow ? 15 * 1000 * 1000 : 30 * 1000 * 1000,
+
+        // Start quickly but don’t sacrifice stability
         startLevel: 0,
         autoStartLoad: true,
-        // Absolute minimum buffer before playback
-        maxBufferHole: 0.3,
-        highBufferWatchdogPeriod: 0.5,
-        // Aggressive timeouts
-        fragLoadingTimeOut: isSlow ? 3000 : 5000,
-        fragLoadingMaxRetry: 1,
-        fragLoadingRetryDelay: 100,
-        manifestLoadingTimeOut: 2000,
-        manifestLoadingMaxRetry: 1,
-        levelLoadingTimeOut: 2000,
-        levelLoadingMaxRetry: 1,
-        // Zero delay start
-        maxStarvationDelay: 0.2,
-        maxLoadingDelay: 0.2,
-        // Conservative ABR - stay low quality longer
-        abrEwmaDefaultEstimate: isSlow ? 100000 : 300000,
-        abrBandWidthFactor: 0.4,
-        abrBandWidthUpFactor: 0.1,
+
+        // Timeouts / retries (avoid fatal errors on temporary stalls)
+        fragLoadingTimeOut: 20000,
+        fragLoadingMaxRetry: 6,
+        fragLoadingRetryDelay: 800,
+        manifestLoadingTimeOut: 20000,
+        manifestLoadingMaxRetry: 3,
+        levelLoadingTimeOut: 20000,
+        levelLoadingMaxRetry: 3,
+
+        // ABR tuning (keep conservative on slow networks)
+        abrEwmaDefaultEstimate: isSlow ? 150000 : 400000,
+        abrBandWidthFactor: isSlow ? 0.6 : 0.8,
+        abrBandWidthUpFactor: isSlow ? 0.2 : 0.3,
         abrMaxWithRealBitrate: true,
-        // Prefetch
-        startFragPrefetch: true,
-        // Disable everything unnecessary
-        enableCEA708Captions: false,
-        enableWebVTT: false,
-        enableIMSC1: false,
-        debug: false,
-        progressive: true,
+
         // Force cap quality to player size
         capLevelToPlayerSize: true,
         capLevelOnFPSDrop: true,
+
+        // Disable unnecessary caption parsing (we handle subtitles separately)
+        enableCEA708Captions: false,
+        enableWebVTT: false,
+        enableIMSC1: false,
+
+        debug: false,
       });
 
       hlsRef.current = hls;
@@ -559,19 +560,21 @@ export const VideoPlayer = ({
         setIsBuffering(false);
       });
 
-      // Error handling with aggressive recovery
+      // Error handling with recovery (aim: stable playback across background/foreground)
       hls.on(Hls.Events.ERROR, (event, data) => {
         console.error('HLS error:', data.type, data.details);
         
         if (data.fatal) {
           switch (data.type) {
-            case Hls.ErrorTypes.NETWORK_ERROR:
+            case Hls.ErrorTypes.NETWORK_ERROR: {
               console.log('Network error, attempting recovery...');
-              // Try to recover by restarting load
+              // Restart load from the current playback position to avoid “restart from 0”.
+              const current = Number.isFinite(video.currentTime) ? video.currentTime : -1;
               setTimeout(() => {
-                hls.startLoad();
-              }, 1000);
+                hls.startLoad(current);
+              }, 800);
               break;
+            }
             case Hls.ErrorTypes.MEDIA_ERROR:
               console.log('Media error, attempting recovery...');
               hls.recoverMediaError();
@@ -596,10 +599,9 @@ export const VideoPlayer = ({
               break;
           }
         } else {
-          // Non-fatal error - try to recover silently
+          // Non-fatal errors can happen more often in background tabs (throttling). Let HLS.js auto-recover.
           if (data.details === 'bufferStalledError') {
-            console.log('Buffer stalled, nudging...');
-            // HLS.js will auto-recover, just log it
+            console.log('Buffer stalled (non-fatal), waiting for auto-recovery...');
           }
         }
       });
