@@ -103,16 +103,19 @@ export const VideoPlayer = ({
   const [showQualityLabel, setShowQualityLabel] = useState(true);
   const [isVisible, setIsVisible] = useState(false);
   const [shouldLoad, setShouldLoad] = useState(false);
+  const [resumePoster, setResumePoster] = useState<string | null>(null);
+
   const containerRef = useRef<HTMLDivElement>(null);
   const lastTapRef = useRef<{ time: number; side: 'left' | 'right' } | null>(null);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const qualityLabelTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const bufferingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
   // Prevent duplicate autoplay calls
   const hasAutoPlayedRef = useRef(false);
-  // Store time before tab switch to restore on visibility change
-  const savedTimeOnHideRef = useRef<number | null>(null);
-  const wasPlayingOnHideRef = useRef(false);
+
+  // Prevent duplicate progress restoration (avoids multi-seek flicker)
+  const hasRestoredProgressRef = useRef(false);
   
   // Subtitle state
   const [subtitlesEnabled, setSubtitlesEnabled] = useState(false);
@@ -264,9 +267,9 @@ export const VideoPlayer = ({
     setIsLoading(true);
     setIsBuffering(false);
     setHasStarted(false);
+    setResumePoster(null);
     hasAutoPlayedRef.current = false;
-    savedTimeOnHideRef.current = null;
-    wasPlayingOnHideRef.current = false;
+    hasRestoredProgressRef.current = false;
   }, [videoUrl]);
 
   // Handle visibility/tab lifecycle:
@@ -300,6 +303,33 @@ export const VideoPlayer = ({
       window.removeEventListener("pagehide", handlePageHide);
     };
   }, [shouldLoad, videoUrl]);
+
+  // When resuming, use a thumbnail near the saved time as poster to avoid flashing the beginning frame
+  useEffect(() => {
+    if (!shouldLoad) return;
+
+    const progressKey = `video-progress:${videoUrl}`;
+
+    try {
+      const saved = sessionStorage.getItem(progressKey);
+      if (!saved) {
+        setResumePoster(null);
+        return;
+      }
+
+      const time = parseFloat(saved);
+      if (!Number.isFinite(time) || time <= 1) {
+        setResumePoster(null);
+        return;
+      }
+
+      // Cloudflare Stream thumbnails accept "time" in seconds (integer works best)
+      const poster = getCloudflareStreamThumbnail(videoUrl, Math.floor(time));
+      setResumePoster(poster);
+    } catch {
+      setResumePoster(null);
+    }
+  }, [videoUrl, shouldLoad]);
 
   useEffect(() => {
     // Don't load video until visible and shouldLoad is true
@@ -405,15 +435,28 @@ export const VideoPlayer = ({
       // Stable settings tuned for: (1) fast start, (2) reliable background playback.
       // Previous ultra-small buffers could stall when the tab is backgrounded (browser throttles timers/network),
       // making playback stop and “reload” on return.
+      const savedStartPosition = (() => {
+        try {
+          const saved = sessionStorage.getItem(progressKey);
+          const time = saved ? parseFloat(saved) : Number.NaN;
+          return Number.isFinite(time) && time > 0.5 ? time : -1;
+        } catch {
+          return -1;
+        }
+      })();
+
       const hls = new Hls({
         enableWorker: true,
         lowLatencyMode: false, // VOD playback: favor stability over low-latency
 
+        // Resume near the last saved position (reduces "start frame" flashes on reload)
+        startPosition: savedStartPosition,
+
         // Buffering (key for background reliability)
-        maxBufferLength: isSlow ? 15 : 30, // seconds
-        maxMaxBufferLength: isSlow ? 30 : 60,
-        backBufferLength: 30,
-        maxBufferSize: isSlow ? 15 * 1000 * 1000 : 30 * 1000 * 1000,
+        maxBufferLength: isSlow ? 30 : 60, // seconds
+        maxMaxBufferLength: isSlow ? 60 : 180,
+        backBufferLength: 60,
+        maxBufferSize: isSlow ? 30 * 1000 * 1000 : 60 * 1000 * 1000,
 
         // Start quickly but don’t sacrifice stability
         startLevel: 0,
@@ -647,16 +690,22 @@ export const VideoPlayer = ({
     const progressKey = `video-progress:${videoUrl}`;
 
     const restoreProgress = () => {
+      if (hasRestoredProgressRef.current) return;
+
       try {
         const saved = sessionStorage.getItem(progressKey);
         if (!saved) return;
+
         const time = parseFloat(saved);
-        if (Number.isNaN(time) || time <= 0.5) return;
+        if (!Number.isFinite(time) || time <= 0.5) return;
+
         // Don't restore if near end
         if (video.duration && time >= video.duration - 1) return;
+
         // Only restore if we're near the beginning (i.e., just started fresh)
         if (video.currentTime < 1) {
           video.currentTime = time;
+          hasRestoredProgressRef.current = true;
         }
       } catch (e) {
         console.log('Unable to restore video progress:', e);
@@ -859,7 +908,7 @@ export const VideoPlayer = ({
           playsInline
           preload="metadata"
           loop
-          poster={effectiveThumbnail || undefined}
+          poster={(resumePoster ?? effectiveThumbnail) || undefined}
           onContextMenu={(e) => e.preventDefault()}
           disablePictureInPicture
           webkit-playsinline="true"
