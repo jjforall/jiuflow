@@ -605,6 +605,15 @@ export const VideoPlayer = ({
       });
 
       return () => {
+        // Save current position before unmount (SPA navigation, etc.)
+        try {
+          if (video.currentTime > 0.5 && Number.isFinite(video.currentTime)) {
+            sessionStorage.setItem(progressKey, video.currentTime.toString());
+          }
+        } catch {
+          // ignore
+        }
+        
         video.removeEventListener('loadstart', handleLoadStart);
         video.removeEventListener('canplay', handleCanPlay);
         video.removeEventListener('canplaythrough', handleCanPlayThrough);
@@ -652,6 +661,15 @@ export const VideoPlayer = ({
     }
 
     return () => {
+      // Save current position before unmount (SPA navigation, etc.)
+      try {
+        if (video.currentTime > 0.5 && Number.isFinite(video.currentTime)) {
+          sessionStorage.setItem(progressKey, video.currentTime.toString());
+        }
+      } catch {
+        // ignore
+      }
+      
       video.removeEventListener('loadstart', handleLoadStart);
       video.removeEventListener('canplay', handleCanPlay);
       video.removeEventListener('canplaythrough', handleCanPlayThrough);
@@ -670,9 +688,10 @@ export const VideoPlayer = ({
     };
   }, [videoUrl, autoPlay, language, onPlay, onVideoEnded, shouldLoad]);
 
+  // Restore progress on mount - runs after HLS init but before autoplay visually takes effect
   useEffect(() => {
     const video = videoRef.current;
-    if (!video) return;
+    if (!video || !shouldLoad) return;
 
     const progressKey = `video-progress:${videoUrl}`;
 
@@ -681,24 +700,32 @@ export const VideoPlayer = ({
         const saved = sessionStorage.getItem(progressKey);
         if (!saved) return;
         const time = parseFloat(saved);
-        if (Number.isNaN(time) || time <= 0) return;
+        if (Number.isNaN(time) || time <= 0.5) return;
+        // Don't restore if near end
         if (video.duration && time >= video.duration - 1) return;
-        video.currentTime = time;
+        // Only restore if we're near the beginning (i.e., just started fresh)
+        if (video.currentTime < 1) {
+          video.currentTime = time;
+        }
       } catch (e) {
         console.log('Unable to restore video progress:', e);
       }
     };
 
+    // Try immediately if ready
     if (video.readyState >= 1) {
       restoreProgress();
-    } else {
-      video.addEventListener('loadedmetadata', restoreProgress);
     }
+    
+    // Also listen for loadedmetadata and canplay as backups
+    video.addEventListener('loadedmetadata', restoreProgress);
+    video.addEventListener('canplay', restoreProgress, { once: true });
 
     return () => {
       video.removeEventListener('loadedmetadata', restoreProgress);
+      video.removeEventListener('canplay', restoreProgress);
     };
-  }, [videoUrl]);
+  }, [videoUrl, shouldLoad]);
 
   // Keyboard shortcuts
   useEffect(() => {
