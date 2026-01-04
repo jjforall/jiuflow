@@ -1,5 +1,5 @@
 import { useParams, Link, useNavigate, useSearchParams } from "react-router-dom";
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { SEOHead } from "@/components/SEOHead";
@@ -178,8 +178,8 @@ const Video = () => {
     }
   }, [searchParams, setSearchParams, language]);
 
-  // Record video view
-  const recordVideoView = async (videoId: string, userId: string) => {
+  // Record video view - useCallbackでメモ化して参照を安定化
+  const recordVideoView = useCallback(async (videoId: string, userId: string) => {
     try {
       // Check if view record exists
       const { data: existingView } = await supabase
@@ -220,7 +220,7 @@ const Video = () => {
     } catch (error) {
       console.error('Error recording video view:', error);
     }
-  };
+  }, []);
 
   // Load view count for current video
   const loadViewCount = async (videoId: string, userId: string) => {
@@ -516,8 +516,8 @@ const Video = () => {
     return getTechniqueVideoUrl(tech);
   };
 
-  // 音声言語切り替えハンドラ
-  const handleAudioLanguageChange = (langCode: string, currentTime: number) => {
+  // 音声言語切り替えハンドラ - useCallbackでメモ化
+  const handleAudioLanguageChange = useCallback((langCode: string, currentTime: number) => {
     if (!technique) return;
     
     // 新しい動画URLを取得
@@ -537,7 +537,34 @@ const Video = () => {
       langCode === "pt" ? "Mudou para Português" :
       "Language changed"
     );
-  };
+  }, [technique]);
+
+  // メモ化されたVideoPlayer用のprops
+  const currentVideoUrl = useMemo(() => {
+    if (!technique) return null;
+    return getCurrentVideoUrl(technique);
+  }, [technique, currentAudioLanguage]);
+
+  const currentThumbnailUrl = useMemo(() => {
+    if (!technique) return null;
+    return getTechniqueThumbnailUrl(technique);
+  }, [technique, language]);
+
+  const memoizedAvailableLanguages = useMemo(() => {
+    if (!technique) return [];
+    return getAvailableAudioLanguages(technique);
+  }, [technique]);
+
+  // メモ化されたコールバック
+  const handleVideoPlay = useCallback(() => {
+    setIsVideoPlaying(true);
+  }, []);
+
+  const handleVideoEnded = useCallback(() => {
+    if (user?.id && technique?.id) {
+      recordVideoView(technique.id, user.id);
+    }
+  }, [user?.id, technique?.id, recordVideoView]);
 
   // 翻訳を開始
   const startTranslation = async () => {
@@ -902,23 +929,17 @@ const Video = () => {
             <div className="flex-1">
               {/* Video Player */}
               <div className="w-full bg-muted rounded-lg overflow-hidden">
-                {getCurrentVideoUrl(technique) ? (
+                {currentVideoUrl ? (
                   <VideoPlayer 
-                    key={`${technique.id}-${currentAudioLanguage}`} 
-                    videoUrl={getCurrentVideoUrl(technique)!} 
-                    thumbnailUrl={getTechniqueThumbnailUrl(technique)}
+                    videoUrl={currentVideoUrl} 
+                    thumbnailUrl={currentThumbnailUrl}
                     autoPlay
                     techniqueId={technique.id}
-                    availableLanguages={getAvailableAudioLanguages(technique)}
+                    availableLanguages={memoizedAvailableLanguages}
                     currentAudioLanguage={currentAudioLanguage}
                     onAudioLanguageChange={handleAudioLanguageChange}
-                    onPlay={() => setIsVideoPlaying(true)}
-                    onVideoEnded={() => {
-                      // Increment view count on repeat play
-                      if (user?.id) {
-                        recordVideoView(technique.id, user.id);
-                      }
-                    }}
+                    onPlay={handleVideoPlay}
+                    onVideoEnded={handleVideoEnded}
                   />
                 ) : (
                   <div className="aspect-video flex items-center justify-center">
