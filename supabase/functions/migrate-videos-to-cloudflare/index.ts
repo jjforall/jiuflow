@@ -132,40 +132,64 @@ serve(async (req) => {
 
     const uniq = <T,>(arr: T[]) => Array.from(new Set(arr));
 
-    const findExistingCloudflareVideoUid = async (searchTerms: string[]) => {
+    const findExistingCloudflareVideoUid = async (searchTerms: string[]): Promise<{ uid: string | null; matchedTerm?: string; matchCount?: number; error?: string }> => {
       for (const raw of uniq(searchTerms)) {
         const term = (raw ?? '').trim();
         if (!term || term.length < 3) continue;
 
-        const { json } = await cloudflareFetch(`/stream?search=${encodeURIComponent(term)}&limit=50`);
-        const candidates = Array.isArray((json as any)?.result) ? (json as any).result : [];
-        if (candidates.length === 0) continue;
+        try {
+          const { json } = await cloudflareFetch(`/stream?search=${encodeURIComponent(term)}&limit=50`);
+          const candidates = Array.isArray((json as any)?.result) ? (json as any).result : [];
+          if (candidates.length === 0) continue;
 
-        const lower = term.toLowerCase();
-        const scored = candidates
-          .map((v: any) => {
-            const name = String(v?.meta?.name ?? '').toLowerCase();
-            const score = name === lower ? 3 : name.includes(lower) ? 2 : 1;
-            return { v, score };
-          })
-          .sort((a: any, b: any) => b.score - a.score);
+          const lower = term.toLowerCase();
+          const scored = candidates
+            .map((v: any) => {
+              const name = String(v?.meta?.name ?? '').toLowerCase();
+              const score = name === lower ? 3 : name.includes(lower) ? 2 : 1;
+              return { v, score };
+            })
+            .sort((a: any, b: any) => b.score - a.score);
 
-        const best = scored[0]?.v;
-        if (best?.uid) {
-          return { uid: best.uid as string, matchedTerm: term, matchCount: candidates.length };
+          const best = scored[0]?.v;
+          if (best?.uid) {
+            return { uid: best.uid as string, matchedTerm: term, matchCount: candidates.length };
+          }
+        } catch (searchError) {
+          console.error(`Cloudflare search error for term "${term}":`, searchError);
+          return { uid: null, error: searchError instanceof Error ? searchError.message : String(searchError) };
         }
       }
 
-      return { uid: null as string | null };
+      return { uid: null };
     };
 
     if (needsCloudflareApi) {
       // Quick probe to surface 401/403/account mismatch immediately
-      const { json } = await cloudflareFetch('/stream?include_counts=true&limit=1');
-      diagnostics.cloudflare = {
-        ok: true,
-        total_count: (json as any)?.result_info?.total_count ?? (json as any)?.total ?? null,
-      };
+      try {
+        const { json } = await cloudflareFetch('/stream?include_counts=true&limit=1');
+        diagnostics.cloudflare = {
+          ok: true,
+          total_count: (json as any)?.result_info?.total_count ?? (json as any)?.total ?? null,
+        };
+      } catch (probeError) {
+        console.error('Cloudflare API probe failed:', probeError);
+        diagnostics.cloudflare = {
+          ok: false,
+          error: probeError instanceof Error ? probeError.message : String(probeError),
+        };
+        // Return early with detailed error instead of crashing
+        return new Response(
+          JSON.stringify({
+            success: false,
+            action,
+            message: `Cloudflare API authentication failed: ${probeError instanceof Error ? probeError.message : String(probeError)}`,
+            diagnostics,
+            hint: 'Please verify CLOUDFLARE_STREAM_API_TOKEN has Stream:Read and Stream:Edit permissions, and CLOUDFLARE_ACCOUNT_ID is correct.',
+          }),
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
 
       // Cross-check: can this account access an already-linked video ID from DB?
       const { data: sampleRows } = await supabase
@@ -450,49 +474,52 @@ serve(async (req) => {
             );
 
             // 1) Try to link existing Cloudflare Stream video by searching the Stream library
-            try {
-              const linked = await findExistingCloudflareVideoUid(searchTerms);
+            const linked = await findExistingCloudflareVideoUid(searchTerms);
 
-              if (linked.uid) {
-                const playbackUrl = `https://videodelivery.net/${linked.uid}/manifest/video.m3u8`;
-                updates[field] = playbackUrl;
-
-                details.push({
-                  field,
-                  method: 'linked',
-                  originalUrl: url,
-                  fileName,
-                  searched: searchTerms,
-                  matchedTerm: (linked as any).matchedTerm,
-                  matchCount: (linked as any).matchCount,
-                  cloudflareUid: linked.uid,
-                  newUrl: playbackUrl,
-                });
-
-                continue;
-              }
-
+            // If there was an API error, log it but continue to next technique
+            if (linked.error) {
+              console.error(`Cloudflare API error for technique ${technique.id}, field ${field}:`, linked.error);
               details.push({
                 field,
-                method: 'not-found',
+                method: 'cloudflare-api-error',
                 originalUrl: url,
                 fileName,
                 searched: searchTerms,
+                error: linked.error,
               });
-
-              // 2) If link-only mode, do not attempt URL-copy upload
-              if (linkOnly) continue;
-            } catch (e) {
-              details.push({
-                field,
-                method: 'cloudflare-search-error',
-                originalUrl: url,
-                fileName,
-                searched: searchTerms,
-                error: e instanceof Error ? e.message : String(e),
-              });
-              break;
+              // Continue to next field instead of breaking entire loop
+              continue;
             }
+
+            if (linked.uid) {
+              const playbackUrl = `https://videodelivery.net/${linked.uid}/manifest/video.m3u8`;
+              updates[field] = playbackUrl;
+
+              details.push({
+                field,
+                method: 'linked',
+                originalUrl: url,
+                fileName,
+                searched: searchTerms,
+                matchedTerm: linked.matchedTerm,
+                matchCount: linked.matchCount,
+                cloudflareUid: linked.uid,
+                newUrl: playbackUrl,
+              });
+
+              continue;
+            }
+
+            details.push({
+              field,
+              method: 'not-found',
+              originalUrl: url,
+              fileName,
+              searched: searchTerms,
+            });
+
+            // 2) If link-only mode, do not attempt URL-copy upload
+            if (linkOnly) continue;
 
             // 3) Fallback: Cloudflare Stream URL-copy upload (requires Stream:Edit)
             const videoName = `${techniqueName} (${field})`;
