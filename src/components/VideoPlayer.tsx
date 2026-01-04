@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback, memo } from "react";
 import Hls from "hls.js";
 import { toast } from "sonner";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -50,7 +50,7 @@ const getConnectionQuality = (): 'slow' | 'medium' | 'fast' => {
   return 'fast';
 };
 
-export const VideoPlayer = ({ 
+const VideoPlayerInner = ({ 
   videoUrl, 
   autoPlay = true, 
   thumbnailUrl, 
@@ -89,6 +89,9 @@ export const VideoPlayer = ({
 
   // Prevent duplicate progress restoration (avoids multi-seek flicker)
   const hasRestoredProgressRef = useRef(false);
+  
+  // Track if HLS has been initialized for the current videoUrl
+  const hlsInitializedForUrlRef = useRef<string | null>(null);
   
   // Subtitle state
   const [subtitlesEnabled, setSubtitlesEnabled] = useState(false);
@@ -311,6 +314,13 @@ export const VideoPlayer = ({
     const video = videoRef.current;
     if (!video) return;
 
+    // Prevent re-initialization for the same URL (avoids "media removed" errors on parent re-render)
+    const normalizedPlaybackUrl = getCloudflareStreamHlsUrl(videoUrl) ?? videoUrl;
+    if (hlsInitializedForUrlRef.current === normalizedPlaybackUrl && hlsRef.current) {
+      // Already initialized for this URL, skip
+      return;
+    }
+
     const progressKey = getVideoProgressKey(videoUrl);
 
     // Setup event listeners for loading states
@@ -462,6 +472,7 @@ export const VideoPlayer = ({
       });
 
       hlsRef.current = hls;
+      hlsInitializedForUrlRef.current = playbackUrl;
 
       hls.loadSource(playbackUrl);
       hls.attachMedia(video);
@@ -600,6 +611,7 @@ export const VideoPlayer = ({
         if (hlsRef.current) {
           hlsRef.current.destroy();
           hlsRef.current = null;
+          hlsInitializedForUrlRef.current = null;
         }
       };
     } else if (isHLS && video.canPlayType('application/vnd.apple.mpegurl')) {
@@ -1023,3 +1035,17 @@ export const VideoPlayer = ({
     </div>
   );
 };
+
+// Memoize the component to prevent unnecessary unmounts when parent re-renders
+export const VideoPlayer = memo(VideoPlayerInner, (prevProps, nextProps) => {
+  // Only re-render if these key props change
+  return (
+    prevProps.videoUrl === nextProps.videoUrl &&
+    prevProps.autoPlay === nextProps.autoPlay &&
+    prevProps.thumbnailUrl === nextProps.thumbnailUrl &&
+    prevProps.techniqueId === nextProps.techniqueId &&
+    prevProps.userVideoId === nextProps.userVideoId &&
+    prevProps.currentAudioLanguage === nextProps.currentAudioLanguage &&
+    prevProps.availableLanguages?.length === nextProps.availableLanguages?.length
+  );
+});
