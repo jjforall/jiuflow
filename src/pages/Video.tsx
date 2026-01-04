@@ -35,6 +35,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { CalendarIcon, Plus } from "lucide-react";
 import { format } from "date-fns";
 import { getSeriesPrefixColors } from "@/components/ui/series-badge";
+import { getVideoProgressKey } from "@/lib/cloudflareStream";
 
 interface Technique {
   id: string;
@@ -141,27 +142,26 @@ const Video = () => {
   useEffect(() => {
     return () => {
       // Activate floating video if there's a technique and it was playing
-      if (technique && isVideoPlaying) {
-        const videoUrl = getTechniqueVideoUrl(technique);
-        const thumbnailUrl = getTechniqueThumbnailUrl(technique);
-        const title = getTechniqueName(technique);
-        
-        // Try to get current time from video element
-        const progressKey = `video-progress:${videoUrl}`;
-        const savedProgress = sessionStorage.getItem(progressKey);
-        const currentTime = savedProgress ? parseFloat(savedProgress) : 0;
-        
-        if (videoUrl) {
-          setFloatingVideo({
-            videoUrl,
-            thumbnailUrl,
-            title,
-            currentTime
-          });
-        }
-      }
+      if (!technique || !isVideoPlaying) return;
+
+      const videoUrl = getCurrentVideoUrl(technique);
+      if (!videoUrl) return;
+
+      const thumbnailUrl = getTechniqueThumbnailUrl(technique);
+      const title = getTechniqueName(technique);
+
+      const progressKey = getVideoProgressKey(videoUrl);
+      const savedProgress = sessionStorage.getItem(progressKey);
+      const currentTime = savedProgress ? parseFloat(savedProgress) : 0;
+
+      setFloatingVideo({
+        videoUrl,
+        thumbnailUrl,
+        title,
+        currentTime,
+      });
     };
-  }, [technique, isVideoPlaying, language, setFloatingVideo]);
+  }, [technique, isVideoPlaying, currentAudioLanguage, language, setFloatingVideo]);
 
   // Check for tip success
   useEffect(() => {
@@ -526,7 +526,7 @@ const Video = () => {
     if (!targetLang) return;
     
     // 現在の再生位置を新しい動画URL用のキーで保存
-    const newProgressKey = `video-progress:${targetLang.videoUrl}`;
+    const newProgressKey = getVideoProgressKey(targetLang.videoUrl);
     sessionStorage.setItem(newProgressKey, currentTime.toString());
     
     setCurrentAudioLanguage(langCode);
@@ -912,6 +912,7 @@ const Video = () => {
                     availableLanguages={getAvailableAudioLanguages(technique)}
                     currentAudioLanguage={currentAudioLanguage}
                     onAudioLanguageChange={handleAudioLanguageChange}
+                    onPlay={() => setIsVideoPlaying(true)}
                     onVideoEnded={() => {
                       // Increment view count on repeat play
                       if (user?.id) {
