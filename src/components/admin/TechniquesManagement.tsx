@@ -256,7 +256,7 @@ export const TechniquesManagement = () => {
 
   // Cloudflare Streamへの移行
   const handleMigrateToCloudflare = async () => {
-    if (!confirm(`${supabaseStorageCount}件の動画URLをCloudflare Streamに移行しますか？この処理には時間がかかる場合があります。`)) return;
+    if (!confirm(`${supabaseStorageCount}件の動画URLをCloudflare Streamの既存動画に紐付けますか？（アップロードは行いません）`)) return;
     
     setIsMigrating(true);
     try {
@@ -267,7 +267,7 @@ export const TechniquesManagement = () => {
       }
 
       const response = await supabase.functions.invoke('migrate-videos-to-cloudflare', {
-        body: { table: 'techniques' },
+        body: { table: 'techniques', action: 'link-existing' },
       });
 
       if (response.error) {
@@ -276,6 +276,18 @@ export const TechniquesManagement = () => {
 
       const result = response.data;
       if (result.success) {
+        console.log("[Cloudflare Link] result:", result);
+        if (Array.isArray(result.results)) {
+          console.table(
+            result.results.map((r: any) => ({
+              id: r.id,
+              name: r.name,
+              success: r.success,
+              error: r.error,
+            }))
+          );
+        }
+
         toast.success(result.message);
         // Refresh count
         const { data } = await supabase

@@ -48,19 +48,152 @@ serve(async (req) => {
       throw new Error('Admin access required');
     }
 
-    // Parse request to check table type
+    // Parse request
     const body = await req.json().catch(() => ({}));
     const tableType = body.table || 'techniques'; // Default to techniques
-    const action = body.action || 'migrate'; // 'migrate', 'repair-broken', or 'fix-thumbnails'
+    const action = body.action || 'migrate'; // 'migrate' | 'link-existing' | 'repair-broken' | 'fix-thumbnails'
 
     console.log(`Starting ${action} for table: ${tableType}`);
 
+    const diagnostics: Record<string, unknown> = { action, tableType };
+
     const needsCloudflareApi = action !== 'repair-broken' && action !== 'fix-thumbnails';
+    const cloudflareAuthHeader = CLOUDFLARE_STREAM_API_TOKEN
+      ? { Authorization: `Bearer ${CLOUDFLARE_STREAM_API_TOKEN}` }
+      : null;
+
     if (needsCloudflareApi && (!CLOUDFLARE_ACCOUNT_ID || !CLOUDFLARE_STREAM_API_TOKEN)) {
       throw new Error('Cloudflare credentials not configured');
     }
 
-    let results: { id: string; name: string; success: boolean; error?: string; newUrl?: string }[] = [];
+    const safeJson = async (res: Response) => {
+      try {
+        return await res.clone().json();
+      } catch {
+        return null;
+      }
+    };
+
+    const safeText = async (res: Response) => {
+      try {
+        return await res.clone().text();
+      } catch {
+        return null;
+      }
+    };
+
+    const cloudflareFetch = async (path: string, init?: RequestInit) => {
+      const res = await fetch(
+        `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}${path}`,
+        {
+          ...init,
+          headers: {
+            ...(cloudflareAuthHeader ?? {}),
+            ...(init?.headers ?? {}),
+          },
+        }
+      );
+
+      const json = await safeJson(res);
+
+      if (!res.ok || (json && (json as any).success === false)) {
+        const message =
+          (json as any)?.errors?.[0]?.message ||
+          (json as any)?.messages?.[0]?.message ||
+          (typeof (json as any)?.error === 'string' ? (json as any).error : null) ||
+          (await safeText(res)) ||
+          'Unknown Cloudflare error';
+
+        throw new Error(`Cloudflare API error (${res.status}): ${message}`);
+      }
+
+      return { res, json };
+    };
+
+    const extractFileNameFromSupabaseUrl = (url: string): string | null => {
+      try {
+        const u = new URL(url);
+        const parts = u.pathname.split('/').filter(Boolean);
+        const last = parts[parts.length - 1];
+        return last ? decodeURIComponent(last) : null;
+      } catch {
+        const last = url.split('?')[0].split('/').pop();
+        return last ? decodeURIComponent(last) : null;
+      }
+    };
+
+    const extractCloudflareUid = (url: string): string | null => {
+      const m =
+        url.match(/cloudflarestream\.com\/([a-f0-9]{32})/i) ||
+        url.match(/videodelivery\.net\/([a-f0-9]{32})/i) ||
+        url.match(/iframe\.videodelivery\.net\/([a-f0-9]{32})/i);
+      return m?.[1] ?? null;
+    };
+
+    const uniq = <T,>(arr: T[]) => Array.from(new Set(arr));
+
+    const findExistingCloudflareVideoUid = async (searchTerms: string[]) => {
+      for (const raw of uniq(searchTerms)) {
+        const term = (raw ?? '').trim();
+        if (!term || term.length < 3) continue;
+
+        const { json } = await cloudflareFetch(`/stream?search=${encodeURIComponent(term)}&limit=50`);
+        const candidates = Array.isArray((json as any)?.result) ? (json as any).result : [];
+        if (candidates.length === 0) continue;
+
+        const lower = term.toLowerCase();
+        const scored = candidates
+          .map((v: any) => {
+            const name = String(v?.meta?.name ?? '').toLowerCase();
+            const score = name === lower ? 3 : name.includes(lower) ? 2 : 1;
+            return { v, score };
+          })
+          .sort((a: any, b: any) => b.score - a.score);
+
+        const best = scored[0]?.v;
+        if (best?.uid) {
+          return { uid: best.uid as string, matchedTerm: term, matchCount: candidates.length };
+        }
+      }
+
+      return { uid: null as string | null };
+    };
+
+    if (needsCloudflareApi) {
+      // Quick probe to surface 401/403/account mismatch immediately
+      const { json } = await cloudflareFetch('/stream?include_counts=true&limit=1');
+      diagnostics.cloudflare = {
+        ok: true,
+        total_count: (json as any)?.result_info?.total_count ?? (json as any)?.total ?? null,
+      };
+
+      // Cross-check: can this account access an already-linked video ID from DB?
+      const { data: sampleRows } = await supabase
+        .from('techniques')
+        .select('id, video_url')
+        .not('video_url', 'is', null)
+        .or('video_url.ilike.%cloudflarestream.com%,video_url.ilike.%videodelivery.net%')
+        .limit(1);
+
+      const sampleUrl = sampleRows?.[0]?.video_url as string | undefined;
+      const sampleUid = sampleUrl ? extractCloudflareUid(sampleUrl) : null;
+
+      if (sampleUid) {
+        try {
+          await cloudflareFetch(`/stream/${sampleUid}`);
+          diagnostics.cloudflare_sample_video = { ok: true };
+        } catch (e) {
+          diagnostics.cloudflare_sample_video = {
+            ok: false,
+            error: e instanceof Error ? e.message : String(e),
+          };
+        }
+      } else {
+        diagnostics.cloudflare_sample_video = { ok: null, note: 'No Cloudflare URL found in DB to cross-check' };
+      }
+    }
+
+    let results: any[] = [];
 
     // Repair broken videos (404) from video_metadata backup
     if (action === 'repair-broken') {
@@ -272,6 +405,8 @@ serve(async (req) => {
     }
 
     if (tableType === 'techniques') {
+      const linkOnly = action === 'link-existing';
+
       // Get all techniques with Supabase Storage URLs
       const { data: techniques, error: fetchError } = await supabase
         .from('techniques')
@@ -282,116 +417,135 @@ serve(async (req) => {
 
       if (!techniques || techniques.length === 0) {
         return new Response(
-          JSON.stringify({ success: true, message: 'No techniques to migrate', migrated: 0 }),
+          JSON.stringify({
+            success: true,
+            action,
+            message: 'No techniques to migrate',
+            migrated: 0,
+            diagnostics,
+          }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
 
-      console.log(`Found ${techniques.length} techniques to migrate`);
+      console.log(`Found ${techniques.length} techniques to ${linkOnly ? 'link' : 'migrate'}`);
+
+      const urlFields = ['video_url', 'video_url_ja', 'video_url_pt'] as const;
 
       for (const technique of techniques) {
+        const techniqueName = technique.name_ja || technique.id;
+        const details: any[] = [];
+        const updates: Record<string, string> = {};
+
         try {
-          console.log(`Migrating technique: ${technique.id} - ${technique.name_ja}`);
-
-          const updates: Record<string, string> = {};
-          const urlFields = ['video_url', 'video_url_ja', 'video_url_pt'] as const;
-
           for (const field of urlFields) {
             const url = technique[field];
-            if (url && url.includes('supabase.co/storage')) {
-              console.log(`Migrating ${field}: ${url}`);
+            if (!url || !url.includes('supabase.co/storage')) continue;
 
-              try {
-                // Helper function to encode UTF-8 strings to Base64
-                const encodeBase64 = (str: string) => {
-                  const encoder = new TextEncoder();
-                  const bytes = encoder.encode(str);
-                  let binary = '';
-                  for (const byte of bytes) {
-                    binary += String.fromCharCode(byte);
-                  }
-                  return btoa(binary);
-                };
+            const fileName = extractFileNameFromSupabaseUrl(url);
+            const searchTerms = uniq(
+              [fileName, techniqueName, `${techniqueName} (${field})`, technique.id].filter(
+                (v): v is string => typeof v === 'string' && v.trim().length > 0
+              )
+            );
 
-                // Use Cloudflare Stream's URL copy feature - no memory needed!
-                // This tells Cloudflare to fetch the video directly from the URL
-                const videoName = `${technique.name_ja || technique.id} (${field})`;
-                
-                const copyResponse = await fetch(
-                  `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/stream/copy`,
-                  {
-                    method: 'POST',
-                    headers: {
-                      'Authorization': `Bearer ${CLOUDFLARE_STREAM_API_TOKEN}`,
-                      'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                      url: url,
-                      meta: { 
-                        name: videoName,
-                        original_id: technique.id,
-                        field: field 
-                      },
-                    }),
-                  }
-                );
+            // 1) Try to link existing Cloudflare Stream video by searching the Stream library
+            try {
+              const linked = await findExistingCloudflareVideoUid(searchTerms);
 
-                if (!copyResponse.ok) {
-                  const errorText = await copyResponse.text();
-                  console.error(`Cloudflare copy failed for ${field}:`, errorText);
-                  continue;
-                }
-
-                const copyData = await copyResponse.json();
-                const videoUid = copyData.result.uid;
-                console.log(`Cloudflare is copying video, UID: ${videoUid}`);
-
-                // Wait for video to be ready and get the correct playback URL
-                let playbackUrl = '';
-                let attempts = 0;
-                const maxAttempts = 30; // Wait up to 60 seconds
-                
-                while (attempts < maxAttempts) {
-                  await new Promise(resolve => setTimeout(resolve, 2000));
-                  
-                  const statusResponse = await fetch(
-                    `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/stream/${videoUid}`,
-                    {
-                      headers: {
-                        'Authorization': `Bearer ${CLOUDFLARE_STREAM_API_TOKEN}`,
-                      },
-                    }
-                  );
-                  
-                  if (statusResponse.ok) {
-                    const statusData = await statusResponse.json();
-                    if (statusData.result?.playback?.hls) {
-                      playbackUrl = statusData.result.playback.hls;
-                      console.log(`Got correct playback URL: ${playbackUrl}`);
-                      break;
-                    }
-                    if (statusData.result?.readyToStream) {
-                      // Fallback to constructing URL with the correct subdomain format
-                      playbackUrl = `https://videodelivery.net/${videoUid}/manifest/video.m3u8`;
-                      console.log(`Using videodelivery.net URL: ${playbackUrl}`);
-                      break;
-                    }
-                  }
-                  attempts++;
-                }
-                
-                if (!playbackUrl) {
-                  // Final fallback - use videodelivery.net which always works
-                  playbackUrl = `https://videodelivery.net/${videoUid}/manifest/video.m3u8`;
-                  console.log(`Timeout - using fallback URL: ${playbackUrl}`);
-                }
-                
+              if (linked.uid) {
+                const playbackUrl = `https://videodelivery.net/${linked.uid}/manifest/video.m3u8`;
                 updates[field] = playbackUrl;
-              } catch (fieldError) {
-                console.error(`Error processing ${field}:`, fieldError);
+
+                details.push({
+                  field,
+                  method: 'linked',
+                  originalUrl: url,
+                  fileName,
+                  searched: searchTerms,
+                  matchedTerm: (linked as any).matchedTerm,
+                  matchCount: (linked as any).matchCount,
+                  cloudflareUid: linked.uid,
+                  newUrl: playbackUrl,
+                });
+
                 continue;
               }
+
+              details.push({
+                field,
+                method: 'not-found',
+                originalUrl: url,
+                fileName,
+                searched: searchTerms,
+              });
+
+              // 2) If link-only mode, do not attempt URL-copy upload
+              if (linkOnly) continue;
+            } catch (e) {
+              details.push({
+                field,
+                method: 'cloudflare-search-error',
+                originalUrl: url,
+                fileName,
+                searched: searchTerms,
+                error: e instanceof Error ? e.message : String(e),
+              });
+              break;
             }
+
+            // 3) Fallback: Cloudflare Stream URL-copy upload (requires Stream:Edit)
+            const videoName = `${techniqueName} (${field})`;
+            const copyResponse = await fetch(
+              `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/stream/copy`,
+              {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${CLOUDFLARE_STREAM_API_TOKEN}`,
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  url,
+                  meta: {
+                    name: videoName,
+                    original_id: technique.id,
+                    field,
+                    source_filename: fileName,
+                  },
+                }),
+              }
+            );
+
+            if (!copyResponse.ok) {
+              const errorText = (await safeText(copyResponse)) || 'Unknown error';
+              details.push({
+                field,
+                method: 'copy-failed',
+                originalUrl: url,
+                status: copyResponse.status,
+                error: errorText,
+              });
+              continue;
+            }
+
+            const copyData = await copyResponse.json();
+            const videoUid = copyData?.result?.uid as string | undefined;
+
+            if (!videoUid) {
+              details.push({ field, method: 'copy-no-uid', originalUrl: url });
+              continue;
+            }
+
+            const playbackUrl = `https://videodelivery.net/${videoUid}/manifest/video.m3u8`;
+            updates[field] = playbackUrl;
+
+            details.push({
+              field,
+              method: 'copied',
+              originalUrl: url,
+              cloudflareUid: videoUid,
+              newUrl: playbackUrl,
+            });
           }
 
           if (Object.keys(updates).length > 0) {
@@ -401,24 +555,30 @@ serve(async (req) => {
               .eq('id', technique.id);
 
             if (updateError) throw updateError;
-            console.log(`Successfully migrated technique ${technique.id}`);
-            results.push({ id: technique.id, name: technique.name_ja, success: true });
+
+            results.push({
+              id: technique.id,
+              name: techniqueName,
+              success: true,
+              updates,
+              details,
+            });
           } else {
-            results.push({ 
-              id: technique.id, 
-              name: technique.name_ja,
-              success: false, 
-              error: 'No fields were migrated' 
+            results.push({
+              id: technique.id,
+              name: techniqueName,
+              success: false,
+              error: linkOnly ? 'No matching Cloudflare video found' : 'No fields were migrated',
+              details,
             });
           }
-
         } catch (techError) {
-          console.error(`Failed to migrate technique ${technique.id}:`, techError);
-          results.push({ 
-            id: technique.id, 
-            name: technique.name_ja,
-            success: false, 
-            error: techError instanceof Error ? techError.message : 'Unknown error' 
+          results.push({
+            id: technique.id,
+            name: techniqueName,
+            success: false,
+            error: techError instanceof Error ? techError.message : 'Unknown error',
+            details,
           });
         }
       }
@@ -489,14 +649,17 @@ serve(async (req) => {
 
     const migrated = results.filter(r => r.success).length;
     const failed = results.filter(r => !r.success).length;
+    const summaryLabel = action === 'link-existing' ? 'Link complete' : 'Migration complete';
 
     return new Response(
-      JSON.stringify({ 
-        success: true, 
-        message: `Migration complete: ${migrated} migrated, ${failed} failed`,
+      JSON.stringify({
+        success: true,
+        action,
+        message: `${summaryLabel}: ${migrated} updated, ${failed} failed`,
         migrated,
         failed,
-        results 
+        diagnostics,
+        results,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
