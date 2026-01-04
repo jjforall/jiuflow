@@ -254,11 +254,20 @@ export const TechniquesManagement = () => {
     setSeriesNameSuggestions(mappings.map(m => m.series_name));
   };
 
+  // Migration result state for detailed display
+  const [migrationResults, setMigrationResults] = useState<{
+    diagnostics: any;
+    results: any[];
+    has403Error: boolean;
+    notFoundItems: any[];
+  } | null>(null);
+
   // Cloudflare Streamへの移行
   const handleMigrateToCloudflare = async () => {
     if (!confirm(`${supabaseStorageCount}件の動画URLをCloudflare Streamの既存動画に紐付けますか？（アップロードは行いません）`)) return;
     
     setIsMigrating(true);
+    setMigrationResults(null);
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
@@ -275,35 +284,81 @@ export const TechniquesManagement = () => {
       }
 
       const result = response.data;
-      if (result.success) {
-        console.log("[Cloudflare Link] result:", result);
-        if (Array.isArray(result.results)) {
-          console.table(
-            result.results.map((r: any) => ({
-              id: r.id,
-              name: r.name,
-              success: r.success,
-              error: r.error,
-            }))
-          );
-        }
+      console.log("[Cloudflare Link] Full result:", result);
 
-        toast.success(result.message);
-        // Refresh count
-        const { data } = await supabase
-          .from('techniques')
-          .select('id, video_url, video_url_ja, video_url_pt');
-        
-        let count = 0;
-        data?.forEach(t => {
-          if (t.video_url?.includes('supabase.co/storage')) count++;
-          if (t.video_url_ja?.includes('supabase.co/storage')) count++;
-          if (t.video_url_pt?.includes('supabase.co/storage')) count++;
+      // Parse results for detailed display
+      const results = Array.isArray(result.results) ? result.results : [];
+      
+      // Check for 403 errors in diagnostics or results
+      const has403Error = 
+        result.diagnostics?.cloudflare?.error?.includes('403') ||
+        result.message?.includes('403') ||
+        results.some((r: any) => 
+          r.error?.includes('403') || 
+          r.details?.some((d: any) => d.error?.includes('403'))
+        );
+
+      // Collect not-found items with search terms
+      const notFoundItems = results
+        .filter((r: any) => !r.success)
+        .map((r: any) => {
+          const notFoundDetails = r.details?.filter((d: any) => d.method === 'not-found') || [];
+          const apiErrorDetails = r.details?.filter((d: any) => d.method === 'cloudflare-api-error') || [];
+          return {
+            id: r.id,
+            name: r.name,
+            error: r.error,
+            notFoundDetails,
+            apiErrorDetails,
+            searchedTerms: notFoundDetails.flatMap((d: any) => d.searched || []),
+          };
         });
-        setSupabaseStorageCount(count);
-      } else {
-        throw new Error(result.error || '移行に失敗しました');
+
+      setMigrationResults({
+        diagnostics: result.diagnostics,
+        results,
+        has403Error,
+        notFoundItems,
+      });
+
+      // Console log for debugging
+      console.log("[Cloudflare Link] Diagnostics:", result.diagnostics);
+      if (results.length > 0) {
+        console.table(
+          results.map((r: any) => ({
+            id: r.id,
+            name: r.name,
+            success: r.success,
+            error: r.error,
+            method: r.details?.[0]?.method || 'unknown',
+            searched: r.details?.[0]?.searched?.join(', ') || '',
+          }))
+        );
       }
+
+      if (result.success && result.migrated > 0) {
+        toast.success(result.message);
+      } else if (has403Error) {
+        toast.error("CloudflareのAPIトークンに Stream:Read 権限が必要です");
+      } else if (notFoundItems.length > 0) {
+        toast.warning(`${notFoundItems.length}件の動画がCloudflareで見つかりませんでした。詳細は下記を確認してください。`);
+      } else {
+        toast.info(result.message || "処理が完了しました");
+      }
+
+      // Refresh count
+      const { data } = await supabase
+        .from('techniques')
+        .select('id, video_url, video_url_ja, video_url_pt');
+      
+      let count = 0;
+      data?.forEach(t => {
+        if (t.video_url?.includes('supabase.co/storage')) count++;
+        if (t.video_url_ja?.includes('supabase.co/storage')) count++;
+        if (t.video_url_pt?.includes('supabase.co/storage')) count++;
+      });
+      setSupabaseStorageCount(count);
+
     } catch (error) {
       console.error("移行エラー:", error);
       toast.error(error instanceof Error ? error.message : "動画の移行に失敗しました");
@@ -1986,6 +2041,131 @@ export const TechniquesManagement = () => {
               )}
             </Button>
           </div>
+        </div>
+      )}
+
+      {/* Migration Results Panel */}
+      {migrationResults && (
+        <div className="mb-6 p-4 border border-muted rounded-lg bg-muted/20">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="font-medium flex items-center gap-2">
+              <FileText className="w-4 h-4" />
+              移行結果詳細
+            </h3>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => setMigrationResults(null)}
+            >
+              <X className="w-4 h-4" />
+            </Button>
+          </div>
+
+          {/* 403 Error Warning */}
+          {migrationResults.has403Error && (
+            <div className="mb-4 p-3 bg-red-500/10 border border-red-500/50 rounded-md">
+              <div className="flex items-center gap-2 text-red-600">
+                <AlertTriangle className="w-5 h-5" />
+                <span className="font-medium">権限エラー (403)</span>
+              </div>
+              <p className="mt-1 text-sm text-red-600/80">
+                CloudflareのAPIトークンに <code className="bg-red-500/20 px-1 rounded">Stream:Read</code> および <code className="bg-red-500/20 px-1 rounded">Stream:Edit</code> 権限が必要です。
+                Cloudflareダッシュボードでトークンの権限を確認してください。
+              </p>
+            </div>
+          )}
+
+          {/* Diagnostics Summary */}
+          {migrationResults.diagnostics && (
+            <div className="mb-4 p-3 bg-muted/50 rounded-md text-sm">
+              <p className="font-medium mb-1">診断情報:</p>
+              <ul className="space-y-1 text-muted-foreground">
+                <li>アクション: {migrationResults.diagnostics.action}</li>
+                {migrationResults.diagnostics.cloudflare && (
+                  <li>
+                    Cloudflare API: {migrationResults.diagnostics.cloudflare.ok ? (
+                      <span className="text-green-600">接続成功 (動画数: {migrationResults.diagnostics.cloudflare.total_count ?? '不明'})</span>
+                    ) : (
+                      <span className="text-red-600">接続失敗 - {migrationResults.diagnostics.cloudflare.error}</span>
+                    )}
+                  </li>
+                )}
+              </ul>
+            </div>
+          )}
+
+          {/* Not Found Items */}
+          {migrationResults.notFoundItems.length > 0 && (
+            <div className="mb-4">
+              <p className="font-medium mb-2 flex items-center gap-2">
+                <Search className="w-4 h-4" />
+                見つからなかった動画 ({migrationResults.notFoundItems.length}件)
+              </p>
+              <div className="max-h-64 overflow-y-auto border border-muted rounded-md">
+                <table className="w-full text-sm">
+                  <thead className="bg-muted/50 sticky top-0">
+                    <tr>
+                      <th className="text-left p-2">技術名</th>
+                      <th className="text-left p-2">検索キーワード</th>
+                      <th className="text-left p-2">原因</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {migrationResults.notFoundItems.map((item: any, idx: number) => (
+                      <tr key={item.id || idx} className="border-t border-muted">
+                        <td className="p-2 font-medium">{item.name}</td>
+                        <td className="p-2">
+                          {item.searchedTerms.length > 0 ? (
+                            <div className="flex flex-wrap gap-1">
+                              {item.searchedTerms.slice(0, 3).map((term: string, i: number) => (
+                                <code key={i} className="text-xs bg-muted px-1 py-0.5 rounded">{term}</code>
+                              ))}
+                              {item.searchedTerms.length > 3 && (
+                                <span className="text-xs text-muted-foreground">+{item.searchedTerms.length - 3}</span>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-muted-foreground">-</span>
+                          )}
+                        </td>
+                        <td className="p-2">
+                          {item.apiErrorDetails?.length > 0 ? (
+                            <span className="text-red-600 text-xs">{item.apiErrorDetails[0].error}</span>
+                          ) : item.notFoundDetails?.length > 0 ? (
+                            <span className="text-amber-600 text-xs">Cloudflare Streamに該当動画なし</span>
+                          ) : (
+                            <span className="text-muted-foreground text-xs">{item.error || '不明'}</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <p className="mt-2 text-xs text-muted-foreground">
+                ヒント: Cloudflareダッシュボードで動画のタイトル（meta.name）が上記の検索キーワードと一致するか確認してください。
+              </p>
+            </div>
+          )}
+
+          {/* Success Items */}
+          {migrationResults.results.filter((r: any) => r.success).length > 0 && (
+            <div>
+              <p className="font-medium mb-2 text-green-600 flex items-center gap-2">
+                <Check className="w-4 h-4" />
+                成功 ({migrationResults.results.filter((r: any) => r.success).length}件)
+              </p>
+              <div className="max-h-32 overflow-y-auto">
+                <ul className="text-sm space-y-1">
+                  {migrationResults.results.filter((r: any) => r.success).map((r: any) => (
+                    <li key={r.id} className="text-muted-foreground">
+                      ✓ {r.name}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
