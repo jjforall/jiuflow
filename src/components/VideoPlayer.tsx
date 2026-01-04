@@ -381,19 +381,18 @@ export const VideoPlayer = ({
       setIsBuffering(false);
     };
 
-    // Debounced time update to reduce sessionStorage writes
+    // Throttled time update: persist progress even while playing
+    // (previous trailing-debounce could fail to save at all during continuous playback)
     const handleTimeUpdate = () => {
       try {
         if (!video.duration || video.duration < 5) return;
-        
-        // Clear existing timeout
-        if (saveTimeoutRef.current) {
-          clearTimeout(saveTimeoutRef.current);
-        }
-        
-        // Save after 2 seconds of no updates (reduces writes significantly)
+
+        // Save at most once every ~2 seconds
+        if (saveTimeoutRef.current) return;
+
+        sessionStorage.setItem(progressKey, video.currentTime.toString());
         saveTimeoutRef.current = setTimeout(() => {
-          sessionStorage.setItem(progressKey, video.currentTime.toString());
+          saveTimeoutRef.current = null;
         }, 2000);
       } catch (e) {
         console.log('Unable to save video progress:', e);
@@ -617,7 +616,7 @@ export const VideoPlayer = ({
         video.removeEventListener('seeked', handleSeeked);
         video.removeEventListener('timeupdate', handleTimeUpdate);
         if (saveTimeoutRef.current) {
-          clearTimeout(saveTimeoutRef.current);
+          clearTimeout(saveTimeoutRef.current); saveTimeoutRef.current = null;
         }
         if (bufferingTimeoutRef.current) {
           clearTimeout(bufferingTimeoutRef.current);
@@ -674,7 +673,7 @@ export const VideoPlayer = ({
       video.removeEventListener('timeupdate', handleTimeUpdate);
       video.removeEventListener('ended', handleEnded);
       if (saveTimeoutRef.current) {
-        clearTimeout(saveTimeoutRef.current);
+        clearTimeout(saveTimeoutRef.current); saveTimeoutRef.current = null;
       }
       if (bufferingTimeoutRef.current) {
         clearTimeout(bufferingTimeoutRef.current);
