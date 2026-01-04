@@ -91,8 +91,6 @@ export const TechniquesManagement = () => {
   const [supabaseStorageCount, setSupabaseStorageCount] = useState(0);
   const [reEncodingIds, setReEncodingIds] = useState<Set<string>>(new Set());
   const [isCheckingEncoding, setIsCheckingEncoding] = useState(false);
-  const [isMigratingToBunny, setIsMigratingToBunny] = useState(false);
-  const [bunnyMigrationCount, setBunnyMigrationCount] = useState({ cloudflare: 0, supabase: 0, bunny: 0 });
   const [encodingResults, setEncodingResults] = useState<{
     total: number;
     properlyEncoded: number;
@@ -189,18 +187,10 @@ export const TechniquesManagement = () => {
       let storageCount = 0;
       let brokenCount = 0;
       let missingThumbCount = 0;
-      let cloudflareCount = 0;
-      let bunnyCount = 0;
       data?.forEach(t => {
         if (t.video_url?.includes('supabase.co/storage')) storageCount++;
         if (t.video_url_ja?.includes('supabase.co/storage')) storageCount++;
         if (t.video_url_pt?.includes('supabase.co/storage')) storageCount++;
-        // Count Cloudflare URLs
-        if (t.video_url?.includes('cloudflarestream.com') || t.video_url?.includes('videodelivery.net')) cloudflareCount++;
-        if (t.video_url_ja?.includes('cloudflarestream.com') || t.video_url_ja?.includes('videodelivery.net')) cloudflareCount++;
-        // Count Bunny.net URLs
-        if (t.video_url?.includes('b-cdn.net') || t.video_url?.includes('bunnycdn.com')) bunnyCount++;
-        if (t.video_url_ja?.includes('b-cdn.net') || t.video_url_ja?.includes('bunnycdn.com')) bunnyCount++;
         // Count broken Cloudflare URLs
         if (t.video_url?.includes('customer-46bf2542468db352a9741f14b84d2744')) brokenCount++;
         if (t.video_url_ja?.includes('customer-46bf2542468db352a9741f14b84d2744')) brokenCount++;
@@ -210,7 +200,6 @@ export const TechniquesManagement = () => {
       setSupabaseStorageCount(storageCount);
       setBrokenVideoCount(brokenCount);
       setMissingThumbnailCount(missingThumbCount);
-      setBunnyMigrationCount({ cloudflare: cloudflareCount, supabase: storageCount, bunny: bunnyCount });
     };
     
     const fetchTranscriptions = async () => {
@@ -397,62 +386,6 @@ export const TechniquesManagement = () => {
       toast.error(error instanceof Error ? error.message : "サムネイル修復に失敗しました");
     } finally {
       setIsFixingThumbnails(false);
-    }
-  };
-
-  // Migrate all videos to Bunny.net
-  const handleMigrateToBunny = async (dryRun = false) => {
-    const totalToMigrate = bunnyMigrationCount.cloudflare + bunnyMigrationCount.supabase;
-    if (!dryRun && !confirm(`${totalToMigrate}件の動画をBunny.netに移行しますか？\n\nCloudflare: ${bunnyMigrationCount.cloudflare}件\nSupabase Storage: ${bunnyMigrationCount.supabase}件\n\nこの処理には時間がかかる場合があります。`)) return;
-    
-    setIsMigratingToBunny(true);
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        toast.error("ログインが必要です");
-        return;
-      }
-
-      const response = await supabase.functions.invoke('migrate-to-bunny', {
-        body: { action: 'migrate-all', dryRun },
-      });
-
-      if (response.error) {
-        throw new Error(response.error.message);
-      }
-
-      const result = response.data;
-      if (result.success) {
-        toast.success(result.message, {
-          description: `成功: ${result.summary.success}件, エラー: ${result.summary.error}件, スキップ: ${result.summary.skipped}件`
-        });
-        
-        // Refresh counts
-        const { data } = await supabase
-          .from('techniques')
-          .select('id, video_url, video_url_ja');
-        
-        let cloudflareCount = 0;
-        let supabaseCount = 0;
-        let bunnyCount = 0;
-        data?.forEach(t => {
-          if (t.video_url?.includes('cloudflarestream.com') || t.video_url?.includes('videodelivery.net')) cloudflareCount++;
-          if (t.video_url_ja?.includes('cloudflarestream.com') || t.video_url_ja?.includes('videodelivery.net')) cloudflareCount++;
-          if (t.video_url?.includes('supabase.co/storage')) supabaseCount++;
-          if (t.video_url_ja?.includes('supabase.co/storage')) supabaseCount++;
-          if (t.video_url?.includes('b-cdn.net') || t.video_url?.includes('bunnycdn.com')) bunnyCount++;
-          if (t.video_url_ja?.includes('b-cdn.net') || t.video_url_ja?.includes('bunnycdn.com')) bunnyCount++;
-        });
-        setBunnyMigrationCount({ cloudflare: cloudflareCount, supabase: supabaseCount, bunny: bunnyCount });
-        setSupabaseStorageCount(supabaseCount);
-      } else {
-        throw new Error(result.error || '移行に失敗しました');
-      }
-    } catch (error) {
-      console.error("Bunny移行エラー:", error);
-      toast.error(error instanceof Error ? error.message : "Bunny.netへの移行に失敗しました");
-    } finally {
-      setIsMigratingToBunny(false);
     }
   };
 
@@ -2007,53 +1940,6 @@ export const TechniquesManagement = () => {
           )}
         </div>
       </div>
-
-      {/* Bunny.net Migration Card - Primary */}
-      {(bunnyMigrationCount.cloudflare > 0 || bunnyMigrationCount.supabase > 0) && isAdmin && (
-        <div className="mb-6 p-4 border border-green-500/50 bg-green-500/5 rounded-lg">
-          <div className="flex items-center justify-between gap-4 flex-wrap">
-            <div className="flex items-center gap-3">
-              <Cloud className="w-8 h-8 text-green-500" />
-              <div>
-                <p className="font-medium">Bunny.net一括移行</p>
-                <p className="text-sm text-muted-foreground">
-                  全動画をBunny.netに移行（可変ビットレート対応）
-                </p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Cloudflare: {bunnyMigrationCount.cloudflare}件 / Supabase: {bunnyMigrationCount.supabase}件 / Bunny済: {bunnyMigrationCount.bunny}件
-                </p>
-              </div>
-            </div>
-            <div className="flex gap-2">
-              <Button 
-                onClick={() => handleMigrateToBunny(true)}
-                disabled={isMigratingToBunny}
-                variant="outline"
-                className="border-green-500 text-green-500 hover:bg-green-500/10"
-              >
-                プレビュー
-              </Button>
-              <Button 
-                onClick={() => handleMigrateToBunny(false)}
-                disabled={isMigratingToBunny}
-                className="bg-green-500 hover:bg-green-600 text-white"
-              >
-                {isMigratingToBunny ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    移行中...
-                  </>
-                ) : (
-                  <>
-                    <Cloud className="w-4 h-4 mr-2" />
-                    Bunnyに移行
-                  </>
-                )}
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Cloudflare Stream Migration Card */}
       {supabaseStorageCount > 0 && isAdmin && (
