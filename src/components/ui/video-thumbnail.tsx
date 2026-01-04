@@ -22,33 +22,44 @@ export const VideoThumbnail = ({
 }: VideoThumbnailProps) => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(false);
-  const [isVisible, setIsVisible] = useState(false);
+  // DEBUG: Force visible to true to bypass lazy loading
+  const [isVisible, setIsVisible] = useState(true);
   const containerRef = useRef<HTMLDivElement>(null);
   const hasTriedLoadRef = useRef(false);
 
-  // Lazy loading with Intersection Observer
-  useEffect(() => {
-    const currentRef = containerRef.current;
-    if (!currentRef) return;
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsVisible(true);
-          observer.disconnect();
-        }
-      },
-      { rootMargin: '200px', threshold: 0.01 }
-    );
-
-    observer.observe(currentRef);
-
-    return () => observer.disconnect();
-  }, []);
+  // Lazy loading with Intersection Observer - TEMPORARILY DISABLED FOR DEBUG
+  // useEffect(() => {
+  //   const currentRef = containerRef.current;
+  //   if (!currentRef) return;
+  //
+  //   const observer = new IntersectionObserver(
+  //     ([entry]) => {
+  //       if (entry.isIntersecting) {
+  //         setIsVisible(true);
+  //         observer.disconnect();
+  //       }
+  //     },
+  //     { rootMargin: '200px', threshold: 0.01 }
+  //   );
+  //
+  //   observer.observe(currentRef);
+  //
+  //   return () => observer.disconnect();
+  // }, []);
 
   // Determine the best thumbnail URL - prioritize provided thumbnailUrl, then generate from videoUrl
   const effectiveThumbnailUrl = thumbnailUrl || 
     (videoUrl ? getCloudflareStreamThumbnail(videoUrl) : null);
+
+  // DEBUG: Log URL values to diagnose the issue
+  console.log('[VideoThumbnail DEBUG]', {
+    videoUrl,
+    thumbnailUrl,
+    effectiveThumbnailUrl,
+    isVisible,
+    isLoading,
+    error
+  });
 
   // Handle image load
   const handleLoad = useCallback(() => {
@@ -98,14 +109,15 @@ export const VideoThumbnail = ({
         <div className="absolute inset-0 bg-muted animate-pulse" />
       )}
       
-      {/* Image - always render when visible to allow loading */}
-      {isVisible && effectiveThumbnailUrl && !error && (
+      {/* Image - always render when visible, keep img tag even on error for debugging */}
+      {isVisible && effectiveThumbnailUrl && (
         <img
           src={effectiveThumbnailUrl}
           alt="Video thumbnail"
           className={cn(
             "w-full h-full object-cover transition-opacity duration-300",
-            isLoading ? "opacity-0" : "opacity-100"
+            isLoading ? "opacity-0" : "opacity-100",
+            error ? "hidden" : ""
           )}
           loading="lazy"
           onLoad={handleLoad}
