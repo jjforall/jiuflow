@@ -2233,6 +2233,7 @@ export type Database = {
           hashtags: string[] | null
           id: string
           is_sample: boolean
+          migrated_to_bunny_at: string | null
           name: string
           name_ja: string
           name_pt: string
@@ -2240,13 +2241,19 @@ export type Database = {
           series_order: number | null
           series_prefix: string | null
           thumbnail_url: string | null
+          thumbnail_url_backup: string | null
           thumbnail_url_ja: string | null
+          thumbnail_url_ja_backup: string | null
           thumbnail_url_pt: string | null
+          thumbnail_url_pt_backup: string | null
           updated_at: string | null
           video_metadata: Json | null
           video_url: string | null
+          video_url_backup: string | null
           video_url_ja: string | null
+          video_url_ja_backup: string | null
           video_url_pt: string | null
+          video_url_pt_backup: string | null
           visibility: string
         }
         Insert: {
@@ -2259,6 +2266,7 @@ export type Database = {
           hashtags?: string[] | null
           id?: string
           is_sample?: boolean
+          migrated_to_bunny_at?: string | null
           name: string
           name_ja: string
           name_pt: string
@@ -2266,13 +2274,19 @@ export type Database = {
           series_order?: number | null
           series_prefix?: string | null
           thumbnail_url?: string | null
+          thumbnail_url_backup?: string | null
           thumbnail_url_ja?: string | null
+          thumbnail_url_ja_backup?: string | null
           thumbnail_url_pt?: string | null
+          thumbnail_url_pt_backup?: string | null
           updated_at?: string | null
           video_metadata?: Json | null
           video_url?: string | null
+          video_url_backup?: string | null
           video_url_ja?: string | null
+          video_url_ja_backup?: string | null
           video_url_pt?: string | null
+          video_url_pt_backup?: string | null
           visibility?: string
         }
         Update: {
@@ -2285,6 +2299,7 @@ export type Database = {
           hashtags?: string[] | null
           id?: string
           is_sample?: boolean
+          migrated_to_bunny_at?: string | null
           name?: string
           name_ja?: string
           name_pt?: string
@@ -2292,13 +2307,19 @@ export type Database = {
           series_order?: number | null
           series_prefix?: string | null
           thumbnail_url?: string | null
+          thumbnail_url_backup?: string | null
           thumbnail_url_ja?: string | null
+          thumbnail_url_ja_backup?: string | null
           thumbnail_url_pt?: string | null
+          thumbnail_url_pt_backup?: string | null
           updated_at?: string | null
           video_metadata?: Json | null
           video_url?: string | null
+          video_url_backup?: string | null
           video_url_ja?: string | null
+          video_url_ja_backup?: string | null
           video_url_pt?: string | null
+          video_url_pt_backup?: string | null
           visibility?: string
         }
         Relationships: []
