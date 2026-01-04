@@ -11,6 +11,11 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  getCloudflareStreamHlsUrl,
+  getCloudflareStreamThumbnail,
+  getVideoProgressKey,
+} from "@/lib/cloudflareStream";
 
 interface AvailableLanguage {
   code: string;
@@ -31,38 +36,6 @@ interface VideoPlayerProps {
   onAudioLanguageChange?: (langCode: string, currentTime: number) => void;
 }
 
-// Get Cloudflare Stream thumbnail URL for placeholder
-const extractCloudflareStreamId = (videoUrl: string): string | null => {
-  const patterns = [
-    /cloudflarestream\.com\/([a-zA-Z0-9]+)/,
-    /watch\.cloudflarestream\.com\/([a-zA-Z0-9]+)/,
-    /videodelivery\.net\/([a-zA-Z0-9]+)/,
-    /iframe\.videodelivery\.net\/([a-zA-Z0-9]+)/,
-    /customer-[a-z0-9]+\.cloudflarestream\.com\/([a-zA-Z0-9]+)/,
-  ];
-
-  for (const pattern of patterns) {
-    const match = videoUrl.match(pattern);
-    if (match?.[1]) return match[1];
-  }
-
-  return null;
-};
-
-const getCloudflareStreamThumbnail = (videoUrl: string, time = 1): string | null => {
-  const id = extractCloudflareStreamId(videoUrl);
-  if (!id) return null;
-  return `https://videodelivery.net/${id}/thumbnails/thumbnail.jpg?time=${time}s&width=640&height=360`;
-};
-
-// Convert any Cloudflare Stream playback URL to the stable videodelivery.net HLS manifest URL
-// (customer-*.cloudflarestream.com can vary by account/subdomain and may 404)
-const getCloudflareStreamHlsUrl = (videoUrl: string): string | null => {
-  const id = extractCloudflareStreamId(videoUrl);
-  if (id) return `https://videodelivery.net/${id}/manifest/video.m3u8`;
-  if (videoUrl.includes('.m3u8')) return videoUrl;
-  return null;
-};
 
 // Network Information API - detect connection quality for adaptive settings
 const getConnectionQuality = (): 'slow' | 'medium' | 'fast' => {
@@ -280,7 +253,7 @@ export const VideoPlayer = ({
   useEffect(() => {
     if (!shouldLoad) return;
 
-    const progressKey = `video-progress:${videoUrl}`;
+    const progressKey = getVideoProgressKey(videoUrl);
 
     const handlePageHide = () => {
       // Fires when the browser is about to put the page into BFCache or discard it.
@@ -308,7 +281,7 @@ export const VideoPlayer = ({
   useEffect(() => {
     if (!shouldLoad) return;
 
-    const progressKey = `video-progress:${videoUrl}`;
+    const progressKey = getVideoProgressKey(videoUrl);
 
     try {
       const saved = sessionStorage.getItem(progressKey);
@@ -338,7 +311,7 @@ export const VideoPlayer = ({
     const video = videoRef.current;
     if (!video) return;
 
-    const progressKey = `video-progress:${videoUrl}`;
+    const progressKey = getVideoProgressKey(videoUrl);
 
     // Setup event listeners for loading states
     const handleLoadStart = () => setIsLoading(true);
@@ -686,7 +659,7 @@ export const VideoPlayer = ({
     const video = videoRef.current;
     if (!video || !shouldLoad) return;
 
-    const progressKey = `video-progress:${videoUrl}`;
+    const progressKey = getVideoProgressKey(videoUrl);
 
     const restoreProgress = () => {
       if (hasRestoredProgressRef.current) return;

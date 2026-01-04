@@ -4,6 +4,7 @@ import { useFloatingVideo } from "@/contexts/FloatingVideoContext";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import Hls from "hls.js";
+import { getCloudflareStreamHlsUrl, getVideoProgressKey } from "@/lib/cloudflareStream";
 
 // Get connection quality for adaptive settings
 const getConnectionQuality = (): 'slow' | 'medium' | 'fast' => {
@@ -27,7 +28,8 @@ export const FloatingVideoPlayer = () => {
     const video = videoRef.current;
     if (!video || !floatingVideo) return;
 
-    const isHLS = floatingVideo.videoUrl.includes('.m3u8');
+    const playbackUrl = getCloudflareStreamHlsUrl(floatingVideo.videoUrl) ?? floatingVideo.videoUrl;
+    const isHLS = playbackUrl.includes('.m3u8');
     const quality = getConnectionQuality();
 
     if (isHLS && Hls.isSupported()) {
@@ -57,11 +59,11 @@ export const FloatingVideoPlayer = () => {
         startFragPrefetch: true,
       });
       hlsRef.current = hls;
-      hls.loadSource(floatingVideo.videoUrl);
+      hls.loadSource(playbackUrl);
       hls.attachMedia(video);
       hls.on(Hls.Events.MANIFEST_PARSED, () => {
         video.currentTime = floatingVideo.currentTime;
-        video.play().catch(e => console.log('Play prevented:', e));
+        video.play().catch((e) => console.log('Play prevented:', e));
       });
 
       return () => {
@@ -70,17 +72,20 @@ export const FloatingVideoPlayer = () => {
           hlsRef.current = null;
         }
       };
-    } else if (isHLS && video.canPlayType('application/vnd.apple.mpegurl')) {
-      video.src = floatingVideo.videoUrl;
-      video.preload = 'metadata';
-      video.currentTime = floatingVideo.currentTime;
-      video.play().catch(e => console.log('Play prevented:', e));
-    } else {
-      video.src = floatingVideo.videoUrl;
-      video.preload = 'metadata';
-      video.currentTime = floatingVideo.currentTime;
-      video.play().catch(e => console.log('Play prevented:', e));
     }
+
+    if (isHLS && video.canPlayType('application/vnd.apple.mpegurl')) {
+      video.src = playbackUrl;
+      video.preload = 'metadata';
+      video.currentTime = floatingVideo.currentTime;
+      video.play().catch((e) => console.log('Play prevented:', e));
+      return;
+    }
+
+    video.src = playbackUrl;
+    video.preload = 'metadata';
+    video.currentTime = floatingVideo.currentTime;
+    video.play().catch((e) => console.log('Play prevented:', e));
   }, [floatingVideo]);
 
   // Clear floating video if we navigate back to a video page
@@ -95,7 +100,7 @@ export const FloatingVideoPlayer = () => {
   const handleExpand = () => {
     // Store current time before navigating
     if (videoRef.current) {
-      sessionStorage.setItem(`video-progress:${floatingVideo.videoUrl}`, videoRef.current.currentTime.toString());
+      sessionStorage.setItem(getVideoProgressKey(floatingVideo.videoUrl), videoRef.current.currentTime.toString());
     }
     clearFloatingVideo();
     // Navigate back would require storing the video ID, for now just close
