@@ -1002,75 +1002,76 @@ export const TechniquesManagement = () => {
   };
 
   const handleVideoUpload = async (file: File, techniqueId?: string) => {
-    const fileExt = file.name.split('.').pop();
-    const timestamp = Date.now();
-    const filePath = techniqueId 
-      ? `${techniqueId}_${timestamp}.${fileExt}`
-      : `${crypto.randomUUID()}.${fileExt}`;
-
     try {
-      // Delete old video file if updating
-      if (techniqueId) {
-        const { data: files } = await supabase.storage
-          .from('technique-videos')
-          .list('', {
-            search: techniqueId
-          });
-        
-        if (files && files.length > 0) {
-          const oldFiles = files.filter(f => f.name.startsWith(techniqueId));
-          for (const oldFile of oldFiles) {
-            await supabase.storage
-              .from('technique-videos')
-              .remove([oldFile.name]);
-          }
-        }
-        
-        // Delete old thumbnails
-        const { data: thumbFiles } = await supabase.storage
-          .from('technique-videos')
-          .list('thumbnails', {
-            search: techniqueId
-          });
-        
-        if (thumbFiles && thumbFiles.length > 0) {
-          const oldThumbs = thumbFiles.filter(f => f.name.startsWith(techniqueId));
-          for (const oldThumb of oldThumbs) {
-            await supabase.storage
-              .from('technique-videos')
-              .remove([`thumbnails/${oldThumb.name}`]);
-          }
-        }
+      // Step 1: Get direct upload URL from Cloudflare Stream
+      toast.info('Cloudflare Streamにアップロード中...', {
+        description: 'アップロードURLを取得しています'
+      });
+      
+      const { data: uploadData, error: uploadError } = await supabase.functions.invoke('upload-to-cloudflare-stream', {
+        body: { action: 'get-upload-url' }
+      });
+
+      if (uploadError || !uploadData?.uploadUrl) {
+        throw new Error(uploadError?.message || 'アップロードURLの取得に失敗しました');
       }
 
-      // Use global upload context for background upload
-      const result = await startStorageUpload(
-        file,
-        'technique-videos',
-        filePath,
-        async (videoUrl: string) => {
-          // Generate and upload thumbnail
-          try {
-            const thumbnailBlob = await generateThumbnail(videoUrl);
-            const tempId = techniqueId || crypto.randomUUID();
-            const thumbUrl = await uploadThumbnail(thumbnailBlob, tempId);
-            return `${thumbUrl}?t=${timestamp}`;
-          } catch (error) {
-            console.error('Failed to generate thumbnail:', error);
-            toast.error('サムネイル生成エラー', {
-              description: 'サムネイルの生成に失敗しましたが、動画はアップロードされました'
-            });
-            return null;
-          }
-        }
-      );
+      const { uploadUrl, videoId } = uploadData;
 
-      if (!result) {
-        throw new Error('アップロードに失敗しました');
+      // Step 2: Upload the file directly to Cloudflare
+      toast.info('動画をアップロード中...', {
+        description: `${(file.size / 1024 / 1024).toFixed(1)}MB`
+      });
+
+      const uploadResponse = await fetch(uploadUrl, {
+        method: 'POST',
+        body: file,
+      });
+
+      if (!uploadResponse.ok) {
+        throw new Error('Cloudflare Streamへのアップロードに失敗しました');
       }
 
-      return { videoUrl: result.videoUrl, thumbnailUrl: result.thumbnailUrl };
+      // Step 3: Poll for video processing completion
+      toast.info('動画を処理中...', {
+        description: 'エンコード完了を待っています'
+      });
+
+      let attempts = 0;
+      const maxAttempts = 60; // 5 minutes max (5 sec intervals)
+      let videoUrl: string | null = null;
+      let thumbnailUrl: string | null = null;
+
+      while (attempts < maxAttempts) {
+        const { data: statusData, error: statusError } = await supabase.functions.invoke('upload-to-cloudflare-stream', {
+          body: { action: 'get-video-status', videoId }
+        });
+
+        if (statusError) {
+          console.error('Status check error:', statusError);
+        }
+
+        if (statusData?.ready && statusData?.playbackUrl) {
+          // Normalize to videodelivery.net format for stability
+          const cfVideoId = statusData.playbackUrl.match(/\/([a-f0-9-]+)\/manifest/)?.[1] || videoId;
+          videoUrl = `https://videodelivery.net/${cfVideoId}/manifest/video.m3u8`;
+          thumbnailUrl = `https://videodelivery.net/${cfVideoId}/thumbnails/thumbnail.jpg`;
+          break;
+        }
+
+        await new Promise(resolve => setTimeout(resolve, 5000));
+        attempts++;
+      }
+
+      if (!videoUrl) {
+        throw new Error('動画の処理がタイムアウトしました。しばらく待ってから再試行してください。');
+      }
+
+      toast.success('Cloudflare Streamにアップロード完了');
+      
+      return { videoUrl, thumbnailUrl };
     } catch (error: unknown) {
+      console.error('Cloudflare upload error:', error);
       throw error;
     }
   };
