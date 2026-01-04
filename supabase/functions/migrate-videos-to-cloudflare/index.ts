@@ -16,11 +16,37 @@ serve(async (req) => {
     const CLOUDFLARE_STREAM_API_TOKEN = Deno.env.get('CLOUDFLARE_STREAM_API_TOKEN');
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!;
 
     // Cloudflare credentials are only required for actions that call Cloudflare APIs.
     // For 'repair-broken' we only normalize playback URLs and don't need Cloudflare access.
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+    // --- Authorization / Admin guard (important: this function uses service role) ---
+    const authHeader = req.headers.get('authorization') ?? req.headers.get('Authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      throw new Error('Authorization required');
+    }
+
+    const token = authHeader.replace('Bearer ', '');
+    const userClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const { data: { user }, error: authError } = await userClient.auth.getUser(token);
+
+    if (authError || !user) {
+      throw new Error('Invalid authorization');
+    }
+
+    const { data: roles, error: roleError } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', user.id)
+      .in('role', ['admin', 'staff']);
+
+    if (roleError) throw roleError;
+    if (!roles || roles.length === 0) {
+      throw new Error('Admin access required');
+    }
 
     // Parse request to check table type
     const body = await req.json().catch(() => ({}));

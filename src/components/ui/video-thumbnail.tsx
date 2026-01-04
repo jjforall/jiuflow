@@ -3,6 +3,8 @@ import { Play } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getCloudflareStreamThumbnail } from '@/lib/cloudflareStream';
 
+const FALLBACK_THUMBNAIL_URL = '/images/venues/default-venue.jpg';
+
 interface VideoThumbnailProps {
   videoUrl: string | null;
   thumbnailUrl?: string | null;
@@ -22,10 +24,11 @@ export const VideoThumbnail = ({
 }: VideoThumbnailProps) => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(false);
+
   // DEBUG: Force visible to true to bypass lazy loading
-  const [isVisible, setIsVisible] = useState(true);
+  const [isVisible] = useState(true);
   const containerRef = useRef<HTMLDivElement>(null);
-  const hasTriedLoadRef = useRef(false);
+  const hasTriedFallbackRef = useRef(false);
 
   // Lazy loading with Intersection Observer - TEMPORARILY DISABLED FOR DEBUG
   // useEffect(() => {
@@ -47,19 +50,28 @@ export const VideoThumbnail = ({
   //   return () => observer.disconnect();
   // }, []);
 
-  // Determine the best thumbnail URL - prioritize provided thumbnailUrl, then generate from videoUrl
-  const effectiveThumbnailUrl = thumbnailUrl || 
-    (videoUrl ? getCloudflareStreamThumbnail(videoUrl) : null);
+  // Determine the best thumbnail URL - prioritize provided thumbnailUrl, then generate from Cloudflare Stream videoUrl.
+  // NOTE: If the URL is NOT Cloudflare Stream (e.g. old storage mp4), generation returns null.
+  const preferredThumbnailUrl = thumbnailUrl || (videoUrl ? getCloudflareStreamThumbnail(videoUrl) : null);
 
-  // DEBUG: Log URL values to diagnose the issue
-  console.log('[VideoThumbnail DEBUG]', {
-    videoUrl,
-    thumbnailUrl,
-    effectiveThumbnailUrl,
-    isVisible,
-    isLoading,
-    error
-  });
+  // Always render an <img> (even when we can't generate a real thumbnail) by falling back to a default still image.
+  const baseSrc = preferredThumbnailUrl ?? FALLBACK_THUMBNAIL_URL;
+
+  const [imgSrc, setImgSrc] = useState<string>(baseSrc);
+
+  // DEBUG: Log URL values to diagnose the issue (DEV only)
+  if (import.meta.env.DEV) {
+    console.log('[VideoThumbnail DEBUG]', {
+      videoUrl,
+      thumbnailUrl,
+      preferredThumbnailUrl,
+      baseSrc,
+      imgSrc,
+      isVisible,
+      isLoading,
+      error,
+    });
+  }
 
   // Handle image load
   const handleLoad = useCallback(() => {
@@ -67,29 +79,33 @@ export const VideoThumbnail = ({
     setError(false);
   }, []);
 
-  // Handle image error with retry logic
+  // Handle image error: retry once with fallback image, keep <img> in the DOM.
   const handleError = useCallback(() => {
-    if (!hasTriedLoadRef.current && videoUrl) {
-      // Try with a different time parameter as fallback
-      hasTriedLoadRef.current = true;
-      // Let the error state show fallback
+    if (!hasTriedFallbackRef.current && imgSrc !== FALLBACK_THUMBNAIL_URL) {
+      hasTriedFallbackRef.current = true;
+      setImgSrc(FALLBACK_THUMBNAIL_URL);
+      setIsLoading(true);
+      setError(false);
+      return;
     }
+
     setError(true);
     setIsLoading(false);
-  }, [videoUrl]);
+  }, [imgSrc]);
 
   // Reset states when URL changes
   useEffect(() => {
+    setImgSrc(baseSrc);
     setIsLoading(true);
     setError(false);
-    hasTriedLoadRef.current = false;
-  }, [effectiveThumbnailUrl]);
+    hasTriedFallbackRef.current = false;
+  }, [baseSrc]);
 
   if (!videoUrl && !thumbnailUrl) {
     return (
       <div 
         className={cn(
-          "bg-muted rounded flex items-center justify-center text-muted-foreground text-xs",
+          'bg-muted rounded flex items-center justify-center text-muted-foreground text-xs',
           className
         )}
       >
@@ -101,7 +117,7 @@ export const VideoThumbnail = ({
   return (
     <div 
       ref={containerRef}
-      className={cn("relative rounded overflow-hidden cursor-pointer group bg-muted", className)}
+      className={cn('relative rounded overflow-hidden cursor-pointer group bg-muted', className)}
       onClick={onClick}
     >
       {/* Skeleton while loading */}
@@ -109,17 +125,17 @@ export const VideoThumbnail = ({
         <div className="absolute inset-0 bg-muted animate-pulse" />
       )}
       
-      {/* Image - always render when visible, keep img tag even on error for debugging */}
-      {isVisible && effectiveThumbnailUrl && (
+      {/* Image - keep <img> tag even if load fails (fallback will kick in) */}
+      {isVisible && (
         <img
-          src={effectiveThumbnailUrl}
-          alt="Video thumbnail"
+          src={imgSrc}
+          alt="BJJ video thumbnail"
           className={cn(
-            "w-full h-full object-cover transition-opacity duration-300",
-            isLoading ? "opacity-0" : "opacity-100",
-            error ? "hidden" : ""
+            'w-full h-full object-cover transition-opacity duration-300',
+            isLoading ? 'opacity-0' : 'opacity-100'
           )}
           loading="lazy"
+          decoding="async"
           onLoad={handleLoad}
           onError={handleError}
         />
