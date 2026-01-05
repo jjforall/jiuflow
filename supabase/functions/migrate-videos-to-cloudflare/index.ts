@@ -121,6 +121,44 @@ serve(async (req) => {
       return { res, json };
     };
 
+    // Cloudflare endpoints that are NOT account-scoped (used for diagnosing token/account mismatch)
+    const cloudflareFetchGlobal = async (path: string, init?: RequestInit) => {
+      const url = `https://api.cloudflare.com/client/v4${path}`;
+
+      const res = await fetch(url, {
+        ...init,
+        headers: {
+          ...(cloudflareAuthHeader ?? {}),
+          ...(init?.headers ?? {}),
+        },
+      });
+
+      const json = await safeJson(res);
+
+      if (!res.ok || (json && (json as any).success === false)) {
+        const rawBody = await safeText(res);
+        console.error('[CLOUDFLARE_API_ERROR_GLOBAL]', {
+          url,
+          path,
+          status: res.status,
+          ok: res.ok,
+          rawBody,
+          json,
+        });
+
+        const message =
+          (json as any)?.errors?.[0]?.message ||
+          (json as any)?.messages?.[0]?.message ||
+          (typeof (json as any)?.error === 'string' ? (json as any).error : null) ||
+          rawBody ||
+          'Unknown Cloudflare error';
+
+        throw new Error(`Cloudflare API error (${res.status}): ${message}`);
+      }
+
+      return { res, json };
+    };
+
     const extractFileNameFromSupabaseUrl = (url: string): string | null => {
       try {
         const u = new URL(url);
@@ -179,11 +217,54 @@ serve(async (req) => {
       const mask = (v?: string | null) => (v ? `${v.slice(0, 6)}…${v.slice(-4)}` : null);
       diagnostics.cloudflare_account_id = mask(CLOUDFLARE_ACCOUNT_ID);
 
-      // Diagnose account/token validity with /accounts/{account_id} and a Stream probe.
-      const [accountCheck, streamProbe] = await Promise.allSettled([
+      // Diagnose token/account mismatch:
+      // - /user/tokens/verify (token is valid?)
+      // - /accounts (which accounts this token can see)
+      // - /accounts/{account_id} (can access this specific account?)
+      // - /accounts/{account_id}/stream (can access Stream?)
+      const [tokenVerify, accountsList, accountCheck, streamProbe] = await Promise.allSettled([
+        cloudflareFetchGlobal('/user/tokens/verify'),
+        cloudflareFetchGlobal('/accounts?per_page=50'),
         cloudflareFetch(''),
         cloudflareFetch('/stream?include_counts=true&limit=1'),
       ]);
+
+      if (tokenVerify.status === 'fulfilled') {
+        const json = tokenVerify.value.json as any;
+        diagnostics.cloudflare_token_verify = {
+          ok: true,
+          result: json?.result ?? null,
+        };
+        console.log('[CLOUDFLARE_TOKEN_VERIFY_OK]', diagnostics.cloudflare_token_verify);
+      } else {
+        diagnostics.cloudflare_token_verify = {
+          ok: false,
+          error: tokenVerify.reason instanceof Error ? tokenVerify.reason.message : String(tokenVerify.reason),
+        };
+        console.error('[CLOUDFLARE_TOKEN_VERIFY_FAILED]', tokenVerify.reason);
+      }
+
+      if (accountsList.status === 'fulfilled') {
+        const json = accountsList.value.json as any;
+        const accounts = Array.isArray(json?.result) ? json.result : [];
+        diagnostics.cloudflare_accessible_accounts = {
+          ok: true,
+          count: accounts.length,
+          // keep payload small but informative
+          accounts: accounts.slice(0, 10).map((a: any) => ({
+            id: a?.id ?? null,
+            name: a?.name ?? null,
+            type: a?.type ?? null,
+          })),
+        };
+        console.log('[CLOUDFLARE_ACCOUNTS_LIST_OK]', diagnostics.cloudflare_accessible_accounts);
+      } else {
+        diagnostics.cloudflare_accessible_accounts = {
+          ok: false,
+          error: accountsList.reason instanceof Error ? accountsList.reason.message : String(accountsList.reason),
+        };
+        console.error('[CLOUDFLARE_ACCOUNTS_LIST_FAILED]', accountsList.reason);
+      }
 
       if (accountCheck.status === 'fulfilled') {
         const account = (accountCheck.value.json as any)?.result;
@@ -224,7 +305,8 @@ serve(async (req) => {
             action,
             message: `Cloudflare API authentication failed: ${probeError instanceof Error ? probeError.message : String(probeError)}`,
             diagnostics,
-            hint: 'Please verify CLOUDFLARE_STREAM_API_TOKEN has Stream:Read and Stream:Edit permissions, and CLOUDFLARE_ACCOUNT_ID is correct.',
+            hint:
+              'Please verify: (1) Cloudflare Stream is enabled on the target account, (2) CLOUDFLARE_ACCOUNT_ID matches that account, (3) the token has Account:Read plus Stream:Read and Stream:Edit permissions.',
           }),
           { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
