@@ -83,25 +83,36 @@ serve(async (req) => {
     };
 
     const cloudflareFetch = async (path: string, init?: RequestInit) => {
-      const res = await fetch(
-        `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}${path}`,
-        {
-          ...init,
-          headers: {
-            ...(cloudflareAuthHeader ?? {}),
-            ...(init?.headers ?? {}),
-          },
-        }
-      );
+      const url = `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}${path}`;
+
+      const res = await fetch(url, {
+        ...init,
+        headers: {
+          ...(cloudflareAuthHeader ?? {}),
+          ...(init?.headers ?? {}),
+        },
+      });
 
       const json = await safeJson(res);
 
       if (!res.ok || (json && (json as any).success === false)) {
+        const rawBody = await safeText(res);
+
+        // Always log raw Cloudflare error payloads for diagnosing 401/403 (account mismatch / permission denied etc.)
+        console.error('[CLOUDFLARE_API_ERROR]', {
+          url,
+          path,
+          status: res.status,
+          ok: res.ok,
+          rawBody,
+          json,
+        });
+
         const message =
           (json as any)?.errors?.[0]?.message ||
           (json as any)?.messages?.[0]?.message ||
           (typeof (json as any)?.error === 'string' ? (json as any).error : null) ||
-          (await safeText(res)) ||
+          rawBody ||
           'Unknown Cloudflare error';
 
         throw new Error(`Cloudflare API error (${res.status}): ${message}`);
@@ -165,19 +176,47 @@ serve(async (req) => {
     };
 
     if (needsCloudflareApi) {
-      // Quick probe to surface 401/403/account mismatch immediately
-      try {
-        const { json } = await cloudflareFetch('/stream?include_counts=true&limit=1');
+      const mask = (v?: string | null) => (v ? `${v.slice(0, 6)}…${v.slice(-4)}` : null);
+      diagnostics.cloudflare_account_id = mask(CLOUDFLARE_ACCOUNT_ID);
+
+      // Diagnose account/token validity with /accounts/{account_id} and a Stream probe.
+      const [accountCheck, streamProbe] = await Promise.allSettled([
+        cloudflareFetch(''),
+        cloudflareFetch('/stream?include_counts=true&limit=1'),
+      ]);
+
+      if (accountCheck.status === 'fulfilled') {
+        const account = (accountCheck.value.json as any)?.result;
+        diagnostics.cloudflare_account = {
+          ok: true,
+          id: account?.id ?? null,
+          name: account?.name ?? null,
+          type: account?.type ?? null,
+          settings: account?.settings ?? null,
+        };
+        console.log('[CLOUDFLARE_ACCOUNT_CHECK_OK]', diagnostics.cloudflare_account);
+      } else {
+        diagnostics.cloudflare_account = {
+          ok: false,
+          error: accountCheck.reason instanceof Error ? accountCheck.reason.message : String(accountCheck.reason),
+        };
+        console.error('[CLOUDFLARE_ACCOUNT_CHECK_FAILED]', accountCheck.reason);
+      }
+
+      if (streamProbe.status === 'fulfilled') {
+        const json = streamProbe.value.json;
         diagnostics.cloudflare = {
           ok: true,
           total_count: (json as any)?.result_info?.total_count ?? (json as any)?.total ?? null,
         };
-      } catch (probeError) {
+      } else {
+        const probeError = streamProbe.reason;
         console.error('Cloudflare API probe failed:', probeError);
         diagnostics.cloudflare = {
           ok: false,
           error: probeError instanceof Error ? probeError.message : String(probeError),
         };
+
         // Return early with detailed error instead of crashing
         return new Response(
           JSON.stringify({
