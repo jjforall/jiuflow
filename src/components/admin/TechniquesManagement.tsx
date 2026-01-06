@@ -262,6 +262,123 @@ export const TechniquesManagement = () => {
     notFoundItems: any[];
   } | null>(null);
 
+  // Relink preview state
+  const [isPreviewingRelink, setIsPreviewingRelink] = useState(false);
+  const [isApplyingRelink, setIsApplyingRelink] = useState(false);
+  const [relinkPreview, setRelinkPreview] = useState<{
+    diagnostics: any;
+    matches: Array<{
+      techniqueId: string;
+      techniqueName: string;
+      field: string;
+      currentUrl: string | null;
+      candidateUid: string | null;
+      candidateName: string | null;
+      confidence: 'strong' | 'ok' | 'weak' | 'none';
+      candidateCreatedAt: string | null;
+    }>;
+    has403Error: boolean;
+  } | null>(null);
+
+  // Preview relink - shows which videos would be linked without updating DB
+  const handlePreviewRelink = async () => {
+    setIsPreviewingRelink(true);
+    setRelinkPreview(null);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error("ログインが必要です");
+        return;
+      }
+
+      const response = await supabase.functions.invoke('migrate-videos-to-cloudflare', {
+        body: { action: 'preview-relink' },
+      });
+
+      if (response.error) {
+        throw new Error(response.error.message);
+      }
+
+      const result = response.data;
+      console.log("[Preview Relink] Full result:", result);
+
+      const has403Error = 
+        result.diagnostics?.cloudflare?.error?.includes('403') ||
+        result.error?.includes('403');
+
+      setRelinkPreview({
+        diagnostics: result.diagnostics,
+        matches: result.matches || [],
+        has403Error,
+      });
+
+      if (has403Error) {
+        toast.error("CloudflareのAPIトークン権限エラー（403）");
+      } else if (result.matches?.length > 0) {
+        toast.success(`${result.matches.length}件のマッチング候補を取得しました。確認してください。`);
+      } else {
+        toast.info("マッチング候補がありません");
+      }
+    } catch (error) {
+      console.error("Preview relink error:", error);
+      toast.error(error instanceof Error ? error.message : "プレビュー取得に失敗しました");
+    } finally {
+      setIsPreviewingRelink(false);
+    }
+  };
+
+  // Apply relink - actually updates the DB after user confirmation
+  const handleApplyRelink = async () => {
+    if (!relinkPreview || relinkPreview.has403Error) {
+      toast.error("プレビューを先に確認してください");
+      return;
+    }
+
+    const strongMatches = relinkPreview.matches.filter(m => m.confidence === 'strong' || m.confidence === 'ok');
+    if (strongMatches.length === 0) {
+      toast.warning("適用可能なマッチがありません");
+      return;
+    }
+
+    if (!confirm(`${strongMatches.length}件の動画URLを更新しますか？（強/中マッチのみ適用）`)) {
+      return;
+    }
+
+    setIsApplyingRelink(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error("ログインが必要です");
+        return;
+      }
+
+      const response = await supabase.functions.invoke('migrate-videos-to-cloudflare', {
+        body: { action: 'apply-relink' },
+      });
+
+      if (response.error) {
+        throw new Error(response.error.message);
+      }
+
+      const result = response.data;
+      console.log("[Apply Relink] Result:", result);
+
+      if (result.success) {
+        toast.success(`${result.updated}件の動画URLを更新しました`);
+        setRelinkPreview(null);
+        // Refresh the page data
+        window.location.reload();
+      } else {
+        toast.error(result.error || "更新に失敗しました");
+      }
+    } catch (error) {
+      console.error("Apply relink error:", error);
+      toast.error(error instanceof Error ? error.message : "更新に失敗しました");
+    } finally {
+      setIsApplyingRelink(false);
+    }
+  };
+
   // Cloudflare Streamへの移行
   const handleMigrateToCloudflare = async () => {
     if (!confirm(`${supabaseStorageCount}件の動画URLをCloudflare Streamの既存動画に紐付けますか？（アップロードは行いません）`)) return;
@@ -2008,6 +2125,162 @@ export const TechniquesManagement = () => {
           )}
         </div>
       </div>
+      {/* Relink Preview Card - Always show for admins */}
+      {isAdmin && (
+        <div className="mb-6 p-4 border border-blue-500/50 bg-blue-500/5 rounded-lg">
+          <div className="flex items-center justify-between gap-4 flex-wrap">
+            <div className="flex items-center gap-3">
+              <Link className="w-8 h-8 text-blue-500" />
+              <div>
+                <p className="font-medium">動画URL復旧ツール</p>
+                <p className="text-sm text-muted-foreground">
+                  Cloudflareの動画リストと照合し、正しいURLに再紐付けします
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <Button 
+                onClick={handlePreviewRelink}
+                disabled={isPreviewingRelink}
+                variant="outline"
+                className="border-blue-500 text-blue-500 hover:bg-blue-500/10"
+              >
+                {isPreviewingRelink ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    プレビュー中...
+                  </>
+                ) : (
+                  <>
+                    <Search className="w-4 h-4 mr-2" />
+                    プレビュー
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Relink Preview Results */}
+      {relinkPreview && (
+        <div className="mb-6 p-4 border border-blue-500/50 bg-blue-500/5 rounded-lg">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="font-medium flex items-center gap-2">
+              <Link className="w-4 h-4" />
+              再紐付けプレビュー結果
+            </h3>
+            <div className="flex gap-2">
+              {!relinkPreview.has403Error && relinkPreview.matches.filter(m => m.confidence === 'strong' || m.confidence === 'ok').length > 0 && (
+                <Button 
+                  onClick={handleApplyRelink}
+                  disabled={isApplyingRelink}
+                  variant="default"
+                  className="bg-green-600 hover:bg-green-700"
+                >
+                  {isApplyingRelink ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      適用中...
+                    </>
+                  ) : (
+                    <>
+                      <Check className="w-4 h-4 mr-2" />
+                      強/中マッチを適用
+                    </>
+                  )}
+                </Button>
+              )}
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => setRelinkPreview(null)}
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
+
+          {/* 403 Error Warning */}
+          {relinkPreview.has403Error && (
+            <div className="mb-4 p-3 bg-red-500/10 border border-red-500/50 rounded-md">
+              <div className="flex items-center gap-2 text-red-600">
+                <AlertTriangle className="w-5 h-5" />
+                <span className="font-medium">権限エラー (403)</span>
+              </div>
+              <p className="mt-1 text-sm text-red-600/80">
+                CloudflareのAPIトークンに権限が不足しています。
+              </p>
+            </div>
+          )}
+
+          {/* Diagnostics */}
+          {relinkPreview.diagnostics && (
+            <div className="mb-4 p-3 bg-muted/50 rounded-md text-sm">
+              <p className="font-medium mb-1">診断情報:</p>
+              <ul className="space-y-1 text-muted-foreground">
+                {relinkPreview.diagnostics.cloudflare && (
+                  <li>
+                    Cloudflare API: {relinkPreview.diagnostics.cloudflare.ok ? (
+                      <span className="text-green-600">接続成功 (動画数: {relinkPreview.diagnostics.cloudflare.total_count ?? '不明'})</span>
+                    ) : (
+                      <span className="text-red-600">接続失敗 - {relinkPreview.diagnostics.cloudflare.error}</span>
+                    )}
+                  </li>
+                )}
+                <li>候補数: {relinkPreview.matches.length}件</li>
+              </ul>
+            </div>
+          )}
+
+          {/* Matches Table */}
+          {relinkPreview.matches.length > 0 && (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b">
+                    <th className="text-left p-2">テクニック名</th>
+                    <th className="text-left p-2">フィールド</th>
+                    <th className="text-left p-2">候補UID</th>
+                    <th className="text-left p-2">候補名</th>
+                    <th className="text-left p-2">信頼度</th>
+                    <th className="text-left p-2">作成日</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {relinkPreview.matches.map((match, idx) => (
+                    <tr key={idx} className="border-b border-muted">
+                      <td className="p-2 font-medium">{match.techniqueName}</td>
+                      <td className="p-2 text-muted-foreground">{match.field}</td>
+                      <td className="p-2 font-mono text-xs">{match.candidateUid || '-'}</td>
+                      <td className="p-2 text-muted-foreground text-xs">{match.candidateName || '-'}</td>
+                      <td className="p-2">
+                        <span className={`px-2 py-0.5 rounded text-xs font-medium ${
+                          match.confidence === 'strong' ? 'bg-green-500/20 text-green-600' :
+                          match.confidence === 'ok' ? 'bg-yellow-500/20 text-yellow-600' :
+                          match.confidence === 'weak' ? 'bg-orange-500/20 text-orange-600' :
+                          'bg-red-500/20 text-red-600'
+                        }`}>
+                          {match.confidence === 'strong' ? '強' :
+                           match.confidence === 'ok' ? '中' :
+                           match.confidence === 'weak' ? '弱' : 'なし'}
+                        </span>
+                      </td>
+                      <td className="p-2 text-xs text-muted-foreground">
+                        {match.candidateCreatedAt ? new Date(match.candidateCreatedAt).toLocaleString('ja-JP') : '-'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {relinkPreview.matches.length === 0 && !relinkPreview.has403Error && (
+            <p className="text-muted-foreground text-center py-4">マッチング候補がありません</p>
+          )}
+        </div>
+      )}
 
       {/* Cloudflare Stream Migration Card */}
       {supabaseStorageCount > 0 && isAdmin && (
