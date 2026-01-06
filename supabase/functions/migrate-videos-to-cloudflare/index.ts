@@ -51,7 +51,8 @@ serve(async (req) => {
     // Parse request
     const body = await req.json().catch(() => ({}));
     const tableType = body.table || 'techniques'; // Default to techniques
-    const action = body.action || 'migrate'; // 'migrate' | 'link-existing' | 'repair-broken' | 'fix-thumbnails'
+    // 'migrate' | 'link-existing' | 'repair-broken' | 'fix-thumbnails' | 'preview-relink' | 'apply-relink'
+    const action = body.action || 'migrate';
 
     console.log(`Starting ${action} for table: ${tableType}`);
 
@@ -191,14 +192,20 @@ serve(async (req) => {
           const candidates = Array.isArray((json as any)?.result) ? (json as any).result : [];
           if (candidates.length === 0) continue;
 
-          const lower = term.toLowerCase();
-          const scored = candidates
-            .map((v: any) => {
-              const name = String(v?.meta?.name ?? '').toLowerCase();
-              const score = name === lower ? 3 : name.includes(lower) ? 2 : 1;
-              return { v, score };
-            })
-            .sort((a: any, b: any) => b.score - a.score);
+           const createdMs = (v: any) => {
+             const raw = v?.created ?? v?.uploaded ?? v?.modified ?? null;
+             const ms = raw ? Date.parse(String(raw)) : NaN;
+             return Number.isFinite(ms) ? ms : 0;
+           };
+
+           const lower = term.toLowerCase();
+           const scored = candidates
+             .map((v: any) => {
+               const name = String(v?.meta?.name ?? '').toLowerCase();
+               const score = name === lower ? 3 : name.includes(lower) ? 2 : 1;
+               return { v, score };
+             })
+             .sort((a: any, b: any) => (b.score - a.score) || (createdMs(b.v) - createdMs(a.v)));
 
           const best = scored[0]?.v;
           if (best?.uid) {
@@ -544,6 +551,253 @@ serve(async (req) => {
           fixed,
           failed,
           results 
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (tableType === 'techniques' && (action === 'preview-relink' || action === 'apply-relink')) {
+      const apply = action === 'apply-relink';
+      const updatedSince = typeof (body as any).updatedSince === 'string'
+        ? (body as any).updatedSince
+        : typeof (body as any).updated_since === 'string'
+          ? (body as any).updated_since
+          : null;
+
+      const techniqueIds = Array.isArray((body as any).techniqueIds)
+        ? (body as any).techniqueIds
+        : Array.isArray((body as any).technique_ids)
+          ? (body as any).technique_ids
+          : null;
+
+      const strict = (body as any).strict === undefined ? true : Boolean((body as any).strict);
+
+      if (!updatedSince && (!techniqueIds || techniqueIds.length === 0)) {
+        return new Response(
+          JSON.stringify({
+            success: false,
+            action,
+            message: 'preview/apply requires updatedSince or techniqueIds',
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      let query = supabase
+        .from('techniques')
+        .select('id, name_ja, updated_at, video_url, video_url_ja, video_metadata');
+
+      if (techniqueIds && techniqueIds.length > 0) {
+        query = query.in('id', techniqueIds);
+      } else if (updatedSince) {
+        query = query.gte('updated_at', updatedSince);
+      }
+
+      const { data: techniques, error: fetchError } = await query;
+      if (fetchError) throw fetchError;
+
+      const safeArray = <T,>(v: T[] | null | undefined) => Array.isArray(v) ? v : [];
+      const toMs = (raw: unknown) => {
+        const ms = raw ? Date.parse(String(raw)) : NaN;
+        return Number.isFinite(ms) ? ms : 0;
+      };
+
+      const collectCandidates = async (terms: string[]) => {
+        const all: any[] = [];
+        const seen = new Set<string>();
+
+        for (const raw of uniq(terms)) {
+          const term = (raw ?? '').trim();
+          if (!term || term.length < 3) continue;
+
+          const { json } = await cloudflareFetch(`/stream?search=${encodeURIComponent(term)}&limit=50`);
+          const candidates = (Array.isArray((json as any)?.result) ? (json as any).result : []) as any[];
+
+          for (const c of candidates) {
+            const uid = String((c as any)?.uid ?? '');
+            if (!uid || seen.has(uid)) continue;
+            seen.add(uid);
+            all.push(c);
+          }
+        }
+
+        return all;
+      };
+
+      const pickBest = (candidates: any[], ctx: { techniqueId: string; techniqueName: string; fileName?: string | null }) => {
+        const fileName = ctx.fileName ?? null;
+        const nameLower = ctx.techniqueName.toLowerCase();
+
+        const ranked = candidates
+          .map((c) => {
+            const meta = (c?.meta ?? {}) as Record<string, any>;
+            const metaOriginalId = typeof meta.original_id === 'string' ? meta.original_id : null;
+            const metaField = typeof meta.field === 'string' ? meta.field : null;
+            const metaSourceFilename = typeof meta.source_filename === 'string' ? meta.source_filename : null;
+            const metaName = String(meta.name ?? '').toLowerCase();
+
+            let rank = 0;
+            if (metaOriginalId === ctx.techniqueId && (metaField === 'video_url_ja' || metaField === 'video_url')) rank = 4;
+            else if (metaOriginalId === ctx.techniqueId) rank = 3;
+            else if (fileName && metaSourceFilename === fileName) rank = 2;
+            else if (metaName === nameLower || metaName.includes(nameLower)) rank = 1;
+
+            return {
+              c,
+              uid: c?.uid as string | undefined,
+              rank,
+              createdMs: toMs(c?.created ?? c?.uploaded ?? c?.modified),
+              meta: {
+                name: meta.name ?? null,
+                original_id: metaOriginalId,
+                field: metaField,
+                source_filename: metaSourceFilename,
+              },
+            };
+          })
+          .filter((r) => !!r.uid)
+          .sort((a, b) => (b.rank - a.rank) || (b.createdMs - a.createdMs));
+
+        const best = ranked[0] ?? null;
+        const strong = best ? best.rank >= 2 : false;
+        const ok = strict ? strong : best?.rank >= 1;
+
+        return {
+          ok,
+          strong,
+          best,
+          top: ranked.slice(0, 5),
+        };
+      };
+
+      const plans: any[] = [];
+      let authError: string | null = null;
+
+      for (const technique of techniques ?? []) {
+        const techniqueName = (technique as any).name_ja || (technique as any).id;
+        const meta = (technique as any).video_metadata as any;
+        const sourceUrl = meta?.ja?.video_url ?? null;
+        const fileName = sourceUrl ? extractFileNameFromSupabaseUrl(String(sourceUrl)) : null;
+
+        const terms = [fileName, techniqueName, (technique as any).id].filter(
+          (v): v is string => typeof v === 'string' && v.trim().length > 0
+        );
+
+        try {
+          const candidates = await collectCandidates(terms);
+          const picked = pickBest(candidates, { techniqueId: (technique as any).id, techniqueName: techniqueName, fileName });
+
+          const chosenUid = picked.best?.uid ?? null;
+          const chosenUrl = chosenUid ? `https://videodelivery.net/${chosenUid}/manifest/video.m3u8` : null;
+
+          plans.push({
+            id: (technique as any).id,
+            name: techniqueName,
+            updated_at: (technique as any).updated_at,
+            sourceUrl,
+            fileName,
+            current: {
+              video_url: (technique as any).video_url ?? null,
+              video_url_ja: (technique as any).video_url_ja ?? null,
+            },
+            chosen: chosenUrl ? { uid: chosenUid, url: chosenUrl } : null,
+            match: {
+              ok: picked.ok,
+              strong: picked.strong,
+            },
+            candidates: picked.top,
+          });
+        } catch (e) {
+          const msg = e instanceof Error ? e.message : String(e);
+          if (msg.includes('(403)') || msg.includes('(401)') || msg.includes('403') || msg.includes('401')) {
+            authError = msg;
+            break;
+          }
+
+          plans.push({
+            id: (technique as any).id,
+            name: techniqueName,
+            updated_at: (technique as any).updated_at,
+            sourceUrl,
+            fileName,
+            error: msg,
+          });
+        }
+      }
+
+      if (authError) {
+        return new Response(
+          JSON.stringify({
+            success: false,
+            action,
+            message: `Cloudflare API authentication/permission error: ${authError}`,
+            diagnostics,
+            results: [],
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      if (apply) {
+        // Apply only strong/ok matches to avoid accidental overwrites.
+        const toApply = plans.filter((p) => p?.match?.ok && p?.chosen?.url);
+
+        // If strict mode and nothing is safe to apply, do nothing.
+        const applied: any[] = [];
+        const skipped: any[] = [];
+
+        for (const plan of plans) {
+          if (!plan?.match?.ok || !plan?.chosen?.url) {
+            skipped.push({ id: plan.id, name: plan.name, reason: plan?.chosen?.url ? 'match-not-ok' : 'no-chosen' });
+            continue;
+          }
+
+          const nextUrl = plan.chosen.url as string;
+          const currentUrl = plan.current?.video_url as string | null;
+          const currentJa = plan.current?.video_url_ja as string | null;
+
+          // Only update if it actually changes something
+          if (currentUrl === nextUrl && currentJa === nextUrl) {
+            skipped.push({ id: plan.id, name: plan.name, reason: 'already-matched' });
+            continue;
+          }
+
+          const { error: updateError } = await supabase
+            .from('techniques')
+            .update({ video_url: nextUrl, video_url_ja: nextUrl })
+            .eq('id', plan.id);
+
+          if (updateError) {
+            skipped.push({ id: plan.id, name: plan.name, reason: 'db-update-failed', error: updateError.message });
+            continue;
+          }
+
+          applied.push({ id: plan.id, name: plan.name, url: nextUrl });
+        }
+
+        return new Response(
+          JSON.stringify({
+            success: true,
+            action,
+            message: `Apply complete: ${applied.length} updated, ${skipped.length} skipped`,
+            updated: applied.length,
+            skipped: skipped.length,
+            applied,
+            skipped_details: skipped,
+            preview: plans,
+            diagnostics,
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          action,
+          message: `Preview ready: ${plans.length} technique(s) analyzed`,
+          results: plans,
+          diagnostics,
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
