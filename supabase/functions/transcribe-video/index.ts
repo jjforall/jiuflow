@@ -485,8 +485,20 @@ async function getCloudflareDownloadUrl(
     console.log("Enable downloads response:", JSON.stringify(enableJson));
     
     if (enableJson?.success && enableJson?.result?.default?.url) {
-      console.log("Got download URL from enable response");
-      return enableJson.result.default.url;
+      const downloadInfo = enableJson.result.default;
+      
+      // Check if download is ready or still processing
+      if (downloadInfo.status === "ready") {
+        console.log("Download is ready");
+        return downloadInfo.url;
+      } else if (downloadInfo.status === "inprogress") {
+        console.log("Download is in progress, waiting for completion...");
+        // Wait for download to be ready
+        return await waitForDownloadReady(videoId, accountId, apiToken, downloadInfo.url);
+      } else {
+        console.log("Got download URL from enable response, status:", downloadInfo.status);
+        return downloadInfo.url;
+      }
     }
   } catch (e) {
     console.log("Enable downloads request failed:", e);
@@ -509,8 +521,17 @@ async function getCloudflareDownloadUrl(
     console.log("Download status response:", JSON.stringify(downloadStatusJson));
     
     if (downloadStatusJson?.success && downloadStatusJson?.result?.default?.url) {
-      console.log("Got download URL from status check");
-      return downloadStatusJson.result.default.url;
+      const downloadInfo = downloadStatusJson.result.default;
+      
+      if (downloadInfo.status === "ready") {
+        console.log("Download is ready from status check");
+        return downloadInfo.url;
+      } else if (downloadInfo.status === "inprogress") {
+        console.log("Download is in progress from status check, waiting...");
+        return await waitForDownloadReady(videoId, accountId, apiToken, downloadInfo.url);
+      }
+      
+      return downloadInfo.url;
     }
   } catch (e) {
     console.log("Download status check failed:", e);
@@ -561,6 +582,61 @@ async function getCloudflareDownloadUrl(
   const fallbackUrl = `https://videodelivery.net/${videoId}/downloads/default.mp4`;
   console.log("Using fallback URL pattern:", fallbackUrl);
   return fallbackUrl;
+}
+
+// Poll Cloudflare until the download file is ready
+async function waitForDownloadReady(
+  videoId: string,
+  accountId: string,
+  apiToken: string,
+  downloadUrl: string,
+): Promise<string> {
+  const maxWaitMs = 5 * 60 * 1000; // Wait up to 5 minutes
+  const pollIntervalMs = 5000; // Poll every 5 seconds
+  const startTime = Date.now();
+  
+  while (Date.now() - startTime < maxWaitMs) {
+    await new Promise((resolve) => setTimeout(resolve, pollIntervalMs));
+    
+    try {
+      const statusRes = await fetch(
+        `https://api.cloudflare.com/client/v4/accounts/${accountId}/stream/${videoId}/downloads`,
+        {
+          method: "GET",
+          headers: {
+            "Authorization": `Bearer ${apiToken}`,
+          },
+        },
+      );
+      
+      const statusJson = await statusRes.json().catch(() => null);
+      
+      if (statusJson?.success && statusJson?.result?.default) {
+        const downloadInfo = statusJson.result.default;
+        const percent = downloadInfo.percentComplete ?? 0;
+        console.log(`Download progress: ${percent}%, status: ${downloadInfo.status}`);
+        
+        if (downloadInfo.status === "ready") {
+          console.log("Download is now ready!");
+          return downloadInfo.url || downloadUrl;
+        }
+        
+        // If progress is 100%, consider it ready even if status hasn't updated
+        if (percent >= 100) {
+          console.log("Download at 100%, proceeding with URL");
+          // Give it a bit more time for the file to be fully available
+          await new Promise((resolve) => setTimeout(resolve, 2000));
+          return downloadInfo.url || downloadUrl;
+        }
+      }
+    } catch (e) {
+      console.log("Error checking download status:", e);
+    }
+  }
+  
+  // If we timeout, try the URL anyway - it might work
+  console.log("Timeout waiting for download, proceeding with URL anyway");
+  return downloadUrl;
 }
 
 async function uploadToAssemblyAiFromUrl(apiKey: string, fileUrl: string): Promise<string> {
