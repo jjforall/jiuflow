@@ -473,9 +473,9 @@ export const TechniquesManagement = () => {
     }
   };
 
-  // Cloudflare Streamへの移行
+  // Cloudflare Streamへの移行（実際にアップロード）
   const handleMigrateToCloudflare = async () => {
-    if (!confirm(`${supabaseStorageCount}件の動画URLをCloudflare Streamの既存動画に紐付けますか？（アップロードは行いません）`)) return;
+    if (!confirm(`${supabaseStorageCount}件の動画をSupabase StorageからCloudflare Streamにアップロードしますか？\n\n※ 動画はCloudflareにコピーされ、DBのURLが新しいCloudflare URLに更新されます。`)) return;
     
     setIsMigrating(true);
     setMigrationResults(null);
@@ -486,8 +486,9 @@ export const TechniquesManagement = () => {
         return;
       }
 
+      // action: 'migrate' で実際にCloudflareへURL-copyアップロードを実行
       const response = await supabase.functions.invoke('migrate-videos-to-cloudflare', {
-        body: { table: 'techniques', action: 'link-existing' },
+        body: { table: 'techniques', action: 'migrate' },
       });
 
       if (response.error) {
