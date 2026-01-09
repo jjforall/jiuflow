@@ -265,6 +265,7 @@ export const TechniquesManagement = () => {
   // Relink preview state
   const [isPreviewingRelink, setIsPreviewingRelink] = useState(false);
   const [isApplyingRelink, setIsApplyingRelink] = useState(false);
+  const [relinkUpdatedSince] = useState<string>("2000-01-01T00:00:00Z");
   const [relinkPreview, setRelinkPreview] = useState<{
     diagnostics: any;
     matches: Array<{
@@ -292,7 +293,11 @@ export const TechniquesManagement = () => {
       }
 
       const response = await supabase.functions.invoke('migrate-videos-to-cloudflare', {
-        body: { action: 'preview-relink' },
+        body: {
+          table: 'techniques',
+          action: 'preview-relink',
+          updatedSince: relinkUpdatedSince,
+        },
       });
 
       if (response.error) {
@@ -302,20 +307,41 @@ export const TechniquesManagement = () => {
       const result = response.data;
       console.log("[Preview Relink] Full result:", result);
 
-      const has403Error = 
-        result.diagnostics?.cloudflare?.error?.includes('403') ||
-        result.error?.includes('403');
+      const messageText = String(result?.message ?? result?.error ?? "");
+      const has403Error =
+        messageText.includes('403') ||
+        String(result?.diagnostics?.cloudflare?.error ?? '').includes('403');
+
+      // Backend returns `results` (plans). Convert to the table format used by UI.
+      const plans = Array.isArray(result?.results) ? result.results : [];
+      const matches = plans.map((p: any) => {
+        const best = p?.candidates?.[0] ?? null;
+        const createdMs = typeof best?.createdMs === 'number' ? best.createdMs : null;
+
+        return {
+          techniqueId: String(p?.id ?? ''),
+          techniqueName: String(p?.name ?? ''),
+          field: 'video_url / video_url_ja',
+          currentUrl: (p?.current?.video_url_ja ?? p?.current?.video_url ?? null) as string | null,
+          candidateUid: (p?.chosen?.uid ?? null) as string | null,
+          candidateName: (best?.meta?.name ?? null) as string | null,
+          confidence: p?.match?.strong ? 'strong' : p?.match?.ok ? 'ok' : 'none',
+          candidateCreatedAt: createdMs ? new Date(createdMs).toISOString() : null,
+        };
+      });
 
       setRelinkPreview({
-        diagnostics: result.diagnostics,
-        matches: result.matches || [],
+        diagnostics: result?.diagnostics,
+        matches,
         has403Error,
       });
 
       if (has403Error) {
         toast.error("CloudflareのAPIトークン権限エラー（403）");
-      } else if (result.matches?.length > 0) {
-        toast.success(`${result.matches.length}件のマッチング候補を取得しました。確認してください。`);
+      } else if (result?.success === false) {
+        toast.error(messageText || "プレビュー取得に失敗しました");
+      } else if (matches.length > 0) {
+        toast.success(`${matches.length}件のマッチング候補を取得しました。確認してください。`);
       } else {
         toast.info("マッチング候補がありません");
       }
@@ -353,7 +379,11 @@ export const TechniquesManagement = () => {
       }
 
       const response = await supabase.functions.invoke('migrate-videos-to-cloudflare', {
-        body: { action: 'apply-relink' },
+        body: {
+          table: 'techniques',
+          action: 'apply-relink',
+          updatedSince: relinkUpdatedSince,
+        },
       });
 
       if (response.error) {
@@ -369,7 +399,7 @@ export const TechniquesManagement = () => {
         // Refresh the page data
         window.location.reload();
       } else {
-        toast.error(result.error || "更新に失敗しました");
+        toast.error(result.error || result.message || "更新に失敗しました");
       }
     } catch (error) {
       console.error("Apply relink error:", error);
