@@ -38,7 +38,8 @@ serve(async (req) => {
     let downloadUrl = videoUrl;
 
     // Check if this is a Cloudflare Stream URL and get proper download URL
-    const cfMatch = videoUrl.match(/cloudflarestream\.com\/([a-f0-9-]+)/);
+    // Support both cloudflarestream.com and videodelivery.net domains
+    const cfMatch = videoUrl.match(/(?:cloudflarestream\.com|videodelivery\.net)\/([a-f0-9-]+)/);
     const isCloudflare = Boolean(cfMatch && cloudflareAccountId && cloudflareApiToken);
 
     if (isCloudflare) {
