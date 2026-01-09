@@ -44,11 +44,7 @@ export const TechniquesManagement = () => {
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [editingTechnique, setEditingTechnique] = useState<Technique | null>(null);
   const [videoFile, setVideoFile] = useState<File | null>(null);
-  const [videoUploadProgress, setVideoUploadProgress] = useState<{
-    stage: 'idle' | 'uploading' | 'processing';
-    percent: number;
-  }>({ stage: 'idle', percent: 0 });
-  const { startStorageUpload, isUploading: globalUploading } = useUpload();
+  const { startCloudflareUpload } = useUpload();
   const [isTranslating, setIsTranslating] = useState(false);
   const [isAutoTranslatingName, setIsAutoTranslatingName] = useState(false);
   const [isAutoTranslatingDesc, setIsAutoTranslatingDesc] = useState(false);
@@ -1285,103 +1281,11 @@ export const TechniquesManagement = () => {
   };
 
   const handleVideoUpload = async (file: File, _techniqueId?: string) => {
-    try {
-      // Reset progress
-      setVideoUploadProgress({ stage: 'uploading', percent: 0 });
-      
-      // Step 1: Get direct upload URL from Cloudflare Stream (0-5%)
-      setVideoUploadProgress({ stage: 'uploading', percent: 2 });
-      
-      const { data: uploadData, error: uploadError } = await supabase.functions.invoke('upload-to-cloudflare-stream', {
-        body: { action: 'get-upload-url' }
-      });
-
-      if (uploadError || !uploadData?.uploadUrl) {
-        throw new Error(uploadError?.message || 'アップロードURLの取得に失敗しました');
-      }
-
-      const { uploadUrl, videoId } = uploadData;
-      setVideoUploadProgress({ stage: 'uploading', percent: 5 });
-
-      // Step 2: Upload the file directly to Cloudflare with progress tracking (5-70%)
-      // Using XMLHttpRequest for progress tracking
-      const uploadPromise = new Promise<void>((resolve, reject) => {
-        const xhr = new XMLHttpRequest();
-        
-        xhr.upload.onprogress = (event) => {
-          if (event.lengthComputable) {
-            // Map upload progress (0-100%) to (5-70%)
-            const uploadPercent = (event.loaded / event.total) * 100;
-            const mappedPercent = 5 + (uploadPercent * 0.65);
-            setVideoUploadProgress({ stage: 'uploading', percent: Math.round(mappedPercent) });
-          }
-        };
-        
-        xhr.onload = () => {
-          if (xhr.status >= 200 && xhr.status < 300) {
-            resolve();
-          } else {
-            reject(new Error('Cloudflare Streamへのアップロードに失敗しました'));
-          }
-        };
-        
-        xhr.onerror = () => reject(new Error('ネットワークエラーが発生しました'));
-        xhr.ontimeout = () => reject(new Error('アップロードがタイムアウトしました'));
-        
-        xhr.open('POST', uploadUrl);
-        xhr.send(file);
-      });
-
-      await uploadPromise;
-      
-      // Step 3: Poll for video processing completion (70-100%)
-      setVideoUploadProgress({ stage: 'processing', percent: 70 });
-
-      let attempts = 0;
-      const maxAttempts = 60; // 5 minutes max (5 sec intervals)
-      let videoUrl: string | null = null;
-      let thumbnailUrl: string | null = null;
-
-      while (attempts < maxAttempts) {
-        const { data: statusData, error: statusError } = await supabase.functions.invoke('upload-to-cloudflare-stream', {
-          body: { action: 'get-video-status', videoId }
-        });
-
-        if (statusError) {
-          console.error('Status check error:', statusError);
-        }
-
-        if (statusData?.ready && statusData?.playbackUrl) {
-          // Normalize to videodelivery.net format for stability
-          const cfVideoId = statusData.playbackUrl.match(/\/([a-f0-9-]+)\/manifest/)?.[1] || videoId;
-          videoUrl = `https://videodelivery.net/${cfVideoId}/manifest/video.m3u8`;
-          thumbnailUrl = `https://videodelivery.net/${cfVideoId}/thumbnails/thumbnail.jpg`;
-          break;
-        }
-
-        await new Promise(resolve => setTimeout(resolve, 5000));
-        attempts++;
-        
-        // Map processing attempts (0-60) to progress (70-99%)
-        // Use logarithmic curve for more realistic feel - slower at the end
-        const processingPercent = Math.min(99, 70 + (Math.log(attempts + 1) / Math.log(61)) * 29);
-        setVideoUploadProgress({ stage: 'processing', percent: Math.round(processingPercent) });
-      }
-
-      if (!videoUrl) {
-        setVideoUploadProgress({ stage: 'idle', percent: 0 });
-        throw new Error('動画の処理がタイムアウトしました。しばらく待ってから再試行してください。');
-      }
-
-      setVideoUploadProgress({ stage: 'idle', percent: 100 });
-      toast.success('Cloudflare Streamにアップロード完了');
-      
-      return { videoUrl, thumbnailUrl };
-    } catch (error: unknown) {
-      console.error('Cloudflare upload error:', error);
-      setVideoUploadProgress({ stage: 'idle', percent: 0 });
-      throw error;
+    const result = await startCloudflareUpload(file, formData.name_ja || formData.name || file.name);
+    if (!result) {
+      throw new Error('動画のアップロードに失敗しました');
     }
+    return { videoUrl: result.videoUrl, thumbnailUrl: result.thumbnailUrl };
   };
 
   const handleGenerateMissingThumbnails = async () => {
@@ -3761,32 +3665,11 @@ export const TechniquesManagement = () => {
                     type="file"
                     accept="video/*"
                     onChange={(e) => setVideoFile(e.target.files?.[0] || null)}
-                    disabled={videoUploadProgress.stage !== 'idle'}
                   />
-                  {editingTechnique?.video_url && !videoFile && videoUploadProgress.stage === 'idle' && (
+                  {editingTechnique?.video_url && !videoFile && (
                     <p className="text-sm text-muted-foreground mt-1">
                       現在の動画はアップロード済みです
                     </p>
-                  )}
-                  
-                  {/* Video Upload Progress Bar */}
-                  {videoUploadProgress.stage !== 'idle' && (
-                    <div className="mt-3 space-y-2">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground">
-                          {videoUploadProgress.stage === 'uploading' 
-                            ? '動画をアップロード中...' 
-                            : 'エンコード処理中...'}
-                        </span>
-                        <span className="font-medium">{videoUploadProgress.percent}%</span>
-                      </div>
-                      <Progress value={videoUploadProgress.percent} className="h-2" />
-                      <p className="text-xs text-muted-foreground">
-                        {videoUploadProgress.stage === 'uploading' 
-                          ? 'ファイルをCloudflareにアップロードしています' 
-                          : '動画のエンコードが完了するまでお待ちください（ダイアログを閉じないでください）'}
-                      </p>
-                    </div>
                   )}
                 </div>
 
@@ -3811,18 +3694,12 @@ export const TechniquesManagement = () => {
                   resetForm();
                   setShowEditDialog(false);
                 }}
-                disabled={videoUploadProgress.stage !== 'idle'}
               >
                 {isAdmin ? 'キャンセル' : '閉じる'}
               </Button>
               {isAdmin && (
-                <Button 
-                  type="submit" 
-                  disabled={videoUploadProgress.stage !== 'idle'}
-                >
-                  {videoUploadProgress.stage !== 'idle' 
-                    ? (videoUploadProgress.stage === 'uploading' ? 'アップロード中...' : '処理中...')
-                    : (editingTechnique ? '更新' : '作成')}
+                <Button type="submit">
+                  {editingTechnique ? '更新' : '作成'}
                 </Button>
               )}
             </div>
