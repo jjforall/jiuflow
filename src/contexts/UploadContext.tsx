@@ -420,52 +420,12 @@ export function UploadProvider({ children }: { children: ReactNode }) {
       const { uploadUrl, videoId } = uploadData;
       updateUpload(uploadId, { progress: 5, cloudflareVideoId: videoId });
 
-      // Step 2: Upload using TUS protocol (Cloudflare Stream requires TUS for direct uploads)
+      // Step 2: Upload using TUS protocol
+      // Cloudflare Stream Direct Upload URL is already a TUS endpoint - no need to create session
+      // Just send PATCH requests directly to uploadUrl
       console.log(`Cloudflare TUS upload: file size ${file.size} bytes (${(file.size / 1024 / 1024).toFixed(2)} MB)`);
 
-      // Step 2a: Create TUS upload session
-      let createResponse: Response | null = null;
-      for (let attempt = 1; attempt <= 3; attempt++) {
-        if (abortController.signal.aborted) {
-          throw new Error("アップロードがキャンセルされました");
-        }
-
-        try {
-          const res = await fetch(uploadUrl, {
-            method: "POST",
-            headers: {
-              "Tus-Resumable": "1.0.0",
-              "Upload-Length": file.size.toString(),
-              "Upload-Metadata": `name ${btoa(unescape(encodeURIComponent(title || file.name)))}`,
-            },
-            signal: abortController.signal,
-          });
-
-          if (res.ok || res.status === 201) {
-            createResponse = res;
-            break;
-          }
-
-          console.error("Cloudflare TUS create failed:", res.status, await res.text());
-          if (attempt < 3) {
-            await new Promise((r) => setTimeout(r, 1500 * attempt));
-          }
-        } catch (err) {
-          console.log(`Cloudflare TUS create error, retry ${attempt}/3:`, err);
-          if (attempt < 3) {
-            await new Promise((r) => setTimeout(r, 1500 * attempt));
-          }
-        }
-      }
-
-      if (!createResponse) {
-        throw new Error("Cloudflareへのアップロードセッション作成に失敗しました");
-      }
-
-      const locationHeader = createResponse.headers.get("Location") || createResponse.headers.get("location");
-      const uploadLocation = locationHeader ? new URL(locationHeader, uploadUrl).toString() : uploadUrl;
-
-      // Step 2b: Upload file in chunks using TUS PATCH
+      // Cloudflare Stream requires minimum 5MB chunks (except for last chunk)
       const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
       const CHUNK_SIZE = isMobile ? 5 * 1024 * 1024 : 10 * 1024 * 1024; // 5MB mobile, 10MB desktop
       let offset = 0;
@@ -480,12 +440,13 @@ export function UploadProvider({ children }: { children: ReactNode }) {
         const chunk = file.slice(offset, Math.min(offset + CHUNK_SIZE, file.size));
 
         try {
-          const patchResponse = await fetch(uploadLocation, {
+          const patchResponse = await fetch(uploadUrl, {
             method: "PATCH",
             headers: {
               "Tus-Resumable": "1.0.0",
               "Upload-Offset": offset.toString(),
               "Content-Type": "application/offset+octet-stream",
+              "Upload-Length": file.size.toString(),
             },
             body: chunk,
             signal: abortController.signal,
@@ -499,9 +460,11 @@ export function UploadProvider({ children }: { children: ReactNode }) {
 
           const newOffset = parseInt(patchResponse.headers.get("Upload-Offset") || "0", 10);
           if (newOffset <= offset && offset < file.size) {
-            throw new Error("オフセットが進まない");
+            // If offset didn't advance, use chunk size
+            offset += chunk.size;
+          } else {
+            offset = newOffset;
           }
-          offset = newOffset;
           retryCount = 0;
 
           // Map upload progress (0-100%) to (5-70%)
