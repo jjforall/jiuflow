@@ -11,9 +11,10 @@ interface UploadTask {
   status: 'uploading' | 'processing' | 'completed' | 'error';
   videoUrl?: string;
   bunnyVideoId?: string;
+  cloudflareVideoId?: string;
   thumbnailUrl?: string;
   error?: string;
-  type: 'bunny' | 'supabase';
+  type: 'bunny' | 'supabase' | 'cloudflare';
   startTime: number;
 }
 
@@ -21,6 +22,7 @@ interface UploadContextType {
   uploads: UploadTask[];
   startUpload: (file: File, title: string) => Promise<{ videoUrl: string; bunnyVideoId: string; fileSize: number } | null>;
   startStorageUpload: (file: File, bucket: string, path: string, onThumbnail?: (url: string) => Promise<string | null>) => Promise<{ videoUrl: string; thumbnailUrl: string | null } | null>;
+  startCloudflareUpload: (file: File, title: string) => Promise<{ videoUrl: string; thumbnailUrl: string | null; cloudflareVideoId: string } | null>;
   cancelUpload: (id: string) => void;
   clearCompletedUploads: () => void;
   isUploading: boolean;
@@ -381,6 +383,148 @@ export function UploadProvider({ children }: { children: ReactNode }) {
     }
   }, [updateUpload]);
 
+  // Cloudflare Stream upload for admin technique videos
+  const startCloudflareUpload = useCallback(async (
+    file: File, 
+    title: string
+  ): Promise<{ videoUrl: string; thumbnailUrl: string | null; cloudflareVideoId: string } | null> => {
+    const uploadId = `cloudflare_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const abortController = new AbortController();
+    abortControllers.current.set(uploadId, abortController);
+
+    const newUpload: UploadTask = {
+      id: uploadId,
+      fileName: title || file.name,
+      fileSize: file.size,
+      uploadedBytes: 0,
+      progress: 0,
+      status: 'uploading',
+      type: 'cloudflare',
+      startTime: Date.now(),
+    };
+
+    setUploads(prev => [...prev, newUpload]);
+
+    try {
+      // Step 1: Get direct upload URL from Cloudflare Stream (0-5%)
+      updateUpload(uploadId, { progress: 2 });
+      
+      const { data: uploadData, error: uploadError } = await supabase.functions.invoke('upload-to-cloudflare-stream', {
+        body: { action: 'get-upload-url' }
+      });
+
+      if (uploadError || !uploadData?.uploadUrl) {
+        throw new Error(uploadError?.message || 'アップロードURLの取得に失敗しました');
+      }
+
+      const { uploadUrl, videoId } = uploadData;
+      updateUpload(uploadId, { progress: 5, cloudflareVideoId: videoId });
+
+      // Step 2: Upload the file directly to Cloudflare with progress tracking (5-70%)
+      const uploadPromise = new Promise<void>((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        
+        xhr.upload.onprogress = (event) => {
+          if (event.lengthComputable) {
+            // Map upload progress (0-100%) to (5-70%)
+            const uploadPercent = (event.loaded / event.total) * 100;
+            const mappedPercent = 5 + (uploadPercent * 0.65);
+            updateUpload(uploadId, { 
+              progress: Math.round(mappedPercent),
+              uploadedBytes: event.loaded 
+            });
+          }
+        };
+        
+        xhr.onload = () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            resolve();
+          } else {
+            reject(new Error('Cloudflare Streamへのアップロードに失敗しました'));
+          }
+        };
+        
+        xhr.onerror = () => reject(new Error('ネットワークエラーが発生しました'));
+        xhr.ontimeout = () => reject(new Error('アップロードがタイムアウトしました'));
+        
+        // Handle abort
+        abortController.signal.addEventListener('abort', () => {
+          xhr.abort();
+          reject(new Error('キャンセルされました'));
+        });
+        
+        xhr.open('POST', uploadUrl);
+        xhr.send(file);
+      });
+
+      await uploadPromise;
+      
+      // Step 3: Poll for video processing completion (70-100%)
+      updateUpload(uploadId, { progress: 70, status: 'processing' });
+
+      let attempts = 0;
+      const maxAttempts = 60; // 5 minutes max (5 sec intervals)
+      let videoUrl: string | null = null;
+      let thumbnailUrl: string | null = null;
+
+      while (attempts < maxAttempts) {
+        // Check if cancelled
+        if (abortController.signal.aborted) {
+          throw new Error('キャンセルされました');
+        }
+        
+        const { data: statusData, error: statusError } = await supabase.functions.invoke('upload-to-cloudflare-stream', {
+          body: { action: 'get-video-status', videoId }
+        });
+
+        if (statusError) {
+          console.error('Status check error:', statusError);
+        }
+
+        if (statusData?.ready && statusData?.playbackUrl) {
+          // Normalize to videodelivery.net format for stability
+          const cfVideoId = statusData.playbackUrl.match(/\/([a-f0-9-]+)\/manifest/)?.[1] || videoId;
+          videoUrl = `https://videodelivery.net/${cfVideoId}/manifest/video.m3u8`;
+          thumbnailUrl = `https://videodelivery.net/${cfVideoId}/thumbnails/thumbnail.jpg`;
+          break;
+        }
+
+        await new Promise(resolve => setTimeout(resolve, 5000));
+        attempts++;
+        
+        // Map processing attempts (0-60) to progress (70-99%) with logarithmic curve
+        const processingPercent = Math.min(99, 70 + (Math.log(attempts + 1) / Math.log(61)) * 29);
+        updateUpload(uploadId, { progress: Math.round(processingPercent) });
+      }
+
+      if (!videoUrl) {
+        throw new Error('動画の処理がタイムアウトしました。しばらく待ってから再試行してください。');
+      }
+
+      updateUpload(uploadId, { 
+        progress: 100, 
+        status: 'completed',
+        videoUrl,
+        thumbnailUrl: thumbnailUrl || undefined,
+      });
+
+      abortControllers.current.delete(uploadId);
+      toast.success("Cloudflare Streamへのアップロードが完了しました！");
+      
+      return { videoUrl, thumbnailUrl, cloudflareVideoId: videoId };
+    } catch (error) {
+      if (error instanceof Error && (error.name === 'AbortError' || error.message === 'キャンセルされました')) {
+        updateUpload(uploadId, { status: 'error', error: 'キャンセルされました' });
+      } else {
+        const errorMessage = error instanceof Error ? error.message : "アップロードに失敗しました";
+        updateUpload(uploadId, { status: 'error', error: errorMessage });
+        toast.error(errorMessage);
+      }
+      abortControllers.current.delete(uploadId);
+      return null;
+    }
+  }, [updateUpload]);
+
   const cancelUpload = useCallback((id: string) => {
     const controller = abortControllers.current.get(id);
     if (controller) {
@@ -397,7 +541,7 @@ export function UploadProvider({ children }: { children: ReactNode }) {
   const isUploading = uploads.some(u => u.status === 'uploading' || u.status === 'processing');
 
   return (
-    <UploadContext.Provider value={{ uploads, startUpload, startStorageUpload, cancelUpload, clearCompletedUploads, isUploading }}>
+    <UploadContext.Provider value={{ uploads, startUpload, startStorageUpload, startCloudflareUpload, cancelUpload, clearCompletedUploads, isUploading }}>
       {children}
     </UploadContext.Provider>
   );
