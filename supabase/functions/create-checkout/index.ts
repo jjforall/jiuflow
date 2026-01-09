@@ -72,25 +72,35 @@ serve(async (req) => {
     sessionConfig.payment_method_collection = 'always';
 
     // Referrer codes that grant access to the special Founder plan
+    // MURATABJJ: 1480 JPY/month with 1 month free trial
+    // YUKIBJJ: 980 JPY/month (original founder price)
     const REFERRER_CODES = ["MURATABJJ", "YUKIBJJ"];
-    const FOUNDER_REFERRAL_PRICE_ID_980 = "price_1SR3ZmDqLakc8NxkNdqL5BtO"; // 980 JPY/month (until Dec 2025)
-    const FOUNDER_REFERRAL_PRICE_ID_1480 = "price_1Sdu0rDqLakc8NxkBt73C3DL"; // 1480 JPY/month (from Jan 2026)
+    const MURATABJJ_PRICE_ID = "price_1Sdu0rDqLakc8NxkBt73C3DL"; // 1480 JPY/month
+    const YUKIBJJ_PRICE_ID = "price_1SR3ZmDqLakc8NxkNdqL5BtO"; // 980 JPY/month
 
     // Check if referralCode is a special referrer code
     const isReferrerCode = referralCode && REFERRER_CODES.includes(referralCode.toUpperCase());
     
-    // If it's a referrer code, override the priceId based on date
+    // If it's a referrer code, override the priceId and trial settings
     if (isReferrerCode) {
-      const now = new Date();
-      const jan2026 = new Date("2026-01-01T00:00:00+09:00"); // JST
-      const referralPriceId = now >= jan2026 ? FOUNDER_REFERRAL_PRICE_ID_1480 : FOUNDER_REFERRAL_PRICE_ID_980;
-      const priceAmount = now >= jan2026 ? "1480" : "980";
+      const upperCode = referralCode.toUpperCase();
       
-      sessionConfig.line_items = [{
-        price: referralPriceId,
-        quantity: 1,
-      }];
-      console.log(`Referrer code detected, switching to Founder plan (${priceAmount} JPY/month):`, referralCode);
+      if (upperCode === "MURATABJJ") {
+        // MURATABJJ: 1480 JPY/month with 1 month free trial
+        sessionConfig.line_items = [{
+          price: MURATABJJ_PRICE_ID,
+          quantity: 1,
+        }];
+        sessionConfig.subscription_data.trial_period_days = 30; // 1 month free
+        console.log(`MURATABJJ code: 1480 JPY/month with 30-day free trial`);
+      } else if (upperCode === "YUKIBJJ") {
+        // YUKIBJJ: 980 JPY/month (keeps default trial from above)
+        sessionConfig.line_items = [{
+          price: YUKIBJJ_PRICE_ID,
+          quantity: 1,
+        }];
+        console.log(`YUKIBJJ code: 980 JPY/month with default trial`);
+      }
     }
 
     const actualCouponId = couponCode || (!isReferrerCode ? referralCode : null);
