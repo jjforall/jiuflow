@@ -132,7 +132,10 @@ serve(async (req) => {
         throw new Error("Failed to create TUS session (Location header missing)");
       }
 
-      const uploadUrl = new URL(location, "https://upload.videodelivery.net").toString();
+      const uploadUrlObj = new URL(location, "https://upload.videodelivery.net");
+      // Cloudflare TUS v2 requires this query param for browser uploads
+      uploadUrlObj.searchParams.set("tusv2", "true");
+      const uploadUrl = uploadUrlObj.toString();
 
       // Cloudflare returns the media UID in stream-media-id header (when available)
       const streamMediaId =
