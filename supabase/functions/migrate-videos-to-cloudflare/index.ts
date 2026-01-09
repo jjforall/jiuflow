@@ -347,6 +347,57 @@ serve(async (req) => {
 
     let results: any[] = [];
 
+    // ========== LIST-ALL: Brute force mode - list all Cloudflare videos without search ==========
+    if (action === 'list-all') {
+      const listUrl = `/stream?limit=100&status=ready`;
+      console.log('[LIST-ALL] Fetching all videos from Cloudflare:', listUrl);
+      
+      try {
+        const { json } = await cloudflareFetch(listUrl);
+        const videos = Array.isArray((json as any)?.result) ? (json as any).result : [];
+        
+        console.log(`[LIST-ALL] Received ${videos.length} videos from Cloudflare`);
+        
+        // Map to simplified format for display
+        const videoList = videos.map((v: any) => ({
+          uid: v?.uid ?? null,
+          name: v?.meta?.name ?? null,
+          created: v?.created ?? v?.uploaded ?? null,
+          duration: v?.duration ?? null,
+          status: v?.status?.state ?? v?.status ?? null,
+          readyToStream: v?.readyToStream ?? null,
+          thumbnail: v?.thumbnail ?? null,
+        }));
+
+        return new Response(
+          JSON.stringify({
+            success: true,
+            action,
+            message: `Found ${videoList.length} videos in Cloudflare Stream`,
+            requestUrl: `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}${listUrl}`,
+            resultLength: videos.length,
+            videos: videoList,
+            diagnostics,
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      } catch (listError) {
+        console.error('[LIST-ALL] Error:', listError);
+        return new Response(
+          JSON.stringify({
+            success: false,
+            action,
+            message: listError instanceof Error ? listError.message : String(listError),
+            requestUrl: `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}${listUrl}`,
+            resultLength: 0,
+            videos: [],
+            diagnostics,
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    }
+
     // Repair broken videos (404) from video_metadata backup
     if (action === 'repair-broken') {
       // Get techniques with broken Cloudflare URLs (customer-46bf2542468db352a9741f14b84d2744)
