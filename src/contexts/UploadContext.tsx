@@ -406,87 +406,147 @@ export function UploadProvider({ children }: { children: ReactNode }) {
     setUploads(prev => [...prev, newUpload]);
 
     try {
-      // Step 1: Get direct upload URL from Cloudflare Stream (0-5%)
+      // Step 1: Get upload destination (0-5%)
       updateUpload(uploadId, { progress: 2 });
-      
-      const { data: uploadData, error: uploadError } = await supabase.functions.invoke('upload-to-cloudflare-stream', {
-        body: { action: 'get-upload-url' }
-      });
+
+      const isLargeFile = file.size > 200 * 1024 * 1024;
+
+      const { data: uploadData, error: uploadError } = await supabase.functions.invoke(
+        'upload-to-cloudflare-stream',
+        {
+          body: isLargeFile
+            ? {
+                action: 'create-tus-session',
+                fileSize: file.size,
+                fileName: title || file.name,
+                fileType: file.type,
+                maxDurationSeconds: 7200,
+              }
+            : { action: 'get-upload-url' },
+        }
+      );
 
       if (uploadError || !uploadData?.uploadUrl) {
         throw new Error(uploadError?.message || 'アップロードURLの取得に失敗しました');
       }
 
-      const { uploadUrl, videoId } = uploadData;
-      updateUpload(uploadId, { progress: 5, cloudflareVideoId: videoId });
-
-      // Step 2: Upload using TUS protocol
-      // Cloudflare Stream Direct Upload URL is already a TUS endpoint - no need to create session
-      // Just send PATCH requests directly to uploadUrl
-      console.log(`Cloudflare TUS upload: file size ${file.size} bytes (${(file.size / 1024 / 1024).toFixed(2)} MB)`);
-
-      // Cloudflare Stream requires minimum 5MB chunks (except for last chunk)
-      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-      const CHUNK_SIZE = isMobile ? 5 * 1024 * 1024 : 10 * 1024 * 1024; // 5MB mobile, 10MB desktop
-      let offset = 0;
-      const MAX_RETRIES = 5;
-      let retryCount = 0;
-
-      while (offset < file.size) {
-        if (abortController.signal.aborted) {
-          throw new Error('アップロードがキャンセルされました');
-        }
-
-        const chunk = file.slice(offset, Math.min(offset + CHUNK_SIZE, file.size));
-
-        try {
-          const patchResponse = await fetch(uploadUrl, {
-            method: "PATCH",
-            headers: {
-              "Tus-Resumable": "1.0.0",
-              "Upload-Offset": offset.toString(),
-              "Content-Type": "application/offset+octet-stream",
-              "Upload-Length": file.size.toString(),
-            },
-            body: chunk,
-            signal: abortController.signal,
-          });
-
-          if (!patchResponse.ok) {
-            const errorText = await patchResponse.text();
-            console.error(`Cloudflare TUS PATCH failed at offset ${offset}:`, patchResponse.status, errorText);
-            throw new Error(`チャンクアップロード失敗 (${patchResponse.status})`);
-          }
-
-          const newOffset = parseInt(patchResponse.headers.get("Upload-Offset") || "0", 10);
-          if (newOffset <= offset && offset < file.size) {
-            // If offset didn't advance, use chunk size
-            offset += chunk.size;
-          } else {
-            offset = newOffset;
-          }
-          retryCount = 0;
-
-          // Map upload progress (0-100%) to (5-70%)
-          const uploadPercent = (offset / file.size) * 100;
-          const mappedPercent = 5 + (uploadPercent * 0.65);
-          updateUpload(uploadId, { 
-            progress: Math.round(mappedPercent),
-            uploadedBytes: offset 
-          });
-
-        } catch (err) {
-          retryCount++;
-          if (retryCount > MAX_RETRIES) {
-            throw new Error(`アップロードに失敗しました: ${err}`);
-          }
-          console.log(`Cloudflare TUS retry ${retryCount}/${MAX_RETRIES} at offset ${offset}`);
-          await new Promise((r) => setTimeout(r, 1500 * retryCount));
-        }
+      const { uploadUrl, videoId } = uploadData as { uploadUrl: string; videoId: string | null };
+      if (!videoId) {
+        throw new Error('CloudflareのvideoId取得に失敗しました');
       }
 
-      console.log(`Cloudflare TUS upload complete: ${offset} bytes uploaded`);
-      
+      updateUpload(uploadId, { progress: 5, cloudflareVideoId: videoId });
+
+      // Step 2: Upload
+      if (!isLargeFile) {
+        // Basic upload (<=200MB) using multipart/form-data POST
+        await new Promise<void>((resolve, reject) => {
+          const xhr = new XMLHttpRequest();
+
+          xhr.upload.onprogress = (event) => {
+            if (event.lengthComputable) {
+              const uploadPercent = (event.loaded / event.total) * 100;
+              const mappedPercent = 5 + uploadPercent * 0.65;
+              updateUpload(uploadId, {
+                progress: Math.round(mappedPercent),
+                uploadedBytes: event.loaded,
+              });
+            }
+          };
+
+          xhr.onload = () => {
+            if (xhr.status >= 200 && xhr.status < 300) {
+              resolve();
+              return;
+            }
+
+            const responseText = typeof xhr.responseText === 'string' ? xhr.responseText : '';
+            reject(
+              new Error(
+                `Cloudflare Streamへのアップロードに失敗しました (${xhr.status}): ${responseText.slice(0, 200)}`
+              )
+            );
+          };
+
+          xhr.onerror = () => reject(new Error('ネットワークエラーが発生しました'));
+          xhr.ontimeout = () => reject(new Error('アップロードがタイムアウトしました'));
+
+          abortController.signal.addEventListener('abort', () => {
+            xhr.abort();
+            reject(new Error('キャンセルされました'));
+          });
+
+          xhr.open('POST', uploadUrl);
+          const formData = new FormData();
+          formData.append('file', file, file.name);
+          xhr.send(formData);
+        });
+      } else {
+        // Resumable upload (>200MB) using TUS PATCH to the Location URL
+        console.log(
+          `Cloudflare TUS upload: file size ${file.size} bytes (${(file.size / 1024 / 1024).toFixed(2)} MB)`
+        );
+
+        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+        const CHUNK_SIZE = isMobile ? 5 * 1024 * 1024 : 10 * 1024 * 1024;
+        let offset = 0;
+        const MAX_RETRIES = 5;
+        let retryCount = 0;
+
+        while (offset < file.size) {
+          if (abortController.signal.aborted) {
+            throw new Error('アップロードがキャンセルされました');
+          }
+
+          const chunk = file.slice(offset, Math.min(offset + CHUNK_SIZE, file.size));
+
+          try {
+            const patchResponse = await fetch(uploadUrl, {
+              method: 'PATCH',
+              headers: {
+                'Tus-Resumable': '1.0.0',
+                'Upload-Offset': offset.toString(),
+                'Content-Type': 'application/offset+octet-stream',
+              },
+              body: chunk,
+              signal: abortController.signal,
+            });
+
+            if (!patchResponse.ok) {
+              const errorText = await patchResponse.text();
+              console.error(
+                `Cloudflare TUS PATCH failed at offset ${offset}:`,
+                patchResponse.status,
+                errorText
+              );
+              throw new Error(
+                `チャンクアップロード失敗 (${patchResponse.status}): ${errorText.slice(0, 200)}`
+              );
+            }
+
+            const newOffsetHeader = patchResponse.headers.get('Upload-Offset');
+            const newOffset = newOffsetHeader ? parseInt(newOffsetHeader, 10) : NaN;
+            offset = Number.isFinite(newOffset) ? newOffset : offset + chunk.size;
+            retryCount = 0;
+
+            const uploadPercent = (offset / file.size) * 100;
+            const mappedPercent = 5 + uploadPercent * 0.65;
+            updateUpload(uploadId, {
+              progress: Math.round(mappedPercent),
+              uploadedBytes: offset,
+            });
+          } catch (err) {
+            retryCount++;
+            if (retryCount > MAX_RETRIES) {
+              throw new Error(`アップロードに失敗しました: ${err}`);
+            }
+            await new Promise((r) => setTimeout(r, 1500 * retryCount));
+          }
+        }
+
+        console.log(`Cloudflare TUS upload complete: ${offset} bytes uploaded`);
+      }
+
       // Step 3: Poll for video processing completion (70-100%)
       updateUpload(uploadId, { progress: 70, status: 'processing' });
 

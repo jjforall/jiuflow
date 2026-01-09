@@ -89,6 +89,70 @@ serve(async (req) => {
       );
     }
 
+    if (action === "create-tus-session") {
+      const { fileSize, fileName, fileType, maxDurationSeconds } = body;
+
+      if (!fileSize || typeof fileSize !== "number") {
+        throw new Error("fileSize is required");
+      }
+
+      const safeFileName = String(fileName || `Video_${Date.now()}`);
+      const safeFileType = String(fileType || "video/mp4");
+      const safeMaxDurationSeconds = Number(maxDurationSeconds || 7200); // default 2 hours
+
+      // Resumable uploads for files over 200MB must use tus via /stream?direct_user=true
+      // Cloudflare expects Upload-Metadata values in base64.
+      const uploadMetadata = [
+        `name ${btoa(unescape(encodeURIComponent(safeFileName)))}`,
+        `filetype ${btoa(unescape(encodeURIComponent(safeFileType)))}`,
+        `maxDurationSeconds ${btoa(String(safeMaxDurationSeconds))}`,
+      ].join(",");
+
+      const response = await fetch(
+        `https://api.cloudflare.com/client/v4/accounts/${accountId}/stream?direct_user=true`,
+        {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${apiToken}`,
+            "Tus-Resumable": "1.0.0",
+            "Upload-Length": String(fileSize),
+            "Upload-Metadata": uploadMetadata,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("[CLOUDFLARE-STREAM] Failed to create TUS session:", response.status, errorText);
+        throw new Error(`Failed to create TUS session (${response.status})`);
+      }
+
+      const location = response.headers.get("Location") || response.headers.get("location");
+      if (!location) {
+        throw new Error("Failed to create TUS session (Location header missing)");
+      }
+
+      const uploadUrl = new URL(location, "https://upload.videodelivery.net").toString();
+
+      // Cloudflare returns the media UID in stream-media-id header (when available)
+      const streamMediaId =
+        response.headers.get("stream-media-id") ||
+        response.headers.get("Stream-Media-Id") ||
+        response.headers.get("Stream-Media-ID");
+
+      const inferredId = streamMediaId || uploadUrl.match(/([a-f0-9]{32})/i)?.[1] || null;
+
+      console.log(`[CLOUDFLARE-STREAM] TUS session created for video: ${inferredId ?? "unknown"}`);
+
+      return new Response(
+        JSON.stringify({
+          uploadUrl,
+          videoId: inferredId,
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     if (action === "get-video-status") {
       if (!videoId) {
         throw new Error("videoId is required");
