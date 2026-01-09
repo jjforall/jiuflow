@@ -489,6 +489,17 @@ export function UploadProvider({ children }: { children: ReactNode }) {
 
         const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
         const CHUNK_SIZE = isMobile ? 5 * 1024 * 1024 : 10 * 1024 * 1024;
+
+        const resumableUploadUrl = (() => {
+          try {
+            const u = new URL(uploadUrl);
+            u.searchParams.set('tusv2', 'true');
+            return u.toString();
+          } catch {
+            return uploadUrl;
+          }
+        })();
+
         let offset = 0;
         const MAX_RETRIES = 5;
         let retryCount = 0;
@@ -501,7 +512,7 @@ export function UploadProvider({ children }: { children: ReactNode }) {
           const chunk = file.slice(offset, Math.min(offset + CHUNK_SIZE, file.size));
 
           try {
-            const patchResponse = await fetch(uploadUrl, {
+            const patchResponse = await fetch(resumableUploadUrl, {
               method: 'PATCH',
               headers: {
                 'Tus-Resumable': '1.0.0',
