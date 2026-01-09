@@ -440,11 +440,15 @@ export function UploadProvider({ children }: { children: ReactNode }) {
           if (xhr.status >= 200 && xhr.status < 300) {
             resolve();
           } else {
-            reject(new Error('Cloudflare Streamへのアップロードに失敗しました'));
+            console.error('Cloudflare upload failed:', xhr.status, xhr.statusText, xhr.responseText);
+            reject(new Error(`Cloudflare Streamへのアップロードに失敗しました (${xhr.status}: ${xhr.statusText})`));
           }
         };
         
-        xhr.onerror = () => reject(new Error('ネットワークエラーが発生しました'));
+        xhr.onerror = () => {
+          console.error('Cloudflare upload network error');
+          reject(new Error('ネットワークエラーが発生しました'));
+        };
         xhr.ontimeout = () => reject(new Error('アップロードがタイムアウトしました'));
         
         // Handle abort
@@ -454,7 +458,11 @@ export function UploadProvider({ children }: { children: ReactNode }) {
         });
         
         xhr.open('POST', uploadUrl);
-        xhr.send(file);
+        
+        // Cloudflare Stream requires FormData with 'file' field
+        const formData = new FormData();
+        formData.append('file', file);
+        xhr.send(formData);
       });
 
       await uploadPromise;
