@@ -281,6 +281,70 @@ export const TechniquesManagement = () => {
     has403Error: boolean;
   } | null>(null);
 
+  // List-all state (brute force mode)
+  const [isListingAll, setIsListingAll] = useState(false);
+  const [cloudflareVideoList, setCloudflareVideoList] = useState<{
+    requestUrl: string;
+    resultLength: number;
+    videos: Array<{
+      uid: string | null;
+      name: string | null;
+      created: string | null;
+      duration: number | null;
+      status: string | null;
+    }>;
+    error?: string;
+  } | null>(null);
+
+  // List all Cloudflare videos (brute force mode)
+  const handleListAllCloudflareVideos = async () => {
+    setIsListingAll(true);
+    setCloudflareVideoList(null);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error("ログインが必要です");
+        return;
+      }
+
+      const response = await supabase.functions.invoke('migrate-videos-to-cloudflare', {
+        body: { action: 'list-all' },
+      });
+
+      if (response.error) {
+        throw new Error(response.error.message);
+      }
+
+      const result = response.data;
+      console.log("[List All] Full result:", result);
+
+      setCloudflareVideoList({
+        requestUrl: result.requestUrl || '',
+        resultLength: result.resultLength || 0,
+        videos: result.videos || [],
+        error: result.success ? undefined : result.message,
+      });
+
+      if (result.success) {
+        toast.success(`${result.resultLength}件の動画を取得しました`);
+      } else {
+        toast.error(result.message || "取得に失敗しました");
+      }
+    } catch (error) {
+      console.error("List all error:", error);
+      const msg = error instanceof Error ? error.message : "取得に失敗しました";
+      setCloudflareVideoList({
+        requestUrl: '',
+        resultLength: 0,
+        videos: [],
+        error: msg,
+      });
+      toast.error(msg);
+    } finally {
+      setIsListingAll(false);
+    }
+  };
+
   // Preview relink - shows which videos would be linked without updating DB
   const handlePreviewRelink = async () => {
     setIsPreviewingRelink(true);
@@ -2170,6 +2234,24 @@ export const TechniquesManagement = () => {
             </div>
             <div className="flex gap-2">
               <Button 
+                onClick={handleListAllCloudflareVideos}
+                disabled={isListingAll}
+                variant="outline"
+                className="border-purple-500 text-purple-500 hover:bg-purple-500/10"
+              >
+                {isListingAll ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    取得中...
+                  </>
+                ) : (
+                  <>
+                    <Cloud className="w-4 h-4 mr-2" />
+                    全動画リスト取得
+                  </>
+                )}
+              </Button>
+              <Button 
                 onClick={handlePreviewRelink}
                 disabled={isPreviewingRelink}
                 variant="outline"
@@ -2189,6 +2271,81 @@ export const TechniquesManagement = () => {
               </Button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Cloudflare Video List (Brute Force Mode) */}
+      {cloudflareVideoList && (
+        <div className="mb-6 p-4 border border-purple-500/50 bg-purple-500/5 rounded-lg">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="font-medium flex items-center gap-2">
+              <Cloud className="w-4 h-4 text-purple-500" />
+              Cloudflare 全動画リスト（力技モード）
+            </h3>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => setCloudflareVideoList(null)}
+            >
+              <X className="w-4 h-4" />
+            </Button>
+          </div>
+
+          {/* Diagnostics */}
+          <div className="mb-4 p-3 bg-muted/50 rounded-md text-sm font-mono">
+            <p className="font-medium mb-1">診断情報:</p>
+            <ul className="space-y-1 text-muted-foreground text-xs">
+              <li>リクエストURL: <code className="bg-muted px-1 rounded break-all">{cloudflareVideoList.requestUrl || 'N/A'}</code></li>
+              <li>json.result.length: <span className="text-green-600 font-bold">{cloudflareVideoList.resultLength}</span></li>
+              {cloudflareVideoList.error && (
+                <li className="text-red-600">エラー: {cloudflareVideoList.error}</li>
+              )}
+            </ul>
+          </div>
+
+          {/* Video List Table */}
+          {cloudflareVideoList.videos.length > 0 ? (
+            <div className="overflow-x-auto max-h-96 overflow-y-auto">
+              <table className="w-full text-sm">
+                <thead className="sticky top-0 bg-background">
+                  <tr className="border-b">
+                    <th className="text-left p-2">#</th>
+                    <th className="text-left p-2">UID</th>
+                    <th className="text-left p-2">meta.name（タイトル）</th>
+                    <th className="text-left p-2">作成日時</th>
+                    <th className="text-left p-2">長さ</th>
+                    <th className="text-left p-2">状態</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {cloudflareVideoList.videos.map((video, idx) => (
+                    <tr key={video.uid || idx} className="border-b border-muted hover:bg-muted/30">
+                      <td className="p-2 text-muted-foreground">{idx + 1}</td>
+                      <td className="p-2 font-mono text-xs">{video.uid || '-'}</td>
+                      <td className="p-2">{video.name || <span className="text-muted-foreground italic">（名前なし）</span>}</td>
+                      <td className="p-2 text-xs text-muted-foreground">
+                        {video.created ? new Date(video.created).toLocaleString('ja-JP') : '-'}
+                      </td>
+                      <td className="p-2 text-xs">
+                        {video.duration ? `${Math.round(video.duration)}秒` : '-'}
+                      </td>
+                      <td className="p-2 text-xs">
+                        <span className={`px-1.5 py-0.5 rounded ${
+                          video.status === 'ready' ? 'bg-green-500/20 text-green-600' : 'bg-yellow-500/20 text-yellow-600'
+                        }`}>
+                          {video.status || '-'}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <p className="text-muted-foreground text-center py-4">
+              {cloudflareVideoList.error ? 'エラーが発生しました' : '動画が見つかりませんでした'}
+            </p>
+          )}
         </div>
       )}
 
