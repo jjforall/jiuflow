@@ -1,9 +1,21 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { z } from "https://deno.land/x/zod@v3.23.8/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+// Input validation schema for OAuth parameters
+const oauthParamsSchema = z.object({
+  client_id: z.string().min(1, "client_id is required").max(255, "client_id too long"),
+  redirect_uri: z.string().url("Invalid redirect_uri").max(2048, "redirect_uri too long"),
+  response_type: z.literal('code', { errorMap: () => ({ message: "response_type must be 'code'" }) }),
+  scope: z.string().max(500, "scope too long").optional().default('profile'),
+  state: z.string().max(500, "state too long").optional(),
+  code_challenge: z.string().max(128, "code_challenge too long").optional(),
+  code_challenge_method: z.enum(['plain', 'S256']).optional(),
+});
 
 Deno.serve(async (req) => {
   // Handle CORS preflight
@@ -17,27 +29,32 @@ Deno.serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
     
-    // Parse OAuth parameters
-    const clientId = url.searchParams.get('client_id');
-    const redirectUri = url.searchParams.get('redirect_uri');
-    const responseType = url.searchParams.get('response_type');
-    const scope = url.searchParams.get('scope') || 'profile';
-    const state = url.searchParams.get('state');
-    const codeChallenge = url.searchParams.get('code_challenge');
-    const codeChallengeMethod = url.searchParams.get('code_challenge_method');
-
-    console.log('OAuth authorize request:', { clientId, redirectUri, responseType, scope, state });
-
-    // Validate required parameters
-    if (!clientId || !redirectUri || responseType !== 'code') {
+    // Parse and validate OAuth parameters
+    const rawParams = {
+      client_id: url.searchParams.get('client_id'),
+      redirect_uri: url.searchParams.get('redirect_uri'),
+      response_type: url.searchParams.get('response_type'),
+      scope: url.searchParams.get('scope') || undefined,
+      state: url.searchParams.get('state') || undefined,
+      code_challenge: url.searchParams.get('code_challenge') || undefined,
+      code_challenge_method: url.searchParams.get('code_challenge_method') || undefined,
+    };
+    
+    const parseResult = oauthParamsSchema.safeParse(rawParams);
+    
+    if (!parseResult.success) {
       return new Response(JSON.stringify({
         error: 'invalid_request',
-        error_description: 'Missing or invalid required parameters (client_id, redirect_uri, response_type=code)',
+        error_description: parseResult.error.issues.map(i => i.message).join(', '),
       }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
+    
+    const { client_id: clientId, redirect_uri: redirectUri, scope, state, code_challenge: codeChallenge, code_challenge_method: codeChallengeMethod } = parseResult.data;
+
+    console.log('OAuth authorize request:', { clientId, redirectUri, scope, state });
 
     // Create admin client to validate OAuth client
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
