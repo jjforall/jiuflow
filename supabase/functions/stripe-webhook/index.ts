@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
+import { z } from "https://deno.land/x/zod@v3.23.8/mod.ts";
 
 const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
   apiVersion: "2025-08-27.basil",
@@ -12,6 +13,42 @@ const logStep = (step: string, details?: unknown) => {
   const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
   console.log(`[STRIPE-WEBHOOK] ${step}${detailsStr}`);
 };
+
+// Validation schemas for metadata
+const cartItemSchema = z.object({
+  variantId: z.number().int().positive(),
+  quantity: z.number().int().positive().max(100),
+});
+
+const videoPurchaseMetadataSchema = z.object({
+  type: z.literal("video_purchase"),
+  videoId: z.string().uuid(),
+  buyerId: z.string().uuid(),
+  ownerId: z.string().uuid(),
+  featuredUserId: z.string().uuid().optional(),
+  totalAmount: z.string().regex(/^\d+$/).optional(),
+  platformFee: z.string().regex(/^\d+$/).optional(),
+  ownerAmount: z.string().regex(/^\d+$/).optional(),
+  featuredUserAmount: z.string().regex(/^\d+$/).optional(),
+});
+
+const videoTipMetadataSchema = z.object({
+  videoId: z.string().uuid(),
+  userId: z.string().uuid(),
+  message: z.string().max(500).optional(),
+});
+
+// Helper function to safely parse cart items
+function parseAndValidateCartItems(cartItemsJson: string): { variantId: number; quantity: number }[] | null {
+  try {
+    const parsed = JSON.parse(cartItemsJson);
+    if (!Array.isArray(parsed)) return null;
+    const result = z.array(cartItemSchema).safeParse(parsed);
+    return result.success ? result.data : null;
+  } catch {
+    return null;
+  }
+}
 
 // Function to track conversion across GA4, Meta, and Google Ads
 async function trackConversion(data: {

@@ -1,6 +1,13 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
+import { z } from "https://deno.land/x/zod@v3.23.8/mod.ts";
 import { getCorsHeaders } from "../_shared/cors.ts";
+
+// Input validation schema
+const manageRolesSchema = z.object({
+  targetUserId: z.string().uuid("Invalid user ID format"),
+  makeAdmin: z.boolean(),
+});
 
 serve(async (req) => {
   const corsHeaders = getCorsHeaders(req);
@@ -60,14 +67,18 @@ serve(async (req) => {
       });
     }
 
-    const { targetUserId, makeAdmin } = await req.json();
-
-    if (!targetUserId || typeof makeAdmin !== "boolean") {
-      return new Response(JSON.stringify({ error: "Invalid payload" }), {
+    // Parse and validate the request body
+    const rawBody = await req.json();
+    const parseResult = manageRolesSchema.safeParse(rawBody);
+    
+    if (!parseResult.success) {
+      return new Response(JSON.stringify({ error: "Validation failed", details: parseResult.error.flatten().fieldErrors }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 400,
       });
     }
+
+    const { targetUserId, makeAdmin } = parseResult.data;
 
     if (makeAdmin) {
       // Idempotent grant

@@ -1,6 +1,14 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
+import { z } from "https://deno.land/x/zod@v3.23.8/mod.ts";
 import { getCorsHeaders } from "../_shared/cors.ts";
+
+// Input validation schema
+const createUserSchema = z.object({
+  email: z.string().email("Invalid email format").max(255, "Email too long").transform(v => v.toLowerCase().trim()),
+  password: z.string().min(8, "Password must be at least 8 characters").max(128, "Password too long"),
+  role: z.enum(["user", "admin", "staff"]).default("user"),
+});
 
 serve(async (req) => {
   const corsHeaders = getCorsHeaders(req);
@@ -64,15 +72,18 @@ serve(async (req) => {
 
     console.log('Admin verified');
 
-    // Parse the request body
-    const { email, password, role = 'user' } = await req.json();
-
-    if (!email || !password) {
+    // Parse and validate the request body
+    const rawBody = await req.json();
+    const parseResult = createUserSchema.safeParse(rawBody);
+    
+    if (!parseResult.success) {
       return new Response(
-        JSON.stringify({ error: 'Email and password are required' }),
+        JSON.stringify({ error: 'Validation failed', details: parseResult.error.flatten().fieldErrors }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+    
+    const { email, password, role } = parseResult.data;
 
     console.log('Creating user:', email);
 
