@@ -850,14 +850,11 @@ const VideoPlayerInner = ({
         </div>
       )}
       
-      {/* Buffering indicator during playback - positioned at bottom-left to not block video content */}
+      {/* Buffering indicator during playback - spinner only, no text */}
       {isBuffering && hasStarted && (
         <div className="absolute bottom-16 left-4 z-10 pointer-events-none">
-          <div className="bg-black/70 backdrop-blur-sm rounded-lg px-3 py-2 flex items-center gap-2">
+          <div className="bg-black/70 backdrop-blur-sm rounded-full p-2">
             <Loader2 className="w-5 h-5 text-white animate-spin" />
-            <span className="text-white text-sm font-medium">
-              {language === "ja" ? "読み込み中..." : language === "pt" ? "Carregando..." : "Loading..."}
-            </span>
           </div>
         </div>
       )}
