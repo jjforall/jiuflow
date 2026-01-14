@@ -12,7 +12,7 @@ import { useSubscription } from "@/hooks/useSubscription";
 import { useAuth } from "@/hooks/useAuth";
 import { useFavoriteTechniques } from "@/hooks/useFavoriteTechniques";
 import { prefetchVideo } from "@/hooks/useVideoPrefetch";
-import { Lock, Eye, Target, Trophy, Flame, ArrowLeft, Heart } from "lucide-react";
+import { Lock, Eye, Target, Trophy, Flame, ArrowLeft, Heart, Map } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { VideoPlayer } from "@/components/VideoPlayer";
 import { VideoThumbnail } from "@/components/ui/video-thumbnail";
@@ -1026,16 +1026,28 @@ const Video = () => {
 
               {/* Back Button and Technique Info */}
               <div className="mt-6 animate-fade-up space-y-4">
-                {/* Back to Map Button */}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => navigate(-1)}
-                  className="gap-2 -ml-2 text-muted-foreground hover:text-foreground"
-                >
-                  <ArrowLeft className="h-4 w-4" />
-                  {language === "ja" ? "戻る" : language === "pt" ? "Voltar" : "Back"}
-                </Button>
+                {/* Navigation Buttons */}
+                <div className="flex items-center gap-3">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => navigate(-1)}
+                    className="gap-2 -ml-2 text-muted-foreground hover:text-foreground"
+                  >
+                    <ArrowLeft className="h-4 w-4" />
+                    {language === "ja" ? "戻る" : language === "pt" ? "Voltar" : "Back"}
+                  </Button>
+                  <Link to="/map">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="gap-2"
+                    >
+                      <Map className="h-4 w-4" />
+                      {language === "ja" ? "技マップ" : language === "pt" ? "Mapa" : "Map"}
+                    </Button>
+                  </Link>
+                </div>
                 
                 <div className="flex flex-col gap-3">
                   <div className="flex items-center justify-between">
