@@ -974,11 +974,14 @@ serve(async (req) => {
       
       console.log('Received LINE webhook');
       
-      // Verify signature (skip in development if needed)
+      // Verify signature - reject invalid signatures when channel secret is configured
       const isValid = await verifyLineSignature(bodyText, signature);
       if (!isValid && LINE_CHANNEL_SECRET) {
-        console.error('Invalid LINE signature');
-        // Still process for testing, but log the warning
+        console.error('Invalid LINE signature - rejecting request');
+        return new Response(JSON.stringify({ error: 'Invalid signature' }), {
+          status: 401,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
       }
 
       const body: LineWebhookBody = JSON.parse(bodyText);
