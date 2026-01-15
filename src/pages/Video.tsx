@@ -53,6 +53,7 @@ interface Technique {
   hashtags: string[];
   series_name: string | null;
   series_order: number | null;
+  series_prefix: string | null;
   thumbnail_url: string | null;
   thumbnail_url_ja: string | null;
   thumbnail_url_pt: string | null;
@@ -260,37 +261,27 @@ const Video = () => {
     // Load view count and record new view in parallel
     const viewPromise = loadViewCount(videoId, userId).then(() => recordVideoView(videoId, userId));
 
-    // Get all series to calculate letter index
+    // Use series_prefix from database directly instead of calculating it
     let letterValue = "";
     let seriesVids: Technique[] = [];
     
     if (techniqueData?.series_name) {
-      // Load series data in parallel
-      const [allSeriesResult, seriesDataResult] = await Promise.all([
-        supabase
-          .from("techniques")
-          .select("series_name")
-          .not("series_name", "is", null)
-          .order("series_name", { ascending: true }),
-        supabase
-          .from("techniques")
-          .select("*")
-          .eq("series_name", techniqueData.series_name)
-          .neq("id", videoId)
-          .order("series_order", { ascending: true })
-      ]);
-
-      if (allSeriesResult.data) {
-        const uniqueSeries = [...new Set(allSeriesResult.data.map(s => s.series_name))].filter(Boolean) as string[];
-        const seriesIndex = uniqueSeries.indexOf(techniqueData.series_name);
-        if (seriesIndex !== -1) {
-          letterValue = String.fromCharCode(65 + seriesIndex);
-          setSeriesLetter(letterValue);
-        }
+      // Use the series_prefix directly from the technique data
+      if (techniqueData.series_prefix) {
+        letterValue = techniqueData.series_prefix;
+        setSeriesLetter(letterValue);
       }
+      
+      // Load series videos
+      const { data: seriesDataResult } = await supabase
+        .from("techniques")
+        .select("*")
+        .eq("series_name", techniqueData.series_name)
+        .neq("id", videoId)
+        .order("series_order", { ascending: true });
 
-      if (seriesDataResult.data) {
-        seriesVids = seriesDataResult.data as Technique[];
+      if (seriesDataResult) {
+        seriesVids = seriesDataResult as Technique[];
         setSeriesVideos(seriesVids);
       }
     }
