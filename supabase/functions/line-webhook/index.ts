@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { buildSafeIlikeFilter } from "../_shared/search-utils.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -402,8 +403,9 @@ async function executeTool(name: string, args: Record<string, unknown>): Promise
     switch (name) {
       case "search_celebrities": {
         let query = supabase.from('celebrities').select('id, display_name, bio, home_dojo, avatar_url');
-        if (args.query) {
-          query = query.or(`display_name.ilike.%${args.query}%,bio.ilike.%${args.query}%,home_dojo.ilike.%${args.query}%`);
+        const searchFilter = buildSafeIlikeFilter(['display_name', 'bio', 'home_dojo'], args.query as string);
+        if (searchFilter) {
+          query = query.or(searchFilter);
         }
         const { data, error } = await query.limit(Number(args.limit) || 10);
         if (error) throw error;
@@ -412,8 +414,9 @@ async function executeTool(name: string, args: Record<string, unknown>): Promise
       
       case "search_tournaments": {
         let query = supabase.from('tournaments').select('id, name, name_ja, date_start, date_end, location, location_ja');
-        if (args.query) {
-          query = query.or(`name.ilike.%${args.query}%,name_ja.ilike.%${args.query}%`);
+        const searchFilter = buildSafeIlikeFilter(['name', 'name_ja'], args.query as string);
+        if (searchFilter) {
+          query = query.or(searchFilter);
         }
         if (args.upcoming) {
           query = query.gte('date_start', new Date().toISOString().split('T')[0]);
@@ -425,8 +428,9 @@ async function executeTool(name: string, args: Record<string, unknown>): Promise
       
       case "search_techniques": {
         let query = supabase.from('techniques').select('id, name, name_ja, category, description');
-        if (args.query) {
-          query = query.or(`name.ilike.%${args.query}%,name_ja.ilike.%${args.query}%,description.ilike.%${args.query}%`);
+        const searchFilter = buildSafeIlikeFilter(['name', 'name_ja', 'description'], args.query as string);
+        if (searchFilter) {
+          query = query.or(searchFilter);
         }
         if (args.category) {
           query = query.eq('category', args.category);
@@ -438,8 +442,9 @@ async function executeTool(name: string, args: Record<string, unknown>): Promise
       
       case "search_dojos": {
         let query = supabase.from('dojos').select('id, name, name_ja, location, description');
-        if (args.query) {
-          query = query.or(`name.ilike.%${args.query}%,name_ja.ilike.%${args.query}%,location.ilike.%${args.query}%`);
+        const searchFilter = buildSafeIlikeFilter(['name', 'name_ja', 'location'], args.query as string);
+        if (searchFilter) {
+          query = query.or(searchFilter);
         }
         const { data, error } = await query.limit(Number(args.limit) || 10);
         if (error) throw error;
@@ -448,8 +453,9 @@ async function executeTool(name: string, args: Record<string, unknown>): Promise
       
       case "search_venues": {
         let query = supabase.from('venues').select('id, name, name_ja, location, capacity');
-        if (args.query) {
-          query = query.or(`name.ilike.%${args.query}%,name_ja.ilike.%${args.query}%,location.ilike.%${args.query}%`);
+        const searchFilter = buildSafeIlikeFilter(['name', 'name_ja', 'location'], args.query as string);
+        if (searchFilter) {
+          query = query.or(searchFilter);
         }
         const { data, error } = await query.limit(Number(args.limit) || 10);
         if (error) throw error;
@@ -479,8 +485,9 @@ async function executeTool(name: string, args: Record<string, unknown>): Promise
 
       case "list_users": {
         let query = supabase.from('profiles').select('id, display_name, username, avatar_url, created_at');
-        if (args.search) {
-          query = query.or(`display_name.ilike.%${args.search}%,username.ilike.%${args.search}%`);
+        const searchFilter = buildSafeIlikeFilter(['display_name', 'username'], args.search as string);
+        if (searchFilter) {
+          query = query.or(searchFilter);
         }
         const { data, error } = await query.order('created_at', { ascending: false }).limit(Number(args.limit) || 20);
         if (error) throw error;
