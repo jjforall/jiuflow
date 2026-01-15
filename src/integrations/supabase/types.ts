@@ -2643,6 +2643,7 @@ export type Database = {
           created_at: string
           dojo_id: string
           id: string
+          is_public: boolean | null
           joined_at: string | null
           relationship_type: string
           user_id: string
@@ -2651,6 +2652,7 @@ export type Database = {
           created_at?: string
           dojo_id: string
           id?: string
+          is_public?: boolean | null
           joined_at?: string | null
           relationship_type: string
           user_id: string
@@ -2659,6 +2661,7 @@ export type Database = {
           created_at?: string
           dojo_id?: string
           id?: string
+          is_public?: boolean | null
           joined_at?: string | null
           relationship_type?: string
           user_id?: string
