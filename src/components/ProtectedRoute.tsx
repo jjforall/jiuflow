@@ -18,13 +18,21 @@ export const ProtectedRoute = ({
   const location = useLocation();
   const [searchParams] = useSearchParams();
   
-  // Check if accessing video via unlisted list (has ?list= parameter)
+  // Check if accessing a video page and/or via unlisted list (has ?list= parameter)
   const listId = searchParams.get('list');
   const isVideoRoute = location.pathname.includes('/video/');
   const isUnlistedListAccess = isVideoRoute && !!listId;
 
-  // If accessing video via unlisted list, bypass auth guard and let Video.tsx handle access control
-  if (isUnlistedListAccess) {
+  // Video pages handle their own access control (membership wall, unlisted-list access, etc.)
+  // So we always bypass auth guard for /video/:id routes and let Video.tsx decide.
+  if (isVideoRoute) {
+    if (listId || searchParams.get('debug') === '1') {
+      console.log('[ProtectedRoute] bypass video route', {
+        pathname: location.pathname,
+        listId,
+        isUnlistedListAccess,
+      });
+    }
     return <>{children}</>;
   }
 
