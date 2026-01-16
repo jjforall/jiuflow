@@ -1,4 +1,4 @@
-import { useParams, Link, useNavigate, useSearchParams } from "react-router-dom";
+import { useParams, Link, useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
@@ -79,6 +79,7 @@ const getTranslatedSeriesName = (seriesName: string | null, language: string): s
 };
 
 const Video = () => {
+  const location = useLocation();
   const { id } = useParams<{ id: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
   const { language } = useLanguage();
@@ -110,6 +111,22 @@ const Video = () => {
     notes: "",
   });
   
+  // Debug: confirm we are on the expected route and query params are present
+  useEffect(() => {
+    const listId = searchParams.get("list");
+    const debug = searchParams.get("debug") === "1";
+    if (listId || debug) {
+      console.log("[Video] route debug", {
+        pathname: location.pathname,
+        search: location.search,
+        id,
+        listId,
+        authLoading,
+        hasUser: !!user,
+      });
+    }
+  }, [searchParams, location.pathname, location.search, id, authLoading, user]);
+
   // Check if accessing from an unlisted video list
   useEffect(() => {
     const listId = searchParams.get("list");
