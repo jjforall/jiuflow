@@ -101,12 +101,53 @@ const Video = () => {
   const [isTranslating, setIsTranslating] = useState(false);
   const [currentAudioLanguage, setCurrentAudioLanguage] = useState<string>("ja");
   const [pendingSeekTime, setPendingSeekTime] = useState<number | null>(null);
+  const [isFromUnlistedList, setIsFromUnlistedList] = useState<boolean>(false);
+  const [listAccessChecked, setListAccessChecked] = useState<boolean>(false);
   const [formData, setFormData] = useState({
     practice_date: new Date(),
     proficiency_level: "1",
     repetition_count: "30",
     notes: "",
   });
+  
+  // Check if accessing from an unlisted video list
+  useEffect(() => {
+    const listId = searchParams.get("list");
+    if (!listId) {
+      setListAccessChecked(true);
+      return;
+    }
+    
+    const checkListAccess = async () => {
+      try {
+        const { data: listData, error } = await supabase
+          .from("video_lists")
+          .select("visibility")
+          .eq("id", listId)
+          .single();
+        
+        if (!error && listData?.visibility === "unlisted") {
+          // Verify the video is actually in this list
+          const { data: itemData, error: itemError } = await supabase
+            .from("video_list_items")
+            .select("id")
+            .eq("list_id", listId)
+            .eq("technique_id", id)
+            .maybeSingle();
+          
+          if (!itemError && itemData) {
+            setIsFromUnlistedList(true);
+          }
+        }
+      } catch (err) {
+        console.error("Error checking list access:", err);
+      } finally {
+        setListAccessChecked(true);
+      }
+    };
+    
+    checkListAccess();
+  }, [searchParams, id]);
 
   // 動画ページに来たら、音楽が再生中で音量が25%以上なら25%にフェードダウン
   useEffect(() => {
@@ -362,33 +403,67 @@ const Video = () => {
   // 統合初期化 - キャッシュがあれば即座表示、なければサーバーから取得
   useEffect(() => {
     if (!id) return;
+    // Wait for auth to finish loading before deciding if user is authenticated
+    if (authLoading) return;
     
     const initializeAll = async () => {
       try {
-        // useAuthからユーザー情報を使用（すでにロード済み）
-        if (!user) {
-          // ユーザーがまだロード中の場合は待機
-          return;
-        }
+        const userId = user?.id;
 
-        const userId = user.id;
-
-        // キャッシュから即座に復元を試みる
-        const cachedData = restoreFromCache();
-        
-        if (cachedData) {
-          // キャッシュがあれば即座に表示
-          setTechnique(cachedData.technique);
-          setSeriesVideos(cachedData.seriesVideos);
-          setSeriesLetter(cachedData.seriesLetter);
-          setViewCount(cachedData.viewCount);
-          setIsReady(true);
+        // For authenticated users, use cache and user-specific features
+        if (userId) {
+          // キャッシュから即座に復元を試みる
+          const cachedData = restoreFromCache();
           
-          // バックグラウンドで更新チェック
-          backgroundRefresh(userId);
+          if (cachedData) {
+            // キャッシュがあれば即座に表示
+            setTechnique(cachedData.technique);
+            setSeriesVideos(cachedData.seriesVideos);
+            setSeriesLetter(cachedData.seriesLetter);
+            setViewCount(cachedData.viewCount);
+            setIsReady(true);
+            
+            // バックグラウンドで更新チェック
+            backgroundRefresh(userId);
+          } else {
+            // キャッシュがない場合はサーバーから取得
+            await loadTechniqueFromServer(id, userId, `technique:${id}`);
+            setIsReady(true);
+          }
         } else {
-          // キャッシュがない場合はサーバーから取得
-          await loadTechniqueFromServer(id, userId, `technique:${id}`);
+          // For unauthenticated users (e.g., accessing from unlisted list), load technique without view tracking
+          const { data, error } = await supabase
+            .from("techniques")
+            .select("*")
+            .eq("id", id)
+            .maybeSingle();
+
+          if (error) {
+            console.error("Error loading technique:", error);
+            setIsReady(true);
+            return;
+          }
+
+          const techniqueData = data as Technique;
+          setTechnique(techniqueData);
+
+          // Use series_prefix from database directly
+          if (techniqueData?.series_name && techniqueData.series_prefix) {
+            setSeriesLetter(techniqueData.series_prefix);
+            
+            // Load series videos
+            const { data: seriesDataResult } = await supabase
+              .from("techniques")
+              .select("*")
+              .eq("series_name", techniqueData.series_name)
+              .neq("id", id)
+              .order("series_order", { ascending: true });
+
+            if (seriesDataResult) {
+              setSeriesVideos(seriesDataResult as Technique[]);
+            }
+          }
+          
           setIsReady(true);
         }
       } catch (error) {
@@ -399,7 +474,7 @@ const Video = () => {
 
     initializeAll();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id, user]);
+  }, [id, user, authLoading]);
 
   const getTechniqueName = (tech: Technique) => {
     switch (language) {
@@ -729,8 +804,8 @@ const Video = () => {
     }
   };
 
-  // 統合ローディング - 認証やテクニックデータ読み込み中はスケルトン表示
-  if (!isReady || authLoading) {
+  // 統合ローディング - 認証やテクニックデータ読み込み中、またはリストアクセスチェック中はスケルトン表示
+  if (!isReady || authLoading || !listAccessChecked) {
     return (
       <div className="min-h-screen">
         <Navigation />
@@ -764,7 +839,8 @@ const Video = () => {
 
   // Only show membership page to non-authenticated users
   // Logged-in users can view regardless of subscription status per memory features/subscription-access-logic
-  if (!user) {
+  // Users accessing from unlisted video lists can also view without authentication
+  if (!user && !isFromUnlistedList) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/20">
         <Navigation />
