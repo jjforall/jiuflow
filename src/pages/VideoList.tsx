@@ -140,6 +140,8 @@ export default function VideoList() {
   };
 
   const canViewVideo = (technique: VideoListItem['technique']) => {
+    // If the list itself is unlisted, all videos in the list are viewable by anyone with the link
+    if (list?.visibility === 'unlisted') return true;
     // Public or unlisted techniques are viewable
     if (technique.visibility === 'unlisted') return true;
     // Subscribers can view all
