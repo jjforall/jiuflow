@@ -1,8 +1,7 @@
-import { Navigate, useLocation } from 'react-router-dom';
+import { Navigate, useLocation, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
-import { Skeleton } from '@/components/ui/skeleton';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -17,6 +16,17 @@ export const ProtectedRoute = ({
 }: ProtectedRouteProps) => {
   const { user, isLoading, isAdmin, isStaff, rolesChecked } = useAuth();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
+  
+  // Check if accessing video via unlisted list (has ?list= parameter)
+  const listId = searchParams.get('list');
+  const isVideoRoute = location.pathname.includes('/video/');
+  const isUnlistedListAccess = isVideoRoute && !!listId;
+
+  // If accessing video via unlisted list, bypass auth guard and let Video.tsx handle access control
+  if (isUnlistedListAccess) {
+    return <>{children}</>;
+  }
 
   // Show loading state while checking authentication or roles
   if (isLoading || (user && requireAdmin && !rolesChecked)) {
