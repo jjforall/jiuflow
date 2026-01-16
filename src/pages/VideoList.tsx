@@ -272,7 +272,7 @@ export default function VideoList() {
                   {/* Play all button */}
                   {items.length > 0 && (
                     <Button asChild className="w-full mt-4">
-                      <Link to={`/video/${items[0].technique.id}`}>
+                      <Link to={`/video/${items[0].technique.id}${list.visibility === 'unlisted' ? `?list=${list.id}` : ''}`}>
                         <Play className="w-4 h-4 mr-2 fill-current" />
                         すべて再生
                       </Link>
@@ -310,7 +310,7 @@ export default function VideoList() {
                       {/* Thumbnail */}
                       {canView ? (
                         <Link 
-                          to={`/video/${item.technique.id}`}
+                          to={`/video/${item.technique.id}${list.visibility === 'unlisted' ? `?list=${list.id}` : ''}`}
                           className="relative w-40 aspect-video flex-shrink-0 rounded overflow-hidden bg-muted group"
                         >
                           {item.technique.thumbnail_url ? (
@@ -350,7 +350,7 @@ export default function VideoList() {
                       {/* Video info */}
                       <div className="flex-1 min-w-0 py-1">
                         {canView ? (
-                          <Link to={`/video/${item.technique.id}`}>
+                          <Link to={`/video/${item.technique.id}${list.visibility === 'unlisted' ? `?list=${list.id}` : ''}`}>
                             <h3 className="font-medium line-clamp-2 hover:text-primary transition-colors">
                               {getLocalizedName(item.technique)}
                             </h3>
