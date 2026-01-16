@@ -118,9 +118,7 @@ const App = () => (
                     <Route path="athletes" element={<SuspenseWrapper variant="map"><Athletes /></SuspenseWrapper>} />
                     <Route path="lineage-tree" element={<SuspenseWrapper variant="map"><LineageTree /></SuspenseWrapper>} />
                     <Route path="video/:id" element={
-                      <ProtectedRoute>
-                        <SuspenseWrapper variant="video"><Video /></SuspenseWrapper>
-                      </ProtectedRoute>
+                      <SuspenseWrapper variant="video"><Video /></SuspenseWrapper>
                     } />
                     <Route path="lists/:slug" element={<SuspenseWrapper variant="map"><VideoList /></SuspenseWrapper>} />
                     <Route path="video-upload-info" element={
@@ -217,9 +215,7 @@ const App = () => (
 
                   {/* Video pages */}
                   <Route path="/video/:id" element={
-                    <ProtectedRoute>
-                      <SuspenseWrapper variant="video"><Video /></SuspenseWrapper>
-                    </ProtectedRoute>
+                    <SuspenseWrapper variant="video"><Video /></SuspenseWrapper>
                   } />
                   <Route path="/video-upload-info" element={
                     <ProtectedRoute>
