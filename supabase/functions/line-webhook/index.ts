@@ -13,7 +13,39 @@ const LINE_CHANNEL_SECRET = Deno.env.get('LINE_CHANNEL_SECRET');
 const GROQ_API_KEY = Deno.env.get('GROQ_API_KEY');
 const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+
+// Helper function to verify admin authentication
+async function verifyAdminAuth(req: Request): Promise<{ userId: string } | null> {
+  const authHeader = req.headers.get('Authorization');
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return null;
+  }
+  
+  const token = authHeader.replace('Bearer ', '');
+  const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey);
+  
+  const { data: { user }, error } = await supabaseAuth.auth.getUser(token);
+  if (error || !user) {
+    return null;
+  }
+  
+  // Check if user has admin role
+  const supabase = createClient(supabaseUrl, supabaseServiceKey);
+  const { data: roleData } = await supabase
+    .from('user_roles')
+    .select('role')
+    .eq('user_id', user.id)
+    .eq('role', 'admin')
+    .single();
+  
+  if (!roleData) {
+    return null;
+  }
+  
+  return { userId: user.id };
+}
 
 interface LineEvent {
   type: string;
@@ -894,16 +926,32 @@ serve(async (req) => {
       });
     }
 
-    // Get settings endpoint (for admin panel)
+    // Get settings endpoint (for admin panel) - requires admin auth
     if (req.method === 'GET' && url.pathname.endsWith('/settings')) {
+      const admin = await verifyAdminAuth(req);
+      if (!admin) {
+        return new Response(JSON.stringify({ error: 'Unauthorized: Admin access required' }), {
+          status: 401,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      
       const settings = await getLineSettings();
       return new Response(JSON.stringify(settings), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    // Update settings endpoint (for admin panel)
+    // Update settings endpoint (for admin panel) - requires admin auth
     if (req.method === 'POST' && url.pathname.endsWith('/settings')) {
+      const admin = await verifyAdminAuth(req);
+      if (!admin) {
+        return new Response(JSON.stringify({ error: 'Unauthorized: Admin access required' }), {
+          status: 401,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      
       const settings = await req.json();
       const supabase = createClient(supabaseUrl, supabaseServiceKey);
       
@@ -943,8 +991,16 @@ serve(async (req) => {
       });
     }
 
-    // Get chat logs endpoint (for admin panel)
+    // Get chat logs endpoint (for admin panel) - requires admin auth
     if (req.method === 'GET' && url.pathname.endsWith('/logs')) {
+      const admin = await verifyAdminAuth(req);
+      if (!admin) {
+        return new Response(JSON.stringify({ error: 'Unauthorized: Admin access required' }), {
+          status: 401,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      
       const supabase = createClient(supabaseUrl, supabaseServiceKey);
       const limit = url.searchParams.get('limit') || '50';
       
