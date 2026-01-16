@@ -1,10 +1,44 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { getCorsHeaders } from "../_shared/cors.ts";
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+// Environment variables for authentication
+const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+
+// Verify admin authentication
+async function verifyAdminAuth(req: Request): Promise<{ authorized: boolean; userId?: string; error?: string }> {
+  const authHeader = req.headers.get('Authorization');
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return { authorized: false, error: 'Missing or invalid Authorization header' };
+  }
+
+  const token = authHeader.replace('Bearer ', '');
+  const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, {
+    global: { headers: { Authorization: `Bearer ${token}` } }
+  });
+
+  const { data: { user }, error: authError } = await supabaseAuth.auth.getUser();
+  if (authError || !user) {
+    return { authorized: false, error: 'Invalid or expired token' };
+  }
+
+  // Check if user has admin role
+  const supabaseService = createClient(supabaseUrl, supabaseServiceKey);
+  const { data: adminRole } = await supabaseService
+    .from('user_roles')
+    .select('role')
+    .eq('user_id', user.id)
+    .eq('role', 'admin')
+    .maybeSingle();
+
+  if (!adminRole) {
+    return { authorized: false, error: 'Admin role required' };
+  }
+
+  return { authorized: true, userId: user.id };
+}
 
 interface ChatMessage {
   role: 'user' | 'assistant' | 'system' | 'tool';
@@ -1288,14 +1322,26 @@ async function processWithTools(
 }
 
 serve(async (req) => {
+  const corsHeaders = getCorsHeaders(req);
+
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
+    // CRITICAL: Verify admin authentication before processing any requests
+    const authResult = await verifyAdminAuth(req);
+    if (!authResult.authorized) {
+      console.log(`MCP Chat auth failed: ${authResult.error}`);
+      return new Response(
+        JSON.stringify({ error: authResult.error }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     const { messages, provider, model, apiKeys = {} }: ChatRequest = await req.json();
 
-    console.log(`MCP Chat request - Provider: ${provider}, Model: ${model}`);
+    console.log(`MCP Chat request - Provider: ${provider}, Model: ${model}, User: ${authResult.userId}`);
 
     const result = await processWithTools(messages, provider, model, apiKeys);
 
