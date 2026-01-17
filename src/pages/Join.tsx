@@ -534,6 +534,25 @@ const Join = () => {
           )}
 
           <>
+            {/* First Month Free Campaign Banner */}
+            <div className="mb-12 relative overflow-hidden rounded-2xl animate-fade-up">
+              <div className="absolute inset-0 bg-gradient-to-r from-primary via-secondary to-accent opacity-90" />
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,rgba(255,255,255,0.2),transparent_50%)]" />
+              <div className="relative p-8 md:p-10 text-center text-white">
+                <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-white/20 backdrop-blur-sm rounded-full text-sm font-medium mb-4">
+                  <span className="animate-pulse">🎉</span>
+                  <span>{language === "ja" ? "期間限定キャンペーン" : "Limited Time Offer"}</span>
+                </div>
+                <h2 className="text-3xl md:text-4xl font-bold mb-3">
+                  {language === "ja" ? "初月無料" : "First Month FREE"}
+                </h2>
+                <p className="text-lg md:text-xl opacity-90 max-w-xl mx-auto">
+                  {language === "ja" 
+                    ? "今なら登録から1ヶ月間、すべてのコンテンツを無料でお試しいただけます" 
+                    : "Try all content free for 1 month from registration"}
+                </p>
+              </div>
+            </div>
 
             <div className="text-center mb-16 animate-fade-up">
               <h1 className="text-5xl md:text-6xl font-light mb-6">{t.join.title}</h1>
@@ -874,16 +893,31 @@ const Join = () => {
               
               {/* Monthly Plan - Only shown when no valid referral code */}
               {!isValidReferralCode && (
-                <div className="relative overflow-hidden rounded-2xl group hover:shadow-xl transition-all">
+                <div className="relative overflow-hidden rounded-2xl group hover:shadow-xl transition-all ring-2 ring-primary/50">
+                  {/* First Month Free Badge */}
+                  <div className="absolute -top-1 -right-1 z-10">
+                    <div className="bg-gradient-to-r from-primary to-secondary text-white text-xs font-bold px-3 py-1.5 rounded-bl-lg rounded-tr-xl shadow-lg">
+                      {language === "ja" ? "🎁 初月無料" : "🎁 1st Month FREE"}
+                    </div>
+                  </div>
                   <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-background" />
-                  <div className="relative border border-border/50 p-10 rounded-2xl backdrop-blur-sm">
+                  <div className="relative border border-primary/30 p-10 rounded-2xl backdrop-blur-sm">
                     <h3 className="text-3xl font-light mb-6">
                       {language === "ja" ? "月額プラン" : "Monthly Plan"}
                     </h3>
                     <div className="mb-8">
-                      <div className="text-5xl font-light mb-3">¥2,900</div>
-                      <div className="text-base text-muted-foreground font-light">
-                        {language === "ja" ? "月額（いつでもキャンセル可能）" : "per month (cancel anytime)"}
+                      <div className="flex items-baseline gap-2">
+                        <div className="text-5xl font-light">¥2,900</div>
+                        <div className="text-sm text-muted-foreground">
+                          {language === "ja" ? "/月" : "/mo"}
+                        </div>
+                      </div>
+                      <div className="mt-2 inline-flex items-center gap-1.5 px-3 py-1 bg-primary/10 text-primary text-sm font-medium rounded-full">
+                        <span>✨</span>
+                        <span>{language === "ja" ? "初月0円でお試し" : "Try free for 1 month"}</span>
+                      </div>
+                      <div className="text-sm text-muted-foreground font-light mt-2">
+                        {language === "ja" ? "いつでもキャンセル可能" : "Cancel anytime"}
                       </div>
                     </div>
                     <ul className="space-y-4 mb-8 text-base font-light">
@@ -901,12 +935,17 @@ const Join = () => {
                       </li>
                     </ul>
                     <Button
-                      className="w-full h-14 text-lg bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg transition-all"
-                      onClick={() => handleCheckout(PRICE_IDS.monthly, false)}
+                      className="w-full h-14 text-lg bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90 text-primary-foreground shadow-lg transition-all"
+                      onClick={() => handleCheckout(PRICE_IDS.monthly, true)}
                       disabled={isLoading}
                     >
-                      {language === "ja" ? "今すぐ始める" : "Start Now"}
+                      {language === "ja" ? "初月無料で始める" : "Start Free Trial"}
                     </Button>
+                    <p className="text-xs text-center text-muted-foreground mt-3">
+                      {language === "ja" 
+                        ? "※ 無料期間終了前にマイページからいつでも解約可能" 
+                        : "* Cancel anytime before trial ends from My Page"}
+                    </p>
                   </div>
                 </div>
               )}
