@@ -62,6 +62,7 @@ const VenueDetail = lazy(() => import("./pages/VenueDetail"));
 const OrganizationDetail = lazy(() => import("./pages/OrganizationDetail"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const Glossary = lazy(() => import("./pages/Glossary"));
+const FAQ = lazy(() => import("./pages/FAQ"));
 const Blog = lazy(() => import("./pages/Blog"));
 const VideoList = lazy(() => import("./pages/VideoList"));
 const TranscriptionDetail = lazy(() => import("./pages/TranscriptionDetail"));
@@ -103,6 +104,7 @@ const App = () => (
                     <Route path="privacy" element={<SuspenseWrapper><PrivacyPolicy /></SuspenseWrapper>} />
                     <Route path="terms" element={<SuspenseWrapper><Terms /></SuspenseWrapper>} />
                     <Route path="glossary" element={<SuspenseWrapper><Glossary /></SuspenseWrapper>} />
+                    <Route path="faq" element={<SuspenseWrapper><FAQ /></SuspenseWrapper>} />
                     <Route path="blog" element={<SuspenseWrapper><Blog /></SuspenseWrapper>} />
                     <Route path="tournaments" element={<SuspenseWrapper><Tournaments /></SuspenseWrapper>} />
                     <Route path="tournaments/:year/:slug" element={<SuspenseWrapper><TournamentDetail /></SuspenseWrapper>} />
@@ -196,6 +198,7 @@ const App = () => (
                   <Route path="/privacy" element={<SuspenseWrapper><PrivacyPolicy /></SuspenseWrapper>} />
                   <Route path="/terms" element={<SuspenseWrapper><Terms /></SuspenseWrapper>} />
                   <Route path="/glossary" element={<SuspenseWrapper><Glossary /></SuspenseWrapper>} />
+                  <Route path="/faq" element={<SuspenseWrapper><FAQ /></SuspenseWrapper>} />
                   <Route path="/blog" element={<SuspenseWrapper><Blog /></SuspenseWrapper>} />
                   <Route path="/tournaments" element={<SuspenseWrapper><Tournaments /></SuspenseWrapper>} />
                   <Route path="/tournaments/:year/:slug" element={<SuspenseWrapper><TournamentDetail /></SuspenseWrapper>} />
