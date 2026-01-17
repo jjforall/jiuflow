@@ -7,7 +7,7 @@ import { Progress } from "@/components/ui/progress";
 import { useState, useEffect } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { translations } from "@/lib/translations";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -16,6 +16,7 @@ import { useSubscription } from "@/hooks/useSubscription";
 import { Eye } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Label } from "@/components/ui/label";
 
 const useCountdown = () => {
@@ -976,27 +977,82 @@ const Join = () => {
             {/* FAQ */}
             <div className="mt-16 animate-fade-up">
               <h3 className="text-2xl font-light mb-8 text-center border-b border-border pb-4">
-                {t.join.faq.title}
+                {language === "ja" ? "よくあるご質問" : "FAQ"}
               </h3>
-              <div className="space-y-6">
-                <div>
-                  <h4 className="font-light mb-2">{t.join.faq.q1.q}</h4>
-                  <p className="text-muted-foreground font-light text-sm">
-                    {t.join.faq.q1.a}
-                  </p>
-                </div>
-                <div>
-                  <h4 className="font-light mb-2">{t.join.faq.q2.q}</h4>
-                  <p className="text-muted-foreground font-light text-sm">
-                    {t.join.faq.q2.a}
-                  </p>
-                </div>
-                <div>
-                  <h4 className="font-light mb-2">{t.join.faq.q3.q}</h4>
-                  <p className="text-muted-foreground font-light text-sm">
-                    {t.join.faq.q3.a}
-                  </p>
-                </div>
+              <Accordion type="multiple" className="space-y-2">
+                <AccordionItem value="faq-1" className="border border-border/50 rounded-lg px-4">
+                  <AccordionTrigger className="text-left text-sm md:text-base font-light hover:no-underline">
+                    {language === "ja" 
+                      ? "初心者でも内容は理解できますか？" 
+                      : "Can beginners understand the content?"}
+                  </AccordionTrigger>
+                  <AccordionContent className="text-muted-foreground text-sm font-light leading-relaxed">
+                    {language === "ja" 
+                      ? "はい。白帯の初心者でも身につけられ、かつ黒帯まで使い続けられる本質的なテクニックを厳選しています。実際にYAWARAやSWEEPでは、運動未経験からこのメソッドを学び、白帯で優勝された方も多数いらっしゃいます。"
+                      : "Yes. We carefully select essential techniques that beginners can learn and continue using up to black belt. At YAWARA and SWEEP, many people with no athletic background have learned this method and won championships at white belt."}
+                  </AccordionContent>
+                </AccordionItem>
+
+                <AccordionItem value="faq-2" className="border border-border/50 rounded-lg px-4">
+                  <AccordionTrigger className="text-left text-sm md:text-base font-light hover:no-underline">
+                    {language === "ja" 
+                      ? "他のサービスに比べてテクニックの種類が少ないのはなぜですか？" 
+                      : "Why are there fewer techniques compared to other services?"}
+                  </AccordionTrigger>
+                  <AccordionContent className="text-muted-foreground text-sm font-light leading-relaxed">
+                    {language === "ja" 
+                      ? "辞書のような網羅性を目指しているのではなく、黒帯までの最短ルートを迷わず進めるよう、あえて「回り道をしないための技」に絞って掲載しているためです。"
+                      : "Rather than aiming for dictionary-like comprehensiveness, we deliberately focus on 'techniques to avoid detours' so you can take the shortest path to black belt without getting lost."}
+                  </AccordionContent>
+                </AccordionItem>
+
+                <AccordionItem value="faq-3" className="border border-border/50 rounded-lg px-4">
+                  <AccordionTrigger className="text-left text-sm md:text-base font-light hover:no-underline">
+                    {language === "ja" 
+                      ? "動画を見ただけで強くなれますか？おすすめの学習方法は？" 
+                      : "Can I get stronger just by watching videos? What's the recommended learning method?"}
+                  </AccordionTrigger>
+                  <AccordionContent className="text-muted-foreground text-sm font-light leading-relaxed">
+                    {language === "ja" 
+                      ? "動画で論理を理解し、道場での練習で実践するのが最短の道です。練習直前にスマホでテーマを確認してからマットに上がるスタイルをおすすめしています。"
+                      : "The fastest path is to understand the logic through videos and practice at the dojo. We recommend checking the topic on your phone just before practice and then stepping onto the mat."}
+                  </AccordionContent>
+                </AccordionItem>
+
+                <AccordionItem value="faq-4" className="border border-border/50 rounded-lg px-4">
+                  <AccordionTrigger className="text-left text-sm md:text-base font-light hover:no-underline">
+                    {language === "ja" 
+                      ? "トライアル期間中に解約した場合、料金はかかりますか？" 
+                      : "Will I be charged if I cancel during the trial period?"}
+                  </AccordionTrigger>
+                  <AccordionContent className="text-muted-foreground text-sm font-light leading-relaxed">
+                    {language === "ja" 
+                      ? "期間終了前に解約手続きを完了すれば、料金は一切発生しません。マイページからいつでも即座にお手続きいただけます。"
+                      : "If you complete the cancellation process before the trial ends, no charges will be made. You can cancel anytime instantly from My Page."}
+                  </AccordionContent>
+                </AccordionItem>
+
+                <AccordionItem value="faq-5" className="border border-border/50 rounded-lg px-4">
+                  <AccordionTrigger className="text-left text-sm md:text-base font-light hover:no-underline">
+                    {language === "ja" 
+                      ? "練習記録機能はどのように使えますか？" 
+                      : "How can I use the practice record feature?"}
+                  </AccordionTrigger>
+                  <AccordionContent className="text-muted-foreground text-sm font-light leading-relaxed">
+                    {language === "ja" 
+                      ? "視聴した動画の感想や、スパーリングの気づきをメモとして残せます。言語化することで技術の定着率が高まり、自分だけの「デジタル柔術ノート」として活用いただけます。"
+                      : "You can save notes about your thoughts on watched videos and insights from sparring. Verbalizing helps techniques stick better, and you can use it as your own 'digital Jiu-Jitsu notebook'."}
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
+
+              <div className="mt-6 text-center">
+                <Link 
+                  to="/faq" 
+                  className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                >
+                  {language === "ja" ? "その他、詳細なFAQはこちら →" : "For more detailed FAQ →"}
+                </Link>
               </div>
             </div>
           </>
