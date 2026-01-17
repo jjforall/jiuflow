@@ -3381,6 +3381,12 @@ const MyPage = () => {
                           <p className="text-sm text-green-600 dark:text-green-400">
                             ✓ {language === "ja" ? "有効なプラン" : "Active Plan"}
                           </p>
+                          <p className="text-sm text-muted-foreground mb-2">
+                            {language === "ja" 
+                              ? <>解約後のデータ保持や、プランに関する<Link to="/faq" className="text-primary hover:underline">よくあるご質問はこちら</Link>をご確認ください。</>
+                              : <>For questions about data retention after cancellation, please check our <Link to="/faq" className="text-primary hover:underline">FAQ</Link>.</>
+                            }
+                          </p>
                           <AlertDialog open={showCancelSubscriptionDialog} onOpenChange={setShowCancelSubscriptionDialog}>
                             <AlertDialogTrigger asChild>
                               <Button
