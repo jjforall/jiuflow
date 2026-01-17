@@ -79,7 +79,7 @@ const FAQ = () => {
             <Accordion type="multiple" className="w-full">
               {philosophyFAQs.map((faq, index) => (
                 <AccordionItem key={index} value={`philosophy-${index}`}>
-                  <AccordionTrigger className="text-left text-foreground hover:text-primary">
+                  <AccordionTrigger className="text-left text-sm md:text-base text-foreground hover:text-primary">
                     {faq.question}
                   </AccordionTrigger>
                   <AccordionContent className="text-muted-foreground leading-relaxed">
@@ -106,7 +106,7 @@ const FAQ = () => {
             <Accordion type="multiple" className="w-full">
               {featureFAQs.map((faq, index) => (
                 <AccordionItem key={index} value={`feature-${index}`}>
-                  <AccordionTrigger className="text-left text-foreground hover:text-primary">
+                  <AccordionTrigger className="text-left text-sm md:text-base text-foreground hover:text-primary">
                     {faq.question}
                   </AccordionTrigger>
                   <AccordionContent className="text-muted-foreground leading-relaxed">
