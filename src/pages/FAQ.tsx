@@ -76,7 +76,7 @@ const FAQ = () => {
             <h2 className="text-lg md:text-xl font-semibold text-foreground mb-4 border-l-4 border-primary pl-3">
               JiuFlowの哲学・コンテンツについて
             </h2>
-            <Accordion type="single" collapsible className="w-full">
+            <Accordion type="multiple" className="w-full">
               {philosophyFAQs.map((faq, index) => (
                 <AccordionItem key={index} value={`philosophy-${index}`}>
                   <AccordionTrigger className="text-left text-foreground hover:text-primary">
@@ -103,7 +103,7 @@ const FAQ = () => {
             <h2 className="text-lg md:text-xl font-semibold text-foreground mb-4 border-l-4 border-primary pl-3">
               機能・活用法について
             </h2>
-            <Accordion type="single" collapsible className="w-full">
+            <Accordion type="multiple" className="w-full">
               {featureFAQs.map((faq, index) => (
                 <AccordionItem key={index} value={`feature-${index}`}>
                   <AccordionTrigger className="text-left text-foreground hover:text-primary">
