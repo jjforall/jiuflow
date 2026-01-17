@@ -75,6 +75,11 @@ const Footer = () => {
                 </Link>
               </li>
               <li>
+                <Link to="/faq" className="text-muted-foreground hover:text-foreground transition-colors">
+                  {language === "ja" ? "よくあるご質問" : language === "pt" ? "Perguntas Frequentes" : "FAQ"}
+                </Link>
+              </li>
+              <li>
                 <Link to="/contact" className="text-muted-foreground hover:text-foreground transition-colors">
                   {language === "ja" ? "お問い合わせ" : language === "pt" ? "Contato" : "Contact"}
                 </Link>
