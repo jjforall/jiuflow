@@ -699,7 +699,7 @@ const Join = () => {
                       {language === "ja" ? "🎁 紹介者限定プラン" : "🎁 Referral Plan"}
                     </div>
                     <h3 className="text-3xl font-light mb-6 mt-2">
-                      Ryozo Association
+                      Ryozo Association Plan
                     </h3>
                     <div className="mb-8">
                       <div className="text-5xl font-light mb-3 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">¥1,480</div>
