@@ -690,31 +690,31 @@ const Join = () => {
             <div className={`grid ${isValidReferralCode ? 'md:grid-cols-1 max-w-xl mx-auto' : 'md:grid-cols-2'} gap-8 mb-16 animate-fade-up`}>
               {/* Referral Plans - shown when valid referral code is entered */}
               
-              {/* MURATABJJ - Founder Plan */}
+              {/* MURATABJJ - Ryozo Association Plan */}
               {isValidReferralCode && referralPlanType === 'founder' && (
                 <div className="relative rounded-2xl group hover:shadow-2xl transition-all">
                   <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-secondary/10 to-accent/10 rounded-2xl" />
                   <div className="relative border-2 border-primary p-10 rounded-2xl backdrop-blur-sm">
                     <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-primary text-primary-foreground px-6 py-2 text-sm font-medium rounded-full shadow-lg z-10">
-                      {language === "ja" ? "🎁 特別プラン" : "🎁 Special Plan"}
+                      {language === "ja" ? "🎁 紹介者限定プラン" : "🎁 Referral Plan"}
                     </div>
                     <h3 className="text-3xl font-light mb-6 mt-2">
-                      Founder Plan
+                      Ryozo Association
                     </h3>
                     <div className="mb-8">
-                      <div className="text-5xl font-light mb-3 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">¥980</div>
+                      <div className="text-5xl font-light mb-3 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">¥1,480</div>
                       <div className="text-base text-muted-foreground font-light">
-                        {language === "ja" ? "月額（3ヶ月無料・いつでもキャンセル可能）" : "per month (3 months free・cancel anytime)"}
+                        {language === "ja" ? "月額（初月無料・いつでもキャンセル可能）" : "per month (1 month free・cancel anytime)"}
                       </div>
                     </div>
                     <ul className="space-y-4 mb-8 text-base font-light">
                       <li className="flex items-start">
                         <span className="mr-3 text-primary text-xl">✓</span>
-                        <span className="font-medium text-primary">{language === "ja" ? "永久に月額980円" : "¥980/month forever"}</span>
+                        <span className="font-medium text-primary">{language === "ja" ? "永久に月額1,480円（通常の約49%OFF）" : "¥1,480/month forever (about 49% off)"}</span>
                       </li>
                       <li className="flex items-start">
                         <span className="mr-3 text-primary text-xl">✓</span>
-                        <span className="font-medium text-primary">{language === "ja" ? "3ヶ月無料トライアル" : "3 months free trial"}</span>
+                        <span className="font-medium text-primary">{language === "ja" ? "初月無料トライアル" : "1 month free trial"}</span>
                       </li>
                       <li className="flex items-start">
                         <span className="mr-3 text-xl">✓</span>
@@ -730,7 +730,7 @@ const Join = () => {
                       onClick={() => handleCheckout(PRICE_IDS.founder, true)}
                       disabled={isLoading}
                     >
-                      {language === "ja" ? "Founder Planで始める" : "Start with Founder Plan"}
+                      {language === "ja" ? "初月無料で始める" : "Start with 1 month free"}
                     </Button>
                   </div>
                 </div>
