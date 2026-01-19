@@ -710,7 +710,7 @@ const Join = () => {
                     <ul className="space-y-4 mb-8 text-base font-light">
                       <li className="flex items-start">
                         <span className="mr-3 text-primary text-xl">✓</span>
-                        <span className="font-medium text-primary">{language === "ja" ? "永久に月額1,480円（通常の約49%OFF）" : "¥1,480/month forever (about 49% off)"}</span>
+                        <span className="font-medium text-primary">{language === "ja" ? "月額1,480円（通常の約49%OFF）" : "¥1,480/month (about 49% off)"}</span>
                       </li>
                       <li className="flex items-start">
                         <span className="mr-3 text-primary text-xl">✓</span>
