@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Home, Menu, BarChart3 } from "lucide-react";
@@ -42,6 +42,18 @@ import OAuthClientsManagement from "@/components/admin/OAuthClientsManagement";
 const AdminDashboard = () => {
   const { signOut } = useAuth();
   const [activeTab, setActiveTab] = useState("techniques");
+
+  // Listen for custom tab change events from other components
+  useEffect(() => {
+    const handleTabChange = (event: CustomEvent<string>) => {
+      setActiveTab(event.detail);
+    };
+    
+    window.addEventListener('admin-tab-change', handleTabChange as EventListener);
+    return () => {
+      window.removeEventListener('admin-tab-change', handleTabChange as EventListener);
+    };
+  }, []);
 
   const handleLogout = async () => {
     await signOut();
