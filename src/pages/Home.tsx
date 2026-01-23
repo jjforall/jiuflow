@@ -1,4 +1,3 @@
-import { useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import Navigation from "@/components/Navigation";
@@ -13,6 +12,8 @@ import { Badge } from "@/components/ui/badge";
 import { Award, BookOpen, FileText, CheckCircle, Users, Trophy } from "lucide-react";
 import { SEOHead, getOGLocale } from "@/components/SEOHead";
 import { TypewriterText } from "@/components/TypewriterText";
+import { ScrollToTopButton } from "@/components/ScrollToTopButton";
+import { AnimatedSection } from "@/components/AnimatedSection";
 import murataImage from "@/assets/murata-ryozo-portrait.jpg";
 import kimuraLockImage from "@/assets/kimura-lock-overhead.png";
 
@@ -177,225 +178,236 @@ const Home = () => {
             </section>
 
             {/* 4K Overhead Image Section */}
-            <section className="py-20 px-6 bg-background">
-              <div className="max-w-5xl mx-auto">
-                <div className="text-center mb-8">
-                  <h2 className="text-3xl md:text-4xl font-light mb-3">
-                    {language === 'ja' ? '上面からの4K撮影' : language === 'pt' ? 'Filmagem 4K Aérea' : '4K Overhead Filming'}
-                  </h2>
-                  <p className="text-lg text-muted-foreground font-light">
-                    {language === 'ja' ? '細部まで見逃さない、プロ仕様の撮影' : language === 'pt' ? 'Filmagem profissional que não perde nenhum detalhe' : 'Professional filming that captures every detail'}
-                  </p>
+            <AnimatedSection>
+              <section className="py-20 px-6 bg-background">
+                <div className="max-w-5xl mx-auto">
+                  <div className="text-center mb-8">
+                    <h2 className="text-3xl md:text-4xl font-light mb-3">
+                      {language === 'ja' ? '上面からの4K撮影' : language === 'pt' ? 'Filmagem 4K Aérea' : '4K Overhead Filming'}
+                    </h2>
+                    <p className="text-lg text-muted-foreground font-light">
+                      {language === 'ja' ? '細部まで見逃さない、プロ仕様の撮影' : language === 'pt' ? 'Filmagem profissional que não perde nenhum detalhe' : 'Professional filming that captures every detail'}
+                    </p>
+                  </div>
+                  <div className="relative rounded-2xl overflow-hidden shadow-xl">
+                    <img 
+                      src={kimuraLockImage} 
+                      alt={language === 'ja' ? '4K上面撮影 - キムラロック（腕絡み）の技術解説' : language === 'pt' ? 'Filmagem 4K Aérea - Técnica Kimura Lock' : '4K Overhead View - Kimura Lock Technique Tutorial'}
+                      className="w-full h-auto object-cover"
+                    />
+                  </div>
                 </div>
-                <div className="relative rounded-2xl overflow-hidden shadow-xl">
-                  <img 
-                    src={kimuraLockImage} 
-                    alt={language === 'ja' ? '4K上面撮影 - キムラロック（腕絡み）の技術解説' : language === 'pt' ? 'Filmagem 4K Aérea - Técnica Kimura Lock' : '4K Overhead View - Kimura Lock Technique Tutorial'}
-                    className="w-full h-auto object-cover"
-                  />
-                </div>
-              </div>
-            </section>
+              </section>
+            </AnimatedSection>
 
             {/* Instructor Section - "Who You Learn From" */}
-            <section className="py-24 px-6 bg-gradient-to-br from-primary/5 via-background to-primary/10">
-              <div className="max-w-6xl mx-auto">
-                <div className="grid lg:grid-cols-2 gap-12 items-center">
-                  {/* Photo */}
-                  <div className="relative">
-                    <div className="absolute -top-4 -left-4 z-10">
-                      <Badge className="bg-primary text-primary-foreground px-4 py-2 text-sm font-medium flex items-center gap-2">
-                        <Award className="w-4 h-4" />
-                        {homeT.instructor?.badge || "世界チャンピオン監修"}
-                      </Badge>
-                    </div>
-                    <div className="relative rounded-2xl overflow-hidden shadow-2xl">
-                      <img 
-                        src={murataImage} 
-                        alt={language === 'ja' ? '村田良蔵 - SJJIF世界選手権2連覇の柔術世界王者' : language === 'pt' ? 'Ryozo Murata - Bicampeão Mundial SJJIF de Jiu-Jitsu' : 'Ryozo Murata - 2x SJJIF World Champion BJJ Black Belt'}
-                        className="w-full h-auto object-cover"
-                        loading="lazy"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-                      <div className="absolute bottom-6 left-6 right-6">
-                        <p className="text-white/90 text-lg italic font-light">
-                          {homeT.instructor?.quote || "「怪我なく勝つ。理詰めで動く。それが大人の柔術。」"}
-                        </p>
+            <AnimatedSection delay={100}>
+              <section className="py-24 px-6 bg-gradient-to-br from-primary/5 via-background to-primary/10">
+                <div className="max-w-6xl mx-auto">
+                  <div className="grid lg:grid-cols-2 gap-12 items-center">
+                    {/* Photo */}
+                    <div className="relative">
+                      <div className="absolute -top-4 -left-4 z-10">
+                        <Badge className="bg-primary text-primary-foreground px-4 py-2 text-sm font-medium flex items-center gap-2">
+                          <Award className="w-4 h-4" />
+                          {homeT.instructor?.badge || "世界チャンピオン監修"}
+                        </Badge>
                       </div>
-                    </div>
-                  </div>
-
-                  {/* Content */}
-                  <div className="space-y-6">
-                    <div>
-                      <h2 className="text-3xl sm:text-4xl md:text-5xl font-light mb-4">
-                        {homeT.instructor?.title || "誰から学ぶか、が全てを変える"}
-                      </h2>
-                      <div className="mb-6">
-                        <h3 className="text-xl sm:text-2xl font-medium whitespace-nowrap">{homeT.instructor?.name || "村田 良蔵"}</h3>
-                        <span className="text-muted-foreground block mt-1">{homeT.instructor?.subtitle || "Ryozo Murata | 黒帯・世界王者"}</span>
-                      </div>
-                    </div>
-
-                    {/* Credentials */}
-                    <div className="space-y-3">
-                      {(homeT.instructor?.credentials || [
-                        "SJJIF世界選手権 2連覇（日本人初）",
-                        "IBJJF世界マスター 銅メダル",
-                        "北海道初のグレイシー直系黒帯"
-                      ]).map((credential: string, index: number) => (
-                        <div key={index} className="flex items-center gap-3">
-                          <CheckCircle className="w-5 h-5 text-primary shrink-0" />
-                          <span className="text-lg">{credential}</span>
+                      <div className="relative rounded-2xl overflow-hidden shadow-2xl">
+                        <img 
+                          src={murataImage} 
+                          alt={language === 'ja' ? '村田良蔵 - SJJIF世界選手権2連覇の柔術世界王者' : language === 'pt' ? 'Ryozo Murata - Bicampeão Mundial SJJIF de Jiu-Jitsu' : 'Ryozo Murata - 2x SJJIF World Champion BJJ Black Belt'}
+                          className="w-full h-auto object-cover"
+                          loading="lazy"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                        <div className="absolute bottom-6 left-6 right-6">
+                          <p className="text-white/90 text-lg italic font-light">
+                            {homeT.instructor?.quote || "「怪我なく勝つ。理詰めで動く。それが大人の柔術。」"}
+                          </p>
                         </div>
-                      ))}
+                      </div>
                     </div>
 
-                    <Link to="/about">
-                      <Button variant="outline" size="lg" className="mt-6">
-                        {homeT.instructor?.cta || "指導者について詳しく見る"}
-                      </Button>
-                    </Link>
+                    {/* Content */}
+                    <div className="space-y-6">
+                      <div>
+                        <h2 className="text-3xl sm:text-4xl md:text-5xl font-light mb-4">
+                          {homeT.instructor?.title || "誰から学ぶか、が全てを変える"}
+                        </h2>
+                        <div className="mb-6">
+                          <h3 className="text-xl sm:text-2xl font-medium whitespace-nowrap">{homeT.instructor?.name || "村田 良蔵"}</h3>
+                          <span className="text-muted-foreground block mt-1">{homeT.instructor?.subtitle || "Ryozo Murata | 黒帯・世界王者"}</span>
+                        </div>
+                      </div>
+
+                      {/* Credentials */}
+                      <div className="space-y-3">
+                        {(homeT.instructor?.credentials || [
+                          "SJJIF世界選手権 2連覇（日本人初）",
+                          "IBJJF世界マスター 銅メダル",
+                          "北海道初のグレイシー直系黒帯"
+                        ]).map((credential: string, index: number) => (
+                          <div key={index} className="flex items-center gap-3">
+                            <CheckCircle className="w-5 h-5 text-primary shrink-0" />
+                            <span className="text-lg">{credential}</span>
+                          </div>
+                        ))}
+                      </div>
+
+                      <Link to="/about">
+                        <Button variant="outline" size="lg" className="mt-6">
+                          {homeT.instructor?.cta || "指導者について詳しく見る"}
+                        </Button>
+                      </Link>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </section>
+              </section>
+            </AnimatedSection>
 
 
             {/* Technique Flowchart Section */}
-            <section className="py-24 px-6 bg-muted/30">
-              <div className="max-w-7xl mx-auto">
-                <div className="text-center mb-12">
-                  <h2 className="text-4xl md:text-5xl font-light mb-4">
-                    {language === 'ja' ? '技術マップ' : language === 'pt' ? 'Mapa de Técnicas' : 'Technique Map'}
-                  </h2>
-                  <p className="text-lg text-muted-foreground font-light">
-                    {language === 'ja' ? '柔術の技術体系を視覚的に理解する' : language === 'pt' ? 'Visualize a estrutura do Jiu-Jitsu' : 'Visualize the structure of Jiu-Jitsu'}
-                  </p>
+            <AnimatedSection delay={150}>
+              <section className="py-24 px-6 bg-muted/30">
+                <div className="max-w-7xl mx-auto">
+                  <div className="text-center mb-12">
+                    <h2 className="text-4xl md:text-5xl font-light mb-4">
+                      {language === 'ja' ? '技術マップ' : language === 'pt' ? 'Mapa de Técnicas' : 'Technique Map'}
+                    </h2>
+                    <p className="text-lg text-muted-foreground font-light">
+                      {language === 'ja' ? '柔術の技術体系を視覚的に理解する' : language === 'pt' ? 'Visualize a estrutura do Jiu-Jitsu' : 'Visualize the structure of Jiu-Jitsu'}
+                    </p>
+                  </div>
+                  <TechniqueFlowchart />
                 </div>
-                <TechniqueFlowchart />
-              </div>
-            </section>
+              </section>
+            </AnimatedSection>
 
             {/* SEO Section - Explore Jiu-Jitsu */}
-            <section className="py-20 px-6">
-              <div className="max-w-6xl mx-auto">
-                <div className="text-center mb-12">
-                  <h2 className="text-3xl md:text-4xl font-light mb-3">
-                    {homeT.seo?.title || "柔術を深く学ぶ"}
-                  </h2>
-                  <p className="text-muted-foreground">
-                    {language === 'ja' ? '選手・大会情報から用語まで、柔術の世界を探索' : 
-                     language === 'pt' ? 'Explore o mundo do Jiu-Jitsu: atletas, torneios e terminologia' : 
-                     'Explore the world of Jiu-Jitsu: athletes, tournaments, and terminology'}
-                  </p>
-                </div>
-
-                <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                  {/* Athletes Card */}
-                  <Link to="/athletes" className="group bg-card rounded-xl border border-border p-5 hover:border-primary/50 transition-colors block">
-                    <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
-                      <Users className="w-5 h-5 text-primary" />
-                    </div>
-                    <h3 className="text-lg font-medium mb-1">
-                      {language === 'ja' ? '選手一覧' : language === 'pt' ? 'Atletas' : 'Athletes'}
-                    </h3>
-                    <p className="text-sm text-muted-foreground">
-                      {language === 'ja' ? '世界の柔術家プロフィール' : language === 'pt' ? 'Perfis de lutadores mundiais' : 'World fighter profiles'}
+            <AnimatedSection delay={200}>
+              <section className="py-20 px-6">
+                <div className="max-w-6xl mx-auto">
+                  <div className="text-center mb-12">
+                    <h2 className="text-3xl md:text-4xl font-light mb-3">
+                      {homeT.seo?.title || "柔術を深く学ぶ"}
+                    </h2>
+                    <p className="text-muted-foreground">
+                      {language === 'ja' ? '選手・大会情報から用語まで、柔術の世界を探索' : 
+                       language === 'pt' ? 'Explore o mundo do Jiu-Jitsu: atletas, torneios e terminologia' : 
+                       'Explore the world of Jiu-Jitsu: athletes, tournaments, and terminology'}
                     </p>
-                  </Link>
+                  </div>
 
-                  {/* Tournaments Card */}
-                  <Link to="/tournaments" className="group bg-card rounded-xl border border-border p-5 hover:border-primary/50 transition-colors block">
-                    <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
-                      <Trophy className="w-5 h-5 text-primary" />
-                    </div>
-                    <h3 className="text-lg font-medium mb-1">
-                      {language === 'ja' ? '大会一覧' : language === 'pt' ? 'Torneios' : 'Tournaments'}
-                    </h3>
-                    <p className="text-sm text-muted-foreground">
-                      {language === 'ja' ? '国内外の大会スケジュール' : language === 'pt' ? 'Calendário de competições' : 'Competition calendar'}
-                    </p>
-                  </Link>
-
-                  {/* Blog Card */}
-                  <Link to="/blog" className="group bg-card rounded-xl border border-border p-5 hover:border-primary/50 transition-colors block">
-                    <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
-                      <FileText className="w-5 h-5 text-primary" />
-                    </div>
-                    <h3 className="text-lg font-medium mb-1">
-                      {homeT.seo?.blogTitle || "ブログ"}
-                    </h3>
-                    <p className="text-sm text-muted-foreground">
-                      {language === 'ja' ? '開発記録・お知らせ' : language === 'pt' ? 'Atualizações e notícias' : 'Updates and news'}
-                    </p>
-                  </Link>
-
-                  {/* Glossary Card */}
-                  <Link to="/glossary" className="group bg-card rounded-xl border border-border p-5 hover:border-primary/50 transition-colors block">
-                    <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
-                      <BookOpen className="w-5 h-5 text-primary" />
-                    </div>
-                    <h3 className="text-lg font-medium mb-1">
-                      {homeT.seo?.glossaryTitle || "用語集"}
-                    </h3>
-                    <p className="text-sm text-muted-foreground">
-                      {language === 'ja' ? '柔術用語辞典' : language === 'pt' ? 'Dicionário de termos' : 'Terminology dictionary'}
-                    </p>
-                  </Link>
-                </div>
-              </div>
-            </section>
-
-            {/* Closing CTA Section */}
-            <section className="py-24 px-6 bg-gradient-to-br from-primary/10 via-primary/5 to-background">
-              <div className="max-w-4xl mx-auto text-center">
-                <h2 className="text-4xl md:text-5xl font-light mb-6">
-                  {language === 'ja' ? '今日から始める、一生モノの柔術' : 
-                   language === 'pt' ? 'Comece Hoje, Jiu-Jitsu Para a Vida' : 
-                   'Start Today, Jiu-Jitsu for Life'}
-                </h2>
-                <p className="text-xl text-muted-foreground font-light mb-10 max-w-2xl mx-auto">
-                  {language === 'ja' ? '世界チャンピオンが体系化した技術を、4K映像で学ぶ。怪我なく、長く、強くなれる柔術がここにあります。' :
-                   language === 'pt' ? 'Aprenda técnicas sistematizadas por um campeão mundial em vídeo 4K. Jiu-Jitsu seguro, duradouro e forte está aqui.' :
-                   'Learn techniques systematized by a world champion in 4K video. Safe, lasting, and strong Jiu-Jitsu is here.'}
-                </p>
-                
-                {!user && (
-                  <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                    <Link to="/join">
-                      <Button size="lg" className="min-w-[280px] text-lg font-medium shadow-lg hover:shadow-xl transition-all">
-                        {language === 'ja' ? '1ヶ月無料で始める' : 
-                         language === 'pt' ? 'Começar 1 Mês Grátis' : 
-                         'Start 1 Month Free'}
-                      </Button>
+                  <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {/* Athletes Card */}
+                    <Link to="/athletes" className="group bg-card rounded-xl border border-border p-5 hover:border-primary/50 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 block">
+                      <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
+                        <Users className="w-5 h-5 text-primary" />
+                      </div>
+                      <h3 className="text-lg font-medium mb-1">
+                        {language === 'ja' ? '選手一覧' : language === 'pt' ? 'Atletas' : 'Athletes'}
+                      </h3>
+                      <p className="text-sm text-muted-foreground">
+                        {language === 'ja' ? '世界の柔術家プロフィール' : language === 'pt' ? 'Perfis de lutadores mundiais' : 'World fighter profiles'}
+                      </p>
                     </Link>
-                    <Link to="/about">
-                      <Button variant="outline" size="lg" className="min-w-[200px]">
-                        {language === 'ja' ? '詳しく見る' : 
-                         language === 'pt' ? 'Saiba Mais' : 
-                         'Learn More'}
-                      </Button>
+
+                    {/* Tournaments Card */}
+                    <Link to="/tournaments" className="group bg-card rounded-xl border border-border p-5 hover:border-primary/50 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 block">
+                      <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
+                        <Trophy className="w-5 h-5 text-primary" />
+                      </div>
+                      <h3 className="text-lg font-medium mb-1">
+                        {language === 'ja' ? '大会一覧' : language === 'pt' ? 'Torneios' : 'Tournaments'}
+                      </h3>
+                      <p className="text-sm text-muted-foreground">
+                        {language === 'ja' ? '国内外の大会スケジュール' : language === 'pt' ? 'Calendário de competições' : 'Competition calendar'}
+                      </p>
+                    </Link>
+
+                    {/* Blog Card */}
+                    <Link to="/blog" className="group bg-card rounded-xl border border-border p-5 hover:border-primary/50 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 block">
+                      <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
+                        <FileText className="w-5 h-5 text-primary" />
+                      </div>
+                      <h3 className="text-lg font-medium mb-1">
+                        {homeT.seo?.blogTitle || "ブログ"}
+                      </h3>
+                      <p className="text-sm text-muted-foreground">
+                        {language === 'ja' ? '開発記録・お知らせ' : language === 'pt' ? 'Atualizações e notícias' : 'Updates and news'}
+                      </p>
+                    </Link>
+
+                    {/* Glossary Card */}
+                    <Link to="/glossary" className="group bg-card rounded-xl border border-border p-5 hover:border-primary/50 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 block">
+                      <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
+                        <BookOpen className="w-5 h-5 text-primary" />
+                      </div>
+                      <h3 className="text-lg font-medium mb-1">
+                        {homeT.seo?.glossaryTitle || "用語集"}
+                      </h3>
+                      <p className="text-sm text-muted-foreground">
+                        {language === 'ja' ? '柔術用語辞典' : language === 'pt' ? 'Dicionário de termos' : 'Terminology dictionary'}
+                      </p>
                     </Link>
                   </div>
-                )}
-                
-                {user && (
-                  <Link to="/my-page">
-                    <Button size="lg" className="min-w-[280px] text-lg font-medium">
-                      {language === 'ja' ? 'マイページへ' : 
-                       language === 'pt' ? 'Minha Página' : 
-                       'My Page'}
-                    </Button>
-                  </Link>
-                )}
-              </div>
-            </section>
+                </div>
+              </section>
+            </AnimatedSection>
+
+            {/* Closing CTA Section */}
+            <AnimatedSection delay={250}>
+              <section className="py-24 px-6 bg-gradient-to-br from-primary/10 via-primary/5 to-background">
+                <div className="max-w-4xl mx-auto text-center">
+                  <h2 className="text-4xl md:text-5xl font-light mb-6">
+                    {language === 'ja' ? '今日から始める、一生モノの柔術' : 
+                     language === 'pt' ? 'Comece Hoje, Jiu-Jitsu Para a Vida' : 
+                     'Start Today, Jiu-Jitsu for Life'}
+                  </h2>
+                  <p className="text-xl text-muted-foreground font-light mb-10 max-w-2xl mx-auto">
+                    {language === 'ja' ? '世界チャンピオンが体系化した技術を、4K映像で学ぶ。怪我なく、長く、強くなれる柔術がここにあります。' :
+                     language === 'pt' ? 'Aprenda técnicas sistematizadas por um campeão mundial em vídeo 4K. Jiu-Jitsu seguro, duradouro e forte está aqui.' :
+                     'Learn techniques systematized by a world champion in 4K video. Safe, lasting, and strong Jiu-Jitsu is here.'}
+                  </p>
+                  
+                  {!user && (
+                    <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                      <Link to="/join">
+                        <Button size="lg" className="min-w-[280px] text-lg font-medium shadow-lg hover:shadow-xl transition-all">
+                          {language === 'ja' ? '1ヶ月無料で始める' : 
+                           language === 'pt' ? 'Começar 1 Mês Grátis' : 
+                           'Start 1 Month Free'}
+                        </Button>
+                      </Link>
+                      <Link to="/about">
+                        <Button variant="outline" size="lg" className="min-w-[200px]">
+                          {language === 'ja' ? '詳しく見る' : 
+                           language === 'pt' ? 'Saiba Mais' : 
+                           'Learn More'}
+                        </Button>
+                      </Link>
+                    </div>
+                  )}
+                  
+                  {user && (
+                    <Link to="/my-page">
+                      <Button size="lg" className="min-w-[280px] text-lg font-medium">
+                        {language === 'ja' ? 'マイページへ' : 
+                         language === 'pt' ? 'Minha Página' : 
+                         'My Page'}
+                      </Button>
+                    </Link>
+                  )}
+                </div>
+              </section>
+            </AnimatedSection>
           </>
         )}
       </main>
       
       <Footer />
+      <ScrollToTopButton />
     </div>
   );
 };
