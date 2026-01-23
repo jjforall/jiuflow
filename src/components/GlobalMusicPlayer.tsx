@@ -38,12 +38,12 @@ const GlobalMusicPlayer = () => {
     }
   }, [playlist]);
 
-  // Initialize position to bottom-right
+  // Initialize position to bottom-right (partially off-screen)
   useEffect(() => {
     const updatePosition = () => {
       setPosition({
-        x: window.innerWidth - 80,
-        y: window.innerHeight - 100,
+        x: window.innerWidth - 20,
+        y: window.innerHeight - 24,
       });
     };
     updatePosition();
