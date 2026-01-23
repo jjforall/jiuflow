@@ -1945,6 +1945,8 @@ export const VideosManagement = () => {
               const langs: string[] = [];
               if (t.video_metadata && typeof t.video_metadata === 'object') {
                 Object.keys(t.video_metadata).forEach(lang => {
+                  // 日本語は除外（オリジナル音声であり吹替ではない）
+                  if (lang === 'ja') return;
                   const meta = (t.video_metadata as Record<string, any>)[lang];
                   if (meta?.video_url) {
                     langs.push(lang);

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -21,26 +21,34 @@ export function VideoPreviewDialog({ open, onOpenChange, technique }: VideoPrevi
   const [selectedLanguage, setSelectedLanguage] = useState<string>("ja");
   const [currentVideoUrl, setCurrentVideoUrl] = useState<string | null>(null);
 
-  // Get available languages for this technique
-  const availableLanguages = technique ? getAvailableVideoLanguages(technique) : [];
+  // メモ化してレンダリングごとの再計算を防ぐ
+  const availableLanguages = useMemo(() => {
+    return technique ? getAvailableVideoLanguages(technique) : [];
+  }, [technique]);
 
-  // Reset to Japanese when dialog opens with new technique
+  // ダイアログの開閉時の処理
   useEffect(() => {
     if (open && technique) {
       setSelectedLanguage("ja");
-      // Set initial video URL
+      // 初期動画URLを設定
       const jaLang = availableLanguages.find((l) => l.code === "ja");
       setCurrentVideoUrl(jaLang?.videoUrl || technique.video_url || null);
+    } else if (!open) {
+      // ダイアログが閉じられたら即座にビデオURLをクリア
+      // これによりVideoPlayerがアンマウントされ、HLS.jsがdestroyされる
+      setCurrentVideoUrl(null);
     }
-  }, [open, technique?.video_url]);
+  }, [open, technique, availableLanguages]);
 
-  // Update video URL when language changes
+  // 言語切り替え時のURL更新
   useEffect(() => {
+    if (!open) return; // ダイアログが閉じている時は処理しない
+    
     const lang = availableLanguages.find((l) => l.code === selectedLanguage);
     if (lang) {
       setCurrentVideoUrl(lang.videoUrl);
     }
-  }, [selectedLanguage, availableLanguages]);
+  }, [selectedLanguage, availableLanguages, open]);
 
   const handleLanguageChange = (langCode: string) => {
     setSelectedLanguage(langCode);
