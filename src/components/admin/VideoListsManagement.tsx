@@ -9,10 +9,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, Pencil, Trash2, Eye, EyeOff, Link2, X, Copy, ExternalLink, ChevronDown, ChevronUp, Play } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Plus, Pencil, Trash2, Eye, EyeOff, Link2, X, Copy, ExternalLink, ChevronDown, ChevronUp, Play, FileText, Mic, ListVideo, Languages, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { LocalizationBadges } from "@/components/ui/LocalizationBadges";
 import { VideoPreviewDialog, type VideoPreviewTechnique } from "@/components/admin/VideoPreviewDialog";
+import { TranscriptionQuickDialog } from "@/components/admin/TranscriptionQuickDialog";
+import { TranslationQuickDialog } from "@/components/admin/TranslationQuickDialog";
 
 interface VideoList {
   id: string;
@@ -36,6 +39,7 @@ interface Technique {
   id: string;
   name: string;
   name_ja: string;
+  video_url: string | null;
   series_prefix: string | null;
   series_order: number | null;
   thumbnail_url: string | null;
@@ -45,6 +49,17 @@ interface Technique {
   hasTranscription?: boolean;
   subtitleLanguages?: string[];
   dubbedLanguages?: string[];
+  transcription?: Transcription | null;
+}
+
+interface Transcription {
+  id: string;
+  technique_id: string | null;
+  language_code: string;
+  original_text: string;
+  edited_text: string | null;
+  status: string;
+  created_at: string;
 }
 
 interface VideoListItem {
@@ -56,9 +71,9 @@ interface VideoListItem {
 }
 
 const VISIBILITY_LABELS = {
-  public: { label: "公開", labelEn: "Public", icon: Eye, color: "bg-green-500" },
-  unlisted: { label: "限定公開", labelEn: "Unlisted", icon: Link2, color: "bg-yellow-500" },
-  private: { label: "非公開", labelEn: "Private", icon: EyeOff, color: "bg-red-500" },
+  public: { label: "公開", labelEn: "Public", icon: Eye, color: "bg-green-600" },
+  unlisted: { label: "限定公開", labelEn: "Unlisted", icon: Link2, color: "bg-yellow-600" },
+  private: { label: "非公開", labelEn: "Private", icon: EyeOff, color: "bg-destructive" },
 };
 
 export default function VideoListsManagement() {
@@ -73,6 +88,20 @@ export default function VideoListsManagement() {
   const [expandedLists, setExpandedLists] = useState<Set<string>>(new Set());
   const [previewTechnique, setPreviewTechnique] = useState<VideoPreviewTechnique | null>(null);
   const [showVideoPreview, setShowVideoPreview] = useState(false);
+  
+  // Transcription dialog state
+  const [showTranscriptionDialog, setShowTranscriptionDialog] = useState(false);
+  const [transcriptionTechnique, setTranscriptionTechnique] = useState<Technique | null>(null);
+  
+  // Translation dialog state
+  const [showTranslationDialog, setShowTranslationDialog] = useState(false);
+  const [translationTechnique, setTranslationTechnique] = useState<Technique | null>(null);
+  
+  // All techniques tab
+  const [searchQuery, setSearchQuery] = useState("");
+  const [seriesFilter, setSeriesFilter] = useState<string>("all");
+  const [seriesMapping, setSeriesMapping] = useState<Array<{ series_name: string; series_prefix: string }>>([]);
+
   const [formData, setFormData] = useState({
     name: "",
     name_ja: "",
@@ -104,26 +133,24 @@ export default function VideoListsManagement() {
       console.error(error);
     } else {
       const techniques = techniquesData || allTechniques;
-      // Get items for each list (up to 10 for preview)
       const listsWithItems = await Promise.all(
         (data || []).map(async (list) => {
           const { data: itemsData, count } = await supabase
             .from("video_list_items")
-            .select("*, technique:technique_id(id, name, name_ja, series_prefix, series_order, thumbnail_url, video_url_ja, video_url_pt, video_metadata)", { count: "exact" })
+            .select("*, technique:technique_id(id, name, name_ja, series_prefix, series_order, thumbnail_url, video_url, video_url_ja, video_url_pt, video_metadata)", { count: "exact" })
             .eq("list_id", list.id)
             .order("display_order", { ascending: true })
             .limit(10);
           
-          // Enrich techniques with localization data
-          const items = (itemsData || []).map((item: any) => {
+          const items = (itemsData || []).map((item: VideoListItem & { technique?: Partial<Technique> }) => {
             const enrichedTechnique = techniques.find(t => t.id === item.technique?.id);
             return {
               ...item,
               technique: enrichedTechnique || item.technique,
-            };
+            } as VideoListItem;
           });
           
-          return { ...list, item_count: count || 0, items };
+          return { ...list, item_count: count || 0, items } as VideoList;
         })
       );
       setLists(listsWithItems);
@@ -134,7 +161,7 @@ export default function VideoListsManagement() {
   const fetchTechniques = async (): Promise<Technique[]> => {
     const { data, error } = await supabase
       .from("techniques")
-      .select("id, name, name_ja, series_prefix, series_order, thumbnail_url, video_url_ja, video_url_pt, video_metadata")
+      .select("id, name, name_ja, series_prefix, series_order, series_name, thumbnail_url, video_url, video_url_ja, video_url_pt, video_metadata")
       .order("series_prefix", { ascending: true })
       .order("series_order", { ascending: true });
 
@@ -146,12 +173,12 @@ export default function VideoListsManagement() {
     const techniques = data || [];
     const techniqueIds = techniques.map(t => t.id);
 
-    // Fetch transcription status for all techniques
+    // Fetch transcriptions
     const { data: transcriptions } = await supabase
       .from("video_transcriptions")
-      .select("technique_id, status")
+      .select("*")
       .in("technique_id", techniqueIds)
-      .eq("status", "completed");
+      .order("created_at", { ascending: false });
 
     // Fetch subtitle languages
     const { data: subtitles } = await supabase
@@ -160,7 +187,13 @@ export default function VideoListsManagement() {
       .eq("status", "completed");
 
     // Build lookup maps
-    const transcriptionMap = new Set((transcriptions || []).map(t => t.technique_id));
+    const transcriptionMap: Record<string, Transcription> = {};
+    (transcriptions || []).forEach((t: Transcription) => {
+      if (t.technique_id && !transcriptionMap[t.technique_id]) {
+        transcriptionMap[t.technique_id] = t;
+      }
+    });
+    
     const subtitleMap: Record<string, string[]> = {};
     (subtitles || []).forEach((sub: { video_transcriptions: { technique_id: string }, language_code: string }) => {
       const techId = sub.video_transcriptions?.technique_id;
@@ -172,18 +205,30 @@ export default function VideoListsManagement() {
       }
     });
 
+    // Build series mapping
+    const seriesMap = new Map<string, string>();
+    techniques.forEach((item: { series_name?: string; series_prefix?: string }) => {
+      if (item.series_name && item.series_prefix) {
+        seriesMap.set(item.series_name, item.series_prefix);
+      }
+    });
+    
+    const mappings = Array.from(seriesMap.entries())
+      .map(([series_name, series_prefix]) => ({ series_name, series_prefix }))
+      .sort((a, b) => a.series_prefix.localeCompare(b.series_prefix));
+    
+    setSeriesMapping(mappings);
+
     // Enrich techniques with localization info
-    const enrichedTechniques: Technique[] = techniques.map(t => {
+    const enrichedTechniques: Technique[] = techniques.map((t: { id: string; name: string; name_ja: string; video_url: string | null; series_prefix: string | null; series_order: number | null; thumbnail_url: string | null; video_url_ja: string | null; video_url_pt: string | null; video_metadata: unknown }) => {
       const dubbedLanguages: string[] = [];
       if (t.video_url_ja) dubbedLanguages.push("ja");
       if (t.video_url_pt) dubbedLanguages.push("pt");
       
-      // Check video_metadata for additional translations
       const metadata = t.video_metadata as Record<string, unknown> | null;
-      if (metadata && typeof metadata === 'object' && 'translations' in metadata) {
-        const translations = metadata.translations as Record<string, { video_url?: string }>;
-        Object.entries(translations).forEach(([lang, data]) => {
-          if (data?.video_url && !dubbedLanguages.includes(lang)) {
+      if (metadata && typeof metadata === 'object') {
+        Object.entries(metadata).forEach(([lang, data]) => {
+          if ((data as { video_url?: string })?.video_url && !dubbedLanguages.includes(lang)) {
             dubbedLanguages.push(lang);
           }
         });
@@ -193,13 +238,15 @@ export default function VideoListsManagement() {
         id: t.id,
         name: t.name,
         name_ja: t.name_ja,
+        video_url: t.video_url,
         series_prefix: t.series_prefix,
         series_order: t.series_order,
         thumbnail_url: t.thumbnail_url,
         video_url_ja: t.video_url_ja,
         video_url_pt: t.video_url_pt,
-        video_metadata: t.video_metadata as unknown,
-        hasTranscription: transcriptionMap.has(t.id),
+        video_metadata: t.video_metadata,
+        hasTranscription: !!transcriptionMap[t.id],
+        transcription: transcriptionMap[t.id] || null,
         subtitleLanguages: subtitleMap[t.id] || [],
         dubbedLanguages,
       } as Technique;
@@ -222,7 +269,6 @@ export default function VideoListsManagement() {
       return;
     }
 
-    // Attach technique data
     const itemsWithTechniques = (data || []).map((item) => ({
       ...item,
       technique: allTechniques.find((t) => t.id === item.technique_id),
@@ -405,9 +451,44 @@ export default function VideoListsManagement() {
     });
   };
 
+  const openTranscriptionDialog = (technique: Technique) => {
+    setTranscriptionTechnique(technique);
+    setShowTranscriptionDialog(true);
+  };
+
+  const openTranslationDialog = (technique: Technique) => {
+    setTranslationTechnique(technique);
+    setShowTranslationDialog(true);
+  };
+
+  const handleRefresh = async () => {
+    const techniques = await fetchTechniques();
+    await fetchLists(techniques);
+    toast.success("データを更新しました");
+  };
+
   const availableTechniques = allTechniques.filter(
     (t) => !listItems.some((item) => item.technique_id === t.id)
   );
+
+  // Filter techniques for All Videos tab
+  const filteredTechniques = allTechniques.filter(tech => {
+    const matchesSearch = searchQuery === "" || 
+      tech.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      tech.name_ja.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    const matchesSeries = seriesFilter === "all" || tech.series_prefix === seriesFilter;
+    
+    return matchesSearch && matchesSeries;
+  });
+
+  // Stats
+  const stats = {
+    totalLists: lists.length,
+    totalVideos: allTechniques.length,
+    withTranscription: allTechniques.filter(t => t.hasTranscription).length,
+    withTranslation: allTechniques.filter(t => (t.dubbedLanguages?.length || 0) > 1).length,
+  };
 
   if (loading) {
     return (
@@ -418,303 +499,421 @@ export default function VideoListsManagement() {
     );
   }
 
+  const renderVideoItem = (technique: Technique, showActions = true) => (
+    <div className="flex items-center gap-3 p-2 bg-background rounded hover:bg-muted/50 group">
+      {/* Thumbnail */}
+      <div 
+        className="relative w-24 h-14 bg-muted rounded overflow-hidden flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
+        onClick={() => {
+          if (technique.video_url_ja || technique.video_url) {
+            setPreviewTechnique({
+              video_url: technique.video_url_ja || technique.video_url || '',
+              video_url_ja: technique.video_url_ja ?? undefined,
+              video_url_pt: technique.video_url_pt ?? undefined,
+              video_metadata: technique.video_metadata as VideoPreviewTechnique['video_metadata'],
+              name_ja: technique.name_ja,
+              name: technique.name,
+            });
+            setShowVideoPreview(true);
+          }
+        }}
+      >
+        {technique.thumbnail_url ? (
+          <img src={technique.thumbnail_url} alt="" className="w-full h-full object-cover" />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center">
+            <Play className="w-4 h-4 text-muted-foreground" />
+          </div>
+        )}
+        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+          <Play className="w-6 h-6 text-white" />
+        </div>
+      </div>
+      
+      {/* Info */}
+      <div className="flex-1 min-w-0">
+        <div className="text-sm font-medium truncate">
+          {technique.name_ja || technique.name}
+        </div>
+        <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+          {technique.series_prefix && (
+            <span className="text-xs text-muted-foreground">
+              {technique.series_prefix}-{technique.series_order}
+            </span>
+          )}
+          <LocalizationBadges
+            hasTranscription={technique.hasTranscription}
+            subtitleLanguages={technique.subtitleLanguages}
+            dubbedLanguages={technique.dubbedLanguages}
+            compact
+          />
+        </div>
+      </div>
+
+      {/* Action buttons */}
+      {showActions && (
+        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={(e) => {
+              e.stopPropagation();
+              openTranscriptionDialog(technique);
+            }}
+            title="字幕・文字起こし"
+            className="h-8 w-8 p-0"
+          >
+            <FileText className="w-4 h-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={(e) => {
+              e.stopPropagation();
+              openTranslationDialog(technique);
+            }}
+            title="吹き替え翻訳"
+            className="h-8 w-8 p-0"
+          >
+            <Mic className="w-4 h-4" />
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">動画リスト管理</h2>
-        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={() => resetForm()}>
-              <Plus className="w-4 h-4 mr-2" />
-              新規リスト作成
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-lg">
-            <DialogHeader>
-              <DialogTitle>新規リスト作成</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <label className="text-sm font-medium">リスト名 (EN)</label>
-                <Input
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="List name"
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium">リスト名 (日本語)</label>
-                <Input
-                  value={formData.name_ja}
-                  onChange={(e) => setFormData({ ...formData, name_ja: e.target.value })}
-                  placeholder="リスト名"
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium">説明</label>
-                <Textarea
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  placeholder="リストの説明"
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium">公開設定</label>
-                <Select
-                  value={formData.visibility}
-                  onValueChange={(v) => setFormData({ ...formData, visibility: v as any })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="public">
-                      <div className="flex items-center gap-2">
-                        <Eye className="w-4 h-4" />
-                        公開（有料会員向け）
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="unlisted">
-                      <div className="flex items-center gap-2">
-                        <Link2 className="w-4 h-4" />
-                        限定公開（URLを知っている人のみ）
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="private">
-                      <div className="flex items-center gap-2">
-                        <EyeOff className="w-4 h-4" />
-                        非公開
-                      </div>
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <Button onClick={handleCreate} className="w-full">
-                作成
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+        <h2 className="text-2xl font-bold flex items-center gap-2">
+          <ListVideo className="w-6 h-6" />
+          動画管理
+        </h2>
+        <Button variant="outline" size="sm" onClick={handleRefresh}>
+          <RefreshCw className="w-4 h-4 mr-2" />
+          更新
+        </Button>
       </div>
 
-      {/* YouTube Studio style list view */}
-      <Card>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-12"></TableHead>
-                <TableHead>動画</TableHead>
-                <TableHead>公開設定</TableHead>
-                <TableHead>日付</TableHead>
-                <TableHead>動画数</TableHead>
-                <TableHead className="text-right">操作</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {lists.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
-                    リストがありません
-                  </TableCell>
-                </TableRow>
-              ) : (
-                lists.map((list) => {
-                  const isExpanded = expandedLists.has(list.id);
-                  const coverItem = list.items?.[0];
-                  
-                  return (
-                    <>
-                      <TableRow key={list.id} className="hover:bg-muted/50">
-                        <TableCell>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => toggleExpanded(list.id)}
-                            disabled={!list.items?.length}
-                          >
-                            {isExpanded ? (
-                              <ChevronUp className="w-4 h-4" />
-                            ) : (
-                              <ChevronDown className="w-4 h-4" />
-                            )}
-                          </Button>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-3">
-                            {/* Cover image / first video thumbnail */}
-                            <div className="relative w-28 h-16 bg-muted rounded overflow-hidden flex-shrink-0">
-                              {list.cover_image_url || coverItem?.technique?.thumbnail_url ? (
-                                <img
-                                  src={list.cover_image_url || coverItem?.technique?.thumbnail_url || ''}
-                                  alt=""
-                                  className="w-full h-full object-cover"
-                                />
-                              ) : (
-                                <div className="w-full h-full flex items-center justify-center">
-                                  <Play className="w-6 h-6 text-muted-foreground" />
-                                </div>
-                              )}
-                              {list.item_count && list.item_count > 0 && (
-                                <div className="absolute bottom-0 right-0 bg-black/80 text-white text-xs px-1.5 py-0.5">
-                                  {list.item_count}本
-                                </div>
-                              )}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="font-medium truncate">{list.name_ja || list.name}</div>
-                              {list.description && (
-                                <div className="text-sm text-muted-foreground truncate max-w-xs">
-                                  {list.description}
-                                </div>
-                              )}
-                            </div>
+      {/* Stats */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <Card className="p-4">
+          <div className="text-2xl font-bold">{stats.totalLists}</div>
+          <div className="text-sm text-muted-foreground">再生リスト</div>
+        </Card>
+        <Card className="p-4">
+          <div className="text-2xl font-bold">{stats.totalVideos}</div>
+          <div className="text-sm text-muted-foreground">全動画</div>
+        </Card>
+        <Card className="p-4">
+          <div className="text-2xl font-bold">{stats.withTranscription}</div>
+          <div className="text-sm text-muted-foreground">字幕あり</div>
+        </Card>
+        <Card className="p-4">
+          <div className="text-2xl font-bold">{stats.withTranslation}</div>
+          <div className="text-sm text-muted-foreground">多言語対応</div>
+        </Card>
+      </div>
+
+      <Tabs defaultValue="lists" className="w-full">
+        <TabsList className="grid w-full grid-cols-2 max-w-md">
+          <TabsTrigger value="lists" className="flex items-center gap-2">
+            <ListVideo className="h-4 w-4" />
+            再生リスト
+          </TabsTrigger>
+          <TabsTrigger value="all-videos" className="flex items-center gap-2">
+            <Languages className="h-4 w-4" />
+            全動画ローカライズ
+          </TabsTrigger>
+        </TabsList>
+
+        {/* Lists Tab */}
+        <TabsContent value="lists" className="mt-6">
+          <div className="flex justify-end mb-4">
+            <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+              <DialogTrigger asChild>
+                <Button onClick={() => resetForm()}>
+                  <Plus className="w-4 h-4 mr-2" />
+                  新規リスト作成
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-lg">
+                <DialogHeader>
+                  <DialogTitle>新規リスト作成</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-sm font-medium">リスト名 (EN)</label>
+                    <Input
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      placeholder="List name"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium">リスト名 (日本語)</label>
+                    <Input
+                      value={formData.name_ja}
+                      onChange={(e) => setFormData({ ...formData, name_ja: e.target.value })}
+                      placeholder="リスト名"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium">説明</label>
+                    <Textarea
+                      value={formData.description}
+                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                      placeholder="リストの説明"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium">公開設定</label>
+                    <Select
+                      value={formData.visibility}
+                      onValueChange={(v) => setFormData({ ...formData, visibility: v as 'public' | 'unlisted' | 'private' })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="public">
+                          <div className="flex items-center gap-2">
+                            <Eye className="w-4 h-4" />
+                            公開（有料会員向け）
                           </div>
-                        </TableCell>
-                        <TableCell>{getVisibilityBadge(list.visibility)}</TableCell>
-                        <TableCell>
-                          <div className="text-sm">
-                            {new Date(list.created_at).toLocaleDateString("ja-JP")}
+                        </SelectItem>
+                        <SelectItem value="unlisted">
+                          <div className="flex items-center gap-2">
+                            <Link2 className="w-4 h-4" />
+                            限定公開（URLを知っている人のみ）
                           </div>
-                          <div className="text-xs text-muted-foreground">作成日</div>
-                        </TableCell>
-                        <TableCell>{list.item_count || 0}本</TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-1">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => copyListUrl(list)}
-                              title="URLをコピー"
-                            >
-                              <Copy className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => window.open(getListUrl(list), '_blank')}
-                              title="プレビュー"
-                            >
-                              <ExternalLink className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => openItemsDialog(list)}
-                            >
-                              動画管理
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => openEditDialog(list)}
-                            >
-                              <Pencil className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleDelete(list.id)}
-                            >
-                              <Trash2 className="w-4 h-4 text-destructive" />
-                            </Button>
+                        </SelectItem>
+                        <SelectItem value="private">
+                          <div className="flex items-center gap-2">
+                            <EyeOff className="w-4 h-4" />
+                            非公開
                           </div>
-                        </TableCell>
-                      </TableRow>
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <Button onClick={handleCreate} className="w-full">
+                    作成
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
+
+          <Card>
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-12"></TableHead>
+                    <TableHead>動画</TableHead>
+                    <TableHead>公開設定</TableHead>
+                    <TableHead>日付</TableHead>
+                    <TableHead>動画数</TableHead>
+                    <TableHead className="text-right">操作</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {lists.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                        リストがありません
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    lists.map((list) => {
+                      const isExpanded = expandedLists.has(list.id);
+                      const coverItem = list.items?.[0];
                       
-                      {/* Expanded video items */}
-                      {isExpanded && list.items && list.items.length > 0 && (
-                        <TableRow key={`${list.id}-items`}>
-                          <TableCell colSpan={6} className="bg-muted/30 p-0">
-                            <div className="p-4">
-                              <div className="text-sm font-medium mb-3 text-muted-foreground">
-                                再生リストの動画
-                              </div>
-                              <div className="space-y-2">
-                                {list.items.map((item, index) => (
-                                  <div 
-                                    key={item.id}
-                                    className="flex items-center gap-3 p-2 bg-background rounded hover:bg-muted/50"
-                                  >
-                                    <div className="w-6 text-center text-sm text-muted-foreground">
-                                      {index + 1}
-                                    </div>
-                                    <div 
-                                      className="relative w-24 h-14 bg-muted rounded overflow-hidden flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity group"
-                                      onClick={() => {
-                                        if (item.technique?.video_url_ja) {
-                                          setPreviewTechnique({
-                                            video_url: item.technique.video_url_ja,
-                                            video_url_ja: item.technique.video_url_ja,
-                                            video_url_pt: item.technique.video_url_pt ?? undefined,
-                                            video_metadata: item.technique.video_metadata as VideoPreviewTechnique['video_metadata'],
-                                            name_ja: item.technique.name_ja,
-                                            name: item.technique.name,
-                                          });
-                                          setShowVideoPreview(true);
-                                        }
-                                      }}
-                                      title="クリックしてプレビュー"
-                                    >
-                                      {item.technique?.thumbnail_url ? (
-                                        <img
-                                          src={item.technique.thumbnail_url}
-                                          alt=""
-                                          className="w-full h-full object-cover"
-                                        />
-                                      ) : (
-                                        <div className="w-full h-full flex items-center justify-center">
-                                          <Play className="w-4 h-4 text-muted-foreground" />
-                                        </div>
-                                      )}
-                                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                        <Play className="w-6 h-6 text-white" />
-                                      </div>
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                      <div className="text-sm font-medium truncate">
-                                        {item.technique?.name_ja || item.technique?.name || '動画'}
-                                      </div>
-                                      <div className="flex items-center gap-2 mt-0.5">
-                                        {item.technique?.series_prefix && (
-                                          <span className="text-xs text-muted-foreground">
-                                            {item.technique.series_prefix}-{item.technique.series_order}
-                                          </span>
-                                        )}
-                                        <LocalizationBadges
-                                          hasTranscription={item.technique?.hasTranscription}
-                                          subtitleLanguages={item.technique?.subtitleLanguages}
-                                          dubbedLanguages={item.technique?.dubbedLanguages}
-                                          compact
-                                        />
-                                      </div>
-                                    </div>
-                                  </div>
-                                ))}
-                                {list.item_count && list.item_count > 10 && (
-                                  <div className="text-center py-2">
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      onClick={() => openItemsDialog(list)}
-                                    >
-                                      他{list.item_count - 10}件を表示
-                                    </Button>
-                                  </div>
+                      return (
+                        <>
+                          <TableRow key={list.id} className="hover:bg-muted/50">
+                            <TableCell>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => toggleExpanded(list.id)}
+                                disabled={!list.items?.length}
+                              >
+                                {isExpanded ? (
+                                  <ChevronUp className="w-4 h-4" />
+                                ) : (
+                                  <ChevronDown className="w-4 h-4" />
                                 )}
+                              </Button>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-3">
+                                <div className="relative w-28 h-16 bg-muted rounded overflow-hidden flex-shrink-0">
+                                  {list.cover_image_url || coverItem?.technique?.thumbnail_url ? (
+                                    <img
+                                      src={list.cover_image_url || coverItem?.technique?.thumbnail_url || ''}
+                                      alt=""
+                                      className="w-full h-full object-cover"
+                                    />
+                                  ) : (
+                                    <div className="w-full h-full flex items-center justify-center">
+                                      <Play className="w-6 h-6 text-muted-foreground" />
+                                    </div>
+                                  )}
+                                  {list.item_count && list.item_count > 0 && (
+                                    <div className="absolute bottom-0 right-0 bg-black/80 text-white text-xs px-1.5 py-0.5">
+                                      {list.item_count}本
+                                    </div>
+                                  )}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="font-medium truncate">{list.name_ja || list.name}</div>
+                                  {list.description && (
+                                    <div className="text-sm text-muted-foreground truncate max-w-xs">
+                                      {list.description}
+                                    </div>
+                                  )}
+                                </div>
                               </div>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      )}
-                    </>
-                  );
-                })
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+                            </TableCell>
+                            <TableCell>{getVisibilityBadge(list.visibility)}</TableCell>
+                            <TableCell>
+                              <div className="text-sm">
+                                {new Date(list.created_at).toLocaleDateString("ja-JP")}
+                              </div>
+                              <div className="text-xs text-muted-foreground">作成日</div>
+                            </TableCell>
+                            <TableCell>{list.item_count || 0}本</TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex justify-end gap-1">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => copyListUrl(list)}
+                                  title="URLをコピー"
+                                >
+                                  <Copy className="w-4 h-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => window.open(getListUrl(list), '_blank')}
+                                  title="プレビュー"
+                                >
+                                  <ExternalLink className="w-4 h-4" />
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => openItemsDialog(list)}
+                                >
+                                  動画管理
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => openEditDialog(list)}
+                                >
+                                  <Pencil className="w-4 h-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleDelete(list.id)}
+                                >
+                                  <Trash2 className="w-4 h-4 text-destructive" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                          
+                          {/* Expanded video items */}
+                          {isExpanded && list.items && list.items.length > 0 && (
+                            <TableRow key={`${list.id}-items`}>
+                              <TableCell colSpan={6} className="bg-muted/30 p-0">
+                                <div className="p-4">
+                                  <div className="text-sm font-medium mb-3 text-muted-foreground">
+                                    再生リストの動画
+                                  </div>
+                                  <div className="space-y-2">
+                                    {list.items.map((item, index) => (
+                                      <div key={item.id} className="flex items-center gap-2">
+                                        <div className="w-6 text-center text-sm text-muted-foreground">
+                                          {index + 1}
+                                        </div>
+                                        {item.technique && renderVideoItem(item.technique as Technique)}
+                                      </div>
+                                    ))}
+                                    {list.item_count && list.item_count > 10 && (
+                                      <div className="text-center py-2">
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          onClick={() => openItemsDialog(list)}
+                                        >
+                                          他{list.item_count - 10}件を表示
+                                        </Button>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          )}
+                        </>
+                      );
+                    })
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* All Videos Tab */}
+        <TabsContent value="all-videos" className="mt-6">
+          <div className="space-y-4">
+            {/* Filters */}
+            <div className="flex gap-4 flex-wrap">
+              <Input
+                placeholder="検索..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="max-w-xs"
+              />
+              <Select value={seriesFilter} onValueChange={setSeriesFilter}>
+                <SelectTrigger className="w-48">
+                  <SelectValue placeholder="シリーズ" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">すべてのシリーズ</SelectItem>
+                  {seriesMapping.map(({ series_name, series_prefix }) => (
+                    <SelectItem key={series_prefix} value={series_prefix}>
+                      {series_prefix}: {series_name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Video Grid */}
+            <Card>
+              <CardContent className="p-4">
+                <div className="space-y-2">
+                  {filteredTechniques.length === 0 ? (
+                    <div className="text-center text-muted-foreground py-8">
+                      動画がありません
+                    </div>
+                  ) : (
+                    filteredTechniques.map((technique) => renderVideoItem(technique))
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+      </Tabs>
 
       {/* Edit Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
@@ -748,7 +947,7 @@ export default function VideoListsManagement() {
               <label className="text-sm font-medium">公開設定</label>
               <Select
                 value={formData.visibility}
-                onValueChange={(v) => setFormData({ ...formData, visibility: v as any })}
+                onValueChange={(v) => setFormData({ ...formData, visibility: v as 'public' | 'unlisted' | 'private' })}
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -776,7 +975,6 @@ export default function VideoListsManagement() {
               </Select>
             </div>
             
-            {/* URL copy section */}
             {selectedList && (
               <div className="pt-2 border-t">
                 <label className="text-sm font-medium">共有URL</label>
@@ -931,6 +1129,23 @@ export default function VideoListsManagement() {
         open={showVideoPreview}
         onOpenChange={setShowVideoPreview}
         technique={previewTechnique}
+      />
+
+      {/* Transcription Quick Dialog */}
+      <TranscriptionQuickDialog
+        open={showTranscriptionDialog}
+        onOpenChange={setShowTranscriptionDialog}
+        technique={transcriptionTechnique}
+        transcription={transcriptionTechnique?.transcription}
+        onTranscriptionComplete={handleRefresh}
+      />
+
+      {/* Translation Quick Dialog */}
+      <TranslationQuickDialog
+        open={showTranslationDialog}
+        onOpenChange={setShowTranslationDialog}
+        technique={translationTechnique}
+        onTranslationStarted={handleRefresh}
       />
     </div>
   );
