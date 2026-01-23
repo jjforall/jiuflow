@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { InputWithSuggestions } from "@/components/ui/input-with-suggestions";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Upload, Trash2, Search, Check, X, Languages, ExternalLink, ChevronDown, Cloud, Loader2, RefreshCw, FileText, Link, AlertTriangle, ImageIcon, Wrench } from "lucide-react";
+import { Upload, Trash2, Search, Check, X, Languages, ExternalLink, ChevronDown, Loader2, RefreshCw, ImageIcon, Wrench, FileText, Link2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   Collapsible,
@@ -84,36 +84,11 @@ export const TechniquesManagement = () => {
   const [previewVideoUrl, setPreviewVideoUrl] = useState<string | null>(null);
   const [showVideoPreview, setShowVideoPreview] = useState(false);
   const [seriesMapping, setSeriesMapping] = useState<Array<{ series_name: string; series_prefix: string }>>([]);
-  const [isMigrating, setIsMigrating] = useState(false);
-  const [isRepairing, setIsRepairing] = useState(false);
   const [isFixingThumbnails, setIsFixingThumbnails] = useState(false);
-  const [brokenVideoCount, setBrokenVideoCount] = useState(0);
   const [missingThumbnailCount, setMissingThumbnailCount] = useState(0);
-  const [supabaseStorageCount, setSupabaseStorageCount] = useState(0);
-  const [reEncodingIds, setReEncodingIds] = useState<Set<string>>(new Set());
-  const [isCheckingEncoding, setIsCheckingEncoding] = useState(false);
-  const [encodingResults, setEncodingResults] = useState<{
-    total: number;
-    properlyEncoded: number;
-    notEncoded: number;
-    notEncodedVideos: Array<{
-      techniqueId: string;
-      name: string;
-      seriesPrefix: string;
-      seriesOrder: number | null;
-      cloudflareVideoId: string;
-      status: string;
-      readyToStream: boolean;
-      inputWidth: number;
-      inputHeight: number;
-      duration: number;
-      isProperlyEncoded: boolean;
-      error?: string;
-    }>;
-  } | null>(null);
-  const [reEncodingCloudflareIds, setReEncodingCloudflareIds] = useState<Set<string>>(new Set());
   const [transcribingIds, setTranscribingIds] = useState<Set<string>>(new Set());
   const [transcriptionMap, setTranscriptionMap] = useState<Record<string, { id: string; status: string }>>({});
+  const [reEncodingIds, setReEncodingIds] = useState<Set<string>>(new Set());
 
 
   // すべての言語（カウント用）
@@ -175,31 +150,21 @@ export const TechniquesManagement = () => {
       setSeriesNameSuggestions(mappings.map(m => m.series_name));
     };
 
-    const fetchSupabaseStorageCount = async () => {
+    const fetchMissingThumbnailCount = async () => {
       const { data, error } = await supabase
         .from('techniques')
-        .select('id, video_url, video_url_ja, video_url_pt, thumbnail_url');
+        .select('id, video_url, thumbnail_url');
       
       if (error) {
-        console.error('Error fetching storage count:', error);
+        console.error('Error fetching thumbnail count:', error);
         return;
       }
       
-      let storageCount = 0;
-      let brokenCount = 0;
       let missingThumbCount = 0;
       data?.forEach(t => {
-        if (t.video_url?.includes('supabase.co/storage')) storageCount++;
-        if (t.video_url_ja?.includes('supabase.co/storage')) storageCount++;
-        if (t.video_url_pt?.includes('supabase.co/storage')) storageCount++;
-        // Count broken Cloudflare URLs
-        if (t.video_url?.includes('customer-46bf2542468db352a9741f14b84d2744')) brokenCount++;
-        if (t.video_url_ja?.includes('customer-46bf2542468db352a9741f14b84d2744')) brokenCount++;
         // Count missing thumbnails
         if (!t.thumbnail_url && t.video_url) missingThumbCount++;
       });
-      setSupabaseStorageCount(storageCount);
-      setBrokenVideoCount(brokenCount);
       setMissingThumbnailCount(missingThumbCount);
     };
     
@@ -224,7 +189,7 @@ export const TechniquesManagement = () => {
     
     fetchCategories();
     fetchSeriesNames();
-    fetchSupabaseStorageCount();
+    fetchMissingThumbnailCount();
     fetchTranscriptions();
   }, []);
 
@@ -255,376 +220,6 @@ export const TechniquesManagement = () => {
     setSeriesNameSuggestions(mappings.map(m => m.series_name));
   };
 
-  // Migration result state for detailed display
-  const [migrationResults, setMigrationResults] = useState<{
-    diagnostics: any;
-    results: any[];
-    has403Error: boolean;
-    notFoundItems: any[];
-  } | null>(null);
-
-  // Relink preview state
-  const [isPreviewingRelink, setIsPreviewingRelink] = useState(false);
-  const [isApplyingRelink, setIsApplyingRelink] = useState(false);
-  const [relinkUpdatedSince] = useState<string>("2000-01-01T00:00:00Z");
-  const [relinkPreview, setRelinkPreview] = useState<{
-    diagnostics: any;
-    matches: Array<{
-      techniqueId: string;
-      techniqueName: string;
-      field: string;
-      currentUrl: string | null;
-      candidateUid: string | null;
-      candidateName: string | null;
-      confidence: 'strong' | 'ok' | 'weak' | 'none';
-      candidateCreatedAt: string | null;
-    }>;
-    has403Error: boolean;
-  } | null>(null);
-
-  // List-all state (brute force mode)
-  const [isListingAll, setIsListingAll] = useState(false);
-  const [cloudflareVideoList, setCloudflareVideoList] = useState<{
-    requestUrl: string;
-    resultLength: number;
-    videos: Array<{
-      uid: string | null;
-      name: string | null;
-      created: string | null;
-      duration: number | null;
-      status: string | null;
-    }>;
-    error?: string;
-  } | null>(null);
-
-  // List all Cloudflare videos (brute force mode)
-  const handleListAllCloudflareVideos = async () => {
-    setIsListingAll(true);
-    setCloudflareVideoList(null);
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        toast.error("ログインが必要です");
-        return;
-      }
-
-      const response = await supabase.functions.invoke('migrate-videos-to-cloudflare', {
-        body: { action: 'list-all' },
-      });
-
-      if (response.error) {
-        throw new Error(response.error.message);
-      }
-
-      const result = response.data;
-      console.log("[List All] Full result:", result);
-
-      setCloudflareVideoList({
-        requestUrl: result.requestUrl || '',
-        resultLength: result.resultLength || 0,
-        videos: result.videos || [],
-        error: result.success ? undefined : result.message,
-      });
-
-      if (result.success) {
-        toast.success(`${result.resultLength}件の動画を取得しました`);
-      } else {
-        toast.error(result.message || "取得に失敗しました");
-      }
-    } catch (error) {
-      console.error("List all error:", error);
-      const msg = error instanceof Error ? error.message : "取得に失敗しました";
-      setCloudflareVideoList({
-        requestUrl: '',
-        resultLength: 0,
-        videos: [],
-        error: msg,
-      });
-      toast.error(msg);
-    } finally {
-      setIsListingAll(false);
-    }
-  };
-
-  // Preview relink - shows which videos would be linked without updating DB
-  const handlePreviewRelink = async () => {
-    setIsPreviewingRelink(true);
-    setRelinkPreview(null);
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        toast.error("ログインが必要です");
-        return;
-      }
-
-      const response = await supabase.functions.invoke('migrate-videos-to-cloudflare', {
-        body: {
-          table: 'techniques',
-          action: 'preview-relink',
-          updatedSince: relinkUpdatedSince,
-        },
-      });
-
-      if (response.error) {
-        throw new Error(response.error.message);
-      }
-
-      const result = response.data;
-      console.log("[Preview Relink] Full result:", result);
-
-      const messageText = String(result?.message ?? result?.error ?? "");
-      const has403Error =
-        messageText.includes('403') ||
-        String(result?.diagnostics?.cloudflare?.error ?? '').includes('403');
-
-      // Backend returns `results` (plans). Convert to the table format used by UI.
-      const plans = Array.isArray(result?.results) ? result.results : [];
-      const matches = plans.map((p: any) => {
-        const best = p?.candidates?.[0] ?? null;
-        const createdMs = typeof best?.createdMs === 'number' ? best.createdMs : null;
-
-        return {
-          techniqueId: String(p?.id ?? ''),
-          techniqueName: String(p?.name ?? ''),
-          field: 'video_url / video_url_ja',
-          currentUrl: (p?.current?.video_url_ja ?? p?.current?.video_url ?? null) as string | null,
-          candidateUid: (p?.chosen?.uid ?? null) as string | null,
-          candidateName: (best?.meta?.name ?? null) as string | null,
-          confidence: p?.match?.strong ? 'strong' : p?.match?.ok ? 'ok' : 'none',
-          candidateCreatedAt: createdMs ? new Date(createdMs).toISOString() : null,
-        };
-      });
-
-      setRelinkPreview({
-        diagnostics: result?.diagnostics,
-        matches,
-        has403Error,
-      });
-
-      if (has403Error) {
-        toast.error("CloudflareのAPIトークン権限エラー（403）");
-      } else if (result?.success === false) {
-        toast.error(messageText || "プレビュー取得に失敗しました");
-      } else if (matches.length > 0) {
-        toast.success(`${matches.length}件のマッチング候補を取得しました。確認してください。`);
-      } else {
-        toast.info("マッチング候補がありません");
-      }
-    } catch (error) {
-      console.error("Preview relink error:", error);
-      toast.error(error instanceof Error ? error.message : "プレビュー取得に失敗しました");
-    } finally {
-      setIsPreviewingRelink(false);
-    }
-  };
-
-  // Apply relink - actually updates the DB after user confirmation
-  const handleApplyRelink = async () => {
-    if (!relinkPreview || relinkPreview.has403Error) {
-      toast.error("プレビューを先に確認してください");
-      return;
-    }
-
-    const strongMatches = relinkPreview.matches.filter(m => m.confidence === 'strong' || m.confidence === 'ok');
-    if (strongMatches.length === 0) {
-      toast.warning("適用可能なマッチがありません");
-      return;
-    }
-
-    if (!confirm(`${strongMatches.length}件の動画URLを更新しますか？（強/中マッチのみ適用）`)) {
-      return;
-    }
-
-    setIsApplyingRelink(true);
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        toast.error("ログインが必要です");
-        return;
-      }
-
-      const response = await supabase.functions.invoke('migrate-videos-to-cloudflare', {
-        body: {
-          table: 'techniques',
-          action: 'apply-relink',
-          updatedSince: relinkUpdatedSince,
-        },
-      });
-
-      if (response.error) {
-        throw new Error(response.error.message);
-      }
-
-      const result = response.data;
-      console.log("[Apply Relink] Result:", result);
-
-      if (result.success) {
-        toast.success(`${result.updated}件の動画URLを更新しました`);
-        setRelinkPreview(null);
-        // Refresh the page data
-        window.location.reload();
-      } else {
-        toast.error(result.error || result.message || "更新に失敗しました");
-      }
-    } catch (error) {
-      console.error("Apply relink error:", error);
-      toast.error(error instanceof Error ? error.message : "更新に失敗しました");
-    } finally {
-      setIsApplyingRelink(false);
-    }
-  };
-
-  // Cloudflare Streamへの移行（実際にアップロード）
-  const handleMigrateToCloudflare = async () => {
-    if (!confirm(`${supabaseStorageCount}件の動画をSupabase StorageからCloudflare Streamにアップロードしますか？\n\n※ 動画はCloudflareにコピーされ、DBのURLが新しいCloudflare URLに更新されます。`)) return;
-    
-    setIsMigrating(true);
-    setMigrationResults(null);
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        toast.error("ログインが必要です");
-        return;
-      }
-
-      // action: 'migrate' で実際にCloudflareへURL-copyアップロードを実行
-      const response = await supabase.functions.invoke('migrate-videos-to-cloudflare', {
-        body: { table: 'techniques', action: 'migrate' },
-      });
-
-      if (response.error) {
-        throw new Error(response.error.message);
-      }
-
-      const result = response.data;
-      console.log("[Cloudflare Link] Full result:", result);
-
-      // Parse results for detailed display
-      const results = Array.isArray(result.results) ? result.results : [];
-      
-      // Check for 403 errors in diagnostics or results
-      const has403Error = 
-        result.diagnostics?.cloudflare?.error?.includes('403') ||
-        result.message?.includes('403') ||
-        results.some((r: any) => 
-          r.error?.includes('403') || 
-          r.details?.some((d: any) => d.error?.includes('403'))
-        );
-
-      // Collect not-found items with search terms
-      const notFoundItems = results
-        .filter((r: any) => !r.success)
-        .map((r: any) => {
-          const notFoundDetails = r.details?.filter((d: any) => d.method === 'not-found') || [];
-          const apiErrorDetails = r.details?.filter((d: any) => d.method === 'cloudflare-api-error') || [];
-          return {
-            id: r.id,
-            name: r.name,
-            error: r.error,
-            notFoundDetails,
-            apiErrorDetails,
-            searchedTerms: notFoundDetails.flatMap((d: any) => d.searched || []),
-          };
-        });
-
-      setMigrationResults({
-        diagnostics: result.diagnostics,
-        results,
-        has403Error,
-        notFoundItems,
-      });
-
-      // Console log for debugging
-      console.log("[Cloudflare Link] Diagnostics:", result.diagnostics);
-      if (results.length > 0) {
-        console.table(
-          results.map((r: any) => ({
-            id: r.id,
-            name: r.name,
-            success: r.success,
-            error: r.error,
-            method: r.details?.[0]?.method || 'unknown',
-            searched: r.details?.[0]?.searched?.join(', ') || '',
-          }))
-        );
-      }
-
-      if (result.success && result.migrated > 0) {
-        toast.success(result.message);
-      } else if (has403Error) {
-        toast.error("CloudflareのAPIトークンに Stream:Read 権限が必要です");
-      } else if (notFoundItems.length > 0) {
-        toast.warning(`${notFoundItems.length}件の動画がCloudflareで見つかりませんでした。詳細は下記を確認してください。`);
-      } else {
-        toast.info(result.message || "処理が完了しました");
-      }
-
-      // Refresh count
-      const { data } = await supabase
-        .from('techniques')
-        .select('id, video_url, video_url_ja, video_url_pt');
-      
-      let count = 0;
-      data?.forEach(t => {
-        if (t.video_url?.includes('supabase.co/storage')) count++;
-        if (t.video_url_ja?.includes('supabase.co/storage')) count++;
-        if (t.video_url_pt?.includes('supabase.co/storage')) count++;
-      });
-      setSupabaseStorageCount(count);
-
-    } catch (error) {
-      console.error("移行エラー:", error);
-      toast.error(error instanceof Error ? error.message : "動画の移行に失敗しました");
-    } finally {
-      setIsMigrating(false);
-    }
-  };
-
-  // Repair broken videos (404) from video_metadata backup
-  const handleRepairBrokenVideos = async () => {
-    if (!confirm(`${brokenVideoCount}件の動画URLを安定した再生URLに変換しますか？`)) return;
-    
-    setIsRepairing(true);
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        toast.error("ログインが必要です");
-        return;
-      }
-
-      const response = await supabase.functions.invoke('migrate-videos-to-cloudflare', {
-        body: { action: 'repair-broken' },
-      });
-
-      if (response.error) {
-        throw new Error(response.error.message);
-      }
-
-      const result = response.data;
-      if (result.success) {
-        toast.success(result.message);
-        // Refresh broken count
-        const { data } = await supabase
-          .from('techniques')
-          .select('id, video_url, video_url_ja');
-        
-        let count = 0;
-        data?.forEach(t => {
-          if (t.video_url?.includes('customer-46bf2542468db352a9741f14b84d2744')) count++;
-          if (t.video_url_ja?.includes('customer-46bf2542468db352a9741f14b84d2744')) count++;
-        });
-        setBrokenVideoCount(count);
-      } else {
-        throw new Error(result.error || '修復に失敗しました');
-      }
-    } catch (error) {
-      console.error("修復エラー:", error);
-      toast.error(error instanceof Error ? error.message : "動画の修復に失敗しました");
-    } finally {
-      setIsRepairing(false);
-    }
-  };
-
   // Fix missing thumbnails
   const handleFixThumbnails = async () => {
     if (!confirm(`${missingThumbnailCount}件の動画にサムネイルURLを設定しますか？`)) return;
@@ -637,116 +232,54 @@ export const TechniquesManagement = () => {
         return;
       }
 
-      const response = await supabase.functions.invoke('migrate-videos-to-cloudflare', {
-        body: { action: 'fix-thumbnails' },
+      // Generate thumbnails directly from Cloudflare URLs
+      const { data: techniques } = await supabase
+        .from('techniques')
+        .select('id, video_url, thumbnail_url')
+        .is('thumbnail_url', null)
+        .not('video_url', 'is', null);
+
+      if (!techniques || techniques.length === 0) {
+        toast.info("サムネイルが必要な動画がありません");
+        setIsFixingThumbnails(false);
+        return;
+      }
+
+      let fixedCount = 0;
+      for (const technique of techniques) {
+        // Extract Cloudflare video ID from URL
+        const videoUrl = technique.video_url || '';
+        const match = videoUrl.match(/videodelivery\.net\/([a-f0-9]{32})/i);
+        if (match?.[1]) {
+          const videoId = match[1];
+          const thumbnailUrl = `https://videodelivery.net/${videoId}/thumbnails/thumbnail.jpg`;
+          
+          await supabase
+            .from('techniques')
+            .update({ thumbnail_url: thumbnailUrl })
+            .eq('id', technique.id);
+          
+          fixedCount++;
+        }
+      }
+
+      toast.success(`${fixedCount}件のサムネイルを設定しました`);
+      
+      // Refresh missing thumbnail count
+      const { data } = await supabase
+        .from('techniques')
+        .select('id, video_url, thumbnail_url');
+      
+      let count = 0;
+      data?.forEach(t => {
+        if (!t.thumbnail_url && t.video_url) count++;
       });
-
-      if (response.error) {
-        throw new Error(response.error.message);
-      }
-
-      const result = response.data;
-      if (result.success) {
-        toast.success(result.message);
-        // Refresh missing thumbnail count
-        const { data } = await supabase
-          .from('techniques')
-          .select('id, video_url, thumbnail_url');
-        
-        let count = 0;
-        data?.forEach(t => {
-          if (!t.thumbnail_url && t.video_url) count++;
-        });
-        setMissingThumbnailCount(count);
-      } else {
-        throw new Error(result.error || 'サムネイル修復に失敗しました');
-      }
+      setMissingThumbnailCount(count);
     } catch (error) {
       console.error("サムネイル修復エラー:", error);
       toast.error(error instanceof Error ? error.message : "サムネイル修復に失敗しました");
     } finally {
       setIsFixingThumbnails(false);
-    }
-  };
-
-  const handleCheckEncoding = async () => {
-    setIsCheckingEncoding(true);
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        toast.error("ログインが必要です");
-        return;
-      }
-
-      const response = await supabase.functions.invoke('check-video-encoding', {
-        body: { action: 'check-all' },
-      });
-
-      if (response.error) {
-        throw new Error(response.error.message);
-      }
-
-      const result = response.data;
-      setEncodingResults(result);
-      
-      if (result.notEncoded === 0) {
-        toast.success(`全${result.total}件の動画が正常にエンコードされています`);
-      } else {
-        toast.warning(`${result.notEncoded}件の動画が未エンコードです`, {
-          description: '下のリストから再エンコードを実行できます'
-        });
-      }
-    } catch (error) {
-      console.error("Encoding check error:", error);
-      toast.error(error instanceof Error ? error.message : "エンコードチェックに失敗しました");
-    } finally {
-      setIsCheckingEncoding(false);
-    }
-  };
-
-  // Re-encode Cloudflare video
-  const handleReEncodeCloudflare = async (cloudflareVideoId: string, techniqueName: string) => {
-    setReEncodingCloudflareIds(prev => new Set(prev).add(cloudflareVideoId));
-    
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        toast.error("ログインが必要です");
-        return;
-      }
-
-      const response = await supabase.functions.invoke('check-video-encoding', {
-        body: { action: 're-encode', videoId: cloudflareVideoId },
-      });
-
-      if (response.error) {
-        throw new Error(response.error.message);
-      }
-
-      const result = response.data;
-      
-      if (result.success) {
-        toast.success('再エンコード開始', {
-          description: `「${techniqueName}」の新しい動画ID: ${result.newVideoId}`,
-        });
-        
-        // Note: The new video URL needs to be manually updated in the database
-        toast.info('新しい動画URLをDBに反映してください', {
-          description: result.newPlaybackUrl,
-          duration: 10000,
-        });
-      } else {
-        toast.warning(result.message || '再エンコードを開始できませんでした');
-      }
-    } catch (error) {
-      console.error("Re-encode error:", error);
-      toast.error(error instanceof Error ? error.message : "再エンコードに失敗しました");
-    } finally {
-      setReEncodingCloudflareIds(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(cloudflareVideoId);
-        return newSet;
-      });
     }
   };
   
@@ -1530,37 +1063,11 @@ export const TechniquesManagement = () => {
           description: `「${technique.name_ja}」の再エンコードを開始しました。完了まで数分かかります。`
         });
       } 
-      // Cloudflare Stream videos
-      else if (videoUrl.includes('cloudflarestream.com')) {
-        // Extract video ID from Cloudflare URL
-        const match = videoUrl.match(/cloudflarestream\.com\/([a-f0-9]+)\//);
-        if (!match) {
-          toast.error('動画IDを取得できません', {
-            description: 'URLの形式が不正です。'
-          });
-          return;
-        }
-        
-        const cloudflareVideoId = match[1];
-        
-        const { data, error } = await supabase.functions.invoke('check-video-encoding', {
-          body: { action: 're-encode', videoId: cloudflareVideoId }
+      // Cloudflare Stream videos - automatic ABR encoding on upload
+      else if (videoUrl.includes('cloudflarestream.com') || videoUrl.includes('videodelivery.net')) {
+        toast.info('Cloudflare Streamは自動エンコード済み', {
+          description: 'Cloudflare Streamは動画アップロード時に自動でABR（Adaptive Bitrate）エンコードを行います。問題がある場合は動画を再アップロードしてください。'
         });
-
-        if (error) throw error;
-        
-        if (data.success) {
-          toast.success('再エンコード開始', {
-            description: `新しい動画ID: ${data.newVideoId}\nデータベースのvideo_urlを手動で更新してください。`,
-            duration: 10000,
-          });
-          console.log('Re-encode result:', data);
-        } else {
-          toast.warning('再エンコード準備中', {
-            description: data.message || 'ダウンロードURLの準備中です。しばらく待ってから再試行してください。',
-            duration: 8000,
-          });
-        }
       }
       // Supabase storage or other
       else {
@@ -2181,553 +1688,45 @@ export const TechniquesManagement = () => {
             <ChevronDown className="w-4 h-4 text-muted-foreground transition-transform duration-200 group-data-[state=open]:rotate-180" />
           </CollapsibleTrigger>
           <CollapsibleContent className="pt-4 space-y-4">
-            {/* Relink Preview Card */}
-            <div className="p-4 border border-blue-500/50 bg-blue-500/5 rounded-lg">
-              <div className="flex items-center justify-between gap-4 flex-wrap">
-                <div className="flex items-center gap-3">
-                  <Link className="w-8 h-8 text-blue-500" />
-                  <div>
-                    <p className="font-medium">動画URL復旧ツール</p>
-                    <p className="text-sm text-muted-foreground">
-                      Cloudflareの動画リストと照合し、正しいURLに再紐付けします
-                    </p>
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <Button 
-                    onClick={handleListAllCloudflareVideos}
-                    disabled={isListingAll}
-                    variant="outline"
-                    className="border-purple-500 text-purple-500 hover:bg-purple-500/10"
-                  >
-                    {isListingAll ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        取得中...
-                      </>
-                    ) : (
-                      <>
-                        <Cloud className="w-4 h-4 mr-2" />
-                        全動画リスト取得
-                      </>
-                    )}
-                  </Button>
-                  <Button 
-                    onClick={handlePreviewRelink}
-                    disabled={isPreviewingRelink}
-                    variant="outline"
-                    className="border-blue-500 text-blue-500 hover:bg-blue-500/10"
-                  >
-                    {isPreviewingRelink ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        プレビュー中...
-                      </>
-                    ) : (
-                      <>
-                        <Search className="w-4 h-4 mr-2" />
-                        プレビュー
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </div>
-            </div>
-
-            {/* Cloudflare Video List (Brute Force Mode) */}
-            {cloudflareVideoList && (
-        <div className="mb-6 p-4 border border-purple-500/50 bg-purple-500/5 rounded-lg">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="font-medium flex items-center gap-2">
-              <Cloud className="w-4 h-4 text-purple-500" />
-              Cloudflare 全動画リスト（力技モード）
-            </h3>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={() => setCloudflareVideoList(null)}
-            >
-              <X className="w-4 h-4" />
-            </Button>
-          </div>
-
-          {/* Diagnostics */}
-          <div className="mb-4 p-3 bg-muted/50 rounded-md text-sm font-mono">
-            <p className="font-medium mb-1">診断情報:</p>
-            <ul className="space-y-1 text-muted-foreground text-xs">
-              <li>リクエストURL: <code className="bg-muted px-1 rounded break-all">{cloudflareVideoList.requestUrl || 'N/A'}</code></li>
-              <li>json.result.length: <span className="text-green-600 font-bold">{cloudflareVideoList.resultLength}</span></li>
-              {cloudflareVideoList.error && (
-                <li className="text-red-600">エラー: {cloudflareVideoList.error}</li>
-              )}
-            </ul>
-          </div>
-
-          {/* Video List Table */}
-          {cloudflareVideoList.videos.length > 0 ? (
-            <div className="overflow-x-auto max-h-96 overflow-y-auto">
-              <table className="w-full text-sm">
-                <thead className="sticky top-0 bg-background">
-                  <tr className="border-b">
-                    <th className="text-left p-2">#</th>
-                    <th className="text-left p-2">UID</th>
-                    <th className="text-left p-2">meta.name（タイトル）</th>
-                    <th className="text-left p-2">作成日時</th>
-                    <th className="text-left p-2">長さ</th>
-                    <th className="text-left p-2">状態</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {cloudflareVideoList.videos.map((video, idx) => (
-                    <tr key={video.uid || idx} className="border-b border-muted hover:bg-muted/30">
-                      <td className="p-2 text-muted-foreground">{idx + 1}</td>
-                      <td className="p-2 font-mono text-xs">{video.uid || '-'}</td>
-                      <td className="p-2">{video.name || <span className="text-muted-foreground italic">（名前なし）</span>}</td>
-                      <td className="p-2 text-xs text-muted-foreground">
-                        {video.created ? new Date(video.created).toLocaleString('ja-JP') : '-'}
-                      </td>
-                      <td className="p-2 text-xs">
-                        {video.duration ? `${Math.round(video.duration)}秒` : '-'}
-                      </td>
-                      <td className="p-2 text-xs">
-                        <span className={`px-1.5 py-0.5 rounded ${
-                          video.status === 'ready' ? 'bg-green-500/20 text-green-600' : 'bg-yellow-500/20 text-yellow-600'
-                        }`}>
-                          {video.status || '-'}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <p className="text-muted-foreground text-center py-4">
-              {cloudflareVideoList.error ? 'エラーが発生しました' : '動画が見つかりませんでした'}
-            </p>
-          )}
-            </div>
-            )}
-
-            {/* Relink Preview Results */}
-            {relinkPreview && (
-        <div className="mb-6 p-4 border border-blue-500/50 bg-blue-500/5 rounded-lg">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="font-medium flex items-center gap-2">
-              <Link className="w-4 h-4" />
-              再紐付けプレビュー結果
-            </h3>
-            <div className="flex gap-2">
-              {!relinkPreview.has403Error && relinkPreview.matches.filter(m => m.confidence === 'strong' || m.confidence === 'ok').length > 0 && (
-                <Button 
-                  onClick={handleApplyRelink}
-                  disabled={isApplyingRelink}
-                  variant="default"
-                  className="bg-green-600 hover:bg-green-700"
-                >
-                  {isApplyingRelink ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      適用中...
-                    </>
-                  ) : (
-                    <>
-                      <Check className="w-4 h-4 mr-2" />
-                      強/中マッチを適用
-                    </>
-                  )}
-                </Button>
-              )}
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={() => setRelinkPreview(null)}
-              >
-                <X className="w-4 h-4" />
-              </Button>
-            </div>
-          </div>
-
-          {/* 403 Error Warning */}
-          {relinkPreview.has403Error && (
-            <div className="mb-4 p-3 bg-red-500/10 border border-red-500/50 rounded-md">
-              <div className="flex items-center gap-2 text-red-600">
-                <AlertTriangle className="w-5 h-5" />
-                <span className="font-medium">権限エラー (403)</span>
-              </div>
-              <p className="mt-1 text-sm text-red-600/80">
-                CloudflareのAPIトークンに権限が不足しています。
-              </p>
-            </div>
-          )}
-
-          {/* Diagnostics */}
-          {relinkPreview.diagnostics && (
-            <div className="mb-4 p-3 bg-muted/50 rounded-md text-sm">
-              <p className="font-medium mb-1">診断情報:</p>
-              <ul className="space-y-1 text-muted-foreground">
-                {relinkPreview.diagnostics.cloudflare && (
-                  <li>
-                    Cloudflare API: {relinkPreview.diagnostics.cloudflare.ok ? (
-                      <span className="text-green-600">接続成功 (動画数: {relinkPreview.diagnostics.cloudflare.total_count ?? '不明'})</span>
-                    ) : (
-                      <span className="text-red-600">接続失敗 - {relinkPreview.diagnostics.cloudflare.error}</span>
-                    )}
-                  </li>
-                )}
-                <li>候補数: {relinkPreview.matches.length}件</li>
-              </ul>
-            </div>
-          )}
-
-          {/* Matches Table */}
-          {relinkPreview.matches.length > 0 && (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b">
-                    <th className="text-left p-2">テクニック名</th>
-                    <th className="text-left p-2">フィールド</th>
-                    <th className="text-left p-2">候補UID</th>
-                    <th className="text-left p-2">候補名</th>
-                    <th className="text-left p-2">信頼度</th>
-                    <th className="text-left p-2">作成日</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {relinkPreview.matches.map((match, idx) => (
-                    <tr key={idx} className="border-b border-muted">
-                      <td className="p-2 font-medium">{match.techniqueName}</td>
-                      <td className="p-2 text-muted-foreground">{match.field}</td>
-                      <td className="p-2 font-mono text-xs">{match.candidateUid || '-'}</td>
-                      <td className="p-2 text-muted-foreground text-xs">{match.candidateName || '-'}</td>
-                      <td className="p-2">
-                        <span className={`px-2 py-0.5 rounded text-xs font-medium ${
-                          match.confidence === 'strong' ? 'bg-green-500/20 text-green-600' :
-                          match.confidence === 'ok' ? 'bg-yellow-500/20 text-yellow-600' :
-                          match.confidence === 'weak' ? 'bg-orange-500/20 text-orange-600' :
-                          'bg-red-500/20 text-red-600'
-                        }`}>
-                          {match.confidence === 'strong' ? '強' :
-                           match.confidence === 'ok' ? '中' :
-                           match.confidence === 'weak' ? '弱' : 'なし'}
-                        </span>
-                      </td>
-                      <td className="p-2 text-xs text-muted-foreground">
-                        {match.candidateCreatedAt ? new Date(match.candidateCreatedAt).toLocaleString('ja-JP') : '-'}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-
-          {relinkPreview.matches.length === 0 && !relinkPreview.has403Error && (
-            <p className="text-muted-foreground text-center py-4">マッチング候補がありません</p>
-          )}
-            </div>
-            )}
-
-            {/* Cloudflare Stream Migration Card */}
-            {supabaseStorageCount > 0 && (
-        <div className="mb-6 p-4 border border-amber-500/50 bg-amber-500/5 rounded-lg">
-          <div className="flex items-center justify-between gap-4 flex-wrap">
-            <div className="flex items-center gap-3">
-              <Cloud className="w-8 h-8 text-amber-500" />
-              <div>
-                <p className="font-medium">Cloudflare Stream移行</p>
-                <p className="text-sm text-muted-foreground">
-                  {supabaseStorageCount}件の動画URLがSupabase Storageに残っています
-                </p>
-              </div>
-            </div>
-            <Button 
-              onClick={handleMigrateToCloudflare}
-              disabled={isMigrating}
-              variant="outline"
-              className="border-amber-500 text-amber-500 hover:bg-amber-500/10"
-            >
-              {isMigrating ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  移行中...
-                </>
-              ) : (
-                <>
-                  <Cloud className="w-4 h-4 mr-2" />
-                  移行実行
-                </>
-              )}
-            </Button>
-          </div>
-            </div>
-            )}
-
-            {/* Migration Results Panel */}
-            {migrationResults && (
-        <div className="mb-6 p-4 border border-muted rounded-lg bg-muted/20">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="font-medium flex items-center gap-2">
-              <FileText className="w-4 h-4" />
-              移行結果詳細
-            </h3>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={() => setMigrationResults(null)}
-            >
-              <X className="w-4 h-4" />
-            </Button>
-          </div>
-
-          {/* 403 Error Warning */}
-          {migrationResults.has403Error && (
-            <div className="mb-4 p-3 bg-red-500/10 border border-red-500/50 rounded-md">
-              <div className="flex items-center gap-2 text-red-600">
-                <AlertTriangle className="w-5 h-5" />
-                <span className="font-medium">権限エラー (403)</span>
-              </div>
-              <p className="mt-1 text-sm text-red-600/80">
-                CloudflareのAPIトークンに <code className="bg-red-500/20 px-1 rounded">Stream:Read</code> および <code className="bg-red-500/20 px-1 rounded">Stream:Edit</code> 権限が必要です。
-                Cloudflareダッシュボードでトークンの権限を確認してください。
-              </p>
-            </div>
-          )}
-
-          {/* Diagnostics Summary */}
-          {migrationResults.diagnostics && (
-            <div className="mb-4 p-3 bg-muted/50 rounded-md text-sm">
-              <p className="font-medium mb-1">診断情報:</p>
-              <ul className="space-y-1 text-muted-foreground">
-                <li>アクション: {migrationResults.diagnostics.action}</li>
-                {migrationResults.diagnostics.cloudflare && (
-                  <li>
-                    Cloudflare API: {migrationResults.diagnostics.cloudflare.ok ? (
-                      <span className="text-green-600">接続成功 (動画数: {migrationResults.diagnostics.cloudflare.total_count ?? '不明'})</span>
-                    ) : (
-                      <span className="text-red-600">接続失敗 - {migrationResults.diagnostics.cloudflare.error}</span>
-                    )}
-                  </li>
-                )}
-              </ul>
-            </div>
-          )}
-
-          {/* Not Found Items */}
-          {migrationResults.notFoundItems.length > 0 && (
-            <div className="mb-4">
-              <p className="font-medium mb-2 flex items-center gap-2">
-                <Search className="w-4 h-4" />
-                見つからなかった動画 ({migrationResults.notFoundItems.length}件)
-              </p>
-              <div className="max-h-64 overflow-y-auto border border-muted rounded-md">
-                <table className="w-full text-sm">
-                  <thead className="bg-muted/50 sticky top-0">
-                    <tr>
-                      <th className="text-left p-2">技術名</th>
-                      <th className="text-left p-2">検索キーワード</th>
-                      <th className="text-left p-2">原因</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {migrationResults.notFoundItems.map((item: any, idx: number) => (
-                      <tr key={item.id || idx} className="border-t border-muted">
-                        <td className="p-2 font-medium">{item.name}</td>
-                        <td className="p-2">
-                          {item.searchedTerms.length > 0 ? (
-                            <div className="flex flex-wrap gap-1">
-                              {item.searchedTerms.slice(0, 3).map((term: string, i: number) => (
-                                <code key={i} className="text-xs bg-muted px-1 py-0.5 rounded">{term}</code>
-                              ))}
-                              {item.searchedTerms.length > 3 && (
-                                <span className="text-xs text-muted-foreground">+{item.searchedTerms.length - 3}</span>
-                              )}
-                            </div>
-                          ) : (
-                            <span className="text-muted-foreground">-</span>
-                          )}
-                        </td>
-                        <td className="p-2">
-                          {item.apiErrorDetails?.length > 0 ? (
-                            <span className="text-red-600 text-xs">{item.apiErrorDetails[0].error}</span>
-                          ) : item.notFoundDetails?.length > 0 ? (
-                            <span className="text-amber-600 text-xs">Cloudflare Streamに該当動画なし</span>
-                          ) : (
-                            <span className="text-muted-foreground text-xs">{item.error || '不明'}</span>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              <p className="mt-2 text-xs text-muted-foreground">
-                ヒント: Cloudflareダッシュボードで動画のタイトル（meta.name）が上記の検索キーワードと一致するか確認してください。
-              </p>
-            </div>
-          )}
-
-          {/* Success Items */}
-          {migrationResults.results.filter((r: any) => r.success).length > 0 && (
-            <div>
-              <p className="font-medium mb-2 text-green-600 flex items-center gap-2">
-                <Check className="w-4 h-4" />
-                成功 ({migrationResults.results.filter((r: any) => r.success).length}件)
-              </p>
-              <div className="max-h-32 overflow-y-auto">
-                <ul className="text-sm space-y-1">
-                  {migrationResults.results.filter((r: any) => r.success).map((r: any) => (
-                    <li key={r.id} className="text-muted-foreground">
-                      ✓ {r.name}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-          )}
-            </div>
-            )}
-
-            {/* Broken Video Repair Card */}
-            {brokenVideoCount > 0 && (
-        <div className="mb-6 p-4 border border-red-500/50 bg-red-500/5 rounded-lg">
-          <div className="flex items-center justify-between gap-4 flex-wrap">
-            <div className="flex items-center gap-3">
-              <AlertTriangle className="w-8 h-8 text-red-500" />
-              <div>
-                <p className="font-medium">動画URLの正規化</p>
-                <p className="text-sm text-muted-foreground">
-                  {brokenVideoCount}件の動画URLが旧形式のため、安定した再生URLに変換できます
-                </p>
-              </div>
-            </div>
-            <Button 
-              onClick={handleRepairBrokenVideos}
-              disabled={isRepairing}
-              variant="outline"
-              className="border-red-500 text-red-500 hover:bg-red-500/10"
-            >
-              {isRepairing ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  修復中...
-                </>
-              ) : (
-                <>
-                  <RefreshCw className="w-4 h-4 mr-2" />
-                  修復実行
-                </>
-              )}
-            </Button>
-          </div>
-            </div>
-            )}
-
             {/* Missing Thumbnails Card */}
             {missingThumbnailCount > 0 && (
-        <div className="mb-6 p-4 border border-amber-500/50 bg-amber-500/5 rounded-lg">
-          <div className="flex items-center justify-between gap-4 flex-wrap">
-            <div className="flex items-center gap-3">
-              <ImageIcon className="w-8 h-8 text-amber-500" />
-              <div>
-                <p className="font-medium">サムネイル修復</p>
-                <p className="text-sm text-muted-foreground">
-                  {missingThumbnailCount}件の動画にサムネイルURLが設定されていません
-                </p>
-              </div>
-            </div>
-            <Button 
-              onClick={handleFixThumbnails}
-              disabled={isFixingThumbnails}
-              variant="outline"
-              className="border-amber-500 text-amber-500 hover:bg-amber-500/10"
-            >
-              {isFixingThumbnails ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  修復中...
-                </>
-              ) : (
-                <>
-                  <RefreshCw className="w-4 h-4 mr-2" />
-                  サムネイル設定
-                </>
-              )}
-            </Button>
-          </div>
-            </div>
-            )}
-
-            {/* Encoding Check Section */}
-            <div className="p-4 border border-blue-500/50 bg-blue-500/5 rounded-lg">
-          <div className="flex items-center justify-between gap-4 flex-wrap mb-4">
-            <div className="flex items-center gap-3">
-              <RefreshCw className="w-8 h-8 text-blue-500" />
-              <div>
-                <p className="font-medium">動画エンコードチェック</p>
-                <p className="text-sm text-muted-foreground">
-                  Cloudflare動画のエンコード状態を確認・再エンコード
-                </p>
-              </div>
-            </div>
-            <Button 
-              onClick={handleCheckEncoding}
-              disabled={isCheckingEncoding}
-              variant="outline"
-              className="border-blue-500 text-blue-500 hover:bg-blue-500/10"
-            >
-              {isCheckingEncoding ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  チェック中...
-                </>
-              ) : (
-                <>
-                  <Search className="w-4 h-4 mr-2" />
-                  エンコードチェック
-                </>
-              )}
-            </Button>
-          </div>
-          
-          {encodingResults && (
-            <div className="mt-4">
-              <div className="flex gap-4 mb-4 text-sm">
-                <span className="text-green-500">✓ 正常: {encodingResults.properlyEncoded}</span>
-                <span className="text-red-500">✗ 未エンコード: {encodingResults.notEncoded}</span>
-              </div>
-              
-              {encodingResults.notEncodedVideos.length > 0 && (
-                <div className="space-y-2 max-h-60 overflow-y-auto">
-                  {encodingResults.notEncodedVideos.map((video) => (
-                    <div key={video.cloudflareVideoId} className="flex items-center justify-between p-2 bg-background rounded border">
-                      <div className="text-sm">
-                        <span className="font-medium">{video.seriesPrefix}-{video.seriesOrder}</span>
-                        <span className="ml-2">{video.name}</span>
-                        <span className="ml-2 text-muted-foreground text-xs">
-                          ({video.status}, {video.inputWidth}x{video.inputHeight})
-                        </span>
-                      </div>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleReEncodeCloudflare(video.cloudflareVideoId, video.name)}
-                        disabled={reEncodingCloudflareIds.has(video.cloudflareVideoId)}
-                      >
-                        {reEncodingCloudflareIds.has(video.cloudflareVideoId) ? (
-                          <Loader2 className="w-3 h-3 animate-spin" />
-                        ) : (
-                          '再エンコード'
-                        )}
-                      </Button>
+              <div className="p-4 border border-amber-500/50 bg-amber-500/5 rounded-lg">
+                <div className="flex items-center justify-between gap-4 flex-wrap">
+                  <div className="flex items-center gap-3">
+                    <ImageIcon className="w-8 h-8 text-amber-500" />
+                    <div>
+                      <p className="font-medium">サムネイル修復</p>
+                      <p className="text-sm text-muted-foreground">
+                        {missingThumbnailCount}件の動画にサムネイルURLが設定されていません
+                      </p>
                     </div>
-                  ))}
+                  </div>
+                  <Button 
+                    onClick={handleFixThumbnails}
+                    disabled={isFixingThumbnails}
+                    variant="outline"
+                    className="border-amber-500 text-amber-500 hover:bg-amber-500/10"
+                  >
+                    {isFixingThumbnails ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        修復中...
+                      </>
+                    ) : (
+                      <>
+                        <RefreshCw className="w-4 h-4 mr-2" />
+                        サムネイル設定
+                      </>
+                    )}
+                  </Button>
                 </div>
-              )}
-            </div>
-          )}
-            </div>
+              </div>
+            )}
+            {missingThumbnailCount === 0 && (
+              <p className="text-muted-foreground text-center py-4">
+                すべての動画にサムネイルが設定されています
+              </p>
+            )}
           </CollapsibleContent>
         </Collapsible>
       )}
@@ -3189,7 +2188,7 @@ export const TechniquesManagement = () => {
                                       variant="outline"
                                       onClick={() => navigate(`/admin/transcription/${transcriptionMap[technique.id].id}`)}
                                     >
-                                      <Link className="h-4 w-4 mr-1" />
+                                      <Link2 className="h-4 w-4 mr-1" />
                                       文字起こし詳細
                                     </Button>
                                   ) : (
