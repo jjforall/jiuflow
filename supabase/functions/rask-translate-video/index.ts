@@ -43,8 +43,16 @@ async function getRaskAccessToken(): Promise<string> {
 
 // Extract Cloudflare Stream video ID from URL
 function extractCloudflareVideoId(url: string): string | null {
-  const match = url.match(/cloudflarestream\.com\/([a-zA-Z0-9]+)\//);
-  return match ? match[1] : null;
+  // Match both cloudflarestream.com and videodelivery.net URLs
+  const patterns = [
+    /cloudflarestream\.com\/([a-zA-Z0-9]+)\//,
+    /videodelivery\.net\/([a-zA-Z0-9]+)\//,
+  ];
+  for (const pattern of patterns) {
+    const match = url.match(pattern);
+    if (match) return match[1];
+  }
+  return null;
 }
 
 // Get Cloudflare download URL for video
