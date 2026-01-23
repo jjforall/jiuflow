@@ -22,7 +22,7 @@ interface ActiveTranslation {
   techniqueName: string;
   targetLang: string;
   startTime: number;
-  provider: 'rask' | 'elevenlabs';
+  provider: 'rask' | 'elevenlabs' | 'heygen';
 }
 
 const ALL_LANGUAGES = [
@@ -73,13 +73,13 @@ export const VideoTranslationManagement = ({ showHeader = true }: VideoTranslati
   
   // Settings
   const [showSettings, setShowSettings] = useState(false);
-  const [translationProvider, setTranslationProvider] = useState<'elevenlabs' | 'rask'>('elevenlabs');
+  const [translationProvider, setTranslationProvider] = useState<'elevenlabs' | 'rask' | 'heygen'>('elevenlabs');
 
   useEffect(() => {
     fetchData();
     // Load provider preference
     const savedProvider = localStorage.getItem('translation_provider');
-    if (savedProvider === 'rask' || savedProvider === 'elevenlabs') {
+    if (savedProvider === 'rask' || savedProvider === 'elevenlabs' || savedProvider === 'heygen') {
       setTranslationProvider(savedProvider);
     }
   }, []);
@@ -151,7 +151,11 @@ export const VideoTranslationManagement = ({ showHeader = true }: VideoTranslati
     }
     
     const provider = translationProvider;
-    const functionName = provider === 'rask' ? 'rask-translate-video' : 'translate-video';
+    const functionName = provider === 'rask' 
+      ? 'rask-translate-video' 
+      : provider === 'heygen' 
+        ? 'heygen-translate-video' 
+        : 'translate-video';
     
     setIsTranslating(true);
     try {
@@ -161,6 +165,7 @@ export const VideoTranslationManagement = ({ showHeader = true }: VideoTranslati
           sourceLanguage,
           targetLanguage,
           techniqueId: translatingTechnique.id,
+          techniqueName: translatingTechnique.name_ja || translatingTechnique.name,
         }
       });
 
@@ -183,7 +188,7 @@ export const VideoTranslationManagement = ({ showHeader = true }: VideoTranslati
           provider: provider,
         }]);
         
-        const providerName = provider === 'rask' ? 'Rask.ai' : 'ElevenLabs';
+        const providerName = provider === 'rask' ? 'Rask.ai' : provider === 'heygen' ? 'HeyGen' : 'ElevenLabs';
         toast.success("動画翻訳を開始しました", {
           description: `${providerName}で翻訳中。完了すると通知されます。`,
         });
@@ -206,7 +211,11 @@ export const VideoTranslationManagement = ({ showHeader = true }: VideoTranslati
         description: `「${translation.techniqueName}」の翻訳状況を確認しています`,
       });
 
-      const functionName = translation.provider === 'rask' ? 'rask-check-status' : 'check-translation-status';
+      const functionName = translation.provider === 'rask' 
+        ? 'rask-check-status' 
+        : translation.provider === 'heygen' 
+          ? 'heygen-check-status' 
+          : 'check-translation-status';
       const { data: statusData, error: statusError } = await supabase.functions.invoke(functionName, {
         body: { 
           projectId: translation.projectId,
@@ -361,10 +370,12 @@ export const VideoTranslationManagement = ({ showHeader = true }: VideoTranslati
                 variant="outline" 
                 className={translationProvider === 'elevenlabs' 
                   ? 'bg-blue-500/10 text-blue-600 border-blue-500/30' 
-                  : 'bg-green-500/10 text-green-600 border-green-500/30'
+                  : translationProvider === 'heygen'
+                    ? 'bg-purple-500/10 text-purple-600 border-purple-500/30'
+                    : 'bg-green-500/10 text-green-600 border-green-500/30'
                 }
               >
-                {translationProvider === 'elevenlabs' ? 'ElevenLabs' : 'Rask.ai'}
+                {translationProvider === 'elevenlabs' ? 'ElevenLabs' : translationProvider === 'heygen' ? 'HeyGen' : 'Rask.ai'}
               </Badge>
             </h2>
             <p className="text-sm text-muted-foreground mt-1">
@@ -390,10 +401,12 @@ export const VideoTranslationManagement = ({ showHeader = true }: VideoTranslati
             variant="outline" 
             className={translationProvider === 'elevenlabs' 
               ? 'bg-blue-500/10 text-blue-600 border-blue-500/30' 
-              : 'bg-green-500/10 text-green-600 border-green-500/30'
+              : translationProvider === 'heygen'
+                ? 'bg-purple-500/10 text-purple-600 border-purple-500/30'
+                : 'bg-green-500/10 text-green-600 border-green-500/30'
             }
           >
-            {translationProvider === 'elevenlabs' ? 'ElevenLabs' : 'Rask.ai'}
+            {translationProvider === 'elevenlabs' ? 'ElevenLabs' : translationProvider === 'heygen' ? 'HeyGen' : 'Rask.ai'}
           </Badge>
           <div className="flex gap-2">
             <Button variant="outline" size="sm" onClick={() => fetchData()}>
@@ -459,7 +472,7 @@ export const VideoTranslationManagement = ({ showHeader = true }: VideoTranslati
                       <div className="flex-1">
                         <p className="font-medium">{translation.techniqueName}</p>
                         <p className="text-sm text-muted-foreground">
-                          {langName}版 • {translation.provider === 'rask' ? 'Rask.ai' : 'ElevenLabs'} • 経過時間: {minutes}分{seconds}秒
+                          {langName}版 • {translation.provider === 'rask' ? 'Rask.ai' : translation.provider === 'heygen' ? 'HeyGen' : 'ElevenLabs'} • 経過時間: {minutes}分{seconds}秒
                         </p>
                       </div>
                       <Button
@@ -627,7 +640,7 @@ export const VideoTranslationManagement = ({ showHeader = true }: VideoTranslati
                 <label className="text-sm font-medium mb-2 block">翻訳プロバイダー</label>
                 <Select 
                   value={translationProvider} 
-                  onValueChange={(v: 'elevenlabs' | 'rask') => {
+                  onValueChange={(v: 'elevenlabs' | 'rask' | 'heygen') => {
                     setTranslationProvider(v);
                     localStorage.setItem('translation_provider', v);
                   }}
@@ -646,6 +659,12 @@ export const VideoTranslationManagement = ({ showHeader = true }: VideoTranslati
                       <span className="flex items-center gap-2">
                         <span className="w-2 h-2 rounded-full bg-green-500"></span>
                         Rask.ai
+                      </span>
+                    </SelectItem>
+                    <SelectItem value="heygen">
+                      <span className="flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-purple-500"></span>
+                        HeyGen
                       </span>
                     </SelectItem>
                   </SelectContent>
@@ -817,19 +836,22 @@ export const VideoTranslationManagement = ({ showHeader = true }: VideoTranslati
           <div className="space-y-4">
             <div>
               <label className="text-sm font-medium mb-2 block">翻訳プロバイダー</label>
-              <Select value={translationProvider} onValueChange={(v: 'elevenlabs' | 'rask') => setTranslationProvider(v)}>
+              <Select value={translationProvider} onValueChange={(v: 'elevenlabs' | 'rask' | 'heygen') => setTranslationProvider(v)}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="bg-background z-50">
                   <SelectItem value="elevenlabs">ElevenLabs</SelectItem>
                   <SelectItem value="rask">Rask.ai</SelectItem>
+                  <SelectItem value="heygen">HeyGen</SelectItem>
                 </SelectContent>
               </Select>
               <p className="text-xs text-muted-foreground mt-2">
                 {translationProvider === 'elevenlabs' 
                   ? 'ElevenLabsは高品質な音声合成に対応しています' 
-                  : 'Rask.aiは多言語対応が充実しています'}
+                  : translationProvider === 'heygen'
+                    ? 'HeyGenは高品質なAI動画翻訳に対応しています（Scale/Enterprise tier必須）'
+                    : 'Rask.aiは多言語対応が充実しています'}
               </p>
             </div>
             
