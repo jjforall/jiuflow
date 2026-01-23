@@ -352,6 +352,15 @@ export const VideoTranslationManagement = () => {
           <h2 className="text-2xl font-semibold flex items-center gap-2">
             <Languages className="h-6 w-6" />
             動画翻訳管理
+            <Badge 
+              variant="outline" 
+              className={translationProvider === 'elevenlabs' 
+                ? 'bg-blue-500/10 text-blue-600 border-blue-500/30' 
+                : 'bg-green-500/10 text-green-600 border-green-500/30'
+              }
+            >
+              {translationProvider === 'elevenlabs' ? 'ElevenLabs' : 'Rask.ai'}
+            </Badge>
           </h2>
           <p className="text-sm text-muted-foreground mt-1">
             動画の多言語吹き替えを管理します
@@ -579,13 +588,43 @@ export const VideoTranslationManagement = () => {
           
           <div className="space-y-4">
             <div>
-              <p className="text-sm text-muted-foreground mb-4">
+              <p className="text-sm text-muted-foreground mb-2">
                 {translatingTechnique?.name_ja || translatingTechnique?.name} の動画を他言語に翻訳します
               </p>
               
+              {/* Provider Selection in Dialog */}
+              <div className="mb-4 p-3 bg-muted/50 rounded-lg">
+                <label className="text-sm font-medium mb-2 block">翻訳プロバイダー</label>
+                <Select 
+                  value={translationProvider} 
+                  onValueChange={(v: 'elevenlabs' | 'rask') => {
+                    setTranslationProvider(v);
+                    localStorage.setItem('translation_provider', v);
+                  }}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-background z-50">
+                    <SelectItem value="elevenlabs">
+                      <span className="flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+                        ElevenLabs
+                      </span>
+                    </SelectItem>
+                    <SelectItem value="rask">
+                      <span className="flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-green-500"></span>
+                        Rask.ai
+                      </span>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
               <div>
                 <label className="text-sm font-medium mb-3 block">翻訳先言語を選択</label>
-                <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2">
+                <div className="space-y-2 max-h-[350px] overflow-y-auto pr-2">
                   {ALL_LANGUAGES.map(lang => {
                     const metadata = translatingTechnique?.video_metadata?.[lang.code];
                     const inProgressStatuses = ['uploading', 'uploaded', 'transcription_started', 'translation_started', 'voiceover_started', 'processing', 'dubbing'];
