@@ -206,24 +206,59 @@ serve(async (req) => {
 
     console.log("Starting Rask.ai translation:", { mp4Url, srcLang, dstLang, techniqueId });
 
-    // Step 1: Upload media by link
-    // Rask.ai requires the URL to return proper Content-Type header
-    // For Cloudflare Stream, we need to use the signed download URL with .mp4 extension hint
-    console.log("Uploading media to Rask.ai:", { mp4Url });
+    // Step 1: Download video and upload to Rask.ai as file
+    // Rask.ai v2 API requires video_id from their media library
+    // Direct URL upload doesn't work reliably, so we fetch and upload the file
+    console.log("Fetching video for Rask.ai upload:", mp4Url);
     
-    // Ensure URL ends with .mp4 hint for proper MIME type detection
-    let finalUrl = mp4Url;
-    if (!mp4Url.toLowerCase().includes('.mp4')) {
-      // Add .mp4 extension hint as query param if not already a direct mp4
-      const urlObj = new URL(mp4Url);
-      urlObj.searchParams.set('format', 'mp4');
-      finalUrl = urlObj.toString();
+    const videoResponse = await fetch(mp4Url);
+    if (!videoResponse.ok) {
+      console.error("Failed to fetch video:", videoResponse.status);
+      return new Response(
+        JSON.stringify({ 
+          error: "Failed to fetch video for upload", 
+          details: `Video fetch failed: ${videoResponse.status}`,
+        }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
     
-    console.log("Final URL for Rask.ai:", finalUrl);
+    const videoArrayBuffer = await videoResponse.arrayBuffer();
+    const videoBlob = new Blob([videoArrayBuffer], { type: "video/mp4" });
+    console.log("Video fetched, size:", videoBlob.size, "bytes");
     
-    // Use the v2 projects endpoint with direct URL instead of media library
-    // This approach creates a project directly with the video URL
+    // Step 2: Upload to Rask.ai media library
+    const formData = new FormData();
+    formData.append("file", videoBlob, `technique_${techniqueId}.mp4`);
+    
+    console.log("Uploading to Rask.ai media library...");
+    const uploadResponse = await fetch("https://api.rask.ai/api/library/v1/media/file", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${accessToken}`,
+      },
+      body: formData,
+    });
+    
+    if (!uploadResponse.ok) {
+      const uploadErrorText = await uploadResponse.text();
+      console.error("Rask media upload error:", uploadResponse.status, uploadErrorText);
+      return new Response(
+        JSON.stringify({ 
+          error: "Failed to upload media to Rask.ai library", 
+          details: uploadErrorText,
+          status: uploadResponse.status,
+        }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    
+    const uploadData = await uploadResponse.json();
+    const videoId = uploadData.id;
+    console.log("Media uploaded to Rask library:", { videoId });
+    
+    // Step 3: Create project with video_id
+    console.log("Creating Rask.ai project with video_id:", videoId);
     const projectResponse = await fetch("https://api.rask.ai/v2/projects", {
       method: "POST",
       headers: {
@@ -231,7 +266,7 @@ serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        url: mp4Url,
+        video_id: videoId,
         src_lang: srcLang,
         dst_lang: dstLang,
         name: `Technique ${techniqueId} - ${targetLanguage}`,
@@ -246,70 +281,6 @@ serve(async (req) => {
         statusText: projectResponse.statusText,
         body: errorText,
       });
-      
-      // If direct URL fails, try the file upload approach
-      if (projectResponse.status === 400) {
-        console.log("Direct URL failed, attempting to fetch and upload video data...");
-        
-        // Fetch the video content
-        const videoResponse = await fetch(mp4Url);
-        if (!videoResponse.ok) {
-          return new Response(
-            JSON.stringify({ 
-              error: "Failed to fetch video for upload", 
-              details: `Video fetch failed: ${videoResponse.status}`,
-            }),
-            { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-          );
-        }
-        
-        const videoBlob = await videoResponse.blob();
-        console.log("Video fetched, size:", videoBlob.size, "type:", videoBlob.type);
-        
-        // Create form data for multipart upload
-        const formData = new FormData();
-        formData.append("file", videoBlob, `technique_${techniqueId}.mp4`);
-        formData.append("src_lang", srcLang);
-        formData.append("dst_lang", dstLang);
-        formData.append("name", `Technique ${techniqueId} - ${targetLanguage}`);
-        formData.append("speaker_detection", "auto");
-        
-        const uploadProjectResponse = await fetch("https://api.rask.ai/v2/projects", {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${accessToken}`,
-          },
-          body: formData,
-        });
-        
-        if (!uploadProjectResponse.ok) {
-          const uploadErrorText = await uploadProjectResponse.text();
-          console.error("Rask file upload error:", uploadProjectResponse.status, uploadErrorText);
-          return new Response(
-            JSON.stringify({ 
-              error: "Failed to upload video to Rask.ai", 
-              details: uploadErrorText,
-              status: uploadProjectResponse.status,
-            }),
-            { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-          );
-        }
-        
-        const uploadProjectData = await uploadProjectResponse.json();
-        console.log("Rask project created via file upload:", uploadProjectData);
-        
-        return new Response(
-          JSON.stringify({
-            success: true,
-            projectId: uploadProjectData.id,
-            message: "Translation started successfully with Rask.ai (file upload)",
-            targetLanguage,
-            provider: "rask",
-          }),
-          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-      
       return new Response(
         JSON.stringify({ 
           error: "Failed to create Rask.ai project", 
@@ -322,12 +293,13 @@ serve(async (req) => {
 
     const projectData = await projectResponse.json();
     const projectId = projectData.id;
-    console.log("Rask project created:", { projectId });
+    console.log("Rask project created:", { projectId, videoId });
 
     return new Response(
       JSON.stringify({
         success: true,
         projectId,
+        videoId,
         message: "Translation started successfully with Rask.ai",
         targetLanguage,
         provider: "rask",
