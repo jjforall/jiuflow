@@ -78,7 +78,6 @@ const menuGroups: MenuGroup[] = [
       { id: "transcriptions", label: "文字起こし・字幕", icon: FileTextIcon },
       { id: "video-lists", label: "動画リスト", icon: ListVideo },
       { id: "user-videos", label: "ユーザー動画", icon: Video },
-      { id: "music", label: "音楽管理", icon: Music },
     ],
   },
   {
@@ -160,6 +159,7 @@ const menuGroups: MenuGroup[] = [
       { id: "oauth-clients", label: "OAuthクライアント", icon: KeyRound },
       { id: "line", label: "LINE連携", icon: MessageCircle },
       { id: "mcp-chat", label: "MCP チャット", icon: MessageSquare },
+      { id: "music", label: "音楽管理", icon: Music },
       { id: "settings", label: "設定", icon: Settings },
     ],
   },

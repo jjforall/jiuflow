@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { InputWithSuggestions } from "@/components/ui/input-with-suggestions";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Upload, Trash2, Search, Check, X, Languages, ExternalLink, ChevronDown, Cloud, Loader2, RefreshCw, FileText, Link, AlertTriangle, ImageIcon } from "lucide-react";
+import { Upload, Trash2, Search, Check, X, Languages, ExternalLink, ChevronDown, Cloud, Loader2, RefreshCw, FileText, Link, AlertTriangle, ImageIcon, Wrench } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   Collapsible,
@@ -2167,63 +2167,75 @@ export const TechniquesManagement = () => {
           )}
         </div>
       </div>
-      {/* Relink Preview Card - Always show for admins */}
+      {/* Maintenance Tools Section - Collapsible */}
       {isAdmin && (
-        <div className="mb-6 p-4 border border-blue-500/50 bg-blue-500/5 rounded-lg">
-          <div className="flex items-center justify-between gap-4 flex-wrap">
+        <Collapsible defaultOpen={false} className="mb-6">
+          <CollapsibleTrigger className="flex items-center justify-between w-full p-4 border rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
             <div className="flex items-center gap-3">
-              <Link className="w-8 h-8 text-blue-500" />
-              <div>
-                <p className="font-medium">動画URL復旧ツール</p>
-                <p className="text-sm text-muted-foreground">
-                  Cloudflareの動画リストと照合し、正しいURLに再紐付けします
-                </p>
+              <Wrench className="w-5 h-5 text-muted-foreground" />
+              <span className="font-medium">メンテナンスツール</span>
+              <span className="text-xs text-muted-foreground">
+                （動画URL復旧・移行・修復・エンコードチェック）
+              </span>
+            </div>
+            <ChevronDown className="w-4 h-4 text-muted-foreground transition-transform duration-200 group-data-[state=open]:rotate-180" />
+          </CollapsibleTrigger>
+          <CollapsibleContent className="pt-4 space-y-4">
+            {/* Relink Preview Card */}
+            <div className="p-4 border border-blue-500/50 bg-blue-500/5 rounded-lg">
+              <div className="flex items-center justify-between gap-4 flex-wrap">
+                <div className="flex items-center gap-3">
+                  <Link className="w-8 h-8 text-blue-500" />
+                  <div>
+                    <p className="font-medium">動画URL復旧ツール</p>
+                    <p className="text-sm text-muted-foreground">
+                      Cloudflareの動画リストと照合し、正しいURLに再紐付けします
+                    </p>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Button 
+                    onClick={handleListAllCloudflareVideos}
+                    disabled={isListingAll}
+                    variant="outline"
+                    className="border-purple-500 text-purple-500 hover:bg-purple-500/10"
+                  >
+                    {isListingAll ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        取得中...
+                      </>
+                    ) : (
+                      <>
+                        <Cloud className="w-4 h-4 mr-2" />
+                        全動画リスト取得
+                      </>
+                    )}
+                  </Button>
+                  <Button 
+                    onClick={handlePreviewRelink}
+                    disabled={isPreviewingRelink}
+                    variant="outline"
+                    className="border-blue-500 text-blue-500 hover:bg-blue-500/10"
+                  >
+                    {isPreviewingRelink ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        プレビュー中...
+                      </>
+                    ) : (
+                      <>
+                        <Search className="w-4 h-4 mr-2" />
+                        プレビュー
+                      </>
+                    )}
+                  </Button>
+                </div>
               </div>
             </div>
-            <div className="flex gap-2">
-              <Button 
-                onClick={handleListAllCloudflareVideos}
-                disabled={isListingAll}
-                variant="outline"
-                className="border-purple-500 text-purple-500 hover:bg-purple-500/10"
-              >
-                {isListingAll ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    取得中...
-                  </>
-                ) : (
-                  <>
-                    <Cloud className="w-4 h-4 mr-2" />
-                    全動画リスト取得
-                  </>
-                )}
-              </Button>
-              <Button 
-                onClick={handlePreviewRelink}
-                disabled={isPreviewingRelink}
-                variant="outline"
-                className="border-blue-500 text-blue-500 hover:bg-blue-500/10"
-              >
-                {isPreviewingRelink ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    プレビュー中...
-                  </>
-                ) : (
-                  <>
-                    <Search className="w-4 h-4 mr-2" />
-                    プレビュー
-                  </>
-                )}
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
 
-      {/* Cloudflare Video List (Brute Force Mode) */}
-      {cloudflareVideoList && (
+            {/* Cloudflare Video List (Brute Force Mode) */}
+            {cloudflareVideoList && (
         <div className="mb-6 p-4 border border-purple-500/50 bg-purple-500/5 rounded-lg">
           <div className="flex items-center justify-between mb-3">
             <h3 className="font-medium flex items-center gap-2">
@@ -2294,11 +2306,11 @@ export const TechniquesManagement = () => {
               {cloudflareVideoList.error ? 'エラーが発生しました' : '動画が見つかりませんでした'}
             </p>
           )}
-        </div>
-      )}
+            </div>
+            )}
 
-      {/* Relink Preview Results */}
-      {relinkPreview && (
+            {/* Relink Preview Results */}
+            {relinkPreview && (
         <div className="mb-6 p-4 border border-blue-500/50 bg-blue-500/5 rounded-lg">
           <div className="flex items-center justify-between mb-3">
             <h3 className="font-medium flex items-center gap-2">
@@ -2414,11 +2426,11 @@ export const TechniquesManagement = () => {
           {relinkPreview.matches.length === 0 && !relinkPreview.has403Error && (
             <p className="text-muted-foreground text-center py-4">マッチング候補がありません</p>
           )}
-        </div>
-      )}
+            </div>
+            )}
 
-      {/* Cloudflare Stream Migration Card */}
-      {supabaseStorageCount > 0 && isAdmin && (
+            {/* Cloudflare Stream Migration Card */}
+            {supabaseStorageCount > 0 && (
         <div className="mb-6 p-4 border border-amber-500/50 bg-amber-500/5 rounded-lg">
           <div className="flex items-center justify-between gap-4 flex-wrap">
             <div className="flex items-center gap-3">
@@ -2449,11 +2461,11 @@ export const TechniquesManagement = () => {
               )}
             </Button>
           </div>
-        </div>
-      )}
+            </div>
+            )}
 
-      {/* Migration Results Panel */}
-      {migrationResults && (
+            {/* Migration Results Panel */}
+            {migrationResults && (
         <div className="mb-6 p-4 border border-muted rounded-lg bg-muted/20">
           <div className="flex items-center justify-between mb-3">
             <h3 className="font-medium flex items-center gap-2">
@@ -2574,11 +2586,11 @@ export const TechniquesManagement = () => {
               </div>
             </div>
           )}
-        </div>
-      )}
+            </div>
+            )}
 
-      {/* Broken Video Repair Card */}
-      {brokenVideoCount > 0 && isAdmin && (
+            {/* Broken Video Repair Card */}
+            {brokenVideoCount > 0 && (
         <div className="mb-6 p-4 border border-red-500/50 bg-red-500/5 rounded-lg">
           <div className="flex items-center justify-between gap-4 flex-wrap">
             <div className="flex items-center gap-3">
@@ -2609,11 +2621,11 @@ export const TechniquesManagement = () => {
               )}
             </Button>
           </div>
-        </div>
-      )}
+            </div>
+            )}
 
-      {/* Missing Thumbnails Card */}
-      {missingThumbnailCount > 0 && isAdmin && (
+            {/* Missing Thumbnails Card */}
+            {missingThumbnailCount > 0 && (
         <div className="mb-6 p-4 border border-amber-500/50 bg-amber-500/5 rounded-lg">
           <div className="flex items-center justify-between gap-4 flex-wrap">
             <div className="flex items-center gap-3">
@@ -2644,12 +2656,11 @@ export const TechniquesManagement = () => {
               )}
             </Button>
           </div>
-        </div>
-      )}
+            </div>
+            )}
 
-      {/* Encoding Check Section */}
-      {isAdmin && (
-        <div className="mb-6 p-4 border border-blue-500/50 bg-blue-500/5 rounded-lg">
+            {/* Encoding Check Section */}
+            <div className="p-4 border border-blue-500/50 bg-blue-500/5 rounded-lg">
           <div className="flex items-center justify-between gap-4 flex-wrap mb-4">
             <div className="flex items-center gap-3">
               <RefreshCw className="w-8 h-8 text-blue-500" />
@@ -2716,32 +2727,47 @@ export const TechniquesManagement = () => {
               )}
             </div>
           )}
-        </div>
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
       )}
 
-      {/* Series Mapping Section */}
+      {/* Series Mapping Section - Collapsible */}
       {seriesMapping.length > 0 && (
-        <div className="mb-6 border rounded-lg p-4 bg-muted/10">
-          <h3 className="text-lg font-semibold mb-4">シリーズアルファベット対応表</h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {seriesMapping.map((mapping) => (
-              <div
-                key={mapping.series_prefix}
-                className="flex items-center gap-2 p-3 border rounded-lg bg-background"
-              >
-                <div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary/10 text-primary font-bold">
-                  {mapping.series_prefix}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium text-sm truncate">{mapping.series_name}</p>
-                </div>
+        <Collapsible defaultOpen={false} className="mb-6">
+          <CollapsibleTrigger className="flex items-center justify-between w-full p-4 border rounded-lg bg-muted/10 hover:bg-muted/20 transition-colors">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary font-bold text-sm">
+                A-Z
               </div>
-            ))}
-          </div>
-          <p className="text-xs text-muted-foreground mt-3">
-            新しいシリーズが追加されると、次のアルファベット「{getNextAvailablePrefix()}」が自動的に割り当てられます
-          </p>
-        </div>
+              <span className="font-medium">シリーズアルファベット対応表</span>
+              <span className="text-xs text-muted-foreground">
+                （{seriesMapping.length}シリーズ）
+              </span>
+            </div>
+            <ChevronDown className="w-4 h-4 text-muted-foreground transition-transform duration-200 group-data-[state=open]:rotate-180" />
+          </CollapsibleTrigger>
+          <CollapsibleContent className="pt-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {seriesMapping.map((mapping) => (
+                <div
+                  key={mapping.series_prefix}
+                  className="flex items-center gap-2 p-3 border rounded-lg bg-background"
+                >
+                  <div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary/10 text-primary font-bold">
+                    {mapping.series_prefix}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-sm truncate">{mapping.series_name}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <p className="text-xs text-muted-foreground mt-3">
+              新しいシリーズが追加されると、次のアルファベット「{getNextAvailablePrefix()}」が自動的に割り当てられます
+            </p>
+          </CollapsibleContent>
+        </Collapsible>
       )}
 
       {/* Active Translations Section */}
