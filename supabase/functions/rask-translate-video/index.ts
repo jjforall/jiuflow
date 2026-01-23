@@ -193,79 +193,9 @@ serve(async (req) => {
 
     console.log("Starting Rask.ai translation:", { mp4Url, srcLang, dstLang, techniqueId });
 
-    // Step 1: Download video and upload to Rask.ai as file
-    // Rask.ai v2 API requires video_id from their media library
-    // Direct URL upload doesn't work reliably, so we fetch and upload the file
-    console.log("Fetching video for Rask.ai upload:", mp4Url);
-    
-    // Cloudflare Stream downloads can briefly 404 while being prepared.
-    // Retry a few times, refreshing the signed download URL each time.
-    let videoResponse: Response | null = null;
-    let lastStatus: number | null = null;
-    let fetchUrl = mp4Url;
-
-    for (let attempt = 1; attempt <= 3; attempt++) {
-      console.log(`Fetching video attempt ${attempt}:`, fetchUrl);
-      videoResponse = await fetch(fetchUrl);
-      if (videoResponse.ok) break;
-      lastStatus = videoResponse.status;
-      console.error("Failed to fetch video:", videoResponse.status);
-
-      if (videoResponse.status === 404 && attempt < 3) {
-        // Recompute download URL (may return a new signed URL) and wait a bit.
-        const refreshed = await getDownloadableUrl(videoUrl);
-        fetchUrl = refreshed.url;
-        await sleep(2000);
-        continue;
-      }
-    }
-
-    if (!videoResponse || !videoResponse.ok) {
-      return new Response(
-        JSON.stringify({
-          error: "Failed to fetch video for upload",
-          details: `Video fetch failed: ${lastStatus ?? "unknown"}`,
-        }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-      );
-    }
-    
-    const videoArrayBuffer = await videoResponse.arrayBuffer();
-    const videoBlob = new Blob([videoArrayBuffer], { type: "video/mp4" });
-    console.log("Video fetched, size:", videoBlob.size, "bytes");
-    
-    // Step 2: Upload to Rask.ai media library
-    const formData = new FormData();
-    formData.append("file", videoBlob, `technique_${techniqueId}.mp4`);
-    
-    console.log("Uploading to Rask.ai media library...");
-    const uploadResponse = await fetch("https://api.rask.ai/api/library/v1/media/file", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${accessToken}`,
-      },
-      body: formData,
-    });
-    
-    if (!uploadResponse.ok) {
-      const uploadErrorText = await uploadResponse.text();
-      console.error("Rask media upload error:", uploadResponse.status, uploadErrorText);
-      return new Response(
-        JSON.stringify({ 
-          error: "Failed to upload media to Rask.ai library", 
-          details: uploadErrorText,
-          status: uploadResponse.status,
-        }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-    
-    const uploadData = await uploadResponse.json();
-    const videoId = uploadData.id;
-    console.log("Media uploaded to Rask library:", { videoId });
-    
-    // Step 3: Create project with video_id
-    console.log("Creating Rask.ai project with video_id:", videoId);
+    // Rask.ai v2 API supports video_url directly - no need to upload file
+    // Try creating project with video_url first
+    console.log("Creating Rask.ai project with video_url:", mp4Url);
     const projectResponse = await fetch("https://api.rask.ai/v2/projects", {
       method: "POST",
       headers: {
@@ -273,7 +203,7 @@ serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        video_id: videoId,
+        video_url: mp4Url,
         src_lang: srcLang,
         dst_lang: dstLang,
         name: `Technique ${techniqueId} - ${targetLanguage}`,
@@ -300,13 +230,12 @@ serve(async (req) => {
 
     const projectData = await projectResponse.json();
     const projectId = projectData.id;
-    console.log("Rask project created:", { projectId, videoId });
+    console.log("Rask project created:", { projectId });
 
     return new Response(
       JSON.stringify({
         success: true,
         projectId,
-        videoId,
         message: "Translation started successfully with Rask.ai",
         targetLanguage,
         provider: "rask",
