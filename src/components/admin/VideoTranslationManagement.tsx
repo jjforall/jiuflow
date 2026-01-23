@@ -69,6 +69,10 @@ export const VideoTranslationManagement = ({ showHeader = true }: VideoTranslati
     startTime: null,
   });
   
+  // Video duration warning
+  const [videoDuration, setVideoDuration] = useState<number | null>(null);
+  const [isLoadingDuration, setIsLoadingDuration] = useState(false);
+  
   // Active translations tracking
   const [activeTranslations, setActiveTranslations] = useState<ActiveTranslation[]>([]);
   
@@ -138,7 +142,51 @@ export const VideoTranslationManagement = ({ showHeader = true }: VideoTranslati
     });
     // Reset source language to first available
     const available = getAvailableSourceLanguages(technique);
-    setSourceLanguage(available[0] || 'ja');
+    const firstLang = available[0] || 'ja';
+    setSourceLanguage(firstLang);
+    
+    // Reset duration and fetch video duration
+    setVideoDuration(null);
+    setIsLoadingDuration(true);
+    
+    // Get the video URL for the first available source language
+    const videoUrl = technique.video_url_ja || technique.video_url;
+    if (videoUrl) {
+      fetchVideoDuration(videoUrl);
+    } else {
+      setIsLoadingDuration(false);
+    }
+  };
+  
+  // Fetch video duration using HTML5 video element
+  const fetchVideoDuration = (videoUrl: string) => {
+    const video = document.createElement('video');
+    video.preload = 'metadata';
+    
+    video.onloadedmetadata = () => {
+      setVideoDuration(video.duration);
+      setIsLoadingDuration(false);
+      video.remove();
+    };
+    
+    video.onerror = () => {
+      console.warn('Could not load video metadata for duration check');
+      setIsLoadingDuration(false);
+      video.remove();
+    };
+    
+    // Convert HLS URL to direct video URL if needed
+    if (videoUrl.includes('videodelivery.net') && videoUrl.includes('/manifest/')) {
+      // For Cloudflare Stream, use the downloads endpoint
+      const videoId = videoUrl.split('videodelivery.net/')[1]?.split('/')[0];
+      if (videoId) {
+        video.src = `https://videodelivery.net/${videoId}/downloads/default.mp4`;
+      } else {
+        video.src = videoUrl;
+      }
+    } else {
+      video.src = videoUrl;
+    }
   };
 
   // Get source video URL based on selected source language
@@ -713,6 +761,29 @@ export const VideoTranslationManagement = ({ showHeader = true }: VideoTranslati
                   </SelectContent>
                 </Select>
               </div>
+              
+              {/* Video Duration Warning */}
+              {isLoadingDuration ? (
+                <div className="mb-4 p-3 bg-muted/50 rounded-lg flex items-center gap-2">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span className="text-sm text-muted-foreground">動画の長さを確認中...</span>
+                </div>
+              ) : videoDuration !== null && videoDuration > 300 && (
+                <div className="mb-4 p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg">
+                  <div className="flex items-start gap-2">
+                    <span className="text-amber-600 text-lg">⚠️</span>
+                    <div>
+                      <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
+                        長い動画の警告
+                      </p>
+                      <p className="text-xs text-amber-700 dark:text-amber-300 mt-1">
+                        この動画は {Math.floor(videoDuration / 60)}分{Math.floor(videoDuration % 60)}秒 あります。
+                        5分以上の動画は翻訳に時間がかかり、APIコストが高くなる場合があります。
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
               
               {/* Source Language Selection */}
               <div className="mb-4 p-3 bg-muted/50 rounded-lg">
