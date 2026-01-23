@@ -45,7 +45,7 @@ interface Technique {
   thumbnail_url: string | null;
   video_url_ja: string | null;
   video_url_pt: string | null;
-  video_metadata: unknown;
+  video_metadata: Record<string, { video_url?: string; created_at?: string }> | null;
   hasTranscription?: boolean;
   subtitleLanguages?: string[];
   dubbedLanguages?: string[];
@@ -142,11 +142,14 @@ export default function VideoListsManagement() {
             .order("display_order", { ascending: true })
             .limit(10);
           
-          const items = (itemsData || []).map((item: VideoListItem & { technique?: Partial<Technique> }) => {
-            const enrichedTechnique = techniques.find(t => t.id === item.technique?.id);
+          const items = (itemsData || []).map((item) => {
+            const enrichedTechnique = techniques.find(t => t.id === (item.technique as { id?: string })?.id);
             return {
               ...item,
-              technique: enrichedTechnique || item.technique,
+              technique: enrichedTechnique || {
+                ...item.technique,
+                video_metadata: (item.technique as { video_metadata?: unknown })?.video_metadata as Record<string, { video_url?: string; created_at?: string }> | null,
+              },
             } as VideoListItem;
           });
           
