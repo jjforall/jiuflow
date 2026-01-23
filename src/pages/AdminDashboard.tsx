@@ -36,8 +36,7 @@ import { ApiManagement } from "@/components/admin/ApiManagement";
 import { AdsManagement } from "@/components/admin/AdsManagement";
 import LineIntegrationManagement from "@/components/admin/LineIntegrationManagement";
 import McpChatManagement from "@/components/admin/McpChatManagement";
-import { TranscriptionManagement } from "@/components/admin/TranscriptionManagement";
-import { VideoTranslationManagement } from "@/components/admin/VideoTranslationManagement";
+import { VideoLocalizationManagement } from "@/components/admin/VideoLocalizationManagement";
 import OAuthClientsManagement from "@/components/admin/OAuthClientsManagement";
 
 const AdminDashboard = () => {
@@ -84,7 +83,7 @@ const AdminDashboard = () => {
                         <p className="text-xs font-medium text-muted-foreground px-3 mb-1">コンテンツ</p>
                         {[
                           { id: "techniques", label: "テクニック管理" },
-                          { id: "video-translations", label: "動画翻訳" },
+                          { id: "video-localization", label: "動画ローカライズ" },
                           { id: "video-lists", label: "動画リスト" },
                           { id: "user-videos", label: "ユーザー動画" },
                           { id: "music", label: "音楽管理" },
@@ -306,8 +305,7 @@ const AdminDashboard = () => {
             <div className="max-w-7xl mx-auto">
               <div className="space-y-6">
                 {activeTab === "techniques" && <TechniquesManagement />}
-                {activeTab === "video-translations" && <VideoTranslationManagement />}
-                {activeTab === "transcriptions" && <TranscriptionManagement />}
+                {activeTab === "video-localization" && <VideoLocalizationManagement />}
                 {activeTab === "video-lists" && <VideoListsManagement />}
                 {activeTab === "users" && <UsersTab />}
                 {activeTab === "dojos" && <DojosManagement />}

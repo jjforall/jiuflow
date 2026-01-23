@@ -206,23 +206,35 @@ serve(async (req) => {
 
     console.log("Starting Rask.ai translation:", { mp4Url, srcLang, dstLang, techniqueId });
 
-    // Step 1: Upload media by link
-    const uploadResponse = await fetch("https://api.rask.ai/v2/media/link", {
+// Step 1: Upload media by link (using correct v1 API endpoint)
+    console.log("Uploading media to Rask.ai:", { mp4Url });
+    const uploadResponse = await fetch("https://api.rask.ai/api/library/v1/media/link", {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${accessToken}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        url: mp4Url,
+        link: mp4Url,
+        kind: "video",
+        name: `Technique ${techniqueId}`,
       }),
     });
 
     if (!uploadResponse.ok) {
       const errorText = await uploadResponse.text();
-      console.error("Rask media upload error:", uploadResponse.status, errorText);
+      console.error("Rask media upload error:", {
+        status: uploadResponse.status,
+        statusText: uploadResponse.statusText,
+        body: errorText,
+        url: "https://api.rask.ai/api/library/v1/media/link",
+      });
       return new Response(
-        JSON.stringify({ error: "Failed to upload media to Rask.ai", details: errorText }),
+        JSON.stringify({ 
+          error: "Failed to upload media to Rask.ai", 
+          details: errorText,
+          status: uploadResponse.status,
+        }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }

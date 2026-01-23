@@ -40,7 +40,11 @@ const ALL_LANGUAGES = [
   { code: "hi", name: "हिन्दी", nativeName: "ヒンディー語" },
 ];
 
-export const VideoTranslationManagement = () => {
+interface VideoTranslationManagementProps {
+  showHeader?: boolean;
+}
+
+export const VideoTranslationManagement = ({ showHeader = true }: VideoTranslationManagementProps) => {
   const [techniques, setTechniques] = useState<Technique[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -347,36 +351,62 @@ export const VideoTranslationManagement = () => {
   return (
     <div>
       {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-        <div>
-          <h2 className="text-2xl font-semibold flex items-center gap-2">
-            <Languages className="h-6 w-6" />
-            動画翻訳管理
-            <Badge 
-              variant="outline" 
-              className={translationProvider === 'elevenlabs' 
-                ? 'bg-blue-500/10 text-blue-600 border-blue-500/30' 
-                : 'bg-green-500/10 text-green-600 border-green-500/30'
-              }
-            >
-              {translationProvider === 'elevenlabs' ? 'ElevenLabs' : 'Rask.ai'}
-            </Badge>
-          </h2>
-          <p className="text-sm text-muted-foreground mt-1">
-            動画の多言語吹き替えを管理します
-          </p>
+      {showHeader && (
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+          <div>
+            <h2 className="text-2xl font-semibold flex items-center gap-2">
+              <Languages className="h-6 w-6" />
+              動画翻訳管理
+              <Badge 
+                variant="outline" 
+                className={translationProvider === 'elevenlabs' 
+                  ? 'bg-blue-500/10 text-blue-600 border-blue-500/30' 
+                  : 'bg-green-500/10 text-green-600 border-green-500/30'
+                }
+              >
+                {translationProvider === 'elevenlabs' ? 'ElevenLabs' : 'Rask.ai'}
+              </Badge>
+            </h2>
+            <p className="text-sm text-muted-foreground mt-1">
+              動画の多言語吹き替えを管理します
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => fetchData()}>
+              <RefreshCw className="h-4 w-4 mr-2" />
+              更新
+            </Button>
+            <Button variant="outline" onClick={() => setShowSettings(true)}>
+              <Settings className="h-4 w-4 mr-2" />
+              設定
+            </Button>
+          </div>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={() => fetchData()}>
-            <RefreshCw className="h-4 w-4 mr-2" />
-            更新
-          </Button>
-          <Button variant="outline" onClick={() => setShowSettings(true)}>
-            <Settings className="h-4 w-4 mr-2" />
-            設定
-          </Button>
+      )}
+      
+      {!showHeader && (
+        <div className="flex items-center justify-between mb-4">
+          <Badge 
+            variant="outline" 
+            className={translationProvider === 'elevenlabs' 
+              ? 'bg-blue-500/10 text-blue-600 border-blue-500/30' 
+              : 'bg-green-500/10 text-green-600 border-green-500/30'
+            }
+          >
+            {translationProvider === 'elevenlabs' ? 'ElevenLabs' : 'Rask.ai'}
+          </Badge>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={() => fetchData()}>
+              <RefreshCw className="h-4 w-4 mr-2" />
+              更新
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => setShowSettings(true)}>
+              <Settings className="h-4 w-4 mr-2" />
+              設定
+            </Button>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
