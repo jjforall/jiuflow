@@ -2755,9 +2755,27 @@ export const TechniquesManagement = () => {
           
           <div className="space-y-4">
             <div>
-              <p className="text-sm text-muted-foreground mb-4">
-                {translatingTechnique?.name} の動画を他言語に翻訳します
-              </p>
+              <div className="flex items-center justify-between mb-4">
+                <p className="text-sm text-muted-foreground">
+                  {translatingTechnique?.name} の動画を他言語に翻訳します
+                </p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setShowTranslateDialog(false);
+                    navigate('/admin');
+                    // Use setTimeout to ensure the navigation happens first
+                    setTimeout(() => {
+                      window.dispatchEvent(new CustomEvent('admin-tab-change', { detail: 'video-localization' }));
+                    }, 100);
+                  }}
+                  className="text-xs"
+                >
+                  <Languages className="h-3 w-3 mr-1" />
+                  動画ローカライズ
+                </Button>
+              </div>
               
               <div>
                 <label className="text-sm font-medium mb-3 block">翻訳先言語を選択</label>
