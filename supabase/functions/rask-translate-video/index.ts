@@ -145,36 +145,43 @@ async function getDownloadableUrl(url: string): Promise<{ url: string; error?: s
 }
 
 // Language code mapping for Rask.ai
+// Note: Rask.ai uses ISO 639-1 codes for some languages, not locale codes
+// Japanese is NOT supported as a source language for transcription by Rask.ai
 const RASK_LANGUAGE_MAP: Record<string, string> = {
-  ja: "ja-JP",
-  en: "en-US",
-  pt: "pt-BR",
-  es: "es-ES",
-  fr: "fr-FR",
-  de: "de-DE",
+  // Source languages that Rask.ai supports for transcription
+  en: "en",
+  es: "es",
+  pt: "pt",
+  fr: "fr",
+  de: "de",
+  it: "it",
+  ru: "ru",
+  nl: "nl",
+  pl: "pl",
+  tr: "tr",
+  sv: "sv",
+  id: "id",
+  ro: "ro",
+  uk: "uk",
+  el: "el",
+  cs: "cs",
+  da: "da",
+  fi: "fi",
+  bg: "bg",
+  hr: "hr",
+  sk: "sk",
+  // These might need locale format for target languages
   zh: "zh-CN",
-  ko: "ko-KR",
-  it: "it-IT",
-  ru: "ru-RU",
-  ar: "ar-SA",
-  hi: "hi-IN",
-  nl: "nl-NL",
-  pl: "pl-PL",
-  tr: "tr-TR",
-  sv: "sv-SE",
-  id: "id-ID",
-  ms: "ms-MY",
-  ro: "ro-RO",
-  uk: "uk-UA",
-  el: "el-GR",
-  cs: "cs-CZ",
-  da: "da-DK",
-  fi: "fi-FI",
-  bg: "bg-BG",
-  hr: "hr-HR",
-  sk: "sk-SK",
-  ta: "ta-IN",
+  ko: "ko",
+  ar: "ar",
+  hi: "hi",
+  ja: "ja",  // Note: Japanese may not be supported as source language
+  ms: "ms",
+  ta: "ta",
 };
+
+// Languages NOT supported as source (transcription) by Rask.ai
+const RASK_UNSUPPORTED_SOURCE_LANGUAGES = ["ja", "zh", "ko", "ar", "hi", "ta"];
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -211,8 +218,21 @@ serve(async (req) => {
     console.log("Got Rask.ai access token");
 
     // Map language codes
-    const srcLang = RASK_LANGUAGE_MAP[(sourceLanguage || "ja").toLowerCase()] || "ja-JP";
+    const srcLangCode = (sourceLanguage || "ja").toLowerCase();
+    const srcLang = RASK_LANGUAGE_MAP[srcLangCode] || srcLangCode;
     const dstLang = RASK_LANGUAGE_MAP[targetLanguage.toLowerCase()];
+
+    // Check if source language is supported for transcription
+    if (RASK_UNSUPPORTED_SOURCE_LANGUAGES.includes(srcLangCode)) {
+      return new Response(
+        JSON.stringify({
+          error: "Rask.ai doesn't support Japanese as source language",
+          details: "Rask.aiは日本語の文字起こしをサポートしていません。ElevenLabsをお試しください。",
+          unsupported_source: true,
+        }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     if (!dstLang) {
       return new Response(
