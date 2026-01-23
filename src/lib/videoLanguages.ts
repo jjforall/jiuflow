@@ -49,38 +49,17 @@ export function getAvailableVideoLanguages(technique: TechniqueVideoData): Avail
     });
   }
 
-  // Check video_metadata for translations
+  // Check video_metadata for translations (日本語は除外 - オリジナル音声と二重になるため)
+  // 翻訳可能な言語のみを対象とする（jaは常にオリジナルなので除外）
+  const translatableLangs = ["en", "pt", "es", "fr", "de", "zh", "ko", "it", "ru", "ar", "hi"];
+  
   if (technique.video_metadata && typeof technique.video_metadata === "object") {
-    // English from metadata
-    if (technique.video_metadata.en?.video_url) {
-      languages.push({
-        code: "en",
-        label: LANGUAGE_LABELS.en,
-        videoUrl: technique.video_metadata.en.video_url,
-      });
-    }
-
-    // Portuguese from metadata
-    if (technique.video_metadata.pt?.video_url) {
-      languages.push({
-        code: "pt",
-        label: LANGUAGE_LABELS.pt,
-        videoUrl: technique.video_metadata.pt.video_url,
-      });
-    } else if (technique.video_url_pt) {
-      // Fall back to legacy field
-      languages.push({
-        code: "pt",
-        label: LANGUAGE_LABELS.pt,
-        videoUrl: technique.video_url_pt,
-      });
-    }
-
-    // Other languages from metadata
-    const otherLangs = ["es", "fr", "de", "zh", "ko", "it", "ru", "ar", "hi"];
-    for (const lang of otherLangs) {
+    for (const lang of translatableLangs) {
       const metadata = technique.video_metadata[lang];
       if (metadata?.video_url) {
+        // PTはレガシーフィールドとの重複をチェック
+        if (lang === "pt" && languages.some(l => l.code === "pt")) continue;
+        
         languages.push({
           code: lang,
           label: LANGUAGE_LABELS[lang] || lang.toUpperCase(),
@@ -88,8 +67,10 @@ export function getAvailableVideoLanguages(technique: TechniqueVideoData): Avail
         });
       }
     }
-  } else if (technique.video_url_pt) {
-    // Legacy field fallback when no metadata
+  }
+  
+  // Legacy field fallback for Portuguese
+  if (technique.video_url_pt && !languages.some(l => l.code === "pt")) {
     languages.push({
       code: "pt",
       label: LANGUAGE_LABELS.pt,
