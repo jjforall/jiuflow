@@ -44,6 +44,39 @@ async function getRaskAccessToken(): Promise<string> {
   return data.access_token;
 }
 
+// Create Rask.ai media from a public URL and return its id (video_id)
+async function createRaskMediaByLink(opts: {
+  accessToken: string;
+  mp4Url: string;
+  name: string;
+}): Promise<string> {
+  const resp = await fetch("https://api.rask.ai/api/library/v1/media/link", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${opts.accessToken}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      link: opts.mp4Url,
+      kind: "video",
+      name: opts.name,
+    }),
+  });
+
+  if (!resp.ok) {
+    const t = await resp.text();
+    console.error("Rask media(link) error:", resp.status, t);
+    throw new Error(`Rask media(link) failed: ${resp.status} ${t}`);
+  }
+
+  const data = await resp.json();
+  if (!data?.id) {
+    console.error("Rask media(link) unexpected response:", data);
+    throw new Error("Rask media(link) returned no id");
+  }
+  return data.id as string;
+}
+
 // Extract Cloudflare Stream video ID from URL
 function extractCloudflareVideoId(url: string): string | null {
   // Match both cloudflarestream.com and videodelivery.net URLs
@@ -193,9 +226,16 @@ serve(async (req) => {
 
     console.log("Starting Rask.ai translation:", { mp4Url, srcLang, dstLang, techniqueId });
 
-    // Rask.ai v2 API supports video_url directly - no need to upload file
-    // Try creating project with video_url first
-    console.log("Creating Rask.ai project with video_url:", mp4Url);
+    // Rask.ai v2/projects requires video_id (from media library).
+    // Use "Upload media by link" to avoid re-uploading large files.
+    const videoId = await createRaskMediaByLink({
+      accessToken,
+      mp4Url,
+      name: `Technique ${techniqueId} - ${targetLanguage}`,
+    });
+    console.log("Rask media created from link:", { videoId });
+
+    console.log("Creating Rask.ai project with video_id:", videoId);
     const projectResponse = await fetch("https://api.rask.ai/v2/projects", {
       method: "POST",
       headers: {
@@ -203,7 +243,7 @@ serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        video_url: mp4Url,
+        video_id: videoId,
         src_lang: srcLang,
         dst_lang: dstLang,
         name: `Technique ${techniqueId} - ${targetLanguage}`,
@@ -230,12 +270,13 @@ serve(async (req) => {
 
     const projectData = await projectResponse.json();
     const projectId = projectData.id;
-    console.log("Rask project created:", { projectId });
+    console.log("Rask project created:", { projectId, videoId });
 
     return new Response(
       JSON.stringify({
         success: true,
         projectId,
+        videoId,
         message: "Translation started successfully with Rask.ai",
         targetLanguage,
         provider: "rask",
