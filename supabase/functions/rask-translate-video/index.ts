@@ -1,9 +1,12 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { getCloudflareStreamDownloadUrl } from "../_shared/cloudflare-download.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 // Get Rask.ai OAuth token
 async function getRaskAccessToken(): Promise<string> {
@@ -66,39 +69,15 @@ async function getCloudflareDownloadUrl(videoId: string): Promise<string | null>
   }
 
   try {
-    // Enable downloads for the video
-    await fetch(
-      `https://api.cloudflare.com/client/v4/accounts/${accountId}/stream/${videoId}/downloads`,
-      {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${apiToken}`,
-          "Content-Type": "application/json",
-        },
-      }
-    );
-
-    // Get download URL
-    const getResponse = await fetch(
-      `https://api.cloudflare.com/client/v4/accounts/${accountId}/stream/${videoId}/downloads`,
-      {
-        method: "GET",
-        headers: {
-          "Authorization": `Bearer ${apiToken}`,
-        },
-      }
-    );
-
-    if (!getResponse.ok) {
-      const errorText = await getResponse.text();
-      console.error("Get downloads error:", getResponse.status, errorText);
-      return null;
-    }
-
-    const data = await getResponse.json();
-    return data.result?.default?.url || null;
+    const url = await getCloudflareStreamDownloadUrl({
+      videoId,
+      accountId,
+      apiToken,
+    });
+    console.log("Got Cloudflare download URL:", url);
+    return url;
   } catch (error) {
-    console.error("Cloudflare API error:", error);
+    console.error("Cloudflare download URL error:", error);
     return null;
   }
 }
@@ -219,15 +198,35 @@ serve(async (req) => {
     // Direct URL upload doesn't work reliably, so we fetch and upload the file
     console.log("Fetching video for Rask.ai upload:", mp4Url);
     
-    const videoResponse = await fetch(mp4Url);
-    if (!videoResponse.ok) {
+    // Cloudflare Stream downloads can briefly 404 while being prepared.
+    // Retry a few times, refreshing the signed download URL each time.
+    let videoResponse: Response | null = null;
+    let lastStatus: number | null = null;
+    let fetchUrl = mp4Url;
+
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      console.log(`Fetching video attempt ${attempt}:`, fetchUrl);
+      videoResponse = await fetch(fetchUrl);
+      if (videoResponse.ok) break;
+      lastStatus = videoResponse.status;
       console.error("Failed to fetch video:", videoResponse.status);
+
+      if (videoResponse.status === 404 && attempt < 3) {
+        // Recompute download URL (may return a new signed URL) and wait a bit.
+        const refreshed = await getDownloadableUrl(videoUrl);
+        fetchUrl = refreshed.url;
+        await sleep(2000);
+        continue;
+      }
+    }
+
+    if (!videoResponse || !videoResponse.ok) {
       return new Response(
-        JSON.stringify({ 
-          error: "Failed to fetch video for upload", 
-          details: `Video fetch failed: ${videoResponse.status}`,
+        JSON.stringify({
+          error: "Failed to fetch video for upload",
+          details: `Video fetch failed: ${lastStatus ?? "unknown"}`,
         }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
     
