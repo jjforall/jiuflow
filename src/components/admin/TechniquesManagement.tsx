@@ -76,6 +76,7 @@ export const TechniquesManagement = () => {
     techniqueName: string;
     targetLang: string;
     startTime: number;
+    provider?: 'rask' | 'elevenlabs';
   }>>([]);
   const [availableCategories, setAvailableCategories] = useState<string[]>([]);
   const [seriesNameSuggestions, setSeriesNameSuggestions] = useState<string[]>([]);
@@ -1847,9 +1848,13 @@ export const TechniquesManagement = () => {
       return;
     }
     
+    // Get translation provider preference from localStorage
+    const provider = localStorage.getItem('translation_provider') || 'elevenlabs';
+    const functionName = provider === 'rask' ? 'rask-translate-video' : 'translate-video';
+    
     setIsTranslating(true);
     try {
-      const { data, error } = await supabase.functions.invoke('translate-video', {
+      const { data, error } = await supabase.functions.invoke(functionName, {
         body: { 
           videoUrl: sourceVideoUrl,
           sourceLanguage,
@@ -1868,17 +1873,19 @@ export const TechniquesManagement = () => {
           startTime: Date.now(),
         });
         
-        // activeTranslationsに追加
+        // activeTranslationsに追加（providerも含める）
         setActiveTranslations(prev => [...prev, {
           projectId: data.projectId,
           techniqueId: translatingTechnique.id,
           techniqueName: translatingTechnique.name,
           targetLang: targetLanguage,
           startTime: Date.now(),
+          provider: provider as 'rask' | 'elevenlabs',
         }]);
         
+        const providerName = provider === 'rask' ? 'Rask.ai' : 'ElevenLabs';
         toast.success("動画翻訳を開始しました", {
-          description: `翻訳が完了すると自動的に通知されます。バックグラウンドで処理を続行します。`,
+          description: `${providerName}で翻訳中。完了すると通知されます。`,
         });
         
         setShowTranslateDialog(false);
@@ -1991,14 +1998,21 @@ export const TechniquesManagement = () => {
     techniqueName: string;
     targetLang: string;
     startTime: number;
+    provider?: 'rask' | 'elevenlabs';
   }) => {
     try {
       toast.info("ステータス確認中...", {
         description: `「${translation.techniqueName}」の翻訳状況を確認しています`,
       });
 
-      const { data: statusData, error: statusError } = await supabase.functions.invoke('check-translation-status', {
-        body: { projectId: translation.projectId }
+      // Use the correct function based on provider
+      const functionName = translation.provider === 'rask' ? 'rask-check-status' : 'check-translation-status';
+      const { data: statusData, error: statusError } = await supabase.functions.invoke(functionName, {
+        body: { 
+          projectId: translation.projectId,
+          techniqueId: translation.techniqueId,
+          targetLanguage: translation.targetLang,
+        }
       });
 
       if (statusError) {

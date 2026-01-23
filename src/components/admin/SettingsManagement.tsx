@@ -6,7 +6,8 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Moon, Sun, Globe, Shield, Database, RefreshCw, Key, Eye, EyeOff, Plus, Trash2 } from "lucide-react";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Moon, Sun, Globe, Shield, Database, RefreshCw, Key, Eye, EyeOff, Plus, Trash2, Video } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
@@ -26,6 +27,8 @@ const languages = [
   { code: "hi", label: "🇮🇳", name: "हिन्दी" },
 ];
 
+export type TranslationProvider = "elevenlabs" | "rask";
+
 interface McpApiKey {
   id: string;
   name: string;
@@ -40,6 +43,7 @@ export function SettingsManagement() {
   const [showKeys, setShowKeys] = useState<Record<string, boolean>>({});
   const [isSavingKeys, setIsSavingKeys] = useState(false);
   const [newKeyName, setNewKeyName] = useState('');
+  const [translationProvider, setTranslationProvider] = useState<TranslationProvider>("elevenlabs");
 
   const handleClearCache = async () => {
     setIsClearing(true);
@@ -122,10 +126,22 @@ export function SettingsManagement() {
           setMcpKeys(migrated);
         }
       }
+
+      // Load translation provider preference
+      const savedProvider = localStorage.getItem('translation_provider');
+      if (savedProvider === 'rask' || savedProvider === 'elevenlabs') {
+        setTranslationProvider(savedProvider);
+      }
     } catch (e) {
-      console.error('Failed to load API keys:', e);
+      console.error('Failed to load settings:', e);
     }
   }, []);
+
+  const handleProviderChange = (value: TranslationProvider) => {
+    setTranslationProvider(value);
+    localStorage.setItem('translation_provider', value);
+    toast.success(`翻訳プロバイダーを ${value === 'rask' ? 'Rask.ai' : 'ElevenLabs'} に変更しました`);
+  };
 
   return (
     <div className="space-y-6">
@@ -316,6 +332,48 @@ export function SettingsManagement() {
           </CardContent>
         </Card>
       </div>
+
+      {/* 動画翻訳プロバイダー設定 */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Video className="h-5 w-5" />
+            動画翻訳プロバイダー
+          </CardTitle>
+          <CardDescription>
+            動画の翻訳に使用するサービスを選択します
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <RadioGroup
+            value={translationProvider}
+            onValueChange={(value) => handleProviderChange(value as TranslationProvider)}
+            className="space-y-3"
+          >
+            <div className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-muted/50 transition-colors">
+              <RadioGroupItem value="elevenlabs" id="elevenlabs" />
+              <Label htmlFor="elevenlabs" className="flex-1 cursor-pointer">
+                <div className="font-medium">ElevenLabs</div>
+                <p className="text-sm text-muted-foreground">
+                  高品質な音声クローニングと翻訳。Dubbing API使用。
+                </p>
+              </Label>
+            </div>
+            <div className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-muted/50 transition-colors">
+              <RadioGroupItem value="rask" id="rask" />
+              <Label htmlFor="rask" className="flex-1 cursor-pointer">
+                <div className="font-medium">Rask.ai</div>
+                <p className="text-sm text-muted-foreground">
+                  多言語対応の動画翻訳・吹き替えサービス。30以上の言語に対応。
+                </p>
+              </Label>
+            </div>
+          </RadioGroup>
+          <p className="text-xs text-muted-foreground">
+            ※ 選択したプロバイダーは「技術管理」の動画翻訳機能で使用されます。
+          </p>
+        </CardContent>
+      </Card>
 
       {/* MCP APIキー設定 */}
       <Card>
