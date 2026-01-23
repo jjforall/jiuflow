@@ -2,14 +2,14 @@ import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, Play, Lock, ListVideo, Eye } from "lucide-react";
+import { ArrowLeft, Play, Lock, ListVideo } from "lucide-react";
 import { SEOHead } from "@/components/SEOHead";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
 import { SeriesBadge } from "@/components/ui/series-badge";
+import { LocalizationBadges } from "@/components/ui/LocalizationBadges";
 
 interface VideoList {
   id: string;
@@ -28,6 +28,8 @@ interface VideoListItem {
   id: string;
   technique_id: string;
   display_order: number;
+  subtitleLanguages?: string[];
+  dubbedLanguages?: string[];
   technique: {
     id: string;
     name: string;
@@ -37,6 +39,9 @@ interface VideoListItem {
     series_order: number | null;
     thumbnail_url: string | null;
     video_url: string | null;
+    video_url_ja: string | null;
+    video_url_pt: string | null;
+    video_metadata: any;
     visibility: string;
   };
 }
@@ -100,6 +105,9 @@ export default function VideoList() {
           series_order,
           thumbnail_url,
           video_url,
+          video_url_ja,
+          video_url_pt,
+          video_metadata,
           visibility
         )
       `)
@@ -107,12 +115,67 @@ export default function VideoList() {
       .order("display_order", { ascending: true });
 
     if (!itemsError && itemsData) {
-      const formattedItems = itemsData.map((item: any) => ({
-        id: item.id,
-        technique_id: item.technique_id,
-        display_order: item.display_order,
-        technique: item.techniques,
-      }));
+      // Get technique IDs to fetch subtitle info
+      const techniqueIds = itemsData.map((item: any) => item.technique_id).filter(Boolean);
+      
+      // Fetch subtitle languages for each technique
+      let subtitlesByTechnique: Record<string, string[]> = {};
+      if (techniqueIds.length > 0) {
+        const { data: subtitlesData } = await supabase
+          .from("video_transcriptions")
+          .select(`
+            technique_id,
+            video_subtitles!inner (
+              language_code,
+              status
+            )
+          `)
+          .in("technique_id", techniqueIds)
+          .eq("status", "completed");
+        
+        if (subtitlesData) {
+          subtitlesData.forEach((t: any) => {
+            if (!subtitlesByTechnique[t.technique_id]) {
+              subtitlesByTechnique[t.technique_id] = [];
+            }
+            const subs = t.video_subtitles || [];
+            subs.forEach((s: any) => {
+              if (s.status === 'completed' && !subtitlesByTechnique[t.technique_id].includes(s.language_code)) {
+                subtitlesByTechnique[t.technique_id].push(s.language_code);
+              }
+            });
+          });
+        }
+      }
+
+      const formattedItems = itemsData.map((item: any) => {
+        const technique = item.techniques;
+        
+        // Determine dubbed languages from video_url fields and metadata
+        const dubbedLanguages: string[] = [];
+        if (technique?.video_url_ja) dubbedLanguages.push('ja');
+        if (technique?.video_url_pt) dubbedLanguages.push('pt');
+        
+        // Also check video_metadata.translations
+        const translations = technique?.video_metadata?.translations;
+        if (translations) {
+          Object.keys(translations).forEach(lang => {
+            const normalizedLang = lang.split('-')[0]; // 'ja-JP' -> 'ja'
+            if (translations[lang]?.video_url && !dubbedLanguages.includes(normalizedLang)) {
+              dubbedLanguages.push(normalizedLang);
+            }
+          });
+        }
+
+        return {
+          id: item.id,
+          technique_id: item.technique_id,
+          display_order: item.display_order,
+          technique: technique,
+          subtitleLanguages: subtitlesByTechnique[item.technique_id] || [],
+          dubbedLanguages,
+        };
+      });
       setItems(formattedItems);
     }
 
@@ -370,6 +433,13 @@ export default function VideoList() {
                             />
                           )}
                         </div>
+                        
+                        {/* Localization badges */}
+                        <LocalizationBadges
+                          subtitleLanguages={item.subtitleLanguages}
+                          dubbedLanguages={item.dubbedLanguages}
+                          compact
+                        />
 
                         {!canView && (
                           <p className="text-xs text-muted-foreground mt-1">
