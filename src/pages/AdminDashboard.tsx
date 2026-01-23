@@ -36,7 +36,7 @@ import { ApiManagement } from "@/components/admin/ApiManagement";
 import { AdsManagement } from "@/components/admin/AdsManagement";
 import LineIntegrationManagement from "@/components/admin/LineIntegrationManagement";
 import McpChatManagement from "@/components/admin/McpChatManagement";
-import { VideoLocalizationManagement } from "@/components/admin/VideoLocalizationManagement";
+// VideoLocalizationManagement has been integrated into VideoListsManagement
 import OAuthClientsManagement from "@/components/admin/OAuthClientsManagement";
 
 const AdminDashboard = () => {
@@ -95,8 +95,8 @@ const AdminDashboard = () => {
                         <p className="text-xs font-medium text-muted-foreground px-3 mb-1">コンテンツ</p>
                         {[
                           { id: "techniques", label: "テクニック管理" },
-                          { id: "video-localization", label: "動画ローカライズ" },
-                          { id: "video-lists", label: "動画リスト" },
+                          { id: "video-management", label: "動画管理" },
+                          
                           { id: "user-videos", label: "ユーザー動画" },
                           { id: "music", label: "音楽管理" },
                         ].map((item) => (
@@ -317,8 +317,7 @@ const AdminDashboard = () => {
             <div className="max-w-7xl mx-auto">
               <div className="space-y-6">
                 {activeTab === "techniques" && <TechniquesManagement />}
-                {activeTab === "video-localization" && <VideoLocalizationManagement />}
-                {activeTab === "video-lists" && <VideoListsManagement />}
+                {activeTab === "video-management" && <VideoListsManagement />}
                 {activeTab === "users" && <UsersTab />}
                 {activeTab === "dojos" && <DojosManagement />}
                 {activeTab === "subscriptions" && <SubscriptionsTab />}
