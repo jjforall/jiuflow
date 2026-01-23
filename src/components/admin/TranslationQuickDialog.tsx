@@ -202,7 +202,9 @@ export function TranslationQuickDialog({
 
   const availableSourceLangs = getAvailableSourceLanguages(technique);
   const translatedLangs = getTranslatedLanguages(technique);
-  const targetOptions = ALL_LANGUAGES.filter(l => l.code !== sourceLanguage);
+  // ターゲット言語からソース言語と日本語（オリジナル）を除外
+  // 日本語は常にオリジナル音声なので翻訳先にはならない
+  const targetOptions = ALL_LANGUAGES.filter(l => l.code !== sourceLanguage && l.code !== 'ja');
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
