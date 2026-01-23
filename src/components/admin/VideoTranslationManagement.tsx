@@ -57,6 +57,7 @@ export const VideoTranslationManagement = ({ showHeader = true }: VideoTranslati
   const [translatingTechnique, setTranslatingTechnique] = useState<Technique | null>(null);
   const [isTranslating, setIsTranslating] = useState(false);
   const [targetLanguage, setTargetLanguage] = useState<string>("en");
+  const [sourceLanguage, setSourceLanguage] = useState<string>("ja");
   const [translationProjectId, setTranslationProjectId] = useState<string | null>(null);
   const [translationStatus, setTranslationStatus] = useState<{
     status: string | null;
@@ -135,17 +136,59 @@ export const VideoTranslationManagement = ({ showHeader = true }: VideoTranslati
       progress: 0,
       startTime: null,
     });
+    // Reset source language to first available
+    const available = getAvailableSourceLanguages(technique);
+    setSourceLanguage(available[0] || 'ja');
+  };
+
+  // Get source video URL based on selected source language
+  const getSourceVideoUrl = (technique: Technique | null, lang: string): string | null => {
+    if (!technique) return null;
+    switch (lang) {
+      case 'ja':
+        return technique.video_url_ja || technique.video_url;
+      case 'pt':
+        return technique.video_url_pt || null;
+      case 'en':
+        // Check video_metadata for English translated video
+        const enMetadata = technique.video_metadata?.['en'];
+        return enMetadata?.video_url || null;
+      default:
+        // Check video_metadata for other languages
+        const metadata = technique.video_metadata?.[lang];
+        return metadata?.video_url || null;
+    }
+  };
+
+  // Get available source languages for a technique
+  const getAvailableSourceLanguages = (technique: Technique | null): string[] => {
+    if (!technique) return ['ja'];
+    const available: string[] = [];
+    
+    // Check Japanese (always available if video_url exists)
+    if (technique.video_url_ja || technique.video_url) available.push('ja');
+    // Check Portuguese
+    if (technique.video_url_pt) available.push('pt');
+    // Check video_metadata for other languages
+    if (technique.video_metadata) {
+      Object.entries(technique.video_metadata).forEach(([lang, data]) => {
+        if ((data as { video_url?: string })?.video_url && !available.includes(lang)) {
+          available.push(lang);
+        }
+      });
+    }
+    
+    return available;
   };
 
   const handleVideoTranslate = async () => {
     if (!translatingTechnique) return;
     
-    const sourceLanguage = 'ja';
-    const sourceVideoUrl = translatingTechnique.video_url_ja || translatingTechnique.video_url;
+    const sourceVideoUrl = getSourceVideoUrl(translatingTechnique, sourceLanguage);
     
     if (!sourceVideoUrl) {
       toast.error("エラー", {
-        description: "ソース動画（日本語）が見つかりません",
+        description: `ソース動画（${ALL_LANGUAGES.find(l => l.code === sourceLanguage)?.nativeName || sourceLanguage}）が見つかりません`,
       });
       return;
     }
@@ -669,6 +712,36 @@ export const VideoTranslationManagement = ({ showHeader = true }: VideoTranslati
                     </SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+              
+              {/* Source Language Selection */}
+              <div className="mb-4 p-3 bg-muted/50 rounded-lg">
+                <label className="text-sm font-medium mb-2 block">ソース言語（翻訳元）</label>
+                <Select 
+                  value={sourceLanguage} 
+                  onValueChange={setSourceLanguage}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-background z-50">
+                    {getAvailableSourceLanguages(translatingTechnique).map(langCode => {
+                      const lang = ALL_LANGUAGES.find(l => l.code === langCode);
+                      return (
+                        <SelectItem key={langCode} value={langCode}>
+                          <span className="flex items-center gap-2">
+                            {lang?.name || langCode} ({lang?.nativeName || langCode})
+                          </span>
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectContent>
+                </Select>
+                {translationProvider === 'rask' && ['ja', 'zh', 'ko', 'ar', 'hi', 'ta'].includes(sourceLanguage) && (
+                  <p className="text-xs text-amber-600 mt-2">
+                    ⚠️ Rask.aiはこの言語をソース言語としてサポートしていません。ElevenLabsをお試しください。
+                  </p>
+                )}
               </div>
               
               <div>
