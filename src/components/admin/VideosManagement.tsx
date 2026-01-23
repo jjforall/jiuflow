@@ -32,7 +32,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { useUpload } from "@/contexts/UploadContext";
 import { VideoPreviewDialog, type VideoPreviewTechnique } from "@/components/admin/VideoPreviewDialog";
 
-export const TechniquesManagement = () => {
+export const VideosManagement = () => {
   const navigate = useNavigate();
   const { isAdmin } = useAuth();
   const { language } = useLanguage();

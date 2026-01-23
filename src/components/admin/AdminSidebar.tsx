@@ -75,9 +75,8 @@ const menuGroups: MenuGroup[] = [
     label: "コンテンツ",
     icon: Layers,
     items: [
-      { id: "techniques", label: "テクニック管理", icon: Grid3X3 },
-      { id: "video-management", label: "動画管理", icon: ListVideo },
-      { id: "user-videos", label: "ユーザー動画", icon: Video },
+      { id: "videos", label: "動画一覧", icon: Video },
+      { id: "playlists", label: "再生リスト", icon: ListVideo },
     ],
   },
   {
@@ -86,6 +85,7 @@ const menuGroups: MenuGroup[] = [
     icon: Users,
     items: [
       { id: "users", label: "会員管理", icon: Users },
+      { id: "user-videos", label: "ユーザー動画", icon: Video },
       { id: "subscriptions", label: "サブスク管理", icon: CreditCard },
       { id: "plans", label: "プラン管理", icon: ShieldCheck },
       { id: "points", label: "ポイント管理", icon: Award },

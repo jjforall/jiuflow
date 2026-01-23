@@ -7,7 +7,7 @@ import { SidebarProvider } from "@/components/ui/sidebar";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 // Import tab components
-import { TechniquesManagement } from "@/components/admin/TechniquesManagement";
+import { VideosManagement } from "@/components/admin/VideosManagement";
 import { UsersTab } from "@/components/admin/UsersTab";
 import { PlansTab } from "@/components/admin/PlansTab";
 import { SubscriptionsTab } from "@/components/admin/SubscriptionsTab";
@@ -31,17 +31,16 @@ import { CommunityManagement } from "@/components/admin/CommunityManagement";
 import { WeeklyTopicsManagement } from "@/components/admin/WeeklyTopicsManagement";
 import { TournamentsManagement } from "@/components/admin/TournamentsManagement";
 import { VenuesManagement } from "@/components/admin/VenuesManagement";
-import VideoListsManagement from "@/components/admin/VideoListsManagement";
+import PlaylistsManagement from "@/components/admin/PlaylistsManagement";
 import { ApiManagement } from "@/components/admin/ApiManagement";
 import { AdsManagement } from "@/components/admin/AdsManagement";
 import LineIntegrationManagement from "@/components/admin/LineIntegrationManagement";
 import McpChatManagement from "@/components/admin/McpChatManagement";
-// VideoLocalizationManagement has been integrated into VideoListsManagement
 import OAuthClientsManagement from "@/components/admin/OAuthClientsManagement";
 
 const AdminDashboard = () => {
   const { signOut } = useAuth();
-  const [activeTab, setActiveTab] = useState("techniques");
+  const [activeTab, setActiveTab] = useState("videos");
 
   // Listen for custom tab change events from other components
   useEffect(() => {
@@ -94,10 +93,8 @@ const AdminDashboard = () => {
                       <div>
                         <p className="text-xs font-medium text-muted-foreground px-3 mb-1">コンテンツ</p>
                         {[
-                          { id: "techniques", label: "テクニック管理" },
-                          { id: "video-management", label: "動画管理" },
-                          
-                          { id: "user-videos", label: "ユーザー動画" },
+                          { id: "videos", label: "動画一覧" },
+                          { id: "playlists", label: "再生リスト" },
                           { id: "music", label: "音楽管理" },
                         ].map((item) => (
                           <button
@@ -118,6 +115,7 @@ const AdminDashboard = () => {
                         <p className="text-xs font-medium text-muted-foreground px-3 mb-1">ユーザー</p>
                         {[
                           { id: "users", label: "会員管理" },
+                          { id: "user-videos", label: "ユーザー動画" },
                           { id: "subscriptions", label: "サブスク管理" },
                           { id: "plans", label: "プラン管理" },
                           { id: "points", label: "ポイント管理" },
@@ -316,8 +314,8 @@ const AdminDashboard = () => {
           <main className="flex-1 px-6 py-8 overflow-auto">
             <div className="max-w-7xl mx-auto">
               <div className="space-y-6">
-                {activeTab === "techniques" && <TechniquesManagement />}
-                {activeTab === "video-management" && <VideoListsManagement />}
+                {activeTab === "videos" && <VideosManagement />}
+                {activeTab === "playlists" && <PlaylistsManagement />}
                 {activeTab === "users" && <UsersTab />}
                 {activeTab === "dojos" && <DojosManagement />}
                 {activeTab === "subscriptions" && <SubscriptionsTab />}
