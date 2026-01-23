@@ -76,8 +76,7 @@ const menuGroups: MenuGroup[] = [
     icon: Layers,
     items: [
       { id: "techniques", label: "テクニック管理", icon: Grid3X3 },
-      { id: "video-localization", label: "動画ローカライズ", icon: Languages },
-      { id: "video-lists", label: "動画リスト", icon: ListVideo },
+      { id: "video-management", label: "動画管理", icon: ListVideo },
       { id: "user-videos", label: "ユーザー動画", icon: Video },
     ],
   },
