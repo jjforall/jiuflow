@@ -122,8 +122,6 @@ verify_jwt = true
 [functions.upload-to-cloudflare-stream]
 verify_jwt = false
 
-[functions.migrate-videos-to-cloudflare]
-verify_jwt = true
 
 [functions.api-celebrities]
 verify_jwt = false
@@ -152,8 +150,6 @@ verify_jwt = false
 [functions.mcp-chat]
 verify_jwt = false
 
-[functions.check-video-encoding]
-verify_jwt = true
 
 [functions.transcribe-video]
 verify_jwt = true
