@@ -1,23 +1,20 @@
-import { useState, useEffect, Fragment } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { InputWithSuggestions } from "@/components/ui/input-with-suggestions";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Upload, Trash2, Search, Check, X, Languages, ExternalLink, ChevronDown, Loader2, RefreshCw, ImageIcon, Wrench, FileText, Link2 } from "lucide-react";
+import { Upload, Search, Check, Languages, ChevronDown, Loader2, RefreshCw, ImageIcon, Wrench } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { PaginationControls } from "@/components/ui/pagination-controls";
 import { Skeleton } from "@/components/ui/skeleton";
-import { VideoThumbnail } from "@/components/ui/video-thumbnail";
 import { Progress } from "@/components/ui/progress";
-import { SeriesBadge } from "@/components/ui/series-badge";
 import { 
   usePaginatedTechniques, 
   useUpdateTechnique, 
@@ -31,6 +28,9 @@ import { useAuth } from "@/hooks/useAuth";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useUpload } from "@/contexts/UploadContext";
 import { VideoPreviewDialog, type VideoPreviewTechnique } from "@/components/admin/VideoPreviewDialog";
+import { VideoCard } from "@/components/admin/VideoCard";
+import { TranscriptionQuickDialog } from "@/components/admin/TranscriptionQuickDialog";
+import { TranslationQuickDialog } from "@/components/admin/TranslationQuickDialog";
 
 export const VideosManagement = () => {
   const navigate = useNavigate();
@@ -90,6 +90,11 @@ export const VideosManagement = () => {
   const [transcribingIds, setTranscribingIds] = useState<Set<string>>(new Set());
   const [transcriptionMap, setTranscriptionMap] = useState<Record<string, { id: string; status: string }>>({});
   const [reEncodingIds, setReEncodingIds] = useState<Set<string>>(new Set());
+  const [subtitleMap, setSubtitleMap] = useState<Record<string, string[]>>({});
+  
+  // Quick dialogs for transcription/translation
+  const [transcriptionDialogTechnique, setTranscriptionDialogTechnique] = useState<Technique | null>(null);
+  const [translationDialogTechnique, setTranslationDialogTechnique] = useState<Technique | null>(null);
 
 
   // すべての言語（カウント用）
@@ -188,10 +193,51 @@ export const VideosManagement = () => {
       setTranscriptionMap(map);
     };
     
+    const fetchSubtitles = async () => {
+      // Join subtitles with transcriptions to get technique_id
+      const { data: transcriptions, error: transError } = await supabase
+        .from('video_transcriptions')
+        .select('id, technique_id');
+      
+      if (transError) {
+        console.error('Error fetching transcriptions for subtitles:', transError);
+        return;
+      }
+      
+      const { data: subtitles, error: subError } = await supabase
+        .from('video_subtitles')
+        .select('transcription_id, language_code');
+      
+      if (subError) {
+        console.error('Error fetching subtitles:', subError);
+        return;
+      }
+      
+      // Create a map from transcription_id to technique_id
+      const transMap: Record<string, string> = {};
+      transcriptions?.forEach(t => {
+        if (t.technique_id) {
+          transMap[t.id] = t.technique_id;
+        }
+      });
+      
+      // Create map of technique_id to subtitle languages
+      const map: Record<string, string[]> = {};
+      subtitles?.forEach(s => {
+        const techniqueId = transMap[s.transcription_id];
+        if (techniqueId) {
+          if (!map[techniqueId]) map[techniqueId] = [];
+          map[techniqueId].push(s.language_code);
+        }
+      });
+      setSubtitleMap(map);
+    };
+    
     fetchCategories();
     fetchSeriesNames();
     fetchMissingThumbnailCount();
     fetchTranscriptions();
+    fetchSubtitles();
   }, []);
 
   // シリーズ名リストを再取得する関数
@@ -1874,524 +1920,69 @@ export const VideosManagement = () => {
         </div>
       </div>
 
-      {/* Techniques Table - Desktop */}
-      <div className="hidden md:block border rounded-lg overflow-x-auto">
-        <table className="w-full min-w-[900px] table-fixed">
-          <thead className="bg-muted">
-            <tr>
-              <th className="px-3 py-3 text-left" style={{ width: '48px' }}></th>
-              <th className="px-4 py-3 text-left">技術名</th>
-              <th className="px-4 py-3 text-left" style={{ width: '120px' }}>カテゴリー</th>
-              <th className="px-4 py-3 text-center" style={{ width: '120px' }}>動画</th>
-              <th className="px-4 py-3 text-center" style={{ width: '80px' }}>翻訳</th>
-              <th className="px-4 py-3 text-center" style={{ width: '100px' }}>操作</th>
-            </tr>
-          </thead>
-          <tbody>
-            {isLoading ? (
-              // Loading skeletons
-              Array.from({ length: 5 }).map((_, i) => (
-                <tr key={i} className="border-t">
-                  <td className="px-4 py-3">
-                    <Skeleton className="h-8 w-8" />
-                  </td>
-                  <td className="px-4 py-3">
-                    <Skeleton className="h-12 w-full" />
-                  </td>
-                  <td className="px-4 py-3">
-                    <Skeleton className="h-6 w-20" />
-                  </td>
-                  <td className="px-4 py-3">
-                    <Skeleton className="h-16 w-24" />
-                  </td>
-                  <td className="px-4 py-3">
-                    <Skeleton className="h-6 w-12" />
-                  </td>
-                  <td className="px-4 py-3">
-                    <Skeleton className="h-8 w-full" />
-                  </td>
-                </tr>
-              ))
-            ) : data?.data.length === 0 ? (
-              <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
-                  技術が見つかりませんでした
-                </td>
-              </tr>
-            ) : (
-              data?.data.map((technique) => (
-                <Fragment key={technique.id}>
-                  <tr className="border-t hover:bg-muted/50 group">
-                    <td className="px-3 py-3">
-                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => toggleRow(technique.id)}>
-                        <ChevronDown className={`h-4 w-4 transition-transform ${expandedRows.has(technique.id) ? "rotate-180" : ""}`} />
-                      </Button>
-                    </td>
-                    <td className="px-4 py-3 align-top">
-                      <div className="space-y-1.5">
-                        <p className="font-medium leading-tight break-words">{technique.name}</p>
-                        <p className="text-sm text-muted-foreground leading-tight break-words">{technique.name_ja}</p>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className="inline-block px-2.5 py-1 text-xs rounded-full bg-primary/10 text-primary whitespace-nowrap">
-                        {technique.category}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex justify-center">
-                        {(() => {
-                          // Get effective thumbnail URL (fallback to Cloudflare auto-generated)
-                          const getEffectiveThumbnail = (thumbnailUrl: string | null, videoUrl: string | null): string | null => {
-                            if (thumbnailUrl) return thumbnailUrl;
-                            if (!videoUrl) return null;
-                            // Try to extract Cloudflare Stream thumbnail
-                            const patterns = [
-                              /cloudflarestream\.com\/([a-zA-Z0-9]+)/,
-                              /videodelivery\.net\/([a-zA-Z0-9]+)/,
-                              /watch\.cloudflarestream\.com\/([a-zA-Z0-9]+)/,
-                            ];
-                            for (const pattern of patterns) {
-                              const match = videoUrl.match(pattern);
-                              if (match) {
-                                return `https://videodelivery.net/${match[1]}/thumbnails/thumbnail.jpg?time=1s&width=640&height=360`;
-                              }
-                            }
-                            return null;
-                          };
-                          const effectiveThumbnail = getEffectiveThumbnail(technique.thumbnail_url, technique.video_url);
-                          
-                          if (effectiveThumbnail) {
-                            return (
-                              <img
-                                src={effectiveThumbnail}
-                                className="w-24 h-14 object-cover rounded cursor-pointer hover:opacity-80 transition-opacity shadow-sm"
-                                loading="lazy"
-                                alt={technique.name}
-                                onClick={() => {
-                                  if (technique.video_url) {
-                                    setPreviewTechnique(technique as VideoPreviewTechnique);
-                                    setShowVideoPreview(true);
-                                  }
-                                }}
-                                onError={(e) => {
-                                  const target = e.target as HTMLImageElement;
-                                  target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="96" height="64"%3E%3Crect fill="%23ddd" width="96" height="64"/%3E%3Ctext fill="%23999" x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle"%3ENo Image%3C/text%3E%3C/svg%3E';
-                                }}
-                              />
-                            );
-                          } else if (technique.video_url) {
-                            return (
-                              <div 
-                                className="w-24 h-14 bg-muted rounded flex items-center justify-center text-xs text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors"
-                                onClick={() => {
-                                  setPreviewTechnique(technique as VideoPreviewTechnique);
-                                  setShowVideoPreview(true);
-                                }}
-                                title="クリックして動画を再生"
-                              >
-                                <ExternalLink className="h-4 w-4 mr-1" />
-                                再生
-                              </div>
-                            );
-                          } else {
-                            return (
-                              <div className="w-24 h-14 bg-muted rounded flex items-center justify-center text-xs text-muted-foreground">
-                                未登録
-                              </div>
-                            );
-                          }
-                        })()}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-center">
-                      <span className="inline-block px-2 py-1 bg-accent rounded text-sm font-medium">{getTranslationCount(technique as any)}言語</span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex gap-1 justify-center">
-                        {isAdmin ? (
-                          <>
-                            {/* Transcription link */}
-                            {transcriptionMap[technique.id] ? (
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                className="h-8 w-8 p-0"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  navigate(`/admin/transcription/${transcriptionMap[technique.id].id}`);
-                                }}
-                                title="文字起こし詳細"
-                              >
-                                <FileText className="h-4 w-4 text-green-600" />
-                              </Button>
-                            ) : technique.video_url ? (
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                className="h-8 w-8 p-0"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleStartTranscription(technique as any);
-                                }}
-                                disabled={transcribingIds.has(technique.id)}
-                                title="文字起こしを開始"
-                              >
-                                {transcribingIds.has(technique.id) ? (
-                                  <Loader2 className="h-4 w-4 animate-spin" />
-                                ) : (
-                                  <FileText className="h-4 w-4 text-muted-foreground" />
-                                )}
-                              </Button>
-                            ) : null}
-                            {technique.video_url && (
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                className="h-8 w-8 p-0"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setTranslatingTechnique(technique as any);
-                                  setShowTranslateDialog(true);
-                                }}
-                                title="動画を他言語に翻訳"
-                              >
-                                <Languages className="h-4 w-4" />
-                              </Button>
-                            )}
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="h-8 w-8 p-0"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDelete(technique.id);
-                              }}
-                              title="削除"
-                            >
-                              <Trash2 className="h-4 w-4 text-destructive" />
-                            </Button>
-                          </>
-                        ) : null}
-                      </div>
-                    </td>
-                  </tr>
-                  {expandedRows.has(technique.id) && (
-                    <tr>
-                      <td colSpan={6} className="bg-muted/50 p-4">
-                        <div className="space-y-4">
-                          <div className="grid grid-cols-2 gap-4">
-                            <div>
-                              <h4 className="text-sm font-medium mb-2">詳細情報</h4>
-                              <div className="space-y-2 text-sm">
-                                <div>
-                                  <span className="font-medium">English:</span>
-                                  <p className="text-muted-foreground mt-1">{technique.name}</p>
-                                </div>
-                                <div>
-                                  <span className="font-medium">日本語:</span>
-                                  <p className="text-muted-foreground mt-1">{technique.name_ja}</p>
-                                </div>
-                                <div>
-                                  <span className="font-medium">Português:</span>
-                                  <p className="text-muted-foreground mt-1">{technique.name_pt}</p>
-                                </div>
-                                <div>
-                                  <span className="font-medium">表示順:</span>
-                                  <span className="text-muted-foreground ml-2">{technique.display_order}</span>
-                                </div>
-                              </div>
-                            </div>
-                            <div>
-                              <h4 className="text-sm font-medium mb-2">シリーズ・タグ</h4>
-                              <div className="space-y-2 text-sm">
-                                {(technique as Technique).series_name && (
-                                  <div>
-                                    <span className="font-medium">シリーズ:</span>
-                                    <div className="flex items-center gap-2 mt-1">
-                                      {(technique as Technique).series_prefix && (
-                                        <SeriesBadge 
-                                          prefix={(technique as Technique).series_prefix || ''} 
-                                          order={(technique as Technique).series_order || undefined}
-                                          className="h-6"
-                                        />
-                                      )}
-                                      <span className="text-muted-foreground">{(technique as Technique).series_name}</span>
-                                      {(technique as Technique).series_order && (
-                                        <span className="text-xs text-muted-foreground">#{(technique as Technique).series_order}</span>
-                                      )}
-                                    </div>
-                                  </div>
-                                )}
-                                {technique.hashtags && technique.hashtags.length > 0 && (
-                                  <div>
-                                    <span className="font-medium">ハッシュタグ:</span>
-                                    <div className="flex flex-wrap gap-1 mt-1">
-                                      {technique.hashtags.map((tag) => (
-                                        <span key={tag} className="px-2 py-0.5 bg-primary/10 text-primary rounded text-xs">
-                                          #{tag}
-                                        </span>
-                                      ))}
-                                    </div>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                          <div>
-                            <h4 className="text-sm font-medium mb-2">利用可能な翻訳</h4>
-                            <div className="flex flex-wrap gap-2">
-                              {getAvailableTranslations(technique as any).map((trans) => (
-                                <a
-                                  key={trans.code}
-                                  href={trans.url}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="flex items-center gap-2 px-3 py-1.5 rounded border hover:bg-accent text-sm group"
-                                >
-                                  <span>{trans.name}</span>
-                                  {trans.isOriginal && (
-                                    <span className="text-xs text-muted-foreground">(オリジナル)</span>
-                                  )}
-                                  <ExternalLink className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
-                                </a>
-                              ))}
-                            </div>
-                          </div>
-                          {isAdmin && (
-                            <div className="pt-2 border-t flex flex-wrap gap-2">
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => openEditDialog(technique as any)}
-                              >
-                                編集
-                              </Button>
-                              {technique.video_url && (
-                                <>
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => handleReencodeVideo(technique as any)}
-                                    disabled={reEncodingIds.has(technique.id)}
-                                  >
-                                    {reEncodingIds.has(technique.id) ? (
-                                      <Loader2 className="h-4 w-4 mr-1 animate-spin" />
-                                    ) : (
-                                      <RefreshCw className="h-4 w-4 mr-1" />
-                                    )}
-                                    再エンコード
-                                  </Button>
-                                  {/* Transcription button */}
-                                  {transcriptionMap[technique.id] ? (
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
-                                      onClick={() => navigate(`/admin/transcription/${transcriptionMap[technique.id].id}`)}
-                                    >
-                                      <Link2 className="h-4 w-4 mr-1" />
-                                      文字起こし詳細
-                                    </Button>
-                                  ) : (
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
-                                      onClick={() => handleStartTranscription(technique as any)}
-                                      disabled={transcribingIds.has(technique.id)}
-                                    >
-                                      {transcribingIds.has(technique.id) ? (
-                                        <Loader2 className="h-4 w-4 mr-1 animate-spin" />
-                                      ) : (
-                                        <FileText className="h-4 w-4 mr-1" />
-                                      )}
-                                      文字起こし
-                                    </Button>
-                                  )}
-                                </>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  )}
-                </Fragment>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Techniques Cards - Mobile */}
-      <div className="md:hidden space-y-4">
+      {/* Video Cards */}
+      <div className="grid gap-3">
         {isLoading ? (
-          Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="border rounded-lg p-4 space-y-3">
-              <Skeleton className="h-6 w-3/4" />
-              <Skeleton className="h-20 w-full" />
-              <Skeleton className="h-4 w-1/2" />
+          // Loading skeletons
+          Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="border rounded-lg p-4 flex gap-4">
+              <Skeleton className="w-40 h-24 rounded shrink-0" />
+              <div className="flex-1 space-y-2">
+                <Skeleton className="h-5 w-3/4" />
+                <Skeleton className="h-4 w-1/2" />
+                <Skeleton className="h-8 w-full" />
+              </div>
             </div>
           ))
         ) : data?.data.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">
+          <div className="text-center py-12 text-muted-foreground border rounded-lg">
             技術が見つかりませんでした
           </div>
         ) : (
-          data?.data.map((technique) => (
-            <Collapsible 
-              key={technique.id} 
-              open={expandedRows.has(technique.id)} 
-              onOpenChange={() => toggleRow(technique.id)}
-            >
-              <div className="border rounded-lg overflow-hidden bg-card">
-                <div className="p-4 space-y-3">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex-1 space-y-1">
-                      <p className="font-medium text-sm leading-tight">{technique.name}</p>
-                      <p className="text-xs text-muted-foreground">{technique.name_ja}</p>
-                    </div>
-                    <CollapsibleTrigger asChild>
-                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0 shrink-0">
-                        <ChevronDown className={`h-4 w-4 transition-transform ${expandedRows.has(technique.id) ? "rotate-180" : ""}`} />
-                      </Button>
-                    </CollapsibleTrigger>
-                  </div>
-                  
-                  <div className="flex items-center gap-2">
-                    <span className="px-2 py-0.5 text-xs rounded-full bg-primary/10 text-primary">
-                      {technique.category}
-                    </span>
-                    <span className="text-xs text-muted-foreground">
-                      {getTranslationCount(technique as any)}言語
-                    </span>
-                  </div>
-
-                  {technique.thumbnail_url && (
-                    <div className="relative aspect-video rounded overflow-hidden bg-muted">
-                      <img
-                        src={technique.thumbnail_url}
-                        className="w-full h-full object-cover cursor-pointer"
-                        loading="lazy"
-                        alt={technique.name}
-                        onClick={() => {
-                          if (technique.video_url) {
-                            setPreviewTechnique(technique as VideoPreviewTechnique);
-                            setShowVideoPreview(true);
-                          }
-                        }}
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement;
-                          target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="96" height="64"%3E%3Crect fill="%23ddd" width="96" height="64"/%3E%3Ctext fill="%23999" x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle"%3ENo Image%3C/text%3E%3C/svg%3E';
-                        }}
-                      />
-                    </div>
-                  )}
-
-                  {isAdmin && (
-                    <div className="flex gap-2 pt-2">
-                      {technique.video_url && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="flex-1"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setTranslatingTechnique(technique as any);
-                            setShowTranslateDialog(true);
-                          }}
-                        >
-                          <Languages className="h-4 w-4 mr-1" />
-                          <span className="text-xs">翻訳</span>
-                        </Button>
-                      )}
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="flex-1"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          openEditDialog(technique as any);
-                        }}
-                      >
-                        <span className="text-xs">編集</span>
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDelete(technique.id);
-                        }}
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    </div>
-                  )}
-                </div>
-
-                <CollapsibleContent>
-                  <div className="border-t p-4 bg-muted/30 space-y-3">
-                    <div className="space-y-2 text-sm">
-                      <div>
-                        <span className="font-medium text-xs text-muted-foreground">Português:</span>
-                        <p className="mt-0.5">{technique.name_pt}</p>
-                      </div>
-                      {(technique as Technique).series_name && (
-                        <div>
-                          <span className="font-medium text-xs text-muted-foreground">シリーズ:</span>
-                          <div className="flex items-center gap-2 mt-1">
-                            {(technique as Technique).series_prefix && (
-                              <SeriesBadge 
-                                prefix={(technique as Technique).series_prefix || ''} 
-                                order={(technique as Technique).series_order || undefined}
-                                className="h-6"
-                              />
-                            )}
-                            <span>{(technique as Technique).series_name}</span>
-                            {(technique as Technique).series_order && (
-                              <span className="text-xs text-muted-foreground">#{(technique as Technique).series_order}</span>
-                            )}
-                          </div>
-                        </div>
-                      )}
-                      {technique.hashtags && technique.hashtags.length > 0 && (
-                        <div>
-                          <span className="font-medium text-xs text-muted-foreground">タグ:</span>
-                          <div className="flex flex-wrap gap-1 mt-1">
-                            {technique.hashtags.map((tag) => (
-                              <span key={tag} className="px-2 py-0.5 bg-primary/10 text-primary rounded text-xs">
-                                #{tag}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                    
-                    {getAvailableTranslations(technique as any).length > 0 && (
-                      <div>
-                        <span className="font-medium text-xs text-muted-foreground mb-2 block">翻訳:</span>
-                        <div className="flex flex-wrap gap-2">
-                          {getAvailableTranslations(technique as any).map((trans) => (
-                            <a
-                              key={trans.code}
-                              href={trans.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="flex items-center gap-1 px-2 py-1 rounded border hover:bg-accent text-xs"
-                            >
-                              {trans.name}
-                              <ExternalLink className="h-3 w-3" />
-                            </a>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </CollapsibleContent>
-              </div>
-            </Collapsible>
-          ))
+          data?.data.map((technique) => {
+            // Get dubbed languages from video_metadata
+            const getDubbedLanguages = (t: Technique): string[] => {
+              const langs: string[] = [];
+              if (t.video_metadata && typeof t.video_metadata === 'object') {
+                Object.keys(t.video_metadata).forEach(lang => {
+                  const meta = (t.video_metadata as Record<string, any>)[lang];
+                  if (meta?.video_url) {
+                    langs.push(lang);
+                  }
+                });
+              }
+              return langs;
+            };
+            
+            return (
+              <VideoCard
+                key={technique.id}
+                technique={technique}
+                transcription={transcriptionMap[technique.id] || null}
+                subtitleLanguages={subtitleMap[technique.id] || []}
+                dubbedLanguages={getDubbedLanguages(technique)}
+                onEdit={() => openEditDialog(technique)}
+                onPreview={() => {
+                  if (technique.video_url) {
+                    setPreviewTechnique(technique as VideoPreviewTechnique);
+                    setShowVideoPreview(true);
+                  }
+                }}
+                onTranscribe={() => {
+                  if (transcriptionMap[technique.id]) {
+                    navigate(`/admin/transcription/${transcriptionMap[technique.id].id}`);
+                  } else {
+                    setTranscriptionDialogTechnique(technique);
+                  }
+                }}
+                onTranslate={() => {
+                  setTranslationDialogTechnique(technique);
+                }}
+                onDelete={() => handleDelete(technique.id)}
+                isAdmin={isAdmin}
+              />
+            );
+          })
         )}
       </div>
 
@@ -2405,10 +1996,49 @@ export const VideosManagement = () => {
           onPageChange={setPage}
           onPageSizeChange={(newPageSize) => {
             setPageSize(newPageSize);
-            setPage(1); // Reset to first page when changing page size
+            setPage(1);
           }}
         />
       )}
+
+      {/* Video Preview Dialog */}
+      <VideoPreviewDialog
+        open={showVideoPreview}
+        onOpenChange={setShowVideoPreview}
+        technique={previewTechnique}
+      />
+
+      {/* Transcription Quick Dialog */}
+      <TranscriptionQuickDialog
+        open={!!transcriptionDialogTechnique}
+        onOpenChange={(open) => !open && setTranscriptionDialogTechnique(null)}
+        technique={transcriptionDialogTechnique}
+        onTranscriptionComplete={() => {
+          // Refresh transcription map
+          supabase
+            .from('video_transcriptions')
+            .select('id, technique_id, status')
+            .then(({ data }) => {
+              const map: Record<string, { id: string; status: string }> = {};
+              data?.forEach(t => {
+                if (t.technique_id) {
+                  map[t.technique_id] = { id: t.id, status: t.status };
+                }
+              });
+              setTranscriptionMap(map);
+            });
+        }}
+      />
+
+      {/* Translation Quick Dialog */}
+      <TranslationQuickDialog
+        open={!!translationDialogTechnique}
+        onOpenChange={(open) => !open && setTranslationDialogTechnique(null)}
+        technique={translationDialogTechnique as any}
+        onTranslationStarted={() => {
+          // Refresh data after translation starts
+        }}
+      />
 
       {/* Video Preview Dialog */}
       <VideoPreviewDialog
