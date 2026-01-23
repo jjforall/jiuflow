@@ -76,7 +76,7 @@ const VISIBILITY_LABELS = {
   private: { label: "非公開", labelEn: "Private", icon: EyeOff, color: "bg-destructive" },
 };
 
-export default function VideoListsManagement() {
+export default function PlaylistsManagement() {
   const [lists, setLists] = useState<VideoList[]>([]);
   const [loading, setLoading] = useState(true);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
