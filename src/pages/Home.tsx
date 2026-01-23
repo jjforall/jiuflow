@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import Navigation from "@/components/Navigation";
@@ -12,6 +12,7 @@ import TechniqueFlowchart from "@/components/TechniqueFlowchart";
 import { Badge } from "@/components/ui/badge";
 import { Award, BookOpen, FileText, CheckCircle, Users, Trophy } from "lucide-react";
 import { SEOHead, getOGLocale } from "@/components/SEOHead";
+import { TypewriterText } from "@/components/TypewriterText";
 import murataImage from "@/assets/murata-ryozo-portrait.jpg";
 import kimuraLockImage from "@/assets/kimura-lock-overhead.png";
 
@@ -116,9 +117,40 @@ const Home = () => {
                 <h1 className="text-6xl md:text-8xl font-light mb-4 tracking-tight text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)]">
                   {t.home.hero.title}
                 </h1>
-                <p className="text-xl md:text-2xl font-light text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)] whitespace-pre-line">
-                  {t.home.hero.subtitle}
-                </p>
+                <div className="h-16 md:h-20 flex items-center justify-center">
+                  <TypewriterText
+                    texts={
+                      language === 'ja' 
+                        ? [
+                            "怪我なく、長く、強く。",
+                            "理詰めで動く、大人の柔術。",
+                            "世界チャンピオン監修。",
+                            "4K俯瞰撮影で細部まで。",
+                            "体系化された、一生モノの技術。"
+                          ]
+                        : language === 'pt'
+                        ? [
+                            "Sem lesões. Duradouro. Forte.",
+                            "Jiu-Jitsu lógico para adultos.",
+                            "Supervisionado por Campeão Mundial.",
+                            "Filmagem 4K aérea em detalhes.",
+                            "Técnicas sistematizadas para a vida."
+                          ]
+                        : [
+                            "No injuries. Lasting. Strong.",
+                            "Logical Jiu-Jitsu for adults.",
+                            "World Champion supervised.",
+                            "4K overhead filming in detail.",
+                            "Systematic techniques for life."
+                          ]
+                    }
+                    className="text-xl md:text-3xl font-light text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]"
+                    cursorClassName="bg-white"
+                    typingSpeed={60}
+                    deletingSpeed={30}
+                    pauseTime={3000}
+                  />
+                </div>
                 
                 {/* Value Proposition */}
                 <div className="bg-black/40 backdrop-blur-sm border border-white/20 rounded-lg p-6 max-w-2xl mx-auto">
