@@ -235,7 +235,25 @@ const VideoPlayerInner = ({
   }, []);
 
   // Reset quality UI when switching videos (prevents stale selector state)
+  // ★ CRITICAL: Destroy existing HLS.js instance to prevent audio leaks
   useEffect(() => {
+    // Destroy existing HLS.js instance before switching videos
+    if (hlsRef.current) {
+      console.log('Destroying HLS instance for URL change');
+      hlsRef.current.destroy();
+      hlsRef.current = null;
+    }
+    hlsInitializedForUrlRef.current = null;
+    
+    // Stop and clear the video element completely
+    const video = videoRef.current;
+    if (video) {
+      video.pause();
+      video.removeAttribute('src');
+      video.load(); // Complete reset after clearing src
+    }
+    
+    // Reset all state
     setAvailableLevels([]);
     setQuality("auto");
     setShowQualityMenu(false);

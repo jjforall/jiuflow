@@ -20,6 +20,8 @@ interface VideoPreviewDialogProps {
 export function VideoPreviewDialog({ open, onOpenChange, technique }: VideoPreviewDialogProps) {
   const [selectedLanguage, setSelectedLanguage] = useState<string>("ja");
   const [currentVideoUrl, setCurrentVideoUrl] = useState<string | null>(null);
+  // ★ VideoPlayerを確実にアンマウントするためのkey
+  const [playerKey, setPlayerKey] = useState(0);
 
   // メモ化してレンダリングごとの再計算を防ぐ
   const availableLanguages = useMemo(() => {
@@ -33,8 +35,10 @@ export function VideoPreviewDialog({ open, onOpenChange, technique }: VideoPrevi
       // 初期動画URLを設定
       const jaLang = availableLanguages.find((l) => l.code === "ja");
       setCurrentVideoUrl(jaLang?.videoUrl || technique.video_url || null);
+      // 新しいtechniqueの時はkeyを更新
+      setPlayerKey(prev => prev + 1);
     } else if (!open) {
-      // ダイアログが閉じられたら即座にビデオURLをクリア
+      // ★ 重要: ダイアログが閉じられたら即座にビデオURLをクリア
       // これによりVideoPlayerがアンマウントされ、HLS.jsがdestroyされる
       setCurrentVideoUrl(null);
     }
@@ -45,10 +49,10 @@ export function VideoPreviewDialog({ open, onOpenChange, technique }: VideoPrevi
     if (!open) return; // ダイアログが閉じている時は処理しない
     
     const lang = availableLanguages.find((l) => l.code === selectedLanguage);
-    if (lang) {
+    if (lang && lang.videoUrl !== currentVideoUrl) {
       setCurrentVideoUrl(lang.videoUrl);
     }
-  }, [selectedLanguage, availableLanguages, open]);
+  }, [selectedLanguage, availableLanguages, open, currentVideoUrl]);
 
   const handleLanguageChange = (langCode: string) => {
     setSelectedLanguage(langCode);
@@ -96,7 +100,7 @@ export function VideoPreviewDialog({ open, onOpenChange, technique }: VideoPrevi
           <div className="w-full bg-black rounded-lg overflow-hidden" style={{ maxHeight: "65vh" }}>
             {currentVideoUrl ? (
               <VideoPlayer
-                key={`${technique.video_url}-${selectedLanguage}`}
+                key={`preview-${playerKey}-${currentVideoUrl}`}
                 videoUrl={currentVideoUrl}
                 autoPlay={true}
               />
