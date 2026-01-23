@@ -33,7 +33,11 @@ interface Technique {
   series_order: number | null;
 }
 
-export const TranscriptionManagement = () => {
+interface TranscriptionManagementProps {
+  showHeader?: boolean;
+}
+
+export const TranscriptionManagement = ({ showHeader = true }: TranscriptionManagementProps) => {
   const { t } = useTranslation();
   const [techniques, setTechniques] = useState<Technique[]>([]);
   const [transcriptions, setTranscriptions] = useState<Record<string, Transcription>>({});
@@ -646,11 +650,35 @@ STYLE
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold">文字起こし管理</h2>
-        <div className="flex items-center gap-2">
+      {showHeader && (
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-bold">文字起こし管理</h2>
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="outline" 
+              onClick={handleRegenerateAllSubtitles}
+              disabled={isRegeneratingAll || Object.keys(transcriptions).length === 0}
+            >
+              {isRegeneratingAll ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <RotateCcw className="h-4 w-4 mr-2" />
+              )}
+              全て再生成
+            </Button>
+            <Button variant="outline" onClick={fetchData}>
+              <RefreshCw className="h-4 w-4 mr-2" />
+              更新
+            </Button>
+          </div>
+        </div>
+      )}
+      
+      {!showHeader && (
+        <div className="flex items-center justify-end gap-2">
           <Button 
             variant="outline" 
+            size="sm"
             onClick={handleRegenerateAllSubtitles}
             disabled={isRegeneratingAll || Object.keys(transcriptions).length === 0}
           >
@@ -661,12 +689,12 @@ STYLE
             )}
             全て再生成
           </Button>
-          <Button variant="outline" onClick={fetchData}>
+          <Button variant="outline" size="sm" onClick={fetchData}>
             <RefreshCw className="h-4 w-4 mr-2" />
             更新
           </Button>
         </div>
-      </div>
+      )}
 
       <div className="flex items-center gap-4">
         <Input

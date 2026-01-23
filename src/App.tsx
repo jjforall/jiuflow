@@ -73,7 +73,7 @@ const queryClient = new QueryClient();
 
 const App = () => (
   <ErrorBoundary>
-    <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
+    <ThemeProvider attribute="class" defaultTheme="system" storageKey="jiuflow-theme" enableSystem={false}>
       <LanguageProvider>
         <QueryClientProvider client={queryClient}>
           <TooltipProvider>
