@@ -30,6 +30,7 @@ import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useUpload } from "@/contexts/UploadContext";
+import { VideoPreviewDialog, type VideoPreviewTechnique } from "@/components/admin/VideoPreviewDialog";
 
 export const TechniquesManagement = () => {
   const navigate = useNavigate();
@@ -81,7 +82,7 @@ export const TechniquesManagement = () => {
   const [availableCategories, setAvailableCategories] = useState<string[]>([]);
   const [seriesNameSuggestions, setSeriesNameSuggestions] = useState<string[]>([]);
   const [newCategory, setNewCategory] = useState("");
-  const [previewVideoUrl, setPreviewVideoUrl] = useState<string | null>(null);
+  const [previewTechnique, setPreviewTechnique] = useState<VideoPreviewTechnique | null>(null);
   const [showVideoPreview, setShowVideoPreview] = useState(false);
   const [seriesMapping, setSeriesMapping] = useState<Array<{ series_name: string; series_prefix: string }>>([]);
   const [isFixingThumbnails, setIsFixingThumbnails] = useState(false);
@@ -1969,7 +1970,7 @@ export const TechniquesManagement = () => {
                                 alt={technique.name}
                                 onClick={() => {
                                   if (technique.video_url) {
-                                    setPreviewVideoUrl(technique.video_url);
+                                    setPreviewTechnique(technique as VideoPreviewTechnique);
                                     setShowVideoPreview(true);
                                   }
                                 }}
@@ -1984,7 +1985,7 @@ export const TechniquesManagement = () => {
                               <div 
                                 className="w-24 h-14 bg-muted rounded flex items-center justify-center text-xs text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors"
                                 onClick={() => {
-                                  setPreviewVideoUrl(technique.video_url);
+                                  setPreviewTechnique(technique as VideoPreviewTechnique);
                                   setShowVideoPreview(true);
                                 }}
                                 title="クリックして動画を再生"
@@ -2274,7 +2275,7 @@ export const TechniquesManagement = () => {
                         alt={technique.name}
                         onClick={() => {
                           if (technique.video_url) {
-                            setPreviewVideoUrl(technique.video_url);
+                            setPreviewTechnique(technique as VideoPreviewTechnique);
                             setShowVideoPreview(true);
                           }
                         }}
@@ -2410,24 +2411,11 @@ export const TechniquesManagement = () => {
       )}
 
       {/* Video Preview Dialog */}
-      <Dialog open={showVideoPreview} onOpenChange={setShowVideoPreview}>
-        <DialogContent className="max-w-4xl">
-          <DialogHeader>
-            <DialogTitle>動画プレビュー</DialogTitle>
-          </DialogHeader>
-          {previewVideoUrl && (
-            <div className="w-full">
-              <video
-                src={previewVideoUrl}
-                controls
-                autoPlay
-                className="w-full rounded-lg"
-                style={{ maxHeight: '70vh' }}
-              />
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+      <VideoPreviewDialog
+        open={showVideoPreview}
+        onOpenChange={setShowVideoPreview}
+        technique={previewTechnique}
+      />
 
       {/* Edit/Create Dialog */}
       <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>

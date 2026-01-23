@@ -12,6 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Plus, Pencil, Trash2, Eye, EyeOff, Link2, X, Copy, ExternalLink, ChevronDown, ChevronUp, Play } from "lucide-react";
 import { toast } from "sonner";
 import { LocalizationBadges } from "@/components/ui/LocalizationBadges";
+import { VideoPreviewDialog, type VideoPreviewTechnique } from "@/components/admin/VideoPreviewDialog";
 
 interface VideoList {
   id: string;
@@ -70,6 +71,8 @@ export default function VideoListsManagement() {
   const [listItems, setListItems] = useState<VideoListItem[]>([]);
   const [allTechniques, setAllTechniques] = useState<Technique[]>([]);
   const [expandedLists, setExpandedLists] = useState<Set<string>>(new Set());
+  const [previewTechnique, setPreviewTechnique] = useState<VideoPreviewTechnique | null>(null);
+  const [showVideoPreview, setShowVideoPreview] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     name_ja: "",
@@ -636,7 +639,23 @@ export default function VideoListsManagement() {
                                     <div className="w-6 text-center text-sm text-muted-foreground">
                                       {index + 1}
                                     </div>
-                                    <div className="relative w-24 h-14 bg-muted rounded overflow-hidden flex-shrink-0">
+                                    <div 
+                                      className="relative w-24 h-14 bg-muted rounded overflow-hidden flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity group"
+                                      onClick={() => {
+                                        if (item.technique?.video_url_ja) {
+                                          setPreviewTechnique({
+                                            video_url: item.technique.video_url_ja,
+                                            video_url_ja: item.technique.video_url_ja,
+                                            video_url_pt: item.technique.video_url_pt ?? undefined,
+                                            video_metadata: item.technique.video_metadata as VideoPreviewTechnique['video_metadata'],
+                                            name_ja: item.technique.name_ja,
+                                            name: item.technique.name,
+                                          });
+                                          setShowVideoPreview(true);
+                                        }
+                                      }}
+                                      title="クリックしてプレビュー"
+                                    >
                                       {item.technique?.thumbnail_url ? (
                                         <img
                                           src={item.technique.thumbnail_url}
@@ -648,6 +667,9 @@ export default function VideoListsManagement() {
                                           <Play className="w-4 h-4 text-muted-foreground" />
                                         </div>
                                       )}
+                                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                        <Play className="w-6 h-6 text-white" />
+                                      </div>
                                     </div>
                                     <div className="flex-1 min-w-0">
                                       <div className="text-sm font-medium truncate">
@@ -903,6 +925,13 @@ export default function VideoListsManagement() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Video Preview Dialog */}
+      <VideoPreviewDialog
+        open={showVideoPreview}
+        onOpenChange={setShowVideoPreview}
+        technique={previewTechnique}
+      />
     </div>
   );
 }
