@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
@@ -11,6 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Skeleton } from "@/components/ui/skeleton";
 import { Plus, Pencil, Trash2, Eye, EyeOff, Link2, X, Copy, ExternalLink, ChevronDown, ChevronUp, Play } from "lucide-react";
 import { toast } from "sonner";
+import { LocalizationBadges } from "@/components/ui/LocalizationBadges";
 
 interface VideoList {
   id: string;
@@ -37,6 +38,12 @@ interface Technique {
   series_prefix: string | null;
   series_order: number | null;
   thumbnail_url: string | null;
+  video_url_ja: string | null;
+  video_url_pt: string | null;
+  video_metadata: unknown;
+  hasTranscription?: boolean;
+  subtitleLanguages?: string[];
+  dubbedLanguages?: string[];
 }
 
 interface VideoListItem {
@@ -75,11 +82,14 @@ export default function VideoListsManagement() {
   });
 
   useEffect(() => {
-    fetchLists();
-    fetchTechniques();
+    const loadData = async () => {
+      const techniques = await fetchTechniques();
+      await fetchLists(techniques);
+    };
+    loadData();
   }, []);
 
-  const fetchLists = async () => {
+  const fetchLists = async (techniquesData?: Technique[]) => {
     setLoading(true);
     const { data, error } = await supabase
       .from("video_lists")
@@ -90,20 +100,25 @@ export default function VideoListsManagement() {
       toast.error("リストの取得に失敗しました");
       console.error(error);
     } else {
+      const techniques = techniquesData || allTechniques;
       // Get items for each list (up to 10 for preview)
       const listsWithItems = await Promise.all(
         (data || []).map(async (list) => {
           const { data: itemsData, count } = await supabase
             .from("video_list_items")
-            .select("*, technique:technique_id(id, name, name_ja, series_prefix, series_order, thumbnail_url)", { count: "exact" })
+            .select("*, technique:technique_id(id, name, name_ja, series_prefix, series_order, thumbnail_url, video_url_ja, video_url_pt, video_metadata)", { count: "exact" })
             .eq("list_id", list.id)
             .order("display_order", { ascending: true })
             .limit(10);
           
-          const items = (itemsData || []).map((item: any) => ({
-            ...item,
-            technique: item.technique,
-          }));
+          // Enrich techniques with localization data
+          const items = (itemsData || []).map((item: any) => {
+            const enrichedTechnique = techniques.find(t => t.id === item.technique?.id);
+            return {
+              ...item,
+              technique: enrichedTechnique || item.technique,
+            };
+          });
           
           return { ...list, item_count: count || 0, items };
         })
@@ -113,18 +128,82 @@ export default function VideoListsManagement() {
     setLoading(false);
   };
 
-  const fetchTechniques = async () => {
+  const fetchTechniques = async (): Promise<Technique[]> => {
     const { data, error } = await supabase
       .from("techniques")
-      .select("id, name, name_ja, series_prefix, series_order, thumbnail_url")
+      .select("id, name, name_ja, series_prefix, series_order, thumbnail_url, video_url_ja, video_url_pt, video_metadata")
       .order("series_prefix", { ascending: true })
       .order("series_order", { ascending: true });
 
     if (error) {
       console.error(error);
-    } else {
-      setAllTechniques(data || []);
+      return [];
     }
+
+    const techniques = data || [];
+    const techniqueIds = techniques.map(t => t.id);
+
+    // Fetch transcription status for all techniques
+    const { data: transcriptions } = await supabase
+      .from("video_transcriptions")
+      .select("technique_id, status")
+      .in("technique_id", techniqueIds)
+      .eq("status", "completed");
+
+    // Fetch subtitle languages
+    const { data: subtitles } = await supabase
+      .from("video_subtitles")
+      .select("transcription_id, language_code, video_transcriptions!inner(technique_id)")
+      .eq("status", "completed");
+
+    // Build lookup maps
+    const transcriptionMap = new Set((transcriptions || []).map(t => t.technique_id));
+    const subtitleMap: Record<string, string[]> = {};
+    (subtitles || []).forEach((sub: { video_transcriptions: { technique_id: string }, language_code: string }) => {
+      const techId = sub.video_transcriptions?.technique_id;
+      if (techId) {
+        if (!subtitleMap[techId]) subtitleMap[techId] = [];
+        if (!subtitleMap[techId].includes(sub.language_code)) {
+          subtitleMap[techId].push(sub.language_code);
+        }
+      }
+    });
+
+    // Enrich techniques with localization info
+    const enrichedTechniques: Technique[] = techniques.map(t => {
+      const dubbedLanguages: string[] = [];
+      if (t.video_url_ja) dubbedLanguages.push("ja");
+      if (t.video_url_pt) dubbedLanguages.push("pt");
+      
+      // Check video_metadata for additional translations
+      const metadata = t.video_metadata as Record<string, unknown> | null;
+      if (metadata && typeof metadata === 'object' && 'translations' in metadata) {
+        const translations = metadata.translations as Record<string, { video_url?: string }>;
+        Object.entries(translations).forEach(([lang, data]) => {
+          if (data?.video_url && !dubbedLanguages.includes(lang)) {
+            dubbedLanguages.push(lang);
+          }
+        });
+      }
+
+      return {
+        id: t.id,
+        name: t.name,
+        name_ja: t.name_ja,
+        series_prefix: t.series_prefix,
+        series_order: t.series_order,
+        thumbnail_url: t.thumbnail_url,
+        video_url_ja: t.video_url_ja,
+        video_url_pt: t.video_url_pt,
+        video_metadata: t.video_metadata as unknown,
+        hasTranscription: transcriptionMap.has(t.id),
+        subtitleLanguages: subtitleMap[t.id] || [],
+        dubbedLanguages,
+      } as Technique;
+    });
+
+    setAllTechniques(enrichedTechniques);
+    return enrichedTechniques;
   };
 
   const fetchListItems = async (listId: string) => {
@@ -574,11 +653,19 @@ export default function VideoListsManagement() {
                                       <div className="text-sm font-medium truncate">
                                         {item.technique?.name_ja || item.technique?.name || '動画'}
                                       </div>
-                                      {item.technique?.series_prefix && (
-                                        <div className="text-xs text-muted-foreground">
-                                          {item.technique.series_prefix}-{item.technique.series_order}
-                                        </div>
-                                      )}
+                                      <div className="flex items-center gap-2 mt-0.5">
+                                        {item.technique?.series_prefix && (
+                                          <span className="text-xs text-muted-foreground">
+                                            {item.technique.series_prefix}-{item.technique.series_order}
+                                          </span>
+                                        )}
+                                        <LocalizationBadges
+                                          hasTranscription={item.technique?.hasTranscription}
+                                          subtitleLanguages={item.technique?.subtitleLanguages}
+                                          dubbedLanguages={item.technique?.dubbedLanguages}
+                                          compact
+                                        />
+                                      </div>
                                     </div>
                                   </div>
                                 ))}
@@ -786,11 +873,19 @@ export default function VideoListsManagement() {
                           <span className="text-sm truncate block">
                             {technique.name_ja || technique.name}
                           </span>
-                          {technique.series_prefix && (
-                            <span className="text-xs text-muted-foreground">
-                              {technique.series_prefix}-{technique.series_order}
-                            </span>
-                          )}
+                          <div className="flex items-center gap-2 mt-0.5">
+                            {technique.series_prefix && (
+                              <span className="text-xs text-muted-foreground">
+                                {technique.series_prefix}-{technique.series_order}
+                              </span>
+                            )}
+                            <LocalizationBadges
+                              hasTranscription={technique.hasTranscription}
+                              subtitleLanguages={technique.subtitleLanguages}
+                              dubbedLanguages={technique.dubbedLanguages}
+                              compact
+                            />
+                          </div>
                         </div>
                         <Button
                           variant="ghost"
