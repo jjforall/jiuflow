@@ -38,6 +38,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Progress } from "@/components/ui/progress";
 import { 
   Plus, 
   Search, 
@@ -45,10 +46,69 @@ import {
   Trash2, 
   Video, 
   RefreshCcw,
-  AlertTriangle
+  AlertTriangle,
+  Link2,
+  Loader2
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
+
+// マッピング定義
+const SERIES_TO_NOTATION: Record<string, string[]> = {
+  'A': ['CG'],  // クローズドガード
+  'B': ['CG'],  // クローズドガードブレイク
+  'C': ['CB'],  // コンバットベース
+  'D': ['MT'],  // マウント
+  'E': ['GP'],  // 引き込み
+  'F': ['CB'],  // コンバットベース対応
+};
+
+const CATEGORY_TO_NOTATION: Record<string, string[]> = {
+  'submission': [],  // 動画名から個別判定
+  'sweep': ['SW'],
+  'escape': ['ESC'],
+  'guard-pass': ['P'],
+  'control': [],
+  'guard pull': ['GP'],
+};
+
+const SUBMISSION_KEYWORDS: Record<string, string> = {
+  'kimura': 'KIM',
+  'armbar': 'AB',
+  'arm bar': 'AB',
+  'arm-bar': 'AB',
+  'jujigatame': 'AB',
+  '腕十字': 'AB',
+  'triangle': 'TC',
+  '三角絞め': 'TC',
+  'cross choke': 'CC',
+  '十字絞め': 'CC',
+  'guillotine': 'GUI',
+  'ギロチン': 'GUI',
+  'omoplata': 'OMO',
+  'オモプラッタ': 'OMO',
+  'rear naked': 'RNC',
+  '裸絞め': 'RNC',
+  'americana': 'AMI',
+  'アメリカーナ': 'AMI',
+  'ezekiel': 'EZE',
+  'エゼキエル': 'EZE',
+  'lapel choke': 'LC',
+  '送り襟絞め': 'LC',
+  'bow and arrow': 'BNA',
+  'clock choke': 'CLK',
+  'baseball choke': 'BBC',
+  'd\'arce': 'DAR',
+  'anaconda': 'ANA',
+  'heel hook': 'HH',
+  'knee bar': 'KB',
+  'kneebar': 'KB',
+  'ankle lock': 'AL',
+  'straight ankle': 'AL',
+  'toe hold': 'TH',
+  'calf slicer': 'CS',
+};
 
 const CATEGORIES: NotationCategory[] = [
   'position', 'action', 'submission', 'grip', 'movement', 'takedown', 'outcome'
@@ -83,12 +143,127 @@ export default function NotationsManagement() {
   const [editingNotation, setEditingNotation] = useState<BJJNotation | null>(null);
   const [formData, setFormData] = useState<NotationFormData>(defaultFormData);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [isAutoLinking, setIsAutoLinking] = useState(false);
+  const [autoLinkProgress, setAutoLinkProgress] = useState({ current: 0, total: 0, linked: 0 });
 
   const { data: notations, isLoading, refetch } = useNotations();
   const { data: stats } = useNotationStats();
   const createMutation = useCreateNotation();
   const updateMutation = useUpdateNotation();
   const deleteMutation = useDeleteNotation();
+
+  // 既存動画を一括紐付け
+  const handleAutoLinkExistingVideos = async () => {
+    if (!notations) {
+      toast.error('略称データが読み込まれていません');
+      return;
+    }
+
+    if (!confirm('既存の動画をシリーズ・カテゴリに基づいて略称に自動紐付けしますか？\n\n※既存の紐付けはそのまま維持されます')) {
+      return;
+    }
+
+    setIsAutoLinking(true);
+    setAutoLinkProgress({ current: 0, total: 0, linked: 0 });
+
+    try {
+      // 1. 全techniqueを取得
+      const { data: techniques, error: techError } = await supabase
+        .from('techniques')
+        .select('id, name, name_ja, series_prefix, category');
+
+      if (techError) throw techError;
+      if (!techniques || techniques.length === 0) {
+        toast.info('動画がありません');
+        setIsAutoLinking(false);
+        return;
+      }
+
+      // 2. 既存の紐付けを取得
+      const { data: existingLinks, error: linkError } = await supabase
+        .from('technique_notations')
+        .select('technique_id, notation_id');
+
+      if (linkError) throw linkError;
+
+      const existingSet = new Set(
+        (existingLinks || []).map(l => `${l.technique_id}_${l.notation_id}`)
+      );
+
+      // 3. 略称コードからIDへのマップを作成
+      const codeToId: Record<string, string> = {};
+      notations.forEach(n => {
+        codeToId[n.code.toUpperCase()] = n.id;
+      });
+
+      // 4. 各動画に対して紐付けを生成
+      const linksToCreate: Array<{ technique_id: string; notation_id: string; context: string }> = [];
+      setAutoLinkProgress({ current: 0, total: techniques.length, linked: 0 });
+
+      for (let i = 0; i < techniques.length; i++) {
+        const tech = techniques[i];
+        const notationCodes = new Set<string>();
+
+        // シリーズから略称を取得
+        if (tech.series_prefix && SERIES_TO_NOTATION[tech.series_prefix]) {
+          SERIES_TO_NOTATION[tech.series_prefix].forEach(code => notationCodes.add(code));
+        }
+
+        // カテゴリから略称を取得
+        if (tech.category && CATEGORY_TO_NOTATION[tech.category]) {
+          CATEGORY_TO_NOTATION[tech.category].forEach(code => notationCodes.add(code));
+        }
+
+        // 動画名からサブミッション略称を判定
+        const searchName = `${tech.name || ''} ${tech.name_ja || ''}`.toLowerCase();
+        Object.entries(SUBMISSION_KEYWORDS).forEach(([keyword, code]) => {
+          if (searchName.includes(keyword.toLowerCase())) {
+            notationCodes.add(code);
+          }
+        });
+
+        // 紐付けを作成
+        notationCodes.forEach(code => {
+          const notationId = codeToId[code.toUpperCase()];
+          if (notationId && !existingSet.has(`${tech.id}_${notationId}`)) {
+            linksToCreate.push({
+              technique_id: tech.id,
+              notation_id: notationId,
+              context: 'auto-linked',
+            });
+          }
+        });
+
+        setAutoLinkProgress(prev => ({ ...prev, current: i + 1 }));
+      }
+
+      // 5. バッチインサート
+      if (linksToCreate.length > 0) {
+        const batchSize = 100;
+        for (let i = 0; i < linksToCreate.length; i += batchSize) {
+          const batch = linksToCreate.slice(i, i + batchSize);
+          const { error: insertError } = await supabase
+            .from('technique_notations')
+            .insert(batch);
+
+          if (insertError) {
+            console.error('Batch insert error:', insertError);
+          }
+          setAutoLinkProgress(prev => ({ ...prev, linked: Math.min(i + batchSize, linksToCreate.length) }));
+        }
+
+        toast.success(`${linksToCreate.length}件の紐付けを作成しました`);
+        refetch();
+      } else {
+        toast.info('新規の紐付けはありませんでした');
+      }
+    } catch (error) {
+      console.error('Auto-link error:', error);
+      toast.error('紐付け処理中にエラーが発生しました');
+    } finally {
+      setIsAutoLinking(false);
+    }
+  };
 
   // Filter notations
   const filteredNotations = useMemo(() => {
@@ -212,6 +387,20 @@ export default function NotationsManagement() {
               className="pl-8 h-8 text-sm"
             />
           </div>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleAutoLinkExistingVideos}
+            disabled={isAutoLinking}
+            className="h-8"
+          >
+            {isAutoLinking ? (
+              <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />
+            ) : (
+              <Link2 className="h-3.5 w-3.5 mr-1" />
+            )}
+            一括紐付け
+          </Button>
           <Button variant="outline" size="sm" onClick={() => refetch()} className="h-8">
             <RefreshCcw className="h-3.5 w-3.5" />
           </Button>
