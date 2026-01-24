@@ -120,13 +120,11 @@ export function VideoCard({
             </div>
           )}
           
-          {/* Duration badge */}
-          {duration && (
-            <div className="absolute bottom-1.5 right-1.5 px-1.5 py-0.5 bg-black/80 text-white text-[10px] font-medium rounded flex items-center gap-1">
-              <Clock className="w-2.5 h-2.5" />
-              {formatDuration(duration)}
-            </div>
-          )}
+          {/* Duration badge - always show, with placeholder if not available */}
+          <div className="absolute bottom-1.5 right-1.5 px-1.5 py-0.5 bg-black/80 text-white text-[10px] font-medium rounded flex items-center gap-1">
+            <Clock className="w-2.5 h-2.5" />
+            {duration ? formatDuration(duration) : '--:--'}
+          </div>
         </div>
 
         {/* Content area */}
