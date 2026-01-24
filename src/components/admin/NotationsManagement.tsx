@@ -6,12 +6,11 @@ import {
   useDeleteNotation,
   useNotationStats 
 } from "@/hooks/useNotations";
-import { BJJNotation, NotationCategory, NOTATION_CATEGORY_LABELS } from "@/types/notation";
+import { BJJNotation, NotationCategory, NOTATION_CATEGORY_LABELS, NOTATION_CATEGORY_SHORT_LABELS } from "@/types/notation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -38,13 +37,13 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { 
   Plus, 
   Search, 
   Pencil, 
   Trash2, 
   Video, 
-  BarChart3,
   RefreshCcw,
   AlertTriangle
 } from "lucide-react";
@@ -173,8 +172,8 @@ export default function NotationsManagement() {
   const getCategoryBadge = (category: NotationCategory) => {
     const label = NOTATION_CATEGORY_LABELS[category];
     return (
-      <Badge className={cn(label.color, "text-white text-xs")}>
-        {label.ja}
+      <Badge className={cn(label.color, "text-white text-[10px] whitespace-nowrap px-1.5 py-0.5")}>
+        {NOTATION_CATEGORY_SHORT_LABELS[category]}
       </Badge>
     );
   };
@@ -183,9 +182,9 @@ export default function NotationsManagement() {
     return (
       <div className="space-y-4 p-4">
         <Skeleton className="h-8 w-48" />
-        <div className="grid grid-cols-4 gap-4">
+        <div className="grid grid-cols-4 gap-3">
           {[1, 2, 3, 4].map(i => (
-            <Skeleton key={i} className="h-24" />
+            <Skeleton key={i} className="h-20" />
           ))}
         </div>
         <Skeleton className="h-96" />
@@ -194,157 +193,172 @@ export default function NotationsManagement() {
   }
 
   return (
-    <div className="space-y-6 p-4">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+    <div className="space-y-4 p-4">
+      {/* Header with search and actions */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold">略称マスター</h1>
-          <p className="text-sm text-muted-foreground">
+          <h1 className="text-xl font-bold">略称マスター</h1>
+          <p className="text-xs text-muted-foreground">
             BJJ略称の管理 • 合計 {notations?.length || 0} 件
           </p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={() => refetch()}>
-            <RefreshCcw className="h-4 w-4 mr-1" />
-            更新
+        <div className="flex items-center gap-2">
+          <div className="relative w-40">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+            <Input
+              placeholder="検索..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-8 h-8 text-sm"
+            />
+          </div>
+          <Button variant="outline" size="sm" onClick={() => refetch()} className="h-8">
+            <RefreshCcw className="h-3.5 w-3.5" />
           </Button>
-          <Button onClick={openCreateDialog}>
-            <Plus className="h-4 w-4 mr-1" />
-            新規追加
+          <Button size="sm" onClick={openCreateDialog} className="h-8">
+            <Plus className="h-3.5 w-3.5 mr-1" />
+            追加
           </Button>
         </div>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
-        {CATEGORIES.map(cat => {
-          const label = NOTATION_CATEGORY_LABELS[cat];
-          const total = stats?.[cat]?.total || 0;
-          const linked = stats?.[cat]?.linked || 0;
-          return (
-            <Card 
-              key={cat} 
+      {/* Stats Cards - Compact 2 rows on mobile, horizontal scroll on larger */}
+      <ScrollArea className="w-full">
+        <div className="flex gap-2 pb-2">
+          {CATEGORIES.map(cat => {
+            const label = NOTATION_CATEGORY_LABELS[cat];
+            const total = stats?.[cat]?.total || 0;
+            const linked = stats?.[cat]?.linked || 0;
+            return (
+              <Card 
+                key={cat} 
+                className={cn(
+                  "cursor-pointer transition-all hover:ring-1 hover:ring-primary/50 shrink-0 w-[100px]",
+                  activeCategory === cat && "ring-2 ring-primary bg-primary/5"
+                )}
+                onClick={() => setActiveCategory(activeCategory === cat ? 'all' : cat)}
+              >
+                <CardContent className="p-2.5">
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <span className={cn("w-2 h-2 rounded-full shrink-0", label.color)} />
+                    <span className="text-[10px] font-medium text-muted-foreground truncate">
+                      {NOTATION_CATEGORY_SHORT_LABELS[cat]}
+                    </span>
+                  </div>
+                  <div className="text-lg font-bold leading-none">{total}</div>
+                  <div className="text-[10px] text-muted-foreground flex items-center gap-0.5 mt-0.5">
+                    <Video className="h-2.5 w-2.5" />
+                    {linked}動画
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      </ScrollArea>
+
+      {/* Category filter tabs - horizontal scroll */}
+      <ScrollArea className="w-full">
+        <div className="flex gap-1 pb-2">
+          <Button
+            variant={activeCategory === 'all' ? "default" : "ghost"}
+            size="sm"
+            className="h-7 text-xs shrink-0"
+            onClick={() => setActiveCategory('all')}
+          >
+            全て ({categoryStats.all || 0})
+          </Button>
+          {CATEGORIES.map(cat => (
+            <Button
+              key={cat}
+              variant={activeCategory === cat ? "default" : "ghost"}
+              size="sm"
               className={cn(
-                "cursor-pointer transition-all hover:ring-2 hover:ring-primary/50",
-                activeCategory === cat && "ring-2 ring-primary"
+                "h-7 text-xs shrink-0",
+                activeCategory === cat && NOTATION_CATEGORY_LABELS[cat].color
               )}
               onClick={() => setActiveCategory(cat)}
             >
-              <CardHeader className="pb-2 pt-3 px-3">
-                <CardTitle className="text-xs font-medium text-muted-foreground flex items-center gap-1">
-                  <span className={cn("w-2 h-2 rounded-full", label.color)} />
-                  {label.ja}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="px-3 pb-3">
-                <div className="text-2xl font-bold">{total}</div>
-                <p className="text-xs text-muted-foreground flex items-center gap-1">
-                  <Video className="h-3 w-3" />
-                  {linked} 動画
-                </p>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
-
-      {/* Tabs & Search */}
-      <div className="flex flex-col sm:flex-row gap-4">
-        <Tabs 
-          value={activeCategory} 
-          onValueChange={(v) => setActiveCategory(v as NotationCategory | 'all')}
-          className="flex-1"
-        >
-          <TabsList className="flex-wrap h-auto">
-            <TabsTrigger value="all" className="text-xs">
-              全て ({categoryStats.all || 0})
-            </TabsTrigger>
-            {CATEGORIES.map(cat => (
-              <TabsTrigger key={cat} value={cat} className="text-xs">
-                {NOTATION_CATEGORY_LABELS[cat].ja} ({categoryStats[cat] || 0})
-              </TabsTrigger>
-            ))}
-          </TabsList>
-        </Tabs>
-        <div className="relative w-full sm:w-64">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="検索..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-9"
-          />
+              {NOTATION_CATEGORY_SHORT_LABELS[cat]} ({categoryStats[cat] || 0})
+            </Button>
+          ))}
         </div>
-      </div>
+      </ScrollArea>
 
       {/* Table */}
       <Card>
         <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-20">コード</TableHead>
-                <TableHead>日本語</TableHead>
-                <TableHead>English</TableHead>
-                <TableHead className="w-24">カテゴリ</TableHead>
-                <TableHead className="w-16 text-center">動画</TableHead>
-                <TableHead className="w-16 text-center">状態</TableHead>
-                <TableHead className="w-24">操作</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredNotations.length === 0 ? (
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                    {search ? '検索結果がありません' : 'データがありません'}
-                  </TableCell>
+                  <TableHead className="w-[70px] whitespace-nowrap">コード</TableHead>
+                  <TableHead className="min-w-[120px] max-w-[180px]">日本語</TableHead>
+                  <TableHead className="min-w-[120px] max-w-[180px]">English</TableHead>
+                  <TableHead className="w-[60px]">分類</TableHead>
+                  <TableHead className="w-[50px] text-center">動画</TableHead>
+                  <TableHead className="w-[50px] text-center">状態</TableHead>
+                  <TableHead className="w-[70px]">操作</TableHead>
                 </TableRow>
-              ) : (
-                filteredNotations.map(notation => (
-                  <TableRow key={notation.id} className={cn(!notation.is_active && "opacity-50")}>
-                    <TableCell className="font-mono font-bold text-primary">
-                      {notation.code}
-                    </TableCell>
-                    <TableCell>{notation.name_ja}</TableCell>
-                    <TableCell className="text-muted-foreground">{notation.name_en}</TableCell>
-                    <TableCell>{getCategoryBadge(notation.category)}</TableCell>
-                    <TableCell className="text-center">
-                      <Badge variant="outline" className="font-mono">
-                        {notation.technique_count || 0}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-center">
-                      {notation.is_active ? (
-                        <Badge variant="default" className="bg-green-500">有効</Badge>
-                      ) : (
-                        <Badge variant="secondary">無効</Badge>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex gap-1">
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          className="h-8 w-8"
-                          onClick={() => openEditDialog(notation)}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          className="h-8 w-8 text-destructive hover:text-destructive"
-                          onClick={() => setDeleteConfirmId(notation.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
+              </TableHeader>
+              <TableBody>
+                {filteredNotations.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                      {search ? '検索結果がありません' : 'データがありません'}
                     </TableCell>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
+                ) : (
+                  filteredNotations.map(notation => (
+                    <TableRow key={notation.id} className={cn(!notation.is_active && "opacity-50")}>
+                      <TableCell className="font-mono font-bold text-primary text-sm">
+                        {notation.code}
+                      </TableCell>
+                      <TableCell className="text-sm truncate max-w-[180px]" title={notation.name_ja}>
+                        {notation.name_ja}
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground truncate max-w-[180px]" title={notation.name_en}>
+                        {notation.name_en}
+                      </TableCell>
+                      <TableCell>{getCategoryBadge(notation.category)}</TableCell>
+                      <TableCell className="text-center">
+                        <span className="text-xs font-mono text-muted-foreground">
+                          {notation.technique_count || 0}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-center">
+                        {notation.is_active ? (
+                          <span className="text-[10px] text-green-600">●</span>
+                        ) : (
+                          <span className="text-[10px] text-muted-foreground">○</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex gap-0.5">
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-7 w-7"
+                            onClick={() => openEditDialog(notation)}
+                          >
+                            <Pencil className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-7 w-7 text-destructive hover:text-destructive"
+                            onClick={() => setDeleteConfirmId(notation.id)}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
 
@@ -379,7 +393,7 @@ export default function NotationsManagement() {
                   <SelectContent>
                     {CATEGORIES.map(cat => (
                       <SelectItem key={cat} value={cat}>
-                        {NOTATION_CATEGORY_LABELS[cat].ja}
+                        {NOTATION_CATEGORY_SHORT_LABELS[cat]}
                       </SelectItem>
                     ))}
                   </SelectContent>
