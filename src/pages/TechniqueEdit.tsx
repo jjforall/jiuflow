@@ -110,7 +110,7 @@ const TechniqueEdit = () => {
       } catch (error) {
         console.error('Error fetching technique:', error);
         toast.error('技術の取得に失敗しました');
-        navigate('/admin/techniques');
+        navigate('/admin?tab=videos');
       } finally {
         setIsLoading(false);
       }
@@ -310,12 +310,17 @@ const TechniqueEdit = () => {
           id: technique.id,
         });
         toast.success("技術を更新しました");
+        navigate('/admin?tab=videos');
       } else {
-        await createTechnique.mutateAsync(techniqueData);
+        const result = await createTechnique.mutateAsync(techniqueData);
         toast.success("技術を作成しました");
+        // 新規作成後は編集ページにリダイレクト（略称を追加可能に）
+        if (result?.id) {
+          navigate(`/admin/technique/${result.id}`);
+        } else {
+          navigate('/admin?tab=videos');
+        }
       }
-
-      navigate('/admin/techniques');
     } catch (error) {
       console.error('Error saving technique:', error);
       toast.error("保存に失敗しました");
@@ -343,7 +348,7 @@ const TechniqueEdit = () => {
       <div className="max-w-4xl mx-auto p-6 space-y-6">
         {/* Header */}
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/admin/techniques')}>
+          <Button variant="ghost" size="icon" onClick={() => navigate('/admin?tab=videos')}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div>

@@ -62,13 +62,14 @@ export const VideosManagement = () => {
   
   // Fetch notations for filter dropdown (sorted by video count)
   const { data: notationsForFilter } = useNotations();
-  const [showEditDialog, setShowEditDialog] = useState(false);
-  const [editingTechnique, setEditingTechnique] = useState<Technique | null>(null);
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const { startCloudflareUpload } = useUpload();
   const [isTranslating, setIsTranslating] = useState(false);
   const [isAutoTranslatingName, setIsAutoTranslatingName] = useState(false);
   const [isAutoTranslatingDesc, setIsAutoTranslatingDesc] = useState(false);
+  // Note: editingTechnique is no longer used - edit is now on separate page
+  const [editingTechnique, setEditingTechnique] = useState<Technique | null>(null);
+  const [showEditDialog, setShowEditDialog] = useState(false);
   const [isGeneratingThumbnails, setIsGeneratingThumbnails] = useState(false);
   const [isBulkUpdating, setIsBulkUpdating] = useState(false);
   const [editingCell, setEditingCell] = useState<{ id: string; field: string } | null>(null);
