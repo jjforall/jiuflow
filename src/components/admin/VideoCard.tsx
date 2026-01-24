@@ -1,6 +1,7 @@
 import { Play, Edit, Languages, FileText, Trash2, Clock, RefreshCw, Loader2, Download, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { LocalizationStatus } from "./LocalizationStatus";
 import { cn } from "@/lib/utils";
 import type { Technique } from "@/hooks/usePaginatedTechniques";
@@ -27,10 +28,12 @@ function getVideoDuration(videoMetadata: unknown): number | null {
   return null;
 }
 
-// Notation badge component
+// Notation badge component with name for tooltip
 interface NotationBadge {
   code: string;
   category: string;
+  name_ja?: string;
+  name_en?: string;
 }
 
 interface VideoCardProps {
@@ -183,20 +186,27 @@ export function VideoCard({
             </div>
           </div>
           
-          {/* Notation badges (new system) */}
+          {/* Notation badges (new system) with tooltips */}
           {notations.length > 0 && (
             <div className="flex flex-wrap gap-1 mb-2">
               {notations.slice(0, 5).map((n, idx) => (
-                <Badge 
-                  key={`${n.code}-${idx}`}
-                  variant="secondary"
-                  className={cn(
-                    "text-[10px] px-1.5 py-0 h-5 font-mono text-white",
-                    getNotationColor(n.category)
-                  )}
-                >
-                  {n.code}
-                </Badge>
+                <Tooltip key={`${n.code}-${idx}`}>
+                  <TooltipTrigger asChild>
+                    <Badge 
+                      variant="secondary"
+                      className={cn(
+                        "text-[10px] px-1.5 py-0 h-5 font-mono text-white cursor-help",
+                        getNotationColor(n.category)
+                      )}
+                    >
+                      {n.code}
+                    </Badge>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="max-w-xs">
+                    <p className="text-sm font-medium">{n.name_ja || n.code}</p>
+                    {n.name_en && <p className="text-xs text-muted-foreground">{n.name_en}</p>}
+                  </TooltipContent>
+                </Tooltip>
               ))}
               {notations.length > 5 && (
                 <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-5">
