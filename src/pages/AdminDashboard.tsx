@@ -37,6 +37,7 @@ import { AdsManagement } from "@/components/admin/AdsManagement";
 import LineIntegrationManagement from "@/components/admin/LineIntegrationManagement";
 import McpChatManagement from "@/components/admin/McpChatManagement";
 import OAuthClientsManagement from "@/components/admin/OAuthClientsManagement";
+import NotationsManagement from "@/components/admin/NotationsManagement";
 
 const AdminDashboard = () => {
   const { signOut } = useAuth();
@@ -95,6 +96,7 @@ const AdminDashboard = () => {
                         {[
                           { id: "videos", label: "動画一覧" },
                           { id: "playlists", label: "再生リスト" },
+                          { id: "notations", label: "略称マスター" },
                           { id: "music", label: "音楽管理" },
                         ].map((item) => (
                           <button
@@ -316,6 +318,7 @@ const AdminDashboard = () => {
               <div className="space-y-6">
                 {activeTab === "videos" && <VideosManagement />}
                 {activeTab === "playlists" && <PlaylistsManagement />}
+                {activeTab === "notations" && <NotationsManagement />}
                 {activeTab === "users" && <UsersTab />}
                 {activeTab === "dojos" && <DojosManagement />}
                 {activeTab === "subscriptions" && <SubscriptionsTab />}
