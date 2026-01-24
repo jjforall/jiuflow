@@ -68,6 +68,7 @@ const VideoList = lazy(() => import("./pages/VideoList"));
 const TranscriptionDetail = lazy(() => import("./pages/TranscriptionDetail"));
 const SharedVideo = lazy(() => import("./pages/SharedVideo"));
 const OAuthAuthorize = lazy(() => import("./pages/OAuthAuthorize"));
+const TechniqueEdit = lazy(() => import("./pages/TechniqueEdit"));
 
 const queryClient = new QueryClient();
 
@@ -165,6 +166,11 @@ const App = () => (
                     <Route path="admin/techniques" element={
                       <ProtectedRoute requireAdmin>
                         <SuspenseWrapper variant="admin"><AdminDashboard /></SuspenseWrapper>
+                      </ProtectedRoute>
+                    } />
+                    <Route path="admin/technique/:id" element={
+                      <ProtectedRoute requireAdmin>
+                        <SuspenseWrapper variant="admin"><TechniqueEdit /></SuspenseWrapper>
                       </ProtectedRoute>
                     } />
                     <Route path="admin/transcription/:id" element={
@@ -268,6 +274,11 @@ const App = () => (
                   <Route path="/admin/techniques" element={
                     <ProtectedRoute requireAdmin>
                       <SuspenseWrapper variant="admin"><AdminDashboard /></SuspenseWrapper>
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/admin/technique/:id" element={
+                    <ProtectedRoute requireAdmin>
+                      <SuspenseWrapper variant="admin"><TechniqueEdit /></SuspenseWrapper>
                     </ProtectedRoute>
                   } />
                   <Route path="/admin/transcription/:id" element={
