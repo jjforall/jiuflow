@@ -54,6 +54,9 @@ async function uploadToCloudflare(
     throw new Error("Cloudflare credentials not configured");
   }
 
+  console.log(`[uploadToCloudflare] Uploading video: ${videoName}`);
+  console.log(`[uploadToCloudflare] Source URL: ${videoUrl.substring(0, 100)}...`);
+
   const response = await fetch(
     `https://api.cloudflare.com/client/v4/accounts/${accountId}/stream/copy`,
     {
@@ -71,15 +74,24 @@ async function uploadToCloudflare(
 
   if (!response.ok) {
     const errorText = await response.text();
+    console.error("[uploadToCloudflare] Cloudflare copy failed:", errorText);
     throw new Error(`Cloudflare upload failed: ${errorText}`);
   }
 
   const data = await response.json();
+  console.log("[uploadToCloudflare] Cloudflare response:", JSON.stringify(data).substring(0, 500));
+  
+  if (!data.success || !data.result?.uid) {
+    throw new Error(`Cloudflare upload failed: ${JSON.stringify(data.errors)}`);
+  }
+
   const videoId = data.result.uid;
   
-  // Generate manifest URL
-  const customerSubdomain = `customer-${accountId.substring(0, 8)}`;
-  return `https://${customerSubdomain}.cloudflarestream.com/${videoId}/manifest/video.m3u8`;
+  // Use stable videodelivery.net URL format (not customer subdomain which can vary)
+  const manifestUrl = `https://videodelivery.net/${videoId}/manifest/video.m3u8`;
+  console.log("[uploadToCloudflare] Manifest URL:", manifestUrl);
+  
+  return manifestUrl;
 }
 
 serve(async (req) => {
@@ -170,25 +182,41 @@ serve(async (req) => {
               );
               console.log("Uploaded to Cloudflare:", videoUrl);
 
-              // Update technique in database
+              // Update technique in database with video_metadata
               const supabaseUrl = Deno.env.get("SUPABASE_URL");
               const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
               if (supabaseUrl && supabaseKey) {
                 const supabase = createClient(supabaseUrl, supabaseKey);
 
-                // Determine which video_url field to update
-                const videoUrlField = `video_url_${targetLanguage}`;
+                // Get existing metadata first
+                const { data: technique } = await supabase
+                  .from("techniques")
+                  .select("video_metadata")
+                  .eq("id", techniqueId)
+                  .single();
+
+                const existingMetadata = (technique?.video_metadata as Record<string, unknown>) || {};
                 
+                // Update video_metadata with Cloudflare URL
+                const updatedMetadata = {
+                  ...existingMetadata,
+                  [targetLanguage]: {
+                    video_url: videoUrl,
+                    provider: "rask",
+                    created_at: new Date().toISOString(),
+                  },
+                };
+
                 const { error: updateError } = await supabase
                   .from("techniques")
-                  .update({ [videoUrlField]: videoUrl })
+                  .update({ video_metadata: updatedMetadata })
                   .eq("id", techniqueId);
 
                 if (updateError) {
                   console.error("Failed to update technique:", updateError);
                 } else {
-                  console.log(`Updated technique ${techniqueId} with ${videoUrlField}: ${videoUrl}`);
+                  console.log(`Updated technique ${techniqueId} video_metadata.${targetLanguage} with Cloudflare URL`);
                 }
               }
             } catch (uploadError) {

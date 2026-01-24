@@ -40,7 +40,8 @@ async function uploadToCloudflare(videoUrl: string, videoName: string): Promise<
   }
 
   const videoId = data.result.uid;
-  const manifestUrl = `https://customer-q03n1nbij6tjknlt.cloudflarestream.com/${videoId}/manifest/video.m3u8`;
+  // Use stable videodelivery.net URL format (not customer subdomain which can vary)
+  const manifestUrl = `https://videodelivery.net/${videoId}/manifest/video.m3u8`;
 
   console.log("[uploadToCloudflare] Upload complete, manifest URL:", manifestUrl);
   return manifestUrl;

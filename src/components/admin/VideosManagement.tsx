@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { InputWithSuggestions } from "@/components/ui/input-with-suggestions";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Upload, Search, Check, Languages, ChevronDown, Loader2, RefreshCw, ImageIcon, Wrench } from "lucide-react";
+import { Upload, Search, Check, Languages, ChevronDown, Loader2, RefreshCw, ImageIcon, Wrench, Clock } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   Collapsible,
@@ -91,6 +91,8 @@ export const VideosManagement = () => {
   const [transcriptionMap, setTranscriptionMap] = useState<Record<string, { id: string; status: string }>>({});
   const [reEncodingIds, setReEncodingIds] = useState<Set<string>>(new Set());
   const [subtitleMap, setSubtitleMap] = useState<Record<string, string[]>>({});
+  const [isFetchingDurations, setIsFetchingDurations] = useState(false);
+  const [missingDurationCount, setMissingDurationCount] = useState(0);
   
   // Quick dialogs for transcription/translation
   const [transcriptionDialogTechnique, setTranscriptionDialogTechnique] = useState<Technique | null>(null);
@@ -159,7 +161,7 @@ export const VideosManagement = () => {
     const fetchMissingThumbnailCount = async () => {
       const { data, error } = await supabase
         .from('techniques')
-        .select('id, video_url, thumbnail_url');
+        .select('id, video_url, thumbnail_url, video_metadata');
       
       if (error) {
         console.error('Error fetching thumbnail count:', error);
@@ -167,11 +169,16 @@ export const VideosManagement = () => {
       }
       
       let missingThumbCount = 0;
+      let missingDurCount = 0;
       data?.forEach(t => {
         // Count missing thumbnails
         if (!t.thumbnail_url && t.video_url) missingThumbCount++;
+        // Count missing durations
+        const meta = t.video_metadata as Record<string, unknown> | null;
+        if (t.video_url && (!meta || typeof meta.duration !== 'number')) missingDurCount++;
       });
       setMissingThumbnailCount(missingThumbCount);
+      setMissingDurationCount(missingDurCount);
     };
     
     const fetchTranscriptions = async () => {
@@ -328,6 +335,128 @@ export const VideosManagement = () => {
     } finally {
       setIsFixingThumbnails(false);
     }
+  };
+  
+  // 動画時間を一括取得
+  const handleFetchAllDurations = async () => {
+    if (!confirm(`${missingDurationCount}件の動画の時間を取得しますか？（数分かかる場合があります）`)) return;
+    
+    setIsFetchingDurations(true);
+    try {
+      // Get all techniques with video_url but no duration in video_metadata
+      const { data: techniques, error } = await supabase
+        .from('techniques')
+        .select('id, video_url, video_metadata')
+        .not('video_url', 'is', null);
+      
+      if (error) {
+        toast.error('データ取得エラー');
+        return;
+      }
+      
+      // Filter to only those missing duration
+      const needsDuration = techniques?.filter(t => {
+        const meta = t.video_metadata as Record<string, unknown> | null;
+        return !meta || typeof meta.duration !== 'number';
+      }) || [];
+      
+      if (needsDuration.length === 0) {
+        toast.info('すべての動画に時間が設定されています');
+        setIsFetchingDurations(false);
+        return;
+      }
+      
+      let successCount = 0;
+      let errorCount = 0;
+      
+      for (const technique of needsDuration) {
+        try {
+          const duration = await fetchDurationFromVideo(technique.video_url!);
+          if (duration && duration > 0) {
+            const existingMeta = (technique.video_metadata as Record<string, unknown>) || {};
+            await supabase
+              .from('techniques')
+              .update({
+                video_metadata: { ...existingMeta, duration: Math.round(duration) }
+              })
+              .eq('id', technique.id);
+            successCount++;
+          } else {
+            errorCount++;
+          }
+        } catch (err) {
+          console.error(`Failed to get duration for ${technique.id}:`, err);
+          errorCount++;
+        }
+      }
+      
+      toast.success(`動画時間取得完了: ${successCount}件成功${errorCount > 0 ? `, ${errorCount}件失敗` : ''}`);
+      
+      // Refresh missing duration count
+      const { data: refreshData } = await supabase
+        .from('techniques')
+        .select('id, video_url, video_metadata');
+      
+      let count = 0;
+      refreshData?.forEach(t => {
+        const meta = t.video_metadata as Record<string, unknown> | null;
+        if (t.video_url && (!meta || typeof meta.duration !== 'number')) count++;
+      });
+      setMissingDurationCount(count);
+      
+      // Refetch data to update cards
+      refetch?.();
+    } catch (error) {
+      console.error("動画時間取得エラー:", error);
+      toast.error(error instanceof Error ? error.message : "動画時間取得に失敗しました");
+    } finally {
+      setIsFetchingDurations(false);
+    }
+  };
+  
+  // Helper function to extract duration from video URL
+  const fetchDurationFromVideo = (videoUrl: string): Promise<number | null> => {
+    return new Promise((resolve) => {
+      const video = document.createElement('video');
+      video.preload = 'metadata';
+      video.crossOrigin = 'anonymous';
+      
+      // Convert HLS manifest URL to MP4 download URL for duration extraction
+      let srcUrl = videoUrl;
+      if (videoUrl.includes('videodelivery.net') && videoUrl.includes('/manifest/')) {
+        // Extract video ID from URL like https://videodelivery.net/{id}/manifest/video.m3u8
+        const match = videoUrl.match(/videodelivery\.net\/([a-f0-9]+)/i);
+        if (match?.[1]) {
+          srcUrl = `https://videodelivery.net/${match[1]}/downloads/default.mp4`;
+        }
+      } else if (videoUrl.includes('cloudflarestream.com') && videoUrl.includes('/manifest/')) {
+        // Extract video ID from customer subdomain URL
+        const match = videoUrl.match(/cloudflarestream\.com\/([a-f0-9]+)/i);
+        if (match?.[1]) {
+          srcUrl = `https://videodelivery.net/${match[1]}/downloads/default.mp4`;
+        }
+      }
+      
+      video.src = srcUrl;
+      
+      const timeout = setTimeout(() => {
+        video.remove();
+        resolve(null);
+      }, 15000); // 15 second timeout per video
+      
+      video.onloadedmetadata = () => {
+        clearTimeout(timeout);
+        const duration = video.duration;
+        video.remove();
+        resolve(isFinite(duration) ? duration : null);
+      };
+      
+      video.onerror = () => {
+        clearTimeout(timeout);
+        video.remove();
+        resolve(null);
+      };
+    });
   };
   
   // 次に利用可能なアルファベットを取得
@@ -563,7 +692,7 @@ export const VideosManagement = () => {
   const [hashtagInput, setHashtagInput] = useState("");
   const [maxSeriesOrder, setMaxSeriesOrder] = useState<number | null>(null);
 
-  const { data, isLoading, error } = usePaginatedTechniques(page, pageSize, {
+  const { data, isLoading, error, refetch } = usePaginatedTechniques(page, pageSize, {
     search: searchQuery,
     category: categoryFilter,
     series: seriesFilter,
@@ -1928,6 +2057,18 @@ export const VideosManagement = () => {
                   className="text-xs h-7 border-amber-500/50 text-amber-600"
                 >
                   {isFixingThumbnails ? '修復中...' : `サムネイル修復 (${missingThumbnailCount}件)`}
+                </Button>
+              )}
+              {missingDurationCount > 0 && (
+                <Button 
+                  onClick={handleFetchAllDurations}
+                  disabled={isFetchingDurations}
+                  variant="outline"
+                  size="sm"
+                  className="text-xs h-7"
+                >
+                  <Clock className="w-3 h-3 mr-1" />
+                  {isFetchingDurations ? '取得中...' : `動画時間一括取得 (${missingDurationCount}件)`}
                 </Button>
               )}
             </div>
