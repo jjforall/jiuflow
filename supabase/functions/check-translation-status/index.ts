@@ -40,7 +40,8 @@ async function uploadToCloudflare(
   console.log(`Cloudflare is copying video, UID: ${videoUid}`);
 
   // Return HLS manifest URL
-  return `https://customer-${accountId}.cloudflarestream.com/${videoUid}/manifest/video.m3u8`;
+  // Use stable videodelivery.net URL format
+  return `https://videodelivery.net/${videoUid}/manifest/video.m3u8`;
 }
 
 serve(async (req) => {
@@ -180,7 +181,7 @@ serve(async (req) => {
               if (cfUploadRes.ok) {
                 const cfData = await cfUploadRes.json();
                 const cloudflareVideoId = cfData.result.uid;
-                videoUrl = `https://customer-${CLOUDFLARE_ACCOUNT_ID}.cloudflarestream.com/${cloudflareVideoId}/manifest/video.m3u8`;
+                videoUrl = `https://videodelivery.net/${cloudflareVideoId}/manifest/video.m3u8`;
                 console.log("Uploaded to Cloudflare:", videoUrl);
 
                 // Update technique with Cloudflare URL
