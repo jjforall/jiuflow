@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { InputWithSuggestions } from "@/components/ui/input-with-suggestions";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 import { Upload, Search, Check, Languages, ChevronDown, Loader2, RefreshCw, ImageIcon, Wrench, Clock } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
@@ -41,6 +42,8 @@ export const VideosManagement = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [seriesFilter, setSeriesFilter] = useState<string>("all");
+  const [notationFilter, setNotationFilter] = useState<string>("all");
+  const [notationLabel, setNotationLabel] = useState<string>("");
   const [sortBy, setSortBy] = useState<"order" | "name" | "category" | "series" | "created">("order");
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [editingTechnique, setEditingTechnique] = useState<Technique | null>(null);
@@ -794,8 +797,23 @@ export const VideosManagement = () => {
     search: searchQuery,
     category: categoryFilter,
     series: seriesFilter,
+    notationId: notationFilter,
     sortBy,
   });
+
+  // Listen for notation filter events from NotationsManagement
+  useEffect(() => {
+    const handleNotationFilter = (event: CustomEvent<{ notationId: string; label: string }>) => {
+      setNotationFilter(event.detail.notationId);
+      setNotationLabel(event.detail.label);
+      setPage(1);
+    };
+    
+    window.addEventListener('videos-filter-by-notation', handleNotationFilter as EventListener);
+    return () => {
+      window.removeEventListener('videos-filter-by-notation', handleNotationFilter as EventListener);
+    };
+  }, []);
 
   const updateTechnique = useUpdateTechnique();
   const deleteTechnique = useDeleteTechnique();
@@ -2031,6 +2049,24 @@ export const VideosManagement = () => {
           </Select>
         </div>
       </div>
+
+      {/* Active notation filter badge */}
+      {notationFilter !== 'all' && (
+        <div className="mb-4 flex items-center gap-2">
+          <Badge variant="secondary" className="flex items-center gap-1.5 h-7 px-3">
+            <span>略称: {notationLabel || notationFilter}</span>
+            <button
+              onClick={() => {
+                setNotationFilter('all');
+                setNotationLabel('');
+              }}
+              className="ml-1 hover:text-destructive"
+            >
+              ×
+            </button>
+          </Badge>
+        </div>
+      )}
 
       {/* Bulk fetch results summary */}
       {lastBulkFetchResults && (

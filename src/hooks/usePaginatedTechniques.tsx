@@ -19,6 +19,7 @@ interface TechniqueFilters {
   search?: string;
   category?: string;
   series?: string;
+  notationId?: string;
   seriesType?: 'regular' | 'special' | 'all';
   sortBy?: 'order' | 'name' | 'category' | 'series' | 'created';
   sortDirection?: 'asc' | 'desc';
@@ -53,6 +54,28 @@ export const usePaginatedTechniques = (
       // Apply series filter
       if (filters.series && filters.series !== 'all') {
         query = query.eq('series_prefix', filters.series);
+      }
+
+      // Apply notation filter - need to get technique IDs first
+      if (filters.notationId && filters.notationId !== 'all') {
+        const { data: linkedTechniques } = await supabase
+          .from('technique_notations')
+          .select('technique_id')
+          .eq('notation_id', filters.notationId);
+        
+        const techniqueIds = (linkedTechniques || []).map(t => t.technique_id);
+        if (techniqueIds.length > 0) {
+          query = query.in('id', techniqueIds);
+        } else {
+          // No techniques linked, return empty result
+          return {
+            data: [],
+            totalCount: 0,
+            page,
+            pageSize,
+            totalPages: 0,
+          };
+        }
       }
 
       // Apply series type filter (regular vs special)

@@ -474,9 +474,20 @@ export default function NotationsManagement() {
                       </TableCell>
                       <TableCell>{getCategoryBadge(notation.category)}</TableCell>
                       <TableCell className="text-center">
-                        <span className="text-xs font-mono text-muted-foreground">
+                        <button
+                          className="text-xs font-mono text-primary hover:underline cursor-pointer"
+                          onClick={() => {
+                            // Navigate to videos tab with notation filter
+                            window.dispatchEvent(new CustomEvent('videos-filter-by-notation', {
+                              detail: { notationId: notation.id, label: `${notation.code} - ${notation.name_ja}` }
+                            }));
+                            window.dispatchEvent(new CustomEvent('admin-tab-change', { detail: 'videos' }));
+                          }}
+                          disabled={!notation.technique_count}
+                          title={notation.technique_count ? `${notation.technique_count}件の動画を表示` : '紐付け動画なし'}
+                        >
                           {notation.technique_count || 0}
-                        </span>
+                        </button>
                       </TableCell>
                       <TableCell className="text-center">
                         {notation.is_active ? (
