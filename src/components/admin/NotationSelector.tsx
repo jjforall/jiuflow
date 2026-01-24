@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -7,7 +7,6 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Check, Plus, X, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useNotations, useTechniqueNotations, useAddTechniqueNotation, useRemoveTechniqueNotation } from "@/hooks/useNotations";
@@ -123,15 +122,15 @@ export function NotationSelector({ techniqueId, compact = false, readOnly = fals
                 />
               </div>
             </div>
-            <ScrollArea className="h-[300px]">
+            <div className="h-[300px] overflow-y-auto">
               <div className="p-2 space-y-3">
                 {Object.entries(filteredGrouped).map(([category, notations]) => (
                   <div key={category}>
-                    <div className="text-xs font-medium text-muted-foreground mb-1 flex items-center gap-1">
+                    <div className="text-xs font-medium text-muted-foreground mb-1.5 flex items-center gap-1 sticky top-0 bg-popover py-1">
                       <span className={cn("w-2 h-2 rounded-full", NOTATION_CATEGORY_LABELS[category as NotationCategory]?.color)} />
                       {NOTATION_CATEGORY_SHORT_LABELS[category as NotationCategory]}
                     </div>
-                    <div className="grid grid-cols-3 gap-1">
+                    <div className="space-y-0.5">
                       {notations?.map((n) => {
                         const isLinked = linkedNotationIds.has(n.id);
                         return (
@@ -140,14 +139,15 @@ export function NotationSelector({ techniqueId, compact = false, readOnly = fals
                             onClick={() => !isLinked && handleAdd(n.id)}
                             disabled={isLinked || addNotation.isPending}
                             className={cn(
-                              "flex items-center gap-1 px-2 py-1 rounded text-xs font-mono transition-colors",
+                              "flex items-center gap-2 w-full px-2 py-1.5 rounded text-left transition-colors",
                               isLinked 
                                 ? "bg-primary/20 text-primary cursor-not-allowed" 
                                 : "hover:bg-muted cursor-pointer"
                             )}
                           >
-                            {isLinked && <Check className="w-3 h-3" />}
-                            <span className="truncate">{n.code}</span>
+                            {isLinked && <Check className="w-3 h-3 flex-shrink-0" />}
+                            <span className="font-mono text-xs font-medium w-12 flex-shrink-0">{n.code}</span>
+                            <span className="text-sm truncate">{n.name_ja}</span>
                           </button>
                         );
                       })}
@@ -160,7 +160,7 @@ export function NotationSelector({ techniqueId, compact = false, readOnly = fals
                   </div>
                 )}
               </div>
-            </ScrollArea>
+            </div>
           </PopoverContent>
         </Popover>
       )}
