@@ -1,286 +1,270 @@
 
-# BJJ略称マスターシステム実装計画
+# 管理画面改善計画
 
-## 概要
+## 要件一覧
 
-現在の「A-*, B-*, C-*...」シリーズシステムを「旧」としてレガシー扱いにし、新しいBJJ略称体系（CG, HG, DLR, TC, RNC等）をマスターデータとして構築します。これにより、動画の分類・検索・再生リスト作成がより柔軟になります。
-
----
-
-## 現状分析
-
-### 現在のシステム
-- **techniques テーブル**: `series_prefix`（A, B, C...）と `series_name`（クローズドガード等）で管理
-- **カテゴリ**: `category`列（pull, control, submission, guard-pass）
-- **ハッシュタグ**: `hashtags` 配列（現在未活用）
-- **既存データ**: A〜F シリーズで42件の動画
-
-### 新システムの要件
-1. **略称マスター**: ポジション、アクション、サブミッション等をカテゴリ別に管理
-2. **動画との関連付け**: 1つの動画に複数の略称をタグ付け可能
-3. **フィルタリング**: 略称で動画を絞り込み
-4. **カウント表示**: 各略称に何件の動画があるか表示
-5. **再生リスト連携**: 略称の組み合わせで再生リストを作成
+1. **動画ダウンロード機能の追加**: 管理画面から動画をダウンロードできるようにする
+2. **字幕・吹替バッジの○✓マーク削除**: 言語コードのみ表示（JA, EN, PT）
+3. **個別動画時間取得エラーの修正**: Cloudflare Streamダウンロードが有効でない場合に対応
+4. **特別講習管理機能**: シリーズ番号のない動画（A, B等なし）を「特別講習」として別管理、一般公開しない
 
 ---
 
-## データベース設計
+## 1. 動画ダウンロード機能
 
-### 新規テーブル1: `bjj_notations` (略称マスター)
+### 実装方針
+管理者が動画カードから直接ダウンロードを開始できるボタンを追加。Cloudflare Streamのダウンロード機能を利用。
+
+### 変更ファイル
+**`src/components/admin/VideoCard.tsx`**
+
+```typescript
+// アクションボタンに追加
+<Button
+  size="sm"
+  variant="outline"
+  className="h-7 sm:h-8 text-xs px-2 sm:px-3"
+  onClick={onDownload}
+  title="動画をダウンロード"
+>
+  <Download className="w-3 h-3 sm:mr-1" />
+  <span className="hidden sm:inline">DL</span>
+</Button>
+```
+
+**新規Edge Function: `supabase/functions/get-video-download-url/index.ts`**
+- Cloudflare APIを呼び出してダウンロードURLを取得
+- 既存の`_shared/cloudflare-download.ts`を再利用
+- 管理者認証チェック必須
+
+### フロー
+1. 管理者がDLボタンをクリック
+2. Edge Function経由でCloudflare APIからダウンロードURLを取得
+3. ブラウザで新規タブを開いてダウンロード開始
+
+---
+
+## 2. 字幕・吹替バッジのシンプル化
+
+### 現状
+```
+字幕: JA✓ EN✓
+吹替: JA○ EN✓
+```
+
+### 改善後
+```
+字幕: JA EN
+吹替: JA EN
+```
+
+### 変更ファイル
+**`src/components/admin/LocalizationStatus.tsx`**
+
+```typescript
+// 変更前
+{lang.label}✓
+
+// 変更後
+{lang.label}
+```
+
+チェックマーク（✓）と丸印（○）を削除し、言語コードのみ表示。
+
+---
+
+## 3. 個別動画時間取得エラーの修正
+
+### 問題の原因
+Cloudflare Streamの動画は、ダウンロードが有効化されていない場合、`/downloads/default.mp4`にアクセスすると404エラーになる。
+
+現在のフロントエンド実装では：
+1. HLS URLからビデオIDを抽出
+2. `/downloads/default.mp4`に直接アクセス
+3. ダウンロード未有効化の場合、CORSエラーまたは404発生
+
+### 解決策
+既存の`admin-update-video-durations` Edge Functionを拡張して、Cloudflare APIから直接duration情報を取得する。
+
+### 変更ファイル
+
+**`supabase/functions/admin-update-video-durations/index.ts`**
+
+```typescript
+// 新規モード: duration取得
+if (body?.mode === 'fetch') {
+  const videoUrl = body.videoUrl;
+  const videoId = extractCloudflareVideoId(videoUrl);
+  
+  // Cloudflare API経由で動画情報を取得
+  const response = await fetch(
+    `https://api.cloudflare.com/client/v4/accounts/${accountId}/stream/${videoId}`,
+    { headers: { Authorization: `Bearer ${apiToken}` } }
+  );
+  
+  const result = await response.json();
+  // durationはresult.result.durationに格納されている（秒数）
+  return { duration: result.result?.duration };
+}
+```
+
+**`src/components/admin/VideosManagement.tsx`**
+
+```typescript
+// 変更後のfetchDurationFromVideo
+const fetchDurationFromVideo = async (videoUrl: string): Promise<number | null> => {
+  try {
+    // Edge Function経由でCloudflare APIからdurationを取得
+    const { data, error } = await supabase.functions.invoke(
+      'admin-update-video-durations',
+      { body: { mode: 'fetch', videoUrl } }
+    );
+    
+    if (error || !data?.duration) return null;
+    return data.duration;
+  } catch {
+    return null;
+  }
+};
+```
+
+---
+
+## 4. 特別講習管理機能
+
+### 概要
+- シリーズ番号（A, B, C...）がない動画を「特別講習」カテゴリとして分離
+- 管理画面では別タブで管理
+- ユーザー画面には表示しない（または招待制で表示）
+
+### データ構造
+既存の`visibility`フィールドと`series_prefix`を活用：
+- `series_prefix`が空 = 特別講習
+- `visibility: 'private'` = 管理者のみ閲覧可能
+
+### 変更ファイル
+
+**`src/components/admin/AdminSidebar.tsx`**
+
+```typescript
+// コンテンツグループに追加
+items: [
+  { id: "videos", label: "動画一覧", icon: Video },
+  { id: "special-videos", label: "特別講習", icon: GraduationCap }, // 新規
+  { id: "playlists", label: "再生リスト", icon: ListVideo },
+  { id: "notations", label: "略称マスター", icon: Grid3X3 },
+],
+```
+
+**新規コンポーネント: `src/components/admin/SpecialVideosManagement.tsx`**
+
+主要機能：
+- `series_prefix`が空の動画のみ表示
+- デフォルトで`visibility: 'private'`
+- 専用の追加・編集フォーム
+- 招待リンク生成機能（将来拡張）
+
+```typescript
+// フィルタロジック
+const { data } = usePaginatedTechniques(page, pageSize, {
+  ...filters,
+  seriesType: 'special' // 新規フィルタ
+});
+
+// usePaginatedTechniquesに追加
+if (filters.seriesType === 'special') {
+  query = query.or('series_prefix.is.null,series_prefix.eq.');
+}
+```
+
+**`src/pages/AdminDashboard.tsx`**
+
+```typescript
+case "special-videos":
+  return <SpecialVideosManagement />;
+```
+
+**`src/hooks/usePaginatedTechniques.tsx`**
+
+```typescript
+interface TechniqueFilters {
+  // 既存...
+  seriesType?: 'regular' | 'special' | 'all'; // 新規
+}
+
+// クエリ構築
+if (filters.seriesType === 'special') {
+  query = query.or('series_prefix.is.null,series_prefix.eq.');
+} else if (filters.seriesType === 'regular') {
+  query = query.not('series_prefix', 'is', null)
+               .neq('series_prefix', '');
+}
+```
+
+### UI設計
 
 ```text
 ┌─────────────────────────────────────────────────────────────┐
-│ bjj_notations (略称マスター)                                  │
+│ 特別講習                                      [＋ 新規追加]   │
 ├─────────────────────────────────────────────────────────────┤
-│ id             UUID PRIMARY KEY                             │
-│ code           TEXT UNIQUE NOT NULL  -- 'CG', 'HG', 'TC'等   │
-│ name_ja        TEXT NOT NULL         -- '日本語名称'          │
-│ name_en        TEXT NOT NULL         -- 'English Name'       │
-│ category       TEXT NOT NULL         -- 'position', 'action',│
-│                                      -- 'submission', 'grip',│
-│                                      -- 'movement', 'outcome'│
-│ description    TEXT                  -- 詳細説明              │
-│ usage_example  TEXT                  -- 使用例                │
-│ display_order  INTEGER DEFAULT 0     -- 表示順                │
-│ is_active      BOOLEAN DEFAULT true  -- 有効/無効             │
-│ created_at     TIMESTAMPTZ           -- 作成日時              │
+│ 🔒 これらの動画はシリーズに属さず、                           │
+│    招待者のみ閲覧可能です                                    │
+├─────────────────────────────────────────────────────────────┤
+│ [検索...]                                                   │
+├─────────────────────────────────────────────────────────────┤
+│ ┌─────────────────────────────────────────────────────────┐ │
+│ │ [サムネ] 初心者向け基礎講座                              │ │
+│ │          👁 非公開 • ⏱ 15:32                            │ │
+│ │          [再生] [編集] [DL] [削除]                      │ │
+│ └─────────────────────────────────────────────────────────┘ │
 └─────────────────────────────────────────────────────────────┘
 ```
 
-### 新規テーブル2: `technique_notations` (動画×略称の中間テーブル)
-
-```text
-┌─────────────────────────────────────────────────────────────┐
-│ technique_notations (動画と略称の関連付け)                    │
-├─────────────────────────────────────────────────────────────┤
-│ id             UUID PRIMARY KEY                             │
-│ technique_id   UUID REFERENCES techniques(id)               │
-│ notation_id    UUID REFERENCES bjj_notations(id)            │
-│ context        TEXT                  -- 'start', 'end',      │
-│                                      -- 'opponent' 等        │
-│ created_at     TIMESTAMPTZ                                  │
-│ UNIQUE(technique_id, notation_id, context)                  │
-└─────────────────────────────────────────────────────────────┘
-```
-
-### 略称カテゴリ一覧
-
-| category | 説明 | 例 |
-|----------|------|-----|
-| position | ポジション・ガード | CG, HG, MT, SC, BC |
-| action | アクション・動作 | K, B, P, SW, ESC |
-| submission | サブミッション | AB, TC, RNC, GUI, KIM |
-| grip | グリップ・クラッチ | UH, OH, CF, WrC |
-| movement | 基本動作・概念 | Ebi, Brg, Frm, Pst |
-| outcome | 試合・結果 | Tap, Sub, Pts, Adv |
-| takedown | 立ち技・テイクダウン | TD, GP, DL, SL |
-
 ---
 
-## 管理画面設計
+## 変更ファイル一覧
 
-### 新規コンポーネント: `NotationsManagement.tsx`
-
-AdminSidebarの「コンテンツ」グループ内に追加:
-
-```text
-コンテンツ
-├── 動画一覧
-├── 再生リスト
-└── 略称マスター  ← 新規追加
-```
-
-### 略称マスター画面の機能
-
-1. **一覧表示**
-   - カテゴリ別タブ（ポジション/アクション/サブミッション等）
-   - 各略称の使用件数を表示
-   - 検索・フィルタ機能
-
-2. **CRUD操作**
-   - 新規略称の追加
-   - 編集・削除
-   - 有効/無効の切り替え
-
-3. **統計ダッシュボード**
-   - カテゴリ別の略称数
-   - 動画への紐付け状況
-
-### 動画管理画面への統合
-
-`VideosManagement.tsx`に以下を追加:
-
-1. **略称タグ表示**: 各動画カードに紐付いた略称バッジを表示
-2. **略称フィルタ**: 特定の略称で動画を絞り込み
-3. **略称編集**: 動画編集ダイアログで略称を追加/削除
-
-### 再生リストへの統合
-
-`PlaylistsManagement.tsx`に以下を追加:
-
-1. **略称ベースの自動リスト生成**: 例「CGからの攻め」「サブミッション系」
-2. **フロー記述**: `CG -> CGB -> SC` のような記法で動画を選択
-
----
-
-## 初期データ投入
-
-ユーザーが提供した略称リストをすべてマスターに登録:
-
-### ポジション (17件)
-CG, HG, OG, CB, DLR, RDLR, BFG, SLX, XG, SG, LG, SC, MT, BC, KOB, TT, DHG, ZG, 5050, RG, WG, SqG, Don
-
-### アクション (11件)
-K, B, P, SW, ESC, RET, TD, Pull, BP, KP, SP, LP, LgD, OP
-
-### サブミッション (23件)
-AB, TC, RNC, GUI, KIM, AMI, OMO, HH, KB, TH, EZ, CC, DAR, ANA, BA, LC, Clk, BB, WL, SAL, IHH, OHH, CS, Est
-
-### グリップ (14件)
-UH, OH, WZ, CF, KC, WrC, Slv, Clr, Pnt, BlT, PG, PkG, GG, SGS
-
-### ムーブメント (7件)
-Ebi, Brg, Frm, Pst, Scr, Inv, Hip
-
-### 立ち技 (10件)
-GP, DL, SL, AL, OSG, UCH, SMG, ST, AT, CT
-
-### 結果 (6件)
-Tap, Sub, Pts, Adv, Pen, DQ
-
-合計: 約90件の初期データ
-
----
-
-## 実装ステップ
-
-### Phase 1: データベース構築
-1. `bjj_notations` テーブル作成
-2. `technique_notations` 中間テーブル作成
-3. RLSポリシー設定（管理者のみ編集可、閲覧は全員可）
-4. 初期データ投入
-
-### Phase 2: 管理画面 - 略称マスター
-1. `NotationsManagement.tsx` 作成
-2. AdminSidebarにメニュー追加
-3. CRUD機能実装
-4. カテゴリ別タブとカウント表示
-
-### Phase 3: 動画管理への統合
-1. 動画カードに略称バッジ追加
-2. 略称フィルタ機能
-3. 動画編集ダイアログで略称編集
-4. `usePaginatedTechniques`に略称フィルタ追加
-
-### Phase 4: 再生リスト連携
-1. 略称による動画自動選択機能
-2. フロー記法のプレビュー
+| ファイル | 変更内容 |
+|---------|---------|
+| `src/components/admin/VideoCard.tsx` | ダウンロードボタン追加、props追加 |
+| `src/components/admin/LocalizationStatus.tsx` | ✓○マーク削除 |
+| `src/components/admin/VideosManagement.tsx` | Edge Function経由でduration取得、特別講習フィルタ除外 |
+| `src/components/admin/AdminSidebar.tsx` | 「特別講習」メニュー追加 |
+| `src/pages/AdminDashboard.tsx` | special-videosタブ追加 |
+| `src/hooks/usePaginatedTechniques.tsx` | seriesTypeフィルタ追加 |
+| `supabase/functions/admin-update-video-durations/index.ts` | Cloudflare API経由でduration取得機能追加 |
+| 新規: `supabase/functions/get-video-download-url/index.ts` | ダウンロードURL取得 |
+| 新規: `src/components/admin/SpecialVideosManagement.tsx` | 特別講習管理画面 |
 
 ---
 
 ## 技術詳細
 
-### フロント側の型定義
+### Cloudflare API活用
 
-```typescript
-// src/types/notation.ts
-export interface BJJNotation {
-  id: string;
-  code: string;          // 'CG', 'TC' 等
-  name_ja: string;       // 'クローズドガード'
-  name_en: string;       // 'Closed Guard'
-  category: NotationCategory;
-  description?: string;
-  usage_example?: string;
-  display_order: number;
-  is_active: boolean;
-  technique_count?: number; // 紐付いた動画数
-}
-
-export type NotationCategory = 
-  | 'position' 
-  | 'action' 
-  | 'submission' 
-  | 'grip' 
-  | 'movement' 
-  | 'takedown'
-  | 'outcome';
+動画情報取得API：
+```
+GET https://api.cloudflare.com/client/v4/accounts/{account_id}/stream/{video_id}
 ```
 
-### 動画への略称フィルタ例
-
-```typescript
-// usePaginatedTechniques.tsx に追加
-if (filters.notations && filters.notations.length > 0) {
-  // technique_notations テーブルとJOIN
-  query = query.in('id', 
-    supabase.from('technique_notations')
-      .select('technique_id')
-      .in('notation_id', filters.notations)
-  );
+レスポンス例：
+```json
+{
+  "result": {
+    "uid": "abc123",
+    "duration": 245.5,
+    "preview": "https://...",
+    "playback": {
+      "hls": "https://..."
+    }
+  }
 }
 ```
 
----
+### 必要な環境変数
+- `CLOUDFLARE_ACCOUNT_ID`: 既存
+- `CLOUDFLARE_STREAM_TOKEN`: 既存
 
-## 既存データとの互換性
-
-| 既存 | 対応 |
-|------|------|
-| series_prefix: A | CG（クローズドガード）に紐付け |
-| series_prefix: B | CGB等（クローズドガードブレイク）に紐付け |
-| series_prefix: C | CB（コンバットベース）に紐付け |
-| series_prefix: D | MT（マウント）に紐付け |
-| series_prefix: E | Pull（引き込み）に紐付け |
-| series_prefix: F | CB系（コンバットベース対応）に紐付け |
-
-旧シリーズ表記はユーザー画面でそのまま使用を継続し、新システムは管理・分類用として並行運用。
-
----
-
-## UIイメージ
-
-### 略称マスター管理画面
-
-```text
-┌────────────────────────────────────────────────────────────┐
-│ 略称マスター                                    [＋ 新規追加] │
-├────────────────────────────────────────────────────────────┤
-│ [ポジション(23)] [アクション(11)] [サブミッション(23)] ...   │
-├────────────────────────────────────────────────────────────┤
-│ 🔍 検索...                                                  │
-├────────────────────────────────────────────────────────────┤
-│ ┌──────┬────────────────┬─────────────────┬──────┬────┐    │
-│ │ CODE │ 日本語          │ English         │ 動画 │ 操作│    │
-│ ├──────┼────────────────┼─────────────────┼──────┼────┤    │
-│ │ CG   │ クローズドガード │ Closed Guard    │  10  │ ✎ 🗑│    │
-│ │ HG   │ ハーフガード     │ Half Guard      │   5  │ ✎ 🗑│    │
-│ │ DLR  │ デラヒーバ       │ De La Riva      │   3  │ ✎ 🗑│    │
-│ └──────┴────────────────┴─────────────────┴──────┴────┘    │
-└────────────────────────────────────────────────────────────┘
-```
-
-### 動画カードでの表示
-
-```text
-┌──────────────────────────────────────┐
-│ [サムネイル]  A-1 クローズドガードの基本 │
-│              ⏱ 5:32                   │
-│              [CG] [Frm] [RET]         │ ← 略称バッジ
-└──────────────────────────────────────┘
-```
-
----
-
-## 成果物一覧
-
-| ファイル | 内容 |
-|----------|------|
-| 新規: `src/components/admin/NotationsManagement.tsx` | 略称マスター管理画面 |
-| 新規: `src/types/notation.ts` | 略称関連の型定義 |
-| 新規: `src/hooks/useNotations.ts` | 略称データ取得用Hook |
-| 変更: `src/components/admin/AdminSidebar.tsx` | メニューに略称マスター追加 |
-| 変更: `src/components/admin/VideosManagement.tsx` | 略称フィルタ・バッジ追加 |
-| 変更: `src/components/admin/VideoCard.tsx` | 略称バッジ表示 |
-| 変更: `src/hooks/usePaginatedTechniques.tsx` | 略称フィルタ対応 |
-| DB: マイグレーション | `bjj_notations`, `technique_notations` テーブル作成 + 初期データ |
+### セキュリティ考慮
+- ダウンロード機能は管理者のみ利用可能（Edge Functionで認証チェック）
+- 特別講習動画はRLSポリシーで`visibility = 'private'`を強制
