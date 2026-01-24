@@ -411,40 +411,6 @@ export default function NotationsManagement() {
         </div>
       </div>
 
-      {/* Stats Cards - Compact 2 rows on mobile, horizontal scroll on larger */}
-      <ScrollArea className="w-full">
-        <div className="flex gap-2 pb-2">
-          {CATEGORIES.map(cat => {
-            const label = NOTATION_CATEGORY_LABELS[cat];
-            const total = stats?.[cat]?.total || 0;
-            const linked = stats?.[cat]?.linked || 0;
-            return (
-              <Card 
-                key={cat} 
-                className={cn(
-                  "cursor-pointer transition-all hover:ring-1 hover:ring-primary/50 shrink-0 w-[100px]",
-                  activeCategory === cat && "ring-2 ring-primary bg-primary/5"
-                )}
-                onClick={() => setActiveCategory(activeCategory === cat ? 'all' : cat)}
-              >
-                <CardContent className="p-2.5">
-                  <div className="flex items-center gap-1.5 mb-1">
-                    <span className={cn("w-2 h-2 rounded-full shrink-0", label.color)} />
-                    <span className="text-[10px] font-medium text-muted-foreground truncate">
-                      {NOTATION_CATEGORY_SHORT_LABELS[cat]}
-                    </span>
-                  </div>
-                  <div className="text-lg font-bold leading-none">{total}</div>
-                  <div className="text-[10px] text-muted-foreground flex items-center gap-0.5 mt-0.5">
-                    <Video className="h-2.5 w-2.5" />
-                    {linked}動画
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-      </ScrollArea>
 
       {/* Category filter tabs - horizontal scroll */}
       <ScrollArea className="w-full">
@@ -482,8 +448,7 @@ export default function NotationsManagement() {
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-[70px] whitespace-nowrap">コード</TableHead>
-                  <TableHead className="min-w-[120px] max-w-[180px]">日本語</TableHead>
-                  <TableHead className="min-w-[120px] max-w-[180px]">English</TableHead>
+                  <TableHead className="min-w-[180px]">名称</TableHead>
                   <TableHead className="w-[60px]">分類</TableHead>
                   <TableHead className="w-[50px] text-center">動画</TableHead>
                   <TableHead className="w-[50px] text-center">状態</TableHead>
@@ -493,7 +458,7 @@ export default function NotationsManagement() {
               <TableBody>
                 {filteredNotations.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
                       {search ? '検索結果がありません' : 'データがありません'}
                     </TableCell>
                   </TableRow>
@@ -503,11 +468,9 @@ export default function NotationsManagement() {
                       <TableCell className="font-mono font-bold text-primary text-sm">
                         {notation.code}
                       </TableCell>
-                      <TableCell className="text-sm truncate max-w-[180px]" title={notation.name_ja}>
-                        {notation.name_ja}
-                      </TableCell>
-                      <TableCell className="text-sm text-muted-foreground truncate max-w-[180px]" title={notation.name_en}>
-                        {notation.name_en}
+                      <TableCell>
+                        <div className="text-sm">{notation.name_ja}</div>
+                        <div className="text-xs text-muted-foreground">{notation.name_en}</div>
                       </TableCell>
                       <TableCell>{getCategoryBadge(notation.category)}</TableCell>
                       <TableCell className="text-center">
