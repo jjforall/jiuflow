@@ -1,9 +1,30 @@
-import { Play, Edit, Languages, FileText, Trash2 } from "lucide-react";
+import { Play, Edit, Languages, FileText, Trash2, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SeriesBadge } from "@/components/ui/series-badge";
 import { LocalizationStatus } from "./LocalizationStatus";
 import { cn } from "@/lib/utils";
 import type { Technique } from "@/hooks/usePaginatedTechniques";
+
+// Format duration in seconds to MM:SS or HH:MM:SS
+function formatDuration(seconds: number): string {
+  if (!seconds || isNaN(seconds)) return "";
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = Math.floor(seconds % 60);
+  if (h > 0) {
+    return `${h}:${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
+  }
+  return `${m}:${s.toString().padStart(2, "0")}`;
+}
+
+// Extract duration from video_metadata
+function getVideoDuration(videoMetadata: unknown): number | null {
+  if (!videoMetadata || typeof videoMetadata !== "object") return null;
+  const meta = videoMetadata as Record<string, unknown>;
+  if (typeof meta.duration === "number") return meta.duration;
+  if (typeof meta.duration === "string") return parseFloat(meta.duration);
+  return null;
+}
 
 interface VideoCardProps {
   technique: Technique;
@@ -52,6 +73,7 @@ export function VideoCard({
 }: VideoCardProps) {
   const thumbnail = getEffectiveThumbnail(technique.thumbnail_url, technique.video_url);
   const hasTranscription = !!transcription && transcription.status === "completed";
+  const duration = getVideoDuration(technique.video_metadata);
 
   return (
     <div className="border rounded-lg bg-card hover:shadow-md transition-shadow overflow-hidden">
@@ -95,6 +117,14 @@ export function VideoCard({
                 order={technique.series_order || undefined}
                 className="shadow-md"
               />
+            </div>
+          )}
+          
+          {/* Duration badge */}
+          {duration && (
+            <div className="absolute bottom-1.5 right-1.5 px-1.5 py-0.5 bg-black/80 text-white text-[10px] font-medium rounded flex items-center gap-1">
+              <Clock className="w-2.5 h-2.5" />
+              {formatDuration(duration)}
             </div>
           )}
         </div>
