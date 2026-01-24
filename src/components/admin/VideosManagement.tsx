@@ -339,58 +339,68 @@ export const VideosManagement = () => {
   
   // 動画時間を一括取得
   const handleFetchAllDurations = async () => {
-    if (!confirm(`${missingDurationCount}件の動画の時間を取得しますか？（数分かかる場合があります）`)) return;
+    // Get all techniques with video_url but no duration in video_metadata
+    const { data: techniques, error } = await supabase
+      .from('techniques')
+      .select('id, video_url, video_metadata')
+      .not('video_url', 'is', null);
+    
+    if (error) {
+      toast.error('データ取得エラー');
+      return;
+    }
+    
+    // Filter to only those missing duration
+    const needsDuration = techniques?.filter(t => {
+      const meta = t.video_metadata as Record<string, unknown> | null;
+      return !meta || typeof meta.duration !== 'number';
+    }) || [];
+    
+    if (needsDuration.length === 0) {
+      toast.info('すべての動画に時間が設定されています');
+      return;
+    }
+
+    if (!confirm(`${needsDuration.length}件の動画の時間を取得しますか？（数分かかる場合があります）`)) return;
     
     setIsFetchingDurations(true);
     try {
-      // Get all techniques with video_url but no duration in video_metadata
-      const { data: techniques, error } = await supabase
-        .from('techniques')
-        .select('id, video_url, video_metadata')
-        .not('video_url', 'is', null);
-      
-      if (error) {
-        toast.error('データ取得エラー');
-        return;
-      }
-      
-      // Filter to only those missing duration
-      const needsDuration = techniques?.filter(t => {
-        const meta = t.video_metadata as Record<string, unknown> | null;
-        return !meta || typeof meta.duration !== 'number';
-      }) || [];
-      
-      if (needsDuration.length === 0) {
-        toast.info('すべての動画に時間が設定されています');
-        setIsFetchingDurations(false);
-        return;
-      }
-      
-      let successCount = 0;
-      let errorCount = 0;
-      
+      const durationsToSave: Array<{ id: string; duration: number }> = [];
+      let fetchErrorCount = 0;
+
       for (const technique of needsDuration) {
         try {
           const duration = await fetchDurationFromVideo(technique.video_url!);
           if (duration && duration > 0) {
-            const existingMeta = (technique.video_metadata as Record<string, unknown>) || {};
-            await supabase
-              .from('techniques')
-              .update({
-                video_metadata: { ...existingMeta, duration: Math.round(duration) }
-              })
-              .eq('id', technique.id);
-            successCount++;
+            durationsToSave.push({ id: technique.id, duration: Math.round(duration) });
           } else {
-            errorCount++;
+            fetchErrorCount++;
           }
         } catch (err) {
           console.error(`Failed to get duration for ${technique.id}:`, err);
-          errorCount++;
+          fetchErrorCount++;
         }
       }
-      
-      toast.success(`動画時間取得完了: ${successCount}件成功${errorCount > 0 ? `, ${errorCount}件失敗` : ''}`);
+
+      if (durationsToSave.length === 0) {
+        toast.error('動画時間を取得できませんでした（URL形式またはアクセス制限の可能性）');
+        return;
+      }
+
+      // Save durations with admin-privileged backend function (avoids RLS write failures)
+      const { data: saveData, error: saveError } = await supabase.functions.invoke(
+        'admin-update-video-durations',
+        { body: { durations: durationsToSave } }
+      );
+
+      if (saveError) throw saveError;
+      if ((saveData as any)?.error) throw new Error((saveData as any).error);
+
+      const updatedCount = Array.isArray((saveData as any)?.updated) ? (saveData as any).updated.length : durationsToSave.length;
+      const saveFailedCount = Array.isArray((saveData as any)?.failed) ? (saveData as any).failed.length : 0;
+      const totalFailed = fetchErrorCount + saveFailedCount;
+
+      toast.success(`動画時間取得完了: ${updatedCount}件保存${totalFailed > 0 ? `, ${totalFailed}件失敗` : ''}`);
       
       // Refresh missing duration count
       const { data: refreshData } = await supabase
@@ -425,13 +435,13 @@ export const VideosManagement = () => {
       let srcUrl = videoUrl;
       if (videoUrl.includes('videodelivery.net') && videoUrl.includes('/manifest/')) {
         // Extract video ID from URL like https://videodelivery.net/{id}/manifest/video.m3u8
-        const match = videoUrl.match(/videodelivery\.net\/([a-f0-9]+)/i);
+        const match = videoUrl.match(/videodelivery\.net\/([a-zA-Z0-9]+)/i);
         if (match?.[1]) {
           srcUrl = `https://videodelivery.net/${match[1]}/downloads/default.mp4`;
         }
       } else if (videoUrl.includes('cloudflarestream.com') && videoUrl.includes('/manifest/')) {
         // Extract video ID from customer subdomain URL
-        const match = videoUrl.match(/cloudflarestream\.com\/([a-f0-9]+)/i);
+        const match = videoUrl.match(/cloudflarestream\.com\/([a-zA-Z0-9]+)/i);
         if (match?.[1]) {
           srcUrl = `https://videodelivery.net/${match[1]}/downloads/default.mp4`;
         }
