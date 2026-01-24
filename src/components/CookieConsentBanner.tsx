@@ -150,43 +150,40 @@ export const CookieConsentBanner = () => {
 
   return (
     <>
-      <div className="fixed bottom-0 left-0 right-0 z-50 p-2 md:p-3 animate-in slide-in-from-bottom duration-300">
-        <Card className="max-w-2xl mx-auto p-3 shadow-lg bg-background/95 backdrop-blur-sm border">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
-            <div className="flex items-center gap-2 flex-1 min-w-0">
-              <Cookie className="h-4 w-4 text-primary flex-shrink-0" />
-              <p className="text-xs text-muted-foreground line-clamp-2">
-                {t.description}{' '}
-                <Link to="/privacy" className="text-primary hover:underline">
-                  {t.privacy}
-                </Link>
-              </p>
-            </div>
-            <div className="flex items-center gap-1.5 flex-shrink-0 w-full sm:w-auto justify-end">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowSettings(true)}
-                className="h-7 px-2 text-xs"
-              >
-                <Settings className="w-3 h-3" />
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleDecline}
-                className="h-7 px-2 text-xs"
-              >
-                {t.decline}
-              </Button>
-              <Button
-                size="sm"
-                onClick={handleAcceptAll}
-                className="h-7 px-3 text-xs"
-              >
-                {t.acceptAll}
-              </Button>
-            </div>
+      <div className="fixed bottom-2 left-2 right-2 z-50 animate-in slide-in-from-bottom duration-300">
+        <Card className="max-w-md mx-auto px-3 py-2 shadow-md bg-background/95 backdrop-blur-sm border flex items-center gap-2">
+          <Cookie className="h-3.5 w-3.5 text-primary flex-shrink-0" />
+          <p className="text-[11px] text-muted-foreground flex-1 truncate">
+            {language === 'ja' ? 'Cookieを使用しています' : 'We use cookies'}
+            {' · '}
+            <Link to="/privacy" className="text-primary hover:underline">
+              {t.privacy}
+            </Link>
+          </p>
+          <div className="flex items-center gap-1 flex-shrink-0">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowSettings(true)}
+              className="h-6 w-6 p-0"
+            >
+              <Settings className="w-3 h-3" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleDecline}
+              className="h-6 px-1.5 text-[10px]"
+            >
+              ✕
+            </Button>
+            <Button
+              size="sm"
+              onClick={handleAcceptAll}
+              className="h-6 px-2 text-[10px]"
+            >
+              OK
+            </Button>
           </div>
         </Card>
       </div>
