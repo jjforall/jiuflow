@@ -31,8 +31,9 @@ interface VideoCardProps {
   transcription: { id: string; status: string } | null;
   subtitleLanguages: string[];
   dubbedLanguages: string[];
+  processingLanguages?: string[];
   onEdit: () => void;
-  onPreview: () => void;
+  onPreview: (langCode?: string) => void;
   onTranscribe: () => void;
   onTranslate: () => void;
   onDelete: () => void;
@@ -64,6 +65,7 @@ export function VideoCard({
   transcription,
   subtitleLanguages,
   dubbedLanguages,
+  processingLanguages = [],
   onEdit,
   onPreview,
   onTranscribe,
@@ -74,6 +76,10 @@ export function VideoCard({
   const thumbnail = getEffectiveThumbnail(technique.thumbnail_url, technique.video_url);
   const hasTranscription = !!transcription && transcription.status === "completed";
   const duration = getVideoDuration(technique.video_metadata);
+
+  const handlePlayVideo = (langCode: string) => {
+    onPreview(langCode);
+  };
 
   return (
     <div className="border rounded-lg bg-card hover:shadow-md transition-shadow overflow-hidden">
@@ -86,7 +92,7 @@ export function VideoCard({
               alt={technique.name}
               className="w-full h-full object-cover cursor-pointer"
               loading="lazy"
-              onClick={onPreview}
+              onClick={() => onPreview()}
               onError={(e) => {
                 const target = e.target as HTMLImageElement;
                 target.style.display = "none";
@@ -101,7 +107,7 @@ export function VideoCard({
           {/* Play overlay */}
           {technique.video_url && (
             <button
-              onClick={onPreview}
+              onClick={() => onPreview()}
               className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity"
               aria-label="動画を再生"
             >
@@ -150,8 +156,10 @@ export function VideoCard({
               hasTranscription={hasTranscription}
               subtitleLanguages={subtitleLanguages}
               dubbedLanguages={dubbedLanguages}
+              processingLanguages={processingLanguages}
               onGenerateSubtitle={isAdmin && technique.video_url ? onTranscribe : undefined}
               onAddDubbing={isAdmin && technique.video_url ? onTranslate : undefined}
+              onPlayVideo={handlePlayVideo}
               compact
             />
           </div>
@@ -163,7 +171,7 @@ export function VideoCard({
                 size="sm"
                 variant="outline"
                 className="h-7 sm:h-8 text-xs px-2 sm:px-3"
-                onClick={onPreview}
+                onClick={() => onPreview()}
               >
                 <Play className="w-3 h-3 sm:mr-1" />
                 <span className="hidden sm:inline">再生</span>
