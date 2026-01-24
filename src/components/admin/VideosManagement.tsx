@@ -2100,9 +2100,6 @@ export const VideosManagement = () => {
                     </span>
                   ))}
                 </div>
-                <p className="text-[10px] text-muted-foreground mt-1.5">
-                  次: {getNextAvailablePrefix()}
-                </p>
               </div>
             )}
           </CollapsibleContent>
