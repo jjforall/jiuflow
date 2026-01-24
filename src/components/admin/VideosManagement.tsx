@@ -2061,7 +2061,7 @@ export const VideosManagement = () => {
               )}
               <Button 
                 onClick={handleFetchAllDurations}
-                disabled={isFetchingDurations || missingDurationCount === 0}
+                disabled={isFetchingDurations}
                 variant="outline"
                 size="sm"
                 className="text-xs h-7"
@@ -2069,9 +2069,9 @@ export const VideosManagement = () => {
                 <Clock className="w-3 h-3 mr-1" />
                 {isFetchingDurations 
                   ? '取得中...' 
-                  : missingDurationCount === 0 
-                    ? '✓ 動画時間取得済み' 
-                    : `動画時間一括取得 (${missingDurationCount}件)`}
+                  : missingDurationCount > 0 
+                    ? `動画時間一括取得 (${missingDurationCount}件)`
+                    : '動画時間一括取得'}
               </Button>
             </div>
             
