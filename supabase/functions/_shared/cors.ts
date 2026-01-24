@@ -6,6 +6,8 @@ const DEFAULT_ALLOWED_ORIGINS = [
   'https://jiuflow.art',
   'https://jiuflow.lovable.app',
   'https://id-preview--d4de17a3-a3d0-4f5e-810f-f2ba83ada41d.lovable.app',
+  // Lovable preview sometimes uses this project-scoped domain as the page origin
+  'https://d4de17a3-a3d0-4f5e-810f-f2ba83ada41d.lovableproject.com',
   'http://localhost:5173',
   'http://localhost:8080',
 ];

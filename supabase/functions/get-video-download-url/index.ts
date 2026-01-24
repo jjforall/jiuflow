@@ -22,9 +22,15 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
 
-    const token = authHeader.replace("Bearer ", "");
-    const supabaseUser = createClient(supabaseUrl, anonKey);
-    const { data: userRes, error: userErr } = await supabaseUser.auth.getUser(token);
+    // IMPORTANT:
+    // We must create the caller-scoped client with the incoming Authorization header.
+    // Otherwise, table reads (e.g. user_roles) will be evaluated as anon and fail under RLS.
+    const supabaseUser = createClient(supabaseUrl, anonKey, {
+      global: { headers: { Authorization: authHeader } },
+      auth: { persistSession: false },
+    });
+
+    const { data: userRes, error: userErr } = await supabaseUser.auth.getUser();
     if (userErr || !userRes?.user) {
       return new Response(JSON.stringify({ error: "Unauthorized - Invalid token" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
