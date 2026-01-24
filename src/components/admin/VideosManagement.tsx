@@ -92,7 +92,16 @@ export const VideosManagement = () => {
   const [reEncodingIds, setReEncodingIds] = useState<Set<string>>(new Set());
   const [subtitleMap, setSubtitleMap] = useState<Record<string, string[]>>({});
   const [isFetchingDurations, setIsFetchingDurations] = useState(false);
+  const [fetchingDurationId, setFetchingDurationId] = useState<string | null>(null);
   const [missingDurationCount, setMissingDurationCount] = useState(0);
+  const [durationFilter, setDurationFilter] = useState<'all' | 'missing'>('all');
+  const [lastBulkFetchResults, setLastBulkFetchResults] = useState<{
+    total: number;
+    saved: number;
+    failed: number;
+    verifiedSaved: number;
+    details: Array<{ id: string; name: string; status: 'saved' | 'failed' | 'fetch_error' }>;
+  } | null>(null);
   
   // Quick dialogs for transcription/translation
   const [transcriptionDialogTechnique, setTranscriptionDialogTechnique] = useState<Technique | null>(null);
@@ -342,7 +351,7 @@ export const VideosManagement = () => {
     // Get all techniques with video_url but no duration in video_metadata
     const { data: techniques, error } = await supabase
       .from('techniques')
-      .select('id, video_url, video_metadata')
+      .select('id, name, video_url, video_metadata')
       .not('video_url', 'is', null);
     
     if (error) {
@@ -364,9 +373,12 @@ export const VideosManagement = () => {
     if (!confirm(`${needsDuration.length}件の動画の時間を取得しますか？（数分かかる場合があります）`)) return;
     
     setIsFetchingDurations(true);
+    setLastBulkFetchResults(null);
+    
+    const resultDetails: Array<{ id: string; name: string; status: 'saved' | 'failed' | 'fetch_error' }> = [];
+    
     try {
       const durationsToSave: Array<{ id: string; duration: number }> = [];
-      let fetchErrorCount = 0;
 
       for (const technique of needsDuration) {
         try {
@@ -374,16 +386,23 @@ export const VideosManagement = () => {
           if (duration && duration > 0) {
             durationsToSave.push({ id: technique.id, duration: Math.round(duration) });
           } else {
-            fetchErrorCount++;
+            resultDetails.push({ id: technique.id, name: technique.name, status: 'fetch_error' });
           }
         } catch (err) {
           console.error(`Failed to get duration for ${technique.id}:`, err);
-          fetchErrorCount++;
+          resultDetails.push({ id: technique.id, name: technique.name, status: 'fetch_error' });
         }
       }
 
       if (durationsToSave.length === 0) {
-        toast.error('動画時間を取得できませんでした（URL形式またはアクセス制限の可能性）');
+        setLastBulkFetchResults({
+          total: needsDuration.length,
+          saved: 0,
+          failed: needsDuration.length,
+          verifiedSaved: 0,
+          details: resultDetails
+        });
+        toast.error('動画時間を取得できませんでした');
         return;
       }
 
@@ -396,11 +415,45 @@ export const VideosManagement = () => {
       if (saveError) throw saveError;
       if ((saveData as any)?.error) throw new Error((saveData as any).error);
 
-      const updatedCount = Array.isArray((saveData as any)?.updated) ? (saveData as any).updated.length : durationsToSave.length;
-      const saveFailedCount = Array.isArray((saveData as any)?.failed) ? (saveData as any).failed.length : 0;
-      const totalFailed = fetchErrorCount + saveFailedCount;
+      const updatedIds = Array.isArray((saveData as any)?.updated) ? (saveData as any).updated : [];
+      const failedIds = Array.isArray((saveData as any)?.failed) ? (saveData as any).failed : [];
+      
+      // Mark saved ones
+      durationsToSave.forEach(d => {
+        const t = needsDuration.find(tech => tech.id === d.id);
+        if (t) {
+          if (failedIds.includes(d.id)) {
+            resultDetails.push({ id: d.id, name: t.name, status: 'failed' });
+          } else {
+            resultDetails.push({ id: d.id, name: t.name, status: 'saved' });
+          }
+        }
+      });
 
-      toast.success(`動画時間取得完了: ${updatedCount}件保存${totalFailed > 0 ? `, ${totalFailed}件失敗` : ''}`);
+      // Verify saved durations by re-fetching from DB
+      const savedIds = durationsToSave.map(d => d.id).filter(id => !failedIds.includes(id));
+      const { data: verifyData } = await supabase
+        .from('techniques')
+        .select('id, video_metadata')
+        .in('id', savedIds);
+      
+      let verifiedCount = 0;
+      verifyData?.forEach(t => {
+        const meta = t.video_metadata as Record<string, unknown> | null;
+        if (meta && typeof meta.duration === 'number') {
+          verifiedCount++;
+        }
+      });
+
+      setLastBulkFetchResults({
+        total: needsDuration.length,
+        saved: savedIds.length,
+        failed: resultDetails.filter(r => r.status !== 'saved').length,
+        verifiedSaved: verifiedCount,
+        details: resultDetails
+      });
+
+      toast.success(`動画時間取得完了: ${verifiedCount}件保存確認 / ${needsDuration.length}件中`);
       
       // Refresh missing duration count
       const { data: refreshData } = await supabase
@@ -421,6 +474,42 @@ export const VideosManagement = () => {
       toast.error(error instanceof Error ? error.message : "動画時間取得に失敗しました");
     } finally {
       setIsFetchingDurations(false);
+    }
+  };
+  
+  // 個別の動画時間を取得
+  const handleFetchSingleDuration = async (technique: Technique) => {
+    if (!technique.video_url) return;
+    
+    setFetchingDurationId(technique.id);
+    try {
+      const duration = await fetchDurationFromVideo(technique.video_url);
+      if (!duration || duration <= 0) {
+        toast.error('動画時間を取得できませんでした');
+        return;
+      }
+      
+      // Save via edge function
+      const { data: saveData, error: saveError } = await supabase.functions.invoke(
+        'admin-update-video-durations',
+        { body: { durations: [{ id: technique.id, duration: Math.round(duration) }] } }
+      );
+      
+      if (saveError) throw saveError;
+      if ((saveData as any)?.error) throw new Error((saveData as any).error);
+      
+      toast.success(`動画時間を取得しました: ${Math.floor(duration / 60)}:${String(Math.floor(duration % 60)).padStart(2, '0')}`);
+      
+      // Refresh
+      refetch?.();
+      
+      // Update missing count
+      setMissingDurationCount(prev => Math.max(0, prev - 1));
+    } catch (error) {
+      console.error('Failed to fetch duration:', error);
+      toast.error('動画時間の取得に失敗しました');
+    } finally {
+      setFetchingDurationId(null);
     }
   };
   
@@ -1941,8 +2030,80 @@ export const VideosManagement = () => {
               <SelectItem value="created">追加日順</SelectItem>
             </SelectContent>
           </Select>
+          {isAdmin && (
+            <Select value={durationFilter} onValueChange={(value: 'all' | 'missing') => {
+              setDurationFilter(value);
+              setPage(1);
+            }}>
+              <SelectTrigger className="w-full sm:w-[160px]">
+                <SelectValue placeholder="動画時間" />
+              </SelectTrigger>
+              <SelectContent className="bg-background z-50">
+                <SelectItem value="all">すべて</SelectItem>
+                <SelectItem value="missing">
+                  <span className="flex items-center gap-1">
+                    <Clock className="w-3 h-3" />
+                    時間未取得のみ
+                  </span>
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          )}
         </div>
       </div>
+
+      {/* Bulk fetch results summary */}
+      {lastBulkFetchResults && (
+        <div className="mb-4 p-3 border rounded-lg bg-muted/30">
+          <div className="flex items-center justify-between mb-2">
+            <h4 className="text-sm font-medium">一括取得結果</h4>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="h-6 text-xs"
+              onClick={() => setLastBulkFetchResults(null)}
+            >
+              閉じる
+            </Button>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+            <div className="p-2 rounded bg-background">
+              <span className="text-muted-foreground">対象</span>
+              <p className="font-medium">{lastBulkFetchResults.total}件</p>
+            </div>
+            <div className="p-2 rounded bg-background">
+              <span className="text-muted-foreground">DB保存確認</span>
+              <p className="font-medium text-green-600">{lastBulkFetchResults.verifiedSaved}件</p>
+            </div>
+            <div className="p-2 rounded bg-background">
+              <span className="text-muted-foreground">取得エラー</span>
+              <p className="font-medium text-destructive">
+                {lastBulkFetchResults.details.filter(d => d.status === 'fetch_error').length}件
+              </p>
+            </div>
+            <div className="p-2 rounded bg-background">
+              <span className="text-muted-foreground">保存エラー</span>
+              <p className="font-medium text-destructive">
+                {lastBulkFetchResults.details.filter(d => d.status === 'failed').length}件
+              </p>
+            </div>
+          </div>
+          {lastBulkFetchResults.details.filter(d => d.status !== 'saved').length > 0 && (
+            <details className="mt-2">
+              <summary className="text-xs text-muted-foreground cursor-pointer hover:text-foreground">
+                失敗した動画を表示 ({lastBulkFetchResults.details.filter(d => d.status !== 'saved').length}件)
+              </summary>
+              <ul className="mt-1 text-xs space-y-0.5 max-h-32 overflow-y-auto">
+                {lastBulkFetchResults.details.filter(d => d.status !== 'saved').map(d => (
+                  <li key={d.id} className="text-muted-foreground">
+                    • {d.name} ({d.status === 'fetch_error' ? '取得失敗' : '保存失敗'})
+                  </li>
+                ))}
+              </ul>
+            </details>
+          )}
+        </div>
+      )}
 
       {/* Video Cards */}
       <div className="grid gap-3">
@@ -1958,12 +2119,26 @@ export const VideosManagement = () => {
               </div>
             </div>
           ))
-        ) : data?.data.length === 0 ? (
-          <div className="text-center py-12 text-muted-foreground border rounded-lg">
-            技術が見つかりませんでした
-          </div>
-        ) : (
-          data?.data.map((technique) => {
+        ) : (() => {
+          // Filter by duration if needed
+          let displayData = data?.data || [];
+          if (durationFilter === 'missing') {
+            displayData = displayData.filter(t => {
+              if (!t.video_url) return false;
+              const meta = t.video_metadata as Record<string, unknown> | null;
+              return !meta || typeof meta.duration !== 'number';
+            });
+          }
+          
+          if (displayData.length === 0) {
+            return (
+              <div className="text-center py-12 text-muted-foreground border rounded-lg">
+                {durationFilter === 'missing' ? '動画時間未取得の技術がありません' : '技術が見つかりませんでした'}
+              </div>
+            );
+          }
+          
+          return displayData.map((technique) => {
             // Get dubbed languages from video_metadata
             const getDubbedLanguages = (t: Technique): string[] => {
               const langs: string[] = [];
@@ -1987,6 +2162,7 @@ export const VideosManagement = () => {
                 transcription={transcriptionMap[technique.id] || null}
                 subtitleLanguages={subtitleMap[technique.id] || []}
                 dubbedLanguages={getDubbedLanguages(technique)}
+                isFetchingDuration={fetchingDurationId === technique.id}
                 onEdit={() => openEditDialog(technique)}
                 onPreview={() => {
                   if (technique.video_url) {
@@ -2005,11 +2181,12 @@ export const VideosManagement = () => {
                   setTranslationDialogTechnique(technique);
                 }}
                 onDelete={() => handleDelete(technique.id)}
+                onFetchDuration={() => handleFetchSingleDuration(technique)}
                 isAdmin={isAdmin}
               />
             );
-          })
-        )}
+          });
+        })()}
       </div>
 
       {/* Pagination */}
@@ -2084,24 +2261,6 @@ export const VideosManagement = () => {
                     : '動画時間一括取得'}
               </Button>
             </div>
-            
-            {/* Series Mapping - Compact */}
-            {seriesMapping.length > 0 && (
-              <div className="border rounded p-2 bg-background">
-                <p className="text-xs text-muted-foreground mb-2">シリーズ対応表 ({seriesMapping.length})</p>
-                <div className="flex flex-wrap gap-1.5">
-                  {seriesMapping.map((mapping) => (
-                    <span
-                      key={mapping.series_prefix}
-                      className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] border rounded bg-muted/30"
-                    >
-                      <span className="font-bold text-primary">{mapping.series_prefix}</span>
-                      <span className="text-muted-foreground">{mapping.series_name}</span>
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
           </CollapsibleContent>
         </Collapsible>
       )}
