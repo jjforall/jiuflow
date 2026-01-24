@@ -1,4 +1,4 @@
-import { Play, Edit, Languages, FileText, Trash2, Clock } from "lucide-react";
+import { Play, Edit, Languages, FileText, Trash2, Clock, RefreshCw, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SeriesBadge } from "@/components/ui/series-badge";
 import { LocalizationStatus } from "./LocalizationStatus";
@@ -32,11 +32,13 @@ interface VideoCardProps {
   subtitleLanguages: string[];
   dubbedLanguages: string[];
   processingLanguages?: string[];
+  isFetchingDuration?: boolean;
   onEdit: () => void;
   onPreview: (langCode?: string) => void;
   onTranscribe: () => void;
   onTranslate: () => void;
   onDelete: () => void;
+  onFetchDuration?: () => void;
   isAdmin: boolean;
 }
 
@@ -66,16 +68,19 @@ export function VideoCard({
   subtitleLanguages,
   dubbedLanguages,
   processingLanguages = [],
+  isFetchingDuration = false,
   onEdit,
   onPreview,
   onTranscribe,
   onTranslate,
   onDelete,
+  onFetchDuration,
   isAdmin,
 }: VideoCardProps) {
   const thumbnail = getEffectiveThumbnail(technique.thumbnail_url, technique.video_url);
   const hasTranscription = !!transcription && transcription.status === "completed";
   const duration = getVideoDuration(technique.video_metadata);
+  const hasMissingDuration = technique.video_url && !duration;
 
   const handlePlayVideo = (langCode: string) => {
     onPreview(langCode);
@@ -126,10 +131,31 @@ export function VideoCard({
             </div>
           )}
           
-          {/* Duration badge - always show, with placeholder if not available */}
-          <div className="absolute bottom-1.5 right-1.5 px-1.5 py-0.5 bg-black/80 text-white text-[10px] font-medium rounded flex items-center gap-1">
-            <Clock className="w-2.5 h-2.5" />
-            {duration ? formatDuration(duration) : '--:--'}
+          {/* Duration badge - clickable if missing */}
+          <div 
+            className={cn(
+              "absolute bottom-1.5 right-1.5 px-1.5 py-0.5 bg-black/80 text-white text-[10px] font-medium rounded flex items-center gap-1",
+              hasMissingDuration && isAdmin && onFetchDuration && "cursor-pointer hover:bg-primary/80"
+            )}
+            onClick={(e) => {
+              if (hasMissingDuration && isAdmin && onFetchDuration && !isFetchingDuration) {
+                e.stopPropagation();
+                onFetchDuration();
+              }
+            }}
+            title={hasMissingDuration && isAdmin ? "クリックして時間を取得" : undefined}
+          >
+            {isFetchingDuration ? (
+              <Loader2 className="w-2.5 h-2.5 animate-spin" />
+            ) : (
+              <Clock className="w-2.5 h-2.5" />
+            )}
+            {duration ? formatDuration(duration) : (hasMissingDuration && isAdmin ? (
+              <span className="flex items-center gap-0.5">
+                <RefreshCw className="w-2 h-2" />
+                取得
+              </span>
+            ) : '--:--')}
           </div>
         </div>
 
