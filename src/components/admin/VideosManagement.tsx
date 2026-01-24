@@ -2339,80 +2339,68 @@ export const VideosManagement = () => {
             </DialogTitle>
           </DialogHeader>
           
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {/* 基本情報セクション */}
-            <FormSection icon={<FileText className="h-4 w-4" />} title="基本情報">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <form onSubmit={handleSubmit} className="space-y-4 max-h-[70vh] overflow-y-auto pr-2">
+            {/* 基本情報セクション - 日本語名が必須、他言語はプルダウンで確認 */}
+            <FormSection icon={<FileText className="h-4 w-4" />} title="基本情報（日本語入力必須）">
+              <div className="space-y-4">
                 <div>
                   <label className="text-sm font-medium flex items-center gap-2">
-                    日本語名 *
+                    🇯🇵 技術名（日本語）*
                     {isAutoTranslatingName && <Loader2 className="h-3 w-3 animate-spin" />}
                   </label>
                   <Input
                     value={formData.name_ja}
                     onChange={(e) => setFormData({...formData, name_ja: e.target.value})}
                     onBlur={autoTranslateName}
-                    placeholder="日本語で入力すると自動翻訳"
+                    placeholder="日本語で技術名を入力（必須）"
                     required
                     disabled={!isAdmin}
+                    className="text-base"
                   />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    保存時に英語・ポルトガル語が空の場合は自動翻訳されます
+                  </p>
                 </div>
-                <div>
-                  <label className="text-sm font-medium">English Name *</label>
-                  <Input
-                    value={formData.name}
-                    onChange={(e) => setFormData({...formData, name: e.target.value})}
-                    placeholder={isAutoTranslatingName ? "翻訳中..." : ""}
-                    required
-                    disabled={!isAdmin || isAutoTranslatingName}
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium">Nome em Português *</label>
-                  <Input
-                    value={formData.name_pt}
-                    onChange={(e) => setFormData({...formData, name_pt: e.target.value})}
-                    placeholder={isAutoTranslatingName ? "翻訳中..." : ""}
-                    required
-                    disabled={!isAdmin || isAutoTranslatingName}
-                  />
-                </div>
-              </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium">カテゴリ *</label>
-                  <Input
-                    value={formData.category}
-                    onChange={(e) => setFormData({...formData, category: e.target.value})}
-                    placeholder="カテゴリー名を入力または選択"
-                    disabled={!isAdmin}
-                    list="dialog-categories-list"
-                    required
-                  />
-                  <datalist id="dialog-categories-list">
-                    {availableCategories.map((cat) => (
-                      <option key={cat} value={cat} />
-                    ))}
-                  </datalist>
-                  {availableCategories.length > 0 && (
-                    <div className="flex flex-wrap gap-1 mt-2">
-                      {availableCategories.slice(0, 6).map((cat) => (
-                        <Button
-                          key={cat}
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setFormData({...formData, category: cat})}
-                          disabled={!isAdmin}
-                          className={`text-xs h-7 ${formData.category === cat ? "bg-primary/10" : ""}`}
-                        >
-                          {cat}
-                        </Button>
-                      ))}
+                {/* 他言語の確認（プルダウン） */}
+                <Collapsible>
+                  <CollapsibleTrigger asChild>
+                    <Button variant="ghost" size="sm" className="w-full justify-between text-muted-foreground">
+                      <span className="flex items-center gap-2">
+                        <Languages className="h-4 w-4" />
+                        他言語の翻訳を確認・編集
+                      </span>
+                      <ChevronDown className="h-4 w-4" />
+                    </Button>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="space-y-3 pt-2">
+                    <div>
+                      <label className="text-sm font-medium flex items-center gap-2">
+                        🇺🇸 English Name
+                        {isAutoTranslatingName && <Loader2 className="h-3 w-3 animate-spin" />}
+                      </label>
+                      <Input
+                        value={formData.name}
+                        onChange={(e) => setFormData({...formData, name: e.target.value})}
+                        placeholder={isAutoTranslatingName ? "翻訳中..." : "空欄時は保存時に自動翻訳"}
+                        disabled={!isAdmin || isAutoTranslatingName}
+                      />
                     </div>
-                  )}
-                </div>
+                    <div>
+                      <label className="text-sm font-medium flex items-center gap-2">
+                        🇧🇷 Nome em Português
+                        {isAutoTranslatingName && <Loader2 className="h-3 w-3 animate-spin" />}
+                      </label>
+                      <Input
+                        value={formData.name_pt}
+                        onChange={(e) => setFormData({...formData, name_pt: e.target.value})}
+                        placeholder={isAutoTranslatingName ? "翻訳中..." : "空欄時は保存時に自動翻訳"}
+                        disabled={!isAdmin || isAutoTranslatingName}
+                      />
+                    </div>
+                  </CollapsibleContent>
+                </Collapsible>
+
                 <div>
                   <label className="text-sm font-medium">公開設定</label>
                   <Select
@@ -2446,61 +2434,20 @@ export const VideosManagement = () => {
               </div>
             </FormSection>
 
-            {/* シリーズ設定セクション */}
-            <FormSection icon={<FolderOpen className="h-4 w-4" />} title="シリーズ設定">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <label className="text-sm font-medium">シリーズ名</label>
-                  <InputWithSuggestions
-                    value={formData.series_name}
-                    onChange={(e) => handleSeriesNameChange(e.target.value)}
-                    onSelectSuggestion={(value) => handleSeriesNameChange(value)}
-                    suggestions={seriesNameSuggestions}
-                    placeholder="例: クローズドガード"
-                    disabled={!isAdmin}
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    空欄の場合は「その他の技」として表示
-                  </p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium">アルファベット</label>
-                  <Input
-                    value={formData.series_prefix}
-                    readOnly
-                    disabled
-                    placeholder="自動設定"
-                    className="bg-muted"
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {formData.series_prefix ? `「${formData.series_prefix}」が割り当て済み` : '自動割り当て'}
-                  </p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium">順序</label>
-                  <Input
-                    type="number"
-                    value={formData.series_order || ""}
-                    onChange={(e) => setFormData({...formData, series_order: e.target.value ? parseInt(e.target.value) : null})}
-                    placeholder="1, 2, 3..."
-                    disabled={!isAdmin}
-                  />
-                  {maxSeriesOrder !== null && formData.series_prefix && (
-                    <p className="text-xs text-green-600 mt-1">
-                      現在{maxSeriesOrder}番まで使用中
-                    </p>
-                  )}
-                </div>
-              </div>
-            </FormSection>
-
-            {/* 略称セクション（編集時のみ表示） */}
+            {/* 略称セクション（編集時のみ表示） - メインの分類方法 */}
             {editingTechnique && (
-              <FormSection icon={<Tags className="h-4 w-4" />} title="略称（複数選択可）">
-                <NotationSelector techniqueId={editingTechnique.id} />
-                <p className="text-xs text-muted-foreground">
-                  技術を説明するための略称を複数選択できます
-                </p>
+              <FormSection icon={<Tags className="h-4 w-4" />} title="略称（技術分類 - 複数選択可）">
+                <div className="space-y-3">
+                  <div className="p-3 bg-muted/50 rounded-lg border">
+                    <p className="text-sm font-medium mb-2">現在紐付けられている略称:</p>
+                    <div className="max-h-20 overflow-y-auto">
+                      <NotationSelector techniqueId={editingTechnique.id} />
+                    </div>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    ポップオーバーから略称を検索・追加できます。位置（CG, HG等）、アクション（SW, PS等）、サブミッション等を組み合わせて技術を分類してください。
+                  </p>
+                </div>
               </FormSection>
             )}
 
@@ -2630,18 +2577,55 @@ export const VideosManagement = () => {
               </div>
             </FormSection>
 
+            {/* 旧設定セクション（カテゴリ/シリーズ - 読み取り専用） */}
+            {editingTechnique && (formData.category || formData.series_name) && (
+              <Collapsible>
+                <CollapsibleTrigger asChild>
+                  <Button variant="ghost" size="sm" className="w-full justify-between text-muted-foreground border border-dashed">
+                    <span className="flex items-center gap-2">
+                      <FolderOpen className="h-4 w-4" />
+                      ⚠️ 旧設定（カテゴリ/シリーズ）- 後日削除予定
+                    </span>
+                    <ChevronDown className="h-4 w-4" />
+                  </Button>
+                </CollapsibleTrigger>
+                <CollapsibleContent className="mt-2">
+                  <div className="p-3 bg-muted/30 rounded-lg border border-dashed space-y-3">
+                    <p className="text-xs text-amber-600 dark:text-amber-400">
+                      ⚠️ これらは旧システムの設定です。今後は「略称」による分類がメインになります。
+                    </p>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <span className="text-muted-foreground">カテゴリ:</span>
+                        <p className="font-medium">{formData.category || "未設定"}</p>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">シリーズ:</span>
+                        <p className="font-medium">
+                          {formData.series_name 
+                            ? `${formData.series_name} (${formData.series_prefix || "?"}${formData.series_order || "?"})`
+                            : "未設定"
+                          }
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
+            )}
+
             {/* アクションボタン */}
-            <div className="flex justify-between items-center pt-2 border-t">
+            <div className="flex justify-between items-center pt-2 border-t sticky bottom-0 bg-background pb-1">
               {isAdmin && (
                 <Button
                   type="button"
                   variant="ghost"
                   size="sm"
                   onClick={handleTranslate}
-                  disabled={isTranslating || !formData.name}
+                  disabled={isTranslating || !formData.name_ja}
                 >
                   <Languages className="h-4 w-4 mr-1" />
-                  {isTranslating ? "翻訳中..." : "自動翻訳"}
+                  {isTranslating ? "翻訳中..." : "翻訳実行"}
                 </Button>
               )}
               <div className="flex gap-2 ml-auto">
