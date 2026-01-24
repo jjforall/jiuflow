@@ -35,11 +35,16 @@ export const useNotations = (category?: NotationCategory) => {
         countMap[item.notation_id] = (countMap[item.notation_id] || 0) + 1;
       });
 
-      // Merge counts into notations
-      return (notations || []).map(n => ({
+      // Merge counts into notations and sort by technique_count descending
+      const withCounts = (notations || []).map(n => ({
         ...n,
         technique_count: countMap[n.id] || 0,
       })) as BJJNotation[];
+      
+      // Sort by technique_count descending (most videos first)
+      withCounts.sort((a, b) => (b.technique_count || 0) - (a.technique_count || 0));
+      
+      return withCounts;
     },
     staleTime: 5 * 60 * 1000,
   });
