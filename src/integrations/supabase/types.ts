@@ -2211,6 +2211,50 @@ export type Database = {
           },
         ]
       }
+      special_video_invites: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          expires_at: string | null
+          id: string
+          is_active: boolean | null
+          max_views: number | null
+          technique_id: string
+          token: string
+          view_count: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          max_views?: number | null
+          technique_id: string
+          token: string
+          view_count?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          max_views?: number | null
+          technique_id?: string
+          token?: string
+          view_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "special_video_invites_technique_id_fkey"
+            columns: ["technique_id"]
+            isOneToOne: false
+            referencedRelation: "techniques"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       subscriptions: {
         Row: {
           created_at: string

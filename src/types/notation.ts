@@ -42,3 +42,14 @@ export const NOTATION_CATEGORY_LABELS: Record<NotationCategory, { ja: string; en
   takedown: { ja: '立ち技', en: 'Takedown', color: 'bg-orange-500' },
   outcome: { ja: '結果', en: 'Outcome', color: 'bg-gray-500' },
 };
+
+// Short labels for compact display
+export const NOTATION_CATEGORY_SHORT_LABELS: Record<NotationCategory, string> = {
+  position: '位置',
+  action: '動作',
+  submission: '極技',
+  grip: 'グリップ',
+  movement: '移動',
+  takedown: '立技',
+  outcome: '結果',
+};
