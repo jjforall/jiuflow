@@ -78,11 +78,57 @@ export const usePaginatedTechniques = (
         }
       }
 
-      // Apply series type filter (regular vs special)
+      // Apply series type filter (regular vs special/no-notation)
       if (filters.seriesType === 'special') {
-        query = query.or('series_prefix.is.null,series_prefix.eq.');
+        // Special = videos without any notation assigned
+        const { data: linkedTechniqueIds } = await supabase
+          .from('technique_notations')
+          .select('technique_id');
+        
+        const idsWithNotation = (linkedTechniqueIds || []).map(t => t.technique_id);
+        
+        if (idsWithNotation.length > 0) {
+          // Get all technique IDs first, then filter out those with notations
+          const { data: allTechniques } = await supabase
+            .from('techniques')
+            .select('id');
+          
+          const allIds = (allTechniques || []).map(t => t.id);
+          const idsWithoutNotation = allIds.filter(id => !idsWithNotation.includes(id));
+          
+          if (idsWithoutNotation.length > 0) {
+            query = query.in('id', idsWithoutNotation);
+          } else {
+            // All techniques have notations
+            return {
+              data: [],
+              totalCount: 0,
+              page,
+              pageSize,
+              totalPages: 0,
+            };
+          }
+        }
+        // If no techniques have notations, show all (don't filter)
       } else if (filters.seriesType === 'regular') {
-        query = query.not('series_prefix', 'is', null).neq('series_prefix', '');
+        // Regular = videos that have at least one notation assigned
+        const { data: linkedTechniqueIds } = await supabase
+          .from('technique_notations')
+          .select('technique_id');
+        
+        const idsWithNotation = [...new Set((linkedTechniqueIds || []).map(t => t.technique_id))];
+        if (idsWithNotation.length > 0) {
+          query = query.in('id', idsWithNotation);
+        } else {
+          // No techniques have notations, return empty
+          return {
+            data: [],
+            totalCount: 0,
+            page,
+            pageSize,
+            totalPages: 0,
+          };
+        }
       }
 
       // Apply sorting

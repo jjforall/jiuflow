@@ -291,7 +291,7 @@ export const SpecialVideosManagement = () => {
             特別講習
           </h2>
           <p className="text-sm text-muted-foreground mt-1">
-            シリーズに属さない動画を管理します（デフォルトで非公開）
+            略称が割り当てられていない動画を管理します
           </p>
         </div>
         <Button onClick={openNewDialog}>
@@ -306,8 +306,8 @@ export const SpecialVideosManagement = () => {
           <Lock className="w-5 h-5 text-muted-foreground shrink-0 mt-0.5" />
           <div className="text-sm text-muted-foreground">
             <p className="font-medium text-foreground">特別講習とは？</p>
-            <p>これらの動画はシリーズ番号（A, B, C...）が割り当てられていない動画です。</p>
-            <p>デフォルトで非公開に設定され、一般の動画一覧には表示されません。</p>
+            <p>これらの動画は略称マスターが割り当てられていない動画です。</p>
+            <p>略称を割り当てると、動画一覧に表示されるようになります。</p>
           </div>
         </div>
       </div>
