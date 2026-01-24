@@ -94,7 +94,7 @@ export const VideosManagement = () => {
   const [isFetchingDurations, setIsFetchingDurations] = useState(false);
   const [fetchingDurationId, setFetchingDurationId] = useState<string | null>(null);
   const [missingDurationCount, setMissingDurationCount] = useState(0);
-  const [durationFilter, setDurationFilter] = useState<'all' | 'missing'>('all');
+  
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const [lastBulkFetchResults, setLastBulkFetchResults] = useState<{
     total: number;
@@ -2029,25 +2029,6 @@ export const VideosManagement = () => {
               <SelectItem value="created">追加日順</SelectItem>
             </SelectContent>
           </Select>
-          {isAdmin && (
-            <Select value={durationFilter} onValueChange={(value: 'all' | 'missing') => {
-              setDurationFilter(value);
-              setPage(1);
-            }}>
-              <SelectTrigger className="w-full sm:w-[160px]">
-                <SelectValue placeholder="動画時間" />
-              </SelectTrigger>
-              <SelectContent className="bg-background z-50">
-                <SelectItem value="all">すべて</SelectItem>
-                <SelectItem value="missing">
-                  <span className="flex items-center gap-1">
-                    <Clock className="w-3 h-3" />
-                    時間未取得のみ
-                  </span>
-                </SelectItem>
-              </SelectContent>
-            </Select>
-          )}
         </div>
       </div>
 
@@ -2119,20 +2100,12 @@ export const VideosManagement = () => {
             </div>
           ))
         ) : (() => {
-          // Filter by duration if needed
-          let displayData = data?.data || [];
-          if (durationFilter === 'missing') {
-            displayData = displayData.filter(t => {
-              if (!t.video_url) return false;
-              const meta = t.video_metadata as Record<string, unknown> | null;
-              return !meta || typeof meta.duration !== 'number';
-            });
-          }
+          const displayData = data?.data || [];
           
           if (displayData.length === 0) {
             return (
               <div className="text-center py-12 text-muted-foreground border rounded-lg">
-                {durationFilter === 'missing' ? '動画時間未取得の技術がありません' : '技術が見つかりませんでした'}
+                技術が見つかりませんでした
               </div>
             );
           }
