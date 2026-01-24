@@ -195,7 +195,7 @@ export function VideoCard({
                     <Badge 
                       variant="secondary"
                       className={cn(
-                        "text-[10px] px-1.5 py-0.5 h-auto font-normal text-white cursor-help max-w-[140px] truncate",
+                        "text-[10px] px-1.5 py-0.5 h-auto font-normal text-white max-w-[140px] truncate",
                         getNotationColor(n.category)
                       )}
                     >
@@ -213,7 +213,7 @@ export function VideoCard({
               {notations.length > 4 && (
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Badge variant="outline" className="text-[10px] px-1.5 py-0.5 h-auto cursor-help">
+                    <Badge variant="outline" className="text-[10px] px-1.5 py-0.5 h-auto">
                       +{notations.length - 4}
                     </Badge>
                   </TooltipTrigger>
