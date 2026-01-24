@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Upload, Search, Check, Languages, ChevronDown, Loader2, RefreshCw, ImageIcon, Wrench, Clock, FileText, Film, Hash, Tags, BookOpen, FolderOpen, Eye } from "lucide-react";
+import { Upload, Search, Check, Languages, ChevronDown, Loader2, RefreshCw, ImageIcon, Wrench, Clock, FileText, Film, Hash, Tags, BookOpen, FolderOpen, Eye, AlertTriangle } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   Collapsible,
@@ -34,6 +34,7 @@ import { VideoCard } from "@/components/admin/VideoCard";
 import { TranscriptionQuickDialog } from "@/components/admin/TranscriptionQuickDialog";
 import { TranslationQuickDialog } from "@/components/admin/TranslationQuickDialog";
 import { NotationSelector } from "@/components/admin/NotationSelector";
+import { useNotations } from "@/hooks/useNotations";
 
 // セクションコンポーネント
 const FormSection = ({ icon, title, children }: { icon: React.ReactNode; title: string; children: React.ReactNode }) => (
@@ -58,6 +59,9 @@ export const VideosManagement = () => {
   const [notationFilter, setNotationFilter] = useState<string>("all");
   const [notationLabel, setNotationLabel] = useState<string>("");
   const [sortBy, setSortBy] = useState<"order" | "name" | "category" | "series" | "created">("order");
+  
+  // Fetch notations for filter dropdown (sorted by video count)
+  const { data: notationsForFilter } = useNotations();
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [editingTechnique, setEditingTechnique] = useState<Technique | null>(null);
   const [videoFile, setVideoFile] = useState<File | null>(null);
@@ -107,7 +111,7 @@ export const VideosManagement = () => {
   const [transcriptionMap, setTranscriptionMap] = useState<Record<string, { id: string; status: string }>>({});
   const [reEncodingIds, setReEncodingIds] = useState<Set<string>>(new Set());
   const [subtitleMap, setSubtitleMap] = useState<Record<string, string[]>>({});
-  const [notationMap, setNotationMap] = useState<Record<string, Array<{ code: string; category: string }>>>({});
+  const [notationMap, setNotationMap] = useState<Record<string, Array<{ code: string; category: string; name_ja?: string; name_en?: string }>>>({});
   const [isFetchingDurations, setIsFetchingDurations] = useState(false);
   const [fetchingDurationId, setFetchingDurationId] = useState<string | null>(null);
   const [missingDurationCount, setMissingDurationCount] = useState(0);
@@ -267,24 +271,26 @@ export const VideosManagement = () => {
       setSubtitleMap(map);
     };
     
-    // Fetch notation links for all techniques
+    // Fetch notation links for all techniques - including name info for tooltips
     const fetchNotationLinks = async () => {
       const { data: links, error } = await supabase
         .from('technique_notations')
-        .select('technique_id, notation:bjj_notations(code, category)');
+        .select('technique_id, notation:bjj_notations(code, category, name_ja, name_en)');
       
       if (error) {
         console.error('Error fetching notation links:', error);
         return;
       }
       
-      const map: Record<string, Array<{ code: string; category: string }>> = {};
+      const map: Record<string, Array<{ code: string; category: string; name_ja?: string; name_en?: string }>> = {};
       links?.forEach((link: any) => {
         if (link.technique_id && link.notation) {
           if (!map[link.technique_id]) map[link.technique_id] = [];
           map[link.technique_id].push({
             code: link.notation.code,
             category: link.notation.category,
+            name_ja: link.notation.name_ja,
+            name_en: link.notation.name_en,
           });
         }
       });
@@ -2063,35 +2069,30 @@ export const VideosManagement = () => {
             className="pl-10"
           />
         </div>
-        <div className="flex gap-2">
-          <Select value={categoryFilter} onValueChange={(value) => {
-            setCategoryFilter(value);
+        <div className="flex flex-wrap gap-2">
+          {/* Main notation filter - sorted by video count */}
+          <Select value={notationFilter} onValueChange={(value) => {
+            setNotationFilter(value);
+            const notation = notationsForFilter?.find(n => n.id === value);
+            if (notation) {
+              setNotationLabel(`${notation.code} - ${notation.name_ja}`);
+            } else {
+              setNotationLabel('');
+            }
             setPage(1);
           }}>
-            <SelectTrigger className="w-full sm:w-[140px]">
-              <SelectValue placeholder="カテゴリー" />
+            <SelectTrigger className="w-full sm:w-[200px]">
+              <SelectValue placeholder="略称で絞り込み" />
             </SelectTrigger>
-            <SelectContent className="bg-background z-50">
+            <SelectContent className="bg-background z-50 max-h-[300px]">
               <SelectItem value="all">すべて</SelectItem>
-              {availableCategories.map((category) => (
-                <SelectItem key={category} value={category}>
-                  {category}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select value={seriesFilter} onValueChange={(value) => {
-            setSeriesFilter(value);
-            setPage(1);
-          }}>
-            <SelectTrigger className="w-full sm:w-[160px]">
-              <SelectValue placeholder="シリーズ" />
-            </SelectTrigger>
-            <SelectContent className="bg-background z-50">
-              <SelectItem value="all">すべて</SelectItem>
-              {seriesMapping.map((mapping) => (
-                <SelectItem key={mapping.series_prefix} value={mapping.series_prefix}>
-                  {mapping.series_prefix}. {mapping.series_name}
+              {notationsForFilter?.map((notation) => (
+                <SelectItem key={notation.id} value={notation.id}>
+                  <span className="font-mono">{notation.code}</span>
+                  <span className="ml-2 text-muted-foreground">{notation.name_ja}</span>
+                  <span className="ml-2 text-xs text-muted-foreground/70">
+                    ({notation.technique_count || 0}件)
+                  </span>
                 </SelectItem>
               ))}
             </SelectContent>
@@ -2287,6 +2288,42 @@ export const VideosManagement = () => {
             <ChevronDown className="w-3 h-3 text-muted-foreground" />
           </CollapsibleTrigger>
           <CollapsibleContent className="pt-3 space-y-3">
+            {/* Legacy filters (scheduled for deletion) */}
+            <div className="flex flex-wrap items-center gap-2 p-2 bg-muted/30 rounded border border-dashed">
+              <AlertTriangle className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+              <span className="text-xs text-muted-foreground shrink-0">旧絞り込み（削除予定）:</span>
+              <Select value={categoryFilter} onValueChange={(value) => {
+                setCategoryFilter(value);
+                setPage(1);
+              }}>
+                <SelectTrigger className="w-[120px] h-7 text-xs">
+                  <SelectValue placeholder="カテゴリー" />
+                </SelectTrigger>
+                <SelectContent className="bg-background z-50">
+                  <SelectItem value="all">すべて</SelectItem>
+                  {availableCategories.map((category) => (
+                    <SelectItem key={category} value={category}>{category}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={seriesFilter} onValueChange={(value) => {
+                setSeriesFilter(value);
+                setPage(1);
+              }}>
+                <SelectTrigger className="w-[150px] h-7 text-xs">
+                  <SelectValue placeholder="シリーズ" />
+                </SelectTrigger>
+                <SelectContent className="bg-background z-50">
+                  <SelectItem value="all">すべて</SelectItem>
+                  {seriesMapping.map((mapping) => (
+                    <SelectItem key={mapping.series_prefix} value={mapping.series_prefix}>
+                      {mapping.series_prefix}. {mapping.series_name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
             {/* Quick Actions */}
             <div className="flex flex-wrap gap-2">
               <Button 
