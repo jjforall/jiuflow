@@ -1,224 +1,225 @@
 
-# 管理画面改善計画
+# 管理画面機能拡張計画
 
-## 要件一覧
+## 実装する機能
 
-1. **動画ダウンロード機能の追加**: 管理画面から動画をダウンロードできるようにする
-2. **字幕・吹替バッジの○✓マーク削除**: 言語コードのみ表示（JA, EN, PT）
-3. **個別動画時間取得エラーの修正**: Cloudflare Streamダウンロードが有効でない場合に対応
-4. **特別講習管理機能**: シリーズ番号のない動画（A, B等なし）を「特別講習」として別管理、一般公開しない
-
----
-
-## 1. 動画ダウンロード機能
-
-### 実装方針
-管理者が動画カードから直接ダウンロードを開始できるボタンを追加。Cloudflare Streamのダウンロード機能を利用。
-
-### 変更ファイル
-**`src/components/admin/VideoCard.tsx`**
-
-```typescript
-// アクションボタンに追加
-<Button
-  size="sm"
-  variant="outline"
-  className="h-7 sm:h-8 text-xs px-2 sm:px-3"
-  onClick={onDownload}
-  title="動画をダウンロード"
->
-  <Download className="w-3 h-3 sm:mr-1" />
-  <span className="hidden sm:inline">DL</span>
-</Button>
-```
-
-**新規Edge Function: `supabase/functions/get-video-download-url/index.ts`**
-- Cloudflare APIを呼び出してダウンロードURLを取得
-- 既存の`_shared/cloudflare-download.ts`を再利用
-- 管理者認証チェック必須
-
-### フロー
-1. 管理者がDLボタンをクリック
-2. Edge Function経由でCloudflare APIからダウンロードURLを取得
-3. ブラウザで新規タブを開いてダウンロード開始
+1. **動画に略称を紐付け・略称フィルタリング**
+2. **再生リストを略称の組み合わせで自動生成**
+3. **特別講習に招待リンク機能を追加**
+4. **略称マスターページのUI改善**
 
 ---
 
-## 2. 字幕・吹替バッジのシンプル化
+## 1. 動画と略称の紐付け・フィルタリング
 
-### 現状
-```
-字幕: JA✓ EN✓
-吹替: JA○ EN✓
-```
-
-### 改善後
-```
-字幕: JA EN
-吹替: JA EN
-```
+### 概要
+動画カードに略称バッジを表示し、動画編集ダイアログから略称を追加・削除できるようにする。また、略称でフィルタリングできるようにする。
 
 ### 変更ファイル
-**`src/components/admin/LocalizationStatus.tsx`**
-
-```typescript
-// 変更前
-{lang.label}✓
-
-// 変更後
-{lang.label}
-```
-
-チェックマーク（✓）と丸印（○）を削除し、言語コードのみ表示。
-
----
-
-## 3. 個別動画時間取得エラーの修正
-
-### 問題の原因
-Cloudflare Streamの動画は、ダウンロードが有効化されていない場合、`/downloads/default.mp4`にアクセスすると404エラーになる。
-
-現在のフロントエンド実装では：
-1. HLS URLからビデオIDを抽出
-2. `/downloads/default.mp4`に直接アクセス
-3. ダウンロード未有効化の場合、CORSエラーまたは404発生
-
-### 解決策
-既存の`admin-update-video-durations` Edge Functionを拡張して、Cloudflare APIから直接duration情報を取得する。
-
-### 変更ファイル
-
-**`supabase/functions/admin-update-video-durations/index.ts`**
-
-```typescript
-// 新規モード: duration取得
-if (body?.mode === 'fetch') {
-  const videoUrl = body.videoUrl;
-  const videoId = extractCloudflareVideoId(videoUrl);
-  
-  // Cloudflare API経由で動画情報を取得
-  const response = await fetch(
-    `https://api.cloudflare.com/client/v4/accounts/${accountId}/stream/${videoId}`,
-    { headers: { Authorization: `Bearer ${apiToken}` } }
-  );
-  
-  const result = await response.json();
-  // durationはresult.result.durationに格納されている（秒数）
-  return { duration: result.result?.duration };
-}
-```
 
 **`src/components/admin/VideosManagement.tsx`**
 
-```typescript
-// 変更後のfetchDurationFromVideo
-const fetchDurationFromVideo = async (videoUrl: string): Promise<number | null> => {
-  try {
-    // Edge Function経由でCloudflare APIからdurationを取得
-    const { data, error } = await supabase.functions.invoke(
-      'admin-update-video-durations',
-      { body: { mode: 'fetch', videoUrl } }
-    );
-    
-    if (error || !data?.duration) return null;
-    return data.duration;
-  } catch {
-    return null;
-  }
-};
+- 略称フィルタ用のセレクトボックスを追加
+- 動画編集ダイアログに略称編集セクションを追加
+- `usePaginatedTechniques`に略称フィルタを渡す
+
+**`src/components/admin/VideoCard.tsx`**
+
+- 動画に紐付いた略称バッジを表示するセクション追加
+
+**`src/hooks/usePaginatedTechniques.tsx`**
+
+- `notations?: string[]`フィルタを追加
+- `technique_notations`テーブルとJOINして絞り込み
+
+### UIイメージ
+
+```text
+動画カード:
+┌──────────────────────────────────────┐
+│ [サムネ]  A-1 クローズドガードの基本  │
+│          ⏱ 5:32                      │
+│          [CG] [Frm] [RET]  ← 略称    │
+└──────────────────────────────────────┘
+
+フィルタセクション:
+[シリーズ ▼] [カテゴリ ▼] [略称 ▼] [検索...]
+```
+
+### 新規コンポーネント
+
+**`src/components/admin/NotationSelector.tsx`**
+- 略称を選択・追加・削除するためのコンポーネント
+- カテゴリ別にグループ化されたドロップダウン
+
+---
+
+## 2. 再生リストを略称で自動生成
+
+### 概要
+略称の組み合わせ（例: `CG -> TC`）を指定すると、該当する動画を自動的にリストに追加する機能。
+
+### 変更ファイル
+
+**`src/components/admin/PlaylistsManagement.tsx`**
+
+- 「略称から生成」ボタンを追加
+- 生成ダイアログ：略称を複数選択 → 該当動画をプレビュー → 一括追加
+
+### 機能フロー
+
+```text
+1. 「略称から生成」ボタンをクリック
+2. ダイアログが開く
+3. 略称を選択（複数可）: [CG] [TC] [SC]
+4. 「検索」をクリック → 該当動画をプレビュー表示
+5. 「選択した動画を追加」→ リストに一括追加
+```
+
+### 新規コンポーネント
+
+**`src/components/admin/NotationPlaylistGenerator.tsx`**
+- 略称選択UI
+- 該当動画のプレビューリスト
+- 一括追加機能
+
+---
+
+## 3. 特別講習に招待リンク機能
+
+### 概要
+特別講習の動画に一意のトークンを生成し、そのURLを持つ人だけがアクセスできるようにする。
+
+### データベース変更
+
+**新規テーブル: `special_video_invites`**
+
+```sql
+CREATE TABLE public.special_video_invites (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    technique_id UUID NOT NULL REFERENCES techniques(id) ON DELETE CASCADE,
+    token TEXT NOT NULL UNIQUE,
+    expires_at TIMESTAMPTZ,
+    max_views INTEGER,
+    view_count INTEGER DEFAULT 0,
+    created_by UUID REFERENCES auth.users(id),
+    created_at TIMESTAMPTZ DEFAULT now(),
+    is_active BOOLEAN DEFAULT true
+);
+```
+
+### 変更ファイル
+
+**`src/components/admin/SpecialVideosManagement.tsx`**
+
+- 各動画カードに「招待リンク生成」ボタンを追加
+- 生成ダイアログ：有効期限、最大視聴回数を設定
+- 生成したリンクをコピー可能
+
+**`src/pages/Video.tsx`**
+
+- URLパラメータ`?invite=<token>`をチェック
+- 有効なトークンなら非公開動画にアクセス許可
+
+### UIイメージ
+
+```text
+招待リンク生成ダイアログ:
+┌────────────────────────────────────┐
+│ 招待リンクの設定                    │
+├────────────────────────────────────┤
+│ 有効期限: [7日後 ▼]               │
+│ 最大視聴回数: [10 ▼] (無制限可)    │
+├────────────────────────────────────┤
+│ [リンクを生成]                     │
+│                                    │
+│ 生成されたリンク:                  │
+│ https://jiuflow.art/video/xxx?invite=abc123 │
+│ [コピー]                           │
+└────────────────────────────────────┘
 ```
 
 ---
 
-## 4. 特別講習管理機能
+## 4. 略称マスターページのUI改善
 
-### 概要
-- シリーズ番号（A, B, C...）がない動画を「特別講習」カテゴリとして分離
-- 管理画面では別タブで管理
-- ユーザー画面には表示しない（または招待制で表示）
+### 現状の問題点（スクリーンショットより）
 
-### データ構造
-既存の`visibility`フィールドと`series_prefix`を活用：
-- `series_prefix`が空 = 特別講習
-- `visibility: 'private'` = 管理者のみ閲覧可能
+1. **カテゴリタブが3行に折り返している**
+2. **検索ボックスの配置がおかしい**
+3. **テーブルの日本語名が2行になっている**
+4. **カテゴリバッジも2行になっている**
 
-### 変更ファイル
+### 改善案
 
-**`src/components/admin/AdminSidebar.tsx`**
+**`src/components/admin/NotationsManagement.tsx`**
 
-```typescript
-// コンテンツグループに追加
-items: [
-  { id: "videos", label: "動画一覧", icon: Video },
-  { id: "special-videos", label: "特別講習", icon: GraduationCap }, // 新規
-  { id: "playlists", label: "再生リスト", icon: ListVideo },
-  { id: "notations", label: "略称マスター", icon: Grid3X3 },
-],
-```
+1. **カテゴリタブをスクロール可能に**
+   - `TabsList`に`overflow-x-auto`とスクロールバー非表示を適用
+   - 各タブをコンパクトに（文字数削減）
 
-**新規コンポーネント: `src/components/admin/SpecialVideosManagement.tsx`**
+2. **統計カードを上部にまとめる**
+   - 現在の7カラムを4カラムに（2行構成）
 
-主要機能：
-- `series_prefix`が空の動画のみ表示
-- デフォルトで`visibility: 'private'`
-- 専用の追加・編集フォーム
-- 招待リンク生成機能（将来拡張）
+3. **検索を右上に固定配置**
+   - ヘッダー右側に検索ボックスを移動
 
-```typescript
-// フィルタロジック
-const { data } = usePaginatedTechniques(page, pageSize, {
-  ...filters,
-  seriesType: 'special' // 新規フィルタ
-});
+4. **テーブルを改善**
+   - 日本語/英語列の幅を固定
+   - カテゴリバッジを小さく（1行に収まる短い表記）
+   - `white-space: nowrap`で折り返し防止
 
-// usePaginatedTechniquesに追加
-if (filters.seriesType === 'special') {
-  query = query.or('series_prefix.is.null,series_prefix.eq.');
-}
-```
-
-**`src/pages/AdminDashboard.tsx`**
-
-```typescript
-case "special-videos":
-  return <SpecialVideosManagement />;
-```
-
-**`src/hooks/usePaginatedTechniques.tsx`**
-
-```typescript
-interface TechniqueFilters {
-  // 既存...
-  seriesType?: 'regular' | 'special' | 'all'; // 新規
-}
-
-// クエリ構築
-if (filters.seriesType === 'special') {
-  query = query.or('series_prefix.is.null,series_prefix.eq.');
-} else if (filters.seriesType === 'regular') {
-  query = query.not('series_prefix', 'is', null)
-               .neq('series_prefix', '');
-}
-```
-
-### UI設計
+### 改善後のUIイメージ
 
 ```text
-┌─────────────────────────────────────────────────────────────┐
-│ 特別講習                                      [＋ 新規追加]   │
-├─────────────────────────────────────────────────────────────┤
-│ 🔒 これらの動画はシリーズに属さず、                           │
-│    招待者のみ閲覧可能です                                    │
-├─────────────────────────────────────────────────────────────┤
-│ [検索...]                                                   │
-├─────────────────────────────────────────────────────────────┤
-│ ┌─────────────────────────────────────────────────────────┐ │
-│ │ [サムネ] 初心者向け基礎講座                              │ │
-│ │          👁 非公開 • ⏱ 15:32                            │ │
-│ │          [再生] [編集] [DL] [削除]                      │ │
-│ └─────────────────────────────────────────────────────────┘ │
-└─────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────┐
+│ 略称マスター                               🔍 [検索...]  [更新] [＋追加] │
+│ BJJ略称の管理 • 合計 98 件                                          │
+├──────────────────────────────────────────────────────────────────┤
+│ ┌─────────┬─────────┬─────────┬─────────┐                        │
+│ │● 位置   │● 動作   │● 極技   │● グリップ│ (スクロール可能)        │
+│ │   23    │   14    │   24    │   14    │                        │
+│ │  0動画  │  0動画  │  0動画  │  0動画  │                        │
+│ └─────────┴─────────┴─────────┴─────────┘                        │
+├──────────────────────────────────────────────────────────────────┤
+│ [全て] [位置] [動作] [極技] [グリップ] [移動] [立技] [結果]  ←横スクロール │
+├──────────────────────────────────────────────────────────────────┤
+│ コード │ 日本語        │ English      │ 分類   │ 動画 │状態│ 操作 │
+│ CG    │ クローズドガード │ Closed Guard │ 位置  │  0  │有効│ ✎ 🗑 │
+│ HG    │ ハーフガード    │ Half Guard   │ 位置  │  0  │有効│ ✎ 🗑 │
+└──────────────────────────────────────────────────────────────────┘
 ```
+
+### 具体的な変更点
+
+1. **統計カードを2行4列に変更** (lines 219-249)
+   - `grid-cols-4`をベースに
+   - ラベルを短縮: 「ポジション」→「位置」、「サブミッション」→「極技」
+
+2. **タブをスクロール可能に** (lines 253-268)
+   ```tsx
+   <TabsList className="flex overflow-x-auto scrollbar-hide gap-1 w-full">
+   ```
+
+3. **検索をヘッダーに統合** (lines 199-216)
+   - ヘッダー右側にまとめる
+
+4. **テーブル列幅の固定** (lines 283-293)
+   - `w-[80px]`, `w-[150px]`など固定幅を設定
+   - `truncate`クラスで長いテキストを省略表示
+
+5. **短いカテゴリラベル**
+   ```typescript
+   const SHORT_LABELS: Record<NotationCategory, string> = {
+     position: '位置',
+     action: '動作',
+     submission: '極技',
+     grip: 'グリップ',
+     movement: '移動',
+     takedown: '立技',
+     outcome: '結果',
+   };
+   ```
 
 ---
 
@@ -226,45 +227,86 @@ if (filters.seriesType === 'special') {
 
 | ファイル | 変更内容 |
 |---------|---------|
-| `src/components/admin/VideoCard.tsx` | ダウンロードボタン追加、props追加 |
-| `src/components/admin/LocalizationStatus.tsx` | ✓○マーク削除 |
-| `src/components/admin/VideosManagement.tsx` | Edge Function経由でduration取得、特別講習フィルタ除外 |
-| `src/components/admin/AdminSidebar.tsx` | 「特別講習」メニュー追加 |
-| `src/pages/AdminDashboard.tsx` | special-videosタブ追加 |
-| `src/hooks/usePaginatedTechniques.tsx` | seriesTypeフィルタ追加 |
-| `supabase/functions/admin-update-video-durations/index.ts` | Cloudflare API経由でduration取得機能追加 |
-| 新規: `supabase/functions/get-video-download-url/index.ts` | ダウンロードURL取得 |
-| 新規: `src/components/admin/SpecialVideosManagement.tsx` | 特別講習管理画面 |
+| `src/components/admin/NotationsManagement.tsx` | UIレイアウト全面改修、短いラベル、スクロール対応 |
+| `src/components/admin/VideosManagement.tsx` | 略称フィルタ追加、動画編集に略称選択 |
+| `src/components/admin/VideoCard.tsx` | 略称バッジ表示 |
+| `src/components/admin/PlaylistsManagement.tsx` | 略称から自動生成機能 |
+| `src/components/admin/SpecialVideosManagement.tsx` | 招待リンク生成機能 |
+| `src/pages/Video.tsx` | 招待トークン認証チェック |
+| `src/hooks/usePaginatedTechniques.tsx` | 略称フィルタ対応 |
+| 新規: `src/components/admin/NotationSelector.tsx` | 略称選択コンポーネント |
+| 新規: `src/components/admin/NotationPlaylistGenerator.tsx` | 略称から再生リスト生成 |
+| 新規: `src/components/admin/InviteLinkDialog.tsx` | 招待リンク生成ダイアログ |
+| DB: マイグレーション | `special_video_invites`テーブル作成 |
 
 ---
 
 ## 技術詳細
 
-### Cloudflare API活用
+### 略称フィルタのクエリ例
 
-動画情報取得API：
-```
-GET https://api.cloudflare.com/client/v4/accounts/{account_id}/stream/{video_id}
+```typescript
+// usePaginatedTechniques.tsx
+if (filters.notations && filters.notations.length > 0) {
+  // technique_notations経由で絞り込み
+  const { data: linkedTechniqueIds } = await supabase
+    .from('technique_notations')
+    .select('technique_id')
+    .in('notation_id', filters.notations);
+  
+  const ids = linkedTechniqueIds?.map(t => t.technique_id) || [];
+  query = query.in('id', ids);
+}
 ```
 
-レスポンス例：
-```json
-{
-  "result": {
-    "uid": "abc123",
-    "duration": 245.5,
-    "preview": "https://...",
-    "playback": {
-      "hls": "https://..."
-    }
+### 招待リンクの認証フロー
+
+```typescript
+// Video.tsx
+const inviteToken = searchParams.get('invite');
+
+if (inviteToken) {
+  const { data: invite } = await supabase
+    .from('special_video_invites')
+    .select('*')
+    .eq('token', inviteToken)
+    .eq('technique_id', id)
+    .eq('is_active', true)
+    .gt('expires_at', new Date().toISOString())
+    .single();
+  
+  if (invite) {
+    // 視聴回数をインクリメント
+    await supabase.from('special_video_invites')
+      .update({ view_count: invite.view_count + 1 })
+      .eq('id', invite.id);
+    
+    setHasInviteAccess(true);
   }
 }
 ```
 
-### 必要な環境変数
-- `CLOUDFLARE_ACCOUNT_ID`: 既存
-- `CLOUDFLARE_STREAM_TOKEN`: 既存
+### 短いカテゴリラベルの定義
 
-### セキュリティ考慮
-- ダウンロード機能は管理者のみ利用可能（Edge Functionで認証チェック）
-- 特別講習動画はRLSポリシーで`visibility = 'private'`を強制
+```typescript
+// types/notation.ts に追加
+export const NOTATION_CATEGORY_SHORT_LABELS: Record<NotationCategory, string> = {
+  position: '位置',
+  action: '動作',
+  submission: '極技',
+  grip: 'グリップ',
+  movement: '移動',
+  takedown: '立技',
+  outcome: '結果',
+};
+```
+
+---
+
+## 実装優先順位
+
+1. **略称マスターUIの改善** (最も緊急 - 既存画面の見た目問題)
+2. **動画と略称の紐付け** (基盤機能)
+3. **略称フィルタリング** (動画管理の利便性向上)
+4. **再生リスト自動生成** (応用機能)
+5. **招待リンク機能** (特別講習の活用拡大)
