@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { VideoPlayer } from "@/components/VideoPlayer";
 import { getAvailableVideoLanguages, type TechniqueVideoData } from "@/lib/videoLanguages";
 import { Check, Globe, X } from "lucide-react";
@@ -61,6 +61,7 @@ export function VideoPreviewDialog({ open, onOpenChange, technique }: VideoPrevi
   if (!technique) return null;
 
   const techniqueName = technique.name_ja || technique.name || "動画プレビュー";
+  const selectedLangInfo = availableLanguages.find((l) => l.code === selectedLanguage);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -78,21 +79,37 @@ export function VideoPreviewDialog({ open, onOpenChange, technique }: VideoPrevi
         </DialogHeader>
 
         <div className="space-y-4">
-          {/* Language selector */}
+          {/* Language selector - Dropdown */}
           {availableLanguages.length > 0 && (
-            <div className="flex flex-wrap gap-2">
-              {availableLanguages.map((lang) => (
-                <Button
-                  key={lang.code}
-                  variant={selectedLanguage === lang.code ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => handleLanguageChange(lang.code)}
-                  className="min-w-[80px]"
-                >
-                  {lang.isOriginal && <Check className="h-3 w-3 mr-1" />}
-                  {lang.label}
-                </Button>
-              ))}
+            <div className="flex items-center gap-3">
+              <Globe className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm text-muted-foreground">音声言語:</span>
+              <Select value={selectedLanguage} onValueChange={handleLanguageChange}>
+                <SelectTrigger className="w-[220px]">
+                  <SelectValue>
+                    {selectedLangInfo && (
+                      <span className="flex items-center gap-2">
+                        {selectedLangInfo.isOriginal && <Check className="h-3 w-3" />}
+                        {selectedLangInfo.label}
+                        {selectedLangInfo.isOriginal && " (オリジナル)"}
+                      </span>
+                    )}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  {availableLanguages.map((lang) => (
+                    <SelectItem key={lang.code} value={lang.code}>
+                      <div className="flex items-center gap-2">
+                        {lang.isOriginal && <Check className="h-3 w-3 text-primary" />}
+                        <span>{lang.label}</span>
+                        {lang.isOriginal && (
+                          <span className="text-xs text-muted-foreground">(オリジナル)</span>
+                        )}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           )}
 
@@ -109,17 +126,6 @@ export function VideoPreviewDialog({ open, onOpenChange, technique }: VideoPrevi
                 <X className="h-8 w-8 mr-2" />
                 動画がありません
               </div>
-            )}
-          </div>
-
-          {/* Language info */}
-          <div className="text-sm text-muted-foreground">
-            {selectedLanguage === "ja" ? (
-              <span>🇯🇵 オリジナル音声（日本語）</span>
-            ) : (
-              <span>
-                翻訳版音声（{availableLanguages.find((l) => l.code === selectedLanguage)?.label}）
-              </span>
             )}
           </div>
         </div>

@@ -6,7 +6,8 @@ import { InputWithSuggestions } from "@/components/ui/input-with-suggestions";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Upload, Search, Check, Languages, ChevronDown, Loader2, RefreshCw, ImageIcon, Wrench, Clock } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Upload, Search, Check, Languages, ChevronDown, Loader2, RefreshCw, ImageIcon, Wrench, Clock, FileText, Film, Hash, Tags, BookOpen, FolderOpen, Eye } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   Collapsible,
@@ -32,6 +33,18 @@ import { VideoPreviewDialog, type VideoPreviewTechnique } from "@/components/adm
 import { VideoCard } from "@/components/admin/VideoCard";
 import { TranscriptionQuickDialog } from "@/components/admin/TranscriptionQuickDialog";
 import { TranslationQuickDialog } from "@/components/admin/TranslationQuickDialog";
+import { NotationSelector } from "@/components/admin/NotationSelector";
+
+// セクションコンポーネント
+const FormSection = ({ icon, title, children }: { icon: React.ReactNode; title: string; children: React.ReactNode }) => (
+  <div className="border rounded-lg p-4 space-y-3">
+    <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+      {icon}
+      <span>{title}</span>
+    </div>
+    {children}
+  </div>
+);
 
 export const VideosManagement = () => {
   const navigate = useNavigate();
@@ -791,6 +804,7 @@ export const VideosManagement = () => {
     visibility: "public" as "public" | "unlisted" | "private",
   });
   const [hashtagInput, setHashtagInput] = useState("");
+  const [descriptionTab, setDescriptionTab] = useState<"ja" | "en" | "pt">("ja");
   const [maxSeriesOrder, setMaxSeriesOrder] = useState<number | null>(null);
 
   const { data, isLoading, error, refetch } = usePaginatedTechniques(page, pageSize, {
@@ -2318,316 +2332,335 @@ export const VideosManagement = () => {
 
       {/* Edit/Create Dialog */}
       <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
               {editingTechnique ? (isAdmin ? '技術編集' : '技術詳細') : '新規技術追加'}
             </DialogTitle>
           </DialogHeader>
           
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="text-sm font-medium flex items-center gap-2">
-                  Japanese Name *
-                  {isAutoTranslatingName && <Loader2 className="h-3 w-3 animate-spin" />}
-                </label>
-                <Input
-                  value={formData.name_ja}
-                  onChange={(e) => setFormData({...formData, name_ja: e.target.value})}
-                  onBlur={autoTranslateName}
-                  placeholder="日本語で入力すると自動翻訳"
-                  required
-                  disabled={!isAdmin}
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium">English Name *</label>
-                <Input
-                  value={formData.name}
-                  onChange={(e) => setFormData({...formData, name: e.target.value})}
-                  placeholder={isAutoTranslatingName ? "翻訳中..." : ""}
-                  required
-                  disabled={!isAdmin || isAutoTranslatingName}
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium">Portuguese Name *</label>
-                <Input
-                  value={formData.name_pt}
-                  onChange={(e) => setFormData({...formData, name_pt: e.target.value})}
-                  placeholder={isAutoTranslatingName ? "翻訳中..." : ""}
-                  required
-                  disabled={!isAdmin || isAutoTranslatingName}
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="text-sm font-medium">Category *</label>
-              <div className="space-y-2">
-                <Input
-                  value={formData.category}
-                  onChange={(e) => setFormData({...formData, category: e.target.value})}
-                  placeholder="カテゴリー名を入力または選択"
-                  disabled={!isAdmin}
-                  list="dialog-categories-list"
-                  required
-                />
-                <datalist id="dialog-categories-list">
-                  {availableCategories.map((cat) => (
-                    <option key={cat} value={cat} />
-                  ))}
-                </datalist>
-                {availableCategories.length > 0 && (
-                  <div className="flex flex-wrap gap-2">
-                    {availableCategories.map((cat) => (
-                      <Button
-                        key={cat}
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setFormData({...formData, category: cat})}
-                        disabled={!isAdmin}
-                        className={formData.category === cat ? "bg-primary/10" : ""}
-                      >
-                        {cat}
-                      </Button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="text-sm font-medium">シリーズ名 (Series Name)</label>
-                <InputWithSuggestions
-                  value={formData.series_name}
-                  onChange={(e) => handleSeriesNameChange(e.target.value)}
-                  onSelectSuggestion={(value) => handleSeriesNameChange(value)}
-                  suggestions={seriesNameSuggestions}
-                  placeholder="例: クローズドガード"
-                  disabled={!isAdmin}
-                />
-                <p className="text-xs text-muted-foreground mt-1">
-                  空欄の場合は「その他の技」として表示されます
-                </p>
-              </div>
-              <div>
-                <label className="text-sm font-medium">
-                  シリーズアルファベット (自動割り当て)
-                </label>
-                <Input
-                  value={formData.series_prefix}
-                  readOnly
-                  disabled
-                  placeholder="自動設定"
-                  className="bg-muted"
-                />
-                <p className="text-xs text-muted-foreground mt-1">
-                  {formData.series_name && formData.series_prefix
-                    ? `「${formData.series_name}」には「${formData.series_prefix}」が割り当てられています`
-                    : 'シリーズ名を入力すると自動的に割り当てられます'}
-                </p>
-              </div>
-              <div>
-                <label className="text-sm font-medium">シリーズ内順序 (Order)</label>
-                <Input
-                  type="number"
-                  value={formData.series_order || ""}
-                  onChange={(e) => setFormData({...formData, series_order: e.target.value ? parseInt(e.target.value) : null})}
-                  placeholder="1, 2, 3..."
-                  disabled={!isAdmin}
-                />
-                {maxSeriesOrder !== null && formData.series_prefix && (
-                  <p className="text-xs text-green-600 mt-1">
-                    このシリーズは現在{maxSeriesOrder}番まで使用中
-                  </p>
-                )}
-                <p className="text-xs text-muted-foreground mt-1">
-                  シリーズ内での表示順序（1から始まる連番）
-                </p>
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              <div>
-                <label className="text-sm font-medium flex items-center gap-2">
-                  説明 (Japanese)
-                  {isAutoTranslatingDesc && <Loader2 className="h-3 w-3 animate-spin" />}
-                </label>
-                <Textarea
-                  value={formData.description_ja}
-                  onChange={(e) => setFormData({...formData, description_ja: e.target.value})}
-                  onBlur={autoTranslateDescription}
-                  placeholder="日本語で入力すると自動翻訳"
-                  rows={3}
-                  disabled={!isAdmin}
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium">Description (English)</label>
-                <Textarea
-                  value={formData.description}
-                  onChange={(e) => setFormData({...formData, description: e.target.value})}
-                  placeholder={isAutoTranslatingDesc ? "翻訳中..." : ""}
-                  rows={3}
-                  disabled={!isAdmin || isAutoTranslatingDesc}
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium">Descrição (Portuguese)</label>
-                <Textarea
-                  value={formData.description_pt}
-                  onChange={(e) => setFormData({...formData, description_pt: e.target.value})}
-                  placeholder={isAutoTranslatingDesc ? "翻訳中..." : ""}
-                  rows={3}
-                  disabled={!isAdmin || isAutoTranslatingDesc}
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="text-sm font-medium">ハッシュタグ</label>
-              <div className="space-y-2">
-                {isAdmin && (
-                  <div className="flex gap-2">
-                    <Input
-                      value={hashtagInput}
-                      onChange={(e) => setHashtagInput(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          e.preventDefault();
-                          const tag = hashtagInput.trim().replace(/^#/, '');
-                          if (tag && !formData.hashtags.includes(tag)) {
-                            setFormData({ ...formData, hashtags: [...formData.hashtags, tag] });
-                            setHashtagInput("");
-                          }
-                        }
-                      }}
-                      placeholder="ハッシュタグを入力してEnter"
-                    />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => {
-                        const tag = hashtagInput.trim().replace(/^#/, '');
-                        if (tag && !formData.hashtags.includes(tag)) {
-                          setFormData({ ...formData, hashtags: [...formData.hashtags, tag] });
-                          setHashtagInput("");
-                        }
-                      }}
-                    >
-                      追加
-                    </Button>
-                  </div>
-                )}
-                <div className="flex flex-wrap gap-2">
-                  {formData.hashtags.map((tag) => (
-                    <div
-                      key={tag}
-                      className="flex items-center gap-1 px-2 py-1 bg-primary/10 text-primary rounded-md text-sm"
-                    >
-                      <span>#{tag}</span>
-                      {isAdmin && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setFormData({
-                              ...formData,
-                              hashtags: formData.hashtags.filter((t) => t !== tag),
-                            });
-                          }}
-                          className="text-primary hover:text-primary/80"
-                        >
-                          ×
-                        </button>
-                      )}
-                    </div>
-                  ))}
+            {/* 基本情報セクション */}
+            <FormSection icon={<FileText className="h-4 w-4" />} title="基本情報">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="text-sm font-medium flex items-center gap-2">
+                    日本語名 *
+                    {isAutoTranslatingName && <Loader2 className="h-3 w-3 animate-spin" />}
+                  </label>
+                  <Input
+                    value={formData.name_ja}
+                    onChange={(e) => setFormData({...formData, name_ja: e.target.value})}
+                    onBlur={autoTranslateName}
+                    placeholder="日本語で入力すると自動翻訳"
+                    required
+                    disabled={!isAdmin}
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium">English Name *</label>
+                  <Input
+                    value={formData.name}
+                    onChange={(e) => setFormData({...formData, name: e.target.value})}
+                    placeholder={isAutoTranslatingName ? "翻訳中..." : ""}
+                    required
+                    disabled={!isAdmin || isAutoTranslatingName}
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Nome em Português *</label>
+                  <Input
+                    value={formData.name_pt}
+                    onChange={(e) => setFormData({...formData, name_pt: e.target.value})}
+                    placeholder={isAutoTranslatingName ? "翻訳中..." : ""}
+                    required
+                    disabled={!isAdmin || isAutoTranslatingName}
+                  />
                 </div>
               </div>
-            </div>
 
-            <div>
-              <label className="text-sm font-medium">公開設定</label>
-              <Select
-                value={formData.visibility}
-                onValueChange={(value: "public" | "unlisted" | "private") => setFormData({ ...formData, visibility: value })}
-                disabled={!isAdmin}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="public">
-                    <div className="flex flex-col items-start">
-                      <span>🌍 一般公開</span>
-                      <span className="text-xs text-muted-foreground">誰でも検索・閲覧可能</span>
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="unlisted">
-                    <div className="flex flex-col items-start">
-                      <span>🔗 限定公開</span>
-                      <span className="text-xs text-muted-foreground">URLを知っている人のみ閲覧可能</span>
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="private">
-                    <div className="flex flex-col items-start">
-                      <span>🔒 非公開</span>
-                      <span className="text-xs text-muted-foreground">管理者のみ閲覧可能</span>
-                    </div>
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {isAdmin && (
-              <>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="text-sm font-medium">動画ファイル</label>
+                  <label className="text-sm font-medium">カテゴリ *</label>
+                  <Input
+                    value={formData.category}
+                    onChange={(e) => setFormData({...formData, category: e.target.value})}
+                    placeholder="カテゴリー名を入力または選択"
+                    disabled={!isAdmin}
+                    list="dialog-categories-list"
+                    required
+                  />
+                  <datalist id="dialog-categories-list">
+                    {availableCategories.map((cat) => (
+                      <option key={cat} value={cat} />
+                    ))}
+                  </datalist>
+                  {availableCategories.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-2">
+                      {availableCategories.slice(0, 6).map((cat) => (
+                        <Button
+                          key={cat}
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setFormData({...formData, category: cat})}
+                          disabled={!isAdmin}
+                          className={`text-xs h-7 ${formData.category === cat ? "bg-primary/10" : ""}`}
+                        >
+                          {cat}
+                        </Button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <label className="text-sm font-medium">公開設定</label>
+                  <Select
+                    value={formData.visibility}
+                    onValueChange={(value: "public" | "unlisted" | "private") => setFormData({ ...formData, visibility: value })}
+                    disabled={!isAdmin}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="public">
+                        <div className="flex items-center gap-2">
+                          <Eye className="h-4 w-4" />
+                          <span>🌍 一般公開</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="unlisted">
+                        <div className="flex items-center gap-2">
+                          <span>🔗 限定公開</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="private">
+                        <div className="flex items-center gap-2">
+                          <span>🔒 非公開</span>
+                        </div>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </FormSection>
+
+            {/* シリーズ設定セクション */}
+            <FormSection icon={<FolderOpen className="h-4 w-4" />} title="シリーズ設定">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="text-sm font-medium">シリーズ名</label>
+                  <InputWithSuggestions
+                    value={formData.series_name}
+                    onChange={(e) => handleSeriesNameChange(e.target.value)}
+                    onSelectSuggestion={(value) => handleSeriesNameChange(value)}
+                    suggestions={seriesNameSuggestions}
+                    placeholder="例: クローズドガード"
+                    disabled={!isAdmin}
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    空欄の場合は「その他の技」として表示
+                  </p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium">アルファベット</label>
+                  <Input
+                    value={formData.series_prefix}
+                    readOnly
+                    disabled
+                    placeholder="自動設定"
+                    className="bg-muted"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {formData.series_prefix ? `「${formData.series_prefix}」が割り当て済み` : '自動割り当て'}
+                  </p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium">順序</label>
+                  <Input
+                    type="number"
+                    value={formData.series_order || ""}
+                    onChange={(e) => setFormData({...formData, series_order: e.target.value ? parseInt(e.target.value) : null})}
+                    placeholder="1, 2, 3..."
+                    disabled={!isAdmin}
+                  />
+                  {maxSeriesOrder !== null && formData.series_prefix && (
+                    <p className="text-xs text-green-600 mt-1">
+                      現在{maxSeriesOrder}番まで使用中
+                    </p>
+                  )}
+                </div>
+              </div>
+            </FormSection>
+
+            {/* 略称セクション（編集時のみ表示） */}
+            {editingTechnique && (
+              <FormSection icon={<Tags className="h-4 w-4" />} title="略称（複数選択可）">
+                <NotationSelector techniqueId={editingTechnique.id} />
+                <p className="text-xs text-muted-foreground">
+                  技術を説明するための略称を複数選択できます
+                </p>
+              </FormSection>
+            )}
+
+            {/* 説明セクション */}
+            <FormSection icon={<BookOpen className="h-4 w-4" />} title="説明">
+              <Tabs value={descriptionTab} onValueChange={(v) => setDescriptionTab(v as "ja" | "en" | "pt")}>
+                <TabsList className="grid w-full grid-cols-3">
+                  <TabsTrigger value="ja" className="flex items-center gap-1">
+                    🇯🇵 日本語
+                    {isAutoTranslatingDesc && <Loader2 className="h-3 w-3 animate-spin" />}
+                  </TabsTrigger>
+                  <TabsTrigger value="en">🇺🇸 English</TabsTrigger>
+                  <TabsTrigger value="pt">🇧🇷 Português</TabsTrigger>
+                </TabsList>
+                <TabsContent value="ja" className="mt-3">
+                  <Textarea
+                    value={formData.description_ja}
+                    onChange={(e) => setFormData({...formData, description_ja: e.target.value})}
+                    onBlur={autoTranslateDescription}
+                    placeholder="日本語で入力すると自動翻訳されます"
+                    rows={4}
+                    disabled={!isAdmin}
+                  />
+                </TabsContent>
+                <TabsContent value="en" className="mt-3">
+                  <Textarea
+                    value={formData.description}
+                    onChange={(e) => setFormData({...formData, description: e.target.value})}
+                    placeholder={isAutoTranslatingDesc ? "翻訳中..." : "English description"}
+                    rows={4}
+                    disabled={!isAdmin || isAutoTranslatingDesc}
+                  />
+                </TabsContent>
+                <TabsContent value="pt" className="mt-3">
+                  <Textarea
+                    value={formData.description_pt}
+                    onChange={(e) => setFormData({...formData, description_pt: e.target.value})}
+                    placeholder={isAutoTranslatingDesc ? "翻訳中..." : "Descrição em português"}
+                    rows={4}
+                    disabled={!isAdmin || isAutoTranslatingDesc}
+                  />
+                </TabsContent>
+              </Tabs>
+            </FormSection>
+
+            {/* 動画セクション（管理者のみ） */}
+            {isAdmin && (
+              <FormSection icon={<Film className="h-4 w-4" />} title="動画">
+                <div className="space-y-3">
                   <Input
                     type="file"
                     accept="video/*"
                     onChange={(e) => setVideoFile(e.target.files?.[0] || null)}
                   />
                   {editingTechnique?.video_url && !videoFile && (
-                    <p className="text-sm text-muted-foreground mt-1">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Check className="h-4 w-4 text-green-500" />
                       現在の動画はアップロード済みです
-                    </p>
+                    </div>
                   )}
                 </div>
+              </FormSection>
+            )}
 
+            {/* ハッシュタグセクション */}
+            <FormSection icon={<Hash className="h-4 w-4" />} title="ハッシュタグ">
+              {isAdmin && (
                 <div className="flex gap-2">
+                  <Input
+                    value={hashtagInput}
+                    onChange={(e) => setHashtagInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        const tag = hashtagInput.trim().replace(/^#/, '');
+                        if (tag && !formData.hashtags.includes(tag)) {
+                          setFormData({ ...formData, hashtags: [...formData.hashtags, tag] });
+                          setHashtagInput("");
+                        }
+                      }
+                    }}
+                    placeholder="ハッシュタグを入力してEnter"
+                    className="flex-1"
+                  />
                   <Button
                     type="button"
                     variant="outline"
-                    onClick={handleTranslate}
-                    disabled={isTranslating || !formData.name}
+                    onClick={() => {
+                      const tag = hashtagInput.trim().replace(/^#/, '');
+                      if (tag && !formData.hashtags.includes(tag)) {
+                        setFormData({ ...formData, hashtags: [...formData.hashtags, tag] });
+                        setHashtagInput("");
+                      }
+                    }}
                   >
-                    {isTranslating ? "翻訳中..." : "自動翻訳"}
+                    追加
                   </Button>
                 </div>
-              </>
-            )}
+              )}
+              <div className="flex flex-wrap gap-2">
+                {formData.hashtags.map((tag) => (
+                  <Badge
+                    key={tag}
+                    variant="secondary"
+                    className="flex items-center gap-1"
+                  >
+                    <span>#{tag}</span>
+                    {isAdmin && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setFormData({
+                            ...formData,
+                            hashtags: formData.hashtags.filter((t) => t !== tag),
+                          });
+                        }}
+                        className="ml-1 hover:text-destructive"
+                      >
+                        ×
+                      </button>
+                    )}
+                  </Badge>
+                ))}
+                {formData.hashtags.length === 0 && (
+                  <span className="text-sm text-muted-foreground">ハッシュタグがありません</span>
+                )}
+              </div>
+            </FormSection>
 
-            <div className="flex justify-end gap-2">
-              <Button 
-                type="button" 
-                variant="outline" 
-                onClick={() => {
-                  resetForm();
-                  setShowEditDialog(false);
-                }}
-              >
-                {isAdmin ? 'キャンセル' : '閉じる'}
-              </Button>
+            {/* アクションボタン */}
+            <div className="flex justify-between items-center pt-2 border-t">
               {isAdmin && (
-                <Button type="submit">
-                  {editingTechnique ? '更新' : '作成'}
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleTranslate}
+                  disabled={isTranslating || !formData.name}
+                >
+                  <Languages className="h-4 w-4 mr-1" />
+                  {isTranslating ? "翻訳中..." : "自動翻訳"}
                 </Button>
               )}
+              <div className="flex gap-2 ml-auto">
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => {
+                    resetForm();
+                    setShowEditDialog(false);
+                  }}
+                >
+                  {isAdmin ? 'キャンセル' : '閉じる'}
+                </Button>
+                {isAdmin && (
+                  <Button type="submit">
+                    {editingTechnique ? '更新' : '作成'}
+                  </Button>
+                )}
+              </div>
             </div>
           </form>
         </DialogContent>
