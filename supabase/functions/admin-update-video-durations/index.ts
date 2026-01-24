@@ -50,6 +50,75 @@ serve(async (req) => {
     }
 
     const body = await req.json().catch(() => null);
+
+    // Mode: fetch duration from Cloudflare API
+    if (body?.mode === "fetch" && body?.videoUrl) {
+      const videoUrl = body.videoUrl as string;
+      const accountId = Deno.env.get("CLOUDFLARE_ACCOUNT_ID") ?? "";
+      const apiToken = Deno.env.get("CLOUDFLARE_STREAM_API_TOKEN") ?? "";
+
+      if (!accountId || !apiToken) {
+        return new Response(JSON.stringify({ error: "Cloudflare credentials not configured" }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 500,
+        });
+      }
+
+      // Extract video ID from URL
+      const patterns = [
+        /videodelivery\.net\/([a-zA-Z0-9]+)/i,
+        /cloudflarestream\.com\/([a-zA-Z0-9]+)/i,
+        /watch\.cloudflarestream\.com\/([a-zA-Z0-9]+)/i,
+      ];
+
+      let videoId: string | null = null;
+      for (const pattern of patterns) {
+        const match = videoUrl.match(pattern);
+        if (match?.[1]) {
+          videoId = match[1];
+          break;
+        }
+      }
+
+      if (!videoId) {
+        return new Response(JSON.stringify({ error: "Could not extract video ID" }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 400,
+        });
+      }
+
+      try {
+        const response = await fetch(
+          `https://api.cloudflare.com/client/v4/accounts/${accountId}/stream/${videoId}`,
+          {
+            headers: { Authorization: `Bearer ${apiToken}` },
+          }
+        );
+
+        const result = await response.json();
+        const duration = result?.result?.duration;
+
+        if (typeof duration === "number" && duration > 0) {
+          return new Response(JSON.stringify({ duration }), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 200,
+          });
+        } else {
+          return new Response(JSON.stringify({ error: "Duration not available" }), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 404,
+          });
+        }
+      } catch (e) {
+        console.error("Cloudflare API error:", e);
+        return new Response(JSON.stringify({ error: "Failed to fetch from Cloudflare" }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 500,
+        });
+      }
+    }
+
+    // Default mode: batch update durations
     const durations = (body?.durations ?? []) as DurationUpdate[];
     if (!Array.isArray(durations) || durations.length === 0) {
       return new Response(JSON.stringify({ error: "Missing durations" }), {

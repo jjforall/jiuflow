@@ -38,7 +38,7 @@ import LineIntegrationManagement from "@/components/admin/LineIntegrationManagem
 import McpChatManagement from "@/components/admin/McpChatManagement";
 import OAuthClientsManagement from "@/components/admin/OAuthClientsManagement";
 import NotationsManagement from "@/components/admin/NotationsManagement";
-
+import SpecialVideosManagement from "@/components/admin/SpecialVideosManagement";
 const AdminDashboard = () => {
   const { signOut } = useAuth();
   const [activeTab, setActiveTab] = useState("videos");
@@ -95,6 +95,7 @@ const AdminDashboard = () => {
                         <p className="text-xs font-medium text-muted-foreground px-3 mb-1">コンテンツ</p>
                         {[
                           { id: "videos", label: "動画一覧" },
+                          { id: "special-videos", label: "特別講習" },
                           { id: "playlists", label: "再生リスト" },
                           { id: "notations", label: "略称マスター" },
                           { id: "music", label: "音楽管理" },
@@ -317,6 +318,7 @@ const AdminDashboard = () => {
             <div className="max-w-7xl mx-auto">
               <div className="space-y-6">
                 {activeTab === "videos" && <VideosManagement />}
+                {activeTab === "special-videos" && <SpecialVideosManagement />}
                 {activeTab === "playlists" && <PlaylistsManagement />}
                 {activeTab === "notations" && <NotationsManagement />}
                 {activeTab === "users" && <UsersTab />}

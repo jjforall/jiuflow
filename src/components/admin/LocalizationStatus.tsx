@@ -72,7 +72,7 @@ export function LocalizationStatus({
                 title={`${lang.fullLabel}: クリックで再生`}
                 onClick={() => onPlayVideo?.(lang.code)}
               >
-                {lang.label}✓
+                {lang.label}
               </span>
             ))}
           </div>
@@ -144,12 +144,8 @@ export function LocalizationStatus({
                   }}
                 >
                   {lang.label}
-                  {isProcessing ? (
+                  {isProcessing && (
                     <Loader2 className="inline w-2.5 h-2.5 ml-0.5 animate-spin" />
-                  ) : isOriginal ? (
-                    "○"
-                  ) : (
-                    "✓"
                   )}
                 </span>
               );
