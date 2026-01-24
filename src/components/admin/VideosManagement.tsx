@@ -2059,18 +2059,20 @@ export const VideosManagement = () => {
                   {isFixingThumbnails ? '修復中...' : `サムネイル修復 (${missingThumbnailCount}件)`}
                 </Button>
               )}
-              {missingDurationCount > 0 && (
-                <Button 
-                  onClick={handleFetchAllDurations}
-                  disabled={isFetchingDurations}
-                  variant="outline"
-                  size="sm"
-                  className="text-xs h-7"
-                >
-                  <Clock className="w-3 h-3 mr-1" />
-                  {isFetchingDurations ? '取得中...' : `動画時間一括取得 (${missingDurationCount}件)`}
-                </Button>
-              )}
+              <Button 
+                onClick={handleFetchAllDurations}
+                disabled={isFetchingDurations || missingDurationCount === 0}
+                variant="outline"
+                size="sm"
+                className="text-xs h-7"
+              >
+                <Clock className="w-3 h-3 mr-1" />
+                {isFetchingDurations 
+                  ? '取得中...' 
+                  : missingDurationCount === 0 
+                    ? '✓ 動画時間取得済み' 
+                    : `動画時間一括取得 (${missingDurationCount}件)`}
+              </Button>
             </div>
             
             {/* Series Mapping - Compact */}
