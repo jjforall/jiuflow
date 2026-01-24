@@ -19,6 +19,7 @@ interface TechniqueFilters {
   search?: string;
   category?: string;
   series?: string;
+  seriesType?: 'regular' | 'special' | 'all';
   sortBy?: 'order' | 'name' | 'category' | 'series' | 'created';
   sortDirection?: 'asc' | 'desc';
 }
@@ -52,6 +53,13 @@ export const usePaginatedTechniques = (
       // Apply series filter
       if (filters.series && filters.series !== 'all') {
         query = query.eq('series_prefix', filters.series);
+      }
+
+      // Apply series type filter (regular vs special)
+      if (filters.seriesType === 'special') {
+        query = query.or('series_prefix.is.null,series_prefix.eq.');
+      } else if (filters.seriesType === 'regular') {
+        query = query.not('series_prefix', 'is', null).neq('series_prefix', '');
       }
 
       // Apply sorting

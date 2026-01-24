@@ -95,6 +95,7 @@ export const VideosManagement = () => {
   const [fetchingDurationId, setFetchingDurationId] = useState<string | null>(null);
   const [missingDurationCount, setMissingDurationCount] = useState(0);
   const [durationFilter, setDurationFilter] = useState<'all' | 'missing'>('all');
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const [lastBulkFetchResults, setLastBulkFetchResults] = useState<{
     total: number;
     saved: number;
@@ -513,49 +514,47 @@ export const VideosManagement = () => {
     }
   };
   
-  // Helper function to extract duration from video URL
-  const fetchDurationFromVideo = (videoUrl: string): Promise<number | null> => {
-    return new Promise((resolve) => {
-      const video = document.createElement('video');
-      video.preload = 'metadata';
-      video.crossOrigin = 'anonymous';
+  // Helper function to extract duration from video URL via Cloudflare API
+  const fetchDurationFromVideo = async (videoUrl: string): Promise<number | null> => {
+    try {
+      const { data, error } = await supabase.functions.invoke(
+        'admin-update-video-durations',
+        { body: { mode: 'fetch', videoUrl } }
+      );
       
-      // Convert HLS manifest URL to MP4 download URL for duration extraction
-      let srcUrl = videoUrl;
-      if (videoUrl.includes('videodelivery.net') && videoUrl.includes('/manifest/')) {
-        // Extract video ID from URL like https://videodelivery.net/{id}/manifest/video.m3u8
-        const match = videoUrl.match(/videodelivery\.net\/([a-zA-Z0-9]+)/i);
-        if (match?.[1]) {
-          srcUrl = `https://videodelivery.net/${match[1]}/downloads/default.mp4`;
-        }
-      } else if (videoUrl.includes('cloudflarestream.com') && videoUrl.includes('/manifest/')) {
-        // Extract video ID from customer subdomain URL
-        const match = videoUrl.match(/cloudflarestream\.com\/([a-zA-Z0-9]+)/i);
-        if (match?.[1]) {
-          srcUrl = `https://videodelivery.net/${match[1]}/downloads/default.mp4`;
-        }
+      if (error || !data?.duration) return null;
+      return data.duration;
+    } catch (err) {
+      console.error('Failed to fetch duration:', err);
+      return null;
+    }
+  };
+  
+  // Download video
+  const handleDownloadVideo = async (technique: Technique) => {
+    if (!technique.video_url) return;
+    
+    setDownloadingId(technique.id);
+    try {
+      const { data, error } = await supabase.functions.invoke(
+        'get-video-download-url',
+        { body: { videoUrl: technique.video_url } }
+      );
+      
+      if (error || !data?.downloadUrl) {
+        toast.error('ダウンロードURLの取得に失敗しました');
+        return;
       }
       
-      video.src = srcUrl;
-      
-      const timeout = setTimeout(() => {
-        video.remove();
-        resolve(null);
-      }, 15000); // 15 second timeout per video
-      
-      video.onloadedmetadata = () => {
-        clearTimeout(timeout);
-        const duration = video.duration;
-        video.remove();
-        resolve(isFinite(duration) ? duration : null);
-      };
-      
-      video.onerror = () => {
-        clearTimeout(timeout);
-        video.remove();
-        resolve(null);
-      };
-    });
+      // Open download URL in new tab
+      window.open(data.downloadUrl, '_blank');
+      toast.success('ダウンロードを開始しました');
+    } catch (err) {
+      console.error('Download error:', err);
+      toast.error('ダウンロードに失敗しました');
+    } finally {
+      setDownloadingId(null);
+    }
   };
   
   // 次に利用可能なアルファベットを取得
@@ -2182,6 +2181,8 @@ export const VideosManagement = () => {
                 }}
                 onDelete={() => handleDelete(technique.id)}
                 onFetchDuration={() => handleFetchSingleDuration(technique)}
+                onDownload={() => handleDownloadVideo(technique)}
+                isDownloading={downloadingId === technique.id}
                 isAdmin={isAdmin}
               />
             );

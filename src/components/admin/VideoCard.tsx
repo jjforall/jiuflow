@@ -1,4 +1,4 @@
-import { Play, Edit, Languages, FileText, Trash2, Clock, RefreshCw, Loader2 } from "lucide-react";
+import { Play, Edit, Languages, FileText, Trash2, Clock, RefreshCw, Loader2, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SeriesBadge } from "@/components/ui/series-badge";
 import { LocalizationStatus } from "./LocalizationStatus";
@@ -39,6 +39,8 @@ interface VideoCardProps {
   onTranslate: () => void;
   onDelete: () => void;
   onFetchDuration?: () => void;
+  onDownload?: () => void;
+  isDownloading?: boolean;
   isAdmin: boolean;
 }
 
@@ -75,6 +77,8 @@ export function VideoCard({
   onTranslate,
   onDelete,
   onFetchDuration,
+  onDownload,
+  isDownloading = false,
   isAdmin,
 }: VideoCardProps) {
   const thumbnail = getEffectiveThumbnail(technique.thumbnail_url, technique.video_url);
@@ -229,6 +233,24 @@ export function VideoCard({
                       <Languages className="w-3 h-3 sm:mr-1" />
                       <span className="hidden sm:inline">吹替</span>
                     </Button>
+                    
+                    {onDownload && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-7 sm:h-8 text-xs px-2 sm:px-3"
+                        onClick={onDownload}
+                        disabled={isDownloading}
+                        title="動画をダウンロード"
+                      >
+                        {isDownloading ? (
+                          <Loader2 className="w-3 h-3 animate-spin sm:mr-1" />
+                        ) : (
+                          <Download className="w-3 h-3 sm:mr-1" />
+                        )}
+                        <span className="hidden sm:inline">DL</span>
+                      </Button>
+                    )}
                   </>
                 )}
                 
