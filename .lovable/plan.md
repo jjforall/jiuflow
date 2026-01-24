@@ -1,107 +1,30 @@
 
-
-# 技術編集ダイアログ改善計画
+# 動画一覧改善計画
 
 ## 要件
 
-1. **略称を複数選択可能に** - NotationSelectorを編集ダイアログに組み込む
-2. **言語切り替えをプルダウン形式に** - ボタン形式からSelect/Dropdownに変更
-3. **編集画面の整理** - ごちゃごちゃしたレイアウトを見やすく整理
+1. **動画カードに略称（notation）を表示する** - 現在紐付けられている略称バッジをカードに表示
+2. **旧シリーズ（A, B, etc.）を「削除予定」として別の場所に表示** - レガシー情報を明確に区別
+3. **動画時間取得機能の修正** - 現在「Failed to fetch」エラーが出る問題を調査・修正
 
 ---
 
-## 現状の問題点
+## 現状分析
 
-### 編集ダイアログ（VideosManagement.tsx: 2320-2634）
-- フォームが縦に長く、スクロール量が多い
-- 関連する項目がグループ化されていない
-- 略称の選択機能がない
-- 言語切り替えの視認性が低い
+### VideoCard.tsx の現状
+- 略称（notation）バッジは表示されていない
+- シリーズバッジ（A-1, B-2等）はサムネイル左上に表示
+- 動画時間は右下に表示、未取得時は「取得」ボタン
 
-### VideoPreviewDialog
-- 言語切り替えがボタン形式で横に並んでいる
-- 言語数が多い場合に場所を取りすぎる
+### VideosManagement.tsx の現状
+- 略称データは`technique_notations`テーブルから取得可能だが、VideoCardに渡していない
+- 動画時間取得は`admin-update-video-durations`エッジ関数を使用
 
----
-
-## 改善案
-
-### 1. 編集ダイアログをセクション分けして整理
-
-```text
-┌─────────────────────────────────────────────────────────┐
-│ 技術編集                                                 │
-├─────────────────────────────────────────────────────────┤
-│ ┌─────────────────────────────────────────────────────┐ │
-│ │ 📝 基本情報                                          │ │
-│ ├─────────────────────────────────────────────────────┤ │
-│ │ 日本語名 *     │ English Name * │ Portuguese Name * │ │
-│ │ [入力欄]       │ [入力欄]       │ [入力欄]           │ │
-│ │                                                     │ │
-│ │ カテゴリ *     │ 公開設定                           │ │
-│ │ [選択/入力]    │ [🌍一般公開 ▼]                     │ │
-│ └─────────────────────────────────────────────────────┘ │
-│                                                         │
-│ ┌─────────────────────────────────────────────────────┐ │
-│ │ 📚 シリーズ設定                                      │ │
-│ ├─────────────────────────────────────────────────────┤ │
-│ │ シリーズ名    │ プレフィックス │ 順序               │ │
-│ │ [入力欄]      │ [自動：A]     │ [1]                 │ │
-│ └─────────────────────────────────────────────────────┘ │
-│                                                         │
-│ ┌─────────────────────────────────────────────────────┐ │
-│ │ 🏷️ 略称（複数選択可）                               │ │
-│ ├─────────────────────────────────────────────────────┤ │
-│ │ [CG] [SW] [×]  [+略称を追加]                        │ │
-│ └─────────────────────────────────────────────────────┘ │
-│                                                         │
-│ ┌─────────────────────────────────────────────────────┐ │
-│ │ 📝 説明                                              │ │
-│ ├─────────────────────────────────────────────────────┤ │
-│ │ [タブ: 日本語 | English | Português]                 │ │
-│ │ ┌───────────────────────────────────────────────────┐│ │
-│ │ │                                                   ││ │
-│ │ │ (現在選択中の言語の説明欄)                         ││ │
-│ │ │                                                   ││ │
-│ │ └───────────────────────────────────────────────────┘│ │
-│ └─────────────────────────────────────────────────────┘ │
-│                                                         │
-│ ┌─────────────────────────────────────────────────────┐ │
-│ │ 🎬 動画                                              │ │
-│ ├─────────────────────────────────────────────────────┤ │
-│ │ ファイル: [ファイルを選択]                          │ │
-│ │ 現在の動画: ✓ アップロード済み                      │ │
-│ └─────────────────────────────────────────────────────┘ │
-│                                                         │
-│ ┌─────────────────────────────────────────────────────┐ │
-│ │ #️⃣ ハッシュタグ                                     │ │
-│ ├─────────────────────────────────────────────────────┤ │
-│ │ [#closeGuard] [#sweep] [×]  [入力...] [追加]        │ │
-│ └─────────────────────────────────────────────────────┘ │
-│                                                         │
-│                              [キャンセル] [更新]       │
-└─────────────────────────────────────────────────────────┘
-```
-
-### 2. 言語切り替えをプルダウン形式に
-
-**VideoPreviewDialog改善**
-
-```text
-現在:
-[日本語] [English] [Português] [Español] [Français]...
-
-改善後:
-┌──────────────────────────────────────┐
-│ 🌐 音声言語: [日本語（オリジナル）▼] │
-│              ├────────────────────────│
-│              │ 日本語（オリジナル）✓  │
-│              │ English                │
-│              │ Português              │
-│              │ Español                │
-│              └────────────────────────│
-└──────────────────────────────────────┘
-```
+### 動画時間取得の問題
+- ネットワークログ: `Failed to fetch`エラー
+- エッジ関数自体は正常に動作（認証なしで403返却確認済み）
+- Cloudflare認証情報（CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_STREAM_API_TOKEN）は設定済み
+- 原因: CORSエラーまたはタイムアウトの可能性
 
 ---
 
@@ -109,116 +32,177 @@
 
 | ファイル | 変更内容 |
 |---------|---------|
-| `src/components/admin/VideosManagement.tsx` | 編集ダイアログにNotationSelector追加、セクション分け |
-| `src/components/admin/VideoPreviewDialog.tsx` | 言語切り替えをSelectプルダウンに変更 |
+| `src/components/admin/VideoCard.tsx` | 略称バッジ追加、旧シリーズを「削除予定」表示に変更 |
+| `src/components/admin/VideosManagement.tsx` | 略称データをバッチ取得してVideoCardに渡す |
 
 ---
 
 ## 技術詳細
 
-### VideosManagement.tsx - 編集ダイアログ改善
+### 1. VideoCard.tsx - 略称バッジと旧シリーズ表示の追加
 
-1. **セクションコンポーネントを追加**
+**新しいpropsを追加:**
 ```typescript
-// セクションヘッダーコンポーネント
-const FormSection = ({ icon, title, children }: { icon: React.ReactNode; title: string; children: React.ReactNode }) => (
-  <div className="border rounded-lg p-4 space-y-3">
-    <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-      {icon}
-      <span>{title}</span>
-    </div>
-    {children}
-  </div>
-);
+interface VideoCardProps {
+  technique: Technique;
+  // ...existing props...
+  notations?: Array<{ code: string; category: string }>; // 追加
+}
 ```
 
-2. **NotationSelectorを略称セクションに追加**
-```typescript
-// 略称セクション（編集時のみ表示）
-{editingTechnique && (
-  <FormSection icon={<Tags className="h-4 w-4" />} title="略称">
-    <NotationSelector techniqueId={editingTechnique.id} />
-    <p className="text-xs text-muted-foreground">
-      複数の略称を選択できます
-    </p>
-  </FormSection>
-)}
+**カードレイアウトの変更:**
+```text
+┌──────────────────────────────────────────────────────────────┐
+│ ┌─────────────┐  タイトル                    [カテゴリ]      │
+│ │             │  サブタイトル                                │
+│ │  サムネイル  │                                              │
+│ │             │  略称: [CG] [SW] [ARM]  (新システム)         │
+│ │  ⏱ 5:32    │                                              │
+│ └─────────────┘  🗑️ A-3 (旧・削除予定)                       │
+│                                                              │
+│                  ローカライズステータス                       │
+│                  [再生] [字幕] [吹替] [編集] [削除]           │
+└──────────────────────────────────────────────────────────────┘
 ```
 
-3. **説明欄をタブ形式に**
-```typescript
-const [descriptionTab, setDescriptionTab] = useState<"ja" | "en" | "pt">("ja");
+**実装変更:**
+- 略称バッジをタイトル下に表示（色分けはカテゴリ別）
+- 旧シリーズバッジを薄いグレーの「削除予定」スタイルに変更
+- 旧シリーズは小さく目立たないように表示
 
-// 説明セクション
-<FormSection icon={<FileText className="h-4 w-4" />} title="説明">
-  <Tabs value={descriptionTab} onValueChange={(v) => setDescriptionTab(v as any)}>
-    <TabsList className="grid w-full grid-cols-3">
-      <TabsTrigger value="ja">日本語</TabsTrigger>
-      <TabsTrigger value="en">English</TabsTrigger>
-      <TabsTrigger value="pt">Português</TabsTrigger>
-    </TabsList>
-    <TabsContent value="ja">
-      <Textarea value={formData.description_ja} onChange={...} rows={4} />
-    </TabsContent>
-    <TabsContent value="en">
-      <Textarea value={formData.description} onChange={...} rows={4} />
-    </TabsContent>
-    <TabsContent value="pt">
-      <Textarea value={formData.description_pt} onChange={...} rows={4} />
-    </TabsContent>
-  </Tabs>
-</FormSection>
+### 2. VideosManagement.tsx - 略称データの一括取得
+
+**データ取得の追加:**
+```typescript
+// 全動画の略称マッピングを取得
+const [notationMap, setNotationMap] = useState<Record<string, Array<{ code: string; category: string }>>>({});
+
+useEffect(() => {
+  const fetchNotationLinks = async () => {
+    const { data: links } = await supabase
+      .from('technique_notations')
+      .select('technique_id, notation:bjj_notations(code, category)');
+    
+    const map: Record<string, Array<{ code: string; category: string }>> = {};
+    links?.forEach(link => {
+      if (link.technique_id && link.notation) {
+        if (!map[link.technique_id]) map[link.technique_id] = [];
+        map[link.technique_id].push({
+          code: link.notation.code,
+          category: link.notation.category,
+        });
+      }
+    });
+    setNotationMap(map);
+  };
+  
+  fetchNotationLinks();
+}, []);
 ```
 
-### VideoPreviewDialog.tsx - プルダウン化
+**VideoCardへのデータ渡し:**
+```typescript
+<VideoCard
+  key={technique.id}
+  technique={technique}
+  notations={notationMap[technique.id] || []}
+  // ...other props
+/>
+```
+
+### 3. 動画時間取得の修正
+
+**問題の原因調査:**
+- 「Failed to fetch」はブラウザ側のネットワークエラー（CORSまたはタイムアウト）
+- エッジ関数は正常動作（認証なしで適切な403返却）
+
+**修正ポイント:**
+- エッジ関数の呼び出し時のエラーハンドリング強化
+- タイムアウト設定の追加
+- リトライ機能の追加
 
 ```typescript
-// 現在のボタン形式を削除し、Selectに変更
-<div className="flex items-center gap-3">
-  <Globe className="h-4 w-4 text-muted-foreground" />
-  <span className="text-sm text-muted-foreground">音声言語:</span>
-  <Select value={selectedLanguage} onValueChange={handleLanguageChange}>
-    <SelectTrigger className="w-[200px]">
-      <SelectValue />
-    </SelectTrigger>
-    <SelectContent>
-      {availableLanguages.map((lang) => (
-        <SelectItem key={lang.code} value={lang.code}>
-          <div className="flex items-center gap-2">
-            {lang.isOriginal && <Check className="h-3 w-3" />}
-            <span>{lang.label}</span>
-            {lang.isOriginal && (
-              <span className="text-xs text-muted-foreground">（オリジナル）</span>
-            )}
-          </div>
-        </SelectItem>
-      ))}
-    </SelectContent>
-  </Select>
-</div>
+const fetchDurationFromVideo = async (videoUrl: string): Promise<number | null> => {
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30秒タイムアウト
+    
+    const { data, error } = await supabase.functions.invoke(
+      'admin-update-video-durations',
+      { 
+        body: { mode: 'fetch', videoUrl },
+      }
+    );
+    
+    clearTimeout(timeoutId);
+    
+    if (error) {
+      console.error('Duration fetch error:', error);
+      return null;
+    }
+    
+    return data?.duration || null;
+  } catch (err) {
+    console.error('Failed to fetch duration:', err);
+    return null;
+  }
+};
 ```
 
 ---
 
-## レイアウト改善のポイント
+## 略称バッジのデザイン
 
-1. **グループ化** - 関連項目をセクションで囲む
-2. **アイコン** - 各セクションにアイコンを付けて視認性向上
-3. **余白** - セクション間に適切な余白を設定
-4. **タブ化** - 説明欄は3言語をタブで切り替え（縦スクロールを削減）
-5. **条件表示** - 略称セクションは編集時のみ表示（新規作成時は非表示）
+カテゴリ別の色を使用（既存の`NOTATION_CATEGORY_LABELS`を活用）:
+- position（位置）: 青
+- action（動作）: 緑
+- submission（極技）: 赤
+- grip（グリップ）: 黄
+- movement（移動）: 紫
+- takedown（立技）: オレンジ
+
+**表示例:**
+```
+略称: [CG] [SW] [ARM]
+      (青)  (緑)  (赤)
+```
+
+---
+
+## 旧シリーズバッジのデザイン変更
+
+**Before (現在):**
+```
+[A-3]  ← サムネイル左上、目立つ色
+```
+
+**After (変更後):**
+```
+🗑️ A-3 (旧)  ← 本文エリアに移動、グレー・小さいフォント
+```
+
+スタイル:
+- 薄いグレー背景
+- 小さいフォント (text-xs)
+- 「(旧)」または「⚠️削除予定」のラベル
+- 略称バッジの後に表示
+
+---
+
+## 実装順序
+
+1. VideoCard.tsxに`notations` propsを追加
+2. 略称バッジの表示ロジックを実装
+3. 旧シリーズバッジのスタイルを「削除予定」に変更
+4. VideosManagement.tsxで略称データを一括取得
+5. VideoCardにデータを渡す
+6. 動画時間取得のエラーハンドリング強化
 
 ---
 
 ## 追加インポート
 
 ```typescript
-// VideosManagement.tsx に追加
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Tags, FileText, Film, Hash } from "lucide-react";
-import { NotationSelector } from "@/components/admin/NotationSelector";
-
-// VideoPreviewDialog.tsx に追加
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+// VideoCard.tsx
+import { NOTATION_CATEGORY_LABELS, type NotationCategory } from "@/types/notation";
 ```
-
