@@ -1,9 +1,10 @@
-import { Play, Edit, Languages, FileText, Trash2, Clock, RefreshCw, Loader2, Download } from "lucide-react";
+import { Play, Edit, Languages, FileText, Trash2, Clock, RefreshCw, Loader2, Download, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { SeriesBadge } from "@/components/ui/series-badge";
+import { Badge } from "@/components/ui/badge";
 import { LocalizationStatus } from "./LocalizationStatus";
 import { cn } from "@/lib/utils";
 import type { Technique } from "@/hooks/usePaginatedTechniques";
+import { NOTATION_CATEGORY_LABELS, type NotationCategory } from "@/types/notation";
 
 // Format duration in seconds to MM:SS or HH:MM:SS
 function formatDuration(seconds: number): string {
@@ -26,6 +27,12 @@ function getVideoDuration(videoMetadata: unknown): number | null {
   return null;
 }
 
+// Notation badge component
+interface NotationBadge {
+  code: string;
+  category: string;
+}
+
 interface VideoCardProps {
   technique: Technique;
   transcription: { id: string; status: string } | null;
@@ -33,6 +40,7 @@ interface VideoCardProps {
   dubbedLanguages: string[];
   processingLanguages?: string[];
   isFetchingDuration?: boolean;
+  notations?: NotationBadge[];
   onEdit: () => void;
   onPreview: (langCode?: string) => void;
   onTranscribe: () => void;
@@ -71,6 +79,7 @@ export function VideoCard({
   dubbedLanguages,
   processingLanguages = [],
   isFetchingDuration = false,
+  notations = [],
   onEdit,
   onPreview,
   onTranscribe,
@@ -85,6 +94,12 @@ export function VideoCard({
   const hasTranscription = !!transcription && transcription.status === "completed";
   const duration = getVideoDuration(technique.video_metadata);
   const hasMissingDuration = technique.video_url && !duration;
+  
+  // Helper to get notation badge color
+  const getNotationColor = (category: string): string => {
+    const categoryKey = category as NotationCategory;
+    return NOTATION_CATEGORY_LABELS[categoryKey]?.color || 'bg-gray-500';
+  };
 
   const handlePlayVideo = (langCode: string) => {
     onPreview(langCode);
@@ -124,16 +139,7 @@ export function VideoCard({
             </button>
           )}
           
-          {/* Series badge overlay */}
-          {technique.series_prefix && (
-            <div className="absolute top-2 left-2">
-              <SeriesBadge
-                prefix={technique.series_prefix}
-                order={technique.series_order || undefined}
-                className="shadow-md"
-              />
-            </div>
-          )}
+          {/* Series badge removed - legacy series now shown in content area */}
           
           {/* Duration badge - clickable if missing */}
           <div 
@@ -166,7 +172,7 @@ export function VideoCard({
         {/* Content area */}
         <div className="flex-1 p-3 sm:p-4 flex flex-col min-w-0">
           {/* Title section */}
-          <div className="flex items-start justify-between gap-2 mb-2">
+          <div className="flex items-start justify-between gap-2 mb-1">
             <div className="min-w-0 flex-1">
               <h3 className="font-medium text-sm sm:text-base leading-tight truncate" title={technique.name}>
                 {technique.name}
@@ -175,10 +181,41 @@ export function VideoCard({
                 {technique.name_ja}
               </p>
             </div>
-            <span className="shrink-0 px-2 py-0.5 text-xs rounded-full bg-primary/10 text-primary whitespace-nowrap">
-              {technique.category}
-            </span>
           </div>
+          
+          {/* Notation badges (new system) */}
+          {notations.length > 0 && (
+            <div className="flex flex-wrap gap-1 mb-2">
+              {notations.slice(0, 5).map((n, idx) => (
+                <Badge 
+                  key={`${n.code}-${idx}`}
+                  variant="secondary"
+                  className={cn(
+                    "text-[10px] px-1.5 py-0 h-5 font-mono text-white",
+                    getNotationColor(n.category)
+                  )}
+                >
+                  {n.code}
+                </Badge>
+              ))}
+              {notations.length > 5 && (
+                <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-5">
+                  +{notations.length - 5}
+                </Badge>
+              )}
+            </div>
+          )}
+          
+          {/* Legacy series (scheduled for deletion) */}
+          {technique.series_prefix && (
+            <div className="flex items-center gap-1 mb-2 text-[10px] text-muted-foreground/60">
+              <AlertTriangle className="h-3 w-3" />
+              <span className="font-mono">
+                {technique.series_prefix}{technique.series_order ? `-${technique.series_order}` : ''}
+              </span>
+              <span className="opacity-70">(旧・削除予定)</span>
+            </div>
+          )}
 
           {/* Localization status */}
           <div className="mb-3">

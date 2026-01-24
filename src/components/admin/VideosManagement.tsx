@@ -107,6 +107,7 @@ export const VideosManagement = () => {
   const [transcriptionMap, setTranscriptionMap] = useState<Record<string, { id: string; status: string }>>({});
   const [reEncodingIds, setReEncodingIds] = useState<Set<string>>(new Set());
   const [subtitleMap, setSubtitleMap] = useState<Record<string, string[]>>({});
+  const [notationMap, setNotationMap] = useState<Record<string, Array<{ code: string; category: string }>>>({});
   const [isFetchingDurations, setIsFetchingDurations] = useState(false);
   const [fetchingDurationId, setFetchingDurationId] = useState<string | null>(null);
   const [missingDurationCount, setMissingDurationCount] = useState(0);
@@ -266,11 +267,36 @@ export const VideosManagement = () => {
       setSubtitleMap(map);
     };
     
+    // Fetch notation links for all techniques
+    const fetchNotationLinks = async () => {
+      const { data: links, error } = await supabase
+        .from('technique_notations')
+        .select('technique_id, notation:bjj_notations(code, category)');
+      
+      if (error) {
+        console.error('Error fetching notation links:', error);
+        return;
+      }
+      
+      const map: Record<string, Array<{ code: string; category: string }>> = {};
+      links?.forEach((link: any) => {
+        if (link.technique_id && link.notation) {
+          if (!map[link.technique_id]) map[link.technique_id] = [];
+          map[link.technique_id].push({
+            code: link.notation.code,
+            category: link.notation.category,
+          });
+        }
+      });
+      setNotationMap(map);
+    };
+    
     fetchCategories();
     fetchSeriesNames();
     fetchMissingThumbnailCount();
     fetchTranscriptions();
     fetchSubtitles();
+    fetchNotationLinks();
   }, []);
 
   // シリーズ名リストを再取得する関数
@@ -533,15 +559,36 @@ export const VideosManagement = () => {
   // Helper function to extract duration from video URL via Cloudflare API
   const fetchDurationFromVideo = async (videoUrl: string): Promise<number | null> => {
     try {
+      console.log('[Duration Fetch] Starting for URL:', videoUrl);
+      
       const { data, error } = await supabase.functions.invoke(
         'admin-update-video-durations',
         { body: { mode: 'fetch', videoUrl } }
       );
       
-      if (error || !data?.duration) return null;
+      if (error) {
+        console.error('[Duration Fetch] Supabase invoke error:', error);
+        // Try to parse error message
+        const errorMsg = typeof error === 'object' && error !== null 
+          ? JSON.stringify(error) 
+          : String(error);
+        console.error('[Duration Fetch] Error details:', errorMsg);
+        return null;
+      }
+      
+      if (!data?.duration) {
+        console.warn('[Duration Fetch] No duration in response:', data);
+        return null;
+      }
+      
+      console.log('[Duration Fetch] Success, duration:', data.duration);
       return data.duration;
     } catch (err) {
-      console.error('Failed to fetch duration:', err);
+      console.error('[Duration Fetch] Caught exception:', err);
+      // Check if it's a network error
+      if (err instanceof TypeError && err.message.includes('Failed to fetch')) {
+        console.error('[Duration Fetch] Network error - possible CORS issue or function not deployed');
+      }
       return null;
     }
   };
@@ -2184,6 +2231,7 @@ export const VideosManagement = () => {
                 transcription={transcriptionMap[technique.id] || null}
                 subtitleLanguages={subtitleMap[technique.id] || []}
                 dubbedLanguages={getDubbedLanguages(technique)}
+                notations={notationMap[technique.id] || []}
                 isFetchingDuration={fetchingDurationId === technique.id}
                 onEdit={() => openEditDialog(technique)}
                 onPreview={() => {
