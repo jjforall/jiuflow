@@ -1,131 +1,286 @@
 
-# 動画翻訳管理画面の改善計画
+# BJJ略称マスターシステム実装計画
 
-## 現状分析
+## 概要
 
-### 1. 「G」表示について
-- データベースには「G」シリーズは存在しません（A〜Fのみ）
-- 「次: G」という表示は`getNextAvailablePrefix()`関数が次に使えるプレフィックスを計算している結果
-- **対応**: この「次: G」という行を削除します
-
-### 2. 非アクティブ言語の表示問題
-現在の`LocalizationStatus.tsx`では、字幕・吹替がない言語も「✗」マーク付きで表示されています：
-
-```
-字幕: JA✓ EN✗ PT✗
-吹替: JA○ EN✗ PT✗
-```
-
-**ユーザー要望**: 翻訳がない言語は表示しない（存在するものだけ表示）
-
-### 3. 変換中ステータスの表示
-翻訳が進行中の場合、その言語バッジに「変換中」状態を表示する
-
-### 4. クリックで再生
-アクティブな言語バッジをクリックすると、その言語版の動画を再生できるようにする
+現在の「A-*, B-*, C-*...」シリーズシステムを「旧」としてレガシー扱いにし、新しいBJJ略称体系（CG, HG, DLR, TC, RNC等）をマスターデータとして構築します。これにより、動画の分類・検索・再生リスト作成がより柔軟になります。
 
 ---
 
-## 実装内容
+## 現状分析
 
-### 変更ファイル1: `src/components/admin/VideosManagement.tsx`
-**「次: G」行の削除**
+### 現在のシステム
+- **techniques テーブル**: `series_prefix`（A, B, C...）と `series_name`（クローズドガード等）で管理
+- **カテゴリ**: `category`列（pull, control, submission, guard-pass）
+- **ハッシュタグ**: `hashtags` 配列（現在未活用）
+- **既存データ**: A〜F シリーズで42件の動画
 
-行2103-2105の削除：
-```typescript
-// 削除する箇所
-<p className="text-[10px] text-muted-foreground mt-1.5">
-  次: {getNextAvailablePrefix()}
-</p>
+### 新システムの要件
+1. **略称マスター**: ポジション、アクション、サブミッション等をカテゴリ別に管理
+2. **動画との関連付け**: 1つの動画に複数の略称をタグ付け可能
+3. **フィルタリング**: 略称で動画を絞り込み
+4. **カウント表示**: 各略称に何件の動画があるか表示
+5. **再生リスト連携**: 略称の組み合わせで再生リストを作成
+
+---
+
+## データベース設計
+
+### 新規テーブル1: `bjj_notations` (略称マスター)
+
+```text
+┌─────────────────────────────────────────────────────────────┐
+│ bjj_notations (略称マスター)                                  │
+├─────────────────────────────────────────────────────────────┤
+│ id             UUID PRIMARY KEY                             │
+│ code           TEXT UNIQUE NOT NULL  -- 'CG', 'HG', 'TC'等   │
+│ name_ja        TEXT NOT NULL         -- '日本語名称'          │
+│ name_en        TEXT NOT NULL         -- 'English Name'       │
+│ category       TEXT NOT NULL         -- 'position', 'action',│
+│                                      -- 'submission', 'grip',│
+│                                      -- 'movement', 'outcome'│
+│ description    TEXT                  -- 詳細説明              │
+│ usage_example  TEXT                  -- 使用例                │
+│ display_order  INTEGER DEFAULT 0     -- 表示順                │
+│ is_active      BOOLEAN DEFAULT true  -- 有効/無効             │
+│ created_at     TIMESTAMPTZ           -- 作成日時              │
+└─────────────────────────────────────────────────────────────┘
 ```
 
-### 変更ファイル2: `src/components/admin/LocalizationStatus.tsx`
-**大幅なリファクタリング**
+### 新規テーブル2: `technique_notations` (動画×略称の中間テーブル)
 
-1. **存在する言語のみ表示**
-   - 字幕・吹替がある言語だけをバッジ表示
-   - なければ「字幕」「吹替」のラベル自体を非表示
-
-2. **変換中ステータスの表示**
-   - 新しいprops追加: `processingLanguages?: string[]`
-   - 処理中の言語は点滅アイコン付きで「変換中」表示
-
-3. **クリックで再生機能**
-   - 新しいprops追加: `onPlayVideo?: (langCode: string) => void`
-   - アクティブなバッジをクリックすると動画再生
-
-改修後のイメージ：
-```
-字幕: JA✓ EN✓          ← 存在するもののみ表示
-吹替: JA○ EN✓ [PT処理中...]  ← 変換中は点滅表示
+```text
+┌─────────────────────────────────────────────────────────────┐
+│ technique_notations (動画と略称の関連付け)                    │
+├─────────────────────────────────────────────────────────────┤
+│ id             UUID PRIMARY KEY                             │
+│ technique_id   UUID REFERENCES techniques(id)               │
+│ notation_id    UUID REFERENCES bjj_notations(id)            │
+│ context        TEXT                  -- 'start', 'end',      │
+│                                      -- 'opponent' 等        │
+│ created_at     TIMESTAMPTZ                                  │
+│ UNIQUE(technique_id, notation_id, context)                  │
+└─────────────────────────────────────────────────────────────┘
 ```
 
-### 変更ファイル3: `src/components/admin/VideoCard.tsx`
-**LocalizationStatusへの新props渡し**
+### 略称カテゴリ一覧
 
-1. 処理中の言語情報を渡す
-2. 再生ハンドラーを渡す
+| category | 説明 | 例 |
+|----------|------|-----|
+| position | ポジション・ガード | CG, HG, MT, SC, BC |
+| action | アクション・動作 | K, B, P, SW, ESC |
+| submission | サブミッション | AB, TC, RNC, GUI, KIM |
+| grip | グリップ・クラッチ | UH, OH, CF, WrC |
+| movement | 基本動作・概念 | Ebi, Brg, Frm, Pst |
+| outcome | 試合・結果 | Tap, Sub, Pts, Adv |
+| takedown | 立ち技・テイクダウン | TD, GP, DL, SL |
+
+---
+
+## 管理画面設計
+
+### 新規コンポーネント: `NotationsManagement.tsx`
+
+AdminSidebarの「コンテンツ」グループ内に追加:
+
+```text
+コンテンツ
+├── 動画一覧
+├── 再生リスト
+└── 略称マスター  ← 新規追加
+```
+
+### 略称マスター画面の機能
+
+1. **一覧表示**
+   - カテゴリ別タブ（ポジション/アクション/サブミッション等）
+   - 各略称の使用件数を表示
+   - 検索・フィルタ機能
+
+2. **CRUD操作**
+   - 新規略称の追加
+   - 編集・削除
+   - 有効/無効の切り替え
+
+3. **統計ダッシュボード**
+   - カテゴリ別の略称数
+   - 動画への紐付け状況
+
+### 動画管理画面への統合
+
+`VideosManagement.tsx`に以下を追加:
+
+1. **略称タグ表示**: 各動画カードに紐付いた略称バッジを表示
+2. **略称フィルタ**: 特定の略称で動画を絞り込み
+3. **略称編集**: 動画編集ダイアログで略称を追加/削除
+
+### 再生リストへの統合
+
+`PlaylistsManagement.tsx`に以下を追加:
+
+1. **略称ベースの自動リスト生成**: 例「CGからの攻め」「サブミッション系」
+2. **フロー記述**: `CG -> CGB -> SC` のような記法で動画を選択
+
+---
+
+## 初期データ投入
+
+ユーザーが提供した略称リストをすべてマスターに登録:
+
+### ポジション (17件)
+CG, HG, OG, CB, DLR, RDLR, BFG, SLX, XG, SG, LG, SC, MT, BC, KOB, TT, DHG, ZG, 5050, RG, WG, SqG, Don
+
+### アクション (11件)
+K, B, P, SW, ESC, RET, TD, Pull, BP, KP, SP, LP, LgD, OP
+
+### サブミッション (23件)
+AB, TC, RNC, GUI, KIM, AMI, OMO, HH, KB, TH, EZ, CC, DAR, ANA, BA, LC, Clk, BB, WL, SAL, IHH, OHH, CS, Est
+
+### グリップ (14件)
+UH, OH, WZ, CF, KC, WrC, Slv, Clr, Pnt, BlT, PG, PkG, GG, SGS
+
+### ムーブメント (7件)
+Ebi, Brg, Frm, Pst, Scr, Inv, Hip
+
+### 立ち技 (10件)
+GP, DL, SL, AL, OSG, UCH, SMG, ST, AT, CT
+
+### 結果 (6件)
+Tap, Sub, Pts, Adv, Pen, DQ
+
+合計: 約90件の初期データ
+
+---
+
+## 実装ステップ
+
+### Phase 1: データベース構築
+1. `bjj_notations` テーブル作成
+2. `technique_notations` 中間テーブル作成
+3. RLSポリシー設定（管理者のみ編集可、閲覧は全員可）
+4. 初期データ投入
+
+### Phase 2: 管理画面 - 略称マスター
+1. `NotationsManagement.tsx` 作成
+2. AdminSidebarにメニュー追加
+3. CRUD機能実装
+4. カテゴリ別タブとカウント表示
+
+### Phase 3: 動画管理への統合
+1. 動画カードに略称バッジ追加
+2. 略称フィルタ機能
+3. 動画編集ダイアログで略称編集
+4. `usePaginatedTechniques`に略称フィルタ追加
+
+### Phase 4: 再生リスト連携
+1. 略称による動画自動選択機能
+2. フロー記法のプレビュー
 
 ---
 
 ## 技術詳細
 
-### LocalizationStatus コンポーネントの新インターフェース
+### フロント側の型定義
 
 ```typescript
-interface LocalizationStatusProps {
-  hasTranscription: boolean;
-  subtitleLanguages: string[];
-  dubbedLanguages: string[];
-  processingLanguages?: string[];     // 新規: 変換中の言語
-  onGenerateSubtitle?: () => void;
-  onAddDubbing?: () => void;
-  onPlayVideo?: (langCode: string) => void;  // 新規: 再生コールバック
-  compact?: boolean;
+// src/types/notation.ts
+export interface BJJNotation {
+  id: string;
+  code: string;          // 'CG', 'TC' 等
+  name_ja: string;       // 'クローズドガード'
+  name_en: string;       // 'Closed Guard'
+  category: NotationCategory;
+  description?: string;
+  usage_example?: string;
+  display_order: number;
+  is_active: boolean;
+  technique_count?: number; // 紐付いた動画数
+}
+
+export type NotationCategory = 
+  | 'position' 
+  | 'action' 
+  | 'submission' 
+  | 'grip' 
+  | 'movement' 
+  | 'takedown'
+  | 'outcome';
+```
+
+### 動画への略称フィルタ例
+
+```typescript
+// usePaginatedTechniques.tsx に追加
+if (filters.notations && filters.notations.length > 0) {
+  // technique_notations テーブルとJOIN
+  query = query.in('id', 
+    supabase.from('technique_notations')
+      .select('technique_id')
+      .in('notation_id', filters.notations)
+  );
 }
 ```
 
-### 表示ロジックの変更
+---
 
-```typescript
-// Before: すべての言語を表示
-{LANGUAGES.map((lang) => { ... })}
+## 既存データとの互換性
 
-// After: 存在する言語 + 処理中の言語のみ表示
-const visibleLangs = LANGUAGES.filter(lang => 
-  normalizedDubbing.includes(lang.code) || 
-  processingLanguages?.includes(lang.code) ||
-  lang.code === 'ja'
-);
-{visibleLangs.map((lang) => { ... })}
-```
+| 既存 | 対応 |
+|------|------|
+| series_prefix: A | CG（クローズドガード）に紐付け |
+| series_prefix: B | CGB等（クローズドガードブレイク）に紐付け |
+| series_prefix: C | CB（コンバットベース）に紐付け |
+| series_prefix: D | MT（マウント）に紐付け |
+| series_prefix: E | Pull（引き込み）に紐付け |
+| series_prefix: F | CB系（コンバットベース対応）に紐付け |
 
-### 処理中表示のスタイル
-
-```typescript
-const isProcessing = processingLanguages?.includes(lang.code);
-// 処理中の場合は点滅アニメーション付きで表示
-<span className={cn(
-  "px-1.5 py-0.5 rounded",
-  isProcessing && "animate-pulse bg-yellow-500/20 text-yellow-600"
-)}>
-  {lang.label}
-  {isProcessing ? "⏳" : "✓"}
-</span>
-```
-
-### 再生フォーマットへの変換
-現在の翻訳ワークフロー（ElevenLabs/Rask.ai/HeyGen）は完了後にCloudflare Streamへアップロードし、HLS形式のURLを保存しています。これは既に再生可能なフォーマットです。
-
-もし変換が必要な場合は、check-translation-status等のEdge Functionで対応済みです。
+旧シリーズ表記はユーザー画面でそのまま使用を継続し、新システムは管理・分類用として並行運用。
 
 ---
 
-## 変更サマリー
+## UIイメージ
 
-| ファイル | 変更内容 |
-|---------|---------|
-| `VideosManagement.tsx` | 「次: G」行を削除 |
-| `LocalizationStatus.tsx` | 存在する言語のみ表示、変換中ステータス、クリック再生 |
-| `VideoCard.tsx` | 新propsの受け渡し |
+### 略称マスター管理画面
 
+```text
+┌────────────────────────────────────────────────────────────┐
+│ 略称マスター                                    [＋ 新規追加] │
+├────────────────────────────────────────────────────────────┤
+│ [ポジション(23)] [アクション(11)] [サブミッション(23)] ...   │
+├────────────────────────────────────────────────────────────┤
+│ 🔍 検索...                                                  │
+├────────────────────────────────────────────────────────────┤
+│ ┌──────┬────────────────┬─────────────────┬──────┬────┐    │
+│ │ CODE │ 日本語          │ English         │ 動画 │ 操作│    │
+│ ├──────┼────────────────┼─────────────────┼──────┼────┤    │
+│ │ CG   │ クローズドガード │ Closed Guard    │  10  │ ✎ 🗑│    │
+│ │ HG   │ ハーフガード     │ Half Guard      │   5  │ ✎ 🗑│    │
+│ │ DLR  │ デラヒーバ       │ De La Riva      │   3  │ ✎ 🗑│    │
+│ └──────┴────────────────┴─────────────────┴──────┴────┘    │
+└────────────────────────────────────────────────────────────┘
+```
+
+### 動画カードでの表示
+
+```text
+┌──────────────────────────────────────┐
+│ [サムネイル]  A-1 クローズドガードの基本 │
+│              ⏱ 5:32                   │
+│              [CG] [Frm] [RET]         │ ← 略称バッジ
+└──────────────────────────────────────┘
+```
+
+---
+
+## 成果物一覧
+
+| ファイル | 内容 |
+|----------|------|
+| 新規: `src/components/admin/NotationsManagement.tsx` | 略称マスター管理画面 |
+| 新規: `src/types/notation.ts` | 略称関連の型定義 |
+| 新規: `src/hooks/useNotations.ts` | 略称データ取得用Hook |
+| 変更: `src/components/admin/AdminSidebar.tsx` | メニューに略称マスター追加 |
+| 変更: `src/components/admin/VideosManagement.tsx` | 略称フィルタ・バッジ追加 |
+| 変更: `src/components/admin/VideoCard.tsx` | 略称バッジ表示 |
+| 変更: `src/hooks/usePaginatedTechniques.tsx` | 略称フィルタ対応 |
+| DB: マイグレーション | `bjj_notations`, `technique_notations` テーブル作成 + 初期データ |
