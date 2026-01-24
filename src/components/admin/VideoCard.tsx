@@ -186,32 +186,45 @@ export function VideoCard({
             </div>
           </div>
           
-          {/* Notation badges (new system) with tooltips */}
+          {/* Notation badges (new system) - show code + Japanese name directly */}
           {notations.length > 0 && (
             <div className="flex flex-wrap gap-1 mb-2">
-              {notations.slice(0, 5).map((n, idx) => (
+              {notations.slice(0, 4).map((n, idx) => (
                 <Tooltip key={`${n.code}-${idx}`}>
                   <TooltipTrigger asChild>
                     <Badge 
                       variant="secondary"
                       className={cn(
-                        "text-[10px] px-1.5 py-0 h-5 font-mono text-white cursor-help",
+                        "text-[10px] px-1.5 py-0.5 h-auto font-normal text-white cursor-help max-w-[140px] truncate",
                         getNotationColor(n.category)
                       )}
                     >
-                      {n.code}
+                      <span className="font-mono font-medium">[{n.code}]</span>
+                      {n.name_ja && <span className="ml-1 truncate">{n.name_ja}</span>}
                     </Badge>
                   </TooltipTrigger>
-                  <TooltipContent side="top" className="max-w-xs">
+                  <TooltipContent side="top" className="max-w-xs z-50">
                     <p className="text-sm font-medium">{n.name_ja || n.code}</p>
                     {n.name_en && <p className="text-xs text-muted-foreground">{n.name_en}</p>}
+                    <p className="text-xs text-muted-foreground/70 mt-1">カテゴリー: {NOTATION_CATEGORY_LABELS[n.category as NotationCategory]?.ja || n.category}</p>
                   </TooltipContent>
                 </Tooltip>
               ))}
-              {notations.length > 5 && (
-                <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-5">
-                  +{notations.length - 5}
-                </Badge>
+              {notations.length > 4 && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Badge variant="outline" className="text-[10px] px-1.5 py-0.5 h-auto cursor-help">
+                      +{notations.length - 4}
+                    </Badge>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="max-w-xs z-50">
+                    {notations.slice(4).map((n, idx) => (
+                      <p key={idx} className="text-xs">
+                        <span className="font-mono">[{n.code}]</span> {n.name_ja}
+                      </p>
+                    ))}
+                  </TooltipContent>
+                </Tooltip>
               )}
             </div>
           )}
