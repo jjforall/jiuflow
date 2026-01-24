@@ -92,6 +92,48 @@ export type Database = {
         }
         Relationships: []
       }
+      bjj_notations: {
+        Row: {
+          category: Database["public"]["Enums"]["notation_category"]
+          code: string
+          created_at: string | null
+          description: string | null
+          display_order: number | null
+          id: string
+          is_active: boolean | null
+          name_en: string
+          name_ja: string
+          updated_at: string | null
+          usage_example: string | null
+        }
+        Insert: {
+          category: Database["public"]["Enums"]["notation_category"]
+          code: string
+          created_at?: string | null
+          description?: string | null
+          display_order?: number | null
+          id?: string
+          is_active?: boolean | null
+          name_en: string
+          name_ja: string
+          updated_at?: string | null
+          usage_example?: string | null
+        }
+        Update: {
+          category?: Database["public"]["Enums"]["notation_category"]
+          code?: string
+          created_at?: string | null
+          description?: string | null
+          display_order?: number | null
+          id?: string
+          is_active?: boolean | null
+          name_en?: string
+          name_ja?: string
+          updated_at?: string | null
+          usage_example?: string | null
+        }
+        Relationships: []
+      }
       brothers_applications: {
         Row: {
           application_year: number
@@ -2222,6 +2264,45 @@ export type Database = {
           },
         ]
       }
+      technique_notations: {
+        Row: {
+          context: string | null
+          created_at: string | null
+          id: string
+          notation_id: string
+          technique_id: string
+        }
+        Insert: {
+          context?: string | null
+          created_at?: string | null
+          id?: string
+          notation_id: string
+          technique_id: string
+        }
+        Update: {
+          context?: string | null
+          created_at?: string | null
+          id?: string
+          notation_id?: string
+          technique_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "technique_notations_notation_id_fkey"
+            columns: ["notation_id"]
+            isOneToOne: false
+            referencedRelation: "bjj_notations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "technique_notations_technique_id_fkey"
+            columns: ["technique_id"]
+            isOneToOne: false
+            referencedRelation: "techniques"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       techniques: {
         Row: {
           category: string
@@ -3947,6 +4028,14 @@ export type Database = {
         | "renewal_pending"
         | "renewal_approved"
         | "renewal_rejected"
+      notation_category:
+        | "position"
+        | "action"
+        | "submission"
+        | "grip"
+        | "movement"
+        | "takedown"
+        | "outcome"
       video_list_visibility: "public" | "unlisted" | "private"
     }
     CompositeTypes: {
@@ -4083,6 +4172,15 @@ export const Constants = {
         "renewal_pending",
         "renewal_approved",
         "renewal_rejected",
+      ],
+      notation_category: [
+        "position",
+        "action",
+        "submission",
+        "grip",
+        "movement",
+        "takedown",
+        "outcome",
       ],
       video_list_visibility: ["public", "unlisted", "private"],
     },
