@@ -6,8 +6,7 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Moon, Sun, Globe, Shield, Database, RefreshCw, Key, Eye, EyeOff, Plus, Trash2, Video, Cloud, Loader2 } from "lucide-react";
+import { Moon, Sun, Globe, Shield, Database, RefreshCw, Key, Eye, EyeOff, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
@@ -27,26 +26,10 @@ const languages = [
   { code: "hi", label: "🇮🇳", name: "हिन्दी" },
 ];
 
-export type TranslationProvider = "elevenlabs" | "rask";
-
 interface McpApiKey {
   id: string;
   name: string;
   key: string;
-}
-
-interface CloudflareCleanupPreview {
-  summary: {
-    totalVideosInCloudflare: number;
-    totalMinutesInCloudflare: number;
-    videosToKeep: number;
-    minutesToKeep: number;
-    videosToDelete: number;
-    minutesToDelete: number;
-    estimatedSpaceRecovery: string;
-  };
-  toDelete: Array<{ uid: string; duration: number; name: string }>;
-  toKeep: Array<{ uid: string; duration: number; name: string }>;
 }
 
 export function SettingsManagement() {
@@ -57,76 +40,6 @@ export function SettingsManagement() {
   const [showKeys, setShowKeys] = useState<Record<string, boolean>>({});
   const [isSavingKeys, setIsSavingKeys] = useState(false);
   const [newKeyName, setNewKeyName] = useState('');
-  const [translationProvider, setTranslationProvider] = useState<TranslationProvider>("elevenlabs");
-  const [cfCleanupPreview, setCfCleanupPreview] = useState<CloudflareCleanupPreview | null>(null);
-  const [isCfLoading, setIsCfLoading] = useState(false);
-  const [isCfDeleting, setIsCfDeleting] = useState(false);
-
-  const handleCloudflarePreview = async () => {
-    setIsCfLoading(true);
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error("ログインが必要です");
-      
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/cleanup-cloudflare-videos?mode=preview`,
-        {
-          headers: {
-            Authorization: `Bearer ${session.access_token}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-      
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "プレビュー取得に失敗しました");
-      }
-      
-      const data = await response.json();
-      setCfCleanupPreview(data);
-      toast.success("プレビューを取得しました");
-    } catch (error) {
-      console.error("Cloudflare preview error:", error);
-      toast.error(error instanceof Error ? error.message : "エラーが発生しました");
-    } finally {
-      setIsCfLoading(false);
-    }
-  };
-
-  const handleCloudflareExecute = async () => {
-    if (!cfCleanupPreview || cfCleanupPreview.summary.videosToDelete === 0) return;
-    
-    setIsCfDeleting(true);
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error("ログインが必要です");
-      
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/cleanup-cloudflare-videos?mode=execute`,
-        {
-          headers: {
-            Authorization: `Bearer ${session.access_token}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-      
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "削除に失敗しました");
-      }
-      
-      const data = await response.json();
-      toast.success(`${data.summary.totalDeleted}本の動画を削除しました（${data.summary.minutesRecovered}分回復）`);
-      setCfCleanupPreview(null);
-    } catch (error) {
-      console.error("Cloudflare execute error:", error);
-      toast.error(error instanceof Error ? error.message : "エラーが発生しました");
-    } finally {
-      setIsCfDeleting(false);
-    }
-  };
 
   const handleClearCache = async () => {
     setIsClearing(true);
@@ -209,22 +122,10 @@ export function SettingsManagement() {
           setMcpKeys(migrated);
         }
       }
-
-      // Load translation provider preference
-      const savedProvider = localStorage.getItem('translation_provider');
-      if (savedProvider === 'rask' || savedProvider === 'elevenlabs') {
-        setTranslationProvider(savedProvider);
-      }
     } catch (e) {
       console.error('Failed to load settings:', e);
     }
   }, []);
-
-  const handleProviderChange = (value: TranslationProvider) => {
-    setTranslationProvider(value);
-    localStorage.setItem('translation_provider', value);
-    toast.success(`翻訳プロバイダーを ${value === 'rask' ? 'Rask.ai' : 'ElevenLabs'} に変更しました`);
-  };
 
   return (
     <div className="space-y-6">
@@ -250,7 +151,7 @@ export function SettingsManagement() {
               <div className="space-y-0.5">
                 <Label htmlFor="dark-mode">ダークモード</Label>
                 <p className="text-sm text-muted-foreground">
-                  画面を暗い配色に切り替えます
+                  {theme === "dark" ? "黒帯モード (ダーク)" : "白帯モード (ライト)"}
                 </p>
               </div>
               <Switch
@@ -258,32 +159,6 @@ export function SettingsManagement() {
                 checked={theme === "dark"}
                 onCheckedChange={(checked) => setTheme(checked ? "dark" : "light")}
               />
-            </div>
-            
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label>現在のテーマ</Label>
-                <p className="text-sm text-muted-foreground">
-                  {theme === "dark" ? "黒帯モード (ダーク)" : "白帯モード (ライト)"}
-                </p>
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-              >
-                {theme === "dark" ? (
-                  <>
-                    <Sun className="h-4 w-4 mr-2" />
-                    ライトに切替
-                  </>
-                ) : (
-                  <>
-                    <Moon className="h-4 w-4 mr-2" />
-                    ダークに切替
-                  </>
-                )}
-              </Button>
             </div>
           </CardContent>
         </Card>
@@ -415,97 +290,7 @@ export function SettingsManagement() {
           </CardContent>
         </Card>
 
-        {/* Cloudflare Stream クリーンアップ */}
-        <Card className="md:col-span-2">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Cloud className="h-5 w-5" />
-              Cloudflare Stream クリーンアップ
-            </CardTitle>
-            <CardDescription>
-              データベースに登録されていない不要な動画を削除して容量を回復します
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <Button onClick={handleCloudflarePreview} disabled={isCfLoading}>
-              {isCfLoading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
-              削除対象をプレビュー
-            </Button>
-            
-            {cfCleanupPreview && (
-              <div className="space-y-4 p-4 border rounded-lg bg-muted/50">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                  <div>
-                    <Label className="text-muted-foreground">総動画数</Label>
-                    <p className="font-medium">{cfCleanupPreview.summary.totalVideosInCloudflare}本</p>
-                  </div>
-                  <div>
-                    <Label className="text-muted-foreground">総使用量</Label>
-                    <p className="font-medium">{cfCleanupPreview.summary.totalMinutesInCloudflare.toFixed(1)}分</p>
-                  </div>
-                  <div>
-                    <Label className="text-muted-foreground">保持</Label>
-                    <p className="font-medium text-primary">{cfCleanupPreview.summary.videosToKeep}本 ({cfCleanupPreview.summary.minutesToKeep.toFixed(1)}分)</p>
-                  </div>
-                  <div>
-                    <Label className="text-muted-foreground">削除対象</Label>
-                    <p className="font-medium text-destructive">{cfCleanupPreview.summary.videosToDelete}本 ({cfCleanupPreview.summary.minutesToDelete.toFixed(1)}分)</p>
-                  </div>
-                </div>
-                
-                {cfCleanupPreview.summary.videosToDelete > 0 && (
-                  <Button variant="destructive" onClick={handleCloudflareExecute} disabled={isCfDeleting}>
-                    {isCfDeleting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Trash2 className="h-4 w-4 mr-2" />}
-                    {cfCleanupPreview.summary.videosToDelete}本の不要動画を削除
-                  </Button>
-                )}
-              </div>
-            )}
-          </CardContent>
-        </Card>
       </div>
-
-      {/* 動画翻訳プロバイダー設定 */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Video className="h-5 w-5" />
-            動画翻訳プロバイダー
-          </CardTitle>
-          <CardDescription>
-            動画の翻訳に使用するサービスを選択します
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <RadioGroup
-            value={translationProvider}
-            onValueChange={(value) => handleProviderChange(value as TranslationProvider)}
-            className="space-y-3"
-          >
-            <div className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-muted/50 transition-colors">
-              <RadioGroupItem value="elevenlabs" id="elevenlabs" />
-              <Label htmlFor="elevenlabs" className="flex-1 cursor-pointer">
-                <div className="font-medium">ElevenLabs</div>
-                <p className="text-sm text-muted-foreground">
-                  高品質な音声クローニングと翻訳。Dubbing API使用。
-                </p>
-              </Label>
-            </div>
-            <div className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-muted/50 transition-colors">
-              <RadioGroupItem value="rask" id="rask" />
-              <Label htmlFor="rask" className="flex-1 cursor-pointer">
-                <div className="font-medium">Rask.ai</div>
-                <p className="text-sm text-muted-foreground">
-                  多言語対応の動画翻訳・吹き替えサービス。30以上の言語に対応。
-                </p>
-              </Label>
-            </div>
-          </RadioGroup>
-          <p className="text-xs text-muted-foreground">
-            ※ 選択したプロバイダーは「技術管理」の動画翻訳機能で使用されます。
-          </p>
-        </CardContent>
-      </Card>
 
       {/* MCP APIキー設定 */}
       <Card>
