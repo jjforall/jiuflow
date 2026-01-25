@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Users, DollarSign, UserCheck, Home, Grid3X3, Eye, EyeOff, ChevronDown, Play, TrendingUp, User } from "lucide-react";
+import { Users, DollarSign, UserCheck, Home, Eye, EyeOff, ChevronDown, Play, TrendingUp, User, Menu } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar } from "recharts";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -13,6 +13,9 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
+import { SidebarProvider } from "@/components/ui/sidebar";
+import { AdminSidebar } from "@/components/admin/AdminSidebar";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
 interface TopVideo {
   id: string;
@@ -33,6 +36,8 @@ interface TopViewer {
 
 const AdminStats = () => {
   const { signOut } = useAuth();
+  const navigate = useNavigate();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [stats, setStats] = useState({
     totalMembers: 0,
     paidMembers: 0,
@@ -279,28 +284,46 @@ const AdminStats = () => {
     }
   };
 
+  const handleTabChange = (tab: string) => {
+    setMobileMenuOpen(false);
+    navigate('/admin/techniques');
+    setTimeout(() => {
+      window.dispatchEvent(new CustomEvent('admin-tab-change', { detail: tab }));
+    }, 100);
+  };
+
   return (
-    <div className="min-h-screen w-full bg-background">
-      <header className="h-16 border-b flex items-center px-4 md:px-6 justify-between sticky top-0 bg-background z-10">
-        <h1 className="text-lg md:text-2xl font-light">Admin Dashboard</h1>
-        <div className="flex items-center gap-2">
-          <Link to="/admin/techniques">
-            <Button variant="ghost" size="sm">
-              <Grid3X3 className="h-4 w-4 mr-2" />
-              管理
-            </Button>
-          </Link>
-          <Link to="/">
-            <Button variant="ghost" size="sm">
-              <Home className="h-4 w-4 mr-2" />
-              ホーム
-            </Button>
-          </Link>
-          <Button variant="outline" onClick={handleLogout}>
-            Logout
-          </Button>
-        </div>
-      </header>
+    <SidebarProvider defaultOpen>
+      <div className="min-h-screen w-full flex bg-background">
+        <AdminSidebar activeTab="dashboard" onTabChange={handleTabChange} />
+        <div className="flex-1 flex flex-col min-w-0">
+          <header className="h-16 border-b flex items-center px-4 md:px-6 justify-between sticky top-0 bg-background z-10">
+            <div className="flex items-center gap-2">
+              {/* モバイルメニュー */}
+              <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+                <SheetTrigger asChild>
+                  <Button variant="ghost" size="icon" className="md:hidden">
+                    <Menu className="h-5 w-5" />
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="left" className="p-0 w-72">
+                  <AdminSidebar activeTab="dashboard" onTabChange={handleTabChange} />
+                </SheetContent>
+              </Sheet>
+              <h1 className="text-lg md:text-2xl font-light">Admin Dashboard</h1>
+            </div>
+            <div className="flex items-center gap-2">
+              <Link to="/">
+                <Button variant="ghost" size="sm">
+                  <Home className="h-4 w-4 mr-2" />
+                  ホーム
+                </Button>
+              </Link>
+              <Button variant="outline" onClick={handleLogout}>
+                Logout
+              </Button>
+            </div>
+          </header>
 
       <main className="px-6 py-8">
         <div className="max-w-7xl mx-auto space-y-8">
@@ -589,48 +612,50 @@ const AdminStats = () => {
             </CollapsibleContent>
           </Collapsible>
         </div>
-      </main>
+          </main>
 
-      <Dialog open={showMembersChart} onOpenChange={setShowMembersChart}>
-        <DialogContent className="max-w-4xl">
-          <DialogHeader>
-            <DialogTitle>会員数の推移（過去30日間）</DialogTitle>
-          </DialogHeader>
-          <div className="h-[400px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="date" />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                <Line 
-                  type="monotone" 
-                  dataKey="totalMembers" 
-                  stroke="hsl(var(--primary))" 
-                  name="総会員数"
-                  strokeWidth={2}
-                />
-                <Line 
-                  type="monotone" 
-                  dataKey="paidMembers" 
-                  stroke="hsl(var(--chart-2))" 
-                  name="有料会員数"
-                  strokeWidth={2}
-                />
-                <Line 
-                  type="monotone" 
-                  dataKey="trialMembers" 
-                  stroke="#22c55e"
-                  name="トライアル会員数"
-                  strokeWidth={2}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        </DialogContent>
-      </Dialog>
-    </div>
+          <Dialog open={showMembersChart} onOpenChange={setShowMembersChart}>
+            <DialogContent className="max-w-4xl">
+              <DialogHeader>
+                <DialogTitle>会員数の推移（過去30日間）</DialogTitle>
+              </DialogHeader>
+              <div className="h-[400px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={chartData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="date" />
+                    <YAxis />
+                    <Tooltip />
+                    <Legend />
+                    <Line 
+                      type="monotone" 
+                      dataKey="totalMembers" 
+                      stroke="hsl(var(--primary))" 
+                      name="総会員数"
+                      strokeWidth={2}
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="paidMembers" 
+                      stroke="hsl(var(--chart-2))" 
+                      name="有料会員数"
+                      strokeWidth={2}
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="trialMembers" 
+                      stroke="#22c55e"
+                      name="トライアル会員数"
+                      strokeWidth={2}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
+      </div>
+    </SidebarProvider>
   );
 };
 
