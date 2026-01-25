@@ -147,7 +147,7 @@ export const VideosManagement = () => {
   const [deleteTargetTechnique, setDeleteTargetTechnique] = useState<Technique | null>(null);
 
   // Translation provider setting
-  type TranslationProvider = "elevenlabs" | "rask";
+  type TranslationProvider = "elevenlabs" | "rask" | "heygen";
   const [translationProvider, setTranslationProvider] = useState<TranslationProvider>("elevenlabs");
   
   // Cloudflare cleanup states
@@ -446,7 +446,12 @@ export const VideosManagement = () => {
   const handleProviderChange = (value: TranslationProvider) => {
     setTranslationProvider(value);
     localStorage.setItem('translation_provider', value);
-    toast.success(`翻訳プロバイダーを ${value === 'rask' ? 'Rask.ai' : 'ElevenLabs'} に変更しました`);
+    const providerNames: Record<TranslationProvider, string> = {
+      elevenlabs: 'ElevenLabs',
+      rask: 'Rask.ai',
+      heygen: 'HeyGen'
+    };
+    toast.success(`翻訳プロバイダーを ${providerNames[value]} に変更しました`);
   };
 
   // Cloudflare cleanup handlers
@@ -1854,7 +1859,11 @@ export const VideosManagement = () => {
     
     // Get translation provider preference from localStorage
     const provider = localStorage.getItem('translation_provider') || 'elevenlabs';
-    const functionName = provider === 'rask' ? 'rask-translate-video' : 'translate-video';
+    const functionName = provider === 'rask' 
+      ? 'rask-translate-video' 
+      : provider === 'heygen'
+        ? 'heygen-translate-video'
+        : 'translate-video';
     
     setIsTranslating(true);
     try {
@@ -2660,6 +2669,10 @@ export const VideosManagement = () => {
                 <div className="flex items-center gap-1.5">
                   <RadioGroupItem value="rask" id="admin-rask" className="h-3.5 w-3.5" />
                   <Label htmlFor="admin-rask" className="text-xs cursor-pointer">Rask.ai</Label>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <RadioGroupItem value="heygen" id="admin-heygen" className="h-3.5 w-3.5" />
+                  <Label htmlFor="admin-heygen" className="text-xs cursor-pointer">HeyGen</Label>
                 </div>
               </RadioGroup>
             </div>
