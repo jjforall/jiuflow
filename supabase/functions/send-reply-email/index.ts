@@ -33,21 +33,18 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const anonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     
-    // Use service role client to verify the user token
-    const supabase = createClient(supabaseUrl, serviceRoleKey, {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false
-      }
+    // Create client with user's auth token
+    const supabase = createClient(supabaseUrl, anonKey, {
+      global: { headers: { Authorization: authHeader } }
     });
 
-    // Verify user by getting their info using the provided token
-    const token = authHeader.replace('Bearer ', '');
-    const { data: userData, error: userError } = await supabase.auth.getUser(token);
+    // Verify user
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
     
-    if (userError || !userData?.user) {
+    if (userError || !user) {
       console.error("Auth error:", userError);
       return new Response(
         JSON.stringify({ error: "認証に失敗しました" }),
@@ -55,10 +52,13 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    const userId = userData.user.id;
+    const userId = user.id;
+
+    // Use service role client for admin operations
+    const adminClient = createClient(supabaseUrl, serviceRoleKey);
 
     // Check if user has admin role
-    const { data: roleData } = await supabase
+    const { data: roleData } = await adminClient
       .from('user_roles')
       .select('role')
       .eq('user_id', userId)
@@ -116,7 +116,7 @@ ${content.split('\n').map(line => `            ${line}`).join('\n')}
 
     // Update contact_messages with reply info if originalMessageId provided
     if (originalMessageId) {
-      const { error: updateError } = await supabase
+      const { error: updateError } = await adminClient
         .from('contact_messages')
         .update({
           replied_at: new Date().toISOString(),
