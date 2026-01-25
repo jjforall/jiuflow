@@ -96,7 +96,7 @@ const AdminDashboard = () => {
                         {[
                           { id: "videos", label: "動画一覧" },
                           { id: "playlists", label: "再生リスト" },
-                          { id: "notations", label: "略称マスター" },
+                          { id: "notations", label: "技術タグ" },
                           { id: "music", label: "音楽管理" },
                         ].map((item) => (
                           <button
