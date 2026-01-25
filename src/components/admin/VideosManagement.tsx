@@ -83,6 +83,8 @@ export const VideosManagement = () => {
   const [translatingTechnique, setTranslatingTechnique] = useState<Technique | null>(null);
   const [inlineMaxSeriesOrder, setInlineMaxSeriesOrder] = useState<Record<string, number>>({});
   const [targetLanguage, setTargetLanguage] = useState<"en" | "pt" | "es" | "fr" | "de" | "zh" | "ko" | "it" | "ru" | "ar" | "hi">("en");
+  const [editLanguage, setEditLanguage] = useState<"ja" | "en" | "pt">("ja");
+  const [isTranslatingField, setIsTranslatingField] = useState(false);
   const [translationProjectId, setTranslationProjectId] = useState<string | null>(null);
   const [translationStatus, setTranslationStatus] = useState<{
     status: string | null;
@@ -2026,7 +2028,64 @@ export const VideosManagement = () => {
       series_prefix: technique.series_prefix || "",
       visibility: (technique.visibility || "public") as "public" | "unlisted" | "private",
     });
+    setEditLanguage("ja"); // Reset to Japanese when opening dialog
     setShowEditDialog(true);
+  };
+  
+  // Helper to translate from Japanese to another language
+  const translateFieldFromJapanese = async (targetLang: "en" | "pt") => {
+    if (!formData.name_ja && !formData.description_ja) {
+      toast.error("日本語の内容がありません");
+      return;
+    }
+    
+    setIsTranslatingField(true);
+    try {
+      // Translate name
+      if (formData.name_ja) {
+        const { data: nameData, error: nameError } = await supabase.functions.invoke('translate-text', {
+          body: { 
+            text: formData.name_ja,
+            sourceLang: 'ja',
+            targetLang
+          }
+        });
+        
+        if (!nameError && nameData?.translatedText) {
+          if (targetLang === "en") {
+            setFormData(prev => ({ ...prev, name: nameData.translatedText }));
+          } else {
+            setFormData(prev => ({ ...prev, name_pt: nameData.translatedText }));
+          }
+        }
+      }
+      
+      // Translate description
+      if (formData.description_ja) {
+        const { data: descData, error: descError } = await supabase.functions.invoke('translate-text', {
+          body: { 
+            text: formData.description_ja,
+            sourceLang: 'ja',
+            targetLang
+          }
+        });
+        
+        if (!descError && descData?.translatedText) {
+          if (targetLang === "en") {
+            setFormData(prev => ({ ...prev, description: descData.translatedText }));
+          } else {
+            setFormData(prev => ({ ...prev, description_pt: descData.translatedText }));
+          }
+        }
+      }
+      
+      toast.success("翻訳を取得しました");
+    } catch (error) {
+      console.error("Translation error:", error);
+      toast.error("翻訳に失敗しました");
+    } finally {
+      setIsTranslatingField(false);
+    }
   };
   
   const handleSaveEdit = async () => {
@@ -2756,43 +2815,119 @@ export const VideosManagement = () => {
           </DialogHeader>
           
           <div className="space-y-4 py-4">
-            {/* Japanese Name (required) */}
+            {/* Language Selector */}
             <div className="space-y-2">
-              <Label htmlFor="edit-name-ja" className="text-sm font-medium">
-                日本語名 <span className="text-destructive">*</span>
-              </Label>
-              <Input
-                id="edit-name-ja"
-                value={formData.name_ja}
-                onChange={(e) => setFormData(prev => ({ ...prev, name_ja: e.target.value }))}
-                placeholder="日本語名（必須）"
-              />
+              <Label className="text-sm font-medium">言語</Label>
+              <Select
+                value={editLanguage}
+                onValueChange={(value: "ja" | "en" | "pt") => setEditLanguage(value)}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-background z-50">
+                  <SelectItem value="ja">🇯🇵 日本語</SelectItem>
+                  <SelectItem value="en">🇺🇸 English</SelectItem>
+                  <SelectItem value="pt">🇧🇷 Português</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             
-            {/* English Name */}
+            {/* Name field based on selected language */}
             <div className="space-y-2">
-              <Label htmlFor="edit-name-en" className="text-sm font-medium">
-                英語名
+              <Label htmlFor="edit-name" className="text-sm font-medium">
+                {editLanguage === "ja" ? "名前" : editLanguage === "en" ? "Name" : "Nome"}
+                {editLanguage === "ja" && <span className="text-destructive ml-1">*</span>}
               </Label>
-              <Input
-                id="edit-name-en"
-                value={formData.name}
-                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                placeholder="English name"
-              />
+              {editLanguage === "ja" && (
+                <Input
+                  id="edit-name"
+                  value={formData.name_ja}
+                  onChange={(e) => setFormData(prev => ({ ...prev, name_ja: e.target.value }))}
+                  placeholder="日本語名（必須）"
+                />
+              )}
+              {editLanguage === "en" && (
+                <div className="space-y-2">
+                  <Input
+                    id="edit-name"
+                    value={formData.name}
+                    onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                    placeholder="English name"
+                  />
+                  {!formData.name && formData.name_ja && (
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => translateFieldFromJapanese("en")}
+                      disabled={isTranslatingField}
+                      className="w-full"
+                    >
+                      {isTranslatingField ? (
+                        <><Loader2 className="h-3 w-3 mr-1 animate-spin" /> 翻訳中...</>
+                      ) : (
+                        <><RefreshCw className="h-3 w-3 mr-1" /> 日本語から翻訳</>
+                      )}
+                    </Button>
+                  )}
+                </div>
+              )}
+              {editLanguage === "pt" && (
+                <div className="space-y-2">
+                  <Input
+                    id="edit-name"
+                    value={formData.name_pt}
+                    onChange={(e) => setFormData(prev => ({ ...prev, name_pt: e.target.value }))}
+                    placeholder="Nome em português"
+                  />
+                  {!formData.name_pt && formData.name_ja && (
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => translateFieldFromJapanese("pt")}
+                      disabled={isTranslatingField}
+                      className="w-full"
+                    >
+                      {isTranslatingField ? (
+                        <><Loader2 className="h-3 w-3 mr-1 animate-spin" /> 翻訳中...</>
+                      ) : (
+                        <><RefreshCw className="h-3 w-3 mr-1" /> 日本語から翻訳</>
+                      )}
+                    </Button>
+                  )}
+                </div>
+              )}
             </div>
             
-            {/* Portuguese Name */}
+            {/* Description based on selected language */}
             <div className="space-y-2">
-              <Label htmlFor="edit-name-pt" className="text-sm font-medium">
-                ポルトガル語名
+              <Label className="text-sm font-medium">
+                {editLanguage === "ja" ? "説明" : editLanguage === "en" ? "Description" : "Descrição"}
               </Label>
-              <Input
-                id="edit-name-pt"
-                value={formData.name_pt}
-                onChange={(e) => setFormData(prev => ({ ...prev, name_pt: e.target.value }))}
-                placeholder="Nome em português"
-              />
+              {editLanguage === "ja" && (
+                <Textarea
+                  value={formData.description_ja}
+                  onChange={(e) => setFormData(prev => ({ ...prev, description_ja: e.target.value }))}
+                  placeholder="日本語の説明"
+                  rows={4}
+                />
+              )}
+              {editLanguage === "en" && (
+                <Textarea
+                  value={formData.description}
+                  onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                  placeholder="English description"
+                  rows={4}
+                />
+              )}
+              {editLanguage === "pt" && (
+                <Textarea
+                  value={formData.description_pt}
+                  onChange={(e) => setFormData(prev => ({ ...prev, description_pt: e.target.value }))}
+                  placeholder="Descrição em português"
+                  rows={4}
+                />
+              )}
             </div>
             
             {/* Visibility */}
@@ -2810,59 +2945,33 @@ export const VideosManagement = () => {
                 <SelectContent className="bg-background z-50">
                   <SelectItem value="public">
                     <div className="flex items-center gap-2">
-                      <Eye className="h-4 w-4" />
+                      <Globe className="h-4 w-4" />
                       公開
                     </div>
                   </SelectItem>
-                  <SelectItem value="unlisted">限定公開</SelectItem>
-                  <SelectItem value="private">非公開</SelectItem>
+                  <SelectItem value="unlisted">
+                    <div className="flex items-center gap-2">
+                      <Link2 className="h-4 w-4" />
+                      限定公開
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="private">
+                    <div className="flex items-center gap-2">
+                      <Lock className="h-4 w-4" />
+                      非公開
+                    </div>
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
             
-            {/* Notation Selector */}
+            {/* Notation Selector - 技術タグ */}
             {editingTechnique && (
               <div className="space-y-2">
-                <Label className="text-sm font-medium">略称 (BJJ Notations)</Label>
+                <Label className="text-sm font-medium">技術タグ</Label>
                 <NotationSelector techniqueId={editingTechnique.id} />
               </div>
             )}
-            
-            {/* Description Tabs */}
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">説明</Label>
-              <Tabs value={descriptionTab} onValueChange={(v) => setDescriptionTab(v as "ja" | "en" | "pt")}>
-                <TabsList className="w-full">
-                  <TabsTrigger value="ja" className="flex-1">日本語</TabsTrigger>
-                  <TabsTrigger value="en" className="flex-1">English</TabsTrigger>
-                  <TabsTrigger value="pt" className="flex-1">Português</TabsTrigger>
-                </TabsList>
-                <TabsContent value="ja" className="mt-2">
-                  <Textarea
-                    value={formData.description_ja}
-                    onChange={(e) => setFormData(prev => ({ ...prev, description_ja: e.target.value }))}
-                    placeholder="日本語の説明"
-                    rows={4}
-                  />
-                </TabsContent>
-                <TabsContent value="en" className="mt-2">
-                  <Textarea
-                    value={formData.description}
-                    onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                    placeholder="English description"
-                    rows={4}
-                  />
-                </TabsContent>
-                <TabsContent value="pt" className="mt-2">
-                  <Textarea
-                    value={formData.description_pt}
-                    onChange={(e) => setFormData(prev => ({ ...prev, description_pt: e.target.value }))}
-                    placeholder="Descrição em português"
-                    rows={4}
-                  />
-                </TabsContent>
-              </Tabs>
-            </div>
           </div>
           
           <DialogFooter>

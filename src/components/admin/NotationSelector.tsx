@@ -80,16 +80,17 @@ export function NotationSelector({ techniqueId, compact = false, readOnly = fals
             key={notation.id}
             variant="secondary"
             className={cn(
-              "text-xs font-mono",
+              "text-xs max-w-[200px]",
               categoryLabel?.color,
               "text-white"
             )}
           >
-            {notation.code}
+            <span className="font-mono font-medium">[{notation.code}]</span>
+            <span className="ml-1 truncate">{notation.name_ja}</span>
             {!readOnly && link && (
               <button
                 onClick={() => handleRemove(link.id)}
-                className="ml-1 hover:text-destructive"
+                className="ml-1 hover:text-destructive flex-shrink-0"
               >
                 <X className="w-3 h-3" />
               </button>

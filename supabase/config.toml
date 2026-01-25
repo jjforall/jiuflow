@@ -168,3 +168,6 @@ verify_jwt = true
 
 [functions.rask-check-status]
 verify_jwt = true
+
+[functions.extract-video-metadata]
+verify_jwt = true
