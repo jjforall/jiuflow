@@ -798,15 +798,40 @@ export const VideosManagement = () => {
     }
   };
 
-  // LocalStorageから進行中の翻訳を復元
+  // LocalStorageから進行中の翻訳を復元（24時間以内のジョブのみ）
   useEffect(() => {
     const stored = localStorage.getItem('activeTranslations');
     if (stored) {
       try {
         const parsed = JSON.parse(stored);
-        setActiveTranslations(parsed);
+        
+        // 24時間以内のジョブのみ復元
+        const twentyFourHoursAgo = Date.now() - (24 * 60 * 60 * 1000);
+        const validTranslations = parsed.filter((t: any) => {
+          if (!t.startTime || !t.projectId || !t.techniqueId) {
+            console.warn('Invalid translation data in localStorage:', t);
+            return false;
+          }
+          if (t.startTime < twentyFourHoursAgo) {
+            console.warn('Removing expired translation from localStorage:', t.projectId);
+            return false;
+          }
+          return true;
+        });
+        
+        setActiveTranslations(validTranslations);
+        
+        // クリーンアップされたデータで保存し直す
+        if (validTranslations.length !== parsed.length) {
+          if (validTranslations.length > 0) {
+            localStorage.setItem('activeTranslations', JSON.stringify(validTranslations));
+          } else {
+            localStorage.removeItem('activeTranslations');
+          }
+        }
       } catch (e) {
         console.error('Failed to parse stored translations:', e);
+        localStorage.removeItem('activeTranslations'); // 壊れたデータは削除
       }
     }
   }, []);
@@ -888,14 +913,29 @@ export const VideosManagement = () => {
             setActiveTranslations(prev => 
               prev.filter(t => t.projectId !== translation.projectId)
             );
-          } else if (statusData?.status === 'failed') {
+          } else if (statusData?.status === 'failed' || statusData?.failed === true) {
+            // 失敗した翻訳を自動削除（HeyGenの"not found"エラーも含む）
+            const errorHint = statusData?.hint || '';
             toast.error("動画翻訳失敗", {
-              description: `「${translation.techniqueName}」の翻訳処理に失敗しました`,
+              description: `「${translation.techniqueName}」の翻訳処理に失敗しました${errorHint ? '\n' + errorHint : ''}`,
             });
 
             setActiveTranslations(prev => 
               prev.filter(t => t.projectId !== translation.projectId)
             );
+          } else {
+            // 24時間以上経過したジョブを自動削除
+            const twentyFourHoursAgo = Date.now() - (24 * 60 * 60 * 1000);
+            if (translation.startTime < twentyFourHoursAgo) {
+              console.warn(`Removing stale translation job: ${translation.projectId}`);
+              toast.info("古い翻訳ジョブを削除しました", {
+                description: `「${translation.techniqueName}」は24時間以上前に開始されたため削除されました`,
+              });
+              
+              setActiveTranslations(prev => 
+                prev.filter(t => t.projectId !== translation.projectId)
+              );
+            }
           }
         } catch (error) {
           console.error('Error checking translation:', error);
@@ -2079,9 +2119,10 @@ export const VideosManagement = () => {
         setActiveTranslations(prev => 
           prev.filter(t => t.projectId !== translation.projectId)
         );
-      } else if (statusData?.status === 'failed') {
+      } else if (statusData?.status === 'failed' || statusData?.failed === true) {
+        const errorHint = statusData?.hint || '';
         toast.error("動画翻訳失敗", {
-          description: `「${translation.techniqueName}」の翻訳処理に失敗しました`,
+          description: `「${translation.techniqueName}」の翻訳処理に失敗しました${errorHint ? '\n' + errorHint : ''}`,
         });
 
         setActiveTranslations(prev => 
@@ -2251,10 +2292,31 @@ export const VideosManagement = () => {
       {/* Active Translations Section */}
       {activeTranslations.length > 0 && (
         <div className="mb-6 border rounded-lg p-4 bg-muted/50">
-          <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-            <Languages className="h-5 w-5" />
-            進行中の翻訳 ({activeTranslations.length})
-          </h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold flex items-center gap-2">
+              <Languages className="h-5 w-5" />
+              進行中の翻訳 ({activeTranslations.length})
+            </h3>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                const threshold = Date.now() - (24 * 60 * 60 * 1000);
+                const cleaned = activeTranslations.filter(t => t.startTime >= threshold);
+                const removedCount = activeTranslations.length - cleaned.length;
+                
+                if (removedCount > 0) {
+                  setActiveTranslations(cleaned);
+                  toast.success(`${removedCount}件の古いジョブを削除しました`);
+                } else {
+                  toast.info("削除対象のジョブがありません");
+                }
+              }}
+            >
+              <Trash2 className="w-3 h-3 mr-1" />
+              古いジョブをクリア
+            </Button>
+          </div>
           <div className="space-y-3">
             {activeTranslations.map((translation) => {
               const elapsedTime = Math.floor((Date.now() - translation.startTime) / 1000);
