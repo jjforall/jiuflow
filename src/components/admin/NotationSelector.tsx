@@ -6,6 +6,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
 import { Check, Plus, X, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -110,8 +111,8 @@ export function NotationSelector({ techniqueId, compact = false, readOnly = fals
               {!compact && <span className="ml-1">略称</span>}
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-80 p-0" align="start">
-            <div className="p-2 border-b">
+          <PopoverContent className="w-80 p-0 z-50 bg-popover" align="start">
+            <div className="p-2 border-b bg-popover">
               <div className="relative">
                 <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
@@ -122,11 +123,11 @@ export function NotationSelector({ techniqueId, compact = false, readOnly = fals
                 />
               </div>
             </div>
-            <div className="h-[300px] overflow-y-auto">
+            <ScrollArea className="h-[300px]">
               <div className="p-2 space-y-3">
                 {Object.entries(filteredGrouped).map(([category, notations]) => (
                   <div key={category}>
-                    <div className="text-xs font-medium text-muted-foreground mb-1.5 flex items-center gap-1 sticky top-0 bg-popover py-1">
+                    <div className="text-xs font-medium text-muted-foreground mb-1.5 flex items-center gap-1 sticky top-0 bg-popover py-1 z-10">
                       <span className={cn("w-2 h-2 rounded-full", NOTATION_CATEGORY_LABELS[category as NotationCategory]?.color)} />
                       {NOTATION_CATEGORY_SHORT_LABELS[category as NotationCategory]}
                     </div>
@@ -160,7 +161,7 @@ export function NotationSelector({ techniqueId, compact = false, readOnly = fals
                   </div>
                 )}
               </div>
-            </div>
+            </ScrollArea>
           </PopoverContent>
         </Popover>
       )}
