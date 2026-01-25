@@ -135,7 +135,7 @@ Deno.serve(async (req) => {
     
     // Get Cloudflare credentials
     const accountId = Deno.env.get("CLOUDFLARE_ACCOUNT_ID");
-    const apiToken = Deno.env.get("CLOUDFLARE_API_TOKEN");
+    const apiToken = Deno.env.get("CLOUDFLARE_STREAM_API_TOKEN");
     
     if (!accountId || !apiToken) {
       return new Response(
