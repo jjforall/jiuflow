@@ -1,278 +1,199 @@
 
 
-# 略称セレクター・再生リスト画面改善計画
+## 問題分析
 
-## 要件
+調査の結果、以下の3つの問題が確認されました：
 
-1. **NotationSelector改善**
-   - 2文字の略称コードだけでなく、日本語名も表示する
-   - ポップオーバー内でマウススクロールできるようにする
+### 1. 動画時間取得の失敗
 
-2. **PlaylistsManagement改善**
-   - タイトルを「動画管理」から「再生リスト」に変更
-   - 上部の統計カード（4つの数字）を削除
-   - 「再生リスト」と「全動画ローカライズ」のタブを削除
-   - リスト作成と動画選択機能をメインに
-   - **略称マスターから順番に選んでリストを自動生成**する機能を追加
-   - テーブルレイアウトをカード形式に変更（PC/スマホで見やすく）
+**原因**: `admin-update-video-durations` Edge Functionが403エラー（Forbidden）を返しています。
+
+コンソールログに表示されているエラー：
+```
+[Duration Fetch] Supabase invoke error: FunctionsHttpError: Edge Function returned a non-2xx status code
+```
+
+**根本原因**:
+Edge Function内でadmin権限チェックを行う際、Supabaseクライアントの初期化方法に問題があります：
+
+```typescript
+// 現在のコード（問題あり）
+const supabaseUser = createClient(supabaseUrl, anonKey);
+const { data: userRes, error: userErr } = await supabaseUser.auth.getUser(token);
+```
+
+この方法では、RLSが有効な`user_roles`テーブルに対するクエリが失敗します。クライアントをユーザーのトークンでスコープする必要があります：
+
+```typescript
+// 修正後
+const supabaseUser = createClient(supabaseUrl, anonKey, {
+  global: { headers: { Authorization: authHeader } },
+  auth: { persistSession: false },
+});
+const { data: userRes, error: userErr } = await supabaseUser.auth.getUser();
+```
 
 ---
 
-## 変更ファイル
+### 2. 吹き替え機能が動作しない
+
+**原因**: 2つの問題があります：
+
+1. **TranslationQuickDialogの`onTranslationStarted`コールバックが空**
+
+現在のコード（VideosManagement.tsx 2398-2400行）：
+```typescript
+onTranslationStarted={() => {
+  // Refresh data after translation starts
+}}
+```
+
+コールバックが何もしていないため、翻訳を開始しても`activeTranslations`に追加されません。
+
+2. **進行中の翻訳が追跡されない**
+
+`TranslationQuickDialog`は翻訳を開始しますが、`projectId`や進行状況を親コンポーネントに渡していません。そのため、`VideosManagement`側で進行状況を追跡できません。
+
+---
+
+### 3. 吹き替え中のステータス表示がない
+
+**原因**: 上記の問題により、`activeTranslations`配列に翻訳タスクが追加されないため、進行中表示が出ません。
+
+また、`VideoCard`コンポーネントには`processingLanguages` propがありますが、これが正しく渡されていません：
+
+現在のVideoCard呼び出し（2225行付近）：
+```typescript
+<VideoCard
+  ...
+  processingLanguages={[]}  // 常に空配列
+  ...
+/>
+```
+
+---
+
+## 修正計画
+
+### ステップ1: admin-update-video-durations Edge Functionの修正
+
+Supabaseクライアントの初期化を修正し、ユーザートークンを適切にスコープします：
+
+```typescript
+// 変更前
+const supabaseUser = createClient(supabaseUrl, anonKey);
+const { data: userRes, error: userErr } = await supabaseUser.auth.getUser(token);
+
+// 変更後
+const supabaseUser = createClient(supabaseUrl, anonKey, {
+  global: { headers: { Authorization: authHeader } },
+  auth: { persistSession: false },
+});
+const { data: userRes, error: userErr } = await supabaseUser.auth.getUser();
+```
+
+---
+
+### ステップ2: TranslationQuickDialogの修正
+
+翻訳開始時に必要な情報を親コンポーネントに渡すように変更：
+
+1. `onTranslationStarted`の型を拡張
+2. 翻訳開始成功時に`projectId`、`targetLanguage`、`provider`を返す
+
+```typescript
+interface TranslationQuickDialogProps {
+  // ...
+  onTranslationStarted?: (info: {
+    projectId: string;
+    techniqueId: string;
+    techniqueName: string;
+    targetLang: string;
+    provider: 'rask' | 'elevenlabs' | 'heygen';
+  }) => void;
+}
+```
+
+---
+
+### ステップ3: VideosManagementの修正
+
+1. **onTranslationStartedコールバックを実装**:
+
+```typescript
+onTranslationStarted={(info) => {
+  // activeTranslationsに追加
+  setActiveTranslations(prev => [...prev, {
+    projectId: info.projectId,
+    techniqueId: info.techniqueId,
+    techniqueName: info.techniqueName,
+    targetLang: info.targetLang,
+    startTime: Date.now(),
+    provider: info.provider,
+  }]);
+  
+  // ダイアログを閉じる
+  setTranslationDialogTechnique(null);
+  
+  // トースト通知
+  toast.info('吹き替え翻訳を開始しました', {
+    description: `${info.techniqueName}の翻訳をバックグラウンドで処理中...`
+  });
+}}
+```
+
+2. **processingLanguagesを正しく算出**:
+
+```typescript
+// 進行中の言語を取得するヘルパー関数
+const getProcessingLanguagesForTechnique = (techniqueId: string): string[] => {
+  return activeTranslations
+    .filter(t => t.techniqueId === techniqueId)
+    .map(t => t.targetLang);
+};
+
+// VideoCardに渡す
+<VideoCard
+  ...
+  processingLanguages={getProcessingLanguagesForTechnique(technique.id)}
+  ...
+/>
+```
+
+---
+
+### ステップ4: 進行中表示の強化
+
+**VideosManagementに進行中翻訳の表示セクションを追加**:
+
+動画リストの上部に、現在進行中の翻訳タスクを表示するカードを追加：
+
+```text
++---------------------------------------------------+
+| 🔄 吹き替え翻訳処理中 (2件)                          |
++---------------------------------------------------+
+| ▶ クローズドガード基礎 → English  (02:34経過)  [確認] |
+| ▶ マウントエスケープ → Português (01:12経過)  [確認] |
++---------------------------------------------------+
+```
+
+**VideoCard内の進行中表示**:
+
+`LocalizationStatus`コンポーネントは既に`processingLanguages`を受け取って表示する機能がありますが、データが渡されていませんでした。上記の修正により、処理中の言語にはパルスアニメーション付きのバッジが表示されます。
+
+---
+
+## 技術的な詳細
+
+### 修正が必要なファイル
 
 | ファイル | 変更内容 |
 |---------|---------|
-| `src/components/admin/NotationSelector.tsx` | 略称に日本語名を追加表示、スクロール改善 |
-| `src/components/admin/PlaylistsManagement.tsx` | タイトル変更、統計・タブ削除、カード形式レイアウト、略称ジェネレーター統合 |
+| `supabase/functions/admin-update-video-durations/index.ts` | Supabaseクライアントのトークンスコープ修正 |
+| `src/components/admin/TranslationQuickDialog.tsx` | `onTranslationStarted`の型拡張と情報の返却 |
+| `src/components/admin/VideosManagement.tsx` | コールバック実装、processingLanguages算出、進行中表示セクション追加 |
 
----
+### Edge Functionの再デプロイ
 
-## 技術詳細
-
-### 1. NotationSelector.tsx - 略称名表示とスクロール改善
-
-**略称一覧に日本語名を表示:**
-```text
-現在:
-┌──────────────────────────────────────────┐
-│ ● 位置                                    │
-│ [CG]  [CB]  [MT]  [HG]  [OG]  [DLR]      │
-└──────────────────────────────────────────┘
-
-改善後:
-┌──────────────────────────────────────────┐
-│ ● 位置                                    │
-│ [CG] クローズドガード                     │
-│ [CB] クロスボディ                         │
-│ [MT] マウント                             │
-│ [HG] ハーフガード                         │
-│ [OG] オープンガード                       │
-│ [DLR] デラヒーバ                          │
-└──────────────────────────────────────────┘
-```
-
-**変更ポイント:**
-- グリッド3カラムから縦リスト形式に変更
-- 各アイテムに `code + name_ja` を表示
-- `overflow-auto` で確実にスクロール可能に
-- ポップオーバーに `onWheel` イベント伝播を許可
-
-**実装:**
-```typescript
-// グリッド表示をリスト表示に変更
-<div className="space-y-1">
-  {notations?.map((n) => {
-    const isLinked = linkedNotationIds.has(n.id);
-    return (
-      <button
-        key={n.id}
-        onClick={() => !isLinked && handleAdd(n.id)}
-        disabled={isLinked || addNotation.isPending}
-        className={cn(
-          "flex items-center gap-2 w-full px-2 py-1.5 rounded text-left transition-colors",
-          isLinked 
-            ? "bg-primary/20 text-primary cursor-not-allowed" 
-            : "hover:bg-muted cursor-pointer"
-        )}
-      >
-        {isLinked && <Check className="w-3 h-3 flex-shrink-0" />}
-        <span className="font-mono text-xs font-medium w-10">{n.code}</span>
-        <span className="text-sm truncate">{n.name_ja}</span>
-      </button>
-    );
-  })}
-</div>
-```
-
----
-
-### 2. PlaylistsManagement.tsx - 大幅リファクタリング
-
-**削除する要素:**
-- 統計カード（4つの数字）
-- 「再生リスト」「全動画ローカライズ」タブ
-- 「全動画ローカライズ」タブの内容全体
-
-**変更するレイアウト:**
-```text
-┌──────────────────────────────────────────────────────────┐
-│ 📋 再生リスト                            [更新] [新規作成]│
-├──────────────────────────────────────────────────────────┤
-│                                                          │
-│ ┌────────────────────────────────────────────────────┐  │
-│ │ [サムネイル]  リスト名                              │  │
-│ │              説明文...                              │  │
-│ │              [公開] 10本 • 2024/01/24               │  │
-│ │              [URL] [プレビュー] [動画管理] [編集] [削除]│  │
-│ └────────────────────────────────────────────────────┘  │
-│                                                          │
-│ ┌────────────────────────────────────────────────────┐  │
-│ │ [サムネイル]  別のリスト名                          │  │
-│ │              ...                                    │  │
-│ └────────────────────────────────────────────────────┘  │
-│                                                          │
-└──────────────────────────────────────────────────────────┘
-```
-
-**動画管理ダイアログ - 略称ジェネレーター統合:**
-```text
-┌──────────────────────────────────────────────────────────┐
-│ リスト名 の動画管理                                      │
-├──────────────────────────────────────────────────────────┤
-│ ┌─────────────────────────────────────────────────────┐ │
-│ │ 📋 略称から自動追加                           [開く]│ │
-│ └─────────────────────────────────────────────────────┘ │
-│                                                          │
-│ ┌─────────────────┐ ┌─────────────────┐                 │
-│ │ リスト内 (5本)  │ │ 追加可能 (120本) │                 │
-│ │                 │ │                 │                 │
-│ │ 1. [thumb] 技A  │ │ [thumb] 技X +   │                 │
-│ │ 2. [thumb] 技B  │ │ [thumb] 技Y +   │                 │
-│ │ ...             │ │ ...             │                 │
-│ └─────────────────┘ └─────────────────┘                 │
-└──────────────────────────────────────────────────────────┘
-```
-
-**カード形式リストの実装:**
-```typescript
-// テーブルをカード形式に変更
-<div className="grid gap-4">
-  {lists.map((list) => (
-    <Card key={list.id} className="overflow-hidden">
-      <div className="flex flex-col sm:flex-row gap-4 p-4">
-        {/* サムネイル */}
-        <div className="relative w-full sm:w-40 aspect-video sm:aspect-auto sm:h-24 bg-muted rounded-lg overflow-hidden flex-shrink-0">
-          {list.cover_image_url || coverItem?.technique?.thumbnail_url ? (
-            <img src={...} className="w-full h-full object-cover" />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center">
-              <Play className="w-8 h-8 text-muted-foreground" />
-            </div>
-          )}
-          {list.item_count > 0 && (
-            <div className="absolute bottom-2 right-2 bg-black/80 text-white text-xs px-2 py-1 rounded">
-              {list.item_count}本
-            </div>
-          )}
-        </div>
-        
-        {/* 情報 */}
-        <div className="flex-1 min-w-0 space-y-2">
-          <div>
-            <h3 className="font-medium truncate">{list.name_ja || list.name}</h3>
-            {list.description && (
-              <p className="text-sm text-muted-foreground line-clamp-2">{list.description}</p>
-            )}
-          </div>
-          <div className="flex items-center gap-2 flex-wrap">
-            {getVisibilityBadge(list.visibility)}
-            <span className="text-xs text-muted-foreground">
-              {list.item_count || 0}本 • {new Date(list.created_at).toLocaleDateString("ja-JP")}
-            </span>
-          </div>
-        </div>
-        
-        {/* アクションボタン */}
-        <div className="flex sm:flex-col items-center gap-2 flex-shrink-0">
-          <Button variant="outline" size="sm" onClick={() => openItemsDialog(list)}>
-            動画管理
-          </Button>
-          <div className="flex gap-1">
-            <Button variant="ghost" size="icon" onClick={() => copyListUrl(list)}>
-              <Copy className="w-4 h-4" />
-            </Button>
-            <Button variant="ghost" size="icon" onClick={() => openEditDialog(list)}>
-              <Pencil className="w-4 h-4" />
-            </Button>
-            <Button variant="ghost" size="icon" onClick={() => handleDelete(list.id)}>
-              <Trash2 className="w-4 h-4 text-destructive" />
-            </Button>
-          </div>
-        </div>
-      </div>
-    </Card>
-  ))}
-</div>
-```
-
-**動画管理ダイアログに略称ジェネレーターを統合:**
-```typescript
-// 動画管理ダイアログ内
-<Dialog open={isItemsDialogOpen} onOpenChange={setIsItemsDialogOpen}>
-  <DialogContent className="max-w-3xl max-h-[80vh] overflow-hidden flex flex-col">
-    <DialogHeader>
-      <DialogTitle>{selectedList?.name_ja || selectedList?.name} の動画管理</DialogTitle>
-    </DialogHeader>
-    
-    {/* 略称から追加ボタン */}
-    <div className="flex gap-2 pb-4 border-b">
-      <Button 
-        variant="outline" 
-        onClick={() => setShowNotationGenerator(true)}
-        className="flex items-center gap-2"
-      >
-        <Tag className="w-4 h-4" />
-        略称から自動追加
-      </Button>
-    </div>
-    
-    {/* 既存のリスト管理UI */}
-    <div className="flex-1 overflow-y-auto">
-      ...
-    </div>
-  </DialogContent>
-</Dialog>
-
-{/* 略称ジェネレーターダイアログ */}
-{selectedList && (
-  <NotationPlaylistGenerator
-    open={showNotationGenerator}
-    onOpenChange={setShowNotationGenerator}
-    listId={selectedList.id}
-    existingTechniqueIds={listItems.map(item => item.technique_id)}
-    onVideosAdded={() => {
-      fetchListItems(selectedList.id);
-      fetchLists();
-    }}
-  />
-)}
-```
-
----
-
-## レスポンシブ対応
-
-**PC表示:**
-- カードは横並び（サムネイル左、情報中央、ボタン右）
-- ボタンは縦に並べる
-
-**スマホ表示:**
-- カードは縦積み（サムネイル上、情報中央、ボタン下）
-- サムネイルは全幅
-- ボタンは横並び
-
----
-
-## 追加インポート
-
-```typescript
-// NotationSelector.tsx - 変更なし
-
-// PlaylistsManagement.tsx
-import { Tag } from "lucide-react";
-import { NotationPlaylistGenerator } from "@/components/admin/NotationPlaylistGenerator";
-```
-
----
-
-## 実装順序
-
-1. NotationSelector.tsx のレイアウトを変更（コード + 日本語名の縦リスト化）
-2. NotationSelector.tsx のスクロール問題を修正
-3. PlaylistsManagement.tsx のタイトルを「再生リスト」に変更
-4. 統計カードを削除
-5. タブを削除してリスト表示のみに
-6. テーブルをカード形式に変更
-7. 動画管理ダイアログにNotationPlaylistGeneratorを統合
-8. レスポンシブ対応の確認
+`admin-update-video-durations`は修正後に再デプロイが必要です。
 
