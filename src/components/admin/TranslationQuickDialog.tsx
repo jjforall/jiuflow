@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, Mic, AlertTriangle, CheckCircle } from "lucide-react";
+import { Loader2, Mic, AlertTriangle, CheckCircle, Clock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -37,6 +37,8 @@ interface TranslationStartedInfo {
   techniqueName: string;
   targetLang: string;
   provider: 'rask' | 'elevenlabs' | 'heygen';
+  sourceLang: string;
+  videoDurationSeconds: number | null;
 }
 
 interface TranslationQuickDialogProps {
@@ -44,6 +46,12 @@ interface TranslationQuickDialogProps {
   onOpenChange: (open: boolean) => void;
   technique: Technique | null;
   onTranslationStarted?: (info: TranslationStartedInfo) => void;
+}
+
+interface EstimatedDuration {
+  min: number;
+  max: number;
+  sampleCount: number;
 }
 
 export function TranslationQuickDialog({
@@ -58,6 +66,8 @@ export function TranslationQuickDialog({
   const [translationProvider, setTranslationProvider] = useState<'elevenlabs' | 'rask' | 'heygen'>('elevenlabs');
   const [videoDuration, setVideoDuration] = useState<number | null>(null);
   const [isLoadingDuration, setIsLoadingDuration] = useState(false);
+  const [estimatedDuration, setEstimatedDuration] = useState<EstimatedDuration | null>(null);
+  const [isLoadingEstimate, setIsLoadingEstimate] = useState(false);
 
   useEffect(() => {
     const savedProvider = localStorage.getItem('translation_provider');
@@ -74,6 +84,7 @@ export function TranslationQuickDialog({
       
       setVideoDuration(null);
       setIsLoadingDuration(true);
+      setEstimatedDuration(null);
       
       const videoUrl = technique.video_url_ja || technique.video_url;
       if (videoUrl) {
@@ -83,6 +94,58 @@ export function TranslationQuickDialog({
       }
     }
   }, [open, technique]);
+
+  // Fetch estimated duration when parameters change
+  useEffect(() => {
+    if (open && videoDuration && translationProvider && sourceLanguage && targetLanguage) {
+      fetchEstimatedDuration();
+    }
+  }, [open, videoDuration, translationProvider, sourceLanguage, targetLanguage]);
+
+  const fetchEstimatedDuration = async () => {
+    setIsLoadingEstimate(true);
+    try {
+      const { data: history, error } = await supabase
+        .from('translation_history')
+        .select('video_duration_seconds, processing_duration_seconds')
+        .eq('provider', translationProvider)
+        .eq('source_language', sourceLanguage)
+        .eq('target_language', targetLanguage)
+        .eq('status', 'completed')
+        .not('processing_duration_seconds', 'is', null)
+        .not('video_duration_seconds', 'is', null)
+        .gt('video_duration_seconds', 0)
+        .order('completed_at', { ascending: false })
+        .limit(10);
+
+      if (error) {
+        console.error('Error fetching translation history:', error);
+        setEstimatedDuration(null);
+        return;
+      }
+
+      if (history && history.length >= 2 && videoDuration) {
+        const ratios = history.map(h => 
+          (h.processing_duration_seconds as number) / (h.video_duration_seconds as number)
+        );
+        const minRatio = Math.min(...ratios);
+        const maxRatio = Math.max(...ratios);
+
+        setEstimatedDuration({
+          min: Math.max(1, Math.ceil(videoDuration * minRatio / 60)),
+          max: Math.max(1, Math.ceil(videoDuration * maxRatio / 60)),
+          sampleCount: history.length,
+        });
+      } else {
+        setEstimatedDuration(null);
+      }
+    } catch (err) {
+      console.error('Error fetching estimated duration:', err);
+      setEstimatedDuration(null);
+    } finally {
+      setIsLoadingEstimate(false);
+    }
+  };
 
   const getAvailableSourceLanguages = (tech: Technique | null): string[] => {
     if (!tech) return ['ja'];
@@ -190,18 +253,33 @@ export function TranslationQuickDialog({
       console.log('Translation API response:', data);
 
       if (data && data.success && data.projectId) {
+        // Insert translation history record
+        const videoDurationSeconds = videoDuration ? Math.floor(videoDuration) : null;
+        await supabase.from('translation_history').insert({
+          technique_id: technique.id,
+          source_language: sourceLanguage,
+          target_language: targetLanguage,
+          provider: translationProvider,
+          video_duration_seconds: videoDurationSeconds,
+          started_at: new Date().toISOString(),
+          status: 'processing',
+          project_id: data.projectId,
+        });
+
         const providerName = translationProvider === 'rask' ? 'Rask.ai' : translationProvider === 'heygen' ? 'HeyGen' : 'ElevenLabs';
         toast.success("動画翻訳を開始しました", {
           description: `${providerName}で翻訳中。完了すると通知されます。`,
         });
         
-        // Pass translation info to parent
+        // Pass translation info to parent (including new fields)
         onTranslationStarted?.({
           projectId: data.projectId,
           techniqueId: technique.id,
           techniqueName: technique.name_ja || technique.name,
           targetLang: targetLanguage,
           provider: translationProvider,
+          sourceLang: sourceLanguage,
+          videoDurationSeconds: videoDurationSeconds,
         });
         onOpenChange(false);
       } else if (data && data.error) {
@@ -340,11 +418,46 @@ export function TranslationQuickDialog({
             </Select>
           </div>
 
+          {/* Estimated Duration */}
+          {!isLoadingDuration && videoDuration && (
+            <div>
+              {isLoadingEstimate ? (
+                <div className="p-3 bg-muted/50 rounded-lg">
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    見込み時間を計算中...
+                  </div>
+                </div>
+              ) : estimatedDuration ? (
+                <div className="p-3 bg-primary/10 border border-primary/30 rounded-lg">
+                  <div className="flex items-start gap-2">
+                    <Clock className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
+                    <div className="text-sm">
+                      <strong>見込み時間: 約{estimatedDuration.min}〜{estimatedDuration.max}分</strong>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        ※ 過去{estimatedDuration.sampleCount}件の同条件翻訳実績に基づく推定値
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="p-3 bg-muted/50 rounded-lg">
+                  <p className="text-sm text-muted-foreground">
+                    見込み時間: 通常5〜15分程度
+                    <span className="text-xs block mt-1">
+                      ※ この条件での翻訳実績がまだありません
+                    </span>
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Duration Warning */}
           {!isLoadingDuration && videoDuration && videoDuration > 300 && (
-            <div className="flex items-start gap-2 p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
-              <AlertTriangle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
-              <div className="text-sm text-yellow-700">
+            <div className="flex items-start gap-2 p-3 bg-destructive/10 border border-destructive/30 rounded-lg">
+              <AlertTriangle className="w-5 h-5 text-destructive flex-shrink-0 mt-0.5" />
+              <div className="text-sm text-destructive">
                 動画が{Math.round(videoDuration / 60)}分あります。翻訳には時間がかかる場合があります。
               </div>
             </div>

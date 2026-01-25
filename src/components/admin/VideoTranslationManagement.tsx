@@ -23,6 +23,8 @@ interface ActiveTranslation {
   targetLang: string;
   startTime: number;
   provider: 'rask' | 'elevenlabs' | 'heygen';
+  sourceLang?: string;
+  videoDurationSeconds?: number | null;
 }
 
 const ALL_LANGUAGES = [
@@ -354,7 +356,7 @@ export const VideoTranslationManagement = ({ showHeader = true }: VideoTranslati
           return;
         }
 
-        const currentMetadata = (techniqueData.video_metadata as Record<string, any>) || {};
+        const currentMetadata = (techniqueData.video_metadata as Record<string, { video_url?: string; created_at?: string; updated_at?: string }>) || {};
         const updatedMetadata = {
           ...currentMetadata,
           [translation.targetLang]: {
@@ -366,11 +368,23 @@ export const VideoTranslationManagement = ({ showHeader = true }: VideoTranslati
 
         await supabase
           .from('techniques')
-          .update({ video_metadata: updatedMetadata })
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          .update({ video_metadata: updatedMetadata as any })
           .eq('id', translation.techniqueId);
 
+        // Update translation history with completion info
+        const processingDurationSeconds = Math.floor((Date.now() - translation.startTime) / 1000);
+        await supabase
+          .from('translation_history')
+          .update({
+            completed_at: new Date().toISOString(),
+            processing_duration_seconds: processingDurationSeconds,
+            status: 'completed',
+          })
+          .eq('project_id', translation.projectId);
+
         toast.success("動画翻訳完了", {
-          description: `「${translation.techniqueName}」の${ALL_LANGUAGES.find(l => l.code === translation.targetLang)?.nativeName}版が完了しました`,
+          description: `「${translation.techniqueName}」の${ALL_LANGUAGES.find(l => l.code === translation.targetLang)?.nativeName}版が完了しました（${Math.round(processingDurationSeconds / 60)}分）`,
         });
 
         setActiveTranslations(prev => 
@@ -380,6 +394,16 @@ export const VideoTranslationManagement = ({ showHeader = true }: VideoTranslati
         // Refresh data
         fetchData();
       } else if (statusData?.status === 'failed') {
+        // Update translation history with failed status
+        await supabase
+          .from('translation_history')
+          .update({
+            completed_at: new Date().toISOString(),
+            processing_duration_seconds: Math.floor((Date.now() - translation.startTime) / 1000),
+            status: 'failed',
+          })
+          .eq('project_id', translation.projectId);
+
         toast.error("動画翻訳失敗", {
           description: `「${translation.techniqueName}」の翻訳処理に失敗しました`,
         });
