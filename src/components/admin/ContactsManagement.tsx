@@ -325,12 +325,6 @@ export const ContactsManagement = () => {
     }
   };
 
-  const handleOpenMailer = () => {
-    if (!selectedMessage) return;
-    const subject = encodeURIComponent(`Re: ${selectedMessage.subject}`);
-    const body = encodeURIComponent(replyContent);
-    window.location.href = `mailto:${selectedMessage.email}?subject=${subject}&body=${body}`;
-  };
 
   const handleSendReply = async () => {
     if (!selectedMessage || !replyContent.trim()) {
@@ -635,15 +629,7 @@ export const ContactsManagement = () => {
                 onClick={handleCopyReply}
               >
                 <Copy className="h-4 w-4 mr-2" />
-                コピー
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleOpenMailer}
-              >
-                <Mail className="h-4 w-4 mr-2" />
-                メーラーで開く
+                クリップボードにコピー
               </Button>
               <Button
                 size="sm"
