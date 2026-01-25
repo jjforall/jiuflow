@@ -1,9 +1,12 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { Wrench } from "lucide-react";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { useAuth } from "@/hooks/useAuth";
@@ -11,11 +14,24 @@ import { useAuth } from "@/hooks/useAuth";
 const AdminLogin = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [rememberEmail, setRememberEmail] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [showSetup, setShowSetup] = useState(false);
   const [isCheckingSetup, setIsCheckingSetup] = useState(true);
   const navigate = useNavigate();
   const { user, isAdmin, isStaff, rolesChecked, isLoading: authLoading } = useAuth();
+
+  // プレビュー環境の検出
+  const isLovablePreview = useMemo(() => {
+    const hostname = window.location.hostname;
+    const search = window.location.search;
+    return (
+      search.includes('__lovable_token') ||
+      hostname.includes('id-preview--') ||
+      hostname.includes('lovableproject.com') ||
+      (hostname.includes('lovable.app') && hostname !== 'jiuflow.lovable.app')
+    );
+  }, []);
 
   // ログイン済みadmin/staffならダッシュボードへリダイレクト
   useEffect(() => {
@@ -23,6 +39,16 @@ const AdminLogin = () => {
       navigate('/admin/dashboard');
     }
   }, [authLoading, rolesChecked, user, isAdmin, isStaff, navigate]);
+
+  // プレビュー環境でのメール復元
+  useEffect(() => {
+    if (isLovablePreview) {
+      const savedEmail = localStorage.getItem('jiuflow_admin_dev_email');
+      if (savedEmail) {
+        setEmail(savedEmail);
+      }
+    }
+  }, [isLovablePreview]);
 
   useEffect(() => {
     checkIfSetupNeeded();
@@ -115,6 +141,11 @@ const AdminLogin = () => {
           return;
         }
 
+        // プレビュー環境でメールを保存
+        if (rememberEmail && isLovablePreview) {
+          localStorage.setItem('jiuflow_admin_dev_email', email);
+        }
+
         toast.success("Login successful", {
           description: "Welcome to admin panel",
         });
@@ -203,6 +234,15 @@ const AdminLogin = () => {
                 </p>
               </div>
 
+              {isLovablePreview && (
+                <div className="mb-6 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+                  <div className="flex items-center gap-2 text-sm text-blue-400">
+                    <Wrench className="w-4 h-4" />
+                    開発プレビュー環境
+                  </div>
+                </div>
+              )}
+
               <form onSubmit={handleLogin} className="space-y-6">
                 <div>
                   <Input
@@ -227,6 +267,19 @@ const AdminLogin = () => {
                     disabled={isLoading}
                   />
                 </div>
+
+                {isLovablePreview && (
+                  <div className="flex items-center gap-2">
+                    <Checkbox 
+                      id="remember" 
+                      checked={rememberEmail}
+                      onCheckedChange={(checked) => setRememberEmail(!!checked)}
+                    />
+                    <Label htmlFor="remember" className="text-sm text-muted-foreground cursor-pointer">
+                      このデバイスでメールを記憶する
+                    </Label>
+                  </div>
+                )}
 
                 <Button 
                   type="submit" 
