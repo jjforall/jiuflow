@@ -1,156 +1,114 @@
 
 
-## Lovableプレビュー環境での管理画面ログイン改善
+## Cloudflare Stream 不要動画削除機能
 
 ### 現状の問題
 
-Lovableのプレビュー環境（`id-preview--*.lovable.app`）とプロダクション環境（`jiuflow.lovable.app`）は異なるドメインのため、Supabaseの認証セッション（localStorage）が共有されません。そのため、プレビュー環境では毎回手動でログインが必要です。
+| 項目 | 状態 |
+|------|------|
+| Cloudflare使用量 | 1000.72分 / 1000分（容量オーバー） |
+| データベース登録動画 | 約142分 |
+| 孤児動画（不要） | 約850分以上 |
 
-### 解決策: 開発者向けクイックログイン機能
-
-プレビュー環境かつ開発モード（`__lovable_token`が存在）の場合に、管理者メールアドレスを自動入力し、パスワードのみ入力で素早くログインできるようにします。
+孤児動画とは、テスト、削除済み動画、吹き替え失敗の残骸など、データベースに登録されていない動画です。
 
 ---
 
-### 変更内容
+### 保持すべき動画
 
-#### 1. AdminLogin.tsx の改修
+1. **オリジナル動画**: `techniques.video_url` に登録されたCloudflare Stream ID
+2. **吹き替え版**: `techniques.video_metadata` 内の各言語（en, es, pt, zh等）の `video_url`
 
-**新機能:**
-- Lovableプレビュー環境を検出（URLに`__lovable_token`が含まれる、または`lovable.app`ドメイン）
-- プレビュー環境の場合、管理者メールを自動入力（または直近で使用したメールを保存・復元）
-- 「前回のログイン情報を記憶」オプションを追加
+---
+
+### 実装内容
+
+#### 1. 新しいEdge Function `cleanup-cloudflare-videos` を作成
+
+**機能:**
+- Cloudflare Stream APIから全動画リストを取得
+- データベースから保持すべきVideo ID一覧を抽出
+- 不要な動画を特定して削除
+
+**安全策:**
+- 削除前に対象動画リストを返すプレビューモード
+- 確認後に実際の削除を実行
+
+#### 2. 管理画面に削除ボタンを追加（オプション）
+
+---
+
+### 技術的な詳細
 
 ```typescript
-// プレビュー環境の検出
-const isLovablePreview = 
-  window.location.search.includes('__lovable_token') ||
-  window.location.hostname.includes('lovable.app') ||
-  window.location.hostname.includes('lovableproject.com');
+// supabase/functions/cleanup-cloudflare-videos/index.ts
 
-// 前回のメールアドレスを復元（プレビュー環境のみ）
-useEffect(() => {
-  if (isLovablePreview) {
-    const savedEmail = localStorage.getItem('admin_dev_email');
-    if (savedEmail) {
-      setEmail(savedEmail);
+// 1. Cloudflare Streamから全動画を取得
+const allVideos = await fetchAllCloudflareVideos(accountId, apiToken);
+
+// 2. データベースから保持すべきIDを抽出
+const keepIds = new Set<string>();
+for (const technique of techniques) {
+  // video_urlからCloudflare IDを抽出
+  const mainId = extractCloudflareId(technique.video_url);
+  if (mainId) keepIds.add(mainId);
+  
+  // video_metadataから吹き替え版のIDを抽出
+  if (technique.video_metadata) {
+    for (const lang of ['en', 'es', 'pt', 'zh', 'fr', 'de', 'ko']) {
+      const dubbedUrl = technique.video_metadata[lang]?.video_url;
+      if (dubbedUrl?.includes('videodelivery.net')) {
+        const dubbedId = extractCloudflareId(dubbedUrl);
+        if (dubbedId) keepIds.add(dubbedId);
+      }
     }
   }
-}, []);
+}
 
-// ログイン成功時にメールを保存
-if (isLovablePreview) {
-  localStorage.setItem('admin_dev_email', email);
+// 3. 不要な動画を特定
+const toDelete = allVideos.filter(v => !keepIds.has(v.uid));
+
+// 4. プレビューモードなら対象リストを返す
+if (mode === 'preview') {
+  return { toDelete, toKeep: keepIds.size };
+}
+
+// 5. 削除実行
+for (const video of toDelete) {
+  await deleteCloudflareVideo(video.uid, accountId, apiToken);
 }
 ```
 
-#### 2. UI改善
+---
 
-プレビュー環境では以下のUIを表示:
+### 実行フロー
 
 ```text
-┌─────────────────────────────────────────┐
-│            Admin Login                  │
-│   🔧 開発プレビュー環境                  │
-│                                         │
-│ Email: [admin@example.com____] (自動入力) │
-│ Password: [________________]            │
-│ ☑ このデバイスでメールを記憶する          │
-│                                         │
-│         [ Login ]                       │
-└─────────────────────────────────────────┘
+[管理者] → [cleanup-cloudflare-videos?mode=preview]
+                    ↓
+         削除対象リスト表示（確認）
+                    ↓
+[管理者] → [cleanup-cloudflare-videos?mode=execute]
+                    ↓
+              不要動画を削除
+                    ↓
+           容量回復（推定850分以上）
 ```
 
 ---
 
-### 修正ファイル
+### ファイル変更
 
 | ファイル | 変更内容 |
-|---------|---------|
-| `src/pages/AdminLogin.tsx` | プレビュー環境検出 + メール自動入力 + 記憶オプション |
+|----------|----------|
+| `supabase/functions/cleanup-cloudflare-videos/index.ts` | 新規作成 |
+| `supabase/config.toml` | 関数設定追加（JWT不要） |
 
 ---
 
-### 技術詳細
+### 注意事項
 
-```tsx
-// AdminLogin.tsx に追加
-
-const [rememberEmail, setRememberEmail] = useState(true);
-
-// プレビュー環境の検出
-const isLovablePreview = useMemo(() => {
-  const hostname = window.location.hostname;
-  const search = window.location.search;
-  return (
-    search.includes('__lovable_token') ||
-    hostname.includes('id-preview--') ||
-    hostname.includes('lovableproject.com') ||
-    (hostname.includes('lovable.app') && hostname !== 'jiuflow.lovable.app')
-  );
-}, []);
-
-// 初期化時にメールを復元
-useEffect(() => {
-  if (isLovablePreview) {
-    const savedEmail = localStorage.getItem('jiuflow_admin_dev_email');
-    if (savedEmail) {
-      setEmail(savedEmail);
-    }
-  }
-}, [isLovablePreview]);
-
-// ログイン成功時にメールを保存
-const handleLogin = async (e: React.FormEvent) => {
-  // ... 既存のログイン処理 ...
-  
-  if (data.session && rememberEmail && isLovablePreview) {
-    localStorage.setItem('jiuflow_admin_dev_email', email);
-  }
-  
-  // ... 残りの処理 ...
-};
-
-// JSX: プレビュー環境バナー
-{isLovablePreview && (
-  <div className="mb-4 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
-    <div className="flex items-center gap-2 text-sm text-blue-400">
-      <Wrench className="w-4 h-4" />
-      開発プレビュー環境
-    </div>
-  </div>
-)}
-
-// JSX: メール記憶チェックボックス
-{isLovablePreview && (
-  <div className="flex items-center gap-2">
-    <Checkbox 
-      id="remember" 
-      checked={rememberEmail}
-      onCheckedChange={(checked) => setRememberEmail(!!checked)}
-    />
-    <Label htmlFor="remember" className="text-sm text-muted-foreground">
-      このデバイスでメールを記憶する
-    </Label>
-  </div>
-)}
-```
-
----
-
-### セキュリティ考慮
-
-1. **パスワードは保存しない** - メールアドレスのみをlocalStorageに保存
-2. **プレビュー環境でのみ有効** - 本番環境ではこの機能は表示されない
-3. **認証ロジックは変更なし** - Supabase認証を経由するため、権限のないユーザーはログインできない
-
----
-
-### 期待される結果
-
-**変更後:**
-- Lovableプレビューで`/admin`にアクセス
-- 前回使用したメールアドレスが自動入力される
-- パスワードのみ入力してログイン
-- 開発作業がスムーズに
+- Cloudflare APIはページネーションがあるため、全動画を取得するにはループが必要
+- 削除は不可逆なので、プレビューモードで確認してから実行
+- 吹き替え版のURLがRask.ai（一時URL）の場合は削除対象から除外不要（そもそもCloudflareにない）
 
