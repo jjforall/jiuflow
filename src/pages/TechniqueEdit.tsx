@@ -24,7 +24,8 @@ import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { useUpload } from "@/contexts/UploadContext";
 import { NotationSelector } from "@/components/admin/NotationSelector";
-
+import { SidebarProvider } from "@/components/ui/sidebar";
+import { AdminSidebar } from "@/components/admin/AdminSidebar";
 // セクションコンポーネント
 const FormSection = ({ icon, title, children }: { icon: React.ReactNode; title: string; children: React.ReactNode }) => (
   <Card>
@@ -329,27 +330,41 @@ const TechniqueEdit = () => {
     }
   };
 
+  const handleTabChange = (tab: string) => {
+    // Dispatch event for AdminDashboard to handle tab change
+    window.dispatchEvent(new CustomEvent('admin-tab-change', { detail: tab }));
+    navigate(`/admin?tab=${tab}`);
+  };
+
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background p-6">
-        <div className="max-w-4xl mx-auto space-y-6">
-          <Skeleton className="h-10 w-32" />
-          <Skeleton className="h-[200px]" />
-          <Skeleton className="h-[300px]" />
+      <SidebarProvider defaultOpen>
+        <div className="min-h-screen flex w-full">
+          <AdminSidebar activeTab="videos" onTabChange={handleTabChange} />
+          <main className="flex-1 bg-background p-6">
+            <div className="max-w-4xl mx-auto space-y-6">
+              <Skeleton className="h-10 w-32" />
+              <Skeleton className="h-[200px]" />
+              <Skeleton className="h-[300px]" />
+            </div>
+          </main>
         </div>
-      </div>
+      </SidebarProvider>
     );
   }
 
   const isNew = id === 'new';
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="max-w-4xl mx-auto p-6 space-y-6">
-        {/* Header */}
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/admin?tab=videos')}>
-            <ArrowLeft className="h-5 w-5" />
+    <SidebarProvider defaultOpen>
+      <div className="min-h-screen flex w-full">
+        <AdminSidebar activeTab="videos" onTabChange={handleTabChange} />
+        <main className="flex-1 bg-background overflow-auto">
+          <div className="max-w-4xl mx-auto p-6 space-y-6">
+            {/* Header */}
+            <div className="flex items-center gap-4">
+              <Button variant="ghost" size="icon" onClick={() => navigate('/admin?tab=videos')}>
+                <ArrowLeft className="h-5 w-5" />
           </Button>
           <div>
             <h1 className="text-2xl font-semibold">
@@ -675,8 +690,10 @@ const TechniqueEdit = () => {
             </div>
           </div>
         </form>
+          </div>
+        </main>
       </div>
-    </div>
+    </SidebarProvider>
   );
 };
 
