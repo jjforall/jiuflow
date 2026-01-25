@@ -560,7 +560,7 @@ export const ContactsManagement = () => {
                   onClick={() => selectedMessage && handleDelete(selectedMessage.id)}
                 >
                   <Trash2 className="h-4 w-4 mr-2" />
-                  削除
+                  対応不要
                 </Button>
                 <Button
                   size="sm"
