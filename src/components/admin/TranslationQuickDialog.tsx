@@ -289,6 +289,17 @@ export function TranslationQuickDialog({
                 <SelectItem value="heygen">HeyGen</SelectItem>
               </SelectContent>
             </Select>
+            {/* Rask.ai Japanese source warning */}
+            {translationProvider === 'rask' && sourceLanguage === 'ja' && (
+              <div className="flex items-start gap-2 p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
+                <AlertTriangle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+                <div className="text-sm text-red-700">
+                  <strong>Rask.aiは日本語をソース言語としてサポートしていません。</strong>
+                  <br />
+                  ElevenLabsまたはHeyGenをお選びください。
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Source Language */}
@@ -342,7 +353,7 @@ export function TranslationQuickDialog({
           {/* Translate Button */}
           <Button
             onClick={handleTranslate}
-            disabled={isTranslating || !technique.video_url}
+            disabled={isTranslating || !technique.video_url || (translationProvider === 'rask' && sourceLanguage === 'ja')}
             className="w-full"
           >
             {isTranslating ? (
