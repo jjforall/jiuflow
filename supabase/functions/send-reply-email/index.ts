@@ -33,16 +33,22 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     
-    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-      global: { headers: { Authorization: authHeader } }
+    // Use service role client to verify the user token
+    const supabase = createClient(supabaseUrl, serviceRoleKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
     });
 
-    // Verify user
-    const { data: userData, error: userError } = await supabase.auth.getUser();
+    // Verify user by getting their info using the provided token
+    const token = authHeader.replace('Bearer ', '');
+    const { data: userData, error: userError } = await supabase.auth.getUser(token);
     
     if (userError || !userData?.user) {
+      console.error("Auth error:", userError);
       return new Response(
         JSON.stringify({ error: "認証に失敗しました" }),
         { status: 401, headers: { "Content-Type": "application/json", ...corsHeaders } }
@@ -110,10 +116,7 @@ ${content.split('\n').map(line => `            ${line}`).join('\n')}
 
     // Update contact_messages with reply info if originalMessageId provided
     if (originalMessageId) {
-      const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-      const adminSupabase = createClient(supabaseUrl, serviceRoleKey);
-
-      const { error: updateError } = await adminSupabase
+      const { error: updateError } = await supabase
         .from('contact_messages')
         .update({
           replied_at: new Date().toISOString(),
