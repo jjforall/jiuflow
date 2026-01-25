@@ -36,12 +36,13 @@ const handler = async (req: Request): Promise<Response> => {
     const anonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     
-    // Create client with anon key
-    const supabase = createClient(supabaseUrl, anonKey);
+    // Create client with auth token in headers
+    const supabase = createClient(supabaseUrl, anonKey, {
+      global: { headers: { Authorization: authHeader } }
+    });
 
-    // Verify user by passing token directly
-    const token = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+    // Verify user - client will use the Authorization header
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
     
     if (userError || !user) {
       console.error("Auth error:", userError);
