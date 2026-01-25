@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Upload, Search, Check, Languages, ChevronDown, Loader2, RefreshCw, ImageIcon, Wrench, Clock, FileText, Film, Hash, Tags, BookOpen, FolderOpen, Eye, AlertTriangle, Globe, Link2, Lock, X } from "lucide-react";
+import { Upload, Search, Check, Languages, ChevronDown, Loader2, RefreshCw, ImageIcon, Wrench, Clock, FileText, Film, Hash, Tags, BookOpen, FolderOpen, Eye, AlertTriangle, Globe, Link2, Lock, X, Cloud, Trash2, Video } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
@@ -16,6 +16,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { PaginationControls } from "@/components/ui/pagination-controls";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Progress } from "@/components/ui/progress";
@@ -141,9 +142,31 @@ export const VideosManagement = () => {
   // Quick dialogs for transcription/translation
   const [transcriptionDialogTechnique, setTranscriptionDialogTechnique] = useState<Technique | null>(null);
   const [translationDialogTechnique, setTranslationDialogTechnique] = useState<Technique | null>(null);
-  
+
   // Delete confirmation dialog state
   const [deleteTargetTechnique, setDeleteTargetTechnique] = useState<Technique | null>(null);
+
+  // Translation provider setting
+  type TranslationProvider = "elevenlabs" | "rask";
+  const [translationProvider, setTranslationProvider] = useState<TranslationProvider>("elevenlabs");
+  
+  // Cloudflare cleanup states
+  interface CloudflareCleanupPreview {
+    summary: {
+      totalVideosInCloudflare: number;
+      totalMinutesInCloudflare: number;
+      videosToKeep: number;
+      minutesToKeep: number;
+      videosToDelete: number;
+      minutesToDelete: number;
+      estimatedSpaceRecovery: string;
+    };
+    toDelete: Array<{ uid: string; duration: number; name: string }>;
+    toKeep: Array<{ uid: string; duration: number; name: string }>;
+  }
+  const [cfCleanupPreview, setCfCleanupPreview] = useState<CloudflareCleanupPreview | null>(null);
+  const [isCfLoading, setIsCfLoading] = useState(false);
+  const [isCfDeleting, setIsCfDeleting] = useState(false);
 
 
   // すべての言語（カウント用）
@@ -321,6 +344,14 @@ export const VideosManagement = () => {
     fetchNotationLinks();
   }, []);
 
+  // Load translation provider preference
+  useEffect(() => {
+    const savedProvider = localStorage.getItem('translation_provider');
+    if (savedProvider === 'rask' || savedProvider === 'elevenlabs') {
+      setTranslationProvider(savedProvider);
+    }
+  }, []);
+
   // シリーズ名リストを再取得する関数
   const refetchSeriesNames = async () => {
     const { data: techniqueData, error } = await supabase
@@ -408,6 +439,80 @@ export const VideosManagement = () => {
       toast.error(error instanceof Error ? error.message : "サムネイル修復に失敗しました");
     } finally {
       setIsFixingThumbnails(false);
+    }
+  };
+
+  // Translation provider handler
+  const handleProviderChange = (value: TranslationProvider) => {
+    setTranslationProvider(value);
+    localStorage.setItem('translation_provider', value);
+    toast.success(`翻訳プロバイダーを ${value === 'rask' ? 'Rask.ai' : 'ElevenLabs'} に変更しました`);
+  };
+
+  // Cloudflare cleanup handlers
+  const handleCloudflarePreview = async () => {
+    setIsCfLoading(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("ログインが必要です");
+      
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/cleanup-cloudflare-videos?mode=preview`,
+        {
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "プレビュー取得に失敗しました");
+      }
+      
+      const data = await response.json();
+      setCfCleanupPreview(data);
+      toast.success("プレビューを取得しました");
+    } catch (error) {
+      console.error("Cloudflare preview error:", error);
+      toast.error(error instanceof Error ? error.message : "エラーが発生しました");
+    } finally {
+      setIsCfLoading(false);
+    }
+  };
+
+  const handleCloudflareExecute = async () => {
+    if (!cfCleanupPreview || cfCleanupPreview.summary.videosToDelete === 0) return;
+    
+    setIsCfDeleting(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("ログインが必要です");
+      
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/cleanup-cloudflare-videos?mode=execute`,
+        {
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "削除に失敗しました");
+      }
+      
+      const data = await response.json();
+      toast.success(`${data.summary.totalDeleted}本の動画を削除しました（${data.summary.minutesRecovered}分回復）`);
+      setCfCleanupPreview(null);
+    } catch (error) {
+      console.error("Cloudflare execute error:", error);
+      toast.error(error instanceof Error ? error.message : "エラーが発生しました");
+    } finally {
+      setIsCfDeleting(false);
     }
   };
   
@@ -2535,6 +2640,68 @@ export const VideosManagement = () => {
                     ? `動画時間一括取得 (${missingDurationCount}件)`
                     : '動画時間一括取得'}
               </Button>
+            </div>
+            
+            {/* Translation Provider Settings */}
+            <div className="p-3 border rounded-lg bg-muted/20 space-y-2">
+              <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                <Video className="w-3.5 h-3.5" />
+                <span>翻訳プロバイダー</span>
+              </div>
+              <RadioGroup
+                value={translationProvider}
+                onValueChange={(value) => handleProviderChange(value as TranslationProvider)}
+                className="flex flex-wrap gap-3"
+              >
+                <div className="flex items-center gap-1.5">
+                  <RadioGroupItem value="elevenlabs" id="admin-elevenlabs" className="h-3.5 w-3.5" />
+                  <Label htmlFor="admin-elevenlabs" className="text-xs cursor-pointer">ElevenLabs</Label>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <RadioGroupItem value="rask" id="admin-rask" className="h-3.5 w-3.5" />
+                  <Label htmlFor="admin-rask" className="text-xs cursor-pointer">Rask.ai</Label>
+                </div>
+              </RadioGroup>
+            </div>
+            
+            {/* Cloudflare Stream Cleanup */}
+            <div className="p-3 border rounded-lg bg-muted/20 space-y-3">
+              <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                <Cloud className="w-3.5 h-3.5" />
+                <span>Cloudflare Stream クリーンアップ</span>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Button onClick={handleCloudflarePreview} disabled={isCfLoading} variant="outline" size="sm" className="text-xs h-7">
+                  {isCfLoading ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <RefreshCw className="h-3 w-3 mr-1" />}
+                  使用状況確認
+                </Button>
+                {cfCleanupPreview && cfCleanupPreview.summary.videosToDelete > 0 && (
+                  <Button onClick={handleCloudflareExecute} disabled={isCfDeleting} variant="destructive" size="sm" className="text-xs h-7">
+                    {isCfDeleting ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <Trash2 className="h-3 w-3 mr-1" />}
+                    不要動画削除 ({cfCleanupPreview.summary.videosToDelete}本)
+                  </Button>
+                )}
+              </div>
+              {cfCleanupPreview && (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
+                  <div className="p-2 bg-background rounded">
+                    <span className="text-muted-foreground">総動画</span>
+                    <p className="font-medium">{cfCleanupPreview.summary.totalVideosInCloudflare}本</p>
+                  </div>
+                  <div className="p-2 bg-background rounded">
+                    <span className="text-muted-foreground">使用量</span>
+                    <p className="font-medium">{cfCleanupPreview.summary.totalMinutesInCloudflare.toFixed(1)}分</p>
+                  </div>
+                  <div className="p-2 bg-background rounded">
+                    <span className="text-muted-foreground">保持</span>
+                    <p className="font-medium text-primary">{cfCleanupPreview.summary.videosToKeep}本</p>
+                  </div>
+                  <div className="p-2 bg-background rounded">
+                    <span className="text-muted-foreground">削除対象</span>
+                    <p className="font-medium text-destructive">{cfCleanupPreview.summary.videosToDelete}本</p>
+                  </div>
+                </div>
+              )}
             </div>
           </CollapsibleContent>
         </Collapsible>
