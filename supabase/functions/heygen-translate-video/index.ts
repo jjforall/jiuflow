@@ -104,12 +104,19 @@ serve(async (req) => {
   try {
     const heygenApiKey = Deno.env.get("HEYGEN_API_KEY");
     if (!heygenApiKey) {
-      throw new Error("HEYGEN_API_KEY not configured");
+      return new Response(
+        JSON.stringify({ 
+          success: false,
+          error: "HEYGEN_API_KEY not configured",
+          provider: "heygen",
+        }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     const { videoUrl, sourceLanguage, targetLanguage, techniqueId, techniqueName } = await req.json();
 
-    console.log("[heygen-translate-video] Request:", {
+    console.log("[heygen-translate-video] Request received:", {
       videoUrl: videoUrl?.substring(0, 100),
       sourceLanguage,
       targetLanguage,
@@ -118,27 +125,57 @@ serve(async (req) => {
     });
 
     if (!videoUrl) {
-      throw new Error("videoUrl is required");
+      return new Response(
+        JSON.stringify({ 
+          success: false,
+          error: "videoUrl is required",
+          provider: "heygen",
+        }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
     if (!targetLanguage) {
-      throw new Error("targetLanguage is required");
+      return new Response(
+        JSON.stringify({ 
+          success: false,
+          error: "targetLanguage is required",
+          provider: "heygen",
+        }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     // Map language codes to HeyGen format
     const outputLanguage = HEYGEN_LANGUAGE_MAP[targetLanguage];
     if (!outputLanguage) {
-      throw new Error(`Unsupported target language: ${targetLanguage}`);
+      return new Response(
+        JSON.stringify({ 
+          success: false,
+          error: `Unsupported target language: ${targetLanguage}`,
+          provider: "heygen",
+        }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     // Get downloadable URL
     const { url: downloadUrl, error: downloadError } = await getDownloadableUrl(videoUrl);
     if (downloadError || !downloadUrl) {
-      throw new Error(downloadError || "Failed to get downloadable URL");
+      console.error("[heygen-translate-video] Failed to get download URL:", downloadError);
+      return new Response(
+        JSON.stringify({ 
+          success: false,
+          error: downloadError || "Failed to get downloadable URL",
+          provider: "heygen",
+        }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     console.log("[heygen-translate-video] Using download URL:", downloadUrl);
 
     // Call HeyGen Video Translate API
+    console.log("[heygen-translate-video] Calling HeyGen API...");
     const translateResponse = await fetch("https://api.heygen.com/v2/video_translate", {
       method: "POST",
       headers: {
@@ -152,17 +189,50 @@ serve(async (req) => {
       }),
     });
 
-    const translateData = await translateResponse.json();
-    console.log("[heygen-translate-video] HeyGen response:", translateData);
+    const responseText = await translateResponse.text();
+    console.log("[heygen-translate-video] HeyGen response:", translateResponse.status, responseText?.substring(0, 500));
+
+    let translateData;
+    try {
+      translateData = JSON.parse(responseText);
+    } catch {
+      return new Response(
+        JSON.stringify({ 
+          success: false,
+          error: "Invalid JSON response from HeyGen",
+          details: responseText,
+          provider: "heygen",
+        }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     if (!translateResponse.ok || translateData.error) {
-      throw new Error(translateData.error?.message || translateData.message || "HeyGen API error");
+      return new Response(
+        JSON.stringify({ 
+          success: false,
+          error: translateData.error?.message || translateData.message || "HeyGen API error",
+          details: JSON.stringify(translateData),
+          provider: "heygen",
+        }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     const videoTranslateId = translateData.data?.video_translate_id;
     if (!videoTranslateId) {
-      throw new Error("No video_translate_id returned from HeyGen");
+      return new Response(
+        JSON.stringify({ 
+          success: false,
+          error: "No video_translate_id returned from HeyGen",
+          details: JSON.stringify(translateData),
+          provider: "heygen",
+        }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
+
+    console.log("[heygen-translate-video] Translation started:", { videoTranslateId });
 
     return new Response(
       JSON.stringify({
@@ -181,6 +251,7 @@ serve(async (req) => {
       JSON.stringify({
         success: false,
         error: err instanceof Error ? err.message : String(err),
+        provider: "heygen",
       }),
       {
         status: 500,

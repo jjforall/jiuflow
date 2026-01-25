@@ -148,23 +148,22 @@ serve(async (req) => {
             .single();
 
           const existingMetadata = technique?.video_metadata || {};
-          const translations = existingMetadata.translations || {};
 
-          // Add new translation
-          translations[targetLanguage] = {
-            url: cloudflareUrl,
-            provider: "heygen",
-            created_at: new Date().toISOString(),
+          // 他のプロバイダーと同じ形式で保存: video_metadata[lang].video_url
+          const updatedMetadata = {
+            ...existingMetadata,
+            [targetLanguage]: {
+              video_url: cloudflareUrl,
+              provider: "heygen",
+              created_at: new Date().toISOString(),
+            },
           };
 
           // Update with merged metadata
           const { error: updateError } = await supabase
             .from("techniques")
             .update({
-              video_metadata: {
-                ...existingMetadata,
-                translations,
-              },
+              video_metadata: updatedMetadata,
             })
             .eq("id", techniqueId);
 

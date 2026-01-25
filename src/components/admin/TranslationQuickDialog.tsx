@@ -187,7 +187,9 @@ export function TranslationQuickDialog({
 
       if (error) throw error;
 
-      if (data && data.projectId) {
+      console.log('Translation API response:', data);
+
+      if (data && data.success && data.projectId) {
         const providerName = translationProvider === 'rask' ? 'Rask.ai' : translationProvider === 'heygen' ? 'HeyGen' : 'ElevenLabs';
         toast.success("動画翻訳を開始しました", {
           description: `${providerName}で翻訳中。完了すると通知されます。`,
@@ -202,11 +204,27 @@ export function TranslationQuickDialog({
           provider: translationProvider,
         });
         onOpenChange(false);
+      } else if (data && data.error) {
+        // API returned an error
+        throw new Error(data.details || data.error);
+      } else {
+        throw new Error('翻訳開始に失敗しました。レスポンスにprojectIdがありません。');
       }
     } catch (error: unknown) {
       console.error('Video translation error:', error);
+      
+      // 詳細なエラーメッセージを抽出
+      let errorMessage = "動画翻訳中にエラーが発生しました";
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      } else if (typeof error === 'object' && error !== null) {
+        const errObj = error as Record<string, unknown>;
+        errorMessage = String(errObj.details || errObj.error || JSON.stringify(error));
+      }
+      
       toast.error("動画翻訳エラー", {
-        description: error instanceof Error ? error.message : "動画翻訳中にエラーが発生しました",
+        description: errorMessage,
+        duration: 10000,
       });
     } finally {
       setIsTranslating(false);
