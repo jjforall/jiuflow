@@ -56,23 +56,30 @@ const AdminLogin = () => {
 
   const checkIfSetupNeeded = async () => {
     try {
-      // Check if any admin users exist
-      const { data, error } = await supabase
-        .from('user_roles')
-        .select('id')
-        .eq('role', 'admin')
-        .limit(1);
+      // RLSポリシーにより未認証ユーザーはuser_rolesを読めないため、
+      // setup-admin関数を使って管理者の存在を確認する
+      // 空のリクエストを送り、403なら管理者が存在する
+      const { error } = await supabase.functions.invoke("setup-admin", {
+        body: { email: "check@check.com", password: "CheckOnly123!" },
+      });
 
-      if (error) {
-        console.error('Error checking admin users:', error);
-        setIsCheckingSetup(false);
-        return;
+      // 403 = 管理者が既に存在 → ログインフォームを表示
+      // それ以外のエラー or 成功 = セットアップフォームを表示（ただし成功はありえない）
+      if (error?.message?.includes('403') || error?.message?.includes('already exist')) {
+        setShowSetup(false);
+      } else {
+        // フォールバック: 直接クエリも試す
+        const { data } = await supabase
+          .from('user_roles')
+          .select('id')
+          .eq('role', 'admin')
+          .limit(1);
+        
+        setShowSetup(!data || data.length === 0);
       }
-
-      // If no admin users exist, show setup form
-      setShowSetup(!data || data.length === 0);
     } catch (error: unknown) {
       console.error('Error:', error);
+      setShowSetup(false); // エラー時はログインフォームを表示
     } finally {
       setIsCheckingSetup(false);
     }
