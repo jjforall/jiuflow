@@ -1,98 +1,110 @@
 
 
-## Cloudflare Stream 不要動画削除機能
+## HeyGen等プロバイダーから翻訳済み動画をインポートする機能
 
-### 現状の問題
+### 現状の課題
 
-| 項目 | 状態 |
-|------|------|
-| Cloudflare使用量 | 1000.72分 / 1000分（容量オーバー） |
-| データベース登録動画 | 約142分 |
-| 孤児動画（不要） | 約850分以上 |
-
-孤児動画とは、テスト、削除済み動画、吹き替え失敗の残骸など、データベースに登録されていない動画です。
+外部プロバイダー（HeyGen、ElevenLabs、Rask.ai）で既に翻訳・吹き替えが完了している動画が、システムに取り込まれていない場合があります。これは翻訳完了時にCloudflare Streamへのアップロードが失敗した（容量超過など）、または手動で翻訳を行った場合に発生します。
 
 ---
 
-### 保持すべき動画
+### 解決策：翻訳動画インポートツール
 
-1. **オリジナル動画**: `techniques.video_url` に登録されたCloudflare Stream ID
-2. **吹き替え版**: `techniques.video_metadata` 内の各言語（en, es, pt, zh等）の `video_url`
+動画一覧の「管理ツール」セクションに、HeyGenプロジェクトIDを入力して翻訳済み動画を取り込む機能を追加します。
 
 ---
 
 ### 実装内容
 
-#### 1. 新しいEdge Function `cleanup-cloudflare-videos` を作成
+#### 1. 新しいEdge Function: `import-heygen-video`
 
-**機能:**
-- Cloudflare Stream APIから全動画リストを取得
-- データベースから保持すべきVideo ID一覧を抽出
-- 不要な動画を特定して削除
-
-**安全策:**
-- 削除前に対象動画リストを返すプレビューモード
-- 確認後に実際の削除を実行
-
-#### 2. 管理画面に削除ボタンを追加（オプション）
-
----
-
-### 技術的な詳細
+| 処理 | 詳細 |
+|------|------|
+| 入力 | HeyGenプロジェクトID、対象technique_id、言語コード |
+| 動作1 | HeyGen APIからステータス確認・動画URL取得 |
+| 動作2 | 完了済み動画をCloudflare Streamにコピー |
+| 動作3 | `techniques.video_metadata`に保存 |
 
 ```typescript
-// supabase/functions/cleanup-cloudflare-videos/index.ts
-
-// 1. Cloudflare Streamから全動画を取得
-const allVideos = await fetchAllCloudflareVideos(accountId, apiToken);
-
-// 2. データベースから保持すべきIDを抽出
-const keepIds = new Set<string>();
-for (const technique of techniques) {
-  // video_urlからCloudflare IDを抽出
-  const mainId = extractCloudflareId(technique.video_url);
-  if (mainId) keepIds.add(mainId);
+// supabase/functions/import-heygen-video/index.ts
+serve(async (req) => {
+  const { projectId, techniqueId, targetLanguage } = await req.json();
   
-  // video_metadataから吹き替え版のIDを抽出
-  if (technique.video_metadata) {
-    for (const lang of ['en', 'es', 'pt', 'zh', 'fr', 'de', 'ko']) {
-      const dubbedUrl = technique.video_metadata[lang]?.video_url;
-      if (dubbedUrl?.includes('videodelivery.net')) {
-        const dubbedId = extractCloudflareId(dubbedUrl);
-        if (dubbedId) keepIds.add(dubbedId);
-      }
-    }
+  // 1. HeyGen APIで翻訳動画URLを取得
+  const statusRes = await fetch(
+    `https://api.heygen.com/v2/video_translate/status?video_translate_id=${projectId}`,
+    { headers: { "x-api-key": heygenApiKey } }
+  );
+  const statusData = await statusRes.json();
+  
+  if (statusData.data?.status !== "completed") {
+    return error("翻訳が完了していません");
   }
-}
-
-// 3. 不要な動画を特定
-const toDelete = allVideos.filter(v => !keepIds.has(v.uid));
-
-// 4. プレビューモードなら対象リストを返す
-if (mode === 'preview') {
-  return { toDelete, toKeep: keepIds.size };
-}
-
-// 5. 削除実行
-for (const video of toDelete) {
-  await deleteCloudflareVideo(video.uid, accountId, apiToken);
-}
+  
+  const heygenVideoUrl = statusData.data.url;
+  
+  // 2. Cloudflare Streamにコピー
+  const cloudflareUrl = await uploadToCloudflare(heygenVideoUrl, `technique-${techniqueId}-${targetLanguage}`);
+  
+  // 3. データベース更新
+  const { data: technique } = await supabase
+    .from("techniques")
+    .select("video_metadata")
+    .eq("id", techniqueId)
+    .single();
+  
+  const updatedMetadata = {
+    ...technique.video_metadata,
+    [targetLanguage]: {
+      video_url: cloudflareUrl,
+      provider: "heygen",
+      created_at: new Date().toISOString(),
+    },
+  };
+  
+  await supabase
+    .from("techniques")
+    .update({ video_metadata: updatedMetadata })
+    .eq("id", techniqueId);
+  
+  return { success: true, videoUrl: cloudflareUrl };
+});
 ```
 
----
+#### 2. UI: 管理ツールセクションに追加
 
-### 実行フロー
+動画一覧ページの「管理ツール」（折りたたみセクション）内に以下を追加：
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  📥 翻訳動画インポート                                        │
+├─────────────────────────────────────────────────────────────┤
+│  プロバイダー:  ○ HeyGen  ○ ElevenLabs  ○ Rask.ai         │
+│                                                             │
+│  プロジェクトID: [________________________]                  │
+│                                                             │
+│  対象動画:      [▼ 動画を選択 ___________]                  │
+│                                                             │
+│  言語:          [▼ English ____________]                   │
+│                                                             │
+│  [インポート実行]                                            │
+└─────────────────────────────────────────────────────────────┘
+```
+
+#### 3. フロー
 
 ```text
-[管理者] → [cleanup-cloudflare-videos?mode=preview]
-                    ↓
-         削除対象リスト表示（確認）
-                    ↓
-[管理者] → [cleanup-cloudflare-videos?mode=execute]
-                    ↓
-              不要動画を削除
-                    ↓
-           容量回復（推定850分以上）
+[管理者] プロジェクトID入力
+         ↓
+[管理者] 対象動画・言語を選択
+         ↓
+[Edge Function] HeyGen APIでステータス確認
+         ↓
+[Edge Function] 翻訳動画URLをCloudflare Streamにコピー
+         ↓
+[Edge Function] video_metadataに保存
+         ↓
+[UI] 成功メッセージ・動画一覧に反映
 ```
 
 ---
@@ -101,14 +113,23 @@ for (const video of toDelete) {
 
 | ファイル | 変更内容 |
 |----------|----------|
-| `supabase/functions/cleanup-cloudflare-videos/index.ts` | 新規作成 |
-| `supabase/config.toml` | 関数設定追加（JWT不要） |
+| `supabase/functions/import-heygen-video/index.ts` | 新規作成 |
+| `supabase/config.toml` | 関数登録 |
+| `src/components/admin/VideosManagement.tsx` | 管理ツールにインポートUI追加 |
+
+---
+
+### 技術的考慮事項
+
+1. **HeyGen動画URLの有効期限**: HeyGenの翻訳済み動画URLは7日間で失効するため、インポート時にCloudflare Streamへの永続保存が必須
+2. **ElevenLabs/Rask.ai対応**: 将来的に他プロバイダーも同様のインポート機能を追加可能（同じUIで切り替え）
+3. **重複チェック**: 既に同じ言語の翻訳が存在する場合は警告を表示し、上書きするか確認
 
 ---
 
 ### 注意事項
 
-- Cloudflare APIはページネーションがあるため、全動画を取得するにはループが必要
-- 削除は不可逆なので、プレビューモードで確認してから実行
-- 吹き替え版のURLがRask.ai（一時URL）の場合は削除対象から除外不要（そもそもCloudflareにない）
+- HeyGenのプロジェクトIDは32文字の16進数（例: `05f14f525f074f9399f28402a7c04a85`）
+- Cloudflare Streamの容量に注意（先に不要動画を削除しておく必要あり）
+- インポート成功後、動画一覧の「翻訳済み」バッジに反映される
 
