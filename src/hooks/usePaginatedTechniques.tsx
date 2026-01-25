@@ -21,6 +21,7 @@ interface TechniqueFilters {
   series?: string;
   notationId?: string;
   seriesType?: 'regular' | 'special' | 'all';
+  visibility?: 'all' | 'public' | 'unlisted' | 'private';
   sortBy?: 'order' | 'name' | 'category' | 'series' | 'created';
   sortDirection?: 'asc' | 'desc';
 }
@@ -78,39 +79,13 @@ export const usePaginatedTechniques = (
         }
       }
 
+      // Apply visibility filter
+      if (filters.visibility && filters.visibility !== 'all') {
+        query = query.eq('visibility', filters.visibility);
+      }
+
       // Apply series type filter (regular vs special/no-notation)
       if (filters.seriesType === 'special') {
-        // Special = videos without any notation assigned
-        const { data: linkedTechniqueIds } = await supabase
-          .from('technique_notations')
-          .select('technique_id');
-        
-        const idsWithNotation = (linkedTechniqueIds || []).map(t => t.technique_id);
-        
-        if (idsWithNotation.length > 0) {
-          // Get all technique IDs first, then filter out those with notations
-          const { data: allTechniques } = await supabase
-            .from('techniques')
-            .select('id');
-          
-          const allIds = (allTechniques || []).map(t => t.id);
-          const idsWithoutNotation = allIds.filter(id => !idsWithNotation.includes(id));
-          
-          if (idsWithoutNotation.length > 0) {
-            query = query.in('id', idsWithoutNotation);
-          } else {
-            // All techniques have notations
-            return {
-              data: [],
-              totalCount: 0,
-              page,
-              pageSize,
-              totalPages: 0,
-            };
-          }
-        }
-        // If no techniques have notations, show all (don't filter)
-      } else if (filters.seriesType === 'regular') {
         // Regular = videos that have at least one notation assigned
         const { data: linkedTechniqueIds } = await supabase
           .from('technique_notations')

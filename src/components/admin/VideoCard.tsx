@@ -1,4 +1,4 @@
-import { Edit, FileText, Trash2, Clock, RefreshCw, Loader2, Download, AlertTriangle } from "lucide-react";
+import { Edit, FileText, Trash2, Clock, RefreshCw, Loader2, Download, AlertTriangle, Globe, Link2, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -216,6 +216,24 @@ export function VideoCard({
                     ))}
                   </TooltipContent>
                 </Tooltip>
+              )}
+            </div>
+          )}
+          
+          {/* Visibility badges */}
+          {technique.visibility && technique.visibility !== 'public' && (
+            <div className="flex items-center gap-1 mb-2">
+              {technique.visibility === 'unlisted' && (
+                <Badge variant="outline" className="text-[10px] px-1.5 py-0.5 h-auto bg-yellow-500/10 text-yellow-600 border-yellow-500/30">
+                  <Link2 className="h-3 w-3 mr-1" />
+                  限定公開
+                </Badge>
+              )}
+              {technique.visibility === 'private' && (
+                <Badge variant="outline" className="text-[10px] px-1.5 py-0.5 h-auto bg-red-500/10 text-red-600 border-red-500/30">
+                  <Lock className="h-3 w-3 mr-1" />
+                  非公開
+                </Badge>
               )}
             </div>
           )}

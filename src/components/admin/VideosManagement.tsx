@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Upload, Search, Check, Languages, ChevronDown, Loader2, RefreshCw, ImageIcon, Wrench, Clock, FileText, Film, Hash, Tags, BookOpen, FolderOpen, Eye, AlertTriangle } from "lucide-react";
+import { Upload, Search, Check, Languages, ChevronDown, Loader2, RefreshCw, ImageIcon, Wrench, Clock, FileText, Film, Hash, Tags, BookOpen, FolderOpen, Eye, AlertTriangle, Globe, Link2, Lock } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
@@ -60,6 +60,7 @@ export const VideosManagement = () => {
   const [seriesFilter, setSeriesFilter] = useState<string>("all");
   const [notationFilter, setNotationFilter] = useState<string>("all");
   const [notationLabel, setNotationLabel] = useState<string>("");
+  const [visibilityFilter, setVisibilityFilter] = useState<string>("all");
   const [sortBy, setSortBy] = useState<"order" | "name" | "category" | "series" | "created">("order");
   
   // Fetch notations for filter dropdown (sorted by video count)
@@ -889,6 +890,7 @@ export const VideosManagement = () => {
     category: categoryFilter,
     series: seriesFilter,
     notationId: notationFilter,
+    visibility: visibilityFilter as 'all' | 'public' | 'unlisted' | 'private',
     sortBy,
   });
 
@@ -2155,6 +2157,36 @@ export const VideosManagement = () => {
                   </span>
                 </SelectItem>
               ))}
+            </SelectContent>
+          </Select>
+          {/* Visibility filter */}
+          <Select value={visibilityFilter} onValueChange={(value) => {
+            setVisibilityFilter(value);
+            setPage(1);
+          }}>
+            <SelectTrigger className="w-full sm:w-[130px]">
+              <SelectValue placeholder="公開設定" />
+            </SelectTrigger>
+            <SelectContent className="bg-background z-50">
+              <SelectItem value="all">すべて</SelectItem>
+              <SelectItem value="public">
+                <div className="flex items-center gap-2">
+                  <Globe className="h-3 w-3" />
+                  公開
+                </div>
+              </SelectItem>
+              <SelectItem value="unlisted">
+                <div className="flex items-center gap-2">
+                  <Link2 className="h-3 w-3" />
+                  限定公開
+                </div>
+              </SelectItem>
+              <SelectItem value="private">
+                <div className="flex items-center gap-2">
+                  <Lock className="h-3 w-3" />
+                  非公開
+                </div>
+              </SelectItem>
             </SelectContent>
           </Select>
           <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
