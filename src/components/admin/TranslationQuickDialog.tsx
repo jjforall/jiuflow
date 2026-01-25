@@ -31,11 +31,19 @@ const ALL_LANGUAGES = [
   { code: "ko", name: "한국어", nativeName: "韓国語" },
 ];
 
+interface TranslationStartedInfo {
+  projectId: string;
+  techniqueId: string;
+  techniqueName: string;
+  targetLang: string;
+  provider: 'rask' | 'elevenlabs' | 'heygen';
+}
+
 interface TranslationQuickDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   technique: Technique | null;
-  onTranslationStarted?: () => void;
+  onTranslationStarted?: (info: TranslationStartedInfo) => void;
 }
 
 export function TranslationQuickDialog({
@@ -185,7 +193,14 @@ export function TranslationQuickDialog({
           description: `${providerName}で翻訳中。完了すると通知されます。`,
         });
         
-        onTranslationStarted?.();
+        // Pass translation info to parent
+        onTranslationStarted?.({
+          projectId: data.projectId,
+          techniqueId: technique.id,
+          techniqueName: technique.name_ja || technique.name,
+          targetLang: targetLanguage,
+          provider: translationProvider,
+        });
         onOpenChange(false);
       }
     } catch (error: unknown) {

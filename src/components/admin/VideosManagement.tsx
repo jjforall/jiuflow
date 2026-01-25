@@ -98,8 +98,15 @@ export const VideosManagement = () => {
     techniqueName: string;
     targetLang: string;
     startTime: number;
-    provider?: 'rask' | 'elevenlabs';
+    provider?: 'rask' | 'elevenlabs' | 'heygen';
   }>>([]);
+  
+  // Helper function to get processing languages for a specific technique
+  const getProcessingLanguagesForTechnique = (techniqueId: string): string[] => {
+    return activeTranslations
+      .filter(t => t.techniqueId === techniqueId)
+      .map(t => t.targetLang);
+  };
   const [availableCategories, setAvailableCategories] = useState<string[]>([]);
   const [seriesNameSuggestions, setSeriesNameSuggestions] = useState<string[]>([]);
   const [newCategory, setNewCategory] = useState("");
@@ -1747,10 +1754,10 @@ export const VideosManagement = () => {
           techniqueName: translatingTechnique.name,
           targetLang: targetLanguage,
           startTime: Date.now(),
-          provider: provider as 'rask' | 'elevenlabs',
+          provider: provider as 'rask' | 'elevenlabs' | 'heygen',
         }]);
         
-        const providerName = provider === 'rask' ? 'Rask.ai' : 'ElevenLabs';
+        const providerName = provider === 'rask' ? 'Rask.ai' : provider === 'heygen' ? 'HeyGen' : 'ElevenLabs';
         toast.success("動画翻訳を開始しました", {
           description: `${providerName}で翻訳中。完了すると通知されます。`,
         });
@@ -1865,7 +1872,7 @@ export const VideosManagement = () => {
     techniqueName: string;
     targetLang: string;
     startTime: number;
-    provider?: 'rask' | 'elevenlabs';
+    provider?: 'rask' | 'elevenlabs' | 'heygen';
   }) => {
     try {
       toast.info("ステータス確認中...", {
@@ -1873,7 +1880,11 @@ export const VideosManagement = () => {
       });
 
       // Use the correct function based on provider
-      const functionName = translation.provider === 'rask' ? 'rask-check-status' : 'check-translation-status';
+      const functionName = translation.provider === 'rask' 
+        ? 'rask-check-status' 
+        : translation.provider === 'heygen' 
+          ? 'heygen-check-status' 
+          : 'check-translation-status';
       const { data: statusData, error: statusError } = await supabase.functions.invoke(functionName, {
         body: { 
           projectId: translation.projectId,
@@ -2219,6 +2230,7 @@ export const VideosManagement = () => {
                 transcription={transcriptionMap[technique.id] || null}
                 subtitleLanguages={subtitleMap[technique.id] || []}
                 dubbedLanguages={getDubbedLanguages(technique)}
+                processingLanguages={getProcessingLanguagesForTechnique(technique.id)}
                 notations={notationMap[technique.id] || []}
                 isFetchingDuration={fetchingDurationId === technique.id}
                 onEdit={() => openEditDialog(technique)}
@@ -2395,8 +2407,25 @@ export const VideosManagement = () => {
         open={!!translationDialogTechnique}
         onOpenChange={(open) => !open && setTranslationDialogTechnique(null)}
         technique={translationDialogTechnique as any}
-        onTranslationStarted={() => {
-          // Refresh data after translation starts
+        onTranslationStarted={(info) => {
+          // Add to active translations tracking
+          setActiveTranslations(prev => [...prev, {
+            projectId: info.projectId,
+            techniqueId: info.techniqueId,
+            techniqueName: info.techniqueName,
+            targetLang: info.targetLang,
+            startTime: Date.now(),
+            provider: info.provider,
+          }]);
+          
+          // Close dialog
+          setTranslationDialogTechnique(null);
+          
+          // Show notification
+          const providerName = info.provider === 'rask' ? 'Rask.ai' : info.provider === 'heygen' ? 'HeyGen' : 'ElevenLabs';
+          toast.info('吹き替え翻訳を開始しました', {
+            description: `${info.techniqueName}を${providerName}でバックグラウンド処理中...`
+          });
         }}
       />
 
