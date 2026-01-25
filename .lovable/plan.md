@@ -1,191 +1,156 @@
 
 
-## HeyGen翻訳ステータス問題 & UI改善計画
+## Lovableプレビュー環境での管理画面ログイン改善
 
-### 問題1: HeyGen翻訳ステータスが「not found」になる
+### 現状の問題
 
-#### 原因分析
+Lovableのプレビュー環境（`id-preview--*.lovable.app`）とプロダクション環境（`jiuflow.lovable.app`）は異なるドメインのため、Supabaseの認証セッション（localStorage）が共有されません。そのため、プレビュー環境では毎回手動でログインが必要です。
 
-**ログから判明した事実:**
-```
-[heygen-check-status] HeyGen status response: {"data":null,"error":{"code":"internal_error","message":"Video translate not found"}}
-```
+### 解決策: 開発者向けクイックログイン機能
 
-**原因は複合的:**
-
-1. **HeyGen API の仕様制限:**
-   - HeyGenのドキュメントによると「翻訳後の動画URLは7日で期限切れ」
-   - 翻訳ジョブ自体もAPIから一定期間後に削除される可能性がある
-   - 完了メールは届いているが、ステータスAPIでは既に参照できない
-
-2. **異なるプロバイダーのIDが混在:**
-   - `ecca1e3dbd02445a9400ec834a1d0a6e-en` → HeyGenのIDパターン（32文字16進数）
-   - `5F32SFsv2O1bpWcK9hqJ` → Raskのパターン（20文字英数字）
-   - プロバイダーごとに異なるステータスエンドポイントを呼ぶ必要がある
-
-3. **LocalStorageベースの追跡:**
-   - `activeTranslations` はlocalStorageから復元される
-   - データベースの `translation_history` からは読み込まれていない
-   - 古いエントリが残り続ける問題がある
-
-#### 解決策
-
-##### 1-A. 失敗した翻訳のクリーンアップ機能
-LocalStorageに残っている取得不能な翻訳エントリを手動で削除できるようにする。
-
-**修正ファイル:** `src/components/admin/VideosManagement.tsx`
-
-```tsx
-// 進行中の翻訳カードに「削除」ボタンを追加
-<Button 
-  size="sm" 
-  variant="ghost" 
-  onClick={() => removeFromActiveTranslations(translation.projectId)}
->
-  <X className="w-4 h-4" />
-</Button>
-
-// 削除関数
-const removeFromActiveTranslations = (projectId: string) => {
-  setActiveTranslations(prev => prev.filter(t => t.projectId !== projectId));
-};
-```
-
-##### 1-B. HeyGenメール完了時の手動URL登録機能
-HeyGenからのメールには翻訳完了動画のURLが含まれているため、手動で入力できるダイアログを追加する。
-
-**新規追加:**
-- 「完了済みだがURL未取得」ケースで「URLを手動入力」ボタンを表示
-- URLを入力→Cloudflareにアップロード→video_metadataに保存
-
-##### 1-C. 起動時にデータベースからも翻訳履歴を読み込む
-`translation_history` テーブルから `status = 'processing'` のレコードも `activeTranslations` に追加する。
+プレビュー環境かつ開発モード（`__lovable_token`が存在）の場合に、管理者メールアドレスを自動入力し、パスワードのみ入力で素早くログインできるようにします。
 
 ---
 
-### 問題2: 公開設定をもっと視覚的に分かりやすく
+### 変更内容
 
-#### 現状
-- `unlisted`/`private` のみバッジ表示
-- `public` は何も表示されない
-- バッジが小さく目立たない
+#### 1. AdminLogin.tsx の改修
 
-#### 改善案
+**新機能:**
+- Lovableプレビュー環境を検出（URLに`__lovable_token`が含まれる、または`lovable.app`ドメイン）
+- プレビュー環境の場合、管理者メールを自動入力（または直近で使用したメールを保存・復元）
+- 「前回のログイン情報を記憶」オプションを追加
 
-##### 2-A. すべてのvisibilityにバッジを表示（サムネイル左上）
-サムネイル画像の左上隅に公開設定バッジを固定表示する。
+```typescript
+// プレビュー環境の検出
+const isLovablePreview = 
+  window.location.search.includes('__lovable_token') ||
+  window.location.hostname.includes('lovable.app') ||
+  window.location.hostname.includes('lovableproject.com');
 
-```tsx
-// サムネイル内の左上にバッジ追加
-<div className="absolute top-1.5 left-1.5">
-  {technique.visibility === 'public' && (
-    <Badge className="bg-green-600/90 text-white text-[9px] px-1.5 py-0.5">
-      <Globe className="h-2.5 w-2.5 mr-0.5" />
-      公開
-    </Badge>
-  )}
-  {technique.visibility === 'unlisted' && (
-    <Badge className="bg-yellow-500/90 text-black text-[9px] px-1.5 py-0.5">
-      <Link2 className="h-2.5 w-2.5 mr-0.5" />
-      限定
-    </Badge>
-  )}
-  {technique.visibility === 'private' && (
-    <Badge className="bg-red-600/90 text-white text-[9px] px-1.5 py-0.5">
-      <Lock className="h-2.5 w-2.5 mr-0.5" />
-      非公開
-    </Badge>
-  )}
-</div>
+// 前回のメールアドレスを復元（プレビュー環境のみ）
+useEffect(() => {
+  if (isLovablePreview) {
+    const savedEmail = localStorage.getItem('admin_dev_email');
+    if (savedEmail) {
+      setEmail(savedEmail);
+    }
+  }
+}, []);
+
+// ログイン成功時にメールを保存
+if (isLovablePreview) {
+  localStorage.setItem('admin_dev_email', email);
+}
 ```
 
-##### 2-B. コンテンツエリアのvisibilityバッジを削除
-サムネイルに表示することで、コンテンツエリアのバッジは不要になる。
+#### 2. UI改善
 
----
+プレビュー環境では以下のUIを表示:
 
-### 問題3: 旧タグを動画カードの右下に小さく表示
-
-#### 現状
 ```text
-┌─────────────────────────────────────────────────┐
-│ [サムネイル]  タイトル                          │
-│              説明                               │
-│              [技術タグバッジ...]                │
-│              ⚠️ A-3 (旧・削除予定)  ← ここ      │
-│              [ローカライズ状況...]              │
-│              [アクションボタン...]              │
-└─────────────────────────────────────────────────┘
-```
-
-#### 改善後
-```text
-┌─────────────────────────────────────────────────┐
-│ [サムネイル]  タイトル                          │
-│ └🔒非公開    説明                               │
-│              [技術タグバッジ...]                │
-│              [ローカライズ状況...]              │
-│              [アクションボタン...]    A-3 (旧) ← │
-└─────────────────────────────────────────────────┘
-```
-
-**修正ファイル:** `src/components/admin/VideoCard.tsx`
-
-```tsx
-// Line 242-250 の旧タグ表示を削除し、
-// アクションボタン行の右端に移動
-
-<div className="mt-auto flex flex-wrap gap-1.5 sm:gap-2 items-center">
-  {/* 既存のアクションボタン */}
-  
-  {/* 旧タグ - 右端に小さく表示 */}
-  {technique.series_prefix && (
-    <span className="ml-auto text-[9px] text-muted-foreground/50 font-mono">
-      {technique.series_prefix}{technique.series_order ? `-${technique.series_order}` : ''} (旧)
-    </span>
-  )}
-</div>
+┌─────────────────────────────────────────┐
+│            Admin Login                  │
+│   🔧 開発プレビュー環境                  │
+│                                         │
+│ Email: [admin@example.com____] (自動入力) │
+│ Password: [________________]            │
+│ ☑ このデバイスでメールを記憶する          │
+│                                         │
+│         [ Login ]                       │
+└─────────────────────────────────────────┘
 ```
 
 ---
 
-### 修正ファイル一覧
+### 修正ファイル
 
 | ファイル | 変更内容 |
 |---------|---------|
-| `src/components/admin/VideoCard.tsx` | ① サムネイル左上にvisibilityバッジ追加<br>② コンテンツエリアのvisibilityバッジ削除<br>③ 旧タグをアクション行の右端に移動 |
-| `src/components/admin/VideosManagement.tsx` | ① 進行中翻訳カードに削除ボタン追加<br>② 起動時にDBからも処理中翻訳を読み込み |
+| `src/pages/AdminLogin.tsx` | プレビュー環境検出 + メール自動入力 + 記憶オプション |
 
 ---
 
-### 実装順序
+### 技術詳細
 
-1. **VideoCard.tsx の改修**
-   - visibilityバッジをサムネイル左上に移動
-   - 旧タグをアクション行の右端に移動
-   - 縦幅を節約
+```tsx
+// AdminLogin.tsx に追加
 
-2. **VideosManagement.tsx の改修**
-   - 進行中翻訳カードに削除ボタン追加
-   - DBから処理中翻訳を読み込み
+const [rememberEmail, setRememberEmail] = useState(true);
 
-3. **テスト・確認**
-   - UI表示確認
-   - 不要な翻訳エントリを削除できることを確認
+// プレビュー環境の検出
+const isLovablePreview = useMemo(() => {
+  const hostname = window.location.hostname;
+  const search = window.location.search;
+  return (
+    search.includes('__lovable_token') ||
+    hostname.includes('id-preview--') ||
+    hostname.includes('lovableproject.com') ||
+    (hostname.includes('lovable.app') && hostname !== 'jiuflow.lovable.app')
+  );
+}, []);
+
+// 初期化時にメールを復元
+useEffect(() => {
+  if (isLovablePreview) {
+    const savedEmail = localStorage.getItem('jiuflow_admin_dev_email');
+    if (savedEmail) {
+      setEmail(savedEmail);
+    }
+  }
+}, [isLovablePreview]);
+
+// ログイン成功時にメールを保存
+const handleLogin = async (e: React.FormEvent) => {
+  // ... 既存のログイン処理 ...
+  
+  if (data.session && rememberEmail && isLovablePreview) {
+    localStorage.setItem('jiuflow_admin_dev_email', email);
+  }
+  
+  // ... 残りの処理 ...
+};
+
+// JSX: プレビュー環境バナー
+{isLovablePreview && (
+  <div className="mb-4 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+    <div className="flex items-center gap-2 text-sm text-blue-400">
+      <Wrench className="w-4 h-4" />
+      開発プレビュー環境
+    </div>
+  </div>
+)}
+
+// JSX: メール記憶チェックボックス
+{isLovablePreview && (
+  <div className="flex items-center gap-2">
+    <Checkbox 
+      id="remember" 
+      checked={rememberEmail}
+      onCheckedChange={(checked) => setRememberEmail(!!checked)}
+    />
+    <Label htmlFor="remember" className="text-sm text-muted-foreground">
+      このデバイスでメールを記憶する
+    </Label>
+  </div>
+)}
+```
+
+---
+
+### セキュリティ考慮
+
+1. **パスワードは保存しない** - メールアドレスのみをlocalStorageに保存
+2. **プレビュー環境でのみ有効** - 本番環境ではこの機能は表示されない
+3. **認証ロジックは変更なし** - Supabase認証を経由するため、権限のないユーザーはログインできない
 
 ---
 
 ### 期待される結果
 
-**問題1修正後:**
-- 取得不能な進行中翻訳を手動で削除可能
-- DBの `translation_history` からも処理中翻訳を表示
-
-**問題2修正後:**
-- サムネイル左上に公開設定が一目で分かる
-- 緑=公開、黄=限定、赤=非公開
-
-**問題3修正後:**
-- 旧タグは右下に小さく表示
-- カードの縦幅が削減される
+**変更後:**
+- Lovableプレビューで`/admin`にアクセス
+- 前回使用したメールアドレスが自動入力される
+- パスワードのみ入力してログイン
+- 開発作業がスムーズに
 
