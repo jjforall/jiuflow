@@ -2739,6 +2739,51 @@ export type Database = {
         }
         Relationships: []
       }
+      translation_history: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          id: string
+          processing_duration_seconds: number | null
+          project_id: string | null
+          provider: string
+          source_language: string
+          started_at: string
+          status: string
+          target_language: string
+          technique_id: string
+          video_duration_seconds: number | null
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          processing_duration_seconds?: number | null
+          project_id?: string | null
+          provider: string
+          source_language: string
+          started_at?: string
+          status?: string
+          target_language: string
+          technique_id: string
+          video_duration_seconds?: number | null
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          processing_duration_seconds?: number | null
+          project_id?: string | null
+          provider?: string
+          source_language?: string
+          started_at?: string
+          status?: string
+          target_language?: string
+          technique_id?: string
+          video_duration_seconds?: number | null
+        }
+        Relationships: []
+      }
       user_billing: {
         Row: {
           created_at: string
