@@ -7,12 +7,22 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Languages, Loader2, Check, Eye, Tags, BookOpen, Film, Hash, FolderOpen, ChevronDown, Save } from "lucide-react";
+import { ArrowLeft, Languages, Loader2, Check, Eye, Tags, BookOpen, Film, Hash, FolderOpen, ChevronDown, Save, Sparkles } from "lucide-react";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { 
   useUpdateTechnique,
@@ -57,6 +67,11 @@ const TechniqueEdit = () => {
   const [descriptionTab, setDescriptionTab] = useState<"ja" | "en" | "pt">("ja");
   const [hashtagInput, setHashtagInput] = useState("");
   const [availableCategories, setAvailableCategories] = useState<string[]>([]);
+  
+  // AI extraction dialog states
+  const [showExtractDialog, setShowExtractDialog] = useState(false);
+  const [isExtracting, setIsExtracting] = useState(false);
+  const [pendingVideoFile, setPendingVideoFile] = useState<File | null>(null);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -257,6 +272,127 @@ const TechniqueEdit = () => {
     } finally {
       setIsTranslating(false);
     }
+  };
+
+  // Handle video file selection - show AI extraction dialog for new videos
+  const handleVideoFileChange = (file: File | null) => {
+    if (!file) {
+      setVideoFile(null);
+      return;
+    }
+    
+    // For new technique with no existing title, show the AI extraction dialog
+    const isNew = id === 'new';
+    if (isNew && !formData.name_ja) {
+      setPendingVideoFile(file);
+      setShowExtractDialog(true);
+    } else {
+      setVideoFile(file);
+    }
+  };
+  
+  // Perform AI extraction from video transcription
+  const handleAutoExtract = async () => {
+    if (!pendingVideoFile) return;
+    
+    setIsExtracting(true);
+    setShowExtractDialog(false);
+    setVideoFile(pendingVideoFile);
+    
+    toast.info("自動抽出を開始します", {
+      description: "動画をアップロードして文字起こしを行います..."
+    });
+    
+    try {
+      // First upload the video to get the URL
+      const uploadResult = await startCloudflareUpload(pendingVideoFile, 'new-extract');
+      
+      if (!uploadResult?.videoUrl) {
+        throw new Error("動画のアップロードに失敗しました");
+      }
+      
+      toast.info("文字起こし中...", {
+        description: "動画の文字起こしを行っています"
+      });
+      
+      // Transcribe the video
+      const { data: transcribeData, error: transcribeError } = await supabase.functions.invoke('transcribe-video', {
+        body: { 
+          videoUrl: uploadResult.videoUrl,
+        }
+      });
+      
+      if (transcribeError || !transcribeData?.success) {
+        throw new Error(transcribeData?.error || "文字起こしに失敗しました");
+      }
+      
+      // Get the transcription text
+      const transcriptionText = transcribeData.transcription?.segments
+        ?.map((s: any) => s.text)
+        .join(' ') || '';
+      
+      if (!transcriptionText) {
+        throw new Error("文字起こしテキストが空です");
+      }
+      
+      toast.info("AIでメタデータを抽出中...", {
+        description: "タイトル、説明、技術タグを抽出しています"
+      });
+      
+      // Extract metadata using AI
+      const { data: extractData, error: extractError } = await supabase.functions.invoke('extract-video-metadata', {
+        body: { 
+          transcriptionText,
+        }
+      });
+      
+      if (extractError) {
+        throw new Error(extractError.message || "メタデータ抽出に失敗しました");
+      }
+      
+      // Apply extracted data to form
+      if (extractData?.title_ja) {
+        setFormData(prev => ({
+          ...prev,
+          name_ja: extractData.title_ja,
+        }));
+      }
+      
+      if (extractData?.description_ja) {
+        setFormData(prev => ({
+          ...prev,
+          description_ja: extractData.description_ja,
+        }));
+      }
+      
+      toast.success("自動抽出完了!", {
+        description: `タイトル、説明${extractData?.suggested_tags?.length ? `、${extractData.suggested_tags.length}個の技術タグ` : ''}を抽出しました`
+      });
+      
+      // Note: suggested_tags will be applied after the technique is created
+      // Store them for later use
+      if (extractData?.suggested_tags?.length > 0) {
+        localStorage.setItem('pending_notation_tags', JSON.stringify(extractData.suggested_tags));
+      }
+      
+    } catch (error) {
+      console.error("Auto extract error:", error);
+      toast.error("自動抽出に失敗しました", {
+        description: error instanceof Error ? error.message : "不明なエラー"
+      });
+    } finally {
+      setIsExtracting(false);
+      setPendingVideoFile(null);
+    }
+  };
+  
+  // Skip AI extraction and proceed with manual editing
+  const handleSkipExtract = () => {
+    if (pendingVideoFile) {
+      setVideoFile(pendingVideoFile);
+    }
+    setPendingVideoFile(null);
+    setShowExtractDialog(false);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -534,9 +670,16 @@ const TechniqueEdit = () => {
                 <Input
                   type="file"
                   accept="video/*"
-                  onChange={(e) => setVideoFile(e.target.files?.[0] || null)}
+                  onChange={(e) => handleVideoFileChange(e.target.files?.[0] || null)}
+                  disabled={isExtracting}
                 />
-                {technique?.video_url && !videoFile && (
+                {isExtracting && (
+                  <div className="flex items-center gap-2 text-sm text-primary">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    AIで自動抽出中...
+                  </div>
+                )}
+                {technique?.video_url && !videoFile && !isExtracting && (
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Check className="h-4 w-4 text-green-500" />
                     現在の動画はアップロード済みです
@@ -693,6 +836,38 @@ const TechniqueEdit = () => {
           </div>
         </main>
       </div>
+      
+      {/* AI Extraction Confirmation Dialog */}
+      <AlertDialog open={showExtractDialog} onOpenChange={setShowExtractDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-primary" />
+              動画からメタデータを自動抽出しますか？
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2">
+              <p>文字起こしを行い、AIが以下を抽出します：</p>
+              <ul className="list-disc list-inside space-y-1 mt-2">
+                <li>日本語タイトル</li>
+                <li>日本語説明文</li>
+                <li>技術タグ（推奨）</li>
+              </ul>
+              <p className="text-xs text-muted-foreground mt-3">
+                ※処理に1〜2分かかる場合があります
+              </p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleSkipExtract}>
+              スキップして編集
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={handleAutoExtract}>
+              <Sparkles className="h-4 w-4 mr-1" />
+              自動抽出する
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </SidebarProvider>
   );
 };
