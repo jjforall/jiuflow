@@ -1,54 +1,75 @@
 
-
-## 動画一覧画面のUI改善計画
+## /admin リダイレクトとダッシュボードメニュー追加計画
 
 ### 概要
-動画一覧画面（VideosManagement.tsx）のUIを整理し、より直感的な操作性を実現します。
+管理者がログイン済みの場合、`/admin` にアクセスすると自動的にダッシュボードへリダイレクトし、ダッシュボードページにも左側メニューを表示するようにします。
 
 ---
 
 ### 変更内容
 
-#### 1. 再生ボタン（オーバーレイ）の削除
-現在、サムネイル上にホバー時に表示される再生オーバーレイと、アクションボタン行にある「再生」ボタンの両方があります。
+#### 1. /admin でのログイン済みリダイレクト
+`AdminLogin.tsx` にログイン状態チェックを追加し、既にadmin/staffとしてログインしている場合は `/admin/dashboard` へリダイレクトします。
 
-**変更**:
-- `VideoCard.tsx`から再生オーバーレイ（134-143行目）を削除
-- アクション行の「再生」ボタン（259-268行目）を削除
-- サムネイルクリック（`onClick={() => onPreview()}`）は維持
+**変更箇所**: `src/pages/AdminLogin.tsx`
+- `useAuth` フックからユーザー情報と権限を取得
+- `useEffect` でログイン状態と権限をチェック
+- admin/staffの場合は自動的にリダイレクト
 
----
+```typescript
+// 追加するimport
+import { useAuth } from "@/hooks/useAuth";
 
-#### 2. 編集ボタンをモーダル化
-現在は `/admin/technique/:id` へのページ遷移ですが、モーダルで編集できるように変更します。
+// コンポーネント内
+const { user, isAdmin, isStaff, rolesChecked, isLoading: authLoading } = useAuth();
 
-**変更**:
-- `VideosManagement.tsx`に技術編集用のモーダルコンポーネントを追加
-- 既存の`showEditDialog`と`editingTechnique`状態を活用
-- `openEditDialog`関数を`navigate()`から`setEditingTechnique()`に変更
-- モーダル内に編集フォーム（名前、日本語名、ポルトガル語名、公開設定、略称など）を実装
-- 保存時に`updateTechnique.mutateAsync()`を呼び出し
-
----
-
-#### 3. 削除確認ダイアログの追加
-現在は`confirm()`のブラウザダイアログを使用していますが、UIライブラリの`AlertDialog`に変更します。
-
-**変更**:
-- `VideosManagement.tsx`に削除確認用の状態を追加
-  - `deleteTargetId: string | null`
-  - `showDeleteConfirm: boolean`
-- `AlertDialog`コンポーネントを使用して削除確認UIを実装
-- 確認後に`deleteTechnique.mutateAsync(id)`を実行
+// ログイン済みadmin/staffならリダイレクト
+useEffect(() => {
+  if (!authLoading && rolesChecked && user && (isAdmin || isStaff)) {
+    navigate('/admin/dashboard');
+  }
+}, [authLoading, rolesChecked, user, isAdmin, isStaff, navigate]);
+```
 
 ---
 
-#### 4. 吹き替えボタンの削除
-LocalizationStatusの「追加」ボタンから吹き替え機能にアクセスできるため、アクション行の吹き替えボタンは不要です。
+#### 2. AdminStats（ダッシュボード）にサイドバーメニュー追加
+現在の `AdminStats.tsx` は単独ページですが、`AdminDashboard.tsx` と同様に `SidebarProvider` と `AdminSidebar` を追加してレイアウトを統一します。
 
-**変更**:
-- `VideoCard.tsx`から吹き替えボタン（286-295行目）を削除
-- `onTranslate`プロップは維持（LocalizationStatusで使用）
+**変更箇所**: `src/pages/AdminStats.tsx`
+- `SidebarProvider` と `AdminSidebar` をインポート
+- レイアウトを `AdminDashboard` と同様の構造に変更
+- サイドバーのアクティブタブは "dashboard" を追加（特別なタブ）
+- モバイル用の `Sheet` メニューも追加
+
+```typescript
+// 追加するimport
+import { SidebarProvider } from "@/components/ui/sidebar";
+import { AdminSidebar } from "@/components/admin/AdminSidebar";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Menu } from "lucide-react";
+
+// レイアウト変更
+return (
+  <SidebarProvider defaultOpen>
+    <div className="min-h-screen w-full flex bg-background">
+      <AdminSidebar activeTab="dashboard" onTabChange={(tab) => {
+        // タブ変更時は /admin/techniques へ遷移して該当タブを開く
+        navigate('/admin/techniques');
+        // カスタムイベントでタブを切り替え
+        setTimeout(() => {
+          window.dispatchEvent(new CustomEvent('admin-tab-change', { detail: tab }));
+        }, 100);
+      }} />
+      
+      <div className="flex-1 flex flex-col">
+        <header>...</header>
+        <main>...</main>
+      </div>
+    </div>
+  </SidebarProvider>
+);
+```
 
 ---
 
@@ -56,65 +77,64 @@ LocalizationStatusの「追加」ボタンから吹き替え機能にアクセ�
 
 | ファイル | 変更内容 |
 |---------|---------|
-| `src/components/admin/VideoCard.tsx` | 再生オーバーレイ削除、再生ボタン削除、吹き替えボタン削除 |
-| `src/components/admin/VideosManagement.tsx` | 編集モーダル追加、削除確認ダイアログ追加 |
+| `src/pages/AdminLogin.tsx` | ログイン済みadmin/staffの場合、/admin/dashboardへリダイレクト |
+| `src/pages/AdminStats.tsx` | SidebarProvider、AdminSidebar追加でメニュー表示 |
+
+---
+
+### ユーザー体験の変化
+
+**変更前**:
+- `/admin` → ログインフォーム表示（ログイン済みでも）
+- `/admin/dashboard` → 統計ページ（メニューなし）
+
+**変更後**:
+- `/admin` → ログイン済みadmin/staffなら `/admin/dashboard` へ自動リダイレクト
+- `/admin/dashboard` → 統計ページ（左側にメニュー表示）
+
+---
+
+### レイアウト構造
+
+```text
+┌──────────────────────────────────────────────────────────┐
+│  AdminStats（ダッシュボード）                              │
+├──────────┬───────────────────────────────────────────────┤
+│          │  ヘッダー（タイトル + ボタン）                   │
+│          ├───────────────────────────────────────────────┤
+│  サイド   │                                               │
+│  バー     │  統計カード（会員数、収入など）                  │
+│  メニュー │                                               │
+│          │  動画視聴統計                                   │
+│          │                                               │
+│          │  人気動画ランキング・視聴者ランキング            │
+│          │                                               │
+└──────────┴───────────────────────────────────────────────┘
+```
 
 ---
 
 ### 技術詳細
 
-#### VideoCard.tsx の変更
+#### AdminLogin.tsx の追加ロジック
 ```typescript
-// 削除: 再生オーバーレイ (134-143行目)
-// 削除: アクション行の再生ボタン (259-268行目)  
-// 削除: 吹き替えボタン (286-295行目)
-```
+const { user, isAdmin, isStaff, rolesChecked, isLoading: authLoading } = useAuth();
 
-#### VideosManagement.tsx の変更
-```typescript
-// 新規状態
-const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
-
-// openEditDialog の変更
-const openEditDialog = (technique: Technique) => {
-  setEditingTechnique(technique);
-  setFormData({
-    name: technique.name || "",
-    name_ja: technique.name_ja || "",
-    // ...他のフィールド
-  });
-  setShowEditDialog(true);
-};
-
-// handleDelete の変更
-const handleDelete = (id: string) => {
-  setDeleteTargetId(id);
-};
-
-const confirmDelete = async () => {
-  if (deleteTargetId) {
-    await deleteTechnique.mutateAsync(deleteTargetId);
-    setDeleteTargetId(null);
+useEffect(() => {
+  // 認証チェック中は何もしない
+  if (authLoading || !rolesChecked) return;
+  
+  // ログイン済みかつadmin/staffならダッシュボードへ
+  if (user && (isAdmin || isStaff)) {
+    navigate('/admin/dashboard');
   }
-};
+}, [authLoading, rolesChecked, user, isAdmin, isStaff, navigate]);
+
+// セットアップチェック中またはリダイレクト待ちの場合はローディング表示
+if (authLoading || (user && !rolesChecked)) {
+  return <LoadingState />;
+}
 ```
 
-#### 編集モーダルのUI
-- 日本語名（必須）
-- 英語名
-- ポルトガル語名  
-- 公開設定（public/unlisted/private）
-- 略称セレクター（NotationSelector）
-
-#### 削除確認ダイアログのUI
-```text
-┌─────────────────────────────┐
-│  本当に削除しますか？         │
-│                             │
-│  「[技術名]」を削除します。   │
-│  この操作は取り消せません。   │
-│                             │
-│       [キャンセル] [削除]    │
-└─────────────────────────────┘
-```
-
+#### AdminStats.tsx のサイドバー連携
+サイドバーのタブクリック時は `/admin/techniques` に遷移してから、カスタムイベントで該当タブを開きます。これにより、既存の `AdminDashboard` のタブ管理ロジックを活用できます。
