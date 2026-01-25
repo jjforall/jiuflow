@@ -4,12 +4,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { useLanguage } from "@/contexts/LanguageContext";
-import { translations } from "@/lib/translations";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
+import { useAuth } from "@/hooks/useAuth";
 
 const AdminLogin = () => {
   const [email, setEmail] = useState("");
@@ -18,6 +15,14 @@ const AdminLogin = () => {
   const [showSetup, setShowSetup] = useState(false);
   const [isCheckingSetup, setIsCheckingSetup] = useState(true);
   const navigate = useNavigate();
+  const { user, isAdmin, isStaff, rolesChecked, isLoading: authLoading } = useAuth();
+
+  // ログイン済みadmin/staffならダッシュボードへリダイレクト
+  useEffect(() => {
+    if (!authLoading && rolesChecked && user && (isAdmin || isStaff)) {
+      navigate('/admin/dashboard');
+    }
+  }, [authLoading, rolesChecked, user, isAdmin, isStaff, navigate]);
 
   useEffect(() => {
     checkIfSetupNeeded();
@@ -124,6 +129,15 @@ const AdminLogin = () => {
       setIsLoading(false);
     }
   };
+
+  // 認証チェック中またはリダイレクト待ちの場合はローディング表示
+  if (authLoading || (user && !rolesChecked)) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <p className="text-muted-foreground">Loading...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
