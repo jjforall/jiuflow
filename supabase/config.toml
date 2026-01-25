@@ -174,3 +174,6 @@ verify_jwt = true
 
 [functions.cleanup-cloudflare-videos]
 verify_jwt = false
+
+[functions.send-reply-email]
+verify_jwt = false

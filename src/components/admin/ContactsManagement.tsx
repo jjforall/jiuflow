@@ -3,8 +3,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { Mail, MailOpen, Trash2 } from "lucide-react";
+import { Mail, MailOpen, Trash2, Send, Copy, Clock, Reply, AlertCircle, Check, Loader2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -22,7 +23,116 @@ interface ContactMessage {
   message: string;
   status: 'unread' | 'read';
   created_at: string;
+  replied_at?: string | null;
+  reply_content?: string | null;
 }
+
+// Reply templates
+const REPLY_TEMPLATES = {
+  delayed: {
+    label: "遅延お詫び",
+    getContent: (name: string) => `${name}様
+
+お問い合わせいただきありがとうございます。
+お返事が遅くなり、大変申し訳ございません。
+
+`,
+  },
+  search: {
+    label: "検索方法",
+    getContent: (name: string) => `${name}様
+
+お問い合わせいただきありがとうございます。
+技マップの検索についてご案内いたします。
+
+【技マップの使い方】
+1. 画面上部の検索バーに技名を入力してください
+2. 日本語・英語・ポルトガル語で検索可能です
+3. シリーズ名をクリックすると、そのシリーズの技一覧が表示されます
+
+【すべての動画を見る方法】
+サブスクリプション会員の方は、すべての技動画をご視聴いただけます。
+もし特定の動画が見られない場合は、一度ログアウト→再ログインをお試しください。
+
+それでも解決しない場合は、お気軽にご連絡ください。
+
+どうぞよろしくお願いいたします。
+
+JiuFlow サポート`,
+  },
+  cancel: {
+    label: "解約方法",
+    getContent: (name: string) => `${name}様
+
+お問い合わせいただきありがとうございます。
+解約方法についてご案内いたします。
+
+【解約手順】
+1. JiuFlowにログインしてください
+2. 右上のアイコンをクリック → 「マイページ」を選択
+3. ページ下部の「サブスクリプション設定」セクションへ
+4. 「解約する」ボタンをクリック
+
+解約後も、次回更新日までは引き続きサービスをご利用いただけます。
+
+ご不明な点がございましたら、お気軽にお問い合わせください。
+
+JiuFlow サポート`,
+  },
+  referral: {
+    label: "紹介コード",
+    getContent: (name: string) => `${name}様
+
+お問い合わせいただきありがとうございます。
+紹介コードの適用について対応いたします。
+
+こちらで手動にて紹介コードの適用処理を行います。
+お手数をおかけしますが、このままお待ちください。
+
+適用が完了しましたら、改めてご連絡いたします。
+
+どうぞよろしくお願いいたします。
+
+JiuFlow サポート`,
+  },
+  login: {
+    label: "ログイン方法",
+    getContent: (name: string) => `${name}様
+
+お問い合わせいただきありがとうございます。
+ログイン方法についてご案内いたします。
+
+【ログイン手順】
+1. トップページ右上の「ログイン」ボタンをクリック
+2. 「Googleでログイン」を選択
+3. Googleアカウントでサインイン
+4. ログイン完了後、マイページに移動します
+
+【動画が再生できない場合】
+1. ブラウザのキャッシュをクリアしてください
+2. 別のブラウザ（Chrome推奨）でお試しください
+3. 広告ブロッカーを無効にしてください
+
+それでも解決しない場合は、お気軽にご連絡ください。
+
+JiuFlow サポート`,
+  },
+};
+
+// Calculate elapsed time
+const getElapsedTime = (createdAt: string): { text: string; isDelayed: boolean; days: number } => {
+  const created = new Date(createdAt);
+  const now = new Date();
+  const diffMs = now.getTime() - created.getTime();
+  const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+  if (days === 0) return { text: "今日", isDelayed: false, days };
+  if (days === 1) return { text: "昨日", isDelayed: false, days };
+  if (days < 3) return { text: `${days}日前`, isDelayed: false, days };
+  if (days < 7) return { text: `${days}日前`, isDelayed: true, days };
+  if (days < 30) return { text: `${Math.floor(days / 7)}週間前`, isDelayed: true, days };
+  return { text: `${Math.floor(days / 30)}ヶ月前`, isDelayed: true, days };
+};
 
 export const ContactsManagement = () => {
   const { isAdmin } = useAuth();
@@ -30,6 +140,9 @@ export const ContactsManagement = () => {
   const [loading, setLoading] = useState(true);
   const [selectedMessage, setSelectedMessage] = useState<ContactMessage | null>(null);
   const [showDialog, setShowDialog] = useState(false);
+  const [showReplyDialog, setShowReplyDialog] = useState(false);
+  const [replyContent, setReplyContent] = useState("");
+  const [isSending, setIsSending] = useState(false);
 
   useEffect(() => {
     fetchMessages();
@@ -129,7 +242,107 @@ export const ContactsManagement = () => {
     }
   };
 
+  const handleOpenReplyDialog = () => {
+    if (!selectedMessage) return;
+    
+    const elapsed = getElapsedTime(selectedMessage.created_at);
+    
+    // Auto-insert delayed apology if more than 3 days
+    if (elapsed.days >= 3) {
+      setReplyContent(REPLY_TEMPLATES.delayed.getContent(selectedMessage.name.replace('様', '')));
+    } else {
+      setReplyContent(`${selectedMessage.name.replace('様', '')}様
+
+お問い合わせいただきありがとうございます。
+
+`);
+    }
+    
+    setShowReplyDialog(true);
+  };
+
+  const handleApplyTemplate = (templateKey: keyof typeof REPLY_TEMPLATES) => {
+    if (!selectedMessage) return;
+    const template = REPLY_TEMPLATES[templateKey];
+    const name = selectedMessage.name.replace('様', '');
+    
+    // If it's delayed template, append to existing content
+    if (templateKey === 'delayed') {
+      setReplyContent(template.getContent(name) + replyContent.replace(new RegExp(`^${name}様[\\s\\S]*?申し訳ございません。\\n\\n`, 'm'), ''));
+    } else {
+      // Replace the content with the new template
+      setReplyContent(template.getContent(name));
+    }
+  };
+
+  const handleCopyReply = async () => {
+    try {
+      await navigator.clipboard.writeText(replyContent);
+      toast.success("クリップボードにコピーしました");
+    } catch {
+      toast.error("コピーに失敗しました");
+    }
+  };
+
+  const handleOpenMailer = () => {
+    if (!selectedMessage) return;
+    const subject = encodeURIComponent(`Re: ${selectedMessage.subject}`);
+    const body = encodeURIComponent(replyContent);
+    window.location.href = `mailto:${selectedMessage.email}?subject=${subject}&body=${body}`;
+  };
+
+  const handleSendReply = async () => {
+    if (!selectedMessage || !replyContent.trim()) {
+      toast.error("返信内容を入力してください");
+      return;
+    }
+
+    setIsSending(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error("ログインが必要です");
+        return;
+      }
+
+      const response = await supabase.functions.invoke('send-reply-email', {
+        body: {
+          to: selectedMessage.email,
+          name: selectedMessage.name,
+          subject: selectedMessage.subject,
+          content: replyContent,
+          originalMessageId: selectedMessage.id,
+        },
+      });
+
+      if (response.error) {
+        throw new Error(response.error.message || "送信に失敗しました");
+      }
+
+      toast.success("返信メールを送信しました");
+      
+      // Update local state
+      setMessages(prev =>
+        prev.map(msg =>
+          msg.id === selectedMessage.id
+            ? { ...msg, replied_at: new Date().toISOString(), reply_content: replyContent }
+            : msg
+        )
+      );
+      
+      setShowReplyDialog(false);
+      setShowDialog(false);
+      setReplyContent("");
+    } catch (error) {
+      console.error('Error sending reply:', error);
+      toast.error(error instanceof Error ? error.message : "返信の送信に失敗しました");
+    } finally {
+      setIsSending(false);
+    }
+  };
+
   const unreadCount = messages.filter(msg => msg.status === 'unread').length;
+  const unrepliedCount = messages.filter(msg => !msg.replied_at).length;
 
   if (loading) {
     return <div className="text-center py-8">読み込み中...</div>;
@@ -141,7 +354,7 @@ export const ContactsManagement = () => {
         <div>
           <h2 className="text-2xl font-bold">お問い合わせ一覧</h2>
           <p className="text-sm text-muted-foreground mt-1">
-            未読: {unreadCount}件 / 全{messages.length}件
+            未読: {unreadCount}件 / 未返信: {unrepliedCount}件 / 全{messages.length}件
           </p>
         </div>
       </div>
@@ -154,51 +367,65 @@ export const ContactsManagement = () => {
             </CardContent>
           </Card>
         ) : (
-          messages.map((message) => (
-            <Card
-              key={message.id}
-              className={`cursor-pointer transition-all hover:shadow-md ${
-                message.status === 'unread' ? 'border-l-4 border-l-primary' : ''
-              }`}
-              onClick={() => handleViewMessage(message)}
-            >
-              <CardHeader>
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-2">
-                      {message.status === 'unread' ? (
-                        <Mail className="h-4 w-4 text-primary" />
-                      ) : (
-                        <MailOpen className="h-4 w-4 text-muted-foreground" />
-                      )}
-                      <Badge variant={message.status === 'unread' ? 'default' : 'secondary'}>
-                        {message.status === 'unread' ? '未読' : '既読'}
-                      </Badge>
-                    </div>
-                    <CardTitle className="text-base sm:text-lg truncate">{message.subject}</CardTitle>
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 mt-2 text-xs sm:text-sm text-muted-foreground">
-                      <span className="truncate">{message.name}</span>
-                      <span className="truncate">{message.email}</span>
-                      <span className="whitespace-nowrap">
-                        {new Date(message.created_at).toLocaleDateString('ja-JP', {
-                          year: 'numeric',
-                          month: '2-digit',
-                          day: '2-digit',
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        })}
-                      </span>
+          messages.map((message) => {
+            const elapsed = getElapsedTime(message.created_at);
+            return (
+              <Card
+                key={message.id}
+                className={`cursor-pointer transition-all hover:shadow-md ${
+                  message.status === 'unread' ? 'border-l-4 border-l-primary' : ''
+                }`}
+                onClick={() => handleViewMessage(message)}
+              >
+                <CardHeader>
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-2 flex-wrap">
+                        {message.status === 'unread' ? (
+                          <Mail className="h-4 w-4 text-primary" />
+                        ) : (
+                          <MailOpen className="h-4 w-4 text-muted-foreground" />
+                        )}
+                        <Badge variant={message.status === 'unread' ? 'default' : 'secondary'}>
+                          {message.status === 'unread' ? '未読' : '既読'}
+                        </Badge>
+                        {message.replied_at ? (
+                          <Badge variant="secondary" className="border">
+                            <Check className="h-3 w-3 mr-1" />
+                            返信済
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline">
+                            未返信
+                          </Badge>
+                        )}
+                        {elapsed.isDelayed && !message.replied_at && (
+                          <Badge variant="destructive" className="text-xs">
+                            <AlertCircle className="h-3 w-3 mr-1" />
+                            対応遅延
+                          </Badge>
+                        )}
+                      </div>
+                      <CardTitle className="text-base sm:text-lg truncate">{message.subject}</CardTitle>
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 mt-2 text-xs sm:text-sm text-muted-foreground">
+                        <span className="truncate">{message.name}</span>
+                        <span className="truncate">{message.email}</span>
+                        <span className="flex items-center gap-1 whitespace-nowrap">
+                          <Clock className="h-3 w-3" />
+                          {elapsed.text}
+                        </span>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground line-clamp-2">
-                  {message.message}
-                </p>
-              </CardContent>
-            </Card>
-          ))
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground line-clamp-2">
+                    {message.message}
+                  </p>
+                </CardContent>
+              </Card>
+            );
+          })
         )}
       </div>
 
@@ -222,7 +449,7 @@ export const ContactsManagement = () => {
                 <div>
                   <span className="font-semibold">メール:</span> {selectedMessage?.email}
                 </div>
-                <div className="col-span-2">
+                <div>
                   <span className="font-semibold">送信日時:</span>{' '}
                   {selectedMessage &&
                     new Date(selectedMessage.created_at).toLocaleDateString('ja-JP', {
@@ -233,7 +460,33 @@ export const ContactsManagement = () => {
                       minute: '2-digit',
                     })}
                 </div>
+                <div>
+                  <span className="font-semibold">経過時間:</span>{' '}
+                  {selectedMessage && (
+                    <>
+                      {getElapsedTime(selectedMessage.created_at).text}
+                      {getElapsedTime(selectedMessage.created_at).isDelayed && !selectedMessage.replied_at && (
+                        <Badge variant="destructive" className="ml-2 text-xs">
+                          対応遅延
+                        </Badge>
+                      )}
+                    </>
+                  )}
+                </div>
               </div>
+              {selectedMessage?.replied_at && (
+                <div className="pt-2">
+                  <Badge variant="secondary">
+                    <Check className="h-3 w-3 mr-1" />
+                    返信済: {new Date(selectedMessage.replied_at).toLocaleDateString('ja-JP', {
+                      month: '2-digit',
+                      day: '2-digit',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
+                  </Badge>
+                </div>
+              )}
             </DialogDescription>
           </DialogHeader>
 
@@ -245,8 +498,17 @@ export const ContactsManagement = () => {
               </div>
             </div>
 
+            {selectedMessage?.reply_content && (
+              <div>
+                <h4 className="font-semibold mb-2">送信済み返信:</h4>
+                <div className="bg-muted p-4 rounded-lg whitespace-pre-wrap text-sm border border-border">
+                  {selectedMessage.reply_content}
+                </div>
+              </div>
+            )}
+
             {isAdmin && (
-              <div className="flex justify-end gap-2 pt-4 border-t">
+              <div className="flex justify-end gap-2 pt-4 border-t flex-wrap">
                 {selectedMessage?.status === 'read' && (
                   <Button
                     variant="outline"
@@ -266,18 +528,95 @@ export const ContactsManagement = () => {
                   削除
                 </Button>
                 <Button
-                  variant="outline"
                   size="sm"
-                  onClick={() => {
-                    if (selectedMessage) {
-                      window.location.href = `mailto:${selectedMessage.email}?subject=Re: ${selectedMessage.subject}`;
-                    }
-                  }}
+                  onClick={handleOpenReplyDialog}
                 >
-                  返信
+                  <Reply className="h-4 w-4 mr-2" />
+                  返信作成
                 </Button>
               </div>
             )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Reply Dialog */}
+      <Dialog open={showReplyDialog} onOpenChange={setShowReplyDialog}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Reply className="h-5 w-5" />
+              返信作成
+            </DialogTitle>
+            <DialogDescription>
+              宛先: {selectedMessage?.name} ({selectedMessage?.email})
+              {selectedMessage && getElapsedTime(selectedMessage.created_at).isDelayed && (
+                <Badge variant="destructive" className="ml-2 text-xs">
+                  <AlertCircle className="h-3 w-3 mr-1" />
+                  {getElapsedTime(selectedMessage.created_at).text} - 対応遅延
+                </Badge>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 pt-4">
+            <div>
+              <h4 className="font-semibold mb-2 text-sm">テンプレート選択:</h4>
+              <div className="flex flex-wrap gap-2">
+                {Object.entries(REPLY_TEMPLATES).map(([key, template]) => (
+                  <Button
+                    key={key}
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleApplyTemplate(key as keyof typeof REPLY_TEMPLATES)}
+                  >
+                    {template.label}
+                  </Button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <h4 className="font-semibold mb-2 text-sm">返信内容:</h4>
+              <Textarea
+                value={replyContent}
+                onChange={(e) => setReplyContent(e.target.value)}
+                rows={15}
+                className="font-mono text-sm"
+                placeholder="返信内容を入力..."
+              />
+            </div>
+
+            <div className="flex justify-end gap-2 pt-4 border-t flex-wrap">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleCopyReply}
+              >
+                <Copy className="h-4 w-4 mr-2" />
+                コピー
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleOpenMailer}
+              >
+                <Mail className="h-4 w-4 mr-2" />
+                メーラーで開く
+              </Button>
+              <Button
+                size="sm"
+                onClick={handleSendReply}
+                disabled={isSending || !replyContent.trim()}
+              >
+                {isSending ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <Send className="h-4 w-4 mr-2" />
+                )}
+                Resendで送信
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
