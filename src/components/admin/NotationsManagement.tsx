@@ -372,9 +372,9 @@ export default function NotationsManagement() {
       {/* Header with search and actions */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl font-bold">略称マスター</h1>
+          <h1 className="text-xl font-bold">技術タグ</h1>
           <p className="text-xs text-muted-foreground">
-            BJJ略称の管理 • 合計 {notations?.length || 0} 件
+            BJJ技術の分類タグを管理 • 合計 {notations?.length || 0} 件
           </p>
         </div>
         <div className="flex items-center gap-2">

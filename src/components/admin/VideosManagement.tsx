@@ -2144,7 +2144,7 @@ export const VideosManagement = () => {
             setPage(1);
           }}>
             <SelectTrigger className="w-full sm:w-[200px]">
-              <SelectValue placeholder="略称で絞り込み" />
+              <SelectValue placeholder="技術タグで絞り込み" />
             </SelectTrigger>
             <SelectContent className="bg-background z-50 max-h-[300px]">
               <SelectItem value="all">すべて</SelectItem>
@@ -2208,7 +2208,7 @@ export const VideosManagement = () => {
       {notationFilter !== 'all' && (
         <div className="mb-4 flex items-center gap-2">
           <Badge variant="secondary" className="flex items-center gap-1.5 h-7 px-3">
-            <span>略称: {notationLabel || notationFilter}</span>
+            <span>技術タグ: {notationLabel || notationFilter}</span>
             <button
               onClick={() => {
                 setNotationFilter('all');
