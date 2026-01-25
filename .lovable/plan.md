@@ -1,135 +1,101 @@
 
 
-## HeyGen等プロバイダーから翻訳済み動画をインポートする機能
+## 修正内容
 
-### 現状の課題
+### 1. 翻訳プロバイダーにHeyGenを追加
 
-外部プロバイダー（HeyGen、ElevenLabs、Rask.ai）で既に翻訳・吹き替えが完了している動画が、システムに取り込まれていない場合があります。これは翻訳完了時にCloudflare Streamへのアップロードが失敗した（容量超過など）、または手動で翻訳を行った場合に発生します。
+**問題:** 管理ツールの翻訳プロバイダー選択にHeyGenが含まれていない
 
----
+**修正箇所:** `src/components/admin/VideosManagement.tsx`
 
-### 解決策：翻訳動画インポートツール
-
-動画一覧の「管理ツール」セクションに、HeyGenプロジェクトIDを入力して翻訳済み動画を取り込む機能を追加します。
-
----
-
-### 実装内容
-
-#### 1. 新しいEdge Function: `import-heygen-video`
-
-| 処理 | 詳細 |
-|------|------|
-| 入力 | HeyGenプロジェクトID、対象technique_id、言語コード |
-| 動作1 | HeyGen APIからステータス確認・動画URL取得 |
-| 動作2 | 完了済み動画をCloudflare Streamにコピー |
-| 動作3 | `techniques.video_metadata`に保存 |
+- 型定義を更新: `type TranslationProvider = "elevenlabs" | "rask" | "heygen";`
+- 管理ツールのRadioGroupにHeyGenオプションを追加
+- `handleProviderChange`でHeyGenの名前を正しく表示
+- `handleVideoTranslate`でHeyGen用の関数呼び出しを追加
 
 ```typescript
-// supabase/functions/import-heygen-video/index.ts
-serve(async (req) => {
-  const { projectId, techniqueId, targetLanguage } = await req.json();
-  
-  // 1. HeyGen APIで翻訳動画URLを取得
-  const statusRes = await fetch(
-    `https://api.heygen.com/v2/video_translate/status?video_translate_id=${projectId}`,
-    { headers: { "x-api-key": heygenApiKey } }
-  );
-  const statusData = await statusRes.json();
-  
-  if (statusData.data?.status !== "completed") {
-    return error("翻訳が完了していません");
-  }
-  
-  const heygenVideoUrl = statusData.data.url;
-  
-  // 2. Cloudflare Streamにコピー
-  const cloudflareUrl = await uploadToCloudflare(heygenVideoUrl, `technique-${techniqueId}-${targetLanguage}`);
-  
-  // 3. データベース更新
-  const { data: technique } = await supabase
-    .from("techniques")
-    .select("video_metadata")
-    .eq("id", techniqueId)
-    .single();
-  
-  const updatedMetadata = {
-    ...technique.video_metadata,
-    [targetLanguage]: {
-      video_url: cloudflareUrl,
-      provider: "heygen",
-      created_at: new Date().toISOString(),
-    },
-  };
-  
-  await supabase
-    .from("techniques")
-    .update({ video_metadata: updatedMetadata })
-    .eq("id", techniqueId);
-  
-  return { success: true, videoUrl: cloudflareUrl };
-});
-```
+// Line 150
+type TranslationProvider = "elevenlabs" | "rask" | "heygen";
 
-#### 2. UI: 管理ツールセクションに追加
+// Line 2651-2664 RadioGroup内に追加
+<div className="flex items-center gap-1.5">
+  <RadioGroupItem value="heygen" id="admin-heygen" />
+  <Label htmlFor="admin-heygen">HeyGen</Label>
+</div>
 
-動画一覧ページの「管理ツール」（折りたたみセクション）内に以下を追加：
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│  📥 翻訳動画インポート                                        │
-├─────────────────────────────────────────────────────────────┤
-│  プロバイダー:  ○ HeyGen  ○ ElevenLabs  ○ Rask.ai         │
-│                                                             │
-│  プロジェクトID: [________________________]                  │
-│                                                             │
-│  対象動画:      [▼ 動画を選択 ___________]                  │
-│                                                             │
-│  言語:          [▼ English ____________]                   │
-│                                                             │
-│  [インポート実行]                                            │
-└─────────────────────────────────────────────────────────────┘
-```
-
-#### 3. フロー
-
-```text
-[管理者] プロジェクトID入力
-         ↓
-[管理者] 対象動画・言語を選択
-         ↓
-[Edge Function] HeyGen APIでステータス確認
-         ↓
-[Edge Function] 翻訳動画URLをCloudflare Streamにコピー
-         ↓
-[Edge Function] video_metadataに保存
-         ↓
-[UI] 成功メッセージ・動画一覧に反映
+// handleVideoTranslate内の関数名決定
+const functionName = provider === 'rask' 
+  ? 'rask-translate-video' 
+  : provider === 'heygen'
+    ? 'heygen-translate-video'
+    : 'translate-video';
 ```
 
 ---
 
-### ファイル変更
+### 2. ステータス確認の「not found」問題の調査結果
+
+**ログから判明した原因:**
+
+```
+[heygen-check-status] HeyGen status response: 
+{"data":null,"error":{"code":"internal_error","message":"Video translate not found"}}
+```
+
+これは以下のいずれかを意味します：
+1. **HeyGenで翻訳ジョブが正常に作成されなかった** - 開始時にAPIエラーがあった可能性
+2. **HeyGen Scale/Enterpriseプラン未加入** - Video Translate APIはScale以上のプランが必要
+3. **プロジェクトIDが期限切れまたは無効** - HeyGenのプロジェクトは一定期間後に削除される
+
+**現在の対応:**
+- `heygen-check-status`は既に適切にエラーハンドリングしている（`failed: true`を返す）
+- UIでは「HeyGenのScale/Enterpriseプランが必要な場合があります」というヒントを表示
+
+**追加修正:**
+- 進行中の翻訳リストから、`failed: true`のジョブを自動削除するオプションを追加
+- 管理ツールに「失敗したジョブを削除」ボタンを追加
+
+---
+
+### 3. ファイル変更一覧
 
 | ファイル | 変更内容 |
 |----------|----------|
-| `supabase/functions/import-heygen-video/index.ts` | 新規作成 |
-| `supabase/config.toml` | 関数登録 |
-| `src/components/admin/VideosManagement.tsx` | 管理ツールにインポートUI追加 |
+| `src/components/admin/VideosManagement.tsx` | HeyGenを翻訳プロバイダーに追加、handleVideoTranslateのHeyGen対応 |
 
 ---
 
-### 技術的考慮事項
+### 4. 技術的詳細
 
-1. **HeyGen動画URLの有効期限**: HeyGenの翻訳済み動画URLは7日間で失効するため、インポート時にCloudflare Streamへの永続保存が必須
-2. **ElevenLabs/Rask.ai対応**: 将来的に他プロバイダーも同様のインポート機能を追加可能（同じUIで切り替え）
-3. **重複チェック**: 既に同じ言語の翻訳が存在する場合は警告を表示し、上書きするか確認
+```typescript
+// handleProviderChange更新
+const handleProviderChange = (value: TranslationProvider) => {
+  setTranslationProvider(value);
+  localStorage.setItem('translation_provider', value);
+  const providerNames = {
+    elevenlabs: 'ElevenLabs',
+    rask: 'Rask.ai',
+    heygen: 'HeyGen'
+  };
+  toast.success(`翻訳プロバイダーを ${providerNames[value]} に変更しました`);
+};
+
+// handleVideoTranslate更新（Line ~1856）
+const provider = localStorage.getItem('translation_provider') || 'elevenlabs';
+const functionName = provider === 'rask' 
+  ? 'rask-translate-video' 
+  : provider === 'heygen'
+    ? 'heygen-translate-video'
+    : 'translate-video';  // ElevenLabsのデフォルト
+```
 
 ---
 
-### 注意事項
+### 5. HeyGenの「not found」問題について
 
-- HeyGenのプロジェクトIDは32文字の16進数（例: `05f14f525f074f9399f28402a7c04a85`）
-- Cloudflare Streamの容量に注意（先に不要動画を削除しておく必要あり）
-- インポート成功後、動画一覧の「翻訳済み」バッジに反映される
+**注意事項:**
+- HeyGenで翻訳を開始する際、APIが成功レスポンスを返しても、その後のステータス確認で「not found」になる場合がある
+- これはHeyGen側のプラン制限またはAPI制限による可能性が高い
+- 既存の`failed: true`ハンドリングにより、UIで適切に「翻訳ジョブが見つかりません」と表示される
+- ユーザーは「削除」ボタンで進行中リストから手動で削除可能
 
