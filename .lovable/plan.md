@@ -1,191 +1,124 @@
 
-## 動画管理画面の改善計画
 
-### 概要
-「特別講習」という概念を廃止し、動画を「公開・限定公開・非公開」の3状態で管理。動画一覧からvisibilityで絞り込み可能にし、特別講習タブを削除します。
+## 2つの問題を解決する実装計画
 
 ---
 
-### 変更内容
+### 問題1: HeyGenステータス確認の「not found」エラー修正
 
-#### 1. 特別講習タブの削除
-以下のファイルから「特別講習」メニュー項目を削除します。
+#### 原因
+`translation_history`テーブルに保存されている`project_id`が`5ea2beefdd604a1a89226bce5dfab44f-en`のように、純粋な`video_translate_id`に言語サフィックス（`-en`）が付加された形式になっています。HeyGen APIは純粋なIDのみを期待するため、エラーが発生しています。
 
-**ファイル:**
-- `src/pages/AdminDashboard.tsx`: タブ定義とコンテンツ表示を削除
-- `src/components/admin/AdminSidebar.tsx`: サイドバーメニュー項目を削除
+#### 修正内容
 
-#### 2. 動画一覧にvisibility絞り込みを追加
-`VideosManagement.tsx`のフィルターセクションに公開設定の絞り込みを追加します。
+##### 1. heygen-check-status Edge Functionの修正
+受け取った`projectId`から言語サフィックスを除去してからHeyGen APIに送信します。
 
-**追加するフィルター:**
-| 値 | 表示 | 説明 |
-|---|---|---|
-| all | すべて | 全動画を表示 |
-| public | 公開 | 一般公開の動画 |
-| unlisted | 限定公開 | URLを知っている人のみ |
-| private | 非公開 | 管理者のみ |
+**修正ファイル:** `supabase/functions/heygen-check-status/index.ts`
 
-**UIイメージ:**
-```text
-┌──────────────────────────────────────────────────────────────────┐
-│  [🔍 検索...        ] [略称で絞り込み ▼] [公開設定 ▼] [並び順 ▼] │
-│                                          ┌───────────┐           │
-│                                          │ すべて    │           │
-│                                          │ 🌐 公開   │           │
-│                                          │ 🔗 限定   │           │
-│                                          │ 🔒 非公開 │           │
-│                                          └───────────┘           │
-└──────────────────────────────────────────────────────────────────┘
-```
-
-#### 3. 既存データのマイグレーション
-データベースクエリで既存動画のvisibilityを更新します。
-
-**更新ルール:**
-1. 略称が未割り当ての動画 → `unlisted`（限定公開）に変更
-2. 略称が割り当て済みで `visibility` が未設定の動画 → `public`（公開）のまま
-
-**実行するSQLクエリ:**
-```sql
--- 略称が割り当てられていない動画を限定公開に変更
-UPDATE techniques t
-SET visibility = 'unlisted'
-WHERE NOT EXISTS (
-  SELECT 1 FROM technique_notations tn 
-  WHERE tn.technique_id = t.id
-)
-AND visibility = 'public';
-```
-
-#### 4. usePaginatedTechniquesフックにvisibilityフィルターを追加
-`src/hooks/usePaginatedTechniques.tsx`にvisibilityによるフィルタリング機能を追加します。
-
-**変更点:**
 ```typescript
-interface TechniqueFilters {
-  search?: string;
-  category?: string;
-  series?: string;
-  notationId?: string;
-  seriesType?: 'regular' | 'special' | 'all';
-  visibility?: 'all' | 'public' | 'unlisted' | 'private'; // 追加
-  sortBy?: 'order' | 'name' | 'category' | 'series' | 'created';
-  sortDirection?: 'asc' | 'desc';
-}
+// projectIdから言語サフィックスを除去
+// 例: "5ea2beefdd604a1a89226bce5dfab44f-en" → "5ea2beefdd604a1a89226bce5dfab44f"
+const cleanProjectId = projectId.replace(/-[a-z]{2}$/, '');
+console.log("[heygen-check-status] Cleaned projectId:", cleanProjectId);
 
-// フィルター適用部分に追加
-if (filters.visibility && filters.visibility !== 'all') {
-  query = query.eq('visibility', filters.visibility);
-}
+// HeyGen APIに送信
+const statusResponse = await fetch(
+  `https://api.heygen.com/v2/video_translate/status?video_translate_id=${cleanProjectId}`,
+  ...
+);
 ```
 
-#### 5. VideoCardにvisibilityバッジを表示
-動画カードにvisibility状態を示すバッジを追加します。
-
-**表示例:**
-- 🌐 公開: 緑系バッジ
-- 🔗 限定公開: 黄系バッジ
-- 🔒 非公開: 赤系バッジ
+##### 2. すでに完了した翻訳の復旧方法
+HeyGenからメールで完了通知が来ている動画については、正しいIDでステータスチェックを実行することで、Cloudflareへのアップロードとデータベース更新が自動的に行われます。
 
 ---
 
-### 修正ファイル一覧
+### 問題2:「略称マスター」の名前変更
 
-| ファイル | 変更内容 |
+#### 推奨名称
+**「技術タグ」（Technique Tags）** または **「分類タグ」（Classification Tags）**
+
+#### 修正対象ファイル
+
+| ファイル | 変更箇所 |
 |---------|---------|
-| `src/pages/AdminDashboard.tsx` | special-videosタブ削除 |
-| `src/components/admin/AdminSidebar.tsx` | 特別講習メニュー項目削除 |
-| `src/hooks/usePaginatedTechniques.tsx` | visibilityフィルター追加 |
-| `src/components/admin/VideosManagement.tsx` | visibility絞り込みセレクト追加 |
-| `src/components/admin/VideoCard.tsx` | visibilityバッジ表示 |
+| `src/components/admin/AdminSidebar.tsx` | サイドバーメニュー項目のラベル |
+| `src/components/admin/NotationsManagement.tsx` | 管理画面のヘッダータイトルと説明文 |
+| `src/components/admin/VideosManagement.tsx` | 動画編集モーダル内のラベル |
+| `src/pages/AdminDashboard.tsx` | ダッシュボードのタブ名 |
 
----
+#### 変更内容例（「技術タグ」を採用した場合）
 
-### 削除対象ファイル
+```typescript
+// AdminSidebar.tsx
+{ id: "notations", label: "技術タグ", icon: Grid3X3 }
 
-| ファイル | 理由 |
-|---------|-----|
-| `src/components/admin/SpecialVideosManagement.tsx` | 機能統合により不要 |
+// NotationsManagement.tsx
+<h1 className="text-xl font-bold">技術タグ</h1>
+<p className="text-xs text-muted-foreground">
+  BJJ技術の分類タグを管理 • 合計 {notations?.length || 0} 件
+</p>
+
+// VideosManagement.tsx
+<Label className="text-sm font-medium">技術タグ</Label>
+
+// AdminDashboard.tsx
+{ id: "notations", label: "技術タグ" }
+```
 
 ---
 
 ### 実装順序
 
-1. **usePaginatedTechniques.tsx**: visibilityフィルター機能を追加
-2. **VideosManagement.tsx**: 絞り込みセレクトを追加
-3. **VideoCard.tsx**: visibilityバッジを追加
-4. **AdminDashboard.tsx + AdminSidebar.tsx**: 特別講習タブを削除
-5. **データマイグレーション**: 略称未割り当て動画をunlistedに更新
+1. **heygen-check-status Edge Function修正** - 言語サフィックス除去ロジック追加
+2. **Edge Function再デプロイ** - 修正を適用
+3. **既存翻訳の復旧** - ステータス確認ボタンで再チェック実行
+4. **名称変更** - 4ファイルの「略称マスター」を「技術タグ」に変更
 
 ---
 
 ### 技術詳細
 
-#### VideosManagementに追加するセレクト
-```tsx
-// state追加
-const [visibilityFilter, setVisibilityFilter] = useState<string>("all");
+#### heygen-check-status修正（完全版）
 
-// フィルターセクションに追加
-<Select value={visibilityFilter} onValueChange={(value) => {
-  setVisibilityFilter(value);
-  setPage(1);
-}}>
-  <SelectTrigger className="w-full sm:w-[140px]">
-    <SelectValue placeholder="公開設定" />
-  </SelectTrigger>
-  <SelectContent className="bg-background z-50">
-    <SelectItem value="all">すべて</SelectItem>
-    <SelectItem value="public">
-      <div className="flex items-center gap-2">
-        <Globe className="h-3 w-3" />
-        公開
-      </div>
-    </SelectItem>
-    <SelectItem value="unlisted">
-      <div className="flex items-center gap-2">
-        <Link className="h-3 w-3" />
-        限定公開
-      </div>
-    </SelectItem>
-    <SelectItem value="private">
-      <div className="flex items-center gap-2">
-        <Lock className="h-3 w-3" />
-        非公開
-      </div>
-    </SelectItem>
-  </SelectContent>
-</Select>
-```
+```typescript
+// Line 61付近に追加
+const { projectId, techniqueId, targetLanguage } = await req.json();
 
-#### VideoCardのvisibilityバッジ
-```tsx
-// technique.visibility に基づいてバッジを表示
-{technique.visibility === 'unlisted' && (
-  <Badge variant="outline" className="bg-yellow-500/10 text-yellow-600">
-    <Link className="h-3 w-3 mr-1" />
-    限定公開
-  </Badge>
-)}
-{technique.visibility === 'private' && (
-  <Badge variant="outline" className="bg-red-500/10 text-red-600">
-    <Lock className="h-3 w-3 mr-1" />
-    非公開
-  </Badge>
-)}
+console.log("[heygen-check-status] Request:", { projectId, techniqueId, targetLanguage });
+
+if (!projectId) {
+  throw new Error("projectId is required");
+}
+
+// projectIdから言語サフィックスを除去（例: "-en", "-pt"）
+// HeyGen APIは純粋なvideo_translate_idを期待する
+const cleanProjectId = projectId.replace(/-[a-z]{2}$/, '');
+console.log("[heygen-check-status] Cleaned projectId:", cleanProjectId, "(original:", projectId, ")");
+
+// HeyGen APIに送信（cleanProjectIdを使用）
+const statusResponse = await fetch(
+  `https://api.heygen.com/v2/video_translate/status?video_translate_id=${cleanProjectId}`,
+  {
+    method: "GET",
+    headers: {
+      "x-api-key": heygenApiKey,
+    },
+  }
+);
 ```
 
 ---
 
 ### 期待される結果
 
-**修正前:**
-- 「特別講習」タブで略称未割り当て動画を別管理
-- 動画一覧でvisibilityでの絞り込み不可
+**問題1修正後:**
+- HeyGen翻訳のステータス確認が正常に動作
+- 完了した翻訳がCloudflareにアップロードされ、`video_metadata`に保存される
+- 吹替言語バッジが管理画面に表示される
 
-**修正後:**
-- 全動画が「動画一覧」で一元管理
-- visibility（公開・限定公開・非公開）で絞り込み可能
-- 動画カードにvisibility状態が表示される
-- 動画編集から公開設定を変更可能（既存機能）
+**問題2修正後:**
+- 「略称マスター」が「技術タグ」に統一
+- サイドバー、管理画面ヘッダー、動画編集モーダル、ダッシュボードで一貫した呼称
+
