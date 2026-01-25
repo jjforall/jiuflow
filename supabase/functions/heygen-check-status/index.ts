@@ -66,9 +66,9 @@ serve(async (req) => {
       throw new Error("projectId is required");
     }
 
-    // Check translation status
+    // Check translation status - use v2 API with query parameter
     const statusResponse = await fetch(
-      `https://api.heygen.com/v1/video_translate/${projectId}`,
+      `https://api.heygen.com/v2/video_translate/status?video_translate_id=${projectId}`,
       {
         method: "GET",
         headers: {
@@ -76,6 +76,14 @@ serve(async (req) => {
         },
       }
     );
+
+    // Check if response is HTML (error page) vs JSON
+    const contentType = statusResponse.headers.get("content-type") || "";
+    if (!contentType.includes("application/json")) {
+      const text = await statusResponse.text();
+      console.error("[heygen-check-status] Non-JSON response:", text.substring(0, 500));
+      throw new Error(`HeyGen returned non-JSON response (status ${statusResponse.status})`);
+    }
 
     const statusData = await statusResponse.json();
     console.log("[heygen-check-status] HeyGen status response:", JSON.stringify(statusData).substring(0, 1000));
@@ -107,6 +115,7 @@ serve(async (req) => {
         progress = 100;
         statusMessage = "完了";
         completed = true;
+        // HeyGen v2 API returns 'url' field for translated video
         break;
       case "failed":
       case "error":
@@ -122,13 +131,16 @@ serve(async (req) => {
     let videoUrl: string | null = null;
 
     // If completed, upload to Cloudflare and update database
-    if (completed && data.video_url && techniqueId && targetLanguage) {
+    // HeyGen v2 API uses 'url' field for the translated video
+    const translatedVideoUrl = data?.url || data?.video_url;
+    if (completed && translatedVideoUrl && techniqueId && targetLanguage) {
       console.log("[heygen-check-status] Translation completed, uploading to Cloudflare...");
+      console.log("[heygen-check-status] Translated video URL:", translatedVideoUrl);
 
       try {
         // Upload to Cloudflare Stream
         const cloudflareUrl = await uploadToCloudflare(
-          data.video_url,
+          translatedVideoUrl,
           `technique-${techniqueId}-${targetLanguage}`
         );
         videoUrl = cloudflareUrl;
