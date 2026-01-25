@@ -535,8 +535,8 @@ export const ContactsManagement = () => {
 
             {selectedMessage?.reply_content && (
               <div>
-                <h4 className="font-semibold mb-2">送信済み返信:</h4>
-                <div className="bg-muted p-4 rounded-lg whitespace-pre-wrap text-sm border border-border">
+                <h4 className="font-semibold mb-2 text-primary">📧 送信済み返信内容:</h4>
+                <div className="bg-primary/5 p-4 rounded-lg whitespace-pre-wrap text-sm border-2 border-primary/20">
                   {selectedMessage.reply_content}
                 </div>
               </div>
