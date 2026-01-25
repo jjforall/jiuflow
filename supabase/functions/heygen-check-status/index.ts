@@ -88,8 +88,33 @@ serve(async (req) => {
     const statusData = await statusResponse.json();
     console.log("[heygen-check-status] HeyGen status response:", JSON.stringify(statusData).substring(0, 1000));
 
+    // Handle HeyGen API errors more gracefully
     if (!statusResponse.ok || statusData.error) {
-      throw new Error(statusData.error?.message || statusData.message || "HeyGen status check failed");
+      const errorMessage = statusData.error?.message || statusData.message || "HeyGen status check failed";
+      const errorCode = statusData.error?.code || "unknown";
+      
+      // Check for specific error cases
+      if (errorMessage.includes("not found") || errorCode === "internal_error") {
+        // Translation job doesn't exist - may have failed to create or expired
+        return new Response(
+          JSON.stringify({
+            status: "not_found",
+            progress: 0,
+            statusMessage: "翻訳ジョブが見つかりません。再度翻訳を開始してください。",
+            videoUrl: null,
+            completed: false,
+            failed: true,
+            error: errorMessage,
+            hint: "HeyGenのScale/Enterpriseプランが必要な場合があります",
+          }),
+          {
+            status: 200, // Return 200 so frontend can handle gracefully
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          }
+        );
+      }
+      
+      throw new Error(errorMessage);
     }
 
     const data = statusData.data;
