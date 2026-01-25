@@ -1,4 +1,4 @@
-import { Play, Edit, Languages, FileText, Trash2, Clock, RefreshCw, Loader2, Download, AlertTriangle } from "lucide-react";
+import { Edit, FileText, Trash2, Clock, RefreshCw, Loader2, Download, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -131,16 +131,7 @@ export function VideoCard({
             </div>
           )}
           
-          {/* Play overlay */}
-          {technique.video_url && (
-            <button
-              onClick={() => onPreview()}
-              className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity"
-              aria-label="動画を再生"
-            >
-              <Play className="w-10 h-10 text-white fill-white/80" />
-            </button>
-          )}
+          {/* Thumbnail click handles preview - no overlay needed */}
           
           {/* Series badge removed - legacy series now shown in content area */}
           
@@ -256,18 +247,6 @@ export function VideoCard({
 
           {/* Action buttons */}
           <div className="mt-auto flex flex-wrap gap-1.5 sm:gap-2">
-            {technique.video_url && (
-              <Button
-                size="sm"
-                variant="outline"
-                className="h-7 sm:h-8 text-xs px-2 sm:px-3"
-                onClick={() => onPreview()}
-              >
-                <Play className="w-3 h-3 sm:mr-1" />
-                <span className="hidden sm:inline">再生</span>
-              </Button>
-            )}
-            
             {isAdmin && (
               <>
                 {technique.video_url && (
@@ -281,17 +260,6 @@ export function VideoCard({
                     >
                       <FileText className={cn("w-3 h-3 sm:mr-1", hasTranscription && "text-green-600")} />
                       <span className="hidden sm:inline">{hasTranscription ? "字幕" : "文字起こし"}</span>
-                    </Button>
-                    
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="h-7 sm:h-8 text-xs px-2 sm:px-3"
-                      onClick={onTranslate}
-                      title="動画翻訳"
-                    >
-                      <Languages className="w-3 h-3 sm:mr-1" />
-                      <span className="hidden sm:inline">吹替</span>
                     </Button>
                     
                     {onDownload && (
