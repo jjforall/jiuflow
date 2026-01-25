@@ -141,7 +141,7 @@ serve(async (req) => {
             // Get technique name for video title
             const { data: technique } = await supabase
               .from('techniques')
-              .select('name_ja')
+              .select('name_ja, video_metadata')
               .eq('id', techniqueId)
               .single();
 
@@ -184,23 +184,28 @@ serve(async (req) => {
                 videoUrl = `https://videodelivery.net/${cloudflareVideoId}/manifest/video.m3u8`;
                 console.log("Uploaded to Cloudflare:", videoUrl);
 
-                // Update technique with Cloudflare URL
-                const fieldMap: Record<string, string> = {
-                  ja: 'video_url_ja',
-                  en: 'video_url',
-                  pt: 'video_url_pt',
+                // Get existing video_metadata
+                const existingMetadata = technique?.video_metadata || {};
+
+                // Save to video_metadata in the same format as HeyGen/Rask
+                const updatedMetadata = {
+                  ...existingMetadata,
+                  [targetLanguage]: {
+                    video_url: videoUrl,
+                    provider: "elevenlabs",
+                    created_at: new Date().toISOString(),
+                  },
                 };
-                const updateField = fieldMap[targetLanguage] || `video_url_${targetLanguage}`;
 
                 const { error: updateError } = await supabase
                   .from('techniques')
-                  .update({ [updateField]: videoUrl })
+                  .update({ video_metadata: updatedMetadata })
                   .eq('id', techniqueId);
 
                 if (updateError) {
-                  console.error("Failed to update technique:", updateError);
+                  console.error("Failed to update technique video_metadata:", updateError);
                 } else {
-                  console.log(`Updated technique ${techniqueId} ${updateField} with Cloudflare URL`);
+                  console.log(`Updated technique ${techniqueId} video_metadata.${targetLanguage} with Cloudflare URL`);
                 }
               } else {
                 const cfError = await cfUploadRes.text();
