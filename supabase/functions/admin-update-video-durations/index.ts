@@ -24,9 +24,12 @@ serve(async (req) => {
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 
-    const token = authHeader.replace("Bearer ", "");
-    const supabaseUser = createClient(supabaseUrl, anonKey);
-    const { data: userRes, error: userErr } = await supabaseUser.auth.getUser(token);
+    // Scope the Supabase client with the user's token for RLS
+    const supabaseUser = createClient(supabaseUrl, anonKey, {
+      global: { headers: { Authorization: authHeader } },
+      auth: { persistSession: false },
+    });
+    const { data: userRes, error: userErr } = await supabaseUser.auth.getUser();
     if (userErr || !userRes?.user) {
       return new Response(JSON.stringify({ error: "Unauthorized - Invalid token" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
