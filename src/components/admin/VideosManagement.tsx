@@ -8,7 +8,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Upload, Search, Check, Languages, ChevronDown, Loader2, RefreshCw, ImageIcon, Wrench, Clock, FileText, Film, Hash, Tags, BookOpen, FolderOpen, Eye, AlertTriangle } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Label } from "@/components/ui/label";
 import {
   Collapsible,
   CollapsibleContent,
@@ -136,6 +138,9 @@ export const VideosManagement = () => {
   // Quick dialogs for transcription/translation
   const [transcriptionDialogTechnique, setTranscriptionDialogTechnique] = useState<Technique | null>(null);
   const [translationDialogTechnique, setTranslationDialogTechnique] = useState<Technique | null>(null);
+  
+  // Delete confirmation dialog state
+  const [deleteTargetTechnique, setDeleteTargetTechnique] = useState<Technique | null>(null);
 
 
   // すべての言語（カウント用）
@@ -1649,9 +1654,14 @@ export const VideosManagement = () => {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (confirm("この技術を削除してもよろしいですか？")) {
-      await deleteTechnique.mutateAsync(id);
+  const handleDelete = (technique: Technique) => {
+    setDeleteTargetTechnique(technique);
+  };
+  
+  const confirmDelete = async () => {
+    if (deleteTargetTechnique) {
+      await deleteTechnique.mutateAsync(deleteTargetTechnique.id);
+      setDeleteTargetTechnique(null);
     }
   };
 
@@ -1998,8 +2008,49 @@ export const VideosManagement = () => {
   };
 
   const openEditDialog = (technique: Technique) => {
-    // Navigate to edit page instead of opening modal
-    navigate(`/admin/technique/${technique.id}`);
+    // Open edit modal instead of navigating to edit page
+    setEditingTechnique(technique);
+    setFormData({
+      name: technique.name || "",
+      name_ja: technique.name_ja || "",
+      name_pt: technique.name_pt || "",
+      description: technique.description || "",
+      description_ja: technique.description_ja || "",
+      description_pt: technique.description_pt || "",
+      category: technique.category || "",
+      hashtags: technique.hashtags || [],
+      series_name: technique.series_name || "",
+      series_order: technique.series_order,
+      series_prefix: technique.series_prefix || "",
+      visibility: (technique.visibility || "public") as "public" | "unlisted" | "private",
+    });
+    setShowEditDialog(true);
+  };
+  
+  const handleSaveEdit = async () => {
+    if (!editingTechnique) return;
+    
+    try {
+      await updateTechnique.mutateAsync({
+        id: editingTechnique.id,
+        name: formData.name,
+        name_ja: formData.name_ja,
+        name_pt: formData.name_pt,
+        description: formData.description,
+        description_ja: formData.description_ja,
+        description_pt: formData.description_pt,
+        visibility: formData.visibility,
+        hashtags: formData.hashtags,
+      });
+      
+      toast.success("更新しました");
+      setShowEditDialog(false);
+      setEditingTechnique(null);
+      refetch();
+    } catch (error) {
+      console.error('Error updating technique:', error);
+      toast.error("更新に失敗しました");
+    }
   };
 
   if (error) {
@@ -2261,7 +2312,7 @@ export const VideosManagement = () => {
                 onTranslate={() => {
                   setTranslationDialogTechnique(technique);
                 }}
-                onDelete={() => handleDelete(technique.id)}
+                onDelete={() => handleDelete(technique)}
                 onFetchDuration={() => handleFetchSingleDuration(technique)}
                 onDownload={() => handleDownloadVideo(technique)}
                 isDownloading={downloadingId === technique.id}
@@ -2635,6 +2686,164 @@ export const VideosManagement = () => {
               </Button>
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!deleteTargetTechnique} onOpenChange={(open) => !open && setDeleteTargetTechnique(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>本当に削除しますか？</AlertDialogTitle>
+            <AlertDialogDescription>
+              「{deleteTargetTechnique?.name_ja || deleteTargetTechnique?.name}」を削除します。
+              この操作は取り消せません。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>キャンセル</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              削除
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      
+      {/* Edit Modal Dialog */}
+      <Dialog open={showEditDialog} onOpenChange={(open) => {
+        if (!open) {
+          setShowEditDialog(false);
+          setEditingTechnique(null);
+        }
+      }}>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>動画を編集</DialogTitle>
+            <DialogDescription>
+              {editingTechnique?.name_ja || editingTechnique?.name}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            {/* Japanese Name (required) */}
+            <div className="space-y-2">
+              <Label htmlFor="edit-name-ja" className="text-sm font-medium">
+                日本語名 <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id="edit-name-ja"
+                value={formData.name_ja}
+                onChange={(e) => setFormData(prev => ({ ...prev, name_ja: e.target.value }))}
+                placeholder="日本語名（必須）"
+              />
+            </div>
+            
+            {/* English Name */}
+            <div className="space-y-2">
+              <Label htmlFor="edit-name-en" className="text-sm font-medium">
+                英語名
+              </Label>
+              <Input
+                id="edit-name-en"
+                value={formData.name}
+                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                placeholder="English name"
+              />
+            </div>
+            
+            {/* Portuguese Name */}
+            <div className="space-y-2">
+              <Label htmlFor="edit-name-pt" className="text-sm font-medium">
+                ポルトガル語名
+              </Label>
+              <Input
+                id="edit-name-pt"
+                value={formData.name_pt}
+                onChange={(e) => setFormData(prev => ({ ...prev, name_pt: e.target.value }))}
+                placeholder="Nome em português"
+              />
+            </div>
+            
+            {/* Visibility */}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">公開設定</Label>
+              <Select
+                value={formData.visibility}
+                onValueChange={(value: "public" | "unlisted" | "private") => 
+                  setFormData(prev => ({ ...prev, visibility: value }))
+                }
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-background z-50">
+                  <SelectItem value="public">
+                    <div className="flex items-center gap-2">
+                      <Eye className="h-4 w-4" />
+                      公開
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="unlisted">限定公開</SelectItem>
+                  <SelectItem value="private">非公開</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            {/* Notation Selector */}
+            {editingTechnique && (
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">略称 (BJJ Notations)</Label>
+                <NotationSelector techniqueId={editingTechnique.id} />
+              </div>
+            )}
+            
+            {/* Description Tabs */}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">説明</Label>
+              <Tabs value={descriptionTab} onValueChange={(v) => setDescriptionTab(v as "ja" | "en" | "pt")}>
+                <TabsList className="w-full">
+                  <TabsTrigger value="ja" className="flex-1">日本語</TabsTrigger>
+                  <TabsTrigger value="en" className="flex-1">English</TabsTrigger>
+                  <TabsTrigger value="pt" className="flex-1">Português</TabsTrigger>
+                </TabsList>
+                <TabsContent value="ja" className="mt-2">
+                  <Textarea
+                    value={formData.description_ja}
+                    onChange={(e) => setFormData(prev => ({ ...prev, description_ja: e.target.value }))}
+                    placeholder="日本語の説明"
+                    rows={4}
+                  />
+                </TabsContent>
+                <TabsContent value="en" className="mt-2">
+                  <Textarea
+                    value={formData.description}
+                    onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                    placeholder="English description"
+                    rows={4}
+                  />
+                </TabsContent>
+                <TabsContent value="pt" className="mt-2">
+                  <Textarea
+                    value={formData.description_pt}
+                    onChange={(e) => setFormData(prev => ({ ...prev, description_pt: e.target.value }))}
+                    placeholder="Descrição em português"
+                    rows={4}
+                  />
+                </TabsContent>
+              </Tabs>
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => {
+              setShowEditDialog(false);
+              setEditingTechnique(null);
+            }}>
+              キャンセル
+            </Button>
+            <Button onClick={handleSaveEdit} disabled={!formData.name_ja.trim()}>
+              保存
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
