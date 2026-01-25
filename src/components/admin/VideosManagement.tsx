@@ -709,8 +709,19 @@ export const VideosManagement = () => {
     const checkAllTranslations = async () => {
       for (const translation of activeTranslations) {
         try {
-          const { data: statusData, error: statusError } = await supabase.functions.invoke('check-translation-status', {
-            body: { projectId: translation.projectId }
+          // Route to correct status endpoint based on provider
+          const statusEndpoint = translation.provider === 'heygen' 
+            ? 'heygen-check-status'
+            : translation.provider === 'rask'
+              ? 'rask-check-status'
+              : 'check-translation-status';
+          
+          const { data: statusData, error: statusError } = await supabase.functions.invoke(statusEndpoint, {
+            body: { 
+              projectId: translation.projectId,
+              techniqueId: translation.techniqueId,
+              targetLanguage: translation.targetLang
+            }
           });
 
           if (statusError) {
