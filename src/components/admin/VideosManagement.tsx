@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Upload, Search, Check, Languages, ChevronDown, Loader2, RefreshCw, ImageIcon, Wrench, Clock, FileText, Film, Hash, Tags, BookOpen, FolderOpen, Eye, AlertTriangle, Globe, Link2, Lock } from "lucide-react";
+import { Upload, Search, Check, Languages, ChevronDown, Loader2, RefreshCw, ImageIcon, Wrench, Clock, FileText, Film, Hash, Tags, BookOpen, FolderOpen, Eye, AlertTriangle, Globe, Link2, Lock, X } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
@@ -2157,13 +2157,27 @@ export const VideosManagement = () => {
                         {langName}版 • 経過時間: {minutes}分{seconds}秒
                       </p>
                     </div>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => manualCheckTranslation(translation)}
-                    >
-                      ステータス確認
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => manualCheckTranslation(translation)}
+                      >
+                        ステータス確認
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="text-destructive hover:text-destructive hover:bg-destructive/10 h-8 w-8 p-0"
+                        onClick={() => {
+                          setActiveTranslations(prev => prev.filter(t => t.projectId !== translation.projectId));
+                          toast.success("翻訳エントリを削除しました");
+                        }}
+                        title="この翻訳エントリを削除"
+                      >
+                        <X className="w-4 h-4" />
+                      </Button>
+                    </div>
                   </div>
                   <div className="text-xs text-muted-foreground">
                     プロジェクトID: {translation.projectId}

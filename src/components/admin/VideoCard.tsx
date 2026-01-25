@@ -131,11 +131,29 @@ export function VideoCard({
             </div>
           )}
           
-          {/* Thumbnail click handles preview - no overlay needed */}
-          
-          {/* Series badge removed - legacy series now shown in content area */}
-          
-          {/* Duration badge - clickable if missing */}
+        {/* Visibility badge - top left of thumbnail */}
+        <div className="absolute top-1.5 left-1.5 z-10">
+          {technique.visibility === 'public' && (
+            <Badge className="bg-green-600/90 text-white text-[9px] px-1.5 py-0.5 h-auto border-0 flex items-center gap-0.5">
+              <Globe className="h-2.5 w-2.5" />
+              公開
+            </Badge>
+          )}
+          {technique.visibility === 'unlisted' && (
+            <Badge className="bg-yellow-500/90 text-black text-[9px] px-1.5 py-0.5 h-auto border-0 flex items-center gap-0.5">
+              <Link2 className="h-2.5 w-2.5" />
+              限定
+            </Badge>
+          )}
+          {technique.visibility === 'private' && (
+            <Badge className="bg-red-600/90 text-white text-[9px] px-1.5 py-0.5 h-auto border-0 flex items-center gap-0.5">
+              <Lock className="h-2.5 w-2.5" />
+              非公開
+            </Badge>
+          )}
+        </div>
+        
+        {/* Duration badge - clickable if missing */}
           <div 
             className={cn(
               "absolute bottom-1.5 right-1.5 px-1.5 py-0.5 bg-black/80 text-white text-[10px] font-medium rounded flex items-center gap-1",
@@ -220,34 +238,7 @@ export function VideoCard({
             </div>
           )}
           
-          {/* Visibility badges */}
-          {technique.visibility && technique.visibility !== 'public' && (
-            <div className="flex items-center gap-1 mb-2">
-              {technique.visibility === 'unlisted' && (
-                <Badge variant="outline" className="text-[10px] px-1.5 py-0.5 h-auto bg-yellow-500/10 text-yellow-600 border-yellow-500/30">
-                  <Link2 className="h-3 w-3 mr-1" />
-                  限定公開
-                </Badge>
-              )}
-              {technique.visibility === 'private' && (
-                <Badge variant="outline" className="text-[10px] px-1.5 py-0.5 h-auto bg-red-500/10 text-red-600 border-red-500/30">
-                  <Lock className="h-3 w-3 mr-1" />
-                  非公開
-                </Badge>
-              )}
-            </div>
-          )}
-          
-          {/* Legacy series (scheduled for deletion) */}
-          {technique.series_prefix && (
-            <div className="flex items-center gap-1 mb-2 text-[10px] text-muted-foreground/60">
-              <AlertTriangle className="h-3 w-3" />
-              <span className="font-mono">
-                {technique.series_prefix}{technique.series_order ? `-${technique.series_order}` : ''}
-              </span>
-              <span className="opacity-70">(旧・削除予定)</span>
-            </div>
-          )}
+          {/* Visibility badges moved to thumbnail - removed from here */}
 
           {/* Localization status */}
           <div className="mb-3">
@@ -264,7 +255,7 @@ export function VideoCard({
           </div>
 
           {/* Action buttons */}
-          <div className="mt-auto flex flex-wrap gap-1.5 sm:gap-2">
+          <div className="mt-auto flex flex-wrap gap-1.5 sm:gap-2 items-center">
             {isAdmin && (
               <>
                 {technique.video_url && (
@@ -319,6 +310,13 @@ export function VideoCard({
                   <Trash2 className="w-3 h-3" />
                 </Button>
               </>
+            )}
+            
+            {/* Legacy series tag - compact display at right end */}
+            {technique.series_prefix && (
+              <span className="ml-auto text-[9px] text-muted-foreground/50 font-mono whitespace-nowrap">
+                {technique.series_prefix}{technique.series_order ? `-${technique.series_order}` : ''} (旧)
+              </span>
             )}
           </div>
         </div>
