@@ -255,7 +255,7 @@ serve(async (req) => {
     });
     console.log("Rask media created from link:", { videoId });
 
-    console.log("Creating Rask.ai project with video_id:", videoId);
+    console.log("[rask-translate-video] Creating Rask.ai project with video_id:", videoId);
     const projectResponse = await fetch("https://api.rask.ai/v2/projects", {
       method: "POST",
       headers: {
@@ -267,7 +267,7 @@ serve(async (req) => {
         src_lang: srcLang,
         dst_lang: dstLang,
         name: `Technique ${techniqueId} - ${targetLanguage}`,
-        speaker_detection: "auto",
+        // Note: speaker_detection は無効なパラメータ、自動検出はデフォルト動作
       }),
     });
 
