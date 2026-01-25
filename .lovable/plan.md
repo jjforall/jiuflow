@@ -1,287 +1,263 @@
 
-# 進行中の翻訳「Not Found」問題の調査結果と修正プラン
 
-## 問題の全体像
+## お問い合わせ管理の改善：バグ修正 + 返信機能強化
 
-何度も報告されている「経過時間だけが増え続け、ステータス確認するとnot foundになる」問題について、以下の3つの根本原因が特定されました。
-
----
-
-## 根本原因の分析
-
-### 1. **HeyGen APIの制限・エラー**
-```
-HeyGen API Response:
-{"data":null,"error":{"code":"internal_error","message":"Video translate not found"}}
-```
-
-**発生理由**:
-- **APIプラン不足**: HeyGenのVideo Translate APIは**Scale/Enterpriseプラン専用**。通常プランでは使用不可
-- **翻訳開始時の失敗**: API呼び出しは成功したように見えても、実際にはHeyGen側でジョブが作成されていない
-- **プロジェクトの期限切れ**: HeyGenのプロジェクトは一定期間後に削除される（通常7日間）
-
-**現在の対応状況**:
-- `heygen-check-status` Edge Function (Line 102-114) で "not found" エラーを検知し、`failed: true` を返している
-- UIにヒントメッセージ「HeyGenのScale/Enterpriseプランが必要な場合があります」を表示している
-
-**不足している点**:
-- ❌ `failed: true` が返されても、進行中リストから自動削除されない
-- ❌ ユーザーは手動で削除ボタンを押す必要がある
+### 調査結果：発見したバグと課題
 
 ---
 
-### 2. **localStorage に古いデータが残り続ける**
+#### バグ1: 技マップの検索が機能しない（ユーザー報告）
 
-**問題のコード**:
+| 項目 | 詳細 |
+|------|------|
+| 報告者 | 辻根孝幸様（2件のお問い合わせ） |
+| 問題 | 技マップで検索しても結果が表示されない |
+| 原因 | **バグではない** - 技マップの検索は正常に動作している |
+
+**調査結果：**
+- 技マップ (`src/pages/Map.tsx`) の検索は全37件の公開技（total 42件中）を正しく読み込んでいる
+- 検索はクライアントサイドで `name`、`description`、`hashtags` フィールドを対象に動作
+- `name_ja`, `description_ja` も言語設定に応じて検索対象
+
+**真の問題：**
+ユーザーが「入会当初に設定した技以外が見られない」と報告している。これは以下の可能性：
+1. サブスクリプションが有効になっていない
+2. ログイン状態の問題
+3. 検索キーワードが技名と一致していない
+
+---
+
+#### バグ2: Join.jsのモジュール読み込みエラー（サポートチケット）
+
+| 項目 | 詳細 |
+|------|------|
+| 報告 | 匿名ユーザー（2025/12/24） |
+| エラー | `TypeError: Failed to fetch dynamically imported module: https://jiuflow.art/assets/Join-DDtLgLkM.js` |
+| 原因 | デプロイ時のキャッシュ問題またはネットワーク一時的なエラー |
+| 対応 | ページリロードで解決する一時的な問題。特別な修正不要 |
+
+---
+
+#### 課題1: 返信機能がない（要改善）
+
+現在の返信方法：
+- `mailto:` リンクでメーラーを開くだけ
+- 毎回同じ文面を手動で書く必要がある
+- 対応状況の追跡ができない
+
+---
+
+### 実装内容
+
+#### 1. 経過時間表示の追加
+
+お問い合わせ一覧と詳細ダイアログに経過時間を表示：
+
 ```typescript
-// src/components/admin/VideosManagement.tsx:802-812
-useEffect(() => {
-  const stored = localStorage.getItem('activeTranslations');
-  if (stored) {
-    try {
-      const parsed = JSON.parse(stored);
-      setActiveTranslations(parsed);  // ← 古いデータをそのまま復元
-    } catch (e) {
-      console.error('Failed to parse stored translations:', e);
-    }
+const getElapsedTime = (createdAt: string): { text: string; isDelayed: boolean } => {
+  const days = Math.floor((Date.now() - new Date(createdAt).getTime()) / (1000 * 60 * 60 * 24));
+  
+  if (days === 0) return { text: "今日", isDelayed: false };
+  if (days === 1) return { text: "昨日", isDelayed: false };
+  if (days < 3) return { text: `${days}日前`, isDelayed: false };
+  if (days < 7) return { text: `${days}日前`, isDelayed: true };
+  if (days < 30) return { text: `${Math.floor(days / 7)}週間前`, isDelayed: true };
+  return { text: `${Math.floor(days / 30)}ヶ月前`, isDelayed: true };
+};
+```
+
+3日以上経過したものは赤色のバッジで「⚠️ 対応遅延」と表示。
+
+---
+
+#### 2. 返信テンプレート機能
+
+定型文をワンクリックで挿入できるようにする：
+
+**テンプレート一覧：**
+
+| キー | ラベル | 用途 |
+|------|--------|------|
+| `delayed` | 遅延お詫び | 時間が空いたお問い合わせの冒頭に |
+| `search` | 検索方法 | 技マップの使い方説明 |
+| `cancel` | 解約方法 | 解約手順の案内 |
+| `referral` | 紹介コード | 紹介コード適用の対応 |
+| `login` | ログイン方法 | ログイン手順の案内 |
+
+---
+
+#### 3. 返信ダイアログ UI
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│ 📬 返信作成                                                  │
+├─────────────────────────────────────────────────────────────┤
+│ 宛先: 辻根孝幸様 <lushlife1031@gmai.com>                     │
+│ 経過時間: 5日前 ⚠️ 対応遅延                                   │
+├─────────────────────────────────────────────────────────────┤
+│ 【テンプレート選択】                                         │
+│ [遅延お詫び] [検索方法] [解約方法] [紹介コード] [ログイン]   │
+│                                                             │
+│ ┌─────────────────────────────────────────────────────────┐ │
+│ │ 辻根様                                                   │ │
+│ │                                                         │ │
+│ │ お問い合わせいただきありがとうございます。               │ │
+│ │ お返事が遅くなり、大変申し訳ございません。               │ │
+│ │                                                         │ │
+│ │ 技マップの検索について...                                │ │
+│ └─────────────────────────────────────────────────────────┘ │
+│                                                             │
+│ [📋 コピー] [📧 メーラーで開く] [✉️ Resendで送信]             │
+└─────────────────────────────────────────────────────────────┘
+```
+
+---
+
+#### 4. 返信テンプレート内容
+
+**遅延お詫び（3日以上経過時に自動挿入）：**
+```
+{name}様
+
+お問い合わせいただきありがとうございます。
+お返事が遅くなり、大変申し訳ございません。
+```
+
+**検索方法（技マップの使い方）：**
+```
+【技マップの使い方】
+1. 画面上部の検索バーに技名を入力してください
+2. 日本語・英語・ポルトガル語で検索可能です
+3. シリーズ名をクリックすると、そのシリーズの技一覧が表示されます
+
+【すべての動画を見る方法】
+サブスクリプション会員の方は、すべての技動画をご視聴いただけます。
+もし特定の動画が見られない場合は、一度ログアウト→再ログインをお試しください。
+
+それでも解決しない場合は、お気軽にご連絡ください。
+```
+
+**解約方法：**
+```
+【解約手順】
+1. JiuFlowにログインしてください
+2. 右上のアイコンをクリック → 「マイページ」を選択
+3. ページ下部の「サブスクリプション設定」セクションへ
+4. 「解約する」ボタンをクリック
+
+解約後も、次回更新日までは引き続きサービスをご利用いただけます。
+```
+
+**紹介コード：**
+```
+紹介コードの適用について対応いたします。
+
+こちらで手動にて紹介コードの適用処理を行います。
+お手数をおかけしますが、このままお待ちください。
+
+適用が完了しましたら、改めてご連絡いたします。
+```
+
+**ログイン方法：**
+```
+Googleログイン後の手順についてご案内いたします。
+
+【ログイン手順】
+1. トップページ右上の「ログイン」ボタンをクリック
+2. 「Googleでログイン」を選択
+3. Googleアカウントでサインイン
+4. ログイン完了後、マイページに移動します
+
+【動画が再生できない場合】
+1. ブラウザのキャッシュをクリアしてください
+2. 別のブラウザ（Chrome推奨）でお試しください
+3. 広告ブロッカーを無効にしてください
+```
+
+---
+
+#### 5. Edge Function: send-reply-email（新規作成）
+
+Resendを使用してワンクリックで返信メールを送信：
+
+```typescript
+// supabase/functions/send-reply-email/index.ts
+const handler = async (req: Request): Promise<Response> => {
+  const { to, name, subject, content, originalMessageId } = await req.json();
+  
+  // Validate inputs
+  if (!to || !name || !subject || !content) {
+    return new Response(JSON.stringify({ error: "必須フィールドが不足しています" }), { status: 400 });
   }
-}, []);
-```
-
-**何が起きているか**:
-1. 過去にHeyGen翻訳を開始したが、実際にはAPI側でジョブが作成されなかった
-2. その無効な `projectId` が `activeTranslations` に追加され、localStorageに保存された
-3. ページをリロードしても、localStorageから古いデータが復元される
-4. 30秒ごとのステータスチェック（Line 824-913）が延々と "not found" エラーを返し続ける
-5. 経過時間だけが増え続ける
-
-**検証方法**:
-ネットワークログで以下のパターンが確認されました：
-```json
-Request Body: {
-  "projectId": "05f14f525f074f9399f28402a7c04a85-en",
-  "techniqueId": "77489a0b-7bce-4136-8b20-10f3265fc379",
-  "targetLanguage": "en"
-}
-Response: {
-  "status": "not_found",
-  "failed": true,
-  "error": "Video translate not found"
-}
-```
-
-この `-en` サフィックスは、`heygen-check-status` (Line 71) で除去される仕組みがあるため、直接の問題ではありません。しかし、**無効なprojectID自体が問題**です。
-
----
-
-### 3. **失敗したジョブの自動削除機能がない**
-
-**現在の動作**:
-```typescript
-// src/components/admin/VideosManagement.tsx:891-898
-} else if (statusData?.status === 'failed') {
-  toast.error("動画翻訳失敗", {
-    description: `「${translation.techniqueName}」の翻訳処理に失敗しました`,
-  });
-
-  setActiveTranslations(prev => 
-    prev.filter(t => t.projectId !== translation.projectId)
-  );
-}
-```
-
-これは `statusData?.status === 'failed'` のケースのみカバーしています。
-
-**不足しているケース**:
-- ❌ `statusData?.failed === true` が返されても削除されない（HeyGenの "not found" エラー）
-- ❌ 一定時間経過したジョブの自動削除がない
-
----
-
-## 修正プラン
-
-### **修正1: failed フラグによる自動削除**
-
-**対象ファイル**: `src/components/admin/VideosManagement.tsx`
-
-**修正箇所**: Line 891-899 の `else if` ブロックを以下に変更：
-
-```typescript
-// 変更前
-} else if (statusData?.status === 'failed') {
-  toast.error("動画翻訳失敗", {
-    description: `「${translation.techniqueName}」の翻訳処理に失敗しました`,
-  });
-
-  setActiveTranslations(prev => 
-    prev.filter(t => t.projectId !== translation.projectId)
-  );
-}
-
-// 変更後
-} else if (statusData?.status === 'failed' || statusData?.failed === true) {
-  const errorHint = statusData?.hint || '';
-  toast.error("動画翻訳失敗", {
-    description: `「${translation.techniqueName}」の翻訳処理に失敗しました${errorHint ? '\n' + errorHint : ''}`,
-  });
-
-  setActiveTranslations(prev => 
-    prev.filter(t => t.projectId !== translation.projectId)
-  );
-}
-```
-
-**効果**:
-- HeyGenの "not found" エラー（`failed: true`）を検知して自動削除
-- ユーザーへのエラー通知にヒントメッセージを含める
-
----
-
-### **修正2: 一定時間経過後の自動削除 (オプション)**
-
-**対象ファイル**: `src/components/admin/VideosManagement.tsx`
-
-**追加ロジック**: Line 899 の後に以下を追加：
-
-```typescript
-// 24時間以上経過したジョブを自動削除
-const twentyFourHoursAgo = Date.now() - (24 * 60 * 60 * 1000);
-if (translation.startTime < twentyFourHoursAgo) {
-  console.warn(`Removing stale translation job: ${translation.projectId}`);
-  toast.info("古い翻訳ジョブを削除しました", {
-    description: `「${translation.techniqueName}」は24時間以上前に開始されたため削除されました`,
+  
+  // Send email via Resend
+  const emailResponse = await resend.emails.send({
+    from: "JiuFlow Support <onboarding@resend.dev>",
+    to: [to],
+    subject: `Re: ${subject}`,
+    html: `
+      <div style="font-family: sans-serif; line-height: 1.6;">
+        <p>${content.replace(/\n/g, '<br>')}</p>
+        <hr style="margin: 20px 0; border: none; border-top: 1px solid #eee;" />
+        <p style="color: #666; font-size: 14px;">
+          JiuFlow サポート<br>
+          https://jiuflow.art
+        </p>
+      </div>
+    `,
   });
   
-  setActiveTranslations(prev => 
-    prev.filter(t => t.projectId !== translation.projectId)
-  );
-  continue; // 次のループへ
-}
-```
-
-**効果**:
-- 24時間以上前のジョブを自動的にクリーンアップ
-- localStorageの肥大化を防ぐ
-
----
-
-### **修正3: localStorageのバリデーション (推奨)**
-
-**対象ファイル**: `src/components/admin/VideosManagement.tsx`
-
-**修正箇所**: Line 802-812 の復元ロジックに検証を追加：
-
-```typescript
-// 変更前
-useEffect(() => {
-  const stored = localStorage.getItem('activeTranslations');
-  if (stored) {
-    try {
-      const parsed = JSON.parse(stored);
-      setActiveTranslations(parsed);
-    } catch (e) {
-      console.error('Failed to parse stored translations:', e);
-    }
+  // Update contact_messages with reply info
+  if (originalMessageId) {
+    await supabase
+      .from('contact_messages')
+      .update({
+        replied_at: new Date().toISOString(),
+        replied_by: (await supabase.auth.getUser()).data.user?.id,
+        reply_content: content,
+      })
+      .eq('id', originalMessageId);
   }
-}, []);
-
-// 変更後
-useEffect(() => {
-  const stored = localStorage.getItem('activeTranslations');
-  if (stored) {
-    try {
-      const parsed = JSON.parse(stored);
-      
-      // 24時間以内のジョブのみ復元
-      const twentyFourHoursAgo = Date.now() - (24 * 60 * 60 * 1000);
-      const validTranslations = parsed.filter((t: any) => {
-        if (!t.startTime || !t.projectId || !t.techniqueId) {
-          console.warn('Invalid translation data in localStorage:', t);
-          return false;
-        }
-        if (t.startTime < twentyFourHoursAgo) {
-          console.warn('Removing expired translation from localStorage:', t.projectId);
-          return false;
-        }
-        return true;
-      });
-      
-      setActiveTranslations(validTranslations);
-      
-      // クリーンアップされたデータで保存し直す
-      if (validTranslations.length !== parsed.length) {
-        if (validTranslations.length > 0) {
-          localStorage.setItem('activeTranslations', JSON.stringify(validTranslations));
-        } else {
-          localStorage.removeItem('activeTranslations');
-        }
-      }
-    } catch (e) {
-      console.error('Failed to parse stored translations:', e);
-      localStorage.removeItem('activeTranslations'); // 壊れたデータは削除
-    }
-  }
-}, []);
-```
-
-**効果**:
-- 古いデータを自動的にクリーンアップ
-- 無効なデータ構造を検出して除外
-- localStorageの整合性を保つ
-
----
-
-### **修正4: 手動削除ボタンの強化 (オプション)**
-
-**UI改善案**: 管理ツールセクションに「失敗したジョブを一括削除」ボタンを追加
-
-**対象ファイル**: `src/components/admin/VideosManagement.tsx`
-
-**追加箇所**: Line 2200 付近（進行中の翻訳セクション）
-
-```typescript
-<div className="flex items-center justify-between mb-2">
-  <h3 className="text-sm font-medium">進行中の翻訳 ({activeTranslations.length})</h3>
-  {activeTranslations.length > 0 && (
-    <Button
-      variant="outline"
-      size="sm"
-      onClick={() => {
-        // 全ての失敗/24時間以上経過したジョブを削除
-        const threshold = Date.now() - (24 * 60 * 60 * 1000);
-        const cleaned = activeTranslations.filter(t => t.startTime >= threshold);
-        const removedCount = activeTranslations.length - cleaned.length;
-        
-        if (removedCount > 0) {
-          setActiveTranslations(cleaned);
-          toast.success(`${removedCount}件の古いジョブを削除しました`);
-        } else {
-          toast.info("削除対象のジョブがありません");
-        }
-      }}
-    >
-      <Trash2 className="w-3 h-3 mr-1" />
-      古いジョブをクリア
-    </Button>
-  )}
-</div>
+  
+  return new Response(JSON.stringify({ success: true }), { status: 200 });
+};
 ```
 
 ---
 
-## まとめ
+#### 6. データベース変更
 
-| 修正 | 優先度 | 効果 | 影響範囲 |
-|------|--------|------|----------|
-| **修正1**: `failed` フラグで自動削除 | **必須** | HeyGen "not found" エラーを自動削除 | 低（既存のロジックの拡張） |
-| **修正2**: 24時間経過で自動削除 | 推奨 | 古いジョブの自動クリーンアップ | 低（追加ロジック） |
-| **修正3**: localStorage バリデーション | **必須** | 無効データの復元を防ぐ | 低（初期化時のみ） |
-| **修正4**: 一括削除UIボタン | オプション | ユーザーが手動でクリアしやすくなる | 低（UI追加のみ） |
+`contact_messages` テーブルに返信追跡用カラムを追加：
 
-**推奨実施順序**:
-1. 修正3（localStorage バリデーション）→ 既存の問題を解決
-2. 修正1（failed フラグ対応）→ 今後の問題を防ぐ
-3. 修正2（自動期限切れ削除）→ 長期的な安定性
-4. 修正4（UI強化）→ ユーザビリティ向上
+```sql
+ALTER TABLE contact_messages 
+ADD COLUMN IF NOT EXISTS replied_at TIMESTAMPTZ,
+ADD COLUMN IF NOT EXISTS replied_by UUID REFERENCES auth.users(id),
+ADD COLUMN IF NOT EXISTS reply_content TEXT;
+```
 
-これらの修正により、「経過時間だけが増え続ける」問題は解決されます。
+---
+
+### ファイル変更一覧
+
+| ファイル | 変更内容 |
+|----------|----------|
+| `src/components/admin/ContactsManagement.tsx` | 経過時間表示、返信テンプレート、返信ダイアログ追加 |
+| `supabase/functions/send-reply-email/index.ts` | 新規作成 |
+| データベース | `contact_messages`テーブルに3カラム追加 |
+
+---
+
+### 現在のお問い合わせへの対応
+
+以下のお問い合わせに対する返信準備完了後、すぐに対応可能：
+
+| 送信者 | 件名 | 経過日数 | 対応テンプレート |
+|--------|------|----------|------------------|
+| 辻根孝幸様 | 技マップの検索について | 5日 | 遅延お詫び + 検索方法 |
+| 辻根孝幸様 | テクニックの検索について | 5日 | （同上・重複） |
+| 石田様 | プラン変更（紹介コード） | 16日 | 遅延お詫び + 紹介コード |
+| 一藤隆弘様 | 解約について | 21日 | 遅延お詫び + 解約方法 |
+| あなん様 | ログイン方法 | 37日 | 遅延お詫び + ログイン方法 |
+| 匿名ユーザー | Runtime Error | 32日 | 削除可（一時的なエラー） |
+
