@@ -31,6 +31,9 @@ All colors MUST be HSL.
     
     --success: 142 71% 45%;
     --success-foreground: 0 0% 100%;
+    
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 10%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
@@ -64,6 +67,9 @@ All colors MUST be HSL.
 
     --accent: 145 65% 50%;
     --accent-foreground: 0 0% 100%;
+    
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 10%;
 
     --destructive: 0 62% 50%;
     --destructive-foreground: 0 0% 100%;
@@ -143,5 +149,19 @@ All colors MUST be HSL.
       transform: translate(-20px, -20px) scale(0.95);
       opacity: 0.5;
     }
+  }
+  
+  /* Slow pulse animation for processing indicators */
+  @keyframes pulse-slow {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.85;
+    }
+  }
+  
+  .animate-pulse-slow {
+    animation: pulse-slow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   }
 }

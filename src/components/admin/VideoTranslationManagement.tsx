@@ -76,6 +76,9 @@ export const VideoTranslationManagement = ({ showHeader = true }: VideoTranslati
   // Active translations tracking
   const [activeTranslations, setActiveTranslations] = useState<ActiveTranslation[]>([]);
   
+  // Timer for elapsed time update
+  const [, setTick] = useState(0);
+  
   // Settings
   const [showSettings, setShowSettings] = useState(false);
   const [translationProvider, setTranslationProvider] = useState<'elevenlabs' | 'rask' | 'heygen'>('elevenlabs');
@@ -88,6 +91,17 @@ export const VideoTranslationManagement = ({ showHeader = true }: VideoTranslati
       setTranslationProvider(savedProvider);
     }
   }, []);
+  
+  // Update elapsed time every second when there are active translations
+  useEffect(() => {
+    if (activeTranslations.length === 0) return;
+    
+    const interval = setInterval(() => {
+      setTick(t => t + 1);
+    }, 1000);
+    
+    return () => clearInterval(interval);
+  }, [activeTranslations.length]);
 
   const fetchData = async () => {
     setIsLoading(true);
@@ -460,10 +474,10 @@ export const VideoTranslationManagement = ({ showHeader = true }: VideoTranslati
               <Badge 
                 variant="outline" 
                 className={translationProvider === 'elevenlabs' 
-                  ? 'bg-blue-500/10 text-blue-600 border-blue-500/30' 
+                  ? 'bg-primary/10 text-primary border-primary/30' 
                   : translationProvider === 'heygen'
-                    ? 'bg-purple-500/10 text-purple-600 border-purple-500/30'
-                    : 'bg-green-500/10 text-green-600 border-green-500/30'
+                    ? 'bg-secondary/10 text-secondary border-secondary/30'
+                    : 'bg-success/10 text-success border-success/30'
                 }
               >
                 {translationProvider === 'elevenlabs' ? 'ElevenLabs' : translationProvider === 'heygen' ? 'HeyGen' : 'Rask.ai'}
@@ -491,10 +505,10 @@ export const VideoTranslationManagement = ({ showHeader = true }: VideoTranslati
           <Badge 
             variant="outline" 
             className={translationProvider === 'elevenlabs' 
-              ? 'bg-blue-500/10 text-blue-600 border-blue-500/30' 
+              ? 'bg-primary/10 text-primary border-primary/30' 
               : translationProvider === 'heygen'
-                ? 'bg-purple-500/10 text-purple-600 border-purple-500/30'
-                : 'bg-green-500/10 text-green-600 border-green-500/30'
+                ? 'bg-secondary/10 text-secondary border-secondary/30'
+                : 'bg-success/10 text-success border-success/30'
             }
           >
             {translationProvider === 'elevenlabs' ? 'ElevenLabs' : translationProvider === 'heygen' ? 'HeyGen' : 'Rask.ai'}
@@ -527,7 +541,7 @@ export const VideoTranslationManagement = ({ showHeader = true }: VideoTranslati
             <CardTitle className="text-sm font-medium text-muted-foreground">翻訳済み</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold text-green-600">{stats.withTranslations}</p>
+            <p className="text-2xl font-bold text-success">{stats.withTranslations}</p>
           </CardContent>
         </Card>
         <Card>
@@ -535,18 +549,26 @@ export const VideoTranslationManagement = ({ showHeader = true }: VideoTranslati
             <CardTitle className="text-sm font-medium text-muted-foreground">処理中</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold text-blue-600">{stats.activeTranslations}</p>
+            <p className="text-2xl font-bold text-primary">{stats.activeTranslations}</p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Active Translations */}
+      {/* Active Translations - Always visible when processing */}
       {activeTranslations.length > 0 && (
-        <Card className="mb-6 border-blue-500/50 bg-blue-500/5">
-          <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Loader2 className="h-5 w-5 animate-spin" />
-              進行中の翻訳 ({activeTranslations.length})
+        <Card className="mb-6 border-2 border-warning bg-warning/10 shadow-lg animate-pulse-slow">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg flex items-center gap-3">
+              <div className="relative">
+                <Loader2 className="h-6 w-6 animate-spin text-warning" />
+                <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-warning opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-3 w-3 bg-warning"></span>
+                </span>
+              </div>
+              <span className="text-warning-foreground dark:text-warning">
+                🎙️ 吹き替え処理中 ({activeTranslations.length}件)
+              </span>
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -556,31 +578,57 @@ export const VideoTranslationManagement = ({ showHeader = true }: VideoTranslati
                 const minutes = Math.floor(elapsedTime / 60);
                 const seconds = elapsedTime % 60;
                 const langName = ALL_LANGUAGES.find(l => l.code === translation.targetLang)?.nativeName || translation.targetLang;
+                const providerName = translation.provider === 'rask' ? 'Rask.ai' : translation.provider === 'heygen' ? 'HeyGen' : 'ElevenLabs';
+                const providerColor = translation.provider === 'rask' 
+                  ? 'bg-success/20 text-success border-success/50' 
+                  : translation.provider === 'heygen'
+                    ? 'bg-secondary/20 text-secondary border-secondary/50'
+                    : 'bg-primary/20 text-primary border-primary/50';
                 
                 return (
-                  <div key={translation.projectId} className="border rounded-lg p-3 bg-background">
-                    <div className="flex items-center justify-between mb-2">
+                  <div key={translation.projectId} className="border rounded-lg p-4 bg-background shadow-sm">
+                    <div className="flex items-center justify-between mb-3">
                       <div className="flex-1">
-                        <p className="font-medium">{translation.techniqueName}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {langName}版 • {translation.provider === 'rask' ? 'Rask.ai' : translation.provider === 'heygen' ? 'HeyGen' : 'ElevenLabs'} • 経過時間: {minutes}分{seconds}秒
-                        </p>
+                        <div className="flex items-center gap-2 mb-1">
+                          <p className="font-semibold text-base">{translation.techniqueName}</p>
+                          <Badge className={providerColor}>
+                            {providerName}
+                          </Badge>
+                        </div>
+                        <div className="flex items-center gap-3 text-sm">
+                          <span className="flex items-center gap-1">
+                            <Languages className="h-4 w-4" />
+                            {langName}版
+                          </span>
+                          <span className="flex items-center gap-1 font-mono bg-muted px-2 py-0.5 rounded">
+                            ⏱️ {String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}
+                          </span>
+                        </div>
                       </div>
                       <Button
                         size="sm"
-                        variant="outline"
+                        variant="secondary"
                         onClick={() => manualCheckTranslation(translation)}
+                        className="shrink-0"
                       >
-                        ステータス確認
+                        <RefreshCw className="h-4 w-4 mr-1" />
+                        確認
                       </Button>
                     </div>
-                    <p className="text-xs text-muted-foreground">
-                      プロジェクトID: {translation.projectId}
+                    <div className="flex items-center gap-2">
+                      <Progress value={undefined} className="h-2 flex-1" />
+                      <span className="text-xs text-muted-foreground shrink-0">処理中...</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-2 font-mono">
+                      ID: {translation.projectId.substring(0, 20)}...
                     </p>
                   </div>
                 );
               })}
             </div>
+            <p className="text-xs text-muted-foreground mt-4 text-center">
+              ※ 翻訳には通常5〜15分かかります。「確認」ボタンで最新状態を取得できます。
+            </p>
           </CardContent>
         </Card>
       )}
@@ -742,19 +790,19 @@ export const VideoTranslationManagement = ({ showHeader = true }: VideoTranslati
                   <SelectContent className="bg-background z-50">
                     <SelectItem value="elevenlabs">
                       <span className="flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+                        <span className="w-2 h-2 rounded-full bg-primary"></span>
                         ElevenLabs
                       </span>
                     </SelectItem>
                     <SelectItem value="rask">
                       <span className="flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full bg-green-500"></span>
+                        <span className="w-2 h-2 rounded-full bg-success"></span>
                         Rask.ai
                       </span>
                     </SelectItem>
                     <SelectItem value="heygen">
                       <span className="flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full bg-purple-500"></span>
+                        <span className="w-2 h-2 rounded-full bg-secondary"></span>
                         HeyGen
                       </span>
                     </SelectItem>
@@ -769,14 +817,14 @@ export const VideoTranslationManagement = ({ showHeader = true }: VideoTranslati
                   <span className="text-sm text-muted-foreground">動画の長さを確認中...</span>
                 </div>
               ) : videoDuration !== null && videoDuration > 300 && (
-                <div className="mb-4 p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg">
+                <div className="mb-4 p-3 bg-warning/10 border border-warning/30 rounded-lg">
                   <div className="flex items-start gap-2">
-                    <span className="text-amber-600 text-lg">⚠️</span>
+                    <span className="text-warning text-lg">⚠️</span>
                     <div>
-                      <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
+                      <p className="text-sm font-medium text-warning-foreground dark:text-warning">
                         長い動画の警告
                       </p>
-                      <p className="text-xs text-amber-700 dark:text-amber-300 mt-1">
+                      <p className="text-xs text-muted-foreground mt-1">
                         この動画は {Math.floor(videoDuration / 60)}分{Math.floor(videoDuration % 60)}秒 あります。
                         5分以上の動画は翻訳に時間がかかり、APIコストが高くなる場合があります。
                       </p>
@@ -809,7 +857,7 @@ export const VideoTranslationManagement = ({ showHeader = true }: VideoTranslati
                   </SelectContent>
                 </Select>
                 {translationProvider === 'rask' && ['ja', 'zh', 'ko', 'ar', 'hi', 'ta'].includes(sourceLanguage) && (
-                  <p className="text-xs text-amber-600 mt-2">
+                  <p className="text-xs text-warning mt-2">
                     ⚠️ Rask.aiはこの言語をソース言語としてサポートしていません。ElevenLabsをお試しください。
                   </p>
                 )}
@@ -855,13 +903,13 @@ export const VideoTranslationManagement = ({ showHeader = true }: VideoTranslati
                         </div>
                         <div className="flex flex-col items-end gap-1">
                           {isProcessing ? (
-                            <div className="flex items-center gap-1 text-sm text-blue-600">
+                            <div className="flex items-center gap-1 text-sm text-primary">
                               <span className="animate-pulse">●</span>
                               <span>作成中</span>
                             </div>
                           ) : metadata?.video_url ? (
                             <>
-                              <div className="flex items-center gap-1 text-sm text-green-600">
+                              <div className="flex items-center gap-1 text-sm text-success">
                                 <Check className="w-4 h-4" />
                                 <span>翻訳済み</span>
                               </div>
@@ -877,7 +925,7 @@ export const VideoTranslationManagement = ({ showHeader = true }: VideoTranslati
                             </>
                           ) : isJapanese ? (
                             <>
-                              <div className="flex items-center gap-1 text-sm text-green-600">
+                              <div className="flex items-center gap-1 text-sm text-success">
                                 <Check className="w-4 h-4" />
                                 <span>オリジナル</span>
                               </div>
