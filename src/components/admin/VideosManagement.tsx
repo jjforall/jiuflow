@@ -524,8 +524,8 @@ export const VideosManagement = () => {
       });
       setMissingDurationCount(count);
       
-      // Refetch data to update cards
-      refetch?.();
+      // Refetch data to update cards - await to ensure data is refetched
+      await refetch?.();
     } catch (error) {
       console.error("動画時間取得エラー:", error);
       toast.error(error instanceof Error ? error.message : "動画時間取得に失敗しました");
@@ -557,11 +557,11 @@ export const VideosManagement = () => {
       
       toast.success(`動画時間を取得しました: ${Math.floor(duration / 60)}:${String(Math.floor(duration % 60)).padStart(2, '0')}`);
       
-      // Refresh
-      refetch?.();
-      
       // Update missing count
       setMissingDurationCount(prev => Math.max(0, prev - 1));
+      
+      // Refresh data to show updated duration - await to ensure data is refetched
+      await refetch?.();
     } catch (error) {
       console.error('Failed to fetch duration:', error);
       toast.error('動画時間の取得に失敗しました');
