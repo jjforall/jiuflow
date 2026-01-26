@@ -66,13 +66,17 @@ serve(async (req) => {
       throw new Error("projectId is required");
     }
 
-    // HeyGen APIはvideo_translate_idをそのまま使用する
-    // 以前のサフィックス除去ロジックは誤りだったため、元のIDをそのまま使用
-    console.log("[heygen-check-status] Using projectId as-is:", projectId);
+    // DBに保存されたprojectIdには言語サフィックス（-en, -zh, -pt等）が付いている
+    // HeyGen APIは元の32文字IDを期待するため、サフィックスを除去する
+    const languageSuffixPattern = /-[a-z]{2,3}$/i;
+    const heygenProjectId = projectId.replace(languageSuffixPattern, '');
+    
+    console.log("[heygen-check-status] Original projectId:", projectId);
+    console.log("[heygen-check-status] HeyGen projectId (suffix removed):", heygenProjectId);
 
     // Check translation status - use v2 API with query parameter
     const statusResponse = await fetch(
-      `https://api.heygen.com/v2/video_translate/status?video_translate_id=${projectId}`,
+      `https://api.heygen.com/v2/video_translate/status?video_translate_id=${heygenProjectId}`,
       {
         method: "GET",
         headers: {
