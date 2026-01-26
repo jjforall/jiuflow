@@ -1,126 +1,173 @@
 
 
-# HeyGen動画吹き替えが「処理中」のまま止まる問題の修正計画
+# Cloudflare Stream 重複動画・タイトル問題の修正計画
 
-## 問題の分析結果
+## 問題の分析
 
-781分間止まっている原因を調査しました：
+スクリーンショットを見ると、Cloudflare Streamに「dubbed_video.mp4」というファイル名の動画が大量に重複して登録されています。原因は以下の3点です：
 
-1. **プロバイダー情報の欠落**: `localStorage` から復元された翻訳ジョブに `provider` フィールド（heygen/rask/elevenlabs）が保存されていなかった
-2. **間違ったAPIエンドポイントへのルーティング**: `provider` が undefined のとき、コードはデフォルトで `check-translation-status`（ElevenLabs用）を呼び出す
-3. **結果**: HeyGenのプロジェクトIDがElevenLabsのAPIに送信され、ElevenLabs側でIDが見つからないがエラーを返さず「処理中」として返される
+### 問題1: ElevenLabsの動画タイトルが固定
+```typescript
+// supabase/functions/check-translation-status/index.ts:145
+uploadFormData.append("file", new Blob([audioBuffer], { type: "video/mp4" }), "dubbed_video.mp4");
+```
+ElevenLabsの吹き替え完了時、Cloudflareへのアップロードでファイル名が「dubbed_video.mp4」に固定されています。HeyGenとRask.aiは正しく `technique-${techniqueId}-${targetLanguage}` という名前を使用しています。
+
+### 問題2: Cloudflareメタデータの未設定
+ElevenLabsのエンドポイントは直接ファイルアップロード（FormData）を使用しており、Cloudflareの `meta.name` フィールドを設定していません。HeyGenとRask.aiは `/stream/copy` エンドポイントでメタデータを設定しています。
+
+### 問題3: 重複アップロードの可能性
+ポーリング中に複数のリクエストが同時に処理され、データベース更新前に再度アップロードが実行される可能性があります（レースコンディション）。
+
+---
 
 ## 修正内容
 
-### 1. LocalStorage復元時のプロバイダー推定ロジックを追加
-
-`provider` が欠落している古いジョブを復元する際に、プロジェクトIDのパターンからプロバイダーを推定する機能を追加します。
+### 1. ElevenLabsの動画タイトルを意味のある名前に変更
 
 ```text
-変更ファイル: src/components/admin/VideosManagement.tsx
+変更ファイル: supabase/functions/check-translation-status/index.ts
 
-修正箇所: lines 801-837 (useEffect - localStorage復元)
+修正箇所: lines 137-156
 
-追加ロジック:
-- HeyGenのプロジェクトIDは短い英数字（例: "abc123xyz"）
-- ElevenLabsのdubbing_idは英数字混合
-- Rask.aiは特定のパターン
+変更内容:
+1. technique.name_ja を取得してタイトルに使用
+2. ファイル名を `{技術名}_{言語コード}.mp4` 形式に変更
+3. Cloudflareのメタデータ（name）を設定
 
-providerが欠落している場合:
-1. プロジェクトIDの長さとパターンで推定を試みる
-2. 推定できない場合は「unknown」として明示的にマーク
-3. 「unknown」のジョブは手動確認を促す警告を表示
+修正後の処理:
+- ElevenLabsからの動画取得後、技術名をDBから取得
+- Cloudflare Stream API で meta.name を設定
+- 例: "コンバットベースのポスチャー_en"
 ```
 
-### 2. 不明なプロバイダーの場合のフォールバック処理
+### 2. 共通のCloudflareアップロード関数を使用
+
+HeyGenとRask.aiで使用している `/stream/copy` エンドポイントと同じパターンに統一します。ただし、ElevenLabsはURLではなくバイナリデータを返すため、以下の手順で対応：
 
 ```text
-変更ファイル: src/components/admin/VideosManagement.tsx
+修正ロジック:
+1. FormDataでのアップロード時に meta フィールドを追加
+2. Cloudflare Stream APIはFormDataでも meta を受け付ける
 
-修正箇所: lines 852-868 (checkAllTranslations関数)
-
-改善内容:
-- provider が undefined または "unknown" の場合、3つのエンドポイント全てを順番に試行
-- 最初に成功したレスポンスを採用
-- エラーが続く場合は「failed」として処理
+コード例:
+const uploadFormData = new FormData();
+const videoName = `${technique?.name_ja || 'technique'}-${targetLanguage}`;
+uploadFormData.append("file", new Blob([audioBuffer], { type: "video/mp4" }), `${videoName}.mp4`);
+// Cloudflare APIにメタデータを渡すためにURLパラメータを使用
+const cfUrl = `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/stream?meta.name=${encodeURIComponent(videoName)}`;
 ```
 
-### 3. 「処理中」UIでプロバイダー情報を表示
+### 3. レースコンディション対策の強化
 
 ```text
-変更ファイル: src/components/admin/VideosManagement.tsx
+変更ファイル: supabase/functions/check-translation-status/index.ts
 
-修正箇所: 処理中ジョブのカード表示部分
+追加箇所: アップロード前の再確認チェック
 
-追加内容:
-- プロバイダー名をバッジで表示（ElevenLabs=青、Rask=緑、HeyGen=紫）
-- provider が不明な場合は警告アイコンと「プロバイダー不明」を表示
-- 手動でプロバイダーを選択し直すオプションを追加
+修正内容:
+1. ElevenLabsから動画をダウンロードした後、再度DBをチェック
+2. 既にアップロード済みの場合はスキップ
+3. ログを追加して重複検出を記録
 ```
 
-### 4. スタックしたジョブの強制クリア機能
+### 4. 全プロバイダーのタイトル形式統一
 
 ```text
-変更ファイル: src/components/admin/VideosManagement.tsx
+統一フォーマット: {技術名}-{言語コード}
 
-追加箇所: 処理中カードに「強制削除」ボタン
+例:
+- コンバットベースのポスチャー-en
+- クローズドガードからのスイープ-pt
 
-機能:
-- 個別ジョブの即時削除
-- 確認ダイアログなしで即座にリストから削除
-- localStorageも更新
-```
-
-### 5. 根本対策: 保存時のprovider必須化
-
-```text
-変更ファイル: src/components/admin/TranslationQuickDialog.tsx
-
-確認・修正箇所: 翻訳開始時のコールバック
-
-確認内容:
-- onTranslationStarted コールバックで provider が正しく渡されているか確認
-- localStorageへの保存時に provider が含まれているか確認
+Cloudflareダッシュボードでの表示:
+- 技術名と言語が一目でわかる
+- 重複を視覚的に確認しやすい
 ```
 
 ---
 
-## 実装順序
+## 技術的な詳細
 
-1. まず「強制削除」ボタンを追加して、781分止まっているジョブを削除できるようにする
-2. provider 推定ロジックを追加
-3. フォールバック処理を実装
-4. UI表示を改善
-
----
-
-## 技術詳細
-
-### Provider推定ロジック（仮案）
+### ElevenLabsステータスチェック関数の修正
 
 ```typescript
-function inferProvider(projectId: string): 'heygen' | 'rask' | 'elevenlabs' | 'unknown' {
-  // HeyGen: 比較的短いUID形式
-  if (/^[a-zA-Z0-9]{15,25}$/.test(projectId)) {
-    return 'heygen';
+// supabase/functions/check-translation-status/index.ts
+
+// 1. 技術名を取得してタイトルに使用
+const { data: technique } = await supabase
+  .from('techniques')
+  .select('name_ja, video_metadata')
+  .eq('id', techniqueId)
+  .single();
+
+// 2. 重複チェック（アップロード直前）
+if (technique?.video_metadata?.[targetLanguage]?.video_url) {
+  console.log(`[DUPLICATE PREVENTION] Video already exists for ${targetLanguage}`);
+  return existingVideoUrl;
+}
+
+// 3. 意味のあるタイトルでアップロード
+const videoName = `${technique?.name_ja || `technique-${techniqueId}`}-${targetLanguage}`;
+const uploadFormData = new FormData();
+uploadFormData.append("file", new Blob([audioBuffer], { type: "video/mp4" }), `${videoName}.mp4`);
+
+// Cloudflare Stream APIにメタデータを渡す
+const cfUploadRes = await fetch(
+  `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/stream`,
+  {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${CLOUDFLARE_STREAM_API_TOKEN}`,
+    },
+    body: uploadFormData,
   }
-  // ElevenLabs dubbing_id: 特定のパターン
-  if (/^[a-zA-Z0-9_-]{20,40}$/.test(projectId)) {
-    return 'elevenlabs';
-  }
-  // Rask.ai: 特定のフォーマット
-  if (projectId.includes('-') && projectId.length > 30) {
-    return 'rask';
-  }
-  return 'unknown';
+);
+
+// アップロード成功後、Cloudflareのメタデータを更新
+if (cfUploadRes.ok) {
+  const cfData = await cfUploadRes.json();
+  const videoId = cfData.result.uid;
+  
+  // メタデータを設定（名前をわかりやすくする）
+  await fetch(
+    `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/stream/${videoId}`,
+    {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${CLOUDFLARE_STREAM_API_TOKEN}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        meta: { name: videoName }
+      }),
+    }
+  );
 }
 ```
 
-### 即時対応策
+---
 
-現在781分止まっているジョブについては：
-- 「古いジョブをクリア」ボタンで24時間以上のジョブを削除
-- または「X」ボタンで個別削除
+## 既存の重複動画について
 
-これらの機能は既に存在するので、まずそちらをお試しください。
+Cloudflareに既に登録されている「dubbed_video.mp4」の重複動画は、以下の方法で対処できます：
+
+1. **手動削除**: Cloudflareダッシュボードで不要な動画を選択して削除
+2. **クリーンアップツール使用**: 管理画面の「Settings」→「Cloudflare Stream Cleanup」機能で、データベースに登録されていない孤児動画を特定・削除
+
+---
+
+## 変更するファイル
+
+| ファイル | 変更内容 |
+|---------|---------|
+| `supabase/functions/check-translation-status/index.ts` | タイトル設定・重複防止ロジック追加 |
+
+---
+
+## 期待される効果
+
+1. Cloudflareダッシュボードで動画が「技術名-言語」形式で表示される
+2. 同じ動画の重複アップロードが防止される
+3. どの動画がどの技術に対応しているか一目でわかる
 
