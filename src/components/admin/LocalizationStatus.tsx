@@ -1,5 +1,6 @@
-import { Subtitles, Mic, Plus, Loader2 } from "lucide-react";
+import { Subtitles, Mic, Plus, Loader2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
 const LANGUAGES = [
@@ -16,6 +17,7 @@ interface LocalizationStatusProps {
   onGenerateSubtitle?: () => void;
   onAddDubbing?: () => void;
   onPlayVideo?: (langCode: string) => void;
+  onDeleteDubbing?: (langCode: string) => void;
   compact?: boolean;
 }
 
@@ -27,6 +29,7 @@ export function LocalizationStatus({
   onGenerateSubtitle,
   onAddDubbing,
   onPlayVideo,
+  onDeleteDubbing,
   compact = false,
 }: LocalizationStatusProps) {
   // Normalize language codes (e.g., "ja-JP" -> "ja")
@@ -115,39 +118,52 @@ export function LocalizationStatus({
               const isOriginal = lang.code === "ja";
               const isProcessing = normalizedProcessing.includes(lang.code);
               const hasDubbing = normalizedDubbing.includes(lang.code);
+              const canDelete = !isOriginal && hasDubbing && !isProcessing && onDeleteDubbing;
 
               return (
-                <span
-                  key={lang.code}
-                  className={cn(
-                    "px-1.5 py-0.5 rounded font-medium transition-all",
-                    compact ? "text-[10px]" : "text-xs",
-                    isProcessing
-                      ? "animate-pulse bg-yellow-500/20 text-yellow-600 dark:text-yellow-400"
-                      : isOriginal || hasDubbing
-                        ? "bg-primary/15 text-primary cursor-pointer hover:opacity-80"
-                        : "bg-muted text-muted-foreground"
-                  )}
-                  title={
-                    isProcessing
+                <Tooltip key={lang.code}>
+                  <TooltipTrigger asChild>
+                    <span
+                      className={cn(
+                        "px-1.5 py-0.5 rounded font-medium transition-all inline-flex items-center gap-0.5",
+                        compact ? "text-[10px]" : "text-xs",
+                        isProcessing
+                          ? "animate-pulse bg-yellow-500/20 text-yellow-600 dark:text-yellow-400"
+                          : isOriginal || hasDubbing
+                            ? "bg-primary/15 text-primary cursor-pointer hover:opacity-80"
+                            : "bg-muted text-muted-foreground"
+                      )}
+                      onClick={() => {
+                        if ((isOriginal || hasDubbing) && !isProcessing) {
+                          onPlayVideo?.(lang.code);
+                        }
+                      }}
+                    >
+                      {lang.label}
+                      {isProcessing && (
+                        <Loader2 className="inline w-2.5 h-2.5 ml-0.5 animate-spin" />
+                      )}
+                      {canDelete && (
+                        <X
+                          className="w-2.5 h-2.5 ml-0.5 text-destructive hover:text-destructive/80 cursor-pointer"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onDeleteDubbing(lang.code);
+                          }}
+                        />
+                      )}
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="text-xs">
+                    {isProcessing
                       ? `${lang.fullLabel}: 変換中...`
                       : isOriginal
                         ? `${lang.fullLabel}: オリジナル - クリックで再生`
                         : hasDubbing
-                          ? `${lang.fullLabel}: クリックで再生`
-                          : lang.fullLabel
-                  }
-                  onClick={() => {
-                    if ((isOriginal || hasDubbing) && !isProcessing) {
-                      onPlayVideo?.(lang.code);
-                    }
-                  }}
-                >
-                  {lang.label}
-                  {isProcessing && (
-                    <Loader2 className="inline w-2.5 h-2.5 ml-0.5 animate-spin" />
-                  )}
-                </span>
+                          ? `${lang.fullLabel}: クリックで再生${canDelete ? '、×で削除' : ''}`
+                          : lang.fullLabel}
+                  </TooltipContent>
+                </Tooltip>
               );
             })}
           </div>
