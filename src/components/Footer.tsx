@@ -32,7 +32,7 @@ const Footer = () => {
   ];
 
   return (
-    <footer className="border-t border-border bg-background pb-20">
+    <footer className="glass-footer pb-20">
       <div className="container mx-auto px-4 sm:px-6 py-8 sm:py-12">
         {/* Main Grid */}
         <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-5 gap-6 sm:gap-8 mb-8">
