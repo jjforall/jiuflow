@@ -1,0 +1,1332 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+	new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+	j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+	'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+	})(window,document,'script','dataLayer','GTM-M7CTK5V');</script>
+	<!-- End Google Tag Manager -->
+	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+	<meta name="format-detection" content="telephone=no">
+    <meta charset="utf-8">
+        	<title>にいがたスポーツ情報ナビ</title>
+    	<meta name="keywords" content="">
+	<meta name="description" content="にいがたスポーツ情報ナビでは、新潟市のスポーツに関する情報をお届けしています。体育館やランニングコース、プールといった各施設の利用状況や、スポーツやフィットネスに関する教室・イベント情報など、最新情報を掲載。公益財団法人 新潟市開発公社スポーツプロモーション課が運営しています。">
+        <link rel="stylesheet" href="/css/style.css?id=3e833e5711ca48e5fefa" media="all">
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@700;900&display=swap" rel="stylesheet">
+            <link rel="index" href="/">
+    <link rel="icon" href="https://niigata-kaikou.jp/images/common/favicon.ico" type="image/x-icon">
+    <link rel="apple-touch-icon" sizes="180x180" href="https://niigata-kaikou.jp/images/common/apple-touch-icon-180x180.png">
+    <link rel="icon" sizes="192x192" content="にいがたスポーツ" href="https://niigata-kaikou.jp/images/common/icon-192x192.png">
+    <meta name="theme-color" content="#ffffff">
+    <link rel="manifest" href="/manifest.json">
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/service-worker.js').then(function(registration) {
+            }).catch(function(err) {
+                console.log('ServiceWorker registration failed: ', err);
+            });
+        }
+    </script>
+    <meta property="og:locale" content="ja_JP">
+    <meta property="og:site_name" content="にいがたスポーツ情報ナビ">
+    <meta property="og:title" content=" にいがたスポーツ情報ナビ">
+    <meta property="og:description" content="新潟市の体育施設情報">
+    <meta property="og:url" content="https://niigata-kaikou.jp">
+    <meta property="og:type" content="website">
+    <meta property="og:image" content="https://niigata-kaikou.jp/images/common/ogp.jpg">
+    <meta name="twitter:card" content="summary_large_image">
+    </head>
+<body>
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-M7CTK5V"
+	height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+	<!-- End Google Tag Manager (noscript) -->
+    <header class="l-header">
+    <div class="l-header-logo">
+        <h1>
+            <a href="https://niigata-kaikou.jp"><img src="https://niigata-kaikou.jp/images/common/logo-header.png" alt="にいがたスポーツ情報ナビ"></a>
+            <span>公益財団法人 新潟市開発公社スポーツプロモーション課</span>
+        </h1>
+    </div>
+    <div class="l-header-sns">
+        <ul>
+            <li>
+                <a href="https://twitter.com/sp42527095?lang=ja" target="_blank"><img src="https://niigata-kaikou.jp/images/common/icon/icon-twitter-x.svg" alt=""></a>
+            </li>
+            <li>
+                <a href="https://www.facebook.com/%E6%96%B0%E6%BD%9F%E5%B8%82%E9%96%8B%E7%99%BA%E5%85%AC%E7%A4%BE%E3%82%B9%E3%83%9D%E3%83%BC%E3%83%84%E3%83%97%E3%83%AD%E3%83%A2%E3%83%BC%E3%82%B7%E3%83%A7%E3%83%B3%E8%AA%B2-699731410165573/" target="_blank"><img src="https://niigata-kaikou.jp/images/common/icon/icon-facebook.svg" alt=""></a>
+            </li>
+            <li>
+                <a href="https://niigata-kaikou.jp/page/line"><img src="https://niigata-kaikou.jp/images/common/icon/icon-line.svg" alt=""></a>
+            </li>
+            <li>
+                <a href="https://niigata-kaikou.jp/page/Instagram"><img src="https://niigata-kaikou.jp/images/common/icon/icon-insta.svg" alt=""></a>
+            </li>
+        </ul>
+    </div>
+    <div class="l-header-side">
+        <div class="l-header-side-menu">
+            <div class="l-header-side-menu__icon">
+                <img src="https://niigata-kaikou.jp/images/common/icon/icon-menu.svg" alt=""><span>MENU</span>
+            </div>
+        </div>
+        <div class="l-header-side-search">
+            <ul class="d-none d-md-block">
+                <li class="js-search"><i><img src="https://niigata-kaikou.jp/images/common/icon/icon-search.svg" alt=""></i>サイト内検索</li>
+                <li class="js-facility"><i><img src="https://niigata-kaikou.jp/images/common/icon/icon-pin.svg" alt=""></i>施設検索</li>
+            </ul>
+            <ul class="d-flex d-md-none">
+                <li class="js-search"><i><img src="https://niigata-kaikou.jp/images/common/icon/icon-search-white.svg" alt=""></i>サイト内検索</li>
+                <li class="js-facility"><i><img src="https://niigata-kaikou.jp/images/common/icon/icon-pin-white.svg" alt=""></i>施設検索</li>
+            </ul>
+        </div>
+        <div class="l-header-side-option">
+            <div class="l-header-side-option-bg">
+                <ul>
+                    <li class="js-side-option-bg-active js-bg-white">白</li>
+                    <li class="js-bg-dark">黒</li>
+                </ul>
+            </div>
+            <div class="l-header-side-option-font">
+                <img src="https://niigata-kaikou.jp/images/common/icon/icon-font.svg" alt="">
+                <ul>
+                    <li><button class="size-button active" data-font="10">中</button></li>
+                    <li><button class="size-button" data-font="11">大</button></li>
+                </ul>
+            </div>
+            <div class="l-header-side-option-lang">
+                <img src="https://niigata-kaikou.jp/images/common/icon/icon-language.svg" alt="">
+                <div class="gtranslate_wrapper"></div>
+<script>window.gtranslateSettings = {"default_language":"ja","native_language_names":true,"detect_browser_language":true,"url_structure":"sub_domain","languages":["ja","en","zh-TW","zh-CN","ko","ru","fr"],"wrapper_selector":".gtranslate_wrapper"}</script>
+<script src="https://cdn.gtranslate.net/widgets/latest/dropdown.js" defer></script>            </div>
+        </div>
+    </div>
+
+    <!-- メニュー展開 -->
+    <div class="l-header-sitemap__bg">
+        <div class="l-header-sitemap">
+            <div class="l-header-sitemap01">
+                <ul>
+                    <li><a href="https://niigata-kaikou.jp/facility"><span>FACILITY</span>スポーツ施設</a></li>
+                    <li><a href="https://niigata-kaikou.jp/class"><span>CLASS</span>スポーツ教室</a></li>
+                    <li><a href="https://niigata-kaikou.jp/entry"><span>ENTRY</span>教室お申し込み</a></li>
+                    <li><a href="https://niigata-kaikou.jp/schedule"><span>SCHEDULE</span>個人開放状況</a></li>
+                    <li><a href="https://niigata-kaikou.jp/schedule"><span>RUNNING</span>ランニングコース</a></li>
+                    <li><a href="https://niigata-kaikou.jp/page/close"><span>CLOSE</span>施設休館日</a></li>
+                </ul>
+            </div>
+            <div class="l-header-sitemap02">
+                <ul>
+                    <li><a href="https://niigata-kaikou.jp/specialtopics">スポーツ教室に参加しよう</a></li>
+                    <li><a href="https://niigata-kaikou.jp/card">教室会員カード</a></li>
+                    <li><a href="https://niigata-kaikou.jp/page/benefits">スポーツ教室特典</a></li>
+                    <li><a href="https://niigata-kaikou.jp/page/recruit">採用情報／業務紹介</a></li>
+                    <li><a href="https://niigata-kaikou.jp/page/pool">プール情報</a></li>
+                    <li><a href="https://niigata-kaikou.jp/page/volunteer">スポーツボランティア</a></li>
+                    <li><a href="https://niigata-kaikou.jp/page/instruction">出張スポーツ指導</a></li>
+                    <li><a href="https://niigata-kaikou.jp/page/teacher">講師マッチング</a></li>
+                    <li><a href="https://niigata-kaikou.jp/page/circle">サークル紹介・情報募集</a></li>
+                    <li><a href="https://niigata-kaikou.jp/page/gallery">イベントフォトギャラリー</a></li>
+                    <li><a href="https://niigata-kaikou.jp/use">施設の使い方</a></li>
+                    <li><a href="https://niigata-kaikou.jp/faq">よくある質問</a></li>
+                    <li><a href="https://niigata-kaikou.jp/useful">スポーツお役立ち情報</a></li>
+                    <li><a href="https://niigata-kaikou.jp/terms">サイトご利用方法</a></li>
+                </ul>
+            </div>
+            <div class="l-header-sitemap03">
+                <ul>
+                    <li><a href="https://niigata-kaikou.jp/privacy">プライバシーポリシー</a></li>
+                    <li><a href="https://niigata-kaikou.jp/antisocial">反社会的勢力への対応について</a></li>
+                    <li><a href="https://niigata-kaikou.jp/page/customerharassment">カスタマーハラスメント対策基本方針</a></li>
+                    <li><a href="https://niigata-kaikou.jp/page/safety">安全安心への取り組み</a></li>
+                    <li><a href="https://niigata-kaikou.jp/page/contribution">地域貢献活動</a></li>
+                    <li><a href="https://niigata-kaikou.jp/exemption">障がい者等使用料免除</a></li>
+                    <li><a href="https://niigata-kaikou.jp/compliance">関係法令等の遵守</a></li>
+                    <li><a href="https://niigata-kaikou.jp/sitemap">サイトマップ</a></li>
+                </ul>
+                <div class="l-header-sitemap03-sub">
+                    <ul>
+                        <li><a href="https://niigata-kaikou.jp/page/download">申請書ダウンロード</a></li>
+                        <li><a href="https://niigata-kaikou.jp/inquiry">お問い合わせ・報告</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="l-header-sitemap04-lang">
+                <div class="gtranslate_wrapper"></div>
+<script>window.gtranslateSettings = {"default_language":"ja","native_language_names":true,"detect_browser_language":true,"url_structure":"sub_domain","languages":["ja","en","zh-TW","zh-CN","ko","ru","fr"],"wrapper_selector":".gtranslate_wrapper"}</script>
+<script src="https://cdn.gtranslate.net/widgets/latest/dropdown.js" defer></script>            </div>
+        </div>
+    </div>
+
+    <!-- 施設メニュー展開 -->
+    <div class="l-header-facility__bg">
+        <div class="l-header-facility">
+            <div class="l-header-facility-card">
+                                <div class="l-header-facility-card__item">
+                    <div class="l-header-facility-card__title">
+                        <h5>北区</h5>
+                    </div>
+                    <div class="l-header-facility-card__list">
+                        <ul>
+                                                        <li><a href="https://niigata-kaikou.jp/facility/408">北地区スポーツセンター</a></li>
+                                                        <li><a href="https://niigata-kaikou.jp/facility/409">濁川運動広場</a></li>
+                                                        <li><a href="https://niigata-kaikou.jp/facility/410">太夫浜運動公園球技場</a></li>
+                                                        <li><a href="https://niigata-kaikou.jp/facility/411">南浜運動広場</a></li>
+                                                        <li><a href="https://niigata-kaikou.jp/facility/412">阿賀野川ふれあい公園</a></li>
+                                                    </ul>
+                    </div>
+                </div>
+                                <div class="l-header-facility-card__item">
+                    <div class="l-header-facility-card__title">
+                        <h5>東区</h5>
+                    </div>
+                    <div class="l-header-facility-card__list">
+                        <ul>
+                                                        <li><a href="https://niigata-kaikou.jp/facility/413">東総合スポーツセンター</a></li>
+                                                        <li><a href="https://niigata-kaikou.jp/facility/414">阿賀野川河川公園</a></li>
+                                                        <li><a href="https://niigata-kaikou.jp/facility/415">下山スポーツセンター</a></li>
+                                                        <li><a href="https://niigata-kaikou.jp/facility/416">中地区運動広場</a></li>
+                                                        <li><a href="https://niigata-kaikou.jp/facility/417">津島屋公園運動広場</a></li>
+                                                        <li><a href="https://niigata-kaikou.jp/facility/418">山の下海浜公園プール</a></li>
+                                                        <li><a href="https://niigata-kaikou.jp/facility/419">新潟市庭球場</a></li>
+                                                    </ul>
+                    </div>
+                </div>
+                                <div class="l-header-facility-card__item">
+                    <div class="l-header-facility-card__title">
+                        <h5>中央区</h5>
+                    </div>
+                    <div class="l-header-facility-card__list">
+                        <ul>
+                                                        <li><a href="https://niigata-kaikou.jp/facility/420">鳥屋野総合体育館</a></li>
+                                                        <li><a href="https://niigata-kaikou.jp/facility/421">新潟市陸上競技場</a></li>
+                                                        <li><a href="https://niigata-kaikou.jp/facility/423">新潟市体育館</a></li>
+                                                        <li><a href="https://niigata-kaikou.jp/facility/424">西海岸公園市営プール</a></li>
+                                                        <li><a href="https://niigata-kaikou.jp/facility/425">西海岸公園少年野球広場</a></li>
+                                                        <li><a href="https://niigata-kaikou.jp/facility/426">東公園児童プール</a></li>
+                                                        <li><a href="https://niigata-kaikou.jp/facility/428">鳥屋野運動公園球技場</a></li>
+                                                        <li><a href="https://niigata-kaikou.jp/facility/427">鳥屋野運動公園野球場</a></li>
+                                                        <li><a href="https://niigata-kaikou.jp/facility/19371">山二ツ運動広場</a></li>
+                                                    </ul>
+                    </div>
+                </div>
+                                <div class="l-header-facility-card__item">
+                    <div class="l-header-facility-card__title">
+                        <h5>江南区</h5>
+                    </div>
+                    <div class="l-header-facility-card__list">
+                        <ul>
+                                                        <li><a href="https://niigata-kaikou.jp/facility/429">亀田総合体育館</a></li>
+                                                        <li><a href="https://niigata-kaikou.jp/facility/544">亀田ふれあいドーム</a></li>
+                                                        <li><a href="https://niigata-kaikou.jp/facility/430">亀田少年野球場</a></li>
+                                                        <li><a href="https://niigata-kaikou.jp/facility/431">かわね公園グラウンド</a></li>
+                                                    </ul>
+                    </div>
+                </div>
+                                <div class="l-header-facility-card__item">
+                    <div class="l-header-facility-card__title">
+                        <h5>南区</h5>
+                    </div>
+                    <div class="l-header-facility-card__list">
+                        <ul>
+                                                        <li><a href="https://niigata-kaikou.jp/facility/495">白根カルチャーセンター</a></li>
+                                                        <li><a href="https://niigata-kaikou.jp/facility/433">白根総合公園</a></li>
+                                                        <li><a href="https://niigata-kaikou.jp/facility/543">白根総合公園屋内プール</a></li>
+                                                        <li><a href="https://niigata-kaikou.jp/facility/434">味方体育館</a></li>
+                                                        <li><a href="https://niigata-kaikou.jp/facility/436">味方野球場</a></li>
+                                                        <li><a href="https://niigata-kaikou.jp/facility/437">味方テニスコート</a></li>
+                                                        <li><a href="https://niigata-kaikou.jp/facility/435">味方ゲートボール場</a></li>
+                                                        <li><a href="https://niigata-kaikou.jp/facility/438">味方Ｂ＆Ｇ海洋センタープール</a></li>
+                                                        <li><a href="https://niigata-kaikou.jp/facility/439">月潟野球場</a></li>
+                                                        <li><a href="https://niigata-kaikou.jp/facility/440">月潟テニス場</a></li>
+                                                        <li><a href="https://niigata-kaikou.jp/facility/441">月潟ゲートボール場</a></li>
+                                                    </ul>
+                    </div>
+                </div>
+                                <div class="l-header-facility-card__item">
+                    <div class="l-header-facility-card__title">
+                        <h5>西区</h5>
+                    </div>
+                    <div class="l-header-facility-card__list">
+                        <ul>
+                                                        <li><a href="https://niigata-kaikou.jp/facility/442">西総合スポーツセンター</a></li>
+                                                        <li><a href="https://niigata-kaikou.jp/facility/443">黒埼地区総合体育館</a></li>
+                                                        <li><a href="https://niigata-kaikou.jp/facility/444">山田高架下ゲートボール場</a></li>
+                                                        <li><a href="https://niigata-kaikou.jp/facility/445">善久河川敷公園庭球場</a></li>
+                                                        <li><a href="https://niigata-kaikou.jp/facility/446">流通公園庭球場</a></li>
+                                                        <li><a href="https://niigata-kaikou.jp/facility/447">寺地河川敷公園庭球場</a></li>
+                                                    </ul>
+                    </div>
+                </div>
+                            </div>
+            <div class="l-header-facility-select">
+                <div class="l-header-facility-select__title">
+                    <h5>
+                        <span>SPORTS</span>利用種目で探す
+                    </h5>
+                </div>
+                <div class="l-header-facility-select__box">
+                    <form action="https://niigata-kaikou.jp/facility">
+                        <select name="equipment" class="js-menu_equipment">
+                            <option value="">利用するスポーツ種目を選択</option>
+                                                        <option value="1">体育館フロアー</option>
+                                                        <option value="2">トレーニング室</option>
+                                                        <option value="3">ランニングコース</option>
+                                                        <option value="4">屋外トリムコース</option>
+                                                        <option value="5">プール</option>
+                                                        <option value="6">テニスコート</option>
+                                                        <option value="7">野球場</option>
+                                                        <option value="8">ソフトボール場</option>
+                                                        <option value="9">球技場</option>
+                                                        <option value="10">フットサルコート</option>
+                                                        <option value="11">武道場</option>
+                                                        <option value="12">アーチェリー場</option>
+                                                        <option value="13">クライミング室</option>
+                                                        <option value="14">ゲートボール場</option>
+                                                        <option value="15">ダンス等小部屋</option>
+                                                    </select>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- キーワード検索展開 -->
+    <div class="l-header-search">
+        <script async src="https://cse.google.com/cse.js?cx=4c8b99ef41f523223"></script>
+        <div class="gcse-search"></div>
+    </div>
+</header>
+	<main class="l-main-contents">
+        <!--
+//===============================================
+// メイン
+//=============================================== -->
+
+<div class="p-top-main">
+    <div class="p-top-main__catch">
+        <h2>Kaikou<br>SPORTSWEB</h2>
+    </div>
+    <div class="p-top-main__slide">
+        <div class="p-top-main__slide__item">
+            <a href="https://niigata-kaikou.jp/page/specialtopics06">
+                <img src="/images/top/img-top-main-slide-lp06-2023.jpg" sizes="(max-width: 780px) 50vw,100vw" srcset="/images/top/img-top-main-slide-lp06-2023-sp.jpg 800w,/images/top/img-top-main-slide-lp06-2023.jpg 1600w" alt="スポーツ教室紹介" width="977" height="611" class="img-fluid">
+            </a>
+        </div>
+        <div class="p-top-main__slide__item">
+            <a href="https://niigata-kaikou.jp/page/specialtopics03">
+                <img src="/images/top/img-top-main-slide-lp03-230209.jpg" sizes="(max-width: 780px) 50vw,100vw" srcset="/images/top/img-top-main-slide-lp03-sp-230209.jpg 800w,/images/top/img-top-main-slide-lp03-230209.jpg 1600w" alt="" width="977" height="611" class="img-fluid">
+            </a>
+        </div>
+        <div class="p-top-main__slide__item">
+            <img src="/images/top/img-top-main-slide03.jpg" sizes="(max-width: 780px) 50vw,100vw" srcset="/images/top/img-top-main-slide03-sp.jpg 800w,/images/top/img-top-main-slide03.jpg 1600w" alt="" width="977" height="611" class="img-fluid">
+        </div>
+        <div class="p-top-main__slide__item">
+            <img src="/images/top/img-top-main-slide02.jpg" sizes="(max-width: 780px) 50vw,100vw" srcset="/images/top/img-top-main-slide02-sp.jpg 800w,/images/top/img-top-main-slide02.jpg 1600w" alt="" width="977" height="611" class="img-fluid">
+        </div>
+        <div class="p-top-main__slide__item">
+            <img src="/images/top/img-top-main-slide01.jpg" sizes="(max-width: 780px) 50vw,100vw" srcset="/images/top/img-top-main-slide01-sp.jpg 800w,/images/top/img-top-main-slide01.jpg 1600w" alt="" width="977" height="611" class="img-fluid">
+        </div>
+    </div>
+        <div class="p-top-main__topics">
+        <h3>重要なお知らせ</h3>
+        <ul>
+                        <li><a href="https://niigata-kaikou.jp/topic/26216">2026/01/16<br class="d-block d-md-none">『国士舘大学男子新体操部演技発表会』3/8(日)開催！1/31(土)10:00～よりチケット販売開始！</a></li>
+                        <li><a href="https://niigata-kaikou.jp/topic/25783">2025/06/25<br class="d-block d-md-none">新潟市体育館の休館および新規予約の停止について</a></li>
+                    </ul>
+    </div>
+    </div>
+
+<!--
+//===============================================
+// 使用状況
+//=============================================== -->
+
+<div class="p-top-situation">
+    <div class="p-top-situation__title">
+        <h3 class="c-heading01"><span>SITUATION</span>利用状況検索</h3>
+    </div>
+
+    <div class="p-top-situation__list02">
+        <ul>
+            <li><a href="https://niigata-kaikou.jp/page/close">施設休館日</a></li>
+            <li><a href="https://niigata-kaikou.jp/schedule">ランニングコース</a></li>
+            <li><a href="https://niigata-kaikou.jp/schedule">個人開放状況</a></li>
+            <li><a href="https://niigata-kaikou.jp/page/pool">プール情報</a></li>
+            <li><a href="https://niigata-kaikou.jp/badtaknet" class="is-reserve">バド卓ねっと予約</a></li>
+        </ul>
+    </div>
+
+    <div class="row mt-md-6 mt-3">
+        <div class="col-md-6">
+            <a href="https://niigata-kaikou.jp/badtaknet">
+                <img src="/images/common/bnr-badtak.jpg" alt="" class="w-100">
+            </a>
+        </div>
+        <div class="col-md-6 mt-2 mt-md-0">
+            <a href="https://niigata-kaikou.jp/page/badtaknet">
+                <img src="/images/common/bnr-badtak02.jpg" alt="" class="w-100">
+            </a>
+        </div>
+    </div>
+
+</div>
+
+<!--
+//===============================================
+// 新着情報
+//=============================================== -->
+
+<div class="p-top-info">
+    <div class="p-top-info__inner">
+        <div class="p-top-info__title">
+            <h3 class="c-heading01 text-dark"><span>INFORMATION</span>新着情報</h3>
+        </div>
+
+        <div class="p-top-info-list">
+            <ul class="p-top-info-list__tab nav">
+                <li>
+                    <a href="#contents1" class="nav-link active" data-toggle="tab">すべて</a>
+                </li>
+                <li>
+                    <a href="#contents2" class="nav-link" data-toggle="tab">トピックス</a>
+                </li>
+                <li>
+                    <a href="#contents3" class="nav-link" data-toggle="tab">各施設のお知らせ</a>
+                </li>
+                <li>
+                    <a href="#contents4" class="nav-link" data-toggle="tab">教室・イベント情報</a>
+                </li>
+                <li>
+                    <a href="#contents5" class="nav-link" data-toggle="tab">スタッフ通信</a>
+                </li>
+            </ul>
+
+            
+            <div id="contents1" class="active p-top-info-list__content">
+                <ul>
+                                                            <li>
+                        <a href="https://niigata-kaikou.jp/news/26231">
+                            2026/01/25<span class="p-top-info-list-cat04">スタッフ通信</span><br class="d-block d-md-none">アスパークだより（No.541 2月号）
+                                                        &nbsp;<i>亀田総合体育館</i>
+                                                    </a>
+                    </li>
+                                                            <li>
+                        <a href="https://niigata-kaikou.jp/news/26192">
+                            2026/01/25<span class="p-top-info-list-cat02">教室・イベント</span><br class="d-block d-md-none">【1/27～1/31】スポーツ教室1回参加可能教室のお知らせ
+                                                        &nbsp;<i>亀田総合体育館</i>
+                                                    </a>
+                    </li>
+                                                            <li>
+                        <a href="https://niigata-kaikou.jp/news/26226">
+                            2026/01/22<span class="p-top-info-list-cat02">教室・イベント</span><br class="d-block d-md-none">1/27『美筋ヨガ体験会』受付終了のお知らせ
+                                                        &nbsp;<i>黒埼地区総合体育館</i>
+                                                    </a>
+                    </li>
+                                                            <li>
+                        <a href="https://niigata-kaikou.jp/news/26223">
+                            2026/01/21<span class="p-top-info-list-cat03">各施設のお知らせ</span><br class="d-block d-md-none">2/22（日）全館利用中止のお知らせ
+                                                        &nbsp;<i>鳥屋野総合体育館</i>
+                                                    </a>
+                    </li>
+                                                            <li>
+                        <a href="https://niigata-kaikou.jp/news/26214">
+                            2026/01/21<span class="p-top-info-list-cat04">スタッフ通信</span><br class="d-block d-md-none">Kametter503更新しました☆
+                                                        &nbsp;<i>亀田総合体育館</i>
+                                                    </a>
+                    </li>
+                                                            <li>
+                        <a href="https://niigata-kaikou.jp/news/26157">
+                            2026/01/21<span class="p-top-info-list-cat03">各施設のお知らせ</span><br class="d-block d-md-none">3/8(日)開催『国士舘大学男子新体操部演技発表会』1/31(土)10:00～よりチケット販売開始！
+                                                        &nbsp;<i>鳥屋野総合体育館</i>
+                                                    </a>
+                    </li>
+                                                            <li>
+                        <a href="https://niigata-kaikou.jp/news/26220">
+                            2026/01/19<span class="p-top-info-list-cat03">各施設のお知らせ</span><br class="d-block d-md-none">シャワー室利用再開のお知らせ
+                                                        &nbsp;<i>白根カルチャーセンター</i>
+                                                    </a>
+                    </li>
+                                                        </ul>
+            </div>
+            
+            <div id="contents2" class="p-top-info-list__content">
+                <ul>
+                                        <li>
+                        <a href="https://niigata-kaikou.jp/news/26216">
+                            2026/01/16<span class="p-top-info-list-cat01">トピックス</span><br class="d-block d-md-none">『国士舘大学男子新体操部演技発表会』3/8(日)開催！1/31(土)10:00～よりチケット販売開始！
+                        </a>
+                    </li>
+                                        <li>
+                        <a href="https://niigata-kaikou.jp/news/26173">
+                            2025/12/25<span class="p-top-info-list-cat01">トピックス</span><br class="d-block d-md-none">年末年始の個人開放予約受付開始日について
+                        </a>
+                    </li>
+                                        <li>
+                        <a href="https://niigata-kaikou.jp/news/26140">
+                            2025/12/10<span class="p-top-info-list-cat01">トピックス</span><br class="d-block d-md-none">令和８年度 一般大会申し込みについてのお知らせ
+                        </a>
+                    </li>
+                                        <li>
+                        <a href="https://niigata-kaikou.jp/news/24842">
+                            2025/11/25<span class="p-top-info-list-cat01">トピックス</span><br class="d-block d-md-none">令和7年度 求人のお知らせ
+                        </a>
+                    </li>
+                                        <li>
+                        <a href="https://niigata-kaikou.jp/news/26009">
+                            2025/10/07<span class="p-top-info-list-cat01">トピックス</span><br class="d-block d-md-none">10/13(祝)スポーツの日　スポーツ施設無料開放！
+                        </a>
+                    </li>
+                                        <li>
+                        <a href="https://niigata-kaikou.jp/news/25997">
+                            2025/10/04<span class="p-top-info-list-cat01">トピックス</span><br class="d-block d-md-none">「Team ECO Work! FISHERS クリーン ACTION IN 山の下海浜公園」に参加しました
+                        </a>
+                    </li>
+                                        <li>
+                        <a href="https://niigata-kaikou.jp/news/25828">
+                            2025/07/25<span class="p-top-info-list-cat01">トピックス</span><br class="d-block d-md-none">海岸一斉清掃（日和山浜・五十嵐浜）に参加しました
+                        </a>
+                    </li>
+                                                        </ul>
+                                <div class="p-top-info__btn">
+                    <a class="c-btn01" href="https://niigata-kaikou.jp/topic">more</a>
+                </div>
+                            </div>
+            
+            <div id="contents3" class="p-top-info-list__content">
+                <ul>
+                                        <li>
+                        <a href="https://niigata-kaikou.jp/news/26223">
+                            2026/01/21<span class="p-top-info-list-cat03">各施設のお知らせ</span><br class="d-block d-md-none">2/22（日）全館利用中止のお知らせ&nbsp;<i>鳥屋野総合体育館</i>
+                        </a>
+                    </li>
+                                        <li>
+                        <a href="https://niigata-kaikou.jp/news/26157">
+                            2026/01/21<span class="p-top-info-list-cat03">各施設のお知らせ</span><br class="d-block d-md-none">3/8(日)開催『国士舘大学男子新体操部演技発表会』1/31(土)10:00～よりチケット販売開始！&nbsp;<i>鳥屋野総合体育館</i>
+                        </a>
+                    </li>
+                                        <li>
+                        <a href="https://niigata-kaikou.jp/news/26220">
+                            2026/01/19<span class="p-top-info-list-cat03">各施設のお知らせ</span><br class="d-block d-md-none">シャワー室利用再開のお知らせ&nbsp;<i>白根カルチャーセンター</i>
+                        </a>
+                    </li>
+                                        <li>
+                        <a href="https://niigata-kaikou.jp/news/26218">
+                            2026/01/18<span class="p-top-info-list-cat03">各施設のお知らせ</span><br class="d-block d-md-none">【東総合】秋期「いきいきスロートレーニング教室」中止に伴うご返金について&nbsp;<i>東総合スポーツセンター</i>
+                        </a>
+                    </li>
+                                        <li>
+                        <a href="https://niigata-kaikou.jp/news/26200">
+                            2026/01/10<span class="p-top-info-list-cat03">各施設のお知らせ</span><br class="d-block d-md-none">西海岸公園の駐車場改修工事のお知らせ&nbsp;<i>西海岸公園市営プール</i>
+                        </a>
+                    </li>
+                                        <li>
+                        <a href="https://niigata-kaikou.jp/news/26203">
+                            2026/01/09<span class="p-top-info-list-cat03">各施設のお知らせ</span><br class="d-block d-md-none">1/9（金）『ZUMBA（金曜）』休講対応について&nbsp;<i>亀田総合体育館</i>
+                        </a>
+                    </li>
+                                        <li>
+                        <a href="https://niigata-kaikou.jp/news/26177">
+                            2026/01/01<span class="p-top-info-list-cat03">各施設のお知らせ</span><br class="d-block d-md-none">2026年あけましておめでとうございます！&nbsp;<i>西海岸公園市営プール</i>
+                        </a>
+                    </li>
+                                                        </ul>
+            </div>
+            
+            <div id="contents4" class="p-top-info-list__content">
+                <ul>
+                                        <li>
+                        <a href="https://niigata-kaikou.jp/news/26192">
+                            2026/01/25<span class="p-top-info-list-cat02">教室・イベント</span><br class="d-block d-md-none">【1/27～1/31】スポーツ教室1回参加可能教室のお知らせ&nbsp;<i>亀田総合体育館</i>
+                        </a>
+                    </li>
+                                        <li>
+                        <a href="https://niigata-kaikou.jp/news/26226">
+                            2026/01/22<span class="p-top-info-list-cat02">教室・イベント</span><br class="d-block d-md-none">1/27『美筋ヨガ体験会』受付終了のお知らせ&nbsp;<i>黒埼地区総合体育館</i>
+                        </a>
+                    </li>
+                                        <li>
+                        <a href="https://niigata-kaikou.jp/news/26219">
+                            2026/01/18<span class="p-top-info-list-cat02">教室・イベント</span><br class="d-block d-md-none">【秋期】『タオルdeロコモ予防EX』『ボックスキック』『いきいきスロートレーニング』『スロートレーニング＆コアトレーニング』教室中止に伴うご返金について&nbsp;<i>亀田総合体育館</i>
+                        </a>
+                    </li>
+                                        <li>
+                        <a href="https://niigata-kaikou.jp/news/26208">
+                            2026/01/18<span class="p-top-info-list-cat02">教室・イベント</span><br class="d-block d-md-none">秋期「スロートレーニング＆コアトレーニング教室・ボックスキック教室」中止に伴うご返金について&nbsp;<i>北地区スポーツセンター</i>
+                        </a>
+                    </li>
+                                        <li>
+                        <a href="https://niigata-kaikou.jp/news/26201">
+                            2026/01/18<span class="p-top-info-list-cat02">教室・イベント</span><br class="d-block d-md-none">【重要】【西総合】秋期「BOX KICK 教室」中止分のご返金について&nbsp;<i>西総合スポーツセンター</i>
+                        </a>
+                    </li>
+                                        <li>
+                        <a href="https://niigata-kaikou.jp/news/25475">
+                            2026/01/18<span class="p-top-info-list-cat02">教室・イベント</span><br class="d-block d-md-none">『チャレンジ！親子で体操』イベント開催のお知らせ&nbsp;<i>鳥屋野総合体育館</i>
+                        </a>
+                    </li>
+                                        <li>
+                        <a href="https://niigata-kaikou.jp/news/26207">
+                            2026/01/13<span class="p-top-info-list-cat02">教室・イベント</span><br class="d-block d-md-none">秋期「やさしい健康教室」中止に伴うご返金について&nbsp;<i>黒埼地区総合体育館</i>
+                        </a>
+                    </li>
+                                                        </ul>
+            </div>
+            
+            <div id="contents5" class="p-top-info-list__content">
+                <ul>
+                                        <li>
+                        <a href="https://niigata-kaikou.jp/news/26231">
+                            2026/01/25<span class="p-top-info-list-cat04">スタッフ通信</span><br class="d-block d-md-none">アスパークだより（No.541 2月号）&nbsp;<i>亀田総合体育館</i>
+                        </a>
+                    </li>
+                                        <li>
+                        <a href="https://niigata-kaikou.jp/news/26214">
+                            2026/01/21<span class="p-top-info-list-cat04">スタッフ通信</span><br class="d-block d-md-none">Kametter503更新しました☆&nbsp;<i>亀田総合体育館</i>
+                        </a>
+                    </li>
+                                        <li>
+                        <a href="https://niigata-kaikou.jp/news/26213">
+                            2026/01/16<span class="p-top-info-list-cat04">スタッフ通信</span><br class="d-block d-md-none">踊る！さとっしー御殿&nbsp;<i>下山スポーツセンター</i>
+                        </a>
+                    </li>
+                                        <li>
+                        <a href="https://niigata-kaikou.jp/news/26209">
+                            2026/01/11<span class="p-top-info-list-cat04">スタッフ通信</span><br class="d-block d-md-none">月刊『TGN』1月増刊号 🐎🎾～スポーツ絵馬を掲示しました／冬もテニスが楽しめます～ 🎍✨&nbsp;<i>新潟市庭球場</i>
+                        </a>
+                    </li>
+                                        <li>
+                        <a href="https://niigata-kaikou.jp/news/26206">
+                            2026/01/09<span class="p-top-info-list-cat04">スタッフ通信</span><br class="d-block d-md-none">水中ウォーキングのすすめ&nbsp;<i>西総合スポーツセンター</i>
+                        </a>
+                    </li>
+                                        <li>
+                        <a href="https://niigata-kaikou.jp/news/26199">
+                            2026/01/08<span class="p-top-info-list-cat04">スタッフ通信</span><br class="d-block d-md-none">Kametter502更新しました☆&nbsp;<i>亀田総合体育館</i>
+                        </a>
+                    </li>
+                                        <li>
+                        <a href="https://niigata-kaikou.jp/news/26185">
+                            2026/01/01<span class="p-top-info-list-cat04">スタッフ通信</span><br class="d-block d-md-none">西海岸スタッフ通信　 Take your marks　50&nbsp;<i>西海岸公園市営プール</i>
+                        </a>
+                    </li>
+                                                        </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!--
+//===============================================
+// 施設検索
+//=============================================== -->
+<div class="p-top-search">
+    <div class="p-top-search__title">
+        <h3 class="c-heading01"><span>SEARCH</span>スポーツ施設検索</h3>
+    </div>
+    <div id="search01" class="p-top-search-area">
+        <div class="p-top-search-area__img">
+            <img src="/images/common/img-search-areamap.png" alt="">
+            <h4 class="p-top-search-heading01 d-block d-md-none"><span>AREA MAP</span>エリアマップから探す</h4>
+        </div>
+        
+        <div class="p-top-search-area__list">
+            <h4 class="p-top-search-heading01 d-none d-md-block"><span>AREA MAP</span>エリアマップから探す</h4>
+            <ul>
+                                <li><a href="https://niigata-kaikou.jp/facility?city=15101">北区</a></li>
+                                <li><a href="https://niigata-kaikou.jp/facility?city=15102">東区</a></li>
+                                <li><a href="https://niigata-kaikou.jp/facility?city=15103">中央区</a></li>
+                                <li><a href="https://niigata-kaikou.jp/facility?city=15104">江南区</a></li>
+                                <li><a href="https://niigata-kaikou.jp/facility?city=15106">南区</a></li>
+                                <li><a href="https://niigata-kaikou.jp/facility?city=15107">西区</a></li>
+                            </ul>
+        </div>
+    </div>
+
+    <div class="p-top-search-sports">
+        <div class="p-top-search-sports__inner">
+            <h4 id="search02" class="p-top-search-heading01"><span>SPORTS</span>利用種目で探す</h4>
+            <div class="p-top-search-sports-card">
+                                <div class="p-top-search-sports-card__item">
+                    <a href="https://niigata-kaikou.jp/facility?equipment=1">
+                        <div class="p-top-search-sports-card__img">
+                            <img src="/images/common/icon/icon-sports01.svg" alt="">
+                        </div>
+                        <div class="p-top-search-sports-card__title">
+                            <p>体育館フロアー</p>
+                        </div>
+                    </a>
+                </div>
+                                <div class="p-top-search-sports-card__item">
+                    <a href="https://niigata-kaikou.jp/facility?equipment=2">
+                        <div class="p-top-search-sports-card__img">
+                            <img src="/images/common/icon/icon-sports02.svg" alt="">
+                        </div>
+                        <div class="p-top-search-sports-card__title">
+                            <p>トレーニング室</p>
+                        </div>
+                    </a>
+                </div>
+                                <div class="p-top-search-sports-card__item">
+                    <a href="https://niigata-kaikou.jp/facility?equipment=3">
+                        <div class="p-top-search-sports-card__img">
+                            <img src="/images/common/icon/icon-sports03.svg" alt="">
+                        </div>
+                        <div class="p-top-search-sports-card__title">
+                            <p>ランニングコース</p>
+                        </div>
+                    </a>
+                </div>
+                                <div class="p-top-search-sports-card__item">
+                    <a href="https://niigata-kaikou.jp/facility?equipment=4">
+                        <div class="p-top-search-sports-card__img">
+                            <img src="/images/common/icon/icon-sports04.svg" alt="">
+                        </div>
+                        <div class="p-top-search-sports-card__title">
+                            <p>屋外トリムコース</p>
+                        </div>
+                    </a>
+                </div>
+                                <div class="p-top-search-sports-card__item">
+                    <a href="https://niigata-kaikou.jp/facility?equipment=5">
+                        <div class="p-top-search-sports-card__img">
+                            <img src="/images/common/icon/icon-sports05.svg" alt="">
+                        </div>
+                        <div class="p-top-search-sports-card__title">
+                            <p>プール</p>
+                        </div>
+                    </a>
+                </div>
+                                <div class="p-top-search-sports-card__item">
+                    <a href="https://niigata-kaikou.jp/facility?equipment=6">
+                        <div class="p-top-search-sports-card__img">
+                            <img src="/images/common/icon/icon-sports06.svg" alt="">
+                        </div>
+                        <div class="p-top-search-sports-card__title">
+                            <p>テニスコート</p>
+                        </div>
+                    </a>
+                </div>
+                                <div class="p-top-search-sports-card__item">
+                    <a href="https://niigata-kaikou.jp/facility?equipment=7">
+                        <div class="p-top-search-sports-card__img">
+                            <img src="/images/common/icon/icon-sports07.svg" alt="">
+                        </div>
+                        <div class="p-top-search-sports-card__title">
+                            <p>野球場</p>
+                        </div>
+                    </a>
+                </div>
+                                <div class="p-top-search-sports-card__item">
+                    <a href="https://niigata-kaikou.jp/facility?equipment=8">
+                        <div class="p-top-search-sports-card__img">
+                            <img src="/images/common/icon/icon-sports08.svg" alt="">
+                        </div>
+                        <div class="p-top-search-sports-card__title">
+                            <p>ソフトボール場</p>
+                        </div>
+                    </a>
+                </div>
+                                <div class="p-top-search-sports-card__item">
+                    <a href="https://niigata-kaikou.jp/facility?equipment=9">
+                        <div class="p-top-search-sports-card__img">
+                            <img src="/images/common/icon/icon-sports09.svg" alt="">
+                        </div>
+                        <div class="p-top-search-sports-card__title">
+                            <p>球技場</p>
+                        </div>
+                    </a>
+                </div>
+                                <div class="p-top-search-sports-card__item">
+                    <a href="https://niigata-kaikou.jp/facility?equipment=10">
+                        <div class="p-top-search-sports-card__img">
+                            <img src="/images/common/icon/icon-sports10.svg" alt="">
+                        </div>
+                        <div class="p-top-search-sports-card__title">
+                            <p>フットサルコート</p>
+                        </div>
+                    </a>
+                </div>
+                                <div class="p-top-search-sports-card__item">
+                    <a href="https://niigata-kaikou.jp/facility?equipment=11">
+                        <div class="p-top-search-sports-card__img">
+                            <img src="/images/common/icon/icon-sports11.svg" alt="">
+                        </div>
+                        <div class="p-top-search-sports-card__title">
+                            <p>武道場</p>
+                        </div>
+                    </a>
+                </div>
+                                <div class="p-top-search-sports-card__item">
+                    <a href="https://niigata-kaikou.jp/facility?equipment=12">
+                        <div class="p-top-search-sports-card__img">
+                            <img src="/images/common/icon/icon-sports12.svg" alt="">
+                        </div>
+                        <div class="p-top-search-sports-card__title">
+                            <p>アーチェリー場</p>
+                        </div>
+                    </a>
+                </div>
+                                <div class="p-top-search-sports-card__item">
+                    <a href="https://niigata-kaikou.jp/facility?equipment=13">
+                        <div class="p-top-search-sports-card__img">
+                            <img src="/images/common/icon/icon-sports13.svg" alt="">
+                        </div>
+                        <div class="p-top-search-sports-card__title">
+                            <p>クライミング室</p>
+                        </div>
+                    </a>
+                </div>
+                                <div class="p-top-search-sports-card__item">
+                    <a href="https://niigata-kaikou.jp/facility?equipment=14">
+                        <div class="p-top-search-sports-card__img">
+                            <img src="/images/common/icon/icon-sports14.svg" alt="">
+                        </div>
+                        <div class="p-top-search-sports-card__title">
+                            <p>ゲートボール場</p>
+                        </div>
+                    </a>
+                </div>
+                                <div class="p-top-search-sports-card__item">
+                    <a href="https://niigata-kaikou.jp/facility?equipment=15">
+                        <div class="p-top-search-sports-card__img">
+                            <img src="/images/common/icon/icon-sports15.svg" alt="">
+                        </div>
+                        <div class="p-top-search-sports-card__title">
+                            <p>ダンス等小部屋</p>
+                        </div>
+                    </a>
+                </div>
+                            </div>
+        </div>
+    </div>
+</div>
+
+<!--
+//===============================================
+// スポーツ教室（教室特集）
+//=============================================== -->
+
+<div class="p-top-spclass">
+
+    <div class="p-top-spclass-main">
+        <div class="p-top-spclass__inner">
+            <div class="p-top-spclass-main__title">
+                <h3><span>SPORTS<br>CLASSROOM</span>スポーツ教室に参加しよう</h3>
+            </div>
+            <div class="p-top-spclass-bnr-lg">
+                <a href="https://niigata-kaikou.jp/page/specialtopics06"><img src="/images/lp/img-lp-bnr-lp06-2023.jpg" alt="スポーツ教室紹介">
+            </div>
+            <div class="p-top-spclass-bnr-list">
+                <div class="p-top-spclass-bnr-sm">
+                    <a href="https://niigata-kaikou.jp/page/specialtopics03"><img src="/images/lp/img-lp-bnr-lp03-230209.jpg" alt="心身のリラックスに効果的！簡単ヨガでストレッチ"></a>
+                </div>
+                <div class="p-top-spclass-bnr-sm">
+                    <a href="https://niigata-kaikou.jp/page/specialtopics05"><img src="/images/lp/img-lp-bnr-lp05.jpg" alt="水中運動でカラダづくり"></a>
+                    <!--<a href="https://niigata-kaikou.jp/page/specialtopics03"><img src="/images/lp/img-lp-bnr-lp03.jpg" alt="冬の教室紹介"></a>-->
+                </div>
+            </div>
+            <div class="p-top-spclass-main__btn">
+                <a class="c-btn01" href="https://niigata-kaikou.jp/specialtopics">特集をもっと見る</a>
+            </div>
+        </div>
+    </div>
+    <div class="p-top-spclass-btn-list">
+        <ul class="mb-2">
+            <li><a href="https://niigata-kaikou.jp/class">スポーツ教室検索</a></li>
+            <li><a href="https://niigata-kaikou.jp/page/classroom">施設別スポーツ教室一覧</a></li>
+        </ul>
+        <ul>
+            <li><a href="https://niigata-kaikou.jp/page/trial">1回体験教室のご案内</a></li>
+            <li><a href="https://niigata-kaikou.jp/entry">スポーツ教室に申し込む</a></li>
+        </ul>
+    </div>
+</div>
+
+
+
+
+<!--
+//===============================================
+// 特別コンテンツ
+//=============================================== -->
+
+<div class="p-top-special">
+    <div class="p-top-special__block">
+        <div class="p-top-specail_btn">
+            <a class="blank" href="https://www.youtube.com/channel/UCahViF9oLG4Z91-TR_E6AAg/videos" target="_blank">自宅でできる<br class="d-block d-md-none">簡単フィットネス動画</a>
+        </div>
+    </div>
+    <div class="p-top-special__block">
+        <div class="p-top-specail_btn">
+            <a href="https://niigata-kaikou.jp/page/gallery">イベントフォトギャラリー</a>
+        </div>
+    </div>
+</div>
+
+
+<!--
+//===============================================
+// エンジョイスポーツ
+//=============================================== -->
+
+<div class="p-top-sports">
+    <div class="p-top-sports__inner">
+        <div class="p-top-sports__title">
+            <h3><span>ENJOYSPORTS</span>スポーツをしよう！趣味で楽しむ運動</h3>
+        </div>
+        <div class="p-top-sports__text">
+            <p>
+                健康的なカラダを維持するためには<br class="d-block d-md-none">適度な運動やスポーツがオススメです。<br>
+                運動不足解消やダイエットのために<br class="d-block d-md-none">スポーツを始めたい方、<br>
+                すでに趣味として運動や<br class="d-block d-md-none">スポーツを楽しまれている方に向けて、<br>
+                楽しく長く続けられるための情報をお届けします。
+            </p>
+        </div>
+        <div class="p-top-sports__btn">
+            <a class="c-btn01-white" href="https://niigata-kaikou.jp/useful">スポーツお役立ち情報</a>
+        </div>
+    </div>
+</div>
+
+<div class="p-top-sports-card">
+    <div class="p-top-sports-card__item">
+        <a href="https://niigata-kaikou.jp/use">
+            <div class="p-top-sports-card__img">
+                <img src="/images/top/img-top-sports01.jpg" alt="">
+            </div>
+            <div class="p-top-sports-card__title">
+                <p>施設の使い方</p>
+            </div>
+        </a>
+    </div>
+    <div class="p-top-sports-card__item">
+        <a href="https://niigata-kaikou.jp/faq">
+            <div class="p-top-sports-card__img">
+                <img src="/images/top/img-top-sports02.jpg" alt="">
+            </div>
+            <div class="p-top-sports-card__title">
+                <p>施設利用のよくある質問</p>
+            </div>
+        </a>
+    </div>
+</div>
+    </main>
+
+    <div class="l-contents01">
+
+    <div class="l-contents01-sns">
+        <ul>
+        <li>
+            <a href="https://twitter.com/share?ref_src=twsrc%5Etfw" class="twitter-share-button" data-show-count="false">Tweet</a><script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+        </li>
+        <li>
+            <div id="fb-root"></div>
+            <script async defer crossorigin="anonymous" src="https://connect.facebook.net/ja_JP/sdk.js#xfbml=1&version=v14.0" nonce="sDrchn31"></script>
+
+            <div class="fb-share-button" 
+            data-href="https://niigata-kaikou.jp" 
+            data-layout="button">
+            </div>
+        </li>
+        <li>
+            <div class="line-it-button" data-lang="ja" data-type="share-a" data-ver="3" data-url="https://niigata-kaikou.jp" data-color="default" data-size="small" data-count="false" style="display: none;"></div>
+            <script src="https://www.line-website.com/social-plugins/js/thirdparty/loader.min.js" async="async" defer="defer"></script>
+        </li>
+        </ul>
+    </div>
+
+    <div class="l-contents01-card">
+
+        <div class="l-contents-card__item">
+            <a href="https://niigata-kaikou.jp/page/recruit">
+                <div class="l-contents-card__title">
+                    <span>RECRUIT</span>採用情報／業務紹介
+                </div>
+                <div class="l-contents-card__btn">more</div>
+            </a>
+        </div>
+
+        <div class="l-contents-card__item">
+            <a href="https://niigata-kaikou.jp/page/teacher">
+                <div class="l-contents-card__title">
+                    <span>TEACHER</span>講師マッチング
+                </div>
+                <div class="l-contents-card__btn">more</div>
+            </a>
+        </div>
+
+        <div class="l-contents-card__item">
+            <a href="https://niigata-kaikou.jp/page/volunteer">
+                <div class="l-contents-card__title">
+                    <span>VOLUNTEER</span>スポーツボランティア
+                </div>
+                <div class="l-contents-card__btn">more</div>
+            </a>
+        </div>
+
+        <div class="l-contents-card__item">
+            <a href="https://niigata-kaikou.jp/page/instruction">
+                <div class="l-contents-card__title">
+                    <span>INSTRUCTION</span>出張スポーツ指導
+                </div>
+                <div class="l-contents-card__btn">more</div>
+            </a>
+        </div>
+
+        <div class="l-contents-card__item">
+            <a href="https://niigata-kaikou.jp/page/circle">
+                <div class="l-contents-card__title">
+                    <span>CIRCLE</span>サークル紹介・情報募集
+                </div>
+                <div class="l-contents-card__btn">more</div>
+            </a>
+        </div>
+
+        <div class="l-contents-card__item">
+            <a href="https://niigata-kaikou.jp/page/contribution">
+                <div class="l-contents-card__title">
+                    <span>CONTRIBUTION</span>地域貢献活動
+                </div>
+                <div class="l-contents-card__btn">more</div>
+            </a>
+        </div>
+
+    </div>
+</div>
+
+<!--
+//===============================================
+// コンテンツブロック２
+//=============================================== -->
+
+<div class="l-contents02">
+    <ul>
+        <li><a class="system" href="https://niigata-kaikou.jp/page/publicsystem" target="_blank">新潟市公共施設予約システム</a></li>
+        <li><a class="download" href="https://niigata-kaikou.jp/page/download">申請書PDFダウンロード</a></li>
+        <li><a class="exem" href="https://niigata-kaikou.jp/exemption">障がい者等使用料免除</a></li>
+    </ul>
+</div>
+
+<!--
+//===============================================
+// スポンサー・関連団体・施設
+//=============================================== -->
+
+<div class="l-contents03">
+
+    <div class="l-contents03-block">
+        <div class="l-contents03-block__title">
+            <h4><span>SPONSOR</span>協賛企業</h4>
+        </div>
+        <div class="l-contents03-block-list">
+            <ul>
+                <li><a href="https://www.namics.co.jp/" target="_blank"><img src="/images/common/img-sponsor01.png" alt="ナミックス株式会社"></a></li>
+                <li><a href="https://www.ccbji.co.jp/" target="_blank"><img src="/images/common/img-sponsor-cocacolab.jpg" alt="コカ・コーラボトラーズジャパン株式会社"></a></li>
+                <li><a href="http://www.taiyou-kk.com/" target="_blank"><img src="/images/common/img-sponsor04.png" alt="太陽工業株式会社"></a></li>
+                <li><a href="https://mr-pipewrench.com/" target="_blank"><img src="/images/common/img-sponsor02.png" alt="住まいの救急隊ミスターパイプレンチ"></a></li>
+                <!--
+                <li><a href="http://www.docomo-cs.co.jp/" target="_blank"><img src="/images/common/img-sponsor-docomo.jpg" alt="株式会社ドコモCS"></a></li>
+                -->
+                <!--
+                <li><a href="http://smilemilk.net/index.html" target="_blank"><img src="/images/common/img-sponsor-smilemilk.jpg" alt="有限会社リンク＆ファミル"></a></li>-->
+                <!--
+                <li><a href="https://niigata-kaikou.jp/page/sponsor01" target="_blank"><img src="/images/common/img-sponsor-yoshikawa.jpg" alt="株式会社ヨシカワ"></a></li>
+                -->
+                <li><a href="http://five-sports.com/" target="_blank"><img src="/images/common/img-sponsor06.png" alt="FIVE sports"></a></li>
+                <li><a href="http://www.saispo.com/" target="_blank"><img src="/images/common/img-sponsor-saitosports.jpg" alt="SAITO sports"></a></li>
+                <li><a href="http://itsp-niigata.com" target="_blank"><img src="/images/common/img-sponsor-itosports.png" alt="(有)イトウスポーツ"></a></li>
+                <li><a href="http://www.hasetai.com/" target="_blank"><img src="/images/common/img-sponsor05.png" alt="長谷川体育施設株式会社"></a></li>
+                <li><a href="http://www.marutomi-web.com/" target="_blank"><img src="/images/common/img-sponsor03.png" alt="スポーツ施設の施工・管理は株式会社丸富"></a></li>
+                <li><a href="https://niigata-kaikou.jp/page/sponsor02" target="_blank"><img src="/images/common/img-sponsor-sugaisports.png" alt="スガイスポーツ店"></a></li>
+                <li><a href="https://www.nozomi-niigata.com/" target="_blank"><img src="/images/common/img-sponsor-nozomi.png" alt="株式会社のぞみ"></a></li>
+                
+            </ul>
+            <a href="https://niigata-kaikou.jp/page/sponsor" class="c-btn01 mt-2 mt-md-3 mb-2 mb-md-0">協賛企業を募集しています</a>
+        </div>
+    </div>
+
+    <div class="l-contents03-block">
+        <div class="l-contents03-block__title">
+            <h4><span>RELATION</span>関連団体・施設</h4>
+        </div>
+        <div class="l-contents03-block-list">
+            <ul>
+                <li><a href="http://www.albirex-rc.com/" target="_blank"><img src="https://niigata-kaikou.jp/images/common/img-relation-albirexrc.png" alt="AlbirexRC"></a></li>
+                <li><a href="https://www.nvcb.or.jp/n-csc/" target="_blank"><img src="https://niigata-kaikou.jp/images/common/img-relation-csc.png" alt="新潟市文化・スポーツコミッション"></a></li>
+                <li><a href="http://www.niigatashi-sports.or.jp/" target="_blank"><img src="https://niigata-kaikou.jp/images/common/img-relation-ncs.png" alt="新潟市スポーツ協会"></a></li>
+                <li><a href="https://www.niigata-sports.net/shisetsu/" target="_blank"><img src="https://niigata-kaikou.jp/images/common/img-relation-niigatasports.png" alt="新潟県体育施設協会"></a></li>
+                <li><a href="https://sports.n-fureaiplaza.com/" target="_blank"><img src="https://niigata-kaikou.jp/images/common/img-relation-fureaiplaza.png" alt="新潟県障害者スポーツ協会"></a></li>
+                <li><a href="http://jppc.jp/" target="_blank"><img src="https://niigata-kaikou.jp/images/common/img-relation04.png" alt="日本公共スポーツ施策推進協議会"></a></li>
+                <li><a href="https://www.sport4tomorrow.jpnsport.go.jp/jp/" target="_blank"><img src="https://niigata-kaikou.jp/images/common/img-relation05.png" alt="SPORT FOR TOMORROW"></a></li>
+                <li><a href="https://sportinlife.go.jp/" target="_blank"><img src="https://niigata-kaikou.jp/images/common/img-relation06.png" alt="Sport in Life"></a></li>
+                <li><a href="https://uminohi.jp/" target="_blank"><img src="https://niigata-kaikou.jp/images/common/img-relation-umitonihon.png" alt="海と日本プロジェクト"></a></li>
+                <li><a href="https://niigata-kaikou.jp/facility/10647" target="_blank"><img src="https://niigata-kaikou.jp/images/common/img-relation-toyanokoutsukouen.png" alt="鳥屋野交通公園"></a></li>
+                <li><a href="https://cocospo.go.jp/" target="_blank"><img src="https://niigata-kaikou.jp/images/common/img-relation-cocospo.png" alt="ここスポ スポーツ庁"></a></li>
+            </ul>
+        </div>
+    </div>
+
+</div>
+
+    <div class="l-pagetop">
+	<a href="#"></a>
+</div>
+<footer class="l-footer">
+    <div class="l-footer-block01">
+        <div class="l-footer-block01__logo">
+            <img src="https://niigata-kaikou.jp/images/common/logo-footer.png" alt="新潟スポーツ情報ナビ">
+            <span>公益財団法人 新潟市開発公社スポーツプロモーション課</span>
+        </div>
+        <div class="l-footer-block01-list">
+            <ul>
+                <li><a class="blank" href="https://www.kosya-niigatacity.jp/" target="_blank">運営・管理｜公益財団法人 新潟市開発公社</a></li>
+                <li><a href="https://niigata-kaikou.jp/inquiry">お問い合わせ・報告フォーム</a></li>
+            </ul>
+        </div>
+    </div>
+    <div class="l-footer-block02">
+        <div class="l-footer-block02-sitemap">
+            <ul>
+                <li><a href="https://niigata-kaikou.jp/page/safety">安全安心への取り組み</a></li>
+                <li><a href="https://niigata-kaikou.jp/privacy">プライバシーポリシー</a></li>
+                <li><a href="https://niigata-kaikou.jp/antisocial">反社会的勢力への対応について</a></li>
+                <li><a href="https://niigata-kaikou.jp/compliance">関係法令等の遵守</a></li>
+                <li><a href="https://niigata-kaikou.jp/sitemap">サイトマップ</a></li>
+            </ul>
+        </div>
+        <div class="l-footer-block02-facility">
+            <div class="l-footer-block02-facility__title">
+                <h4><span>FACILITY</span>スポーツ施設</h4>
+            </div>
+
+            <div class="l-footer-block02-facility-card">
+                                <div class="l-footer-block02-facility-card__item">
+                    <div class="l-footer-block02-facility-card__title">
+                        <h5>北区</h5>
+                    </div>
+                    <div class="l-footer-block02-facility-card__list">
+                        <ul>
+                                                        <li><a href="https://niigata-kaikou.jp/facility/408">北地区スポーツセンター</a></li>
+                                                        <li><a href="https://niigata-kaikou.jp/facility/409">濁川運動広場</a></li>
+                                                        <li><a href="https://niigata-kaikou.jp/facility/410">太夫浜運動公園球技場</a></li>
+                                                        <li><a href="https://niigata-kaikou.jp/facility/411">南浜運動広場</a></li>
+                                                        <li><a href="https://niigata-kaikou.jp/facility/412">阿賀野川ふれあい公園</a></li>
+                                                    </ul>
+                    </div>
+                </div>
+                                <div class="l-footer-block02-facility-card__item">
+                    <div class="l-footer-block02-facility-card__title">
+                        <h5>東区</h5>
+                    </div>
+                    <div class="l-footer-block02-facility-card__list">
+                        <ul>
+                                                        <li><a href="https://niigata-kaikou.jp/facility/413">東総合スポーツセンター</a></li>
+                                                        <li><a href="https://niigata-kaikou.jp/facility/414">阿賀野川河川公園</a></li>
+                                                        <li><a href="https://niigata-kaikou.jp/facility/415">下山スポーツセンター</a></li>
+                                                        <li><a href="https://niigata-kaikou.jp/facility/416">中地区運動広場</a></li>
+                                                        <li><a href="https://niigata-kaikou.jp/facility/417">津島屋公園運動広場</a></li>
+                                                        <li><a href="https://niigata-kaikou.jp/facility/418">山の下海浜公園プール</a></li>
+                                                        <li><a href="https://niigata-kaikou.jp/facility/419">新潟市庭球場</a></li>
+                                                    </ul>
+                    </div>
+                </div>
+                                <div class="l-footer-block02-facility-card__item">
+                    <div class="l-footer-block02-facility-card__title">
+                        <h5>中央区</h5>
+                    </div>
+                    <div class="l-footer-block02-facility-card__list">
+                        <ul>
+                                                        <li><a href="https://niigata-kaikou.jp/facility/420">鳥屋野総合体育館</a></li>
+                                                        <li><a href="https://niigata-kaikou.jp/facility/421">新潟市陸上競技場</a></li>
+                                                        <li><a href="https://niigata-kaikou.jp/facility/423">新潟市体育館</a></li>
+                                                        <li><a href="https://niigata-kaikou.jp/facility/424">西海岸公園市営プール</a></li>
+                                                        <li><a href="https://niigata-kaikou.jp/facility/425">西海岸公園少年野球広場</a></li>
+                                                        <li><a href="https://niigata-kaikou.jp/facility/426">東公園児童プール</a></li>
+                                                        <li><a href="https://niigata-kaikou.jp/facility/428">鳥屋野運動公園球技場</a></li>
+                                                        <li><a href="https://niigata-kaikou.jp/facility/427">鳥屋野運動公園野球場</a></li>
+                                                        <li><a href="https://niigata-kaikou.jp/facility/19371">山二ツ運動広場</a></li>
+                                                    </ul>
+                    </div>
+                </div>
+                                <div class="l-footer-block02-facility-card__item">
+                    <div class="l-footer-block02-facility-card__title">
+                        <h5>江南区</h5>
+                    </div>
+                    <div class="l-footer-block02-facility-card__list">
+                        <ul>
+                                                        <li><a href="https://niigata-kaikou.jp/facility/429">亀田総合体育館</a></li>
+                                                        <li><a href="https://niigata-kaikou.jp/facility/544">亀田ふれあいドーム</a></li>
+                                                        <li><a href="https://niigata-kaikou.jp/facility/430">亀田少年野球場</a></li>
+                                                        <li><a href="https://niigata-kaikou.jp/facility/431">かわね公園グラウンド</a></li>
+                                                    </ul>
+                    </div>
+                </div>
+                                <div class="l-footer-block02-facility-card__item">
+                    <div class="l-footer-block02-facility-card__title">
+                        <h5>南区</h5>
+                    </div>
+                    <div class="l-footer-block02-facility-card__list">
+                        <ul>
+                                                        <li><a href="https://niigata-kaikou.jp/facility/495">白根カルチャーセンター</a></li>
+                                                        <li><a href="https://niigata-kaikou.jp/facility/433">白根総合公園</a></li>
+                                                        <li><a href="https://niigata-kaikou.jp/facility/543">白根総合公園屋内プール</a></li>
+                                                        <li><a href="https://niigata-kaikou.jp/facility/434">味方体育館</a></li>
+                                                        <li><a href="https://niigata-kaikou.jp/facility/436">味方野球場</a></li>
+                                                        <li><a href="https://niigata-kaikou.jp/facility/437">味方テニスコート</a></li>
+                                                        <li><a href="https://niigata-kaikou.jp/facility/435">味方ゲートボール場</a></li>
+                                                        <li><a href="https://niigata-kaikou.jp/facility/438">味方Ｂ＆Ｇ海洋センタープール</a></li>
+                                                        <li><a href="https://niigata-kaikou.jp/facility/439">月潟野球場</a></li>
+                                                        <li><a href="https://niigata-kaikou.jp/facility/440">月潟テニス場</a></li>
+                                                        <li><a href="https://niigata-kaikou.jp/facility/441">月潟ゲートボール場</a></li>
+                                                    </ul>
+                    </div>
+                </div>
+                                <div class="l-footer-block02-facility-card__item">
+                    <div class="l-footer-block02-facility-card__title">
+                        <h5>西区</h5>
+                    </div>
+                    <div class="l-footer-block02-facility-card__list">
+                        <ul>
+                                                        <li><a href="https://niigata-kaikou.jp/facility/442">西総合スポーツセンター</a></li>
+                                                        <li><a href="https://niigata-kaikou.jp/facility/443">黒埼地区総合体育館</a></li>
+                                                        <li><a href="https://niigata-kaikou.jp/facility/444">山田高架下ゲートボール場</a></li>
+                                                        <li><a href="https://niigata-kaikou.jp/facility/445">善久河川敷公園庭球場</a></li>
+                                                        <li><a href="https://niigata-kaikou.jp/facility/446">流通公園庭球場</a></li>
+                                                        <li><a href="https://niigata-kaikou.jp/facility/447">寺地河川敷公園庭球場</a></li>
+                                                    </ul>
+                    </div>
+                </div>
+                            </div>
+        </div>
+
+        <div id="js-footer-facility" class="l-footer-block02-facility-sp">
+                                        <div class="l-footer-block02-facility-sp__item">
+                <button class="facility-arrow-down" data-toggle="collapse" data-target="#city15107" aria-expanded="true" aria-controls="city15107">北区のスポーツ施設</button>
+                <div id="city15107" class="collapse facility">
+                    <ul id="contents1" class="active">
+                                                <li><a href="https://niigata-kaikou.jp/facility/408">北地区スポーツセンター</a></li>
+                                                <li><a href="https://niigata-kaikou.jp/facility/409">濁川運動広場</a></li>
+                                                <li><a href="https://niigata-kaikou.jp/facility/410">太夫浜運動公園球技場</a></li>
+                                                <li><a href="https://niigata-kaikou.jp/facility/411">南浜運動広場</a></li>
+                                                <li><a href="https://niigata-kaikou.jp/facility/412">阿賀野川ふれあい公園</a></li>
+                                            </ul>
+                </div>
+            </div>
+                                        <div class="l-footer-block02-facility-sp__item">
+                <button class="facility-arrow-down" data-toggle="collapse" data-target="#city15101" aria-expanded="true" aria-controls="city15101">東区のスポーツ施設</button>
+                <div id="city15101" class="collapse facility">
+                    <ul id="contents1" class="active">
+                                                <li><a href="https://niigata-kaikou.jp/facility/413">東総合スポーツセンター</a></li>
+                                                <li><a href="https://niigata-kaikou.jp/facility/414">阿賀野川河川公園</a></li>
+                                                <li><a href="https://niigata-kaikou.jp/facility/415">下山スポーツセンター</a></li>
+                                                <li><a href="https://niigata-kaikou.jp/facility/416">中地区運動広場</a></li>
+                                                <li><a href="https://niigata-kaikou.jp/facility/417">津島屋公園運動広場</a></li>
+                                                <li><a href="https://niigata-kaikou.jp/facility/418">山の下海浜公園プール</a></li>
+                                                <li><a href="https://niigata-kaikou.jp/facility/419">新潟市庭球場</a></li>
+                                            </ul>
+                </div>
+            </div>
+                                        <div class="l-footer-block02-facility-sp__item">
+                <button class="facility-arrow-down" data-toggle="collapse" data-target="#city15102" aria-expanded="true" aria-controls="city15102">中央区のスポーツ施設</button>
+                <div id="city15102" class="collapse facility">
+                    <ul id="contents1" class="active">
+                                                <li><a href="https://niigata-kaikou.jp/facility/420">鳥屋野総合体育館</a></li>
+                                                <li><a href="https://niigata-kaikou.jp/facility/421">新潟市陸上競技場</a></li>
+                                                <li><a href="https://niigata-kaikou.jp/facility/423">新潟市体育館</a></li>
+                                                <li><a href="https://niigata-kaikou.jp/facility/424">西海岸公園市営プール</a></li>
+                                                <li><a href="https://niigata-kaikou.jp/facility/425">西海岸公園少年野球広場</a></li>
+                                                <li><a href="https://niigata-kaikou.jp/facility/426">東公園児童プール</a></li>
+                                                <li><a href="https://niigata-kaikou.jp/facility/428">鳥屋野運動公園球技場</a></li>
+                                                <li><a href="https://niigata-kaikou.jp/facility/427">鳥屋野運動公園野球場</a></li>
+                                                <li><a href="https://niigata-kaikou.jp/facility/19371">山二ツ運動広場</a></li>
+                                            </ul>
+                </div>
+            </div>
+                                        <div class="l-footer-block02-facility-sp__item">
+                <button class="facility-arrow-down" data-toggle="collapse" data-target="#city15103" aria-expanded="true" aria-controls="city15103">江南区のスポーツ施設</button>
+                <div id="city15103" class="collapse facility">
+                    <ul id="contents1" class="active">
+                                                <li><a href="https://niigata-kaikou.jp/facility/429">亀田総合体育館</a></li>
+                                                <li><a href="https://niigata-kaikou.jp/facility/544">亀田ふれあいドーム</a></li>
+                                                <li><a href="https://niigata-kaikou.jp/facility/430">亀田少年野球場</a></li>
+                                                <li><a href="https://niigata-kaikou.jp/facility/431">かわね公園グラウンド</a></li>
+                                            </ul>
+                </div>
+            </div>
+                                        <div class="l-footer-block02-facility-sp__item">
+                <button class="facility-arrow-down" data-toggle="collapse" data-target="#city15104" aria-expanded="true" aria-controls="city15104">南区のスポーツ施設</button>
+                <div id="city15104" class="collapse facility">
+                    <ul id="contents1" class="active">
+                                                <li><a href="https://niigata-kaikou.jp/facility/495">白根カルチャーセンター</a></li>
+                                                <li><a href="https://niigata-kaikou.jp/facility/433">白根総合公園</a></li>
+                                                <li><a href="https://niigata-kaikou.jp/facility/543">白根総合公園屋内プール</a></li>
+                                                <li><a href="https://niigata-kaikou.jp/facility/434">味方体育館</a></li>
+                                                <li><a href="https://niigata-kaikou.jp/facility/436">味方野球場</a></li>
+                                                <li><a href="https://niigata-kaikou.jp/facility/437">味方テニスコート</a></li>
+                                                <li><a href="https://niigata-kaikou.jp/facility/435">味方ゲートボール場</a></li>
+                                                <li><a href="https://niigata-kaikou.jp/facility/438">味方Ｂ＆Ｇ海洋センタープール</a></li>
+                                                <li><a href="https://niigata-kaikou.jp/facility/439">月潟野球場</a></li>
+                                                <li><a href="https://niigata-kaikou.jp/facility/440">月潟テニス場</a></li>
+                                                <li><a href="https://niigata-kaikou.jp/facility/441">月潟ゲートボール場</a></li>
+                                            </ul>
+                </div>
+            </div>
+                                        <div class="l-footer-block02-facility-sp__item">
+                <button class="facility-arrow-down" data-toggle="collapse" data-target="#city15106" aria-expanded="true" aria-controls="city15106">西区のスポーツ施設</button>
+                <div id="city15106" class="collapse facility">
+                    <ul id="contents1" class="active">
+                                                <li><a href="https://niigata-kaikou.jp/facility/442">西総合スポーツセンター</a></li>
+                                                <li><a href="https://niigata-kaikou.jp/facility/443">黒埼地区総合体育館</a></li>
+                                                <li><a href="https://niigata-kaikou.jp/facility/444">山田高架下ゲートボール場</a></li>
+                                                <li><a href="https://niigata-kaikou.jp/facility/445">善久河川敷公園庭球場</a></li>
+                                                <li><a href="https://niigata-kaikou.jp/facility/446">流通公園庭球場</a></li>
+                                                <li><a href="https://niigata-kaikou.jp/facility/447">寺地河川敷公園庭球場</a></li>
+                                            </ul>
+                </div>
+            </div>
+                    </div>
+
+        <div class="l-footer-block02-other">
+            <ul class="l-footer-block02-other__list">
+                <li><a href="https://www.kosya-niigatacity.jp/seibi/hakusan-park-parking/" target="_blank">白山公園駐車場</a></li>
+                <li><a href="https://www.kosya-niigatacity.jp/seibi/shinanoriver-moorage/" target="_blank">信濃川係留場</a></li>
+                <li><a href="https://www.kosya-niigatacity.jp/seibi/tayuhama-cemetery/" target="_blank">太夫浜霊園</a></li>
+                <li><a href="https://www.sansin.or.jp/" target="_blank">新潟市産業振興センター</a></li>
+                <li><a href="https://www.n-terrsa.jp/" target="_blank">新潟テルサ</a></li>
+                <li><a href="https://tenjyuen.com/" target="_blank">天寿園</a></li>
+                <li><a href="https://niigata-kaikou.jp/facility/10647" target="_blank">鳥屋野交通公園</a></li>
+            </ul>
+        </div>
+
+        <div class="l-footer-block02-slp">
+            <img src="https://niigata-kaikou.jp/images/common/img-footer-slp.png" alt="健康寿命をのばそう！Smart Life Project">
+        </div>
+
+        <div class="l-footer-block02-copy">
+            <small>Copyright© Kaihatsukousha. all rights reserved.</small>
+        </div>
+
+    </div>
+</footer>
+
+    
+    <div class="loading" style="display:none;" id="js-loading">
+        <div class="spinner-border text-light" role="status">
+            <span class="sr-only">Loading...</span>
+        </div>
+    </div>
+
+    
+    <script type="text/javascript" src="https://niigata-kaikou.jp/js/front/front.js?id=c976766da9fe45881024"></script>
+    <script type="text/javascript" src="https://niigata-kaikou.jp/js/front/object-fit-images/ofi.min.js"></script>
+    <script>$(document).ready(function () { objectFitImages() });</script>
+    <script type="text/javascript" src="https://niigata-kaikou.jp/js/front/slick/slick.min.js"></script>
+    <script type="text/javascript" src="https://niigata-kaikou.jp/js/front/common.js"></script>
+    <script type="text/javascript" src="https://niigata-kaikou.jp/js/front/top.js"></script>
+</body>
+</html>
