@@ -104,7 +104,7 @@ export const VideosManagement = () => {
     techniqueName: string;
     targetLang: string;
     startTime: number;
-    provider?: 'rask' | 'elevenlabs' | 'heygen';
+    provider?: 'rask' | 'elevenlabs' | 'heygen' | 'unknown';
   }>>([]);
   
   // Helper function to get processing languages for a specific technique
@@ -798,6 +798,23 @@ export const VideosManagement = () => {
     }
   };
 
+  // プロジェクトIDからプロバイダーを推定する関数
+  const inferProvider = (projectId: string): 'heygen' | 'rask' | 'elevenlabs' | 'unknown' => {
+    // HeyGen: 20文字の英数字（例: abc123XYZ456def789gh）
+    if (/^[a-zA-Z0-9]{15,25}$/.test(projectId) && !projectId.includes('-') && !projectId.includes('_')) {
+      return 'heygen';
+    }
+    // ElevenLabs dubbing_id: ハイフンやアンダースコアを含む長めのID
+    if (/^[a-zA-Z0-9_-]{20,50}$/.test(projectId) && (projectId.includes('_') || projectId.includes('-'))) {
+      return 'elevenlabs';
+    }
+    // Rask.ai: UUID形式（ハイフン区切りで36文字程度）
+    if (/^[a-f0-9-]{30,40}$/.test(projectId.toLowerCase()) && projectId.includes('-')) {
+      return 'rask';
+    }
+    return 'unknown';
+  };
+
   // LocalStorageから進行中の翻訳を復元（24時間以内のジョブのみ）
   useEffect(() => {
     const stored = localStorage.getItem('activeTranslations');
@@ -817,12 +834,20 @@ export const VideosManagement = () => {
             return false;
           }
           return true;
+        }).map((t: any) => {
+          // プロバイダーが欠落している場合は推定する
+          if (!t.provider || t.provider === 'unknown') {
+            const inferred = inferProvider(t.projectId);
+            console.log(`Inferred provider for ${t.projectId}: ${inferred}`);
+            return { ...t, provider: inferred };
+          }
+          return t;
         });
         
         setActiveTranslations(validTranslations);
         
         // クリーンアップされたデータで保存し直す
-        if (validTranslations.length !== parsed.length) {
+        if (validTranslations.length !== parsed.length || JSON.stringify(validTranslations) !== JSON.stringify(parsed)) {
           if (validTranslations.length > 0) {
             localStorage.setItem('activeTranslations', JSON.stringify(validTranslations));
           } else {
@@ -852,20 +877,54 @@ export const VideosManagement = () => {
     const checkAllTranslations = async () => {
       for (const translation of activeTranslations) {
         try {
-          // Route to correct status endpoint based on provider
-          const statusEndpoint = translation.provider === 'heygen' 
-            ? 'heygen-check-status'
-            : translation.provider === 'rask'
-              ? 'rask-check-status'
-              : 'check-translation-status';
+          let statusData = null;
+          let statusError = null;
           
-          const { data: statusData, error: statusError } = await supabase.functions.invoke(statusEndpoint, {
-            body: { 
-              projectId: translation.projectId,
-              techniqueId: translation.techniqueId,
-              targetLanguage: translation.targetLang
+          // Provider が unknown の場合はフォールバック試行
+          if (!translation.provider || translation.provider === 'unknown') {
+            // 3つのエンドポイントを順番に試行
+            const endpoints = ['heygen-check-status', 'check-translation-status', 'rask-check-status'];
+            for (const endpoint of endpoints) {
+              const { data, error } = await supabase.functions.invoke(endpoint, {
+                body: { 
+                  projectId: translation.projectId,
+                  techniqueId: translation.techniqueId,
+                  targetLanguage: translation.targetLang
+                }
+              });
+              
+              // 成功またはprogressが返ってきた場合はそれを使う
+              if (!error && data && (data.status === 'dubbed' || data.status === 'completed' || data.progress > 0)) {
+                statusData = data;
+                console.log(`Fallback success with ${endpoint} for ${translation.projectId}`);
+                break;
+              }
             }
-          });
+            
+            // どのエンドポイントも成功しなかった場合
+            if (!statusData) {
+              console.warn(`All endpoints failed for unknown provider: ${translation.projectId}`);
+              continue;
+            }
+          } else {
+            // 通常のルーティング
+            const statusEndpoint = translation.provider === 'heygen' 
+              ? 'heygen-check-status'
+              : translation.provider === 'rask'
+                ? 'rask-check-status'
+                : 'check-translation-status';
+            
+            const result = await supabase.functions.invoke(statusEndpoint, {
+              body: { 
+                projectId: translation.projectId,
+                techniqueId: translation.techniqueId,
+                targetLanguage: translation.targetLang
+              }
+            });
+            
+            statusData = result.data;
+            statusError = result.error;
+          }
 
           if (statusError) {
             console.error('Translation status check error:', statusError);
@@ -2051,7 +2110,7 @@ export const VideosManagement = () => {
     techniqueName: string;
     targetLang: string;
     startTime: number;
-    provider?: 'rask' | 'elevenlabs' | 'heygen';
+    provider?: 'rask' | 'elevenlabs' | 'heygen' | 'unknown';
   }) => {
     try {
       toast.info("ステータス確認中...", {
@@ -2324,11 +2383,39 @@ export const VideosManagement = () => {
               const seconds = elapsedTime % 60;
               const langName = allLanguages.find(l => l.code === translation.targetLang)?.nativeName || translation.targetLang;
               
+              // プロバイダーバッジの色とラベル
+              const getProviderBadge = (provider?: string) => {
+                switch (provider) {
+                  case 'heygen':
+                    return <Badge className="bg-purple-500/20 text-purple-600 border-purple-500/30">HeyGen</Badge>;
+                  case 'rask':
+                    return <Badge className="bg-green-500/20 text-green-600 border-green-500/30">Rask.ai</Badge>;
+                  case 'elevenlabs':
+                    return <Badge className="bg-blue-500/20 text-blue-600 border-blue-500/30">ElevenLabs</Badge>;
+                  case 'unknown':
+                    return (
+                      <Badge variant="outline" className="bg-yellow-500/20 text-yellow-600 border-yellow-500/30">
+                        <AlertTriangle className="w-3 h-3 mr-1" />
+                        プロバイダー不明
+                      </Badge>
+                    );
+                  default:
+                    return (
+                      <Badge variant="outline" className="bg-muted text-muted-foreground">
+                        不明
+                      </Badge>
+                    );
+                }
+              };
+              
               return (
                 <div key={translation.projectId} className="border rounded p-3 bg-background">
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex-1">
-                      <p className="font-medium">{translation.techniqueName}</p>
+                      <div className="flex items-center gap-2 mb-1">
+                        <p className="font-medium">{translation.techniqueName}</p>
+                        {getProviderBadge(translation.provider)}
+                      </div>
                       <p className="text-sm text-muted-foreground">
                         {langName}版 • 経過時間: {minutes}分{seconds}秒
                       </p>
