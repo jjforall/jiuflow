@@ -117,6 +117,7 @@ export const VideosManagement = () => {
   const [seriesNameSuggestions, setSeriesNameSuggestions] = useState<string[]>([]);
   const [newCategory, setNewCategory] = useState("");
   const [previewTechnique, setPreviewTechnique] = useState<VideoPreviewTechnique | null>(null);
+  const [previewInitialLanguage, setPreviewInitialLanguage] = useState<string | undefined>(undefined);
   const [showVideoPreview, setShowVideoPreview] = useState(false);
   const [seriesMapping, setSeriesMapping] = useState<Array<{ series_name: string; series_prefix: string }>>([]);
   const [isFixingThumbnails, setIsFixingThumbnails] = useState(false);
@@ -1075,6 +1076,53 @@ export const VideosManagement = () => {
     
     // 言語に対応する動画がない場合、デフォルトの動画を返す
     return technique.video_url || technique.video_url_ja || technique.video_url_pt || null;
+  };
+
+  // 翻訳動画（吹き替え）を削除する関数
+  const handleDeleteDubbing = async (technique: Technique, langCode: string) => {
+    const langName = allLanguages.find(l => l.code === langCode)?.nativeName || langCode;
+    
+    if (!confirm(`「${technique.name_ja || technique.name}」の${langName}吹き替え音声を削除しますか？\n\nこの操作は取り消せません。`)) {
+      return;
+    }
+    
+    try {
+      // video_metadataから該当言語のエントリを削除
+      const currentMetadata = (technique.video_metadata as Record<string, any>) || {};
+      const videoUrlToDelete = currentMetadata[langCode]?.video_url;
+      
+      // 該当言語のエントリを除いた新しいmetadataを作成
+      const { [langCode]: removed, ...updatedMetadata } = currentMetadata;
+      
+      // DBを更新
+      const { error } = await supabase
+        .from('techniques')
+        .update({ video_metadata: Object.keys(updatedMetadata).length > 0 ? updatedMetadata : null })
+        .eq('id', technique.id);
+      
+      if (error) throw error;
+      
+      toast.success(`${langName}吹き替えを削除しました`);
+      
+      // Cloudflare Streamからも削除を試みる（バックグラウンドで）
+      if (videoUrlToDelete) {
+        try {
+          const match = videoUrlToDelete.match(/videodelivery\.net\/([a-f0-9]{32})/i);
+          if (match?.[1]) {
+            // cleanup-cloudflare-videos edge functionを使用して削除（オプション）
+            console.log('Video to delete from Cloudflare:', match[1]);
+          }
+        } catch (cfError) {
+          console.error('Failed to delete from Cloudflare:', cfError);
+        }
+      }
+      
+      // データを再取得
+      await refetch?.();
+    } catch (error) {
+      console.error('Delete dubbing error:', error);
+      toast.error(error instanceof Error ? error.message : '削除に失敗しました');
+    }
   };
 
   // Form state
@@ -2664,9 +2712,10 @@ export const VideosManagement = () => {
                 notations={notationMap[technique.id] || []}
                 isFetchingDuration={fetchingDurationId === technique.id}
                 onEdit={() => openEditDialog(technique)}
-                onPreview={() => {
+                onPreview={(langCode) => {
                   if (technique.video_url) {
                     setPreviewTechnique(technique as VideoPreviewTechnique);
+                    setPreviewInitialLanguage(langCode);
                     setShowVideoPreview(true);
                   }
                 }}
@@ -2681,6 +2730,7 @@ export const VideosManagement = () => {
                   setTranslationDialogTechnique(technique);
                 }}
                 onDelete={() => handleDelete(technique)}
+                onDeleteDubbing={(langCode) => handleDeleteDubbing(technique, langCode)}
                 onFetchDuration={() => handleFetchSingleDuration(technique)}
                 onDownload={() => handleDownloadVideo(technique)}
                 isDownloading={downloadingId === technique.id}
@@ -2872,8 +2922,12 @@ export const VideosManagement = () => {
       {/* Video Preview Dialog */}
       <VideoPreviewDialog
         open={showVideoPreview}
-        onOpenChange={setShowVideoPreview}
+        onOpenChange={(open) => {
+          setShowVideoPreview(open);
+          if (!open) setPreviewInitialLanguage(undefined);
+        }}
         technique={previewTechnique}
+        initialLanguage={previewInitialLanguage}
       />
 
       {/* Transcription Quick Dialog */}

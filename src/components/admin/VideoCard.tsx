@@ -49,6 +49,7 @@ interface VideoCardProps {
   onTranscribe: () => void;
   onTranslate: () => void;
   onDelete: () => void;
+  onDeleteDubbing?: (langCode: string) => void;
   onFetchDuration?: () => void;
   onDownload?: () => void;
   isDownloading?: boolean;
@@ -88,6 +89,7 @@ export function VideoCard({
   onTranscribe,
   onTranslate,
   onDelete,
+  onDeleteDubbing,
   onFetchDuration,
   onDownload,
   isDownloading = false,
@@ -240,7 +242,6 @@ export function VideoCard({
           
           {/* Visibility badges moved to thumbnail - removed from here */}
 
-          {/* Localization status */}
           <div className="mb-3">
             <LocalizationStatus
               hasTranscription={hasTranscription}
@@ -250,6 +251,7 @@ export function VideoCard({
               onGenerateSubtitle={isAdmin && technique.video_url ? onTranscribe : undefined}
               onAddDubbing={isAdmin && technique.video_url ? onTranslate : undefined}
               onPlayVideo={handlePlayVideo}
+              onDeleteDubbing={isAdmin && onDeleteDubbing ? onDeleteDubbing : undefined}
               compact
             />
           </div>

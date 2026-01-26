@@ -15,10 +15,11 @@ interface VideoPreviewDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   technique: VideoPreviewTechnique | null;
+  initialLanguage?: string;
 }
 
-export function VideoPreviewDialog({ open, onOpenChange, technique }: VideoPreviewDialogProps) {
-  const [selectedLanguage, setSelectedLanguage] = useState<string>("ja");
+export function VideoPreviewDialog({ open, onOpenChange, technique, initialLanguage }: VideoPreviewDialogProps) {
+  const [selectedLanguage, setSelectedLanguage] = useState<string>(initialLanguage || "ja");
   const [currentVideoUrl, setCurrentVideoUrl] = useState<string | null>(null);
   // ★ VideoPlayerを確実にアンマウントするためのkey
   const [playerKey, setPlayerKey] = useState(0);
@@ -31,18 +32,20 @@ export function VideoPreviewDialog({ open, onOpenChange, technique }: VideoPrevi
   // ダイアログの開閉時の処理
   useEffect(() => {
     if (open && technique) {
-      setSelectedLanguage("ja");
+      const startLang = initialLanguage && availableLanguages.some(l => l.code === initialLanguage) 
+        ? initialLanguage 
+        : "ja";
+      setSelectedLanguage(startLang);
       // 初期動画URLを設定
-      const jaLang = availableLanguages.find((l) => l.code === "ja");
-      setCurrentVideoUrl(jaLang?.videoUrl || technique.video_url || null);
+      const langData = availableLanguages.find((l) => l.code === startLang);
+      setCurrentVideoUrl(langData?.videoUrl || technique.video_url || null);
       // 新しいtechniqueの時はkeyを更新
       setPlayerKey(prev => prev + 1);
     } else if (!open) {
       // ★ 重要: ダイアログが閉じられたら即座にビデオURLをクリア
-      // これによりVideoPlayerがアンマウントされ、HLS.jsがdestroyされる
       setCurrentVideoUrl(null);
     }
-  }, [open, technique, availableLanguages]);
+  }, [open, technique, availableLanguages, initialLanguage]);
 
   // 言語切り替え時のURL更新
   useEffect(() => {
