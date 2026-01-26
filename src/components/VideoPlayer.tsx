@@ -400,9 +400,14 @@ const VideoPlayerInner = ({
       }
     };
 
-    // Handle video ended event for repeat play counting
+    // Handle video ended event - force loop via JS for mobile/Safari HLS stability
     const handleEnded = () => {
-      console.log('Video ended (will loop)');
+      console.log('Video ended - forcing loop for mobile/Safari stability');
+      const vid = videoRef.current;
+      if (vid && vid.loop) {
+        vid.currentTime = 0;
+        vid.play().catch(e => console.log('Loop play failed (likely power-save mode):', e));
+      }
       if (onVideoEnded) {
         onVideoEnded();
       }
@@ -617,6 +622,7 @@ const VideoPlayerInner = ({
         video.removeEventListener('stalled', handleStalled);
         video.removeEventListener('seeked', handleSeeked);
         video.removeEventListener('timeupdate', handleTimeUpdate);
+        video.removeEventListener('ended', handleEnded);
         if (saveTimeoutRef.current) {
           clearTimeout(saveTimeoutRef.current); saveTimeoutRef.current = null;
         }
