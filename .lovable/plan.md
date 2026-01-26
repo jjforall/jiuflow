@@ -1,240 +1,85 @@
 
-# サイト全体のデザイン刷新計画
-## Glassmorphism 2.0 + 3D要素の導入
+# HeyGen翻訳ステータス確認のバグ修正計画
+
+## 問題の概要
+
+HeyGenで開始された翻訳ジョブが2時間以上経過しても「pending」状態のままになっています。ログを分析した結果、以下の問題が判明しました：
+
+**根本原因**: `heygen-check-status` エッジ関数がサフィックス付きのプロジェクトID（例：`8c8e2a5ff1084e9ebb04a5a0caf47a57-en`）をそのままHeyGen APIに送信しているため、HeyGen側で「Video translate not found」エラーが発生しています。
+
+HeyGenが期待するのはサフィックスなしの元ID（`8c8e2a5ff1084e9ebb04a5a0caf47a57`）です。
 
 ---
 
-## 概要
+## 修正内容
 
-サイト全体に「すりガラス表現（Glassmorphism 2.0）」と「インタラクティブ3D要素」を導入し、洗練されたモダンなデザインに刷新します。
+### 1. `heygen-check-status` エッジ関数の修正
+
+**ファイル**: `supabase/functions/heygen-check-status/index.ts`
+
+**変更内容**:
+- 受け取った `projectId` から言語サフィックス（`-en`, `-zh`, `-pt` など）を除去してからHeyGen APIに問い合わせる
+- サフィックスパターン: `-` + 2〜3文字の言語コード（末尾）
+
+```typescript
+// サフィックスを除去してHeyGen用のIDを取得
+const languageSuffixPattern = /-[a-z]{2,3}$/i;
+const heygenProjectId = projectId.replace(languageSuffixPattern, '');
+
+console.log("[heygen-check-status] Original projectId:", projectId);
+console.log("[heygen-check-status] HeyGen projectId (suffix removed):", heygenProjectId);
+
+// HeyGen APIにはサフィックスなしのIDを使用
+const statusResponse = await fetch(
+  `https://api.heygen.com/v2/video_translate/status?video_translate_id=${heygenProjectId}`,
+  // ...
+);
+```
+
+### 2. 既存のstuckジョブのクリーンアップ
+
+現在DBに残っている「processing」状態のHeyGenジョブは、実際には翻訳が完了しているか失敗している可能性があります。修正後、ステータスチェックが正常に動作し、実際の状態（completed/failed）が取得できるようになります。
 
 ---
 
-## 1. Glassmorphism 2.0（すりガラス表現）
+## 技術詳細
 
-### 1.1 デザインコンセプト
+### サフィックスパターンの解析
 
-従来のグラスモーフィズムとの違い：
-- **透明度**: 0.1〜0.2の低い不透明度で背景を透過
-- **ぼかし**: `backdrop-filter: blur(12px〜20px)`
-- **微細なボーダー**: 半透明の白 `rgba(255,255,255,0.2)` の1pxボーダー
-- **内側の光沢**: `box-shadow: inset` で上部にハイライト
+DBに保存されているHeyGen project_id例：
+- `8c8e2a5ff1084e9ebb04a5a0caf47a57-en`（英語）
+- `bdf0abab558343929abe3287103969e5-zh`（中国語）
+- `6ff16f72dce74405ac62ab8b8772e52b-pt`（ポルトガル語）
 
-### 1.2 適用箇所
+パターン: `[32文字の英数字]-[2-3文字の言語コード]`
 
-| コンポーネント | 適用内容 |
-|---------------|---------|
-| **Navigation** | ヘッダーを完全なグラスパネルに強化 |
-| **Card** | 全カードにすりガラス効果を追加 |
-| **Hero Value Proposition** | 既存のぼかしを強化 |
-| **Dialog/Modal** | すりガラス背景に統一 |
-| **Dropdown** | ドロップダウンメニューにグラス効果 |
-| **Footer** | 上部にグラデーション+グラス境界 |
+### 修正後の動作フロー
 
-### 1.3 実装アプローチ
-
-**新規ユーティリティクラスの追加** (`src/index.css`):
-```css
-/* Glassmorphism 2.0 Utilities */
-.glass {
-  background: rgba(255, 255, 255, 0.08);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-}
-
-.glass-dark {
-  background: rgba(0, 0, 0, 0.25);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.glass-card {
-  background: hsl(var(--card) / 0.7);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid hsl(var(--border) / 0.5);
-  box-shadow: 
-    0 8px 32px rgba(0, 0, 0, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
-}
+```text
+1. フロントエンドがステータス確認リクエスト送信
+   projectId: "8c8e2a5ff1084e9ebb04a5a0caf47a57-en"
+   
+2. heygen-check-status がサフィックスを除去
+   heygenProjectId: "8c8e2a5ff1084e9ebb04a5a0caf47a57"
+   
+3. HeyGen APIに正しいIDで問い合わせ
+   → 実際のステータス（completed/processing/failed）を取得
+   
+4. 完了時はCloudflareアップロード→DB更新→通知
 ```
 
 ---
 
-## 2. 3D要素（Spline Integration）
-
-### 2.1 パッケージ追加
-
-```json
-"@splinetool/react-spline": "^2.2.6"
-```
-
-### 2.2 適用箇所
-
-| ページ/セクション | 3D要素 |
-|------------------|-------|
-| **Home Hero背景** | 抽象的なジオメトリックシェイプ（回転するトーラス/球体） |
-| **技術マップ背景** | フローティング3Dグリッド |
-| **CTAセクション** | インタラクティブな帯（Belt）3Dモデル |
-
-### 2.3 実装例
-
-**新規コンポーネント作成** (`src/components/Spline3DBackground.tsx`):
-```tsx
-import { Suspense, lazy } from 'react';
-
-const Spline = lazy(() => import('@splinetool/react-spline'));
-
-export const Spline3DBackground = ({ scene, className }) => {
-  return (
-    <div className={`absolute inset-0 pointer-events-none ${className}`}>
-      <Suspense fallback={<div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-secondary/5" />}>
-        <Spline scene={scene} />
-      </Suspense>
-    </div>
-  );
-};
-```
-
----
-
-## 3. コンポーネント別の変更詳細
-
-### 3.1 Navigation.tsx
-
-**変更前:**
-```tsx
-<nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
-```
-
-**変更後:**
-```tsx
-<nav className="fixed top-0 left-0 right-0 z-50 glass-nav">
-```
-- 新しいグラスナビゲーションスタイル
-- ホバー時の微妙な光沢エフェクト
-- スクロール時の透明度変化
-
-### 3.2 Card.tsx (UIコンポーネント)
-
-**変更:**
-```tsx
-const Card = React.forwardRef(({ className, variant = "default", ...props }, ref) => (
-  <div 
-    ref={ref} 
-    className={cn(
-      "rounded-xl text-card-foreground transition-all duration-300",
-      variant === "glass" 
-        ? "glass-card hover:shadow-xl hover:-translate-y-0.5"
-        : "border bg-card shadow-sm",
-      className
-    )} 
-    {...props} 
-  />
-));
-```
-
-### 3.3 Home.tsx
-
-**Hero セクションの強化:**
-- 3D背景オブジェクトの追加
-- Value Propositionボックスのグラス効果強化
-- CTAボタンにグロー効果追加
-
-**SEOカードセクション:**
-- 各カードに `glass-card` スタイル適用
-- ホバー時の3Dリフト効果強化
-
-### 3.4 index.css (デザインシステム拡張)
-
-追加するCSS変数とユーティリティ:
-- `--glass-bg-light`: ライトモード用グラス背景
-- `--glass-bg-dark`: ダークモード用グラス背景
-- `--glass-border`: グラスボーダー色
-- `--glass-highlight`: 内側ハイライト色
-
----
-
-## 4. パフォーマンス考慮
-
-### 4.1 backdrop-filter の最適化
-- 大量のグラス要素は避ける
-- スクロール中のアニメーションを最小限に
-- モバイルでは軽量なフォールバック
-
-### 4.2 3D要素の最適化
-- Splineシーンは遅延読み込み (`lazy`)
-- フォールバックとしてグラデーション背景
-- モバイルでは3D要素を非表示オプション
-
----
-
-## 5. ファイル変更リスト
+## ファイル変更リスト
 
 | ファイル | 変更内容 |
 |---------|---------|
-| `package.json` | `@splinetool/react-spline` 追加 |
-| `src/index.css` | グラスモーフィズムユーティリティ追加 |
-| `tailwind.config.ts` | カスタムカラー・アニメーション追加 |
-| `src/components/ui/card.tsx` | `variant` prop追加、グラススタイル |
-| `src/components/Navigation.tsx` | グラスナビゲーション適用 |
-| `src/components/Footer.tsx` | グラスボーダー追加 |
-| `src/pages/Home.tsx` | グラスカード・3D背景適用 |
-| `src/components/Spline3DBackground.tsx` | 新規作成 |
-| `src/components/ui/dialog.tsx` | グラスオーバーレイ適用 |
-| `src/components/ui/dropdown-menu.tsx` | グラスドロップダウン適用 |
+| `supabase/functions/heygen-check-status/index.ts` | サフィックス除去ロジックを追加 |
 
 ---
 
-## 6. 視覚的なビフォーアフター
+## 影響範囲
 
-### Navigation (Before)
-```
-┌──────────────────────────────────────┐
-│  JiuFlow    Home  Map  About  Login  │  ← 単純な半透明背景
-└──────────────────────────────────────┘
-```
-
-### Navigation (After)
-```
-┌──────────────────────────────────────┐
-│  JiuFlow    Home  Map  About  Login  │  ← すりガラス + 内側光沢
-│ ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓ │  ← 背景が透けて見える
-└──────────────────────────────────────┘
-```
-
-### Card (Before)
-```
-┌─────────────────────┐
-│  カード内容          │  ← フラットな背景
-└─────────────────────┘
-```
-
-### Card (After)
-```
-╭─────────────────────╮  ← 丸みを増したコーナー
-│ ✨ 上部ハイライト    │  ← 内側の光沢
-│  カード内容          │  ← すりガラス背景
-│  ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒    │  ← 背景透過
-╰─────────────────────╯
-```
-
----
-
-## 7. 技術詳細
-
-### Splineシーン作成の推奨
-
-Splineで作成する3Dシーンの推奨設定:
-1. **オブジェクト**: 抽象的なジオメトリック形状（柔術の帯や円形）
-2. **色**: サイトのプライマリカラー（赤）とセカンダリカラー（紫）
-3. **アニメーション**: ゆっくりとした回転（8〜12秒/回転）
-4. **エクスポート**: 軽量な `.splinecode` 形式
-
-### アクセシビリティ
-
-- すりガラス効果はテキストの読みやすさを損なわないよう調整
-- `prefers-reduced-motion` でアニメーション無効化対応
-- 十分なカラーコントラスト比の維持
+- 既存のHeyGen翻訳ジョブのステータス確認が正常に動作するようになる
+- 新規の翻訳ジョブも正しくトラッキングされる
+- ElevenLabsおよびRask.aiのジョブには影響なし
