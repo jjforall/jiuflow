@@ -4072,41 +4072,29 @@ export type Database = {
         Returns: undefined
       }
       sanitize_search_term: { Args: { search_input: string }; Returns: string }
-      search_public_profiles:
-        | {
-            Args: { p_query: string }
-            Returns: {
-              avatar_url: string | null
-              belt_history: Json | null
-              bio: string | null
-              created_at: string | null
-              display_name: string | null
-              display_name_reading: string | null
-              home_dojo: string | null
-              id: string | null
-              is_public: boolean | null
-              organization_id: string | null
-              titles: Json | null
-              username: string | null
-            }[]
-            SetofOptions: {
-              from: "*"
-              to: "public_profiles"
-              isOneToOne: false
-              isSetofReturn: true
-            }
-          }
-        | {
-            Args: { p_limit?: number; p_query: string }
-            Returns: {
-              avatar_url: string
-              belt_history: Json
-              display_name: string
-              display_name_reading: string
-              id: string
-              username: string
-            }[]
-          }
+      search_public_profiles: {
+        Args: { p_query: string }
+        Returns: {
+          avatar_url: string | null
+          belt_history: Json | null
+          bio: string | null
+          created_at: string | null
+          display_name: string | null
+          display_name_reading: string | null
+          home_dojo: string | null
+          id: string | null
+          is_public: boolean | null
+          organization_id: string | null
+          titles: Json | null
+          username: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "public_profiles"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       user_has_purchased_video: {
         Args: { p_user_id: string; p_video_id: string }
         Returns: boolean
