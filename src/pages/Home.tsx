@@ -153,9 +153,9 @@ const Home = () => {
                   />
                 </div>
                 
-                {/* Value Proposition */}
-                <div className="bg-black/40 backdrop-blur-sm border border-white/20 rounded-lg p-6 max-w-2xl mx-auto">
-                  <p className="text-lg md:text-xl font-light text-white whitespace-pre-line">
+                {/* Value Proposition - Glass Card */}
+                <div className="glass-card rounded-xl p-6 max-w-2xl mx-auto">
+                  <p className="text-lg md:text-xl font-light text-foreground whitespace-pre-line">
                     {t.home.hero.valueProposition}
                   </p>
                 </div>
@@ -301,7 +301,7 @@ const Home = () => {
 
                   <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
                     {/* Athletes Card */}
-                    <Link to="/athletes" className="group bg-card rounded-xl border border-border p-5 hover:border-primary/50 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 block">
+                    <Link to="/athletes" className="group glass-card rounded-xl p-5 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 block">
                       <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
                         <Users className="w-5 h-5 text-primary" />
                       </div>
@@ -314,7 +314,7 @@ const Home = () => {
                     </Link>
 
                     {/* Tournaments Card */}
-                    <Link to="/tournaments" className="group bg-card rounded-xl border border-border p-5 hover:border-primary/50 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 block">
+                    <Link to="/tournaments" className="group glass-card rounded-xl p-5 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 block">
                       <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
                         <Trophy className="w-5 h-5 text-primary" />
                       </div>
@@ -327,7 +327,7 @@ const Home = () => {
                     </Link>
 
                     {/* Blog Card */}
-                    <Link to="/blog" className="group bg-card rounded-xl border border-border p-5 hover:border-primary/50 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 block">
+                    <Link to="/blog" className="group glass-card rounded-xl p-5 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 block">
                       <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
                         <FileText className="w-5 h-5 text-primary" />
                       </div>
@@ -340,7 +340,7 @@ const Home = () => {
                     </Link>
 
                     {/* Glossary Card */}
-                    <Link to="/glossary" className="group bg-card rounded-xl border border-border p-5 hover:border-primary/50 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 block">
+                    <Link to="/glossary" className="group glass-card rounded-xl p-5 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 block">
                       <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
                         <BookOpen className="w-5 h-5 text-primary" />
                       </div>
@@ -358,7 +358,13 @@ const Home = () => {
 
             {/* Closing CTA Section */}
             <AnimatedSection delay={250}>
-              <section className="py-24 px-6 bg-gradient-to-br from-primary/10 via-primary/5 to-background">
+              <section className="py-24 px-6 relative overflow-hidden">
+                {/* Animated background orbs */}
+                <div className="absolute inset-0 -z-10">
+                  <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl animate-float" />
+                  <div className="absolute bottom-1/4 right-1/4 w-72 h-72 bg-secondary/10 rounded-full blur-3xl animate-float" style={{ animationDelay: '3s' }} />
+                </div>
+                
                 <div className="max-w-4xl mx-auto text-center">
                   <h2 className="text-4xl md:text-5xl font-light mb-6">
                     {language === 'ja' ? '今日から始める、一生モノの柔術' : 
@@ -374,7 +380,7 @@ const Home = () => {
                   {!user && (
                     <div className="flex flex-col sm:flex-row gap-4 justify-center">
                       <Link to="/join">
-                        <Button size="lg" className="min-w-[280px] text-lg font-medium shadow-lg hover:shadow-xl transition-all">
+                        <Button size="lg" className="min-w-[280px] text-lg font-medium shadow-lg hover:shadow-xl transition-all glow-primary">
                           {language === 'ja' ? '1ヶ月無料で始める' : 
                            language === 'pt' ? 'Começar 1 Mês Grátis' : 
                            'Start 1 Month Free'}
@@ -392,7 +398,7 @@ const Home = () => {
                   
                   {user && (
                     <Link to="/my-page">
-                      <Button size="lg" className="min-w-[280px] text-lg font-medium">
+                      <Button size="lg" className="min-w-[280px] text-lg font-medium glow-primary">
                         {language === 'ja' ? 'マイページへ' : 
                          language === 'pt' ? 'Minha Página' : 
                          'My Page'}
