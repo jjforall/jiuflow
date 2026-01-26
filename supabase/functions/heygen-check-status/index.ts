@@ -99,20 +99,23 @@ serve(async (req) => {
       
       // Check for specific error cases
       if (errorMessage.includes("not found") || errorCode === "internal_error") {
-        // Translation job doesn't exist - may have failed to create or expired
+        // HeyGenのAPIは翻訳開始直後に「not found」を返すことがある（伝播遅延）
+        // これは失敗ではなく、まだジョブが登録されていない状態
+        // フロントエンドでリトライを促すため、failed: false で返す
+        console.log("[heygen-check-status] Job not found yet - may be propagation delay");
         return new Response(
           JSON.stringify({
-            status: "not_found",
-            progress: 0,
-            statusMessage: "翻訳ジョブが見つかりません。再度翻訳を開始してください。",
+            status: "pending",
+            progress: 5,
+            statusMessage: "翻訳ジョブを初期化中です。しばらくお待ちください...",
             videoUrl: null,
             completed: false,
-            failed: true,
-            error: errorMessage,
-            hint: "HeyGenのScale/Enterpriseプランが必要な場合があります",
+            failed: false, // 失敗ではなく、まだ開始処理中
+            pendingRegistration: true, // フロントエンドでリトライ判定に使用
+            error: null,
           }),
           {
-            status: 200, // Return 200 so frontend can handle gracefully
+            status: 200,
             headers: { ...corsHeaders, "Content-Type": "application/json" },
           }
         );
