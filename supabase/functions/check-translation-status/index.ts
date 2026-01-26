@@ -140,9 +140,27 @@ serve(async (req) => {
             .eq('id', techniqueId)
             .single();
 
-          // Upload to Cloudflare using direct upload
+          // DUPLICATE PREVENTION: Re-check before upload (race condition guard)
+          if (technique?.video_metadata?.[targetLanguage]?.video_url) {
+            console.log(`[DUPLICATE PREVENTION] Video already uploaded for ${targetLanguage}, skipping`);
+            return new Response(
+              JSON.stringify({
+                status: "dubbed",
+                videoUrl: technique.video_metadata[targetLanguage].video_url,
+                progress: 100,
+                message: "Translation completed (cached)",
+              }),
+              { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+            );
+          }
+
+          // Create meaningful video name: {technique_name}-{language}
+          const videoName = `${technique?.name_ja || `technique-${techniqueId}`}-${targetLanguage}`;
+          console.log(`Uploading video with name: ${videoName}`);
+
+          // Upload to Cloudflare using direct upload with meaningful filename
           const uploadFormData = new FormData();
-          uploadFormData.append("file", new Blob([audioBuffer], { type: "video/mp4" }), "dubbed_video.mp4");
+          uploadFormData.append("file", new Blob([audioBuffer], { type: "video/mp4" }), `${videoName}.mp4`);
           
           const cfUploadRes = await fetch(
             `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/stream`,
@@ -160,6 +178,27 @@ serve(async (req) => {
             const cloudflareVideoId = cfData.result.uid;
             videoUrl = `https://videodelivery.net/${cloudflareVideoId}/manifest/video.m3u8`;
             console.log("Uploaded to Cloudflare:", videoUrl);
+
+            // Update Cloudflare video metadata with meaningful name
+            try {
+              await fetch(
+                `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/stream/${cloudflareVideoId}`,
+                {
+                  method: "POST",
+                  headers: {
+                    "Authorization": `Bearer ${CLOUDFLARE_STREAM_API_TOKEN}`,
+                    "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify({
+                    meta: { name: videoName }
+                  }),
+                }
+              );
+              console.log(`Set Cloudflare meta.name to: ${videoName}`);
+            } catch (metaError) {
+              console.error("Failed to set Cloudflare metadata:", metaError);
+              // Continue even if metadata update fails
+            }
 
             // Save to video_metadata
             const existingMetadata = technique?.video_metadata || {};
