@@ -19,35 +19,35 @@ interface SEOHeadProps {
 }
 
 const BASE_URL = "https://jiuflow.lovableproject.com";
-const DEFAULT_OG_IMAGE = "https://storage.googleapis.com/gpt-engineer-file-uploads/eKRz1NN3QtRy6vwWfmoNTmYXlqu2/social-images/social-1764815287708-Gemini_Generated_Image_o203l3o203l3o203.png";
+const DEFAULT_OG_IMAGE = "https://jiuflow.lovable.app/og-image.png";
 
 // Language-specific OG images
 const OG_IMAGES = {
   default: DEFAULT_OG_IMAGE,
   home: {
-    ja: "https://storage.googleapis.com/gpt-engineer-file-uploads/eKRz1NN3QtRy6vwWfmoNTmYXlqu2/social-images/social-1764815287708-Gemini_Generated_Image_o203l3o203l3o203.png",
-    en: "https://storage.googleapis.com/gpt-engineer-file-uploads/eKRz1NN3QtRy6vwWfmoNTmYXlqu2/social-images/social-1764815287708-Gemini_Generated_Image_o203l3o203l3o203.png",
-    pt: "https://storage.googleapis.com/gpt-engineer-file-uploads/eKRz1NN3QtRy6vwWfmoNTmYXlqu2/social-images/social-1764815287708-Gemini_Generated_Image_o203l3o203l3o203.png",
+    ja: DEFAULT_OG_IMAGE,
+    en: DEFAULT_OG_IMAGE,
+    pt: DEFAULT_OG_IMAGE,
   },
   tournaments: {
-    ja: "https://storage.googleapis.com/gpt-engineer-file-uploads/eKRz1NN3QtRy6vwWfmoNTmYXlqu2/social-images/social-1764815287708-Gemini_Generated_Image_o203l3o203l3o203.png",
-    en: "https://storage.googleapis.com/gpt-engineer-file-uploads/eKRz1NN3QtRy6vwWfmoNTmYXlqu2/social-images/social-1764815287708-Gemini_Generated_Image_o203l3o203l3o203.png",
-    pt: "https://storage.googleapis.com/gpt-engineer-file-uploads/eKRz1NN3QtRy6vwWfmoNTmYXlqu2/social-images/social-1764815287708-Gemini_Generated_Image_o203l3o203l3o203.png",
+    ja: DEFAULT_OG_IMAGE,
+    en: DEFAULT_OG_IMAGE,
+    pt: DEFAULT_OG_IMAGE,
   },
   athletes: {
-    ja: "https://storage.googleapis.com/gpt-engineer-file-uploads/eKRz1NN3QtRy6vwWfmoNTmYXlqu2/social-images/social-1764815287708-Gemini_Generated_Image_o203l3o203l3o203.png",
-    en: "https://storage.googleapis.com/gpt-engineer-file-uploads/eKRz1NN3QtRy6vwWfmoNTmYXlqu2/social-images/social-1764815287708-Gemini_Generated_Image_o203l3o203l3o203.png",
-    pt: "https://storage.googleapis.com/gpt-engineer-file-uploads/eKRz1NN3QtRy6vwWfmoNTmYXlqu2/social-images/social-1764815287708-Gemini_Generated_Image_o203l3o203l3o203.png",
+    ja: DEFAULT_OG_IMAGE,
+    en: DEFAULT_OG_IMAGE,
+    pt: DEFAULT_OG_IMAGE,
   },
   dojos: {
-    ja: "https://storage.googleapis.com/gpt-engineer-file-uploads/eKRz1NN3QtRy6vwWfmoNTmYXlqu2/social-images/social-1764815287708-Gemini_Generated_Image_o203l3o203l3o203.png",
-    en: "https://storage.googleapis.com/gpt-engineer-file-uploads/eKRz1NN3QtRy6vwWfmoNTmYXlqu2/social-images/social-1764815287708-Gemini_Generated_Image_o203l3o203l3o203.png",
-    pt: "https://storage.googleapis.com/gpt-engineer-file-uploads/eKRz1NN3QtRy6vwWfmoNTmYXlqu2/social-images/social-1764815287708-Gemini_Generated_Image_o203l3o203l3o203.png",
+    ja: DEFAULT_OG_IMAGE,
+    en: DEFAULT_OG_IMAGE,
+    pt: DEFAULT_OG_IMAGE,
   },
   map: {
-    ja: "https://storage.googleapis.com/gpt-engineer-file-uploads/eKRz1NN3QtRy6vwWfmoNTmYXlqu2/social-images/social-1764815287708-Gemini_Generated_Image_o203l3o203l3o203.png",
-    en: "https://storage.googleapis.com/gpt-engineer-file-uploads/eKRz1NN3QtRy6vwWfmoNTmYXlqu2/social-images/social-1764815287708-Gemini_Generated_Image_o203l3o203l3o203.png",
-    pt: "https://storage.googleapis.com/gpt-engineer-file-uploads/eKRz1NN3QtRy6vwWfmoNTmYXlqu2/social-images/social-1764815287708-Gemini_Generated_Image_o203l3o203l3o203.png",
+    ja: DEFAULT_OG_IMAGE,
+    en: DEFAULT_OG_IMAGE,
+    pt: DEFAULT_OG_IMAGE,
   },
 };
 
