@@ -927,6 +927,31 @@ export const VideosManagement = () => {
             statusError = result.error;
           }
 
+          // ステータスチェック後、DBにレコードが存在するか確認（孤児ジョブ検出）
+          const { data: historyRecord } = await supabase
+            .from('translation_history')
+            .select('id')
+            .eq('project_id', translation.projectId)
+            .maybeSingle();
+
+          // DBにレコードがない場合は孤児ジョブとして削除
+          if (!historyRecord) {
+            console.warn(`[checkAllTranslations] Orphan job detected (no DB record): ${translation.projectId}`);
+            
+            // 開始から6分以上経過している場合のみ削除（開始直後のDB遅延を考慮）
+            const elapsedHours = (Date.now() - translation.startTime) / (1000 * 60 * 60);
+            if (elapsedHours > 0.1) {
+              toast.info("孤児翻訳ジョブを削除しました", {
+                description: `「${translation.techniqueName}」のDBレコードが見つからないため削除しました`,
+              });
+              
+              setActiveTranslations(prev => 
+                prev.filter(t => t.projectId !== translation.projectId)
+              );
+              continue;
+            }
+          }
+
           if (statusError) {
             console.error('Translation status check error:', statusError);
             continue;
