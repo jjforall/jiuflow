@@ -1,170 +1,158 @@
 
-# 全体レビュー結果と改善計画
+# スタックした翻訳ジョブの解決計画
 
-## 調査結果サマリー
+## 現状分析
 
-包括的なコードベースレビューを実施し、以下の発見がありました。
+データベースを調査した結果、2つのジョブがスタックしていることを確認しました：
+
+### ジョブ1: HeyGen (中国語翻訳)
+- **技術名**: コンバットベースへのアクション3
+- **経過時間**: 46分
+- **問題**: HeyGen APIが「Video translate not found」を返し続けている
+- **原因**: HeyGen側でジョブが正しく作成されなかった可能性が高い
+
+### ジョブ2: ElevenLabs (英語翻訳)
+- **技術名**: マウントエスケープのバリエーション1
+- **経過時間**: 49分
+- **問題**: translation_historyでは「processing」だが、実際にはすでに完了している
+- **証拠**: `video_metadata.en.video_url`にCloudflare URL (`https://videodelivery.net/9994f309257922268fa943687ba6e519/manifest/video.m3u8`) が保存済み
 
 ---
 
-## 発見した問題と改善点
+## 解決方法
 
-### 1. ログインフォームの autocomplete 属性欠落（アクセシビリティ改善）
+### 即時対応（手動）
 
-**問題**: ブラウザコンソールに「Input elements should have autocomplete attributes」という警告が表示されています。
+**管理ツールの「古い翻訳ジョブをクリーンアップ」ボタンを使用してください。**
 
-**影響**: パスワードマネージャーの動作が不安定になり、ユーザー体験が低下します。
+現在のタイムアウト設定は2時間ですが、これを1時間に設定してクリーンアップを実行することで、現在スタックしているジョブを解決できます。
 
-**修正内容**:
-| ファイル | 変更内容 |
-|---------|---------|
-| `src/pages/Login.tsx` | email入力に `autoComplete="email"`、password入力に `autoComplete="current-password"` を追加 |
+**手順:**
+1. 管理画面の「翻訳管理」または「管理ツール」セクションに移動
+2. 「古い翻訳ジョブをクリーンアップ」ボタンをクリック
+3. しきい値を「1時間」に設定してクリーンアップを実行
+
+---
+
+## 根本的な改善計画
+
+スタックしたジョブを自動的に検出・解決するため、以下の改善を提案します：
+
+### 改善1: ElevenLabsの完了済みジョブ自動検出
+
+`check-translation-status` Edge Functionは既にキャッシュされたURLを返しますが、`translation_history`のステータスを更新していません。
+
+**変更内容**: 完了済みの動画URLがある場合、translation_historyのステータスも「completed」に更新する
 
 ```typescript
-// 修正前
-<Input id="login-email" type="email" ... />
-<Input id="login-password" type="password" ... />
-
-// 修正後
-<Input id="login-email" type="email" autoComplete="email" ... />
-<Input id="login-password" type="password" autoComplete="current-password" ... />
-<Input id="signup-email" type="email" autoComplete="email" ... />
-<Input id="signup-password" type="password" autoComplete="new-password" ... />
+// supabase/functions/check-translation-status/index.ts
+// 既存のキャッシュチェック後に追加
+if (existingVideoUrl) {
+  // Update translation_history status
+  await supabase
+    .from('translation_history')
+    .update({ 
+      status: 'completed', 
+      completed_at: new Date().toISOString() 
+    })
+    .eq('technique_id', techniqueId)
+    .eq('target_language', targetLanguage)
+    .in('status', ['processing', 'pending']);
+    
+  return new Response(...);
+}
 ```
 
----
+### 改善2: タイムアウト値の短縮
 
-### 2. 通知ベルボタンの未実装機能
+現在の2時間タイムアウトは長すぎます。ほとんどの翻訳は15分以内に完了します。
 
-**問題**: ナビゲーションの通知ベルボタンにはTODOコメントがあり、現在はトースト表示のみです。
+**変更内容**: HeyGenのタイムアウトを1時間に短縮
 
-**現状**: 機能は未完成ですが、UIは存在しています。将来的な実装のためのプレースホルダーとして問題ありません。
+```typescript
+// heygen-check-status/index.ts 
+// 122行目付近
+if (elapsedHours > 1) {  // 2時間 → 1時間に変更
+  // ...mark as failed
+}
+```
 
-**推奨**: 現時点では変更不要。通知機能を実装する際に対応。
+### 改善3: クリーンアップUIの改善
 
----
-
-### 3. タイムアウト値の不統一
-
-**問題**: 各所でネットワークタイムアウトの値が異なります。
-
-| ファイル | タイムアウト値 |
-|---------|--------------|
-| `Map.tsx` | 30秒 |
-| `ContactForm.tsx` | 15秒 |
-| `useSubscription.tsx` | 20秒 |
-
-**推奨**: 重要度に応じて適切に設定されているため、現状維持で問題なし。
+「古い翻訳ジョブをクリーンアップ」ボタンに、カスタムしきい値（分単位）を指定できる機能を追加
 
 ---
 
-### 4. Safari向けセッション永続化の待機ロジック
+## 変更ファイル一覧
 
-**問題**: `Login.tsx` で100msの待機後にセッション確認を行っています。
-
-**現状**: Safari/iOSでのセッション保存の遅延に対応するための対策として有効です。実際に検証済みの対応であり、問題なく動作しています。
-
----
-
-## 修正が必要な項目
-
-### 修正1: Login.tsx の autocomplete 属性追加
-
-**変更箇所（4箇所）**:
-
-1. **256-264行目** - ログインメールアドレス入力
-2. **273-282行目** - ログインパスワード入力
-3. **376-385行目** - 新規登録メールアドレス入力
-4. **393-402行目** - 新規登録パスワード入力
-
----
-
-## 全体的な品質評価
-
-| カテゴリ | 状態 | 備考 |
-|---------|------|------|
-| エラーハンドリング | 良好 | ErrorBoundaryで適切にキャッチ |
-| 認証フロー | 良好 | Safari対応済み |
-| タイムアウト処理 | 良好 | 各所で適切に設定 |
-| アクセシビリティ | 要改善 | autocomplete属性の追加が必要 |
-| セキュリティ | 良好 | RLSポリシーとサニタイズ関数が適用済み |
-
----
-
-## 実装計画
-
-### ステップ1: Login.tsx の修正
-- 4つのInput要素に適切な `autoComplete` 属性を追加
-- ログイン用: `autoComplete="email"` と `autoComplete="current-password"`
-- 新規登録用: `autoComplete="email"` と `autoComplete="new-password"`
-
-### 期待される効果
-- ブラウザのパスワードマネージャーが正しく動作
-- コンソール警告の解消
-- ユーザー体験の向上
+| ファイル | 変更内容 |
+|---------|---------|
+| `supabase/functions/check-translation-status/index.ts` | 完了済みジョブのステータス自動更新を追加 |
+| `supabase/functions/heygen-check-status/index.ts` | タイムアウトを2時間から1時間に短縮 |
 
 ---
 
 ## 技術的詳細
 
-### 変更ファイル一覧
-
-| ファイル | 行数 | 変更種別 |
-|---------|------|---------|
-| `src/pages/Login.tsx` | 256-264, 273-282, 376-385, 393-402 | 属性追加 |
-
-### コード変更の詳細
+### check-translation-status の変更 (L40-60付近)
 
 ```typescript
-// ログインタブ - メールアドレス（256-264行目）
-<Input
-  id="login-email"
-  type="email"
-  value={email}
-  onChange={(e) => setEmail(e.target.value)}
-  placeholder="you@example.com"
-  required
-  disabled={isLoading}
-  autoComplete="email"
-  className="h-12 text-base bg-muted/30 ..."
-/>
-
-// ログインタブ - パスワード（273-282行目）
-<Input
-  id="login-password"
-  type="password"
-  value={password}
-  onChange={(e) => setPassword(e.target.value)}
-  placeholder="••••••••"
-  required
-  disabled={isLoading}
-  autoComplete="current-password"
-  className="h-12 text-base bg-muted/30 ..."
-/>
-
-// 新規登録タブ - メールアドレス（376-385行目）
-<Input
-  id="signup-email"
-  type="email"
-  value={email}
-  onChange={(e) => setEmail(e.target.value)}
-  placeholder="you@example.com"
-  required
-  disabled={isLoading}
-  autoComplete="email"
-  className="h-12 text-base bg-muted/30 ..."
-/>
-
-// 新規登録タブ - パスワード（393-402行目）
-<Input
-  id="signup-password"
-  type="password"
-  value={password}
-  onChange={(e) => setPassword(e.target.value)}
-  placeholder="••••••••"
-  required
-  disabled={isLoading}
-  autoComplete="new-password"
-  className="h-12 text-base bg-muted/30 ..."
-/>
+// 既存: 完了済みの動画URLを返すだけ
+if (existingVideoUrl) {
+  console.log(`Video already uploaded for ${targetLanguage}, returning cached URL`);
+  
+  // 追加: translation_historyのステータスも更新
+  const { error: historyError } = await supabase
+    .from('translation_history')
+    .update({
+      status: 'completed',
+      completed_at: new Date().toISOString(),
+    })
+    .eq('technique_id', techniqueId)
+    .eq('target_language', targetLanguage)
+    .in('status', ['processing', 'pending']);
+    
+  if (historyError) {
+    console.error('Failed to update translation history:', historyError);
+  }
+  
+  return new Response(
+    JSON.stringify({
+      status: "dubbed",
+      videoUrl: existingVideoUrl,
+      progress: 100,
+      message: "Translation completed",
+    }),
+    { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+  );
+}
 ```
+
+### heygen-check-status の変更 (L123付近)
+
+```typescript
+// 変更前
+if (elapsedHours > 2) {
+
+// 変更後  
+if (elapsedHours > 1) {
+```
+
+---
+
+## 今すぐできること
+
+改善を実装する前に、現在のスタックしたジョブを解決するには：
+
+1. **管理ツールでクリーンアップを実行** - 「古い翻訳ジョブをクリーンアップ」ボタンを使用（しきい値1時間）
+2. **または** - 次のステータス確認時に2時間が経過すれば自動的にfailed扱いになる
+
+上記の改善を実装すれば、将来同様の問題が発生した際に自動的に解決されるようになります。
+
+---
+
+## 期待される効果
+
+- ElevenLabsの完了済みジョブは次回のステータス確認時に自動的に「completed」に更新される
+- HeyGenのタイムアウトが1時間に短縮され、スタックしたジョブがより早く検出される
+- ユーザーがスタックした翻訳ジョブを手動で解決する必要がなくなる
