@@ -21,7 +21,7 @@ export const prefetchVideo = (videoUrl: string) => {
   if (!videoId) return;
 
   // Prefetch the HLS manifest
-  const manifestUrl = `https://customer-h30twz5us03qxnww.cloudflarestream.com/${videoId}/manifest/video.m3u8`;
+  const manifestUrl = `https://videodelivery.net/${videoId}/manifest/video.m3u8`;
   
   // Use link preload for manifest
   const existingLink = document.querySelector(`link[href="${manifestUrl}"]`);
@@ -35,7 +35,7 @@ export const prefetchVideo = (videoUrl: string) => {
   }
 
   // Also prefetch the thumbnail
-  const thumbnailUrl = `https://customer-h30twz5us03qxnww.cloudflarestream.com/${videoId}/thumbnails/thumbnail.jpg?time=1s&width=640`;
+  const thumbnailUrl = `https://videodelivery.net/${videoId}/thumbnails/thumbnail.jpg?time=1s&width=640`;
   const existingThumb = document.querySelector(`link[href="${thumbnailUrl}"]`);
   if (!existingThumb) {
     const thumbLink = document.createElement('link');
