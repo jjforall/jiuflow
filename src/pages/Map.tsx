@@ -12,7 +12,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { useFavoriteTechniques } from "@/hooks/useFavoriteTechniques";
 import { prefetchVideo } from "@/hooks/useVideoPrefetch";
 import { Button } from "@/components/ui/button";
-import { Lock, Loader2, Upload, X, ChevronDown, Eye, Check, Search, Star, Heart } from "lucide-react";
+import { Lock, Loader2, Upload, X, ChevronDown, Eye, Check, Search, Star, Heart, Mic } from "lucide-react";
+import { hasTranslatedVideo } from "@/lib/videoLanguages";
 import { Skeleton } from "@/components/ui/skeleton";
 import { VideoUploadDialog } from "@/components/VideoUploadDialog";
 import { Badge } from "@/components/ui/badge";
@@ -72,6 +73,32 @@ const getTranslatedSeriesName = (seriesName: string, language: string): string =
   const translation = seriesNameTranslations[seriesName];
   if (!translation) return seriesName;
   return language === "pt" ? translation.pt : translation.en;
+};
+
+// 選択言語の吹き替えがあるかチェック（Map用ラッパー）
+const hasDubbingForLanguage = (tech: Technique, lang: string): boolean => {
+  if (lang === "ja") return true; // オリジナル
+  return hasTranslatedVideo(tech as any, lang);
+};
+
+// シリーズ内の技術をソート（吹き替え優先）
+const sortTechniquesWithDubbingPriority = (techs: Technique[], lang: string) => {
+  if (lang === "ja") {
+    // 日本語選択時は従来通りseries_orderでソート
+    return [...techs].sort((a, b) => (a.series_order || 0) - (b.series_order || 0));
+  }
+  
+  return [...techs].sort((a, b) => {
+    const aHasDub = hasDubbingForLanguage(a, lang);
+    const bHasDub = hasDubbingForLanguage(b, lang);
+    
+    // 吹き替えありを優先
+    if (aHasDub && !bHasDub) return -1;
+    if (!aHasDub && bHasDub) return 1;
+    
+    // 同じ場合は series_order でソート
+    return (a.series_order || 0) - (b.series_order || 0);
+  });
 };
 
 const Map = () => {
@@ -668,11 +695,11 @@ const Map = () => {
                       </AccordionTrigger>
                       <AccordionContent className="px-0 pb-0">
                         <div className="divide-y divide-border">
-                          {seriesTechs
-                            .sort((a, b) => (a.series_order || 0) - (b.series_order || 0))
+                          {sortTechniquesWithDubbingPriority(seriesTechs, language)
                             .map((tech, index) => {
                             const viewCount = videoViews[tech.id];
                             const isWatched = viewCount && viewCount > 0;
+                            const hasCurrentLangDub = language !== "ja" && hasDubbingForLanguage(tech, language);
                             
                             return (
                               <div
@@ -700,6 +727,13 @@ const Map = () => {
                                       <h4 className="text-sm md:text-base font-medium text-foreground group-hover:text-primary transition-colors leading-snug">
                                         {getTechniqueName(tech)}
                                       </h4>
+                                      {/* 吹き替えバッジ */}
+                                      {hasCurrentLangDub && (
+                                        <span className="inline-flex items-center gap-0.5 text-[10px] text-primary/80 bg-primary/10 px-1.5 py-0.5 rounded flex-shrink-0">
+                                          <Mic className="w-2.5 h-2.5" />
+                                          {language.toUpperCase()}
+                                        </span>
+                                      )}
                                       {isWatched && (
                                         <div className="flex items-center justify-center w-5 h-5 rounded-full bg-primary/10 flex-shrink-0 mt-0.5">
                                           <Check className="w-3 h-3 text-primary" />
