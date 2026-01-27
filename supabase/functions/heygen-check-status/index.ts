@@ -120,7 +120,8 @@ serve(async (req) => {
           if (historyData?.started_at) {
             const elapsedHours = (Date.now() - new Date(historyData.started_at).getTime()) / (1000 * 60 * 60);
             
-            if (elapsedHours > 2) {
+            // Reduced timeout from 2 hours to 1 hour for faster detection of stuck jobs
+            if (elapsedHours > 1) {
               console.log(`[heygen-check-status] Job ${projectId} has been pending for ${elapsedHours.toFixed(1)} hours - marking as failed`);
               
               // Update the job status to failed

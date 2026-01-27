@@ -47,6 +47,24 @@ serve(async (req) => {
       const existingVideoUrl = existingTechnique?.video_metadata?.[targetLanguage]?.video_url;
       if (existingVideoUrl) {
         console.log(`Video already uploaded for ${targetLanguage}, returning cached URL`);
+        
+        // Also update translation_history status if it's still processing
+        const { error: historyError } = await supabase
+          .from('translation_history')
+          .update({
+            status: 'completed',
+            completed_at: new Date().toISOString(),
+          })
+          .eq('technique_id', techniqueId)
+          .eq('target_language', targetLanguage)
+          .in('status', ['processing', 'pending']);
+        
+        if (historyError) {
+          console.error('Failed to update translation history:', historyError);
+        } else {
+          console.log(`Updated translation_history status to completed for ${techniqueId}/${targetLanguage}`);
+        }
+        
         return new Response(
           JSON.stringify({
             status: "dubbed",
