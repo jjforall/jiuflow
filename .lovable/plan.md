@@ -1,158 +1,209 @@
 
-# スタックした翻訳ジョブの解決計画
+# 吹き替え表示とソート機能の追加計画
 
-## 現状分析
+## 概要
 
-データベースを調査した結果、2つのジョブがスタックしていることを確認しました：
-
-### ジョブ1: HeyGen (中国語翻訳)
-- **技術名**: コンバットベースへのアクション3
-- **経過時間**: 46分
-- **問題**: HeyGen APIが「Video translate not found」を返し続けている
-- **原因**: HeyGen側でジョブが正しく作成されなかった可能性が高い
-
-### ジョブ2: ElevenLabs (英語翻訳)
-- **技術名**: マウントエスケープのバリエーション1
-- **経過時間**: 49分
-- **問題**: translation_historyでは「processing」だが、実際にはすでに完了している
-- **証拠**: `video_metadata.en.video_url`にCloudflare URL (`https://videodelivery.net/9994f309257922268fa943687ba6e519/manifest/video.m3u8`) が保存済み
+ユーザー画面（テクニックマップ）に以下の機能を追加します：
+1. 各動画に吹き替えがあることを表示
+2. 選択中の言語の吹き替えがある動画を優先的に上部に表示
 
 ---
 
-## 解決方法
+## 変更内容
 
-### 即時対応（手動）
+### 1. テクニックマップ（Map.tsx）に吹き替えバッジを追加
 
-**管理ツールの「古い翻訳ジョブをクリーンアップ」ボタンを使用してください。**
+**ファイル**: `src/pages/Map.tsx`
 
-現在のタイムアウト設定は2時間ですが、これを1時間に設定してクリーンアップを実行することで、現在スタックしているジョブを解決できます。
+現在、テクニック一覧には視聴済みバッジ（✓）とお気に入りハート（♥）のみが表示されています。ここに吹き替え言語バッジを追加します。
 
-**手順:**
-1. 管理画面の「翻訳管理」または「管理ツール」セクションに移動
-2. 「古い翻訳ジョブをクリーンアップ」ボタンをクリック
-3. しきい値を「1時間」に設定してクリーンアップを実行
+**変更箇所**: 技術名の横に吹き替え対応言語を表示
+
+```
+変更前:
+  [A-1] クローズドガードの基本 ✓ 👁 3 ♥
+
+変更後:
+  [A-1] クローズドガードの基本 ✓ 🎤EN 👁 3 ♥
+```
+
+**表示ロジック**:
+- ユーザーが選択している言語（例: EN）の吹き替えがある場合のみ、その言語のバッジを表示
+- 日本語選択時は吹き替えバッジは非表示（オリジナル音声のため）
+- バッジは小さく控えめなデザイン（`🎤EN` 形式）
 
 ---
 
-## 根本的な改善計画
+### 2. 吹き替え対応動画を上部に優先表示
 
-スタックしたジョブを自動的に検出・解決するため、以下の改善を提案します：
+**ファイル**: `src/pages/Map.tsx`
 
-### 改善1: ElevenLabsの完了済みジョブ自動検出
+各シリーズ内で、ユーザーが選択している言語の吹き替えがある動画を先頭に表示します。
 
-`check-translation-status` Edge Functionは既にキャッシュされたURLを返しますが、`translation_history`のステータスを更新していません。
+**ソート順**:
+1. 選択言語の吹き替えがある動画 → 上部
+2. 吹き替えがない動画 → 下部
+3. 各グループ内では従来通り `series_order` でソート
 
-**変更内容**: 完了済みの動画URLがある場合、translation_historyのステータスも「completed」に更新する
+**例（英語選択時）**:
+```
+変更前:
+  A-1 技術A（吹替なし）
+  A-2 技術B（EN吹替あり）
+  A-3 技術C（吹替なし）
+  A-4 技術D（EN吹替あり）
+
+変更後:
+  A-2 技術B（EN吹替あり）🎤EN
+  A-4 技術D（EN吹替あり）🎤EN
+  A-1 技術A（吹替なし）
+  A-3 技術C（吹替なし）
+```
+
+---
+
+### 3. LocalizationBadges コンポーネントの拡張
+
+**ファイル**: `src/components/ui/LocalizationBadges.tsx`
+
+新しい props を追加して、ユーザー画面向けの簡潔な表示モードをサポート：
 
 ```typescript
-// supabase/functions/check-translation-status/index.ts
-// 既存のキャッシュチェック後に追加
-if (existingVideoUrl) {
-  // Update translation_history status
-  await supabase
-    .from('translation_history')
-    .update({ 
-      status: 'completed', 
-      completed_at: new Date().toISOString() 
-    })
-    .eq('technique_id', techniqueId)
-    .eq('target_language', targetLanguage)
-    .in('status', ['processing', 'pending']);
-    
-  return new Response(...);
+interface LocalizationBadgesProps {
+  // 既存
+  subtitleLanguages?: string[];
+  dubbedLanguages?: string[];
+  hasTranscription?: boolean;
+  compact?: boolean;
+  // 新規追加
+  highlightLanguage?: string;  // 強調表示する言語（ユーザー選択言語）
+  userFacing?: boolean;        // ユーザー画面向けの簡潔表示
 }
 ```
 
-### 改善2: タイムアウト値の短縮
-
-現在の2時間タイムアウトは長すぎます。ほとんどの翻訳は15分以内に完了します。
-
-**変更内容**: HeyGenのタイムアウトを1時間に短縮
-
-```typescript
-// heygen-check-status/index.ts 
-// 122行目付近
-if (elapsedHours > 1) {  // 2時間 → 1時間に変更
-  // ...mark as failed
-}
-```
-
-### 改善3: クリーンアップUIの改善
-
-「古い翻訳ジョブをクリーンアップ」ボタンに、カスタムしきい値（分単位）を指定できる機能を追加
-
----
-
-## 変更ファイル一覧
-
-| ファイル | 変更内容 |
-|---------|---------|
-| `supabase/functions/check-translation-status/index.ts` | 完了済みジョブのステータス自動更新を追加 |
-| `supabase/functions/heygen-check-status/index.ts` | タイムアウトを2時間から1時間に短縮 |
+**userFacing=true の表示**:
+- 選択言語の吹き替えがある場合のみバッジを表示
+- 「🎤EN」のような最小限の表示
+- より目立つが邪魔にならないデザイン
 
 ---
 
 ## 技術的詳細
 
-### check-translation-status の変更 (L40-60付近)
+### Map.tsx の変更箇所
+
+#### 1. Technique インターフェースにヘルパー関数を追加（L50付近）
 
 ```typescript
-// 既存: 完了済みの動画URLを返すだけ
-if (existingVideoUrl) {
-  console.log(`Video already uploaded for ${targetLanguage}, returning cached URL`);
+// 吹き替え言語を取得するヘルパー関数
+const getDubbedLanguages = (tech: Technique): string[] => {
+  const langs: string[] = [];
   
-  // 追加: translation_historyのステータスも更新
-  const { error: historyError } = await supabase
-    .from('translation_history')
-    .update({
-      status: 'completed',
-      completed_at: new Date().toISOString(),
-    })
-    .eq('technique_id', techniqueId)
-    .eq('target_language', targetLanguage)
-    .in('status', ['processing', 'pending']);
-    
-  if (historyError) {
-    console.error('Failed to update translation history:', historyError);
+  // video_metadata から翻訳済み言語を取得
+  if (tech.video_metadata && typeof tech.video_metadata === 'object') {
+    Object.keys(tech.video_metadata).forEach(lang => {
+      if (tech.video_metadata[lang]?.video_url && lang !== 'ja') {
+        langs.push(lang);
+      }
+    });
   }
   
-  return new Response(
-    JSON.stringify({
-      status: "dubbed",
-      videoUrl: existingVideoUrl,
-      progress: 100,
-      message: "Translation completed",
-    }),
-    { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-  );
-}
+  // レガシーフィールドをチェック
+  if (tech.video_url_pt && !langs.includes('pt')) {
+    langs.push('pt');
+  }
+  
+  return langs;
+};
+
+// 選択言語の吹き替えがあるかチェック
+const hasDubbingForLanguage = (tech: Technique, lang: string): boolean => {
+  if (lang === 'ja') return true; // オリジナル
+  const dubbedLangs = getDubbedLanguages(tech);
+  return dubbedLangs.includes(lang);
+};
 ```
 
-### heygen-check-status の変更 (L123付近)
+#### 2. ソート関数の追加（L670付近）
 
 ```typescript
-// 変更前
-if (elapsedHours > 2) {
+// シリーズ内の技術をソート（吹き替え優先）
+const sortTechniquesWithDubbingPriority = (techs: Technique[], lang: string) => {
+  return [...techs].sort((a, b) => {
+    const aHasDub = hasDubbingForLanguage(a, lang);
+    const bHasDub = hasDubbingForLanguage(b, lang);
+    
+    // 吹き替えありを優先
+    if (aHasDub && !bHasDub) return -1;
+    if (!aHasDub && bHasDub) return 1;
+    
+    // 同じ場合は series_order でソート
+    return (a.series_order || 0) - (b.series_order || 0);
+  });
+};
+```
 
-// 変更後  
-if (elapsedHours > 1) {
+#### 3. レンダリング部分の変更（L671-710付近）
+
+```typescript
+{sortTechniquesWithDubbingPriority(seriesTechs, language)
+  .map((tech, index) => {
+    const viewCount = videoViews[tech.id];
+    const isWatched = viewCount && viewCount > 0;
+    const dubbedLanguages = getDubbedLanguages(tech);
+    const hasCurrentLangDub = language !== 'ja' && hasDubbingForLanguage(tech, language);
+    
+    return (
+      <div key={tech.id} className="...">
+        {/* 既存のコンテンツ */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-start gap-2">
+            <h4 className="...">{getTechniqueName(tech)}</h4>
+            {/* 吹き替えバッジを追加 */}
+            {hasCurrentLangDub && (
+              <span className="inline-flex items-center gap-0.5 text-[10px] text-primary/80 bg-primary/10 px-1.5 py-0.5 rounded flex-shrink-0">
+                <Mic className="w-2.5 h-2.5" />
+                {language.toUpperCase()}
+              </span>
+            )}
+            {isWatched && (...)}
+          </div>
+        </div>
+      </div>
+    );
+  })}
 ```
 
 ---
 
-## 今すぐできること
+## 変更ファイル一覧
 
-改善を実装する前に、現在のスタックしたジョブを解決するには：
+| ファイル | 変更種別 | 変更内容 |
+|---------|---------|---------|
+| `src/pages/Map.tsx` | 修正 | 吹き替えバッジ追加、ソートロジック変更 |
+| `src/components/ui/LocalizationBadges.tsx` | 修正 | `highlightLanguage` props追加（オプション） |
 
-1. **管理ツールでクリーンアップを実行** - 「古い翻訳ジョブをクリーンアップ」ボタンを使用（しきい値1時間）
-2. **または** - 次のステータス確認時に2時間が経過すれば自動的にfailed扱いになる
+---
 
-上記の改善を実装すれば、将来同様の問題が発生した際に自動的に解決されるようになります。
+## UI/UXの考慮事項
+
+### バッジデザイン
+- 小さく控えめ（10px フォント）
+- プライマリカラーのソフトな背景
+- マイクアイコン + 言語コード（例: 🎤EN）
+
+### 日本語ユーザー
+- 日本語選択時は吹き替えバッジ非表示（オリジナル音声のため）
+- ソート順も通常通り（series_order）
+
+### 非日本語ユーザー
+- 選択言語の吹き替えがある動画に目立つバッジ表示
+- 吹き替えあり動画が上部に表示され、探しやすくなる
 
 ---
 
 ## 期待される効果
 
-- ElevenLabsの完了済みジョブは次回のステータス確認時に自動的に「completed」に更新される
-- HeyGenのタイムアウトが1時間に短縮され、スタックしたジョブがより早く検出される
-- ユーザーがスタックした翻訳ジョブを手動で解決する必要がなくなる
+1. **発見性の向上**: ユーザーは自分の言語で視聴できる動画をすぐに見つけられる
+2. **エンゲージメント向上**: 吹き替え動画が優先表示されることで視聴率アップ
+3. **翻訳価値の可視化**: 翻訳作業の成果がユーザーに直接見える形で表示される
