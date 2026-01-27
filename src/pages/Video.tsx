@@ -12,7 +12,7 @@ import { useSubscription } from "@/hooks/useSubscription";
 import { useAuth } from "@/hooks/useAuth";
 import { useFavoriteTechniques } from "@/hooks/useFavoriteTechniques";
 import { prefetchVideo } from "@/hooks/useVideoPrefetch";
-import { Lock, Eye, Target, Trophy, Flame, ArrowLeft, Heart, Map } from "lucide-react";
+import { Lock, Eye, Target, Trophy, Flame, ArrowLeft, Heart, Map, Clock } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { VideoPlayer } from "@/components/VideoPlayer";
 import { VideoThumbnail } from "@/components/ui/video-thumbnail";
@@ -104,6 +104,11 @@ const Video = () => {
   const [pendingSeekTime, setPendingSeekTime] = useState<number | null>(null);
   const [isFromUnlistedList, setIsFromUnlistedList] = useState<boolean>(false);
   const [listAccessChecked, setListAccessChecked] = useState<boolean>(false);
+  // Invite link states
+  const [isFromInviteLink, setIsFromInviteLink] = useState<boolean>(false);
+  const [inviteAccessChecked, setInviteAccessChecked] = useState<boolean>(false);
+  const [inviteExpired, setInviteExpired] = useState<boolean>(false);
+  const [inviteLanguage, setInviteLanguage] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     practice_date: new Date(),
     proficiency_level: "1",
@@ -164,6 +169,60 @@ const Video = () => {
     };
     
     checkListAccess();
+  }, [searchParams, id]);
+
+  // Check if accessing via invite token
+  useEffect(() => {
+    const inviteToken = searchParams.get("invite");
+    const inviteLang = searchParams.get("lang");
+    
+    if (!inviteToken) {
+      setInviteAccessChecked(true);
+      return;
+    }
+    
+    const checkInviteAccess = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("special_video_invites")
+          .select("*")
+          .eq("token", inviteToken)
+          .eq("technique_id", id)
+          .maybeSingle();
+        
+        if (error || !data) {
+          // Invalid token
+          setInviteExpired(true);
+        } else if (!data.is_active) {
+          // Deactivated link
+          setInviteExpired(true);
+        } else if (data.expires_at && new Date(data.expires_at) < new Date()) {
+          // Expired
+          setInviteExpired(true);
+        } else if (data.max_views && data.view_count >= data.max_views) {
+          // View limit exceeded
+          setInviteExpired(true);
+        } else {
+          // Valid token
+          setIsFromInviteLink(true);
+          const targetLang = inviteLang || data.target_language || 'ja';
+          setInviteLanguage(targetLang);
+          setCurrentAudioLanguage(targetLang);
+          
+          // Increment view count
+          await supabase
+            .from("special_video_invites")
+            .update({ view_count: (data.view_count || 0) + 1 })
+            .eq("id", data.id);
+        }
+      } catch (err) {
+        console.error("Error checking invite access:", err);
+      } finally {
+        setInviteAccessChecked(true);
+      }
+    };
+    
+    checkInviteAccess();
   }, [searchParams, id]);
 
   // 動画ページに来たら、音楽が再生中で音量が25%以上なら25%にフェードダウン
@@ -821,8 +880,8 @@ const Video = () => {
     }
   };
 
-  // 統合ローディング - 認証やテクニックデータ読み込み中、またはリストアクセスチェック中はスケルトン表示
-  if (!isReady || authLoading || !listAccessChecked) {
+  // 統合ローディング - 認証やテクニックデータ読み込み中、またはリストアクセスチェック中、または招待リンクチェック中はスケルトン表示
+  if (!isReady || authLoading || !listAccessChecked || !inviteAccessChecked) {
     return (
       <div className="min-h-screen">
         <Navigation />
@@ -854,10 +913,64 @@ const Video = () => {
     );
   }
 
+  // Show expired invite link screen
+  if (inviteExpired) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/20">
+        <Navigation />
+        <main className="pt-24 pb-20 px-4 md:px-6">
+          <div className="max-w-2xl mx-auto text-center animate-fade-up">
+            <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-lg p-8 md:p-12">
+              <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-amber-500/10 mb-6">
+                <Clock className="w-10 h-10 text-amber-500" />
+              </div>
+              <h1 className="text-3xl font-light mb-4">
+                {language === "ja" 
+                  ? "招待リンクの有効期限が切れました" 
+                  : language === "pt"
+                  ? "O link de convite expirou"
+                  : "Invitation link has expired"}
+              </h1>
+              <p className="text-lg text-muted-foreground mb-8">
+                {language === "ja"
+                  ? "この動画を視聴するには会員登録が必要です。無料で始められます。"
+                  : language === "pt"
+                  ? "É necessário se cadastrar para assistir este vídeo. Comece gratuitamente."
+                  : "Please register to continue watching. It's free to get started."}
+              </p>
+              <div className="space-y-3">
+                <Button 
+                  onClick={() => navigate("/join")} 
+                  size="lg" 
+                  className="w-full max-w-xs"
+                >
+                  {language === "ja" ? "今すぐ登録" : language === "pt" ? "Registrar Agora" : "Register Now"}
+                </Button>
+                <div>
+                  <Button 
+                    variant="ghost" 
+                    onClick={() => navigate("/login")}
+                  >
+                    {language === "ja" 
+                      ? "すでにアカウントをお持ちの方" 
+                      : language === "pt"
+                      ? "Já tem uma conta?"
+                      : "Already have an account?"}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
   // Only show membership page to non-authenticated users
   // Logged-in users can view regardless of subscription status per memory features/subscription-access-logic
-  // Users accessing from unlisted video lists can also view without authentication
-  if (!user && !isFromUnlistedList) {
+  // Users accessing from unlisted video lists or valid invite links can also view without authentication
+  if (!user && !isFromUnlistedList && !isFromInviteLink) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/20">
         <Navigation />

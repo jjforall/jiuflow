@@ -2228,6 +2228,7 @@ export type Database = {
           id: string
           is_active: boolean | null
           max_views: number | null
+          target_language: string | null
           technique_id: string
           token: string
           view_count: number | null
@@ -2239,6 +2240,7 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           max_views?: number | null
+          target_language?: string | null
           technique_id: string
           token: string
           view_count?: number | null
@@ -2250,6 +2252,7 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           max_views?: number | null
+          target_language?: string | null
           technique_id?: string
           token?: string
           view_count?: number | null
