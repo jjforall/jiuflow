@@ -16,10 +16,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Copy, Link2, Loader2, Check, Calendar, Eye, Trash2 } from "lucide-react";
+import { Copy, Link2, Loader2, Check, Calendar, Eye, Trash2, Globe } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { format, addDays, addHours, addWeeks, addMonths } from "date-fns";
+import { format, addDays, addHours, addMonths } from "date-fns";
 
 interface InviteLinkDialogProps {
   open: boolean;
@@ -36,7 +36,20 @@ interface InviteLink {
   view_count: number;
   is_active: boolean;
   created_at: string;
+  target_language: string;
 }
+
+// Language options for invite links
+const languageOptions = [
+  { code: "ja", label: "日本語", flag: "🇯🇵" },
+  { code: "en", label: "English", flag: "🇺🇸" },
+  { code: "pt", label: "Português", flag: "🇧🇷" },
+  { code: "es", label: "Español", flag: "🇪🇸" },
+  { code: "fr", label: "Français", flag: "🇫🇷" },
+  { code: "de", label: "Deutsch", flag: "🇩🇪" },
+  { code: "zh", label: "中文", flag: "🇨🇳" },
+  { code: "ko", label: "한국어", flag: "🇰🇷" },
+];
 
 // Generate a random token
 function generateToken(): string {
@@ -56,6 +69,7 @@ export function InviteLinkDialog({
 }: InviteLinkDialogProps) {
   const [expiry, setExpiry] = useState<string>("7d");
   const [maxViews, setMaxViews] = useState<string>("unlimited");
+  const [targetLanguage, setTargetLanguage] = useState<string>("ja");
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedLink, setGeneratedLink] = useState<string | null>(null);
   const [existingLinks, setExistingLinks] = useState<InviteLink[]>([]);
@@ -119,11 +133,14 @@ export function InviteLinkDialog({
           expires_at: expiresAt,
           max_views: views,
           created_by: userData.user?.id,
+          target_language: targetLanguage,
         });
 
       if (error) throw error;
 
-      const link = `${window.location.origin}/video/${techniqueId}?invite=${token}`;
+      // Include language in URL if not Japanese (default)
+      const langParam = targetLanguage !== "ja" ? `&lang=${targetLanguage}` : "";
+      const link = `${window.location.origin}/video/${techniqueId}?invite=${token}${langParam}`;
       setGeneratedLink(link);
       loadLinks();
       toast.success("招待リンクを生成しました");
@@ -166,6 +183,11 @@ export function InviteLinkDialog({
     return format(d, "yyyy/MM/dd HH:mm");
   };
 
+  const getLanguageLabel = (code: string) => {
+    const lang = languageOptions.find(l => l.code === code);
+    return lang ? `${lang.flag} ${lang.code.toUpperCase()}` : code.toUpperCase();
+  };
+
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-lg">
@@ -185,7 +207,7 @@ export function InviteLinkDialog({
           <div className="space-y-3 p-4 bg-muted/50 rounded-lg">
             <div className="text-sm font-medium">新規リンクを生成</div>
             
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-3 gap-3">
               <div className="space-y-1.5">
                 <Label className="text-xs">有効期限</Label>
                 <Select value={expiry} onValueChange={setExpiry}>
@@ -216,6 +238,22 @@ export function InviteLinkDialog({
                     <SelectItem value="50">50回</SelectItem>
                     <SelectItem value="100">100回</SelectItem>
                     <SelectItem value="unlimited">無制限</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-xs">対象言語</Label>
+                <Select value={targetLanguage} onValueChange={setTargetLanguage}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {languageOptions.map(lang => (
+                      <SelectItem key={lang.code} value={lang.code}>
+                        {lang.flag} {lang.label}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -263,8 +301,14 @@ export function InviteLinkDialog({
                     }`}
                   >
                     <div className="space-y-1">
-                      <div className="font-mono text-xs">
-                        ...{link.token.slice(-8)}
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-xs">
+                          ...{link.token.slice(-8)}
+                        </span>
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-primary/10 rounded text-[10px] font-medium">
+                          <Globe className="w-2.5 h-2.5" />
+                          {getLanguageLabel(link.target_language || "ja")}
+                        </span>
                       </div>
                       <div className="flex items-center gap-3 text-xs text-muted-foreground">
                         <span className="flex items-center gap-1">
