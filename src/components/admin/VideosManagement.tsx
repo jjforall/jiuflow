@@ -2874,6 +2874,44 @@ export const VideosManagement = () => {
                   <Label htmlFor="admin-heygen" className="text-xs cursor-pointer">HeyGen</Label>
                 </div>
               </RadioGroup>
+              <div className="flex flex-wrap gap-2 mt-2">
+                <Button 
+                  onClick={async () => {
+                    if (!confirm('2時間以上経過した未完了の翻訳ジョブをクリーンアップしますか？\n（DBから失敗としてマークし、LocalStorageからも削除します）')) return;
+                    
+                    try {
+                      const { data, error } = await supabase.functions.invoke('cleanup-stale-translations', {
+                        body: { hoursThreshold: 2 }
+                      });
+                      
+                      if (error) throw error;
+                      
+                      // Also clean up LocalStorage
+                      const twoHoursAgo = Date.now() - (2 * 60 * 60 * 1000);
+                      const beforeCount = activeTranslations.length;
+                      setActiveTranslations(prev => 
+                        prev.filter(t => t.startTime >= twoHoursAgo)
+                      );
+                      const localCleanedCount = beforeCount - activeTranslations.filter(t => t.startTime >= twoHoursAgo).length;
+                      
+                      toast.success('クリーンアップ完了', {
+                        description: `DB: ${data?.cleanedCount || 0}件, ローカル: ${localCleanedCount}件を処理しました`,
+                      });
+                    } catch (err) {
+                      console.error('Cleanup error:', err);
+                      toast.error('クリーンアップに失敗しました', {
+                        description: err instanceof Error ? err.message : String(err),
+                      });
+                    }
+                  }}
+                  variant="outline"
+                  size="sm"
+                  className="text-xs h-7 border-amber-500/50 text-amber-600"
+                >
+                  <Trash2 className="w-3 h-3 mr-1" />
+                  古い翻訳ジョブをクリーンアップ
+                </Button>
+              </div>
             </div>
             
             {/* Cloudflare Stream Cleanup */}
