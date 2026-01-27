@@ -103,9 +103,55 @@ serve(async (req) => {
       
       // Check for specific error cases
       if (errorMessage.includes("not found") || errorCode === "internal_error") {
-        // HeyGenのAPIは翻訳開始直後に「not found」を返すことがある（伝播遅延）
-        // これは失敗ではなく、まだジョブが登録されていない状態
-        // フロントエンドでリトライを促すため、failed: false で返す
+        // Check if job has been running for more than 2 hours - if so, mark as failed
+        const supabaseUrl = Deno.env.get("SUPABASE_URL");
+        const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+        
+        if (supabaseUrl && supabaseKey) {
+          const supabase = createClient(supabaseUrl, supabaseKey);
+          
+          // Look up the job in translation_history using the original projectId (with suffix)
+          const { data: historyData } = await supabase
+            .from('translation_history')
+            .select('started_at, id')
+            .eq('project_id', projectId)
+            .single();
+          
+          if (historyData?.started_at) {
+            const elapsedHours = (Date.now() - new Date(historyData.started_at).getTime()) / (1000 * 60 * 60);
+            
+            if (elapsedHours > 2) {
+              console.log(`[heygen-check-status] Job ${projectId} has been pending for ${elapsedHours.toFixed(1)} hours - marking as failed`);
+              
+              // Update the job status to failed
+              await supabase
+                .from('translation_history')
+                .update({ 
+                  status: 'failed', 
+                  completed_at: new Date().toISOString(),
+                })
+                .eq('id', historyData.id);
+              
+              return new Response(
+                JSON.stringify({
+                  status: "failed",
+                  progress: 0,
+                  statusMessage: "翻訳ジョブがHeyGenで見つかりません（タイムアウト）",
+                  videoUrl: null,
+                  completed: false,
+                  failed: true,
+                  error: "Translation job not found in HeyGen after 2 hours (likely expired or never created)",
+                }),
+                {
+                  status: 200,
+                  headers: { ...corsHeaders, "Content-Type": "application/json" },
+                }
+              );
+            }
+          }
+        }
+        
+        // Job is less than 2 hours old - may still be propagating
         console.log("[heygen-check-status] Job not found yet - may be propagation delay");
         return new Response(
           JSON.stringify({
@@ -114,8 +160,8 @@ serve(async (req) => {
             statusMessage: "翻訳ジョブを初期化中です。しばらくお待ちください...",
             videoUrl: null,
             completed: false,
-            failed: false, // 失敗ではなく、まだ開始処理中
-            pendingRegistration: true, // フロントエンドでリトライ判定に使用
+            failed: false,
+            pendingRegistration: true,
             error: null,
           }),
           {
