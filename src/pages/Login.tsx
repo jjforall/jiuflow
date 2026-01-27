@@ -261,6 +261,7 @@ const Login = () => {
                       placeholder="you@example.com"
                       required
                       disabled={isLoading}
+                      autoComplete="email"
                       className="h-12 text-base bg-muted/30 border-border/50 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
                     />
                   </div>
@@ -278,6 +279,7 @@ const Login = () => {
                       placeholder="••••••••"
                       required
                       disabled={isLoading}
+                      autoComplete="current-password"
                       className="h-12 text-base bg-muted/30 border-border/50 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
                     />
                     <div className="flex justify-end">
@@ -381,6 +383,7 @@ const Login = () => {
                       placeholder="you@example.com"
                       required
                       disabled={isLoading}
+                      autoComplete="email"
                       className="h-12 text-base bg-muted/30 border-border/50 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
                     />
                   </div>
@@ -398,6 +401,7 @@ const Login = () => {
                       placeholder="••••••••"
                       required
                       disabled={isLoading}
+                      autoComplete="new-password"
                       className="h-12 text-base bg-muted/30 border-border/50 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
                     />
                   </div>
