@@ -58,12 +58,53 @@ serve(async (req) => {
       throw new Error("HEYGEN_API_KEY not configured");
     }
 
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+
     const { projectId, techniqueId, targetLanguage } = await req.json();
 
     console.log("[heygen-check-status] Request:", { projectId, techniqueId, targetLanguage });
 
     if (!projectId) {
       throw new Error("projectId is required");
+    }
+
+    // EARLY COMPLETION CHECK: If video already exists in DB, return immediately
+    if (techniqueId && targetLanguage && supabaseUrl && supabaseKey) {
+      const supabase = createClient(supabaseUrl, supabaseKey);
+      const { data: existingTechnique } = await supabase
+        .from('techniques')
+        .select('video_metadata')
+        .eq('id', techniqueId)
+        .single();
+
+      const existingVideoUrl = existingTechnique?.video_metadata?.[targetLanguage]?.video_url;
+      if (existingVideoUrl) {
+        console.log(`[heygen-check-status] Video already exists for ${targetLanguage}, returning cached URL`);
+        
+        // Update translation_history to completed if still processing
+        await supabase
+          .from('translation_history')
+          .update({
+            status: 'completed',
+            completed_at: new Date().toISOString(),
+          })
+          .eq('technique_id', techniqueId)
+          .eq('target_language', targetLanguage)
+          .in('status', ['processing', 'pending']);
+        
+        return new Response(
+          JSON.stringify({
+            status: "completed",
+            progress: 100,
+            statusMessage: "完了",
+            videoUrl: existingVideoUrl,
+            completed: true,
+            failed: false,
+          }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
     }
 
     // HeyGen API returns video_translate_id WITH language suffix (e.g., abc123-en)
@@ -218,51 +259,73 @@ serve(async (req) => {
       console.log("[heygen-check-status] Translated video URL:", translatedVideoUrl);
 
       try {
-        // Upload to Cloudflare Stream
-        const cloudflareUrl = await uploadToCloudflare(
-          translatedVideoUrl,
-          `technique-${techniqueId}-${targetLanguage}`
-        );
-        videoUrl = cloudflareUrl;
+        const supabaseUrl2 = Deno.env.get("SUPABASE_URL");
+        const supabaseKey2 = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
-        // Update database
-        const supabaseUrl = Deno.env.get("SUPABASE_URL");
-        const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+        if (supabaseUrl2 && supabaseKey2) {
+          const supabase = createClient(supabaseUrl2, supabaseKey2);
 
-        if (supabaseUrl && supabaseKey) {
-          const supabase = createClient(supabaseUrl, supabaseKey);
-
-          // First get existing metadata
-          const { data: technique } = await supabase
+          // DUPLICATE PREVENTION: Re-check before upload (race condition guard)
+          const { data: existingCheck } = await supabase
             .from("techniques")
             .select("video_metadata")
             .eq("id", techniqueId)
             .single();
 
-          const existingMetadata = technique?.video_metadata || {};
-
-          // 他のプロバイダーと同じ形式で保存: video_metadata[lang].video_url
-          const updatedMetadata = {
-            ...existingMetadata,
-            [targetLanguage]: {
-              video_url: cloudflareUrl,
-              provider: "heygen",
-              created_at: new Date().toISOString(),
-            },
-          };
-
-          // Update with merged metadata
-          const { error: updateError } = await supabase
-            .from("techniques")
-            .update({
-              video_metadata: updatedMetadata,
-            })
-            .eq("id", techniqueId);
-
-          if (updateError) {
-            console.error("[heygen-check-status] Database update error:", updateError);
+          if (existingCheck?.video_metadata?.[targetLanguage]?.video_url) {
+            console.log("[heygen-check-status] Video already uploaded (race condition prevented)");
+            videoUrl = existingCheck.video_metadata[targetLanguage].video_url;
           } else {
-            console.log("[heygen-check-status] Database updated successfully");
+            // Upload to Cloudflare Stream
+            const cloudflareUrl = await uploadToCloudflare(
+              translatedVideoUrl,
+              `technique-${techniqueId}-${targetLanguage}`
+            );
+            videoUrl = cloudflareUrl;
+
+            // Get existing metadata
+            const existingMetadata = existingCheck?.video_metadata || {};
+
+            // Save with provider info matching other providers' format
+            const updatedMetadata = {
+              ...existingMetadata,
+              [targetLanguage]: {
+                video_url: cloudflareUrl,
+                provider: "heygen",
+                created_at: new Date().toISOString(),
+              },
+            };
+
+            // Update techniques table
+            const { error: updateError } = await supabase
+              .from("techniques")
+              .update({
+                video_metadata: updatedMetadata,
+              })
+              .eq("id", techniqueId);
+
+            if (updateError) {
+              console.error("[heygen-check-status] Database update error:", updateError);
+            } else {
+              console.log("[heygen-check-status] Database updated successfully");
+            }
+          }
+
+          // Update translation_history to completed
+          const { error: historyError } = await supabase
+            .from('translation_history')
+            .update({
+              status: 'completed',
+              completed_at: new Date().toISOString(),
+            })
+            .eq('technique_id', techniqueId)
+            .eq('target_language', targetLanguage)
+            .in('status', ['processing', 'pending']);
+
+          if (historyError) {
+            console.error("[heygen-check-status] History update error:", historyError);
+          } else {
+            console.log("[heygen-check-status] Translation history updated to completed");
           }
         }
       } catch (uploadError) {
