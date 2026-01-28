@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, Mic, AlertTriangle, CheckCircle, Clock } from "lucide-react";
+import { Loader2, Mic, AlertTriangle, CheckCircle, Clock, Star, XCircle, AlertCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -31,6 +31,41 @@ const ALL_LANGUAGES = [
   { code: "ko", name: "한국어", nativeName: "韓国語" },
 ];
 
+// Provider configuration with capabilities
+interface ProviderInfo {
+  id: 'elevenlabs' | 'rask' | 'heygen';
+  name: string;
+  supportedSourceLangs: string[];
+  supportedTargetLangs: string[];
+  notes: string;
+  recommended?: boolean;
+}
+
+const PROVIDERS: ProviderInfo[] = [
+  {
+    id: 'elevenlabs',
+    name: 'ElevenLabs',
+    supportedSourceLangs: ['ja', 'en', 'pt', 'es', 'fr', 'de', 'zh', 'ko'],
+    supportedTargetLangs: ['en', 'pt', 'es', 'fr', 'de', 'zh', 'ko', 'it', 'ru'],
+    notes: '日本語ソース対応、高品質',
+    recommended: true,
+  },
+  {
+    id: 'rask',
+    name: 'Rask.ai',
+    supportedSourceLangs: ['en', 'pt', 'es', 'fr', 'de'],
+    supportedTargetLangs: ['en', 'pt', 'es', 'fr', 'de', 'zh', 'ko'],
+    notes: '日本語ソース非対応',
+  },
+  {
+    id: 'heygen',
+    name: 'HeyGen',
+    supportedSourceLangs: ['en', 'pt', 'es', 'fr', 'de'],
+    supportedTargetLangs: ['en', 'pt', 'es', 'fr', 'de', 'zh', 'ko'],
+    notes: '日本語ソースは不安定（APIプラン制限）',
+  },
+];
+
 interface TranslationStartedInfo {
   projectId: string;
   techniqueId: string;
@@ -54,6 +89,11 @@ interface EstimatedDuration {
   sampleCount: number;
 }
 
+interface ProviderStats {
+  total: number;
+  success: number;
+}
+
 export function TranslationQuickDialog({
   open,
   onOpenChange,
@@ -68,6 +108,31 @@ export function TranslationQuickDialog({
   const [isLoadingDuration, setIsLoadingDuration] = useState(false);
   const [estimatedDuration, setEstimatedDuration] = useState<EstimatedDuration | null>(null);
   const [isLoadingEstimate, setIsLoadingEstimate] = useState(false);
+  const [providerStats, setProviderStats] = useState<Record<string, ProviderStats>>({});
+  const [isTwoStepMode, setIsTwoStepMode] = useState(false);
+
+  // Fetch provider success stats
+  useEffect(() => {
+    if (open) {
+      const fetchStats = async () => {
+        const { data } = await supabase
+          .from('translation_history')
+          .select('provider, status')
+          .in('status', ['completed', 'failed', 'timeout']);
+        
+        if (data) {
+          const stats: Record<string, ProviderStats> = {};
+          data.forEach(row => {
+            if (!stats[row.provider]) stats[row.provider] = { total: 0, success: 0 };
+            stats[row.provider].total++;
+            if (row.status === 'completed') stats[row.provider].success++;
+          });
+          setProviderStats(stats);
+        }
+      };
+      fetchStats();
+    }
+  }, [open]);
 
   useEffect(() => {
     const savedProvider = localStorage.getItem('translation_provider');
@@ -81,6 +146,7 @@ export function TranslationQuickDialog({
       const available = getAvailableSourceLanguages(technique);
       const firstLang = available[0] || 'ja';
       setSourceLanguage(firstLang);
+      setIsTwoStepMode(false);
       
       setVideoDuration(null);
       setIsLoadingDuration(true);
@@ -218,6 +284,18 @@ export function TranslationQuickDialog({
     }
   };
 
+  const getProviderSuccessRate = (providerId: string): { rate: number | null; total: number } => {
+    const stats = providerStats[providerId];
+    if (!stats || stats.total === 0) return { rate: null, total: 0 };
+    return { rate: Math.round((stats.success / stats.total) * 100), total: stats.total };
+  };
+
+  const getJapaneseSourceSupport = (provider: ProviderInfo): 'supported' | 'unsupported' | 'unstable' => {
+    if (provider.id === 'elevenlabs') return 'supported';
+    if (provider.id === 'rask') return 'unsupported';
+    return 'unstable'; // heygen
+  };
+
   const handleTranslate = async () => {
     if (!technique) return;
     
@@ -267,9 +345,16 @@ export function TranslationQuickDialog({
         });
 
         const providerName = translationProvider === 'rask' ? 'Rask.ai' : translationProvider === 'heygen' ? 'HeyGen' : 'ElevenLabs';
-        toast.success("動画翻訳を開始しました", {
-          description: `${providerName}で翻訳中。完了すると通知されます。`,
-        });
+        
+        if (isTwoStepMode) {
+          toast.success("2段階翻訳（ステップ1）を開始しました", {
+            description: `${providerName}で日本語→英語の翻訳中。完了後に英語→中国語の翻訳を行ってください。`,
+          });
+        } else {
+          toast.success("動画翻訳を開始しました", {
+            description: `${providerName}で翻訳中。完了すると通知されます。`,
+          });
+        }
         
         // Pass translation info to parent (including new fields)
         onTranslationStarted?.({
@@ -317,9 +402,15 @@ export function TranslationQuickDialog({
   // 日本語は常にオリジナル音声なので翻訳先にはならない
   const targetOptions = ALL_LANGUAGES.filter(l => l.code !== sourceLanguage && l.code !== 'ja');
 
+  // 2-step translation check: ja → zh without English version
+  const needsTwoStepTranslation = 
+    targetLanguage === 'zh' && 
+    sourceLanguage === 'ja' && 
+    !translatedLangs.includes('en');
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Mic className="w-5 h-5" />
@@ -354,19 +445,82 @@ export function TranslationQuickDialog({
             </div>
           )}
 
-          {/* Provider */}
+          {/* Provider Selection - Enhanced */}
           <div className="space-y-2">
             <label className="text-sm font-medium">翻訳プロバイダー</label>
-            <Select value={translationProvider} onValueChange={(v) => setTranslationProvider(v as typeof translationProvider)}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="elevenlabs">ElevenLabs</SelectItem>
-                <SelectItem value="rask">Rask.ai</SelectItem>
-                <SelectItem value="heygen">HeyGen</SelectItem>
-              </SelectContent>
-            </Select>
+            <div className="space-y-2">
+              {PROVIDERS.map(provider => {
+                const { rate, total } = getProviderSuccessRate(provider.id);
+                const jaSupport = getJapaneseSourceSupport(provider);
+                const isSelected = translationProvider === provider.id;
+                
+                return (
+                  <div
+                    key={provider.id}
+                    onClick={() => setTranslationProvider(provider.id)}
+                    className={`p-3 rounded-lg border cursor-pointer transition-all ${
+                      isSelected 
+                        ? 'border-primary bg-primary/5' 
+                        : 'border-border hover:border-muted-foreground/50'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
+                          isSelected ? 'border-primary' : 'border-muted-foreground'
+                        }`}>
+                          {isSelected && <div className="w-2 h-2 rounded-full bg-primary" />}
+                        </div>
+                        <span className="font-medium">{provider.name}</span>
+                        {provider.recommended && (
+                          <Badge variant="secondary" className="text-xs bg-amber-500/20 text-amber-700 border-amber-500/30">
+                            <Star className="w-3 h-3 mr-1" />
+                            推奨
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                    
+                    <div className="mt-2 flex items-center gap-3 text-xs text-muted-foreground">
+                      {/* Success Rate */}
+                      <span className="flex items-center gap-1">
+                        {rate !== null ? (
+                          <>
+                            <span className={rate >= 80 ? 'text-green-600' : rate >= 50 ? 'text-amber-600' : 'text-red-600'}>
+                              成功率: {rate}%
+                            </span>
+                            <span className="text-muted-foreground">({total}件)</span>
+                          </>
+                        ) : (
+                          <span>成功率: -- (実績なし)</span>
+                        )}
+                      </span>
+                      
+                      <span className="text-muted-foreground">|</span>
+                      
+                      {/* Japanese Source Support */}
+                      <span className="flex items-center gap-1">
+                        日本語ソース
+                        {jaSupport === 'supported' && (
+                          <CheckCircle className="w-3 h-3 text-green-600" />
+                        )}
+                        {jaSupport === 'unsupported' && (
+                          <XCircle className="w-3 h-3 text-red-600" />
+                        )}
+                        {jaSupport === 'unstable' && (
+                          <AlertCircle className="w-3 h-3 text-amber-600" />
+                        )}
+                      </span>
+                    </div>
+                    
+                    <div className="mt-1 text-xs text-muted-foreground">
+                      {provider.notes}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            
             {/* Rask.ai Japanese source warning */}
             {translationProvider === 'rask' && sourceLanguage === 'ja' && (
               <div className="flex items-start gap-2 p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
@@ -374,7 +528,7 @@ export function TranslationQuickDialog({
                 <div className="text-sm text-red-700">
                   <strong>Rask.aiは日本語をソース言語としてサポートしていません。</strong>
                   <br />
-                  ElevenLabsまたはHeyGenをお選びください。
+                  ElevenLabsをお選びください。
                 </div>
               </div>
             )}
@@ -403,7 +557,10 @@ export function TranslationQuickDialog({
           {/* Target Language */}
           <div className="space-y-2">
             <label className="text-sm font-medium">ターゲット言語</label>
-            <Select value={targetLanguage} onValueChange={setTargetLanguage}>
+            <Select value={targetLanguage} onValueChange={(v) => {
+              setTargetLanguage(v);
+              setIsTwoStepMode(false);
+            }}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
@@ -417,6 +574,43 @@ export function TranslationQuickDialog({
               </SelectContent>
             </Select>
           </div>
+
+          {/* Two-Step Translation Warning */}
+          {needsTwoStepTranslation && !isTwoStepMode && (
+            <div className="flex items-start gap-2 p-3 bg-amber-500/10 border border-amber-500/30 rounded-lg">
+              <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+              <div className="text-sm">
+                <strong className="text-amber-700">2段階翻訳を推奨</strong>
+                <p className="text-muted-foreground mt-1">
+                  日本語→中国語の直接翻訳は不安定な場合があります。先に日本語→英語に翻訳後、英語→中国語をお勧めします。
+                </p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="mt-2"
+                  onClick={() => {
+                    setTargetLanguage('en');
+                    setIsTwoStepMode(true);
+                  }}
+                >
+                  日本語→英語を先に翻訳
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Two-Step Mode Indicator */}
+          {isTwoStepMode && (
+            <div className="flex items-start gap-2 p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg">
+              <CheckCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+              <div className="text-sm text-blue-700">
+                <strong>2段階翻訳モード（ステップ1）</strong>
+                <p className="text-muted-foreground mt-1">
+                  まず日本語→英語の翻訳を行います。完了後に英語→中国語の翻訳を行ってください。
+                </p>
+              </div>
+            </div>
+          )}
 
           {/* Estimated Duration */}
           {!isLoadingDuration && videoDuration && (
@@ -477,7 +671,7 @@ export function TranslationQuickDialog({
             ) : (
               <>
                 <Mic className="w-4 h-4 mr-2" />
-                翻訳を開始
+                {isTwoStepMode ? '英語への翻訳を開始' : '翻訳を開始'}
               </>
             )}
           </Button>

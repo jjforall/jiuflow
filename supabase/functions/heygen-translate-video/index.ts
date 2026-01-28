@@ -14,7 +14,7 @@ const HEYGEN_LANGUAGE_MAP: Record<string, string> = {
   es: "Spanish",
   fr: "French",
   de: "German",
-  zh: "Chinese",
+  zh: "Mandarin",
   ko: "Korean",
   it: "Italian",
   ru: "Russian",
