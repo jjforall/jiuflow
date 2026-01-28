@@ -1,8 +1,6 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import Navigation from "@/components/Navigation";
-import Footer from "@/components/Footer";
 import { SEOHead } from "@/components/SEOHead";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,12 +9,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { toast } from "sonner";
 import { z } from "zod";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Mail, Lock, Sparkles, UserPlus, LogIn } from "lucide-react";
 import { trackConversion, trackEvent } from "@/hooks/useGoogleAnalytics";
-
-const emailSchema = z.object({
-  email: z.string().trim().email({ message: "有効なメールアドレスを入力してください" }).max(255),
-});
 
 const authSchema = z.object({
   email: z.string().trim().email({ message: "有効なメールアドレスを入力してください" }).max(255),
@@ -75,22 +68,13 @@ const Login = () => {
       }
 
       if (data.session) {
-        // Wait for session to be persisted (important for Safari)
         await new Promise(resolve => setTimeout(resolve, 100));
-        
-        // Verify session was actually stored
         const { data: { session: verifiedSession } } = await supabase.auth.getSession();
         
         if (verifiedSession) {
-          toast.success(
-            language === "ja" 
-              ? "ログインしました" 
-              : "Logged in successfully"
-          );
-          // Use window.location for more reliable navigation on Safari
+          toast.success(language === "ja" ? "ログインしました" : "Logged in successfully");
           window.location.href = "/map";
         } else {
-          // Session wasn't stored properly, try again
           toast.error(
             language === "ja" 
               ? "セッションの保存に失敗しました。もう一度お試しください。" 
@@ -103,11 +87,7 @@ const Login = () => {
       if (error instanceof z.ZodError) {
         toast.error(error.errors[0].message);
       } else {
-        toast.error(
-          language === "ja" 
-            ? "ログインに失敗しました" 
-            : "Login failed"
-        );
+        toast.error(language === "ja" ? "ログインに失敗しました" : "Login failed");
       }
       setIsLoading(false);
     }
@@ -119,15 +99,12 @@ const Login = () => {
 
     try {
       const validated = authSchema.parse({ email, password });
-      
       const redirectUrl = `${window.location.origin}/map`;
       
       const { error } = await supabase.auth.signUp({
         email: validated.email,
         password: validated.password,
-        options: {
-          emailRedirectTo: redirectUrl
-        }
+        options: { emailRedirectTo: redirectUrl }
       });
 
       if (error) {
@@ -143,9 +120,7 @@ const Login = () => {
         return;
       }
 
-      // Track sign up conversion
       trackConversion('sign_up', { method: 'email' });
-
       toast.success(
         language === "ja" 
           ? "アカウントを作成しました。ログインしてください。" 
@@ -155,11 +130,7 @@ const Login = () => {
       if (error instanceof z.ZodError) {
         toast.error(error.errors[0].message);
       } else {
-        toast.error(
-          language === "ja" 
-            ? "アカウント作成に失敗しました" 
-            : "Sign up failed"
-        );
+        toast.error(language === "ja" ? "アカウント作成に失敗しました" : "Sign up failed");
       }
     } finally {
       setIsLoading(false);
@@ -168,30 +139,21 @@ const Login = () => {
 
   const handleGoogleLogin = async () => {
     try {
-      // Track Google login attempt
       trackEvent('login_attempt', { method: 'google' });
-      
       const redirectUrl = `${window.location.origin}/map`;
       
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
-        options: {
-          redirectTo: redirectUrl,
-        },
+        options: { redirectTo: redirectUrl },
       });
 
       if (error) {
         toast.error(error.message);
       }
-    } catch (error) {
-      toast.error(
-        language === "ja" 
-          ? "Googleログインに失敗しました" 
-          : "Google login failed"
-      );
+    } catch {
+      toast.error(language === "ja" ? "Googleログインに失敗しました" : "Google login failed");
     }
   };
-
 
   const seoTitle = language === 'ja' ? 'ログイン | JiuFlow' : 'Login | JiuFlow';
   const seoDescription = language === 'ja' 
@@ -199,281 +161,188 @@ const Login = () => {
     : 'Login to JiuFlow to access Brazilian Jiu-Jitsu technique videos.';
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-muted via-background to-muted/50">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-background px-4">
       <SEOHead
         title={seoTitle}
         description={seoDescription}
         canonicalUrl="https://jiuflow.lovableproject.com/login"
         noindex={true}
       />
-      <Navigation />
-      <main className="flex-1 flex items-center justify-center px-4 py-32">
-        <div className="max-w-lg w-full animate-fade-up">
-          {/* Header Section */}
-          <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-primary to-secondary mb-4 shadow-lg">
-              <Sparkles className="w-8 h-8 text-primary-foreground" />
+      
+      {/* Logo */}
+      <Link to="/" className="mb-8">
+        <h1 className="text-3xl font-light">
+          jiuF<span className="text-red-500">l</span>ow
+        </h1>
+      </Link>
+
+      {/* Auth Card */}
+      <div className="w-full max-w-sm">
+        <Tabs defaultValue="signup" className="w-full">
+          <TabsList className="grid w-full grid-cols-2 mb-6">
+            <TabsTrigger value="login">
+              {language === "ja" ? "ログイン" : "Login"}
+            </TabsTrigger>
+            <TabsTrigger value="signup">
+              {language === "ja" ? "新規登録" : "Sign Up"}
+            </TabsTrigger>
+          </TabsList>
+          
+          {/* Login Tab */}
+          <TabsContent value="login" className="space-y-4">
+            <form onSubmit={handleLogin} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="login-email">
+                  {language === "ja" ? "メールアドレス" : "Email"}
+                </Label>
+                <Input
+                  id="login-email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="you@example.com"
+                  required
+                  disabled={isLoading}
+                  autoComplete="email"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="login-password">
+                  {language === "ja" ? "パスワード" : "Password"}
+                </Label>
+                <Input
+                  id="login-password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  required
+                  disabled={isLoading}
+                  autoComplete="current-password"
+                />
+              </div>
+
+              <Button type="submit" className="w-full" disabled={isLoading}>
+                {isLoading 
+                  ? (language === "ja" ? "処理中..." : "Loading...") 
+                  : (language === "ja" ? "ログイン" : "Login")}
+              </Button>
+            </form>
+
+            <div className="relative my-4">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-background px-2 text-muted-foreground">
+                  {language === "ja" ? "または" : "or"}
+                </span>
+              </div>
             </div>
-            <h1 className="text-5xl font-light mb-3 bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent">
-              {language === "ja" ? "ようこそ" : language === "pt" ? "Bem-vindo" : "Welcome"}
-            </h1>
-            <p className="text-lg text-muted-foreground">
+
+            <Button 
+              type="button" 
+              variant="outline" 
+              className="w-full"
+              onClick={handleGoogleLogin}
+            >
+              <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
+                <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+                <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
+              </svg>
+              {language === "ja" ? "Googleでログイン" : "Continue with Google"}
+            </Button>
+
+            <div className="text-center text-sm text-muted-foreground pt-4">
+              <Button
+                variant="link"
+                className="p-0 h-auto text-muted-foreground hover:text-foreground"
+                onClick={() => navigate("/reset-password")}
+              >
+                {language === "ja" ? "パスワードを忘れた方" : "Forgot password?"}
+              </Button>
+            </div>
+          </TabsContent>
+          
+          {/* Sign Up Tab */}
+          <TabsContent value="signup" className="space-y-4">
+            <form onSubmit={handleSignUp} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="signup-email">
+                  {language === "ja" ? "メールアドレス" : "Email"}
+                </Label>
+                <Input
+                  id="signup-email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="you@example.com"
+                  required
+                  disabled={isLoading}
+                  autoComplete="email"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="signup-password">
+                  {language === "ja" ? "パスワード（6文字以上）" : "Password (6+ characters)"}
+                </Label>
+                <Input
+                  id="signup-password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  required
+                  disabled={isLoading}
+                  autoComplete="new-password"
+                />
+              </div>
+
+              <Button type="submit" className="w-full" disabled={isLoading}>
+                {isLoading 
+                  ? (language === "ja" ? "処理中..." : "Loading...") 
+                  : (language === "ja" ? "無料で始める" : "Start Free")}
+              </Button>
+            </form>
+
+            <div className="relative my-4">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-background px-2 text-muted-foreground">
+                  {language === "ja" ? "または" : "or"}
+                </span>
+              </div>
+            </div>
+
+            <Button 
+              type="button" 
+              variant="outline" 
+              className="w-full"
+              onClick={handleGoogleLogin}
+            >
+              <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
+                <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+                <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
+              </svg>
+              {language === "ja" ? "Googleで登録" : "Sign up with Google"}
+            </Button>
+
+            <p className="text-xs text-center text-muted-foreground pt-4">
               {language === "ja" 
-                ? "柔術の世界へ" 
-                : language === "pt" 
-                ? "ao mundo do Jiu-Jitsu" 
-                : "to the world of Jiu-Jitsu"}
+                ? "登録することで、利用規約とプライバシーポリシーに同意したものとみなされます。" 
+                : "By signing up, you agree to our Terms and Privacy Policy."}
             </p>
-          </div>
-
-          {/* Card with Tabs */}
-          <div className="bg-card/80 backdrop-blur-sm rounded-2xl shadow-2xl border border-border/50 overflow-hidden">
-            <Tabs defaultValue="signup" className="w-full">
-              <TabsList className="grid w-full grid-cols-2 bg-muted/50 rounded-none h-14">
-                <TabsTrigger 
-                  value="login" 
-                  className="data-[state=active]:bg-background data-[state=active]:shadow-md rounded-none h-full text-base"
-                >
-                  <LogIn className="w-4 h-4 mr-2" />
-                  {language === "ja" ? "ログイン" : "Login"}
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="signup"
-                  className="data-[state=active]:bg-background data-[state=active]:shadow-md rounded-none h-full text-base"
-                >
-                  <UserPlus className="w-4 h-4 mr-2" />
-                  {language === "ja" ? "新規登録" : "Sign Up"}
-                </TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="login" className="p-8 space-y-6">
-                <form onSubmit={handleLogin} className="space-y-5">
-                  <div className="space-y-2">
-                    <Label htmlFor="login-email" className="text-base font-medium flex items-center gap-2">
-                      <Mail className="w-4 h-4 text-primary" />
-                      {language === "ja" ? "メールアドレス" : "Email"}
-                    </Label>
-                    <Input
-                      id="login-email"
-                      type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder="you@example.com"
-                      required
-                      disabled={isLoading}
-                      autoComplete="email"
-                      className="h-12 text-base bg-muted/30 border-border/50 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="login-password" className="text-base font-medium flex items-center gap-2">
-                      <Lock className="w-4 h-4 text-primary" />
-                      {language === "ja" ? "パスワード" : "Password"}
-                    </Label>
-                    <Input
-                      id="login-password"
-                      type="password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      placeholder="••••••••"
-                      required
-                      disabled={isLoading}
-                      autoComplete="current-password"
-                      className="h-12 text-base bg-muted/30 border-border/50 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
-                    />
-                    <div className="flex justify-end">
-                      <Button
-                        type="button"
-                        variant="link"
-                        className="p-0 h-auto text-sm text-primary hover:text-secondary transition-colors"
-                        onClick={() => navigate("/reset-password")}
-                      >
-                        {language === "ja" ? "パスワードを忘れた？" : "Forgot password?"}
-                      </Button>
-                    </div>
-                  </div>
-
-                  <Button 
-                    type="submit" 
-                    className="w-full h-12 text-base bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90 shadow-lg transition-all" 
-                    disabled={isLoading}
-                  >
-                    {isLoading 
-                      ? (language === "ja" ? "処理中..." : "Loading...") 
-                      : (language === "ja" ? "ログイン" : "Login")}
-                  </Button>
-
-                  <div className="relative my-6">
-                    <div className="absolute inset-0 flex items-center">
-                      <span className="w-full border-t border-border/50" />
-                    </div>
-                    <div className="relative flex justify-center text-xs uppercase">
-                      <span className="bg-card px-2 text-muted-foreground">
-                        {language === "ja" ? "または" : "or"}
-                      </span>
-                    </div>
-                  </div>
-
-                  <Button 
-                    type="button" 
-                    variant="outline" 
-                    className="w-full h-12 text-base hover:bg-muted/50 transition-all"
-                    onClick={handleGoogleLogin}
-                  >
-                    <svg className="mr-2 h-5 w-5" viewBox="0 0 24 24">
-                      <path
-                        fill="currentColor"
-                        d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                      />
-                      <path
-                        fill="currentColor"
-                        d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                      />
-                      <path
-                        fill="currentColor"
-                        d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                      />
-                      <path
-                        fill="currentColor"
-                        d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                      />
-                    </svg>
-                    {language === "ja" ? "Googleでログイン" : "Continue with Google"}
-                  </Button>
-
-                  <div className="text-center text-sm text-muted-foreground pt-6 border-t border-border/50 mt-6">
-                    {language === "ja" 
-                      ? "アカウントをお持ちでない方は、" 
-                      : "Don't have an account? "}
-                    <Button
-                      variant="link"
-                      className="p-0 h-auto text-primary hover:text-secondary transition-colors"
-                      onClick={() => navigate("/join")}
-                    >
-                      {language === "ja" ? "料金プランを確認" : "View pricing"}
-                    </Button>
-                  </div>
-                </form>
-              </TabsContent>
-              
-              <TabsContent value="signup" className="p-8 space-y-6">
-                <div className="bg-gradient-to-r from-primary/10 to-secondary/10 border border-primary/20 rounded-xl p-4 mb-6">
-                  <p className="text-sm text-center flex items-center justify-center gap-2">
-                    <Sparkles className="w-4 h-4 text-primary" />
-                    <span className="font-medium">
-                      {language === "ja" 
-                        ? "1ヶ月無料トライアル付き！" 
-                        : "1 month free trial included!"}
-                    </span>
-                  </p>
-                </div>
-
-                <form onSubmit={handleSignUp} className="space-y-5">
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-email" className="text-base font-medium flex items-center gap-2">
-                      <Mail className="w-4 h-4 text-primary" />
-                      {language === "ja" ? "メールアドレス" : "Email"}
-                    </Label>
-                    <Input
-                      id="signup-email"
-                      type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder="you@example.com"
-                      required
-                      disabled={isLoading}
-                      autoComplete="email"
-                      className="h-12 text-base bg-muted/30 border-border/50 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-password" className="text-base font-medium flex items-center gap-2">
-                      <Lock className="w-4 h-4 text-primary" />
-                      {language === "ja" ? "パスワード（6文字以上）" : "Password (6+ characters)"}
-                    </Label>
-                    <Input
-                      id="signup-password"
-                      type="password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      placeholder="••••••••"
-                      required
-                      disabled={isLoading}
-                      autoComplete="new-password"
-                      className="h-12 text-base bg-muted/30 border-border/50 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
-                    />
-                  </div>
-
-                  <Button 
-                    type="submit" 
-                    className="w-full h-12 text-base bg-gradient-to-r from-success to-accent hover:from-success/90 hover:to-accent/90 shadow-lg transition-all" 
-                    disabled={isLoading}
-                  >
-                    {isLoading 
-                      ? (language === "ja" ? "処理中..." : "Loading...") 
-                      : (language === "ja" ? "無料で始める" : "Start Free Trial")}
-                  </Button>
-
-                  <div className="relative my-6">
-                    <div className="absolute inset-0 flex items-center">
-                      <span className="w-full border-t border-border/50" />
-                    </div>
-                    <div className="relative flex justify-center text-xs uppercase">
-                      <span className="bg-card px-2 text-muted-foreground">
-                        {language === "ja" ? "または" : "or"}
-                      </span>
-                    </div>
-                  </div>
-
-                  <Button 
-                    type="button" 
-                    variant="outline" 
-                    className="w-full h-12 text-base hover:bg-muted/50 transition-all"
-                    onClick={handleGoogleLogin}
-                  >
-                    <svg className="mr-2 h-5 w-5" viewBox="0 0 24 24">
-                      <path
-                        fill="currentColor"
-                        d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                      />
-                      <path
-                        fill="currentColor"
-                        d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                      />
-                      <path
-                        fill="currentColor"
-                        d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                      />
-                      <path
-                        fill="currentColor"
-                        d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                      />
-                    </svg>
-                    {language === "ja" ? "Googleでサインアップ" : "Sign up with Google"}
-                  </Button>
-
-                  <div className="text-center text-sm text-muted-foreground pt-6 border-t border-border/50 mt-6">
-                    {language === "ja" 
-                      ? "※ 有料プランは" 
-                      : "For paid plans, visit "}
-                    <Button
-                      variant="link"
-                      className="p-0 h-auto text-primary hover:text-secondary transition-colors"
-                      onClick={() => navigate("/join")}
-                    >
-                      {language === "ja" ? "料金プランページ" : "pricing page"}
-                    </Button>
-                    {language === "ja" ? "から" : ""}
-                  </div>
-                </form>
-              </TabsContent>
-            </Tabs>
-          </div>
-        </div>
-      </main>
-      <Footer />
+          </TabsContent>
+        </Tabs>
+      </div>
     </div>
   );
 };
