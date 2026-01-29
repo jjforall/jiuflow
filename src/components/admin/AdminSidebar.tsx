@@ -100,6 +100,9 @@ const menuGroups: MenuGroup[] = [
     icon: Building2,
     items: [
       { id: "dojos", label: "道場管理", icon: Building2 },
+      { id: "dojo-classes", label: "クラス管理", icon: Calendar },
+      { id: "dojo-members", label: "道場会員", icon: Users },
+      { id: "dojo-check-in", label: "入退館スキャン", icon: UserCheck },
       { id: "celebrities", label: "有名選手", icon: Star },
       { id: "lineage", label: "系統管理", icon: Star },
     ],

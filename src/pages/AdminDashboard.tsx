@@ -38,6 +38,7 @@ import LineIntegrationManagement from "@/components/admin/LineIntegrationManagem
 import McpChatManagement from "@/components/admin/McpChatManagement";
 import OAuthClientsManagement from "@/components/admin/OAuthClientsManagement";
 import NotationsManagement from "@/components/admin/NotationsManagement";
+import DojoManagementWrapper from "@/components/admin/DojoManagementWrapper";
 
 const AdminDashboard = () => {
   const { signOut } = useAuth();
@@ -141,6 +142,9 @@ const AdminDashboard = () => {
                         <p className="text-xs font-medium text-muted-foreground px-3 mb-1">道場・選手</p>
                         {[
                           { id: "dojos", label: "道場管理" },
+                          { id: "dojo-classes", label: "クラス管理" },
+                          { id: "dojo-members", label: "道場会員" },
+                          { id: "dojo-check-in", label: "入退館スキャン" },
                           { id: "celebrities", label: "有名選手" },
                           { id: "lineage", label: "系統管理" },
                         ].map((item) => (
@@ -347,6 +351,9 @@ const AdminDashboard = () => {
                 {activeTab === "api" && <ApiManagement />}
                 {activeTab === "oauth-clients" && <OAuthClientsManagement />}
                 {activeTab === "settings" && <SettingsManagement />}
+                {activeTab === "dojo-classes" && <DojoManagementWrapper defaultTab="classes" />}
+                {activeTab === "dojo-members" && <DojoManagementWrapper defaultTab="members" />}
+                {activeTab === "dojo-check-in" && <DojoManagementWrapper defaultTab="check-in" />}
               </div>
             </div>
           </main>
