@@ -318,7 +318,7 @@ const Terms = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <SEOHead title={seoTitle} description={seoDescription} canonicalUrl="https://jiuflow.lovableproject.com/terms" noindex={true} />
+      <SEOHead title={seoTitle} description={seoDescription} noindex={true} />
       <Navigation />
       
       <main className="container mx-auto px-4 sm:px-6 pt-24 pb-12 max-w-4xl">

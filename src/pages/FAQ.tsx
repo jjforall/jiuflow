@@ -62,7 +62,6 @@ const FAQ = () => {
       <SEOHead
         title="よくあるご質問 | JiuFlow"
         description="JiuFlowに関するよくあるご質問と回答をまとめています。サービスの内容、機能、活用方法についてご確認いただけます。"
-        canonicalUrl={`https://jiuflow.art/${language}/faq`}
       />
       <div className="min-h-screen bg-background flex flex-col">
         <Navigation />

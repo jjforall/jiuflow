@@ -342,7 +342,7 @@ const PrivacyPolicy = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <SEOHead title={seoTitle} description={seoDescription} canonicalUrl="https://jiuflow.lovableproject.com/privacy" noindex={true} />
+      <SEOHead title={seoTitle} description={seoDescription} noindex={true} />
       <Navigation />
       <main className="container max-w-4xl mx-auto px-4 pt-24 md:pt-28 pb-8 md:pb-16">
         <h1 className="text-3xl md:text-4xl font-bold mb-4">{currentContent.title}</h1>

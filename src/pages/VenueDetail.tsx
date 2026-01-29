@@ -323,7 +323,6 @@ const VenueDetail = () => {
         description={seoDescription}
         ogImage={venue.image_url || undefined}
         ogType="website"
-        canonicalUrl={`https://jiuflow.lovableproject.com/venue/${id}`}
       />
       <Navigation />
       

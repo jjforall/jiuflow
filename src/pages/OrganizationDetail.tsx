@@ -190,7 +190,6 @@ const OrganizationDetail = () => {
         title={seoTitle}
         description={seoDescription.slice(0, 160)}
         ogImage={organization.logo_url || undefined}
-        canonicalUrl={`https://jiuflow.lovableproject.com/organization/${slug}`}
       />
       <Navigation />
       

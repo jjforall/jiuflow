@@ -38,7 +38,6 @@ const Contact = () => {
       <SEOHead
         title={currentSeo.title}
         description={currentSeo.description}
-        canonicalUrl="https://jiuflow.lovableproject.com/contact"
       />
       <Navigation />
       <main className="flex-grow pt-20 pb-16">
