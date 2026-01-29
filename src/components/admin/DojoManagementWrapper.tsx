@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Building2, Calendar, Users, UserCheck, Loader2 } from "lucide-react";
+import { Building2, Calendar, Users, UserCheck, ClipboardList, BarChart3, UserPlus, CreditCard } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -15,6 +15,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import DojoClassesManagement from "./DojoClassesManagement";
 import DojoMembersManagement from "./DojoMembersManagement";
 import DojoCheckInScanner from "./DojoCheckInScanner";
+import DojoBookingsManagement from "./DojoBookingsManagement";
+import DojoAttendanceReport from "./DojoAttendanceReport";
+import DojoTrialBookingsManagement from "./DojoTrialBookingsManagement";
+import DojoMembershipPlansManagement from "./DojoMembershipPlansManagement";
 
 interface DojoOption {
   id: string;
@@ -23,7 +27,7 @@ interface DojoOption {
 }
 
 interface DojoManagementWrapperProps {
-  defaultTab?: "classes" | "members" | "check-in";
+  defaultTab?: "classes" | "members" | "check-in" | "bookings" | "reports" | "trial" | "plans";
 }
 
 export default function DojoManagementWrapper({ defaultTab = "classes" }: DojoManagementWrapperProps) {
@@ -123,18 +127,34 @@ export default function DojoManagementWrapper({ defaultTab = "classes" }: DojoMa
           </div>
         ) : (
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-3 mb-6">
-              <TabsTrigger value="classes" className="flex items-center gap-2">
+            <TabsList className="grid w-full grid-cols-4 lg:grid-cols-7 mb-6">
+              <TabsTrigger value="classes" className="flex items-center gap-1">
                 <Calendar className="h-4 w-4" />
-                <span className="hidden sm:inline">クラス管理</span>
+                <span className="hidden sm:inline">クラス</span>
               </TabsTrigger>
-              <TabsTrigger value="members" className="flex items-center gap-2">
+              <TabsTrigger value="members" className="flex items-center gap-1">
                 <Users className="h-4 w-4" />
-                <span className="hidden sm:inline">会員管理</span>
+                <span className="hidden sm:inline">会員</span>
               </TabsTrigger>
-              <TabsTrigger value="check-in" className="flex items-center gap-2">
+              <TabsTrigger value="check-in" className="flex items-center gap-1">
                 <UserCheck className="h-4 w-4" />
                 <span className="hidden sm:inline">入退館</span>
+              </TabsTrigger>
+              <TabsTrigger value="bookings" className="flex items-center gap-1">
+                <ClipboardList className="h-4 w-4" />
+                <span className="hidden sm:inline">予約</span>
+              </TabsTrigger>
+              <TabsTrigger value="reports" className="flex items-center gap-1">
+                <BarChart3 className="h-4 w-4" />
+                <span className="hidden sm:inline">レポート</span>
+              </TabsTrigger>
+              <TabsTrigger value="trial" className="flex items-center gap-1">
+                <UserPlus className="h-4 w-4" />
+                <span className="hidden sm:inline">体験</span>
+              </TabsTrigger>
+              <TabsTrigger value="plans" className="flex items-center gap-1">
+                <CreditCard className="h-4 w-4" />
+                <span className="hidden sm:inline">プラン</span>
               </TabsTrigger>
             </TabsList>
 
@@ -148,6 +168,22 @@ export default function DojoManagementWrapper({ defaultTab = "classes" }: DojoMa
 
             <TabsContent value="check-in">
               <DojoCheckInScanner dojoId={selectedDojoId} />
+            </TabsContent>
+
+            <TabsContent value="bookings">
+              <DojoBookingsManagement dojoId={selectedDojoId} />
+            </TabsContent>
+
+            <TabsContent value="reports">
+              <DojoAttendanceReport dojoId={selectedDojoId} />
+            </TabsContent>
+
+            <TabsContent value="trial">
+              <DojoTrialBookingsManagement dojoId={selectedDojoId} />
+            </TabsContent>
+
+            <TabsContent value="plans">
+              <DojoMembershipPlansManagement dojoId={selectedDojoId} />
             </TabsContent>
           </Tabs>
         )}

@@ -1538,6 +1538,79 @@ export type Database = {
           },
         ]
       }
+      dojo_trial_bookings: {
+        Row: {
+          created_at: string | null
+          dojo_id: string
+          email: string
+          experience_level: string | null
+          id: string
+          message: string | null
+          name: string
+          phone: string | null
+          preferred_date: string
+          preferred_time: string | null
+          schedule_id: string | null
+          staff_notes: string | null
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          dojo_id: string
+          email: string
+          experience_level?: string | null
+          id?: string
+          message?: string | null
+          name: string
+          phone?: string | null
+          preferred_date: string
+          preferred_time?: string | null
+          schedule_id?: string | null
+          staff_notes?: string | null
+          status?: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          dojo_id?: string
+          email?: string
+          experience_level?: string | null
+          id?: string
+          message?: string | null
+          name?: string
+          phone?: string | null
+          preferred_date?: string
+          preferred_time?: string | null
+          schedule_id?: string | null
+          staff_notes?: string | null
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dojo_trial_bookings_dojo_id_fkey"
+            columns: ["dojo_id"]
+            isOneToOne: false
+            referencedRelation: "dojos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dojo_trial_bookings_dojo_id_fkey"
+            columns: ["dojo_id"]
+            isOneToOne: false
+            referencedRelation: "public_dojos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dojo_trial_bookings_schedule_id_fkey"
+            columns: ["schedule_id"]
+            isOneToOne: false
+            referencedRelation: "dojo_class_schedules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       dojos: {
         Row: {
           access_info: string | null
