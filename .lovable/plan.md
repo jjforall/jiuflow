@@ -1,250 +1,272 @@
 
-# 翻訳プロバイダーUI改善・HeyGenマッピング修正・2段階自動翻訳の実装計画
+
+# hacomono風 会員管理・予約システム実装プラン
 
 ## 概要
 
-3つの改善を実施します：
-1. 翻訳プロバイダー選択UIの改善（成功率・対応言語の表示）
-2. HeyGen言語マッピングの修正（Chinese → Mandarin）
-3. 中国語翻訳時の2段階自動翻訳（ja → en → zh）
-
----
+hacomonoは、フィットネス・ウェルネス施設向けの会員管理・予約・決済・入退館一元管理プラットフォームです。JiuFlowに同様の機能を実装することで、柔術道場の運営を効率化し、会員のユーザー体験を向上させます。
 
 ## 現状分析
 
-### データベース統計（translation_history）
-| プロバイダー | ソース | ターゲット | 完了 | 失敗 |
-|-------------|--------|-----------|------|------|
-| ElevenLabs | ja | en | 1 | 0 |
-| ElevenLabs | en | zh | 1 | 0 |
-| HeyGen | ja | en | 0 | 2 |
-| HeyGen | ja | zh | 0 | 2 |
+### 既存リソース（活用可能）
+- **dojos テーブル**: classes, pricing, schedule, trial_info などのJSONBカラムが既に存在（静的データとして表示のみ）
+- **events テーブル + event_registrations テーブル**: イベント登録の仕組みが存在
+- **subscriptions テーブル**: Stripe連携による月額課金システムが稼働中
+- **profiles テーブル**: ユーザー情報管理
+- **user_dojos テーブル**: ユーザーと道場の関係性（home/training）を管理
 
-**結論**: HeyGenは日本語ソースで100%失敗、ElevenLabsは100%成功
-
-### HeyGenの問題
-- 現在 `zh: "Chinese"` とマッピング
-- HeyGen APIは `"Mandarin"` を期待している可能性
-- Scale/Enterpriseプラン制限の可能性もあり
-
----
-
-## 変更内容
-
-### 1. TranslationQuickDialog.tsx：プロバイダーUI改善
-
-**追加データ構造**:
-```typescript
-interface ProviderInfo {
-  id: 'elevenlabs' | 'rask' | 'heygen';
-  name: string;
-  supportedSourceLangs: string[];
-  supportedTargetLangs: string[];
-  notes: string;
-  recommended?: boolean;
-}
-
-const PROVIDERS: ProviderInfo[] = [
-  {
-    id: 'elevenlabs',
-    name: 'ElevenLabs',
-    supportedSourceLangs: ['ja', 'en', 'pt', 'es', 'fr', 'de', 'zh', 'ko'],
-    supportedTargetLangs: ['en', 'pt', 'es', 'fr', 'de', 'zh', 'ko', 'it', 'ru'],
-    notes: '日本語ソース対応、高品質',
-    recommended: true,
-  },
-  {
-    id: 'rask',
-    name: 'Rask.ai',
-    supportedSourceLangs: ['en', 'pt', 'es', 'fr', 'de'], // 日本語非対応
-    supportedTargetLangs: ['en', 'pt', 'es', 'fr', 'de', 'zh', 'ko'],
-    notes: '日本語ソース非対応',
-  },
-  {
-    id: 'heygen',
-    name: 'HeyGen',
-    supportedSourceLangs: ['en', 'pt', 'es', 'fr', 'de'],
-    supportedTargetLangs: ['en', 'pt', 'es', 'fr', 'de', 'zh', 'ko'],
-    notes: '日本語ソースは不安定（APIプラン制限）',
-  },
-];
-```
-
-**成功率の動的取得**:
-```typescript
-const [providerStats, setProviderStats] = useState<Record<string, { total: number; success: number }>>({});
-
-useEffect(() => {
-  const fetchStats = async () => {
-    const { data } = await supabase
-      .from('translation_history')
-      .select('provider, status')
-      .in('status', ['completed', 'failed', 'timeout']);
-    
-    if (data) {
-      const stats: Record<string, { total: number; success: number }> = {};
-      data.forEach(row => {
-        if (!stats[row.provider]) stats[row.provider] = { total: 0, success: 0 };
-        stats[row.provider].total++;
-        if (row.status === 'completed') stats[row.provider].success++;
-      });
-      setProviderStats(stats);
-    }
-  };
-  fetchStats();
-}, [open]);
-```
-
-**改善後のUI表示**:
-```
-翻訳プロバイダー
-┌─────────────────────────────────────────────────┐
-│ ElevenLabs ★推奨                                │
-│   成功率: 100% (2/2) | 日本語ソース ✓           │
-├─────────────────────────────────────────────────┤
-│ Rask.ai                                         │
-│   成功率: - (実績なし) | 日本語ソース ✗         │
-├─────────────────────────────────────────────────┤
-│ HeyGen                                          │
-│   成功率: 0% (0/4) | 日本語ソース ⚠             │
-└─────────────────────────────────────────────────┘
-```
-
-### 2. heygen-translate-video/index.ts：言語マッピング修正
-
-**変更箇所**: L17
-```typescript
-// 変更前
-zh: "Chinese",
-
-// 変更後
-zh: "Mandarin",
-```
-
-HeyGen APIは中国語に対して `"Mandarin"` を使用する可能性が高い
-
-### 3. TranslationQuickDialog.tsx：2段階自動翻訳
-
-**ロジック**:
-- ターゲット言語が `zh`（中国語）で、英語版がまだ存在しない場合
-- 自動的に「ja → en」を先に実行
-- 完了後に「en → zh」を実行（またはユーザーに促す）
-
-**実装方法A: 警告表示 + 手動2段階**:
-```typescript
-// 中国語を選択時に英語版がなければ警告を表示
-const needsTwoStepTranslation = targetLanguage === 'zh' 
-  && sourceLanguage === 'ja' 
-  && !translatedLangs.includes('en');
-
-{needsTwoStepTranslation && (
-  <div className="flex items-start gap-2 p-3 bg-amber-500/10 border border-amber-500/30 rounded-lg">
-    <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
-    <div className="text-sm">
-      <strong>2段階翻訳が必要です</strong>
-      <p className="text-muted-foreground mt-1">
-        日本語→中国語の直接翻訳は不安定です。先に日本語→英語に翻訳後、英語→中国語をお勧めします。
-      </p>
-      <Button
-        variant="outline"
-        size="sm"
-        className="mt-2"
-        onClick={() => {
-          setTargetLanguage('en');
-          setIsTwoStepMode(true);
-        }}
-      >
-        日本語→英語を先に翻訳
-      </Button>
-    </div>
-  </div>
-)}
-```
-
-**実装方法B: 完全自動2段階翻訳**:
-```typescript
-const handleTranslate = async () => {
-  // 中国語で英語版がない場合、2段階実行
-  if (targetLanguage === 'zh' && sourceLanguage === 'ja' && !translatedLangs.includes('en')) {
-    toast.info("2段階翻訳を開始", {
-      description: "まず日本語→英語、次に英語→中国語の順で翻訳します",
-    });
-    
-    // Step 1: ja → en
-    await executeTranslation('ja', 'en');
-    
-    // Step 2 はステータス監視で完了後に自動トリガー
-    // 翻訳履歴に「pending_second_step: zh」フラグを保存
-    await supabase.from('translation_history').update({
-      pending_second_step: 'zh'
-    }).eq('project_id', projectId);
-    
-    return;
-  }
-  
-  // 通常の単一翻訳
-  await executeTranslation(sourceLanguage, targetLanguage);
-};
-```
-
-**推奨: 方法A（警告表示 + 手動）**
-- シンプルで透明性が高い
-- ユーザーが意図を理解しやすい
-- 自動化による予期しない課金を防止
+### 不足している機能
+1. インタラクティブなクラス予約システム
+2. デジタル会員証（QRコード）
+3. 入退館管理
+4. 道場単位の会員プラン管理
+5. 出席履歴・統計
 
 ---
 
-## 変更ファイル一覧
+## 実装計画
 
-| ファイル | 変更種別 | 変更内容 |
-|---------|---------|---------|
-| `src/components/admin/TranslationQuickDialog.tsx` | 修正 | プロバイダー成功率表示、2段階翻訳警告UI |
-| `supabase/functions/heygen-translate-video/index.ts` | 修正 | `zh: "Mandarin"` に変更 |
+### Phase 1: データベース設計
+
+以下の新規テーブルを作成します：
+
+```text
++-------------------+     +-------------------+     +-------------------+
+|   dojo_classes    |     | class_schedules   |     | class_bookings    |
++-------------------+     +-------------------+     +-------------------+
+| id                |<--->| id                |<--->| id                |
+| dojo_id (FK)      |     | class_id (FK)     |     | schedule_id (FK)  |
+| name              |     | day_of_week       |     | user_id (FK)      |
+| description       |     | start_time        |     | status            |
+| class_type        |     | end_time          |     | checked_in_at     |
+| instructor_id     |     | max_capacity      |     | created_at        |
+| duration_minutes  |     | is_active         |     +-------------------+
+| level             |     +-------------------+
++-------------------+
+
++-------------------+     +-------------------+
+| dojo_memberships  |     | dojo_check_ins    |
++-------------------+     +-------------------+
+| id                |     | id                |
+| dojo_id (FK)      |     | dojo_id (FK)      |
+| user_id (FK)      |     | user_id (FK)      |
+| plan_name         |     | checked_in_at     |
+| status            |     | checked_out_at    |
+| valid_from        |     | booking_id (FK)   |
+| valid_until       |     +-------------------+
+| qr_token          |
++-------------------+
+```
+
+### Phase 2: 会員マイページ機能強化
+
+**新規コンポーネント:**
+- `DojoMembershipCard.tsx` - デジタル会員証（QRコード表示）
+- `ClassCalendar.tsx` - 週間スケジュールカレンダー
+- `ClassBookingDialog.tsx` - クラス予約ダイアログ
+- `MyBookings.tsx` - 予約一覧・履歴
+- `AttendanceHistory.tsx` - 出席履歴
+
+**MyPage.tsx への追加タブ:**
+- 「予約」タブ - 今後の予約一覧
+- 「出席履歴」タブ - 月別出席統計
+- 「会員証」タブ - QRコード表示
+
+### Phase 3: 道場詳細ページ拡張
+
+**Dojo.tsx への追加:**
+- インタラクティブな週間スケジュール表示
+- 「このクラスを予約」ボタン
+- 残り空き枠数のリアルタイム表示
+- 体験予約フォーム
+
+### Phase 4: 管理画面（道場オーナー向け）
+
+**新規管理コンポーネント:**
+- `DojoClassesManagement.tsx` - クラス・スケジュール管理
+- `DojoMembersManagement.tsx` - 会員一覧・管理
+- `DojoCheckInManagement.tsx` - 入退館確認画面（スキャナー用）
+- `DojoBookingsManagement.tsx` - 予約一覧・管理
+- `DojoAttendanceReport.tsx` - 出席レポート
+
+### Phase 5: QRコード入退館システム
+
+**実装内容:**
+1. 会員ごとにユニークなQRトークン発行
+2. 道場側でQRスキャンして入退館記録
+3. 予約との自動紐付け（予約なしでも入館可能なオプション）
 
 ---
 
-## UI変更詳細
+## 技術的詳細
 
-### プロバイダー選択の改善後
+### 新規データベーステーブル
 
+```sql
+-- クラス定義
+CREATE TABLE dojo_classes (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  dojo_id UUID NOT NULL REFERENCES dojos(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  name_ja TEXT,
+  description TEXT,
+  description_ja TEXT,
+  class_type TEXT NOT NULL, -- 'regular', 'open_mat', 'competition', 'private'
+  instructor_name TEXT,
+  instructor_id UUID REFERENCES celebrities(id),
+  duration_minutes INTEGER NOT NULL DEFAULT 60,
+  level TEXT, -- 'all', 'beginner', 'intermediate', 'advanced'
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- スケジュール（繰り返し設定）
+CREATE TABLE dojo_class_schedules (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  class_id UUID NOT NULL REFERENCES dojo_classes(id) ON DELETE CASCADE,
+  day_of_week INTEGER NOT NULL, -- 0=Sun, 1=Mon, etc.
+  start_time TIME NOT NULL,
+  end_time TIME NOT NULL,
+  max_capacity INTEGER,
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- 予約
+CREATE TABLE dojo_class_bookings (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  schedule_id UUID NOT NULL REFERENCES dojo_class_schedules(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  booking_date DATE NOT NULL,
+  status TEXT NOT NULL DEFAULT 'confirmed', -- 'confirmed', 'cancelled', 'attended', 'no_show'
+  checked_in_at TIMESTAMPTZ,
+  notes TEXT,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now(),
+  UNIQUE(schedule_id, user_id, booking_date)
+);
+
+-- 道場会員プラン
+CREATE TABLE dojo_membership_plans (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  dojo_id UUID NOT NULL REFERENCES dojos(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  name_ja TEXT,
+  description TEXT,
+  price INTEGER NOT NULL, -- cents
+  interval TEXT NOT NULL DEFAULT 'month', -- 'month', 'year'
+  max_bookings_per_month INTEGER,
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- 道場会員登録
+CREATE TABLE dojo_memberships (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  dojo_id UUID NOT NULL REFERENCES dojos(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  plan_id UUID REFERENCES dojo_membership_plans(id),
+  status TEXT NOT NULL DEFAULT 'active', -- 'active', 'paused', 'cancelled', 'expired'
+  valid_from DATE NOT NULL DEFAULT CURRENT_DATE,
+  valid_until DATE,
+  qr_token TEXT UNIQUE DEFAULT encode(gen_random_bytes(16), 'hex'),
+  stripe_subscription_id TEXT,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now(),
+  UNIQUE(dojo_id, user_id)
+);
+
+-- 入退館記録
+CREATE TABLE dojo_check_ins (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  dojo_id UUID NOT NULL REFERENCES dojos(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  membership_id UUID REFERENCES dojo_memberships(id),
+  booking_id UUID REFERENCES dojo_class_bookings(id),
+  checked_in_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  checked_out_at TIMESTAMPTZ,
+  method TEXT DEFAULT 'qr' -- 'qr', 'manual', 'auto'
+);
 ```
-翻訳プロバイダー
 
-┌─────────────────────────────────────────┐
-│ ● ElevenLabs ★推奨                      │
-│   成功率: 100% (2件) │ 日本語ソース ✓   │
-│   高品質な吹き替え                       │
-└─────────────────────────────────────────┘
+### RLSポリシー
 
-┌─────────────────────────────────────────┐
-│ ○ Rask.ai                               │
-│   成功率: -- │ 日本語ソース ✗           │
-│   日本語をソースとして使用できません      │
-└─────────────────────────────────────────┘
+```sql
+-- ユーザーは自分の予約のみ閲覧・操作可能
+ALTER TABLE dojo_class_bookings ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can view own bookings" ON dojo_class_bookings
+  FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users can create own bookings" ON dojo_class_bookings
+  FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can cancel own bookings" ON dojo_class_bookings
+  FOR UPDATE USING (auth.uid() = user_id);
 
-┌─────────────────────────────────────────┐
-│ ○ HeyGen                                │
-│   成功率: 0% (4件失敗) │ 日本語ソース ⚠  │
-│   APIプラン制限の可能性あり              │
-└─────────────────────────────────────────┘
+-- 道場オーナー/管理者は全予約を閲覧可能
+CREATE POLICY "Dojo admins can view all bookings" ON dojo_class_bookings
+  FOR SELECT USING (
+    EXISTS (
+      SELECT 1 FROM dojo_class_schedules s
+      JOIN dojo_classes c ON s.id = c.id
+      JOIN dojos d ON c.dojo_id = d.id
+      WHERE s.id = schedule_id AND d.created_by = auth.uid()
+    )
+  );
 ```
 
-### 2段階翻訳の警告表示
+### 新規コンポーネント構造
 
+```text
+src/components/
+  dojo/
+    ClassCalendar.tsx         # 週間カレンダー表示
+    ClassBookingDialog.tsx    # 予約フォーム
+    DojoMembershipCard.tsx    # デジタル会員証
+    MyBookings.tsx            # 予約一覧
+    AttendanceHistory.tsx     # 出席履歴
+
+  admin/
+    DojoClassesManagement.tsx   # クラス管理
+    DojoScheduleEditor.tsx      # スケジュール編集
+    DojoMembersManagement.tsx   # 会員管理
+    DojoCheckInScanner.tsx      # QRスキャナー
+    DojoBookingsView.tsx        # 予約一覧（管理者用）
 ```
-⚠ 2段階翻訳が必要です
 
-日本語→中国語の直接翻訳は不安定です。
-先に日本語→英語に翻訳後、英語→中国語をお勧めします。
+### ルーティング追加
 
-[日本語→英語を先に翻訳]
+```tsx
+// App.tsx に追加
+<Route path="dojo/:id/schedule" element={<DojoSchedule />} />
+<Route path="dojo/:id/book/:scheduleId" element={<ClassBooking />} />
+<Route path="dojo/:id/manage" element={
+  <ProtectedRoute>
+    <DojoManagement />
+  </ProtectedRoute>
+} />
+<Route path="dojo/:id/check-in" element={
+  <ProtectedRoute>
+    <DojoCheckIn />
+  </ProtectedRoute>
+} />
 ```
 
 ---
 
-## 期待される効果
+## 実装順序
 
-1. **プロバイダー選択の改善**: 実績データに基づいて最適なプロバイダーを選択可能
-2. **HeyGen中国語修正**: `Mandarin`マッピングで成功率向上の可能性
-3. **2段階翻訳ガイダンス**: ja→zh直接翻訳の失敗を防止、ユーザーに明確な手順を提示
-4. **透明性向上**: 各プロバイダーの制限が一目でわかる
+1. **Week 1**: データベーステーブル作成 + RLSポリシー
+2. **Week 2**: クラス・スケジュール管理（管理画面）
+3. **Week 3**: 予約システム（ユーザー側）
+4. **Week 4**: 会員証・QRコード機能
+5. **Week 5**: 入退館管理・出席レポート
+6. **Week 6**: テスト・調整
+
+---
+
+## 注意事項
+
+- 既存の `dojos.schedule` JSONBカラムは後方互換性のため残し、新システムへの移行期間を設ける
+- Stripe連携は既存の仕組みを拡張し、道場単位のサブスクリプションに対応
+- QRコードはクライアントサイドで `qrcode.react` ライブラリを使用して生成
+
