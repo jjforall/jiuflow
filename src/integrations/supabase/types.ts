@@ -1072,6 +1072,472 @@ export type Database = {
         }
         Relationships: []
       }
+      dojo_admins: {
+        Row: {
+          created_at: string | null
+          dojo_id: string
+          id: string
+          permissions: Json | null
+          role: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          dojo_id: string
+          id?: string
+          permissions?: Json | null
+          role?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          dojo_id?: string
+          id?: string
+          permissions?: Json | null
+          role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dojo_admins_dojo_id_fkey"
+            columns: ["dojo_id"]
+            isOneToOne: false
+            referencedRelation: "dojos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dojo_admins_dojo_id_fkey"
+            columns: ["dojo_id"]
+            isOneToOne: false
+            referencedRelation: "public_dojos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dojo_admins_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dojo_admins_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dojo_check_ins: {
+        Row: {
+          booking_id: string | null
+          checked_in_at: string
+          checked_out_at: string | null
+          dojo_id: string
+          id: string
+          membership_id: string | null
+          method: string | null
+          notes: string | null
+          user_id: string
+        }
+        Insert: {
+          booking_id?: string | null
+          checked_in_at?: string
+          checked_out_at?: string | null
+          dojo_id: string
+          id?: string
+          membership_id?: string | null
+          method?: string | null
+          notes?: string | null
+          user_id: string
+        }
+        Update: {
+          booking_id?: string | null
+          checked_in_at?: string
+          checked_out_at?: string | null
+          dojo_id?: string
+          id?: string
+          membership_id?: string | null
+          method?: string | null
+          notes?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dojo_check_ins_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "dojo_class_bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dojo_check_ins_dojo_id_fkey"
+            columns: ["dojo_id"]
+            isOneToOne: false
+            referencedRelation: "dojos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dojo_check_ins_dojo_id_fkey"
+            columns: ["dojo_id"]
+            isOneToOne: false
+            referencedRelation: "public_dojos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dojo_check_ins_membership_id_fkey"
+            columns: ["membership_id"]
+            isOneToOne: false
+            referencedRelation: "dojo_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dojo_check_ins_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dojo_check_ins_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dojo_class_bookings: {
+        Row: {
+          booking_date: string
+          checked_in_at: string | null
+          created_at: string | null
+          id: string
+          notes: string | null
+          schedule_id: string
+          status: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          booking_date: string
+          checked_in_at?: string | null
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          schedule_id: string
+          status?: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          booking_date?: string
+          checked_in_at?: string | null
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          schedule_id?: string
+          status?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dojo_class_bookings_schedule_id_fkey"
+            columns: ["schedule_id"]
+            isOneToOne: false
+            referencedRelation: "dojo_class_schedules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dojo_class_bookings_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dojo_class_bookings_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dojo_class_schedules: {
+        Row: {
+          class_id: string
+          created_at: string | null
+          day_of_week: number
+          end_time: string
+          id: string
+          is_active: boolean | null
+          max_capacity: number | null
+          room_name: string | null
+          start_time: string
+        }
+        Insert: {
+          class_id: string
+          created_at?: string | null
+          day_of_week: number
+          end_time: string
+          id?: string
+          is_active?: boolean | null
+          max_capacity?: number | null
+          room_name?: string | null
+          start_time: string
+        }
+        Update: {
+          class_id?: string
+          created_at?: string | null
+          day_of_week?: number
+          end_time?: string
+          id?: string
+          is_active?: boolean | null
+          max_capacity?: number | null
+          room_name?: string | null
+          start_time?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dojo_class_schedules_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "dojo_classes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dojo_classes: {
+        Row: {
+          class_type: string
+          color: string | null
+          created_at: string | null
+          description: string | null
+          description_ja: string | null
+          dojo_id: string
+          duration_minutes: number
+          id: string
+          instructor_id: string | null
+          instructor_name: string | null
+          is_active: boolean | null
+          level: string | null
+          name: string
+          name_ja: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          class_type?: string
+          color?: string | null
+          created_at?: string | null
+          description?: string | null
+          description_ja?: string | null
+          dojo_id: string
+          duration_minutes?: number
+          id?: string
+          instructor_id?: string | null
+          instructor_name?: string | null
+          is_active?: boolean | null
+          level?: string | null
+          name: string
+          name_ja?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          class_type?: string
+          color?: string | null
+          created_at?: string | null
+          description?: string | null
+          description_ja?: string | null
+          dojo_id?: string
+          duration_minutes?: number
+          id?: string
+          instructor_id?: string | null
+          instructor_name?: string | null
+          is_active?: boolean | null
+          level?: string | null
+          name?: string
+          name_ja?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dojo_classes_dojo_id_fkey"
+            columns: ["dojo_id"]
+            isOneToOne: false
+            referencedRelation: "dojos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dojo_classes_dojo_id_fkey"
+            columns: ["dojo_id"]
+            isOneToOne: false
+            referencedRelation: "public_dojos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dojo_classes_instructor_id_fkey"
+            columns: ["instructor_id"]
+            isOneToOne: false
+            referencedRelation: "celebrities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dojo_membership_plans: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          description_ja: string | null
+          display_order: number | null
+          dojo_id: string
+          features: Json | null
+          id: string
+          interval: string
+          is_active: boolean | null
+          max_bookings_per_month: number | null
+          name: string
+          name_ja: string | null
+          price: number
+          stripe_price_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          description_ja?: string | null
+          display_order?: number | null
+          dojo_id: string
+          features?: Json | null
+          id?: string
+          interval?: string
+          is_active?: boolean | null
+          max_bookings_per_month?: number | null
+          name: string
+          name_ja?: string | null
+          price: number
+          stripe_price_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          description_ja?: string | null
+          display_order?: number | null
+          dojo_id?: string
+          features?: Json | null
+          id?: string
+          interval?: string
+          is_active?: boolean | null
+          max_bookings_per_month?: number | null
+          name?: string
+          name_ja?: string | null
+          price?: number
+          stripe_price_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dojo_membership_plans_dojo_id_fkey"
+            columns: ["dojo_id"]
+            isOneToOne: false
+            referencedRelation: "dojos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dojo_membership_plans_dojo_id_fkey"
+            columns: ["dojo_id"]
+            isOneToOne: false
+            referencedRelation: "public_dojos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dojo_memberships: {
+        Row: {
+          created_at: string | null
+          dojo_id: string
+          id: string
+          member_number: string | null
+          notes: string | null
+          plan_id: string | null
+          qr_token: string | null
+          status: string
+          stripe_subscription_id: string | null
+          updated_at: string | null
+          user_id: string
+          valid_from: string
+          valid_until: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          dojo_id: string
+          id?: string
+          member_number?: string | null
+          notes?: string | null
+          plan_id?: string | null
+          qr_token?: string | null
+          status?: string
+          stripe_subscription_id?: string | null
+          updated_at?: string | null
+          user_id: string
+          valid_from?: string
+          valid_until?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          dojo_id?: string
+          id?: string
+          member_number?: string | null
+          notes?: string | null
+          plan_id?: string | null
+          qr_token?: string | null
+          status?: string
+          stripe_subscription_id?: string | null
+          updated_at?: string | null
+          user_id?: string
+          valid_from?: string
+          valid_until?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dojo_memberships_dojo_id_fkey"
+            columns: ["dojo_id"]
+            isOneToOne: false
+            referencedRelation: "dojos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dojo_memberships_dojo_id_fkey"
+            columns: ["dojo_id"]
+            isOneToOne: false
+            referencedRelation: "public_dojos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dojo_memberships_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "dojo_membership_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dojo_memberships_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dojo_memberships_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       dojos: {
         Row: {
           access_info: string | null
@@ -3937,6 +4403,10 @@ export type Database = {
       }
       cleanup_expired_oauth_tokens: { Args: never; Returns: undefined }
       generate_referral_code: { Args: never; Returns: string }
+      get_booking_count: {
+        Args: { p_date: string; p_schedule_id: string }
+        Returns: number
+      }
       get_celebrity_applications_masked: {
         Args: never
         Returns: {
@@ -3964,6 +4434,18 @@ export type Database = {
           display_name: string
           id: string
           username: string
+        }[]
+      }
+      get_membership_by_qr_token: {
+        Args: { p_qr_token: string }
+        Returns: {
+          avatar_url: string
+          display_name: string
+          dojo_id: string
+          membership_id: string
+          plan_name: string
+          status: string
+          user_id: string
         }[]
       }
       get_printful_orders_masked: {
@@ -4055,6 +4537,10 @@ export type Database = {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
+        Returns: boolean
+      }
+      is_dojo_staff: {
+        Args: { p_dojo_id: string; p_user_id: string }
         Returns: boolean
       }
       is_group_member: {
