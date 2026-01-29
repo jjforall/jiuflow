@@ -18,7 +18,7 @@ interface SEOHeadProps {
   alternateLanguages?: Record<string, { title: string; description: string; ogImage?: string }>;
 }
 
-const BASE_URL = "https://jiuflow.lovableproject.com";
+const BASE_URL = "https://jiuflow.lovable.app";
 const DEFAULT_OG_IMAGE = "https://jiuflow.lovable.app/og-image.png";
 
 // Language-specific OG images
@@ -75,10 +75,9 @@ const getOGLocale = (lang: string): string => {
 
 // Helper to generate all alternate language URLs for a page
 export const generateAlternateLanguages = (basePath: string) => {
-  const baseUrl = "https://jiuflow.lovableproject.com";
   return SUPPORTED_LANGUAGES.map(lang => ({
     lang,
-    url: lang === 'ja' ? `${baseUrl}${basePath}` : `${baseUrl}/${lang}${basePath === '/' ? '' : basePath}`
+    url: lang === 'ja' ? `${BASE_URL}${basePath}` : `${BASE_URL}/${lang}${basePath === '/' ? '' : basePath}`
   }));
 };
 

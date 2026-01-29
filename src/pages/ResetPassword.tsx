@@ -1,8 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import Navigation from "@/components/Navigation";
-import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -64,56 +62,60 @@ const ResetPassword = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <Navigation />
-      <main className="flex-1 flex items-center justify-center px-6 pt-32 pb-20">
-        <div className="max-w-md w-full">
-          <div className="mb-8">
-            <Button
-              variant="ghost"
-              onClick={() => navigate("/login")}
-              className="mb-4"
-            >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              {language === "ja" ? "ログインに戻る" : "Back to Login"}
-            </Button>
-            <h1 className="text-4xl font-light mb-4">
-              {language === "ja" ? "パスワードをリセット" : language === "pt" ? "Redefinir senha" : "Reset Password"}
-            </h1>
-            <p className="text-muted-foreground">
-              {language === "ja" 
-                ? "登録されているメールアドレスを入力してください。パスワードリセット用のリンクをお送りします。" 
-                : language === "pt"
-                ? "Digite seu endereço de e-mail cadastrado. Enviaremos um link para redefinir sua senha."
-                : "Enter your registered email address. We'll send you a link to reset your password."}
-            </p>
+    <div className="min-h-screen flex items-center justify-center bg-background px-6">
+      <div className="max-w-md w-full">
+        <div className="text-center mb-8">
+          <img 
+            src="https://storage.googleapis.com/gpt-engineer-file-uploads/eKRz1NN3QtRy6vwWfmoNTmYXlqu2/uploads/1765287547884-unnamed.jpg" 
+            alt="JiuFlow" 
+            className="w-16 h-16 mx-auto mb-6 rounded"
+          />
+          <h1 className="text-2xl font-light mb-2">
+            {language === "ja" ? "パスワードをリセット" : language === "pt" ? "Redefinir senha" : "Reset Password"}
+          </h1>
+          <p className="text-muted-foreground text-sm">
+            {language === "ja" 
+              ? "登録されているメールアドレスを入力してください" 
+              : language === "pt"
+              ? "Digite seu endereço de e-mail cadastrado"
+              : "Enter your registered email address"}
+          </p>
+        </div>
+
+        <form onSubmit={handleResetPassword} className="space-y-6 border border-border p-8 rounded-lg bg-card">
+          <div className="space-y-2">
+            <Label htmlFor="email">
+              {language === "ja" ? "メールアドレス" : language === "pt" ? "E-mail" : "Email"}
+            </Label>
+            <Input
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="you@example.com"
+              required
+              disabled={isLoading}
+            />
           </div>
 
-          <form onSubmit={handleResetPassword} className="space-y-6 border border-border p-8">
-            <div className="space-y-2">
-              <Label htmlFor="email">
-                {language === "ja" ? "メールアドレス" : language === "pt" ? "E-mail" : "Email"}
-              </Label>
-              <Input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@example.com"
-                required
-                disabled={isLoading}
-              />
-            </div>
-
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading 
-                ? (language === "ja" ? "送信中..." : language === "pt" ? "Enviando..." : "Sending...") 
-                : (language === "ja" ? "リセットリンクを送信" : language === "pt" ? "Enviar link de redefinição" : "Send Reset Link")}
+          <Button type="submit" className="w-full" disabled={isLoading}>
+            {isLoading 
+              ? (language === "ja" ? "送信中..." : language === "pt" ? "Enviando..." : "Sending...") 
+              : (language === "ja" ? "リセットリンクを送信" : language === "pt" ? "Enviar link de redefinição" : "Send Reset Link")}
+          </Button>
+          
+          <div className="text-center">
+            <Button
+              variant="link"
+              onClick={() => navigate("/login")}
+              className="text-sm text-muted-foreground"
+            >
+              <ArrowLeft className="w-4 h-4 mr-1" />
+              {language === "ja" ? "ログインに戻る" : language === "pt" ? "Voltar ao login" : "Back to Login"}
             </Button>
-          </form>
-        </div>
-      </main>
-      <Footer />
+          </div>
+        </form>
+      </div>
     </div>
   );
 };
