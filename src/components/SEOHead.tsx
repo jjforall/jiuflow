@@ -163,11 +163,17 @@ export const SEOHead = ({
     const currentPath = location.pathname;
     const pathWithoutLang = currentPath.replace(/^\/(ja|en|pt)(\/|$)/, '/');
     const basePath = pathWithoutLang === '' ? '/' : pathWithoutLang;
+
+    // Use the *currently displayed* origin for canonical/og:url.
+    // This avoids Safari using an outdated domain for Share/Bookmark.
+    const canonicalBaseUrl = typeof window !== "undefined" && window.location?.origin
+      ? window.location.origin
+      : BASE_URL;
     
     // Canonical URL - use provided or generate from current path
     const fullCanonicalUrl = canonicalUrl 
-      ? (canonicalUrl.startsWith("http") ? canonicalUrl : `${BASE_URL}${canonicalUrl}`)
-      : `${BASE_URL}${currentPath}`;
+      ? (canonicalUrl.startsWith("http") ? canonicalUrl : `${canonicalBaseUrl}${canonicalUrl}`)
+      : `${canonicalBaseUrl}${currentPath}`;
     setLinkTag("canonical", fullCanonicalUrl);
 
     // Alternate language links (hreflang) - all 12 languages

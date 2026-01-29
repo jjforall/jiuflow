@@ -165,7 +165,6 @@ const Login = () => {
       <SEOHead
         title={seoTitle}
         description={seoDescription}
-        canonicalUrl="https://jiuflow.lovableproject.com/login"
         noindex={true}
       />
       
