@@ -1,217 +1,152 @@
 
-
-# hacomono風 会員管理・予約システム実装プラン
-
-## 概要
-
-hacomonoは、フィットネス・ウェルネス施設向けの会員管理・予約・決済・入退館一元管理プラットフォームです。JiuFlowに同様の機能を実装することで、柔術道場の運営を効率化し、会員のユーザー体験を向上させます。
+# hacomono風システム - 追加機能実装プラン
 
 ## 現状分析
 
-### 既存リソース（活用可能）
-- **dojos テーブル**: classes, pricing, schedule, trial_info などのJSONBカラムが既に存在（静的データとして表示のみ）
-- **events テーブル + event_registrations テーブル**: イベント登録の仕組みが存在
-- **subscriptions テーブル**: Stripe連携による月額課金システムが稼働中
-- **profiles テーブル**: ユーザー情報管理
-- **user_dojos テーブル**: ユーザーと道場の関係性（home/training）を管理
+### 実装済みの機能 ✅
+1. **データベース基盤**: 6テーブル（dojo_classes, dojo_class_schedules, dojo_class_bookings, dojo_membership_plans, dojo_memberships, dojo_check_ins）
+2. **クラス管理**: DojoClassesManagement（クラス定義・スケジュール設定）
+3. **会員管理**: DojoMembersManagement（会員一覧・ステータス更新）
+4. **入退館スキャン**: DojoCheckInScanner（QRコード読取・チェックイン記録）
+5. **予約システム**: ClassCalendar, ClassBookingDialog（週間カレンダー・予約作成）
+6. **デジタル会員証**: DojoMembershipCard（QRコード表示）
+7. **予約一覧**: MyBookings（ユーザーの予約履歴）
+8. **出席履歴**: AttendanceHistory（チェックイン履歴）
 
-### 不足している機能
-1. インタラクティブなクラス予約システム
-2. デジタル会員証（QRコード）
-3. 入退館管理
-4. 道場単位の会員プラン管理
-5. 出席履歴・統計
+### 未実装の機能 ❌
+以下の機能がまだ実装されていません：
 
 ---
 
-## 実装計画
+## 追加実装する機能
 
-### Phase 1: データベース設計
+### 1. 予約管理ダッシュボード（管理者向け）
+道場オーナーが全ての予約を一覧で確認・管理できる画面
 
-以下の新規テーブルを作成します：
+**新規コンポーネント**: `DojoBookingsManagement.tsx`
+- 日付フィルター（今日/今週/今月）
+- ステータスフィルター（確認済み/キャンセル待ち/出席/欠席）
+- クラス別フィルター
+- 予約のキャンセル・ステータス変更機能
+- CSVエクスポート機能
 
-```text
-+-------------------+     +-------------------+     +-------------------+
-|   dojo_classes    |     | class_schedules   |     | class_bookings    |
-+-------------------+     +-------------------+     +-------------------+
-| id                |<--->| id                |<--->| id                |
-| dojo_id (FK)      |     | class_id (FK)     |     | schedule_id (FK)  |
-| name              |     | day_of_week       |     | user_id (FK)      |
-| description       |     | start_time        |     | status            |
-| class_type        |     | end_time          |     | checked_in_at     |
-| instructor_id     |     | max_capacity      |     | created_at        |
-| duration_minutes  |     | is_active         |     +-------------------+
-| level             |     +-------------------+
-+-------------------+
+### 2. 出席レポート・統計ダッシュボード
+出席率や人気クラスなどの統計情報をグラフで可視化
 
-+-------------------+     +-------------------+
-| dojo_memberships  |     | dojo_check_ins    |
-+-------------------+     +-------------------+
-| id                |     | id                |
-| dojo_id (FK)      |     | dojo_id (FK)      |
-| user_id (FK)      |     | user_id (FK)      |
-| plan_name         |     | checked_in_at     |
-| status            |     | checked_out_at    |
-| valid_from        |     | booking_id (FK)   |
-| valid_until       |     +-------------------+
-| qr_token          |
-+-------------------+
+**新規コンポーネント**: `DojoAttendanceReport.tsx`
+- 月別出席者数グラフ（recharts使用）
+- 曜日別・時間帯別人気度ヒートマップ
+- アクティブ会員数/休眠会員数の推移
+- クラス別参加率ランキング
+- 新規入会者数推移
+
+### 3. 体験予約フォーム（非会員向け）
+ウェブサイトから直接体験クラスを予約できる機能
+
+**新規コンポーネント**: `TrialBookingForm.tsx`
+- 名前・メール・電話番号入力
+- 希望日時選択
+- 体験クラス選択
+- 確認メール送信
+- 道場側への通知
+
+**データベース変更**:
+```sql
+CREATE TABLE dojo_trial_bookings (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  dojo_id UUID NOT NULL REFERENCES dojos(id),
+  name TEXT NOT NULL,
+  email TEXT NOT NULL,
+  phone TEXT,
+  preferred_date DATE NOT NULL,
+  schedule_id UUID REFERENCES dojo_class_schedules(id),
+  message TEXT,
+  status TEXT DEFAULT 'pending', -- 'pending', 'confirmed', 'cancelled', 'completed'
+  created_at TIMESTAMPTZ DEFAULT now()
+);
 ```
 
-### Phase 2: 会員マイページ機能強化
+### 4. キャンセル待ち自動昇格システム
+キャンセル発生時に待機者を自動で繰り上げ
 
-**新規コンポーネント:**
-- `DojoMembershipCard.tsx` - デジタル会員証（QRコード表示）
-- `ClassCalendar.tsx` - 週間スケジュールカレンダー
-- `ClassBookingDialog.tsx` - クラス予約ダイアログ
-- `MyBookings.tsx` - 予約一覧・履歴
-- `AttendanceHistory.tsx` - 出席履歴
+**実装内容**:
+- データベーストリガー：予約キャンセル時に待機者を確認
+- 待機者への通知（メール/プッシュ）
+- 24時間以内に承諾がなければ次の待機者へ
 
-**MyPage.tsx への追加タブ:**
-- 「予約」タブ - 今後の予約一覧
-- 「出席履歴」タブ - 月別出席統計
-- 「会員証」タブ - QRコード表示
+**新規Edge Function**: `notify-waitlist/index.ts`
 
-### Phase 3: 道場詳細ページ拡張
+### 5. 予約リマインダー通知
+クラス前日/当日にリマインダーを送信
 
-**Dojo.tsx への追加:**
-- インタラクティブな週間スケジュール表示
+**新規Edge Function**: `send-booking-reminder/index.ts`
+- Resend API経由でメール送信
+- クラス開始24時間前・1時間前に通知
+- cronジョブで定期実行
+
+### 6. 道場別Stripe連携（会員プラン決済）
+道場ごとの会員プランをStripeで決済
+
+**新規Edge Function**: `create-dojo-membership-checkout/index.ts`
+- 道場の`stripe_price_id`を使用してCheckout Session作成
+- 成功時に`dojo_memberships`テーブルに自動登録
+
+**新規コンポーネント**: `DojoMembershipPlansManagement.tsx`
+- プラン作成・編集・削除
+- Stripe価格ID連携
+- 決済リンク生成
+
+### 7. 会員プラン管理（ユーザー側）
+マイページから道場の会員登録・プラン変更
+
+**MyPage.tsx への追加**:
+- 「道場会員」タブ追加
+- 所属道場一覧
+- 会員証表示
+- プラン変更・解約
+
+### 8. 道場詳細ページへの予約UI統合
+Dojo.tsxにインタラクティブなスケジュール表示を追加
+
+**Dojo.tsx への変更**:
+- ClassCalendarコンポーネントの組み込み
 - 「このクラスを予約」ボタン
-- 残り空き枠数のリアルタイム表示
-- 体験予約フォーム
-
-### Phase 4: 管理画面（道場オーナー向け）
-
-**新規管理コンポーネント:**
-- `DojoClassesManagement.tsx` - クラス・スケジュール管理
-- `DojoMembersManagement.tsx` - 会員一覧・管理
-- `DojoCheckInManagement.tsx` - 入退館確認画面（スキャナー用）
-- `DojoBookingsManagement.tsx` - 予約一覧・管理
-- `DojoAttendanceReport.tsx` - 出席レポート
-
-### Phase 5: QRコード入退館システム
-
-**実装内容:**
-1. 会員ごとにユニークなQRトークン発行
-2. 道場側でQRスキャンして入退館記録
-3. 予約との自動紐付け（予約なしでも入館可能なオプション）
+- リアルタイム空き状況表示
+- 体験予約ボタン
 
 ---
 
-## 技術的詳細
+## 技術詳細
 
 ### 新規データベーステーブル
 
 ```sql
--- クラス定義
-CREATE TABLE dojo_classes (
+-- 体験予約テーブル
+CREATE TABLE public.dojo_trial_bookings (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  dojo_id UUID NOT NULL REFERENCES dojos(id) ON DELETE CASCADE,
+  dojo_id UUID NOT NULL REFERENCES public.dojos(id) ON DELETE CASCADE,
   name TEXT NOT NULL,
-  name_ja TEXT,
-  description TEXT,
-  description_ja TEXT,
-  class_type TEXT NOT NULL, -- 'regular', 'open_mat', 'competition', 'private'
-  instructor_name TEXT,
-  instructor_id UUID REFERENCES celebrities(id),
-  duration_minutes INTEGER NOT NULL DEFAULT 60,
-  level TEXT, -- 'all', 'beginner', 'intermediate', 'advanced'
-  is_active BOOLEAN DEFAULT true,
+  email TEXT NOT NULL,
+  phone TEXT,
+  preferred_date DATE NOT NULL,
+  preferred_time TEXT,
+  schedule_id UUID REFERENCES public.dojo_class_schedules(id) ON DELETE SET NULL,
+  experience_level TEXT DEFAULT 'none',
+  message TEXT,
+  status TEXT NOT NULL DEFAULT 'pending',
+  staff_notes TEXT,
   created_at TIMESTAMPTZ DEFAULT now(),
   updated_at TIMESTAMPTZ DEFAULT now()
 );
 
--- スケジュール（繰り返し設定）
-CREATE TABLE dojo_class_schedules (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  class_id UUID NOT NULL REFERENCES dojo_classes(id) ON DELETE CASCADE,
-  day_of_week INTEGER NOT NULL, -- 0=Sun, 1=Mon, etc.
-  start_time TIME NOT NULL,
-  end_time TIME NOT NULL,
-  max_capacity INTEGER,
-  is_active BOOLEAN DEFAULT true,
-  created_at TIMESTAMPTZ DEFAULT now()
-);
+-- RLSポリシー
+ALTER TABLE public.dojo_trial_bookings ENABLE ROW LEVEL SECURITY;
 
--- 予約
-CREATE TABLE dojo_class_bookings (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  schedule_id UUID NOT NULL REFERENCES dojo_class_schedules(id) ON DELETE CASCADE,
-  user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
-  booking_date DATE NOT NULL,
-  status TEXT NOT NULL DEFAULT 'confirmed', -- 'confirmed', 'cancelled', 'attended', 'no_show'
-  checked_in_at TIMESTAMPTZ,
-  notes TEXT,
-  created_at TIMESTAMPTZ DEFAULT now(),
-  updated_at TIMESTAMPTZ DEFAULT now(),
-  UNIQUE(schedule_id, user_id, booking_date)
-);
+CREATE POLICY "Dojo staff can manage trial bookings" ON public.dojo_trial_bookings
+  FOR ALL USING (public.is_dojo_staff(dojo_id, auth.uid()));
 
--- 道場会員プラン
-CREATE TABLE dojo_membership_plans (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  dojo_id UUID NOT NULL REFERENCES dojos(id) ON DELETE CASCADE,
-  name TEXT NOT NULL,
-  name_ja TEXT,
-  description TEXT,
-  price INTEGER NOT NULL, -- cents
-  interval TEXT NOT NULL DEFAULT 'month', -- 'month', 'year'
-  max_bookings_per_month INTEGER,
-  is_active BOOLEAN DEFAULT true,
-  created_at TIMESTAMPTZ DEFAULT now()
-);
-
--- 道場会員登録
-CREATE TABLE dojo_memberships (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  dojo_id UUID NOT NULL REFERENCES dojos(id) ON DELETE CASCADE,
-  user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
-  plan_id UUID REFERENCES dojo_membership_plans(id),
-  status TEXT NOT NULL DEFAULT 'active', -- 'active', 'paused', 'cancelled', 'expired'
-  valid_from DATE NOT NULL DEFAULT CURRENT_DATE,
-  valid_until DATE,
-  qr_token TEXT UNIQUE DEFAULT encode(gen_random_bytes(16), 'hex'),
-  stripe_subscription_id TEXT,
-  created_at TIMESTAMPTZ DEFAULT now(),
-  updated_at TIMESTAMPTZ DEFAULT now(),
-  UNIQUE(dojo_id, user_id)
-);
-
--- 入退館記録
-CREATE TABLE dojo_check_ins (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  dojo_id UUID NOT NULL REFERENCES dojos(id) ON DELETE CASCADE,
-  user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
-  membership_id UUID REFERENCES dojo_memberships(id),
-  booking_id UUID REFERENCES dojo_class_bookings(id),
-  checked_in_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  checked_out_at TIMESTAMPTZ,
-  method TEXT DEFAULT 'qr' -- 'qr', 'manual', 'auto'
-);
-```
-
-### RLSポリシー
-
-```sql
--- ユーザーは自分の予約のみ閲覧・操作可能
-ALTER TABLE dojo_class_bookings ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Users can view own bookings" ON dojo_class_bookings
-  FOR SELECT USING (auth.uid() = user_id);
-CREATE POLICY "Users can create own bookings" ON dojo_class_bookings
-  FOR INSERT WITH CHECK (auth.uid() = user_id);
-CREATE POLICY "Users can cancel own bookings" ON dojo_class_bookings
-  FOR UPDATE USING (auth.uid() = user_id);
-
--- 道場オーナー/管理者は全予約を閲覧可能
-CREATE POLICY "Dojo admins can view all bookings" ON dojo_class_bookings
-  FOR SELECT USING (
-    EXISTS (
-      SELECT 1 FROM dojo_class_schedules s
-      JOIN dojo_classes c ON s.id = c.id
-      JOIN dojos d ON c.dojo_id = d.id
-      WHERE s.id = schedule_id AND d.created_by = auth.uid()
-    )
-  );
+CREATE POLICY "Public can create trial bookings" ON public.dojo_trial_bookings
+  FOR INSERT WITH CHECK (true);
 ```
 
 ### 新規コンポーネント構造
@@ -219,54 +154,51 @@ CREATE POLICY "Dojo admins can view all bookings" ON dojo_class_bookings
 ```text
 src/components/
   dojo/
-    ClassCalendar.tsx         # 週間カレンダー表示
-    ClassBookingDialog.tsx    # 予約フォーム
-    DojoMembershipCard.tsx    # デジタル会員証
-    MyBookings.tsx            # 予約一覧
-    AttendanceHistory.tsx     # 出席履歴
-
+    TrialBookingForm.tsx      # 体験予約フォーム
+    DojoMembershipPlans.tsx   # 会員プラン表示（ユーザー向け）
+    
   admin/
-    DojoClassesManagement.tsx   # クラス管理
-    DojoScheduleEditor.tsx      # スケジュール編集
-    DojoMembersManagement.tsx   # 会員管理
-    DojoCheckInScanner.tsx      # QRスキャナー
-    DojoBookingsView.tsx        # 予約一覧（管理者用）
+    DojoBookingsManagement.tsx    # 予約管理
+    DojoAttendanceReport.tsx      # 出席レポート
+    DojoMembershipPlansManagement.tsx  # プラン管理
+    DojoTrialBookingsManagement.tsx    # 体験予約管理
 ```
 
-### ルーティング追加
+### 新規Edge Functions
 
-```tsx
-// App.tsx に追加
-<Route path="dojo/:id/schedule" element={<DojoSchedule />} />
-<Route path="dojo/:id/book/:scheduleId" element={<ClassBooking />} />
-<Route path="dojo/:id/manage" element={
-  <ProtectedRoute>
-    <DojoManagement />
-  </ProtectedRoute>
-} />
-<Route path="dojo/:id/check-in" element={
-  <ProtectedRoute>
-    <DojoCheckIn />
-  </ProtectedRoute>
-} />
+```text
+supabase/functions/
+  notify-waitlist/index.ts           # キャンセル待ち通知
+  send-booking-reminder/index.ts     # 予約リマインダー
+  create-dojo-membership-checkout/index.ts  # 道場会員決済
+  process-dojo-membership-webhook/index.ts  # Webhook処理
 ```
 
 ---
 
-## 実装順序
+## 実装優先順位
 
-1. **Week 1**: データベーステーブル作成 + RLSポリシー
-2. **Week 2**: クラス・スケジュール管理（管理画面）
-3. **Week 3**: 予約システム（ユーザー側）
-4. **Week 4**: 会員証・QRコード機能
-5. **Week 5**: 入退館管理・出席レポート
-6. **Week 6**: テスト・調整
+| 優先度 | 機能 | 理由 |
+|--------|------|------|
+| 1 | 予約管理ダッシュボード | 管理者が予約を確認できないと運用困難 |
+| 2 | 出席レポート | 道場運営の分析に必須 |
+| 3 | 道場詳細への予約UI統合 | ユーザーが予約できる導線が必要 |
+| 4 | 体験予約フォーム | 新規会員獲得に重要 |
+| 5 | 予約リマインダー | 無断欠席防止 |
+| 6 | キャンセル待ち自動昇格 | 枠の有効活用 |
+| 7 | 道場別Stripe連携 | マネタイズに必要 |
+| 8 | 会員プラン管理（ユーザー側） | セルフサービス化 |
 
 ---
 
-## 注意事項
+## UIイメージ
 
-- 既存の `dojos.schedule` JSONBカラムは後方互換性のため残し、新システムへの移行期間を設ける
-- Stripe連携は既存の仕組みを拡張し、道場単位のサブスクリプションに対応
-- QRコードはクライアントサイドで `qrcode.react` ライブラリを使用して生成
+### DojoManagementWrapper への追加タブ
+現在: クラス管理 / 会員管理 / 入退館
+追加: **予約一覧** / **レポート** / **体験予約** / **プラン設定**
 
+### 出席レポートのグラフ例
+- 棒グラフ：月別チェックイン数
+- 円グラフ：クラスタイプ別参加比率
+- 折れ線グラフ：会員数推移
+- ヒートマップ：曜日×時間帯の人気度
