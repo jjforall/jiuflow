@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/accordion";
 import { MapLoadingState } from "@/components/MapLoadingState";
 import mapBackground from "@/assets/jiuflow-map-background.png";
-import { getSeriesPrefixColors, getSeriesPrefixColorsWatched } from "@/components/ui/series-badge";
+
 import { NOTATION_CATEGORY_LABELS, type NotationCategory } from "@/types/notation";
 
 interface Technique {
@@ -295,7 +295,6 @@ const Map = () => {
   const renderTechniqueRow = (tech: Technique) => {
     const viewCount = videoViews[tech.id];
     const isWatched = viewCount && viewCount > 0;
-    const seriesPrefix = tech.series_prefix || "Z";
     const hasCurrentLangDub = language !== "ja" && hasTranslatedVideo(tech as any, language);
 
     return (
@@ -312,13 +311,6 @@ const Map = () => {
             tech.video_url
           )}
         >
-          <div className={`flex items-center justify-center min-w-[2.5rem] h-8 md:h-10 px-2 rounded-lg font-semibold text-xs md:text-sm flex-shrink-0 transition-all shadow-sm ${
-            isWatched
-              ? getSeriesPrefixColorsWatched(seriesPrefix) + " shadow-lg"
-              : getSeriesPrefixColors(seriesPrefix) + " group-hover:shadow-lg"
-          }`}>
-            {seriesPrefix}-{tech.series_order || 1}
-          </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-start gap-2">
               <h4 className="text-sm md:text-base font-medium text-foreground group-hover:text-primary transition-colors leading-snug">
