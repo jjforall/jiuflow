@@ -28,6 +28,7 @@ const Logout = lazy(() => import("./pages/Logout"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const UpdatePassword = lazy(() => import("./pages/UpdatePassword"));
 const Map = lazy(() => import("./pages/Map"));
+const MapLegacy = lazy(() => import("./pages/MapLegacy"));
 const Video = lazy(() => import("./pages/Video"));
 const About = lazy(() => import("./pages/About"));
 const Join = lazy(() => import("./pages/Join"));
@@ -115,6 +116,11 @@ const App = () => (
                     <Route path="map" element={
                       <ProtectedRoute>
                         <SuspenseWrapper variant="map"><Map /></SuspenseWrapper>
+                      </ProtectedRoute>
+                    } />
+                    <Route path="map/legacy" element={
+                      <ProtectedRoute>
+                        <SuspenseWrapper variant="map"><MapLegacy /></SuspenseWrapper>
                       </ProtectedRoute>
                     } />
                     <Route path="dojos" element={<SuspenseWrapper variant="map"><Dojos /></SuspenseWrapper>} />
@@ -216,6 +222,11 @@ const App = () => (
                   <Route path="/map" element={
                     <ProtectedRoute>
                       <SuspenseWrapper variant="map"><Map /></SuspenseWrapper>
+                    </ProtectedRoute>
+                   } />
+                  <Route path="/map/legacy" element={
+                    <ProtectedRoute>
+                      <SuspenseWrapper variant="map"><MapLegacy /></SuspenseWrapper>
                     </ProtectedRoute>
                   } />
                   <Route path="/dojos" element={<SuspenseWrapper variant="map"><Dojos /></SuspenseWrapper>} />
