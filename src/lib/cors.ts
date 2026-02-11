@@ -1,7 +1,7 @@
 // CORS configuration for Supabase Edge Functions
 
 export const corsHeaders = {
-  'Access-Control-Allow-Origin': process.env.ALLOWED_ORIGINS || 'https://jiuflow.com',
+  'Access-Control-Allow-Origin': process.env.ALLOWED_ORIGINS || 'https://jitsuflow.app',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
   'Access-Control-Allow-Methods': 'POST, GET, OPTIONS, PUT, DELETE',
   'Access-Control-Max-Age': '86400',
@@ -10,7 +10,7 @@ export const corsHeaders = {
 // Helper function to get CORS headers based on request origin
 export const getCorsHeaders = (req: Request): HeadersInit => {
   const origin = req.headers.get('origin') || '';
-  const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'https://jiuflow.com,http://localhost:5173').split(',');
+  const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'https://jitsuflow.app,https://jiuflow.art,http://localhost:5173').split(',');
   
   if (allowedOrigins.includes(origin) || allowedOrigins.includes('*')) {
     return {

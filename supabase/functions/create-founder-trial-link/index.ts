@@ -80,8 +80,8 @@ serve(async (req) => {
           message: "JiuFlow",
         },
       },
-      success_url: "https://jiuflow.art/payment-success?session_id={CHECKOUT_SESSION_ID}",
-      cancel_url: "https://jiuflow.art/payment-canceled",
+      success_url: "https://jitsuflow.app/payment-success?session_id={CHECKOUT_SESSION_ID}",
+      cancel_url: "https://jitsuflow.app/payment-canceled",
     });
 
     console.log("Checkout session created:", session.id);

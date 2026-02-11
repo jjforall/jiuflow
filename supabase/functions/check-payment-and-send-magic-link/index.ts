@@ -146,7 +146,7 @@ serve(async (req) => {
     const { error: magicLinkError } = await supabase.auth.signInWithOtp({
       email: emailToUse,
       options: {
-        emailRedirectTo: `https://jiuflow.art/map`,
+        emailRedirectTo: `https://jitsuflow.app/map`,
       },
     });
 
