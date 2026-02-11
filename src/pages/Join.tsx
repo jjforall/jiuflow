@@ -4,7 +4,7 @@ import { SEOHead } from "@/components/SEOHead";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { translations } from "@/lib/translations";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
@@ -153,6 +153,56 @@ const Join = () => {
   const { subscribed, loading: subscriptionLoading } = useSubscription();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+
+  // Konami Code: ↑↑↓↓←→←→BA
+  const konamiSeq = useRef<string[]>([]);
+  const KONAMI = ["ArrowUp","ArrowUp","ArrowDown","ArrowDown","ArrowLeft","ArrowRight","ArrowLeft","ArrowRight","b","a"];
+
+  const handleKonamiBonus = useCallback(async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      toast.error(language === "ja" ? "ログインが必要です" : "Please log in first");
+      return;
+    }
+    try {
+      const { data, error } = await supabase.functions.invoke("konami-bonus", {
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
+      if (error) throw error;
+      if (data?.success) {
+        toast.success(
+          language === "ja"
+            ? `🎮 +${data.awarded}ポイント！（合計: ${data.points.toLocaleString()}pt）`
+            : `🎮 +${data.awarded} points! (Total: ${data.points.toLocaleString()}pt)`,
+          { duration: 5000 }
+        );
+      } else {
+        toast.info(
+          language === "ja"
+            ? `🎮 ポイント上限（${(100000).toLocaleString()}pt）に達しています`
+            : `🎮 You've reached the max (${(100000).toLocaleString()}pt)`
+        );
+      }
+    } catch (err) {
+      console.error("Konami bonus error:", err);
+    }
+  }, [language]);
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      konamiSeq.current.push(e.key);
+      if (konamiSeq.current.length > KONAMI.length) {
+        konamiSeq.current = konamiSeq.current.slice(-KONAMI.length);
+      }
+      if (konamiSeq.current.length === KONAMI.length &&
+          konamiSeq.current.every((k, i) => k === KONAMI[i])) {
+        konamiSeq.current = [];
+        handleKonamiBonus();
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [handleKonamiBonus]);
 
   // Validate referral code
   useEffect(() => {
