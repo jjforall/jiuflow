@@ -18,8 +18,8 @@ interface SEOHeadProps {
   alternateLanguages?: Record<string, { title: string; description: string; ogImage?: string }>;
 }
 
-const BASE_URL = "https://jiuflow.lovable.app";
-const DEFAULT_OG_IMAGE = "https://jiuflow.lovable.app/og-image.png";
+const BASE_URL = "https://jiuflow.art";
+const DEFAULT_OG_IMAGE = "https://jiuflow.art/og-image.png";
 
 // Language-specific OG images
 const OG_IMAGES = {

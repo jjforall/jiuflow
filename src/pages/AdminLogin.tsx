@@ -29,7 +29,7 @@ const AdminLogin = () => {
       search.includes('__lovable_token') ||
       hostname.includes('id-preview--') ||
       hostname.includes('lovableproject.com') ||
-      (hostname.includes('lovable.app') && hostname !== 'jiuflow.lovable.app')
+      (hostname.includes('lovable.app') && hostname !== 'jiuflow.art')
     );
   }, []);
 

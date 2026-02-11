@@ -500,6 +500,7 @@ const Join = () => {
       <SEOHead
         title={currentSeo.title}
         description={currentSeo.description}
+        canonicalUrl="https://jiuflow.art/join"
         keywords={["BJJ", "柔術", "料金", "プラン", "サブスクリプション"]}
       />
       <Navigation />

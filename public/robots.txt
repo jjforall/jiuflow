@@ -2,7 +2,7 @@ User-agent: *
 Allow: /
 
 # Sitemap
-Sitemap: https://jiuflow.lovableproject.com/sitemap.xml
+Sitemap: https://jiuflow.art/sitemap.xml
 
 # Disallow admin pages
 Disallow: /admin/
