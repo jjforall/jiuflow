@@ -36,6 +36,7 @@ import { CalendarIcon, Plus } from "lucide-react";
 import { format } from "date-fns";
 import { getSeriesPrefixColors } from "@/components/ui/series-badge";
 import { getVideoProgressKey } from "@/lib/cloudflareStream";
+import { useDubbedVideos } from "@/hooks/useDubbedVideos";
 
 interface Technique {
   id: string;
@@ -92,6 +93,7 @@ const Video = () => {
   const { play, isPlaying, volume, setVolume, playlist, loadPlaylist } = useMusic();
   const [technique, setTechnique] = useState<Technique | null>(null);
   const [seriesVideos, setSeriesVideos] = useState<Technique[]>([]);
+  const dubbedLangs = useDubbedVideos(id);
   const [isReady, setIsReady] = useState(false); // 統合ローディング状態
   const [seriesLetter, setSeriesLetter] = useState<string>("");
   const [viewCount, setViewCount] = useState<number>(0);
@@ -622,29 +624,44 @@ const Video = () => {
 
   // 利用可能な音声言語のリストを作成
   const getAvailableAudioLanguages = (tech: Technique) => {
+    const seen = new Set<string>();
     const languages: { code: string; label: string; videoUrl: string }[] = [];
-    
+
     // 日本語（オリジナル）
     const jaUrl = tech.video_url_ja || tech.video_url;
     if (jaUrl) {
-      languages.push({ code: "ja", label: "日本語", videoUrl: jaUrl });
+      languages.push({ code: "ja", label: "🇯🇵 日本語", videoUrl: jaUrl });
+      seen.add("ja");
     }
-    
-    // 英語
-    if (tech.video_metadata?.en?.video_url) {
-      languages.push({ code: "en", label: "English", videoUrl: tech.video_metadata.en.video_url });
-    } else if (tech.video_url && tech.video_url !== tech.video_url_ja) {
-      // video_urlが英語版の場合
-      languages.push({ code: "en", label: "English", videoUrl: tech.video_url });
+
+    // video_metadataからの言語（HeyGen翻訳など）
+    if (tech.video_metadata) {
+      for (const [code, meta] of Object.entries(tech.video_metadata)) {
+        if (code === "duration" || code === "ja" || seen.has(code) || typeof meta !== "object" || !(meta as any)?.video_url) continue;
+        seen.add(code);
+      }
     }
-    
-    // ポルトガル語
-    if (tech.video_metadata?.pt?.video_url) {
-      languages.push({ code: "pt", label: "Português", videoUrl: tech.video_metadata.pt.video_url });
-    } else if (tech.video_url_pt) {
+
+    // ダビング動画マニフェストから追加（静的JSON）
+    for (const dubbed of dubbedLangs) {
+      if (!seen.has(dubbed.code)) {
+        languages.push(dubbed);
+        seen.add(dubbed.code);
+      }
+    }
+
+    // 従来フィールドのフォールバック
+    if (!seen.has("en")) {
+      if (tech.video_url && tech.video_url !== tech.video_url_ja) {
+        languages.push({ code: "en", label: "English", videoUrl: tech.video_url });
+        seen.add("en");
+      }
+    }
+    if (!seen.has("pt") && tech.video_url_pt) {
       languages.push({ code: "pt", label: "Português", videoUrl: tech.video_url_pt });
+      seen.add("pt");
     }
-    
+
     return languages;
   };
 
@@ -695,7 +712,44 @@ const Video = () => {
   const memoizedAvailableLanguages = useMemo(() => {
     if (!technique) return [];
     return getAvailableAudioLanguages(technique);
-  }, [technique]);
+  }, [technique, dubbedLangs]);
+
+  // シリーズ内のスワイプナビゲーション
+  const currentSeriesIndex = useMemo(() => {
+    if (!technique || seriesVideos.length === 0) return -1;
+    return seriesVideos.findIndex(v => v.id === technique.id);
+  }, [technique, seriesVideos]);
+
+  const prevVideo = currentSeriesIndex > 0 ? seriesVideos[currentSeriesIndex - 1] : null;
+  const nextVideo = currentSeriesIndex >= 0 && currentSeriesIndex < seriesVideos.length - 1 ? seriesVideos[currentSeriesIndex + 1] : null;
+
+  // スワイプハンドラ
+  const touchStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
+
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    touchStartRef.current = {
+      x: e.touches[0].clientX,
+      y: e.touches[0].clientY,
+      time: Date.now(),
+    };
+  }, []);
+
+  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
+    if (!touchStartRef.current) return;
+    const dx = e.changedTouches[0].clientX - touchStartRef.current.x;
+    const dy = e.changedTouches[0].clientY - touchStartRef.current.y;
+    const dt = Date.now() - touchStartRef.current.time;
+    touchStartRef.current = null;
+
+    // 横スワイプが縦より大きく、十分な距離と速度
+    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 60 && dt < 500) {
+      if (dx < 0 && nextVideo) {
+        navigate(`/video/${nextVideo.id}`);
+      } else if (dx > 0 && prevVideo) {
+        navigate(`/video/${prevVideo.id}`);
+      }
+    }
+  }, [navigate, prevVideo, nextVideo]);
 
   // メモ化されたコールバック
   const handleVideoPlay = useCallback(() => {
@@ -1124,11 +1178,15 @@ const Video = () => {
           <div className="flex flex-col lg:flex-row gap-6">
             {/* Main Video Section */}
             <div className="flex-1">
-              {/* Video Player */}
-              <div className="w-full bg-muted rounded-lg overflow-hidden">
+              {/* Video Player with swipe navigation */}
+              <div
+                className="w-full bg-muted rounded-lg overflow-hidden relative"
+                onTouchStart={handleTouchStart}
+                onTouchEnd={handleTouchEnd}
+              >
                 {currentVideoUrl ? (
-                  <VideoPlayer 
-                    videoUrl={currentVideoUrl} 
+                  <VideoPlayer
+                    videoUrl={currentVideoUrl}
                     thumbnailUrl={currentThumbnailUrl}
                     autoPlay
                     techniqueId={technique.id}
@@ -1149,6 +1207,33 @@ const Video = () => {
                   </div>
                 )}
               </div>
+
+              {/* Swipe navigation arrows for series */}
+              {seriesVideos.length > 1 && (
+                <div className="flex items-center justify-between mt-2 px-1">
+                  {prevVideo ? (
+                    <Link
+                      to={`/video/${prevVideo.id}`}
+                      className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors px-3 py-2 rounded-lg hover:bg-muted"
+                    >
+                      <ArrowLeft className="w-4 h-4" />
+                      <span className="truncate max-w-[140px]">{getTechniqueName(prevVideo)}</span>
+                    </Link>
+                  ) : <div />}
+                  <span className="text-xs text-muted-foreground">
+                    {currentSeriesIndex + 1}/{seriesVideos.length}
+                  </span>
+                  {nextVideo ? (
+                    <Link
+                      to={`/video/${nextVideo.id}`}
+                      className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors px-3 py-2 rounded-lg hover:bg-muted"
+                    >
+                      <span className="truncate max-w-[140px]">{getTechniqueName(nextVideo)}</span>
+                      <ArrowLeft className="w-4 h-4 rotate-180" />
+                    </Link>
+                  ) : <div />}
+                </div>
+              )}
 
               {/* Translation Status Banner */}
               {language !== "ja" && (
