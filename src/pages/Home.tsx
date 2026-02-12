@@ -202,61 +202,71 @@ const Home = () => {
 
             {/* Instructor Section - "Who You Learn From" */}
             <AnimatedSection delay={100}>
-              <section className="py-24 px-6 bg-gradient-to-br from-primary/5 via-background to-primary/10">
-                <div className="max-w-6xl mx-auto">
-                  <div className="grid lg:grid-cols-2 gap-12 items-center">
-                    {/* Photo */}
-                    <div className="relative">
-                      <div className="absolute -top-4 -left-4 z-10">
-                        <Badge className="bg-primary text-primary-foreground px-4 py-2 text-sm font-medium flex items-center gap-2">
-                          <Award className="w-4 h-4" />
-                          {homeT.instructor?.badge || "世界チャンピオン監修"}
-                        </Badge>
-                      </div>
-                      <div className="relative rounded-2xl overflow-hidden shadow-2xl">
-                        <img 
-                          src={murataImage} 
-                          alt={language === 'ja' ? '村田良蔵 - SJJIF世界選手権2連覇の柔術世界王者' : language === 'pt' ? 'Ryozo Murata - Bicampeão Mundial SJJIF de Jiu-Jitsu' : 'Ryozo Murata - 2x SJJIF World Champion BJJ Black Belt'}
-                          className="w-full h-auto object-cover"
-                          loading="lazy"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-                        <div className="absolute bottom-6 left-6 right-6">
-                          <p className="text-white/90 text-lg italic font-light">
-                            {homeT.instructor?.quote || "「怪我なく勝つ。理詰めで動く。それが大人の柔術。」"}
-                          </p>
+              <section className="py-24 px-6 relative overflow-hidden">
+                {/* Subtle background accent */}
+                <div className="absolute inset-0 -z-10">
+                  <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/4" />
+                  <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-primary/3 rounded-full blur-3xl translate-y-1/2 -translate-x-1/4" />
+                </div>
+                
+                <div className="max-w-5xl mx-auto">
+                  {/* Section header */}
+                  <div className="text-center mb-16">
+                    <Badge className="bg-primary/10 text-primary border-primary/20 px-4 py-1.5 text-sm font-medium mb-6 inline-flex items-center gap-2">
+                      <Award className="w-4 h-4" />
+                      {homeT.instructor?.badge || "世界チャンピオン監修"}
+                    </Badge>
+                    <h2 className="text-3xl sm:text-4xl md:text-5xl font-light">
+                      {homeT.instructor?.title || "誰から学ぶか、が全てを変える"}
+                    </h2>
+                  </div>
+
+                  <div className="grid lg:grid-cols-5 gap-10 lg:gap-16 items-center">
+                    {/* Photo - constrained on PC */}
+                    <div className="lg:col-span-2 flex justify-center">
+                      <div className="relative w-full max-w-[320px]">
+                        <div className="relative rounded-2xl overflow-hidden shadow-2xl aspect-[3/4]">
+                          <img 
+                            src={murataImage} 
+                            alt={language === 'ja' ? '村田良蔵 - SJJIF世界選手権2連覇の柔術世界王者' : language === 'pt' ? 'Ryozo Murata - Bicampeão Mundial SJJIF de Jiu-Jitsu' : 'Ryozo Murata - 2x SJJIF World Champion BJJ Black Belt'}
+                            className="w-full h-full object-cover"
+                            loading="lazy"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
+                          <div className="absolute bottom-0 left-0 right-0 p-5">
+                            <p className="text-white/90 text-sm italic font-light leading-relaxed">
+                              {homeT.instructor?.quote || "「怪我なく勝つ。理詰めで動く。それが大人の柔術。」"}
+                            </p>
+                          </div>
                         </div>
+                        {/* Decorative ring */}
+                        <div className="absolute -inset-3 rounded-2xl border border-primary/10 -z-10" />
                       </div>
                     </div>
 
                     {/* Content */}
-                    <div className="space-y-6">
+                    <div className="lg:col-span-3 space-y-6">
                       <div>
-                        <h2 className="text-3xl sm:text-4xl md:text-5xl font-light mb-4">
-                          {homeT.instructor?.title || "誰から学ぶか、が全てを変える"}
-                        </h2>
-                        <div className="mb-6">
-                          <h3 className="text-xl sm:text-2xl font-medium whitespace-nowrap">{homeT.instructor?.name || "村田 良蔵"}</h3>
-                          <span className="text-muted-foreground block mt-1">{homeT.instructor?.subtitle || "Ryozo Murata | 黒帯・世界王者"}</span>
-                        </div>
+                        <h3 className="text-2xl sm:text-3xl font-medium">{homeT.instructor?.name || "村田 良蔵"}</h3>
+                        <span className="text-muted-foreground block mt-1 text-sm tracking-wider uppercase">{homeT.instructor?.subtitle || "Ryozo Murata | 黒帯・世界王者"}</span>
                       </div>
 
-                      {/* Credentials */}
-                      <div className="space-y-3">
+                      {/* Credentials as glass cards */}
+                      <div className="space-y-2.5">
                         {(homeT.instructor?.credentials || [
                           "SJJIF世界選手権 2連覇（日本人初）",
                           "IBJJF世界マスター 銅メダル",
                           "北海道初のグレイシー直系黒帯"
                         ]).map((credential: string, index: number) => (
-                          <div key={index} className="flex items-center gap-3">
-                            <CheckCircle className="w-5 h-5 text-primary shrink-0" />
-                            <span className="text-lg">{credential}</span>
+                          <div key={index} className="flex items-center gap-3 glass-card rounded-lg px-4 py-3">
+                            <CheckCircle className="w-4 h-4 text-primary shrink-0" />
+                            <span className="text-sm sm:text-base">{credential}</span>
                           </div>
                         ))}
                       </div>
 
                       <Link to="/about">
-                        <Button variant="outline" size="lg" className="mt-6">
+                        <Button variant="outline" size="lg" className="mt-4">
                           {homeT.instructor?.cta || "指導者について詳しく見る"}
                         </Button>
                       </Link>
