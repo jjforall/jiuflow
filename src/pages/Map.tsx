@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
@@ -11,8 +11,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { useFavoriteTechniques } from "@/hooks/useFavoriteTechniques";
 import { prefetchVideo } from "@/hooks/useVideoPrefetch";
 import { Button } from "@/components/ui/button";
-import { Lock, Eye, Check, Search, Star, Heart, ChevronDown, Mic, Tag, ArrowRight } from "lucide-react";
-import { hasTranslatedVideo } from "@/lib/videoLanguages";
+import { Lock, Eye, Check, Search, Star, Heart, ChevronDown, Mic, Globe, Tag, ArrowRight } from "lucide-react";
+import { hasTranslatedVideo, getAvailableVideoLanguages, type TechniqueVideoData } from "@/lib/videoLanguages";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import {
@@ -38,6 +38,7 @@ interface Technique {
   video_url: string | null;
   video_url_ja: string | null;
   video_url_pt: string | null;
+  video_metadata: Record<string, { video_url?: string; created_at?: string }> | null;
   thumbnail_url: string | null;
   display_order: number;
   hashtags: string[];
@@ -295,7 +296,12 @@ const Map = () => {
   const renderTechniqueRow = (tech: Technique, notationCode?: string) => {
     const viewCount = videoViews[tech.id];
     const isWatched = viewCount && viewCount > 0;
-    const hasCurrentLangDub = language !== "ja" && hasTranslatedVideo(tech as any, language);
+    const hasCurrentLangDub = language !== "ja" && hasTranslatedVideo(tech as TechniqueVideoData, language);
+
+    // Get all translated languages (excluding ja which is original)
+    const translatedLangs = getAvailableVideoLanguages(tech as TechniqueVideoData)
+      .filter(l => !l.isOriginal)
+      .map(l => l.code);
 
     // Build notation-based ID like "SW-1", "CG-3"
     const notationId = notationCode && tech.series_order
@@ -337,15 +343,27 @@ const Map = () => {
             )}
           </div>
           <div className="flex-1 min-w-0">
-            <div className="flex items-start gap-2">
+            <div className="flex items-start gap-2 flex-wrap">
               <h4 className="text-sm md:text-base font-medium text-foreground group-hover:text-primary transition-colors leading-snug">
                 {getTechniqueName(tech)}
               </h4>
-              {hasCurrentLangDub && (
-                <span className="inline-flex items-center gap-0.5 text-[10px] text-primary/80 bg-primary/10 px-1.5 py-0.5 rounded flex-shrink-0">
-                  <Mic className="w-2.5 h-2.5" />
-                  {language.toUpperCase()}
-                </span>
+              {/* Translation language badges */}
+              {translatedLangs.length > 0 && (
+                <div className="inline-flex items-center gap-0.5 flex-shrink-0">
+                  <Globe className="w-3 h-3 text-emerald-500" />
+                  {translatedLangs.map(lang => (
+                    <span
+                      key={lang}
+                      className={`text-[10px] px-1 py-0.5 rounded font-medium ${
+                        lang === language
+                          ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400'
+                          : 'bg-muted/60 text-muted-foreground'
+                      }`}
+                    >
+                      {lang.toUpperCase()}
+                    </span>
+                  ))}
+                </div>
               )}
               {isWatched && (
                 <div className="flex items-center justify-center w-5 h-5 rounded-full bg-primary/10 flex-shrink-0 mt-0.5">
