@@ -622,47 +622,52 @@ const Video = () => {
     }
   };
 
-  // 利用可能な音声言語のリストを作成
+  // 利用可能な音声言語のリストを作成（HeyGen優先）
   const getAvailableAudioLanguages = (tech: Technique) => {
-    const seen = new Set<string>();
-    const languages: { code: string; label: string; videoUrl: string }[] = [];
+    const langMap = new Map<string, { code: string; label: string; videoUrl: string }>();
+    const langLabels: Record<string, string> = {
+      en: "English", pt: "Português", es: "Español", ko: "한국어",
+      zh: "中文", fr: "Français", de: "Deutsch", it: "Italiano",
+      ru: "Русский", ar: "العربية", hi: "हिन्दी", th: "ไทย", id: "Bahasa Indonesia",
+    };
 
     // 日本語（オリジナル）
     const jaUrl = tech.video_url_ja || tech.video_url;
     if (jaUrl) {
-      languages.push({ code: "ja", label: "🇯🇵 日本語", videoUrl: jaUrl });
-      seen.add("ja");
+      langMap.set("ja", { code: "ja", label: "🇯🇵 日本語", videoUrl: jaUrl });
     }
 
-    // video_metadataからの言語（HeyGen翻訳など）
+    // 1. まずOSSダビング（低優先）を入れる
+    for (const dubbed of dubbedLangs) {
+      if (!langMap.has(dubbed.code)) {
+        langMap.set(dubbed.code, { ...dubbed, label: `${dubbed.label}` });
+      }
+    }
+
+    // 2. video_metadataから（HeyGenは高優先で上書き）
     if (tech.video_metadata) {
       for (const [code, meta] of Object.entries(tech.video_metadata)) {
-        if (code === "duration" || code === "ja" || seen.has(code) || typeof meta !== "object" || !(meta as any)?.video_url) continue;
-        seen.add(code);
+        if (code === "duration" || typeof meta !== "object" || !(meta as any)?.video_url) continue;
+        const m = meta as any;
+        const isHeyGen = m.provider === "heygen";
+        const label = langLabels[code] || code;
+        const badge = isHeyGen ? " (HeyGen)" : "";
+        // HeyGenは常に上書き、OSSは既存がなければ追加
+        if (isHeyGen || !langMap.has(code)) {
+          langMap.set(code, { code, label: `${label}${badge}`, videoUrl: m.video_url });
+        }
       }
     }
 
-    // ダビング動画マニフェストから追加（静的JSON）
-    for (const dubbed of dubbedLangs) {
-      if (!seen.has(dubbed.code)) {
-        languages.push(dubbed);
-        seen.add(dubbed.code);
-      }
+    // 3. 従来フィールドのフォールバック
+    if (!langMap.has("en") && tech.video_url && tech.video_url !== tech.video_url_ja) {
+      langMap.set("en", { code: "en", label: "English", videoUrl: tech.video_url });
+    }
+    if (!langMap.has("pt") && tech.video_url_pt) {
+      langMap.set("pt", { code: "pt", label: "Português", videoUrl: tech.video_url_pt });
     }
 
-    // 従来フィールドのフォールバック
-    if (!seen.has("en")) {
-      if (tech.video_url && tech.video_url !== tech.video_url_ja) {
-        languages.push({ code: "en", label: "English", videoUrl: tech.video_url });
-        seen.add("en");
-      }
-    }
-    if (!seen.has("pt") && tech.video_url_pt) {
-      languages.push({ code: "pt", label: "Português", videoUrl: tech.video_url_pt });
-      seen.add("pt");
-    }
-
-    return languages;
+    return Array.from(langMap.values());
   };
 
   // 現在の音声言語に基づいて動画URLを取得
