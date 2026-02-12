@@ -939,25 +939,22 @@ const Video = () => {
     return (
       <div className="min-h-screen">
         <Navigation />
-        <main className="pt-24 pb-20">
-          <div className="max-w-7xl mx-auto px-4 md:px-6">
-            <div className="flex flex-col lg:flex-row gap-6">
-              {/* Main Video Section Skeleton */}
-              <div className="flex-1">
-                <Skeleton className="aspect-video w-full rounded-lg" />
-                <div className="mt-6 space-y-4">
-                  <Skeleton className="h-7 w-2/3" />
-                  <Skeleton className="h-5 w-20" />
-                </div>
+        <main className="pt-16 pb-20">
+          <div className="w-full bg-black py-2 md:py-6">
+            <div className="max-w-6xl mx-auto px-0 md:px-4">
+              <Skeleton className="aspect-video w-full md:rounded-xl" />
+            </div>
+          </div>
+          <div className="max-w-6xl mx-auto px-4 md:px-6 mt-6">
+            <div className="flex flex-col lg:flex-row gap-8">
+              <div className="flex-1 space-y-4">
+                <Skeleton className="h-8 w-2/3" />
+                <Skeleton className="h-5 w-20" />
               </div>
-              {/* Sidebar Skeleton */}
-              <div className="lg:w-80 space-y-4">
+              <div className="lg:w-[400px] space-y-3">
                 <Skeleton className="h-6 w-32" />
-                <div className="space-y-3">
-                  <Skeleton className="h-20 w-full rounded-lg" />
-                  <Skeleton className="h-20 w-full rounded-lg" />
-                  <Skeleton className="h-20 w-full rounded-lg" />
-                </div>
+                <Skeleton className="h-20 w-full rounded-lg" />
+                <Skeleton className="h-20 w-full rounded-lg" />
               </div>
             </div>
           </div>
@@ -1173,71 +1170,76 @@ const Video = () => {
       />
       <Navigation />
       
-      <main className="pt-24 pb-20">
-        <div className="max-w-7xl mx-auto px-4 md:px-6">
-          <div className="flex flex-col lg:flex-row gap-6">
-            {/* Main Video Section */}
-            <div className="flex-1">
-              {/* Video Player with swipe navigation */}
-              <div
-                className="w-full bg-muted rounded-lg overflow-hidden relative"
-                onTouchStart={handleTouchStart}
-                onTouchEnd={handleTouchEnd}
-              >
-                {currentVideoUrl ? (
-                  <VideoPlayer
-                    videoUrl={currentVideoUrl}
-                    thumbnailUrl={currentThumbnailUrl}
-                    autoPlay
-                    techniqueId={technique.id}
-                    availableLanguages={memoizedAvailableLanguages}
-                    currentAudioLanguage={currentAudioLanguage}
-                    onAudioLanguageChange={handleAudioLanguageChange}
-                    onPlay={handleVideoPlay}
-                    onVideoEnded={handleVideoEnded}
-                  />
-                ) : (
-                  <div className="aspect-video flex items-center justify-center">
-                    <div className="text-center text-muted-foreground">
-                      <div className="text-6xl mb-4">▶</div>
-                      <div className="text-sm">
-                        {language === "ja" ? "動画なし" : language === "pt" ? "Sem vídeo" : "No video"}
-                      </div>
+      <main className="pt-16 pb-20">
+        {/* Cinema-style video section - full width dark backdrop */}
+        <div className="w-full bg-black py-2 md:py-6">
+          <div className="max-w-6xl mx-auto px-0 md:px-4">
+            <div
+              className="w-full overflow-hidden relative md:rounded-xl md:shadow-2xl md:shadow-black/60"
+              onTouchStart={handleTouchStart}
+              onTouchEnd={handleTouchEnd}
+            >
+              {currentVideoUrl ? (
+                <VideoPlayer
+                  videoUrl={currentVideoUrl}
+                  thumbnailUrl={currentThumbnailUrl}
+                  autoPlay
+                  techniqueId={technique.id}
+                  availableLanguages={memoizedAvailableLanguages}
+                  currentAudioLanguage={currentAudioLanguage}
+                  onAudioLanguageChange={handleAudioLanguageChange}
+                  onPlay={handleVideoPlay}
+                  onVideoEnded={handleVideoEnded}
+                />
+              ) : (
+                <div className="aspect-video flex items-center justify-center">
+                  <div className="text-center text-muted-foreground">
+                    <div className="text-6xl mb-4">▶</div>
+                    <div className="text-sm">
+                      {language === "ja" ? "動画なし" : language === "pt" ? "Sem vídeo" : "No video"}
                     </div>
                   </div>
-                )}
-              </div>
-
-              {/* Swipe navigation arrows for series */}
-              {seriesVideos.length > 1 && (
-                <div className="flex items-center justify-between mt-2 px-1">
-                  {prevVideo ? (
-                    <Link
-                      to={`/video/${prevVideo.id}`}
-                      className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors px-3 py-2 rounded-lg hover:bg-muted"
-                    >
-                      <ArrowLeft className="w-4 h-4" />
-                      <span className="truncate max-w-[140px]">{getTechniqueName(prevVideo)}</span>
-                    </Link>
-                  ) : <div />}
-                  <span className="text-xs text-muted-foreground">
-                    {currentSeriesIndex + 1}/{seriesVideos.length}
-                  </span>
-                  {nextVideo ? (
-                    <Link
-                      to={`/video/${nextVideo.id}`}
-                      className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors px-3 py-2 rounded-lg hover:bg-muted"
-                    >
-                      <span className="truncate max-w-[140px]">{getTechniqueName(nextVideo)}</span>
-                      <ArrowLeft className="w-4 h-4 rotate-180" />
-                    </Link>
-                  ) : <div />}
                 </div>
               )}
+            </div>
 
+            {/* Swipe navigation arrows for series */}
+            {seriesVideos.length > 1 && (
+              <div className="flex items-center justify-between mt-2 px-4 md:px-1">
+                {prevVideo ? (
+                  <Link
+                    to={`/video/${prevVideo.id}`}
+                    className="flex items-center gap-2 text-sm text-white/60 hover:text-white transition-colors px-3 py-2 rounded-lg hover:bg-white/10"
+                  >
+                    <ArrowLeft className="w-4 h-4" />
+                    <span className="truncate max-w-[140px]">{getTechniqueName(prevVideo)}</span>
+                  </Link>
+                ) : <div />}
+                <span className="text-xs text-white/40">
+                  {currentSeriesIndex + 1}/{seriesVideos.length}
+                </span>
+                {nextVideo ? (
+                  <Link
+                    to={`/video/${nextVideo.id}`}
+                    className="flex items-center gap-2 text-sm text-white/60 hover:text-white transition-colors px-3 py-2 rounded-lg hover:bg-white/10"
+                  >
+                    <span className="truncate max-w-[140px]">{getTechniqueName(nextVideo)}</span>
+                    <ArrowLeft className="w-4 h-4 rotate-180" />
+                  </Link>
+                ) : <div />}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Content section below video */}
+        <div className="max-w-6xl mx-auto px-4 md:px-6">
+          <div className="flex flex-col lg:flex-row gap-8 mt-6">
+            {/* Main Content */}
+            <div className="flex-1">
               {/* Translation Status Banner */}
               {language !== "ja" && (
-                <div className="mt-3">
+                <div className="mb-4">
                   {translationStatus === "none" && !hasTranslatedVideo(technique, language) && (
                     <Card className="p-4 bg-gradient-to-r from-primary/10 to-transparent border-primary/20">
                       <div className="flex items-center justify-between gap-4">
@@ -1307,7 +1309,7 @@ const Video = () => {
               )}
 
               {/* Back Button and Technique Info */}
-              <div className="mt-6 animate-fade-up space-y-4">
+              <div className="animate-fade-up space-y-4">
                 {/* Navigation Buttons */}
                 <div className="flex items-center gap-3">
                   <Button
@@ -1333,10 +1335,10 @@ const Video = () => {
                 
                 <div className="flex flex-col gap-3">
                   <div className="flex items-center justify-between">
-                    <h1 className="text-xl md:text-2xl font-light">{getTechniqueName(technique)}</h1>
+                    <h1 className="text-2xl md:text-3xl font-light tracking-tight">{getTechniqueName(technique)}</h1>
                     <button
                       onClick={() => toggleFavorite(technique.id)}
-                      className={`p-2 rounded-full transition-all ${
+                      className={`p-2.5 rounded-full transition-all ${
                         isFavorite(technique.id) 
                           ? "bg-amber-500/20 hover:bg-amber-500/30" 
                           : "bg-muted hover:bg-muted/80"
@@ -1353,7 +1355,7 @@ const Video = () => {
                       }`} />
                     </button>
                   </div>
-                  <span className="inline-block px-3 py-1 text-xs border border-border w-fit">
+                  <span className="inline-block px-3 py-1 text-xs border border-border rounded-full w-fit uppercase tracking-wider text-muted-foreground">
                     {technique.category}
                   </span>
                 </div>
@@ -1402,88 +1404,30 @@ const Video = () => {
                     </div>
 
                     {/* Progress Bar */}
-                    <div className="space-y-2">
-                      <Progress value={Math.min((viewCount / 100) * 100, 100)} className="h-2" />
+                    <div className="space-y-1.5">
+                      <Progress value={Math.min(viewCount, 100)} className="h-2" />
                       <div className="flex justify-between text-xs text-muted-foreground">
+                        <span>{Math.min(viewCount, 100)}%</span>
                         <span>
-                          {language === "ja" 
-                            ? `あと${Math.max(0, 100 - viewCount)}回` 
-                            : language === "pt" 
-                            ? `Faltam ${Math.max(0, 100 - viewCount)}` 
-                            : `${Math.max(0, 100 - viewCount)} more`}
+                          {viewCount >= 100 
+                            ? (language === "ja" ? "🏆 100回達成！" : language === "pt" ? "🏆 100x atingido!" : "🏆 100x achieved!") 
+                            : `${100 - viewCount} ${language === "ja" ? "回残り" : language === "pt" ? "restantes" : "remaining"}`}
                         </span>
-                        <span>{Math.min(Math.round((viewCount / 100) * 100), 100)}%</span>
                       </div>
                     </div>
 
-                    {/* Milestones */}
-                    <div className="flex gap-2 flex-wrap">
-                      {[10, 50, 100].map((milestone) => (
-                        <Badge
-                          key={milestone}
-                          variant={viewCount >= milestone ? "default" : "outline"}
-                          className={viewCount >= milestone ? "animate-scale-in" : ""}
-                        >
-                          {viewCount >= milestone && "✓ "}
-                          {milestone}
-                          {language === "ja" ? "回" : language === "pt" ? "x" : "x"}
-                        </Badge>
-                      ))}
-                    </div>
-
-                    {/* Motivational Message */}
-                    {viewCount >= 100 && (
-                      <div className="text-center p-3 bg-primary/10 rounded-lg animate-fade-in">
-                        <p className="text-sm font-medium text-primary">
-                          {language === "ja" 
-                            ? "🎉 100回達成！マスターレベル！" 
-                            : language === "pt" 
-                            ? "🎉 100x alcançado! Nível Master!" 
-                            : "🎉 100 views! Master level!"}
-                        </p>
-                      </div>
+                    {/* Quick Practice Record */}
+                    {user && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setPracticeDialogOpen(true)}
+                        className="w-full gap-2 mt-2"
+                      >
+                        <Plus className="h-4 w-4" />
+                        {language === "ja" ? "練習記録を追加" : language === "pt" ? "Adicionar registro" : "Add practice record"}
+                      </Button>
                     )}
-                    {viewCount >= 10 && viewCount < 100 && (
-                      <div className="text-center p-3 bg-accent/10 rounded-lg animate-fade-in">
-                        <p className="text-sm text-muted-foreground">
-                          {language === "ja" 
-                            ? "🔥 いい調子！継続は力なり" 
-                            : language === "pt" 
-                            ? "🔥 Ótimo ritmo! Continue assim" 
-                            : "🔥 Great pace! Keep it up"}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </Card>
-
-                {/* Practice Record Button */}
-                <Card className="p-4 bg-gradient-to-br from-accent/5 to-transparent border-accent/20">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="text-sm font-medium mb-1">
-                        {language === "ja" 
-                          ? "練習を記録する" 
-                          : language === "pt" 
-                          ? "Registrar prática" 
-                          : "Record Practice"}
-                      </h3>
-                      <p className="text-xs text-muted-foreground">
-                        {language === "ja" 
-                          ? "この技の練習を記録して進捗を追跡" 
-                          : language === "pt" 
-                          ? "Registre e acompanhe seu progresso" 
-                          : "Track your progress for this technique"}
-                      </p>
-                    </div>
-                    <Button 
-                      size="sm"
-                      onClick={() => setPracticeDialogOpen(true)}
-                      className="gap-2"
-                    >
-                      <Plus className="w-4 h-4" />
-                      {language === "ja" ? "記録" : language === "pt" ? "Registrar" : "Record"}
-                    </Button>
                   </div>
                 </Card>
               </div>
@@ -1543,7 +1487,7 @@ const Video = () => {
             {/* Series Videos Sidebar */}
             {seriesVideos.length > 0 && (
               <div className="lg:w-[400px] xl:w-[420px]">
-                <div className="sticky top-24">
+                <div className="sticky top-20">
                   <h2 className="text-lg font-medium mb-4 px-2">
                     {language === "ja" 
                       ? `${seriesLetter}. ${technique.series_name}シリーズ` 
@@ -1590,7 +1534,7 @@ const Video = () => {
             )}
           </div>
         </div>
-       </main>
+      </main>
       
       <Footer />
 
