@@ -292,10 +292,22 @@ const Map = () => {
   };
 
   // Render a technique row
-  const renderTechniqueRow = (tech: Technique) => {
+  const renderTechniqueRow = (tech: Technique, notationCode?: string) => {
     const viewCount = videoViews[tech.id];
     const isWatched = viewCount && viewCount > 0;
     const hasCurrentLangDub = language !== "ja" && hasTranslatedVideo(tech as any, language);
+
+    // Build notation-based ID like "SW-1", "CG-3"
+    const notationId = notationCode && tech.series_order
+      ? `${notationCode}-${tech.series_order}`
+      : notationCode
+      ? notationCode
+      : null;
+
+    // Old series badge like "A-1"
+    const oldSeriesLabel = tech.series_prefix && tech.series_order
+      ? `${tech.series_prefix}-${tech.series_order}`
+      : tech.series_prefix || null;
 
     return (
       <div
@@ -311,6 +323,19 @@ const Map = () => {
             tech.video_url
           )}
         >
+          {/* Notation ID badge (prominent) + Old series badge (dimmed) */}
+          <div className="flex items-center gap-1.5 flex-shrink-0">
+            {notationId && (
+              <span className="inline-flex items-center justify-center min-w-[3rem] px-2 py-1 rounded-md bg-primary/15 text-primary font-mono font-bold text-xs md:text-sm border border-primary/30">
+                {notationId}
+              </span>
+            )}
+            {oldSeriesLabel && (
+              <span className="inline-flex items-center justify-center min-w-[2rem] px-1.5 py-0.5 rounded text-[10px] font-mono text-muted-foreground/50 bg-muted/30">
+                {oldSeriesLabel}
+              </span>
+            )}
+          </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-start gap-2">
               <h4 className="text-sm md:text-base font-medium text-foreground group-hover:text-primary transition-colors leading-snug">
@@ -523,7 +548,7 @@ const Map = () => {
                           </AccordionTrigger>
                           <AccordionContent className="px-0 pb-0">
                             <div className="divide-y divide-border">
-                              {notation.techniques.map(tech => renderTechniqueRow(tech))}
+                              {notation.techniques.map(tech => renderTechniqueRow(tech, notation.code))}
                             </div>
                           </AccordionContent>
                         </AccordionItem>
