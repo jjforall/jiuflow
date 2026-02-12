@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState, useCallback, memo } from "react";
+import { useEffect, useRef, useState, useCallback, useMemo, memo } from "react";
 import Hls from "hls.js";
 import { toast } from "sonner";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Loader2, SkipForward, SkipBack, Settings, Subtitles, Volume2 } from "lucide-react";
+import { VideoSubtitleOverlay } from "./VideoSubtitleOverlay";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -174,38 +175,12 @@ const VideoPlayerInner = ({
     fetchSubtitles();
   }, [techniqueId, userVideoId, language]);
 
-  // Apply subtitles to video
-  useEffect(() => {
-    const video = videoRef.current;
-    if (!video || !shouldLoad) return;
-
-    // Remove existing tracks
-    const existingTracks = video.querySelectorAll('track');
-    existingTracks.forEach(track => track.remove());
-
-    if (subtitlesEnabled && selectedSubtitleLang) {
-      const subtitle = availableSubtitles.find(s => s.language_code === selectedSubtitleLang);
-      if (subtitle?.vtt_content) {
-        // Create blob URL from VTT content
-        const blob = new Blob([subtitle.vtt_content], { type: 'text/vtt' });
-        const url = URL.createObjectURL(blob);
-        
-        const track = document.createElement('track');
-        track.kind = 'subtitles';
-        track.label = getLanguageLabel(selectedSubtitleLang);
-        track.srclang = selectedSubtitleLang;
-        track.src = url;
-        track.default = true;
-        
-        video.appendChild(track);
-        
-        // Enable the track
-        if (video.textTracks[0]) {
-          video.textTracks[0].mode = 'showing';
-        }
-      }
-    }
-  }, [subtitlesEnabled, selectedSubtitleLang, availableSubtitles, shouldLoad]);
+  // Get active VTT content for custom overlay
+  const activeVttContent = useMemo(() => {
+    if (!subtitlesEnabled || !selectedSubtitleLang) return null;
+    const subtitle = availableSubtitles.find(s => s.language_code === selectedSubtitleLang);
+    return subtitle?.vtt_content ?? null;
+  }, [subtitlesEnabled, selectedSubtitleLang, availableSubtitles]);
 
   const getLanguageLabel = (code: string): string => {
     const labels: Record<string, string> = {
@@ -920,6 +895,15 @@ const VideoPlayerInner = ({
         >
           Your browser does not support the video tag.
         </video>
+      )}
+
+      {/* Custom subtitle overlay */}
+      {shouldLoad && activeVttContent && (
+        <VideoSubtitleOverlay
+          vttContent={activeVttContent}
+          videoRef={videoRef as React.RefObject<HTMLVideoElement>}
+          enabled={subtitlesEnabled}
+        />
       )}
       
       {/* Control buttons container */}
