@@ -623,8 +623,8 @@ const Video = () => {
   };
 
   // 利用可能な音声言語のリストを作成（HeyGen優先）
-  const getAvailableAudioLanguages = (tech: Technique) => {
-    const langMap = new Map<string, { code: string; label: string; videoUrl: string }>();
+  const getAvailableAudioLanguages = (tech: Technique): { code: string; label: string; videoUrl: string }[] => {
+    const langMap: Record<string, { code: string; label: string; videoUrl: string }> = {};
     const langLabels: Record<string, string> = {
       en: "English", pt: "Português", es: "Español", ko: "한국어",
       zh: "中文", fr: "Français", de: "Deutsch", it: "Italiano",
@@ -634,13 +634,13 @@ const Video = () => {
     // 日本語（オリジナル）
     const jaUrl = tech.video_url_ja || tech.video_url;
     if (jaUrl) {
-      langMap.set("ja", { code: "ja", label: "🇯🇵 日本語", videoUrl: jaUrl });
+      langMap["ja"] = { code: "ja", label: "🇯🇵 日本語", videoUrl: jaUrl };
     }
 
     // 1. まずOSSダビング（低優先）を入れる
     for (const dubbed of dubbedLangs) {
-      if (!langMap.has(dubbed.code)) {
-        langMap.set(dubbed.code, { ...dubbed, label: `${dubbed.label}` });
+      if (!langMap[dubbed.code]) {
+        langMap[dubbed.code] = { code: dubbed.code, label: dubbed.label, videoUrl: dubbed.videoUrl };
       }
     }
 
@@ -652,22 +652,21 @@ const Video = () => {
         const isHeyGen = m.provider === "heygen";
         const label = langLabels[code] || code;
         const badge = isHeyGen ? " (HeyGen)" : "";
-        // HeyGenは常に上書き、OSSは既存がなければ追加
-        if (isHeyGen || !langMap.has(code)) {
-          langMap.set(code, { code, label: `${label}${badge}`, videoUrl: m.video_url });
+        if (isHeyGen || !langMap[code]) {
+          langMap[code] = { code, label: `${label}${badge}`, videoUrl: m.video_url };
         }
       }
     }
 
     // 3. 従来フィールドのフォールバック
-    if (!langMap.has("en") && tech.video_url && tech.video_url !== tech.video_url_ja) {
-      langMap.set("en", { code: "en", label: "English", videoUrl: tech.video_url });
+    if (!langMap["en"] && tech.video_url && tech.video_url !== tech.video_url_ja) {
+      langMap["en"] = { code: "en", label: "English", videoUrl: tech.video_url };
     }
-    if (!langMap.has("pt") && tech.video_url_pt) {
-      langMap.set("pt", { code: "pt", label: "Português", videoUrl: tech.video_url_pt });
+    if (!langMap["pt"] && tech.video_url_pt) {
+      langMap["pt"] = { code: "pt", label: "Português", videoUrl: tech.video_url_pt };
     }
 
-    return Array.from(langMap.values());
+    return Object.values(langMap);
   };
 
   // 現在の音声言語に基づいて動画URLを取得
