@@ -12,7 +12,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useFavoriteTechniques } from "@/hooks/useFavoriteTechniques";
 import { prefetchVideo } from "@/hooks/useVideoPrefetch";
 import { Button } from "@/components/ui/button";
-import { Lock, Loader2, Upload, X, ChevronDown, Eye, Check, Search, Star, Heart, Mic, Tag, ArrowRight } from "lucide-react";
+import { Lock, Loader2, Upload, X, ChevronDown, Eye, Check, Search, Star, Heart, Mic } from "lucide-react";
 import { hasTranslatedVideo } from "@/lib/videoLanguages";
 import { Skeleton } from "@/components/ui/skeleton";
 import { VideoUploadDialog } from "@/components/VideoUploadDialog";
@@ -793,19 +793,7 @@ const Map = () => {
               )}
             </div>
           )}
-        
-              {/* New map link */}
-              <div className="mt-12 pt-8 border-t border-border">
-                <Link
-                  to={`${langPath}/map/new`}
-                  className="flex items-center justify-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors group"
-                >
-                  <Tag className="w-4 h-4" />
-                  <span>{language === "ja" ? "新技マップ（タグ別表示）を見る" : language === "pt" ? "Ver novo mapa de técnicas (por tags)" : "View new technique map (by tags)"}</span>
-                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                </Link>
-              </div>
-            </div>
+        </div>
       </main>
       <Footer />
       <VideoUploadDialog 
