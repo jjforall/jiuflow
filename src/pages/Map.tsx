@@ -576,14 +576,14 @@ const Map = () => {
                 );
               })}
 
-              {/* Legacy map link */}
+              {/* Back to main map link */}
               <div className="mt-12 pt-8 border-t border-border">
                 <Link
-                  to={`${langPath}/map/legacy`}
+                  to={`${langPath}/map`}
                   className="flex items-center justify-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors group"
                 >
                   <Tag className="w-4 h-4" />
-                  <span>{language === "ja" ? "旧技マップ（シリーズ別表示）を見る" : language === "pt" ? "Ver mapa de técnicas antigo" : "View legacy technique map (by series)"}</span>
+                  <span>{language === "ja" ? "技マップ（シリーズ別表示）に戻る" : language === "pt" ? "Voltar ao mapa de técnicas" : "Back to technique map (by series)"}</span>
                   <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </Link>
               </div>
