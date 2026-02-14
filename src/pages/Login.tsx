@@ -11,7 +11,12 @@ import { z } from "zod";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { trackConversion, trackEvent } from "@/hooks/useGoogleAnalytics";
 
-const authSchema = z.object({
+const loginSchema = z.object({
+  email: z.string().trim().email({ message: "有効なメールアドレスを入力してください" }).max(255),
+  password: z.string().min(1, { message: "パスワードを入力してください" }).max(100),
+});
+
+const signupSchema = z.object({
   email: z.string().trim().email({ message: "有効なメールアドレスを入力してください" }).max(255),
   password: z.string().min(6, { message: "パスワードは6文字以上である必要があります" }).max(100),
 });
@@ -46,7 +51,7 @@ const Login = () => {
     setIsLoading(true);
 
     try {
-      const validated = authSchema.parse({ email, password });
+      const validated = loginSchema.parse({ email, password });
       
       const { data, error } = await supabase.auth.signInWithPassword({
         email: validated.email,
@@ -98,7 +103,7 @@ const Login = () => {
     setIsLoading(true);
 
     try {
-      const validated = authSchema.parse({ email, password });
+      const validated = signupSchema.parse({ email, password });
       const redirectUrl = `${window.location.origin}/map`;
       
       const { error } = await supabase.auth.signUp({
