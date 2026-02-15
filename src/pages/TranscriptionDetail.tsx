@@ -202,8 +202,8 @@ const TranscriptionDetail = () => {
     setFormattingProgress(0);
 
     try {
-      // Process in batches of 5 segments
-      const batchSize = 5;
+      // Process in batches of 10 segments for context-aware correction
+      const batchSize = 10;
       const formattedSegments: Segment[] = [];
       
       for (let i = 0; i < editedSegments.length; i += batchSize) {
@@ -223,7 +223,7 @@ const TranscriptionDetail = () => {
       }
 
       setEditedSegments(formattedSegments);
-      toast.success('文字起こしをAIで整形しました');
+      toast.success('字幕をAIで校正しました（BJJ専門用語対応）');
     } catch (error) {
       console.error('Format error:', error);
       toast.error('整形に失敗しました');

@@ -6,6 +6,30 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+const BJJ_SYSTEM_PROMPT_JA = `あなたはブラジリアン柔術（BJJ）に精通した専門エディターです。以下のJSON形式の字幕データを、構造を維持したまま校正してください。
+
+【厳守ルール】
+・タイムコード（start, end）は1ミリ秒も変更せず、そのまま出力すること。
+・フィラー（えー、あの、その、えっと等）を削除し、自然な文章に整えること。
+・柔術専門用語の誤字を修正すること（例：クローズカード→クローズドガード、腕十字→腕十字、スイープ→スイープ、SJJJF、SWEEP、YAWARA、野島）。
+・適切な位置に句読点（、。）を追加すること。
+・1つのセグメントが長すぎる場合は、意味の区切りで2つに分割し、start/endの時間を文字数比で按分すること。
+
+出力形式：[{ "start": number, "end": number, "text": string }]
+入力JSONのみを校正し、校正後のJSON配列のみを出力してください。説明やマークダウンは不要です。`;
+
+const BJJ_SYSTEM_PROMPT_EN = `You are a professional editor specializing in Brazilian Jiu-Jitsu (BJJ). Proofread the following subtitle data in JSON format while maintaining the structure.
+
+Rules:
+- Do NOT change timecodes (start, end) at all.
+- Remove filler words like "um", "uh", "like", "you know".
+- Fix BJJ terminology spelling (e.g., closed guard, arm bar, sweep, SJJJF).
+- Add proper punctuation.
+- If a segment is too long, split it at a natural break and distribute start/end proportionally by character count.
+
+Output format: [{ "start": number, "end": number, "text": string }]
+Output only the corrected JSON array. No explanation or markdown.`;
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -23,66 +47,82 @@ serve(async (req) => {
       throw new Error('LOVABLE_API_KEY is not configured');
     }
 
-    // Process segments in batches to avoid rate limits
-    const formattedSegments = [];
-    
-    for (const segment of segments) {
-      const prompt = language === 'ja' 
-        ? `以下の文字起こしテキストを自然な日本語に整形してください。
-要件:
-- 適切な句読点（。、）を追加
-- 不要な空白を削除
-- 「えー」「あー」などのフィラーは削除
-- 意味を変えずに読みやすく
+    const systemPrompt = language === 'ja' ? BJJ_SYSTEM_PROMPT_JA : BJJ_SYSTEM_PROMPT_EN;
 
-入力テキスト:
-${segment.text}
+    // Send all segments as a single JSON block for context-aware correction
+    const inputJson = JSON.stringify(segments.map((s: { start: number; end: number; text: string }) => ({
+      start: s.start,
+      end: s.end,
+      text: s.text,
+    })));
 
-整形後のテキストのみを出力してください（説明不要）:`
-        : `Format this transcript text to be more readable:
-- Add proper punctuation
-- Remove unnecessary spaces
-- Remove filler words like "um", "uh"
-- Keep the meaning intact
+    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'google/gemini-2.5-flash',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: inputJson }
+        ],
+        max_tokens: 4096,
+        temperature: 0.2,
+      }),
+    });
 
-Input:
-${segment.text}
+    if (!response.ok) {
+      const error = await response.text();
+      console.error('AI API error:', response.status, error);
 
-Output only the formatted text:`;
-
-      const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: 'google/gemini-2.5-flash',
-          messages: [
-            { role: 'user', content: prompt }
-          ],
-          max_tokens: 500,
-          temperature: 0.3,
-        }),
-      });
-
-      if (!response.ok) {
-        const error = await response.text();
-        console.error('AI API error:', error);
-        // If AI fails, keep original text
-        formattedSegments.push(segment);
-        continue;
+      if (response.status === 429) {
+        return new Response(
+          JSON.stringify({ error: 'Rate limit exceeded. Please try again later.' }),
+          { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      if (response.status === 402) {
+        return new Response(
+          JSON.stringify({ error: 'Payment required. Please add credits.' }),
+          { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
       }
 
-      const data = await response.json();
-      const formattedText = data.choices?.[0]?.message?.content?.trim() || segment.text;
+      // Fallback: return original segments
+      return new Response(
+        JSON.stringify({ segments }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
-      console.log(`Formatted: "${segment.text.substring(0, 30)}..." -> "${formattedText.substring(0, 30)}..."`);
+    const data = await response.json();
+    const rawContent = data.choices?.[0]?.message?.content?.trim() || '';
 
-      formattedSegments.push({
-        ...segment,
-        text: formattedText
-      });
+    // Parse the AI response as JSON array
+    let formattedSegments;
+    try {
+      // Strip markdown code fences if present
+      const cleaned = rawContent.replace(/^```(?:json)?\s*\n?/i, '').replace(/\n?```\s*$/i, '').trim();
+      formattedSegments = JSON.parse(cleaned);
+
+      if (!Array.isArray(formattedSegments)) {
+        throw new Error('Response is not an array');
+      }
+
+      // Validate each segment has required fields
+      formattedSegments = formattedSegments.map((s: { start?: number; end?: number; text?: string }, idx: number) => ({
+        start: typeof s.start === 'number' ? s.start : segments[idx]?.start ?? 0,
+        end: typeof s.end === 'number' ? s.end : segments[idx]?.end ?? 0,
+        text: typeof s.text === 'string' ? s.text : segments[idx]?.text ?? '',
+      }));
+
+      console.log(`Formatted ${segments.length} segments -> ${formattedSegments.length} segments`);
+    } catch (parseError) {
+      console.error('Failed to parse AI response as JSON, falling back:', parseError);
+      console.error('Raw content:', rawContent.substring(0, 200));
+      formattedSegments = segments;
     }
 
     return new Response(
