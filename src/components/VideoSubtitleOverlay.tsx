@@ -272,6 +272,8 @@ const VideoSubtitleOverlayInner = ({
               textShadow:
                 "1px 1px 2px rgba(0,0,0,0.9), -1px -1px 2px rgba(0,0,0,0.9), 0 0 4px rgba(0,0,0,0.7)",
               letterSpacing: "0.02em",
+              wordBreak: "keep-all",
+              overflowWrap: "anywhere",
             }}
           >
             {line}
