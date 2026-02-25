@@ -2335,7 +2335,7 @@ export type Database = {
       oauth_clients: {
         Row: {
           client_id: string
-          client_secret: string
+          client_secret_hash: string
           created_at: string
           created_by: string | null
           description: string | null
@@ -2349,7 +2349,7 @@ export type Database = {
         }
         Insert: {
           client_id?: string
-          client_secret?: string
+          client_secret_hash: string
           created_at?: string
           created_by?: string | null
           description?: string | null
@@ -2363,7 +2363,7 @@ export type Database = {
         }
         Update: {
           client_id?: string
-          client_secret?: string
+          client_secret_hash?: string
           created_at?: string
           created_by?: string | null
           description?: string | null

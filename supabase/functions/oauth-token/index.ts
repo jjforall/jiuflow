@@ -17,6 +17,15 @@ async function sha256(plain: string): Promise<string> {
     .replace(/=+$/, '');
 }
 
+// Helper to create SHA-256 hex hash for client secret verification
+async function sha256Hex(plain: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(plain);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -56,7 +65,7 @@ Deno.serve(async (req) => {
     // Validate client credentials
     const { data: oauthClient, error: clientError } = await supabaseAdmin
       .from('oauth_clients')
-      .select('id, client_secret, is_active')
+      .select('id, client_secret_hash, is_active')
       .eq('client_id', clientId)
       .eq('is_active', true)
       .single();
@@ -68,8 +77,9 @@ Deno.serve(async (req) => {
       }), { status: 401, headers: corsHeaders });
     }
 
-    // Validate client secret
-    if (oauthClient.client_secret !== clientSecret) {
+    // Validate client secret by comparing SHA-256 hash
+    const providedSecretHash = await sha256Hex(clientSecret);
+    if (oauthClient.client_secret_hash !== providedSecretHash) {
       return new Response(JSON.stringify({
         error: 'invalid_client',
         error_description: 'Invalid client credentials',
@@ -274,7 +284,7 @@ Deno.serve(async (req) => {
     console.error('OAuth token error:', error);
     return new Response(JSON.stringify({
       error: 'server_error',
-      error_description: error instanceof Error ? error.message : 'Unknown error',
+      error_description: 'An internal error occurred',
     }), { status: 500, headers: corsHeaders });
   }
 });
