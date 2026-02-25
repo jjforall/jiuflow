@@ -115,12 +115,12 @@ const App = () => (
                     <Route path="organization/:slug" element={<SuspenseWrapper><OrganizationDetail /></SuspenseWrapper>} />
                     <Route path="map" element={
                       <ProtectedRoute>
-                        <SuspenseWrapper variant="map"><Map /></SuspenseWrapper>
+                        <SuspenseWrapper variant="map"><MapLegacy /></SuspenseWrapper>
                       </ProtectedRoute>
                     } />
-                    <Route path="map/legacy" element={
+                    <Route path="map/new" element={
                       <ProtectedRoute>
-                        <SuspenseWrapper variant="map"><MapLegacy /></SuspenseWrapper>
+                        <SuspenseWrapper variant="map"><Map /></SuspenseWrapper>
                       </ProtectedRoute>
                     } />
                     <Route path="dojos" element={<SuspenseWrapper variant="map"><Dojos /></SuspenseWrapper>} />
@@ -221,12 +221,12 @@ const App = () => (
                   {/* Map/Video grid pages */}
                   <Route path="/map" element={
                     <ProtectedRoute>
-                      <SuspenseWrapper variant="map"><Map /></SuspenseWrapper>
+                      <SuspenseWrapper variant="map"><MapLegacy /></SuspenseWrapper>
                     </ProtectedRoute>
                    } />
-                  <Route path="/map/legacy" element={
+                  <Route path="/map/new" element={
                     <ProtectedRoute>
-                      <SuspenseWrapper variant="map"><MapLegacy /></SuspenseWrapper>
+                      <SuspenseWrapper variant="map"><Map /></SuspenseWrapper>
                     </ProtectedRoute>
                   } />
                   <Route path="/dojos" element={<SuspenseWrapper variant="map"><Dojos /></SuspenseWrapper>} />
