@@ -793,6 +793,16 @@ const Map = () => {
               )}
             </div>
           )}
+
+          {/* New notation map link */}
+          <div className="mt-12 pt-8 border-t border-border">
+            <Link
+              to={`${langPath}/map/new`}
+              className="flex items-center justify-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors group"
+            >
+              <span>{language === "ja" ? "新しい技マップ（ノーテーション別表示）を見る" : language === "pt" ? "Ver novo mapa de técnicas (por notação)" : "View new technique map (by notation)"}</span>
+            </Link>
+          </div>
         </div>
       </main>
       <Footer />
