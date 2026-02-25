@@ -10,12 +10,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
-import { Plus, Copy, Eye, EyeOff, Trash2, Edit, ExternalLink } from 'lucide-react';
+import { Plus, Copy, Trash2, Edit, ExternalLink, RefreshCw, AlertTriangle } from 'lucide-react';
 
 interface OAuthClient {
   id: string;
   client_id: string;
-  client_secret: string;
   name: string;
   description: string | null;
   redirect_uris: string[];
@@ -28,9 +27,10 @@ interface OAuthClient {
 export default function OAuthClientsManagement() {
   const [clients, setClients] = useState<OAuthClient[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showSecret, setShowSecret] = useState<Record<string, boolean>>({});
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingClient, setEditingClient] = useState<OAuthClient | null>(null);
+  const [newlyCreatedSecret, setNewlyCreatedSecret] = useState<string | null>(null);
+  const [regeneratedSecret, setRegeneratedSecret] = useState<{ clientId: string; secret: string } | null>(null);
   
   // Form state
   const [formData, setFormData] = useState({
@@ -45,7 +45,7 @@ export default function OAuthClientsManagement() {
     try {
       const { data, error } = await supabase
         .from('oauth_clients')
-        .select('*')
+        .select('id, client_id, name, description, redirect_uris, logo_url, homepage_url, is_active, created_at')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -71,6 +71,15 @@ export default function OAuthClientsManagement() {
     try {
       const redirectUris = formData.redirect_uris.split('\n').map(u => u.trim()).filter(Boolean);
       
+      // Generate a random secret client-side, then hash it before storing
+      const randomBytes = crypto.getRandomValues(new Uint8Array(32));
+      const plainSecret = Array.from(randomBytes).map(b => b.toString(16).padStart(2, '0')).join('');
+      
+      // Hash with SHA-256
+      const encoder = new TextEncoder();
+      const hashBuffer = await crypto.subtle.digest('SHA-256', encoder.encode(plainSecret));
+      const secretHash = Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+
       const { error } = await supabase
         .from('oauth_clients')
         .insert({
@@ -79,17 +88,46 @@ export default function OAuthClientsManagement() {
           redirect_uris: redirectUris,
           logo_url: formData.logo_url.trim() || null,
           homepage_url: formData.homepage_url.trim() || null,
+          client_secret_hash: secretHash,
         });
 
       if (error) throw error;
 
-      toast.success('OAuthクライアントを作成しました');
+      // Show the plaintext secret ONCE
+      setNewlyCreatedSecret(plainSecret);
+      toast.success('OAuthクライアントを作成しました。シークレットを今すぐコピーしてください。');
       setIsCreateOpen(false);
       resetForm();
       fetchClients();
     } catch (err) {
       console.error('Error creating client:', err);
       toast.error('作成に失敗しました');
+    }
+  };
+
+  const handleRegenerateSecret = async (client: OAuthClient) => {
+    if (!confirm(`「${client.name}」のシークレットを再生成しますか？既存のシークレットは無効になります。`)) return;
+
+    try {
+      const randomBytes = crypto.getRandomValues(new Uint8Array(32));
+      const plainSecret = Array.from(randomBytes).map(b => b.toString(16).padStart(2, '0')).join('');
+      
+      const encoder = new TextEncoder();
+      const hashBuffer = await crypto.subtle.digest('SHA-256', encoder.encode(plainSecret));
+      const secretHash = Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+
+      const { error } = await supabase
+        .from('oauth_clients')
+        .update({ client_secret_hash: secretHash })
+        .eq('id', client.id);
+
+      if (error) throw error;
+
+      setRegeneratedSecret({ clientId: client.id, secret: plainSecret });
+      toast.success('シークレットを再生成しました。今すぐコピーしてください。');
+    } catch (err) {
+      console.error('Error regenerating secret:', err);
+      toast.error('シークレットの再生成に失敗しました');
     }
   };
 
@@ -252,6 +290,37 @@ export default function OAuthClientsManagement() {
         </Dialog>
       </div>
 
+      {/* Newly Created Secret Banner */}
+      {newlyCreatedSecret && (
+        <Card className="border-yellow-500 bg-yellow-50 dark:bg-yellow-950/20">
+          <CardContent className="p-4">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="h-5 w-5 text-yellow-600 mt-0.5 shrink-0" />
+              <div className="flex-1 space-y-2">
+                <p className="font-medium text-yellow-800 dark:text-yellow-200">
+                  クライアントシークレットが生成されました
+                </p>
+                <p className="text-sm text-yellow-700 dark:text-yellow-300">
+                  このシークレットは一度しか表示されません。今すぐコピーして安全な場所に保存してください。
+                </p>
+                <div className="flex items-center gap-2">
+                  <code className="text-xs bg-white dark:bg-black/30 px-3 py-2 rounded border break-all flex-1">
+                    {newlyCreatedSecret}
+                  </code>
+                  <Button size="sm" variant="outline" onClick={() => copyToClipboard(newlyCreatedSecret, 'Client Secret')}>
+                    <Copy className="h-3 w-3 mr-1" />
+                    コピー
+                  </Button>
+                </div>
+                <Button size="sm" variant="ghost" className="text-yellow-700" onClick={() => setNewlyCreatedSecret(null)}>
+                  確認しました（閉じる）
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Endpoint Info */}
       <Card>
         <CardHeader>
@@ -343,22 +412,28 @@ export default function OAuthClientsManagement() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center gap-2">
-                        <code className="text-xs bg-muted px-2 py-1 rounded">
-                          {showSecret[client.id] ? client.client_secret : '••••••••••••••••'}
-                        </code>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-6 w-6"
-                          onClick={() => setShowSecret({ ...showSecret, [client.id]: !showSecret[client.id] })}
-                        >
-                          {showSecret[client.id] ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
-                        </Button>
-                        <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => copyToClipboard(client.client_secret, 'Client Secret')}>
-                          <Copy className="h-3 w-3" />
-                        </Button>
-                      </div>
+                      {regeneratedSecret?.clientId === client.id ? (
+                        <div className="space-y-1">
+                          <code className="text-xs bg-yellow-100 dark:bg-yellow-900/30 px-2 py-1 rounded break-all block max-w-[200px]">
+                            {regeneratedSecret.secret}
+                          </code>
+                          <div className="flex gap-1">
+                            <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => copyToClipboard(regeneratedSecret.secret, 'Client Secret')}>
+                              <Copy className="h-3 w-3" />
+                            </Button>
+                            <Button size="sm" variant="ghost" className="h-6 text-xs" onClick={() => setRegeneratedSecret(null)}>
+                              閉じる
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <code className="text-xs bg-muted px-2 py-1 rounded text-muted-foreground">••••••••••••</code>
+                          <Button size="icon" variant="ghost" className="h-6 w-6" title="シークレットを再生成" onClick={() => handleRegenerateSecret(client)}>
+                            <RefreshCw className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      )}
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
