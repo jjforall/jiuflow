@@ -15,7 +15,14 @@ const PaymentError = () => {
 
   useEffect(() => {
     window.scrollTo(0, 0);
-  }, []);
+    // GA4: Track payment error
+    if (typeof window !== 'undefined' && window.gtag) {
+      window.gtag('event', 'payment_error', {
+        page_location: window.location.href,
+        error_message: errorMessage || undefined,
+      });
+    }
+  }, [errorMessage]);
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-background via-background to-destructive/5">

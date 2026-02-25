@@ -7,6 +7,8 @@ interface SubscriptionStatus {
   price_id: string | null;
   subscription_end: string | null;
   is_trialing: boolean;
+  trial_days_left: number | null;
+  trial_expired: boolean;
   loading: boolean;
 }
 
@@ -42,6 +44,27 @@ const restoreCache = () => {
 // Initialize cache from sessionStorage
 restoreCache();
 
+const computeTrialInfo = (isTrialing: boolean, subscriptionEnd: string | null, subscribed: boolean): { trial_days_left: number | null; trial_expired: boolean } => {
+  if (isTrialing && subscriptionEnd) {
+    const endDate = new Date(subscriptionEnd).getTime();
+    const now = Date.now();
+    const daysLeft = Math.ceil((endDate - now) / (1000 * 60 * 60 * 24));
+    return { trial_days_left: Math.max(0, daysLeft), trial_expired: false };
+  }
+  // If user is not subscribed and not trialing, trial has expired (or never started)
+  if (!subscribed && !isTrialing) {
+    // Check if user had a subscription_end in the past (expired trial)
+    if (subscriptionEnd) {
+      const endDate = new Date(subscriptionEnd).getTime();
+      if (endDate < Date.now()) {
+        return { trial_days_left: 0, trial_expired: true };
+      }
+    }
+    return { trial_days_left: null, trial_expired: false };
+  }
+  return { trial_days_left: null, trial_expired: false };
+};
+
 const fetchSubscription = async (): Promise<Omit<SubscriptionStatus, 'loading'>> => {
   const defaultStatus = {
     subscribed: false,
@@ -49,6 +72,8 @@ const fetchSubscription = async (): Promise<Omit<SubscriptionStatus, 'loading'>>
     price_id: null,
     subscription_end: null,
     is_trialing: false,
+    trial_days_left: null,
+    trial_expired: false,
   };
 
   try {
@@ -77,12 +102,19 @@ const fetchSubscription = async (): Promise<Omit<SubscriptionStatus, 'loading'>>
       return defaultStatus;
     }
 
+    const subscribed = data.subscribed || false;
+    const isTrialing = data.is_trialing || false;
+    const subscriptionEnd = data.subscription_end || null;
+    const { trial_days_left, trial_expired } = computeTrialInfo(isTrialing, subscriptionEnd, subscribed);
+
     return {
-      subscribed: data.subscribed || false,
+      subscribed,
       product_id: data.product_id || null,
       price_id: data.price_id || null,
-      subscription_end: data.subscription_end || null,
-      is_trialing: data.is_trialing || false,
+      subscription_end: subscriptionEnd,
+      is_trialing: isTrialing,
+      trial_days_left,
+      trial_expired,
     };
   } catch (error) {
     console.error("Error checking subscription:", error);
@@ -102,6 +134,8 @@ export const useSubscription = () => {
       price_id: null,
       subscription_end: null,
       is_trialing: false,
+      trial_days_left: null,
+      trial_expired: false,
       loading: true,
     };
   });
@@ -156,6 +190,8 @@ export const useSubscription = () => {
         price_id: null,
         subscription_end: null,
         is_trialing: false,
+        trial_days_left: null,
+        trial_expired: false,
         loading: false,
       });
     }

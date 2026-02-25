@@ -13,6 +13,12 @@ const PaymentCanceled = () => {
 
   useEffect(() => {
     window.scrollTo(0, 0);
+    // GA4: Track payment cancellation
+    if (typeof window !== 'undefined' && window.gtag) {
+      window.gtag('event', 'payment_canceled', {
+        page_location: window.location.href,
+      });
+    }
   }, []);
 
   return (

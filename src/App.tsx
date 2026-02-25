@@ -20,6 +20,7 @@ import { LanguageRoute } from "./components/LanguageRoute";
 import { GoogleAnalytics } from "./components/GoogleAnalytics";
 import { UploadProvider } from "./contexts/UploadContext";
 import { GlobalUploadIndicator } from "./components/GlobalUploadIndicator";
+import TrialBanner from "./components/TrialBanner";
 
 // Lazy load route components for better performance
 const Home = lazy(() => import("./pages/Home"));
@@ -70,6 +71,7 @@ const TranscriptionDetail = lazy(() => import("./pages/TranscriptionDetail"));
 const SharedVideo = lazy(() => import("./pages/SharedVideo"));
 const OAuthAuthorize = lazy(() => import("./pages/OAuthAuthorize"));
 const TechniqueEdit = lazy(() => import("./pages/TechniqueEdit"));
+const Curriculum = lazy(() => import("./pages/Curriculum"));
 
 const queryClient = new QueryClient();
 
@@ -87,6 +89,7 @@ const App = () => (
                 <UploadProvider>
                 <RoutePrefetcher />
                 <GoogleAnalytics />
+                <TrialBanner />
                 <Routes>
                   {/* Language prefixed routes - only match valid 2-letter language codes */}
                   <Route path="/:lang" element={<LanguageRoute />}>
@@ -108,6 +111,7 @@ const App = () => (
                     <Route path="glossary" element={<SuspenseWrapper><Glossary /></SuspenseWrapper>} />
                     <Route path="faq" element={<SuspenseWrapper><FAQ /></SuspenseWrapper>} />
                     <Route path="blog" element={<SuspenseWrapper><Blog /></SuspenseWrapper>} />
+                    <Route path="curriculum" element={<SuspenseWrapper><Curriculum /></SuspenseWrapper>} />
                     <Route path="tournaments" element={<SuspenseWrapper><Tournaments /></SuspenseWrapper>} />
                     <Route path="tournaments/:year/:slug" element={<SuspenseWrapper><TournamentDetail /></SuspenseWrapper>} />
                     <Route path="venues" element={<SuspenseWrapper><Venues /></SuspenseWrapper>} />
@@ -212,6 +216,7 @@ const App = () => (
                   <Route path="/glossary" element={<SuspenseWrapper><Glossary /></SuspenseWrapper>} />
                   <Route path="/faq" element={<SuspenseWrapper><FAQ /></SuspenseWrapper>} />
                   <Route path="/blog" element={<SuspenseWrapper><Blog /></SuspenseWrapper>} />
+                  <Route path="/curriculum" element={<SuspenseWrapper><Curriculum /></SuspenseWrapper>} />
                   <Route path="/tournaments" element={<SuspenseWrapper><Tournaments /></SuspenseWrapper>} />
                   <Route path="/tournaments/:year/:slug" element={<SuspenseWrapper><TournamentDetail /></SuspenseWrapper>} />
                   <Route path="/venues" element={<SuspenseWrapper><Venues /></SuspenseWrapper>} />

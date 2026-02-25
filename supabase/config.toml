@@ -24,8 +24,7 @@ max_client_conn = 100
 
 [realtime]
 enabled = true
-ip_version = "ipv4"
-port = 54323
+ip_version = "IPv4"
 max_header_length = 4096
 
 [studio]
@@ -63,7 +62,6 @@ max_frequency = "1h"
 
 [edge_runtime]
 enabled = true
-port = 54321
 
 [analytics]
 enabled = false
@@ -176,4 +174,10 @@ verify_jwt = true
 verify_jwt = false
 
 [functions.send-reply-email]
+verify_jwt = false
+
+[functions.send-trial-reminder]
+verify_jwt = false
+
+[functions.send-win-back-email]
 verify_jwt = false

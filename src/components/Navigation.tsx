@@ -56,6 +56,7 @@ const Navigation = () => {
 
   const links = [
     { to: "/", label: t.nav.home, icon: Home },
+    { to: "/curriculum", label: language === 'ja' ? 'カリキュラム' : language === 'pt' ? 'Curriculo' : 'Curriculum', icon: ClipboardList },
     { to: "/map", label: t.nav.map, icon: Map },
     { to: "/about", label: t.nav.about, icon: Info },
     // Only show Join link when subscription check is complete and user is not subscribed

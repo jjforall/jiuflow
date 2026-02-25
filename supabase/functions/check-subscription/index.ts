@@ -171,6 +171,29 @@ serve(async (req) => {
       });
     } else {
       logStep("No active or trialing subscription found");
+
+      // Check for recently expired trial (for win-back banner in the SPA)
+      const expiredTrialSubs = subscriptions.data.filter((sub: any) => {
+        const isCanceled = sub.status === "canceled" || sub.status === "incomplete_expired";
+        const priceIdCheck = sub.items.data[0]?.price?.id;
+        const isJiuflowPrice = JIUFLOW_PRICE_IDS.includes(priceIdCheck);
+        // Only consider subscriptions that ended within the last 90 days
+        const endedAt = sub.ended_at || sub.canceled_at;
+        const isRecent = endedAt && (Date.now() / 1000 - endedAt) < 90 * 24 * 60 * 60;
+        return isCanceled && isJiuflowPrice && isRecent;
+      });
+
+      if (expiredTrialSubs.length > 0) {
+        const expiredSub = expiredTrialSubs[0];
+        const endedAt = expiredSub.ended_at || expiredSub.canceled_at;
+        if (endedAt && typeof endedAt === 'number') {
+          subscriptionEnd = new Date(endedAt * 1000).toISOString();
+        }
+        logStep("Found recently expired trial", {
+          subscriptionId: expiredSub.id,
+          endedAt: subscriptionEnd
+        });
+      }
     }
 
     return new Response(JSON.stringify({

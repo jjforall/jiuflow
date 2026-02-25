@@ -263,9 +263,41 @@ const Join = () => {
     }
   }, [searchParams, t.join.payment, language]);
 
+  // GA4: Track plan listing view on mount
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.gtag) {
+      window.gtag('event', 'view_item_list', {
+        item_list_id: 'pricing_plans',
+        item_list_name: 'Pricing Plans',
+        items: [
+          { item_id: 'founder', item_name: 'Founder Plan', price: 980, currency: 'JPY' },
+          { item_id: 'monthly', item_name: 'Monthly Plan', price: 2900, currency: 'JPY' },
+          { item_id: 'annual', item_name: 'Annual Plan', price: 29000, currency: 'JPY' },
+          { item_id: 'muratabros', item_name: 'Founder Plan Pro', price: 50000, currency: 'JPY' },
+        ],
+      });
+    }
+  }, []);
+
   const handleCheckout = async (priceId: string, isSubscription: boolean) => {
+    // GA4: Track begin_checkout
+    const priceMap: Record<string, { name: string; price: number }> = {
+      [PRICE_IDS.founder]: { name: 'Founder Plan', price: 980 },
+      [PRICE_IDS.monthly]: { name: 'Monthly Plan', price: 2900 },
+      [PRICE_IDS.annual]: { name: 'Annual Plan', price: 29000 },
+      [PRICE_IDS.muratabros]: { name: 'Founder Plan Pro', price: 50000 },
+    };
+    const planInfo = priceMap[priceId];
+    if (typeof window !== 'undefined' && window.gtag && planInfo) {
+      window.gtag('event', 'begin_checkout', {
+        currency: 'JPY',
+        value: planInfo.price,
+        items: [{ item_id: priceId, item_name: planInfo.name, price: planInfo.price, quantity: 1 }],
+      });
+    }
+
     const { data: { session } } = await supabase.auth.getSession();
-    
+
     if (!session) {
       // Show signup dialog instead of error
       setPendingCheckout({ priceId, isSubscription });
@@ -277,8 +309,8 @@ const Join = () => {
     try {
       const functionName = isSubscription ? "create-checkout" : "create-payment";
       const { data, error } = await supabase.functions.invoke(functionName, {
-        body: { 
-          priceId, 
+        body: {
+          priceId,
           referralCode: referralCode.trim() || undefined,
           email: session.user.email,
         },

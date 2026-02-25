@@ -9,7 +9,7 @@ import Footer from "@/components/Footer";
 import { Skeleton } from "@/components/ui/skeleton";
 import TechniqueFlowchart from "@/components/TechniqueFlowchart";
 import { Badge } from "@/components/ui/badge";
-import { Award, BookOpen, FileText, CheckCircle, Users, Trophy } from "lucide-react";
+import { Award, BookOpen, FileText, CheckCircle, Users, Trophy, Video, Play } from "lucide-react";
 import { SEOHead, getOGLocale } from "@/components/SEOHead";
 import { TypewriterText } from "@/components/TypewriterText";
 import { ScrollToTopButton } from "@/components/ScrollToTopButton";
@@ -162,12 +162,12 @@ const Home = () => {
                 
                 {!user && (
                   <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
-                    <Link to="/join" className="w-full sm:w-auto">
+                    <Link to="/join" className="w-full sm:w-auto" onClick={() => { if (typeof window !== 'undefined' && window.gtag) window.gtag('event', 'cta_click', { cta_location: 'hero', cta_text: 'free_trial' }); }}>
                       <Button size="lg" className="w-full sm:min-w-[240px] text-lg font-medium bg-primary hover:bg-primary/90 shadow-lg hover:shadow-xl transition-all">
                         {t.home.hero.freeTrial}
                       </Button>
                     </Link>
-                    <Link to="/login" className="w-full sm:w-auto">
+                    <Link to="/login" className="w-full sm:w-auto" onClick={() => { if (typeof window !== 'undefined' && window.gtag) window.gtag('event', 'cta_click', { cta_location: 'hero', cta_text: 'login' }); }}>
                       <Button variant="outline" size="lg" className="w-full sm:min-w-[200px] bg-transparent border-white/30 text-white hover:bg-white/10 backdrop-blur-sm">
                         {t.nav.login}
                       </Button>
@@ -195,6 +195,58 @@ const Home = () => {
                       alt={language === 'ja' ? '4K上面撮影 - キムラロック（腕絡み）の技術解説' : language === 'pt' ? 'Filmagem 4K Aérea - Técnica Kimura Lock' : '4K Overhead View - Kimura Lock Technique Tutorial'}
                       className="w-full h-auto object-cover"
                     />
+                  </div>
+                </div>
+              </section>
+            </AnimatedSection>
+
+            {/* Curriculum Preview Section - What You'll Learn */}
+            <AnimatedSection delay={50}>
+              <section className="py-20 px-6 bg-muted/30">
+                <div className="max-w-6xl mx-auto">
+                  <div className="text-center mb-10">
+                    <Badge className="bg-primary/10 text-primary border-primary/20 px-4 py-1.5 text-sm font-medium mb-4 inline-flex items-center gap-2">
+                      <Video className="w-4 h-4" />
+                      {language === 'ja' ? '200本以上の動画' : language === 'pt' ? '200+ videos' : '200+ videos'}
+                    </Badge>
+                    <h2 className="text-3xl md:text-4xl font-light mb-3">
+                      {language === 'ja' ? '何が学べるか' : language === 'pt' ? 'O Que Voce Vai Aprender' : 'What You Will Learn'}
+                    </h2>
+                    <p className="text-muted-foreground">
+                      {language === 'ja' ? '登録前にカリキュラムの全体像をご確認ください' : language === 'pt' ? 'Confira o curriculo completo antes de se inscrever' : 'Preview the full curriculum before signing up'}
+                    </p>
+                  </div>
+
+                  <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+                    {[
+                      { ja: 'ガード（下からの攻防）', en: 'Guard (Bottom Game)', pt: 'Guarda', count: '60', color: 'bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-500/30' },
+                      { ja: 'ガードパス（上からの攻略）', en: 'Guard Passing', pt: 'Passagem de Guarda', count: '40', color: 'bg-green-500/15 text-green-700 dark:text-green-300 border-green-500/30' },
+                      { ja: 'サブミッション（極め技）', en: 'Submissions', pt: 'Finalizacoes', count: '50', color: 'bg-red-500/15 text-red-700 dark:text-red-300 border-red-500/30' },
+                      { ja: 'テイクダウン（立ち技）', en: 'Takedowns', pt: 'Takedowns', count: '25', color: 'bg-orange-500/15 text-orange-700 dark:text-orange-300 border-orange-500/30' },
+                      { ja: 'トップコントロール', en: 'Top Control', pt: 'Controle Superior', count: '35', color: 'bg-purple-500/15 text-purple-700 dark:text-purple-300 border-purple-500/30' },
+                      { ja: 'エスケープ（脱出技術）', en: 'Escapes & Defense', pt: 'Defesas', count: '25', color: 'bg-yellow-500/15 text-yellow-700 dark:text-yellow-300 border-yellow-500/30' },
+                    ].map((item, idx) => (
+                      <div key={idx} className="glass-card rounded-xl p-4 flex items-center gap-4 hover:shadow-lg transition-all">
+                        <div className={`flex items-center justify-center w-10 h-10 rounded-lg border text-sm font-bold ${item.color}`}>
+                          <Play className="w-4 h-4" />
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="font-medium text-sm">
+                            {language === 'ja' ? item.ja : language === 'pt' ? item.pt : item.en}
+                          </h3>
+                          <p className="text-xs text-muted-foreground">{item.count} {language === 'ja' ? '本の動画' : 'videos'}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="text-center">
+                    <Link to="/curriculum">
+                      <Button variant="outline" size="lg" className="min-w-[240px]">
+                        <BookOpen className="w-4 h-4 mr-2" />
+                        {language === 'ja' ? 'カリキュラム全体を見る' : language === 'pt' ? 'Ver Curriculo Completo' : 'View Full Curriculum'}
+                      </Button>
+                    </Link>
                   </div>
                 </div>
               </section>
@@ -336,16 +388,16 @@ const Home = () => {
                       </p>
                     </Link>
 
-                    {/* Blog Card */}
-                    <Link to="/blog" className="group glass-card rounded-xl p-5 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 block">
+                    {/* Curriculum Card */}
+                    <Link to="/curriculum" className="group glass-card rounded-xl p-5 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 block">
                       <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
-                        <FileText className="w-5 h-5 text-primary" />
+                        <Video className="w-5 h-5 text-primary" />
                       </div>
                       <h3 className="text-lg font-medium mb-1">
-                        {homeT.seo?.blogTitle || "ブログ"}
+                        {language === 'ja' ? 'カリキュラム' : language === 'pt' ? 'Curriculo' : 'Curriculum'}
                       </h3>
                       <p className="text-sm text-muted-foreground">
-                        {language === 'ja' ? '開発記録・お知らせ' : language === 'pt' ? 'Atualizações e notícias' : 'Updates and news'}
+                        {language === 'ja' ? '200本以上のテクニック動画一覧' : language === 'pt' ? '200+ videos de tecnicas' : '200+ technique video catalog'}
                       </p>
                     </Link>
 
@@ -389,17 +441,17 @@ const Home = () => {
                   
                   {!user && (
                     <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                      <Link to="/join">
+                      <Link to="/join" onClick={() => { if (typeof window !== 'undefined' && window.gtag) window.gtag('event', 'cta_click', { cta_location: 'closing', cta_text: 'start_free' }); }}>
                         <Button size="lg" className="min-w-[280px] text-lg font-medium shadow-lg hover:shadow-xl transition-all glow-primary">
-                          {language === 'ja' ? '1ヶ月無料で始める' : 
-                           language === 'pt' ? 'Começar 1 Mês Grátis' : 
+                          {language === 'ja' ? '1ヶ月無料で始める' :
+                           language === 'pt' ? 'Começar 1 Mês Grátis' :
                            'Start 1 Month Free'}
                         </Button>
                       </Link>
-                      <Link to="/about">
+                      <Link to="/about" onClick={() => { if (typeof window !== 'undefined' && window.gtag) window.gtag('event', 'cta_click', { cta_location: 'closing', cta_text: 'learn_more' }); }}>
                         <Button variant="outline" size="lg" className="min-w-[200px]">
-                          {language === 'ja' ? '詳しく見る' : 
-                           language === 'pt' ? 'Saiba Mais' : 
+                          {language === 'ja' ? '詳しく見る' :
+                           language === 'pt' ? 'Saiba Mais' :
                            'Learn More'}
                         </Button>
                       </Link>
