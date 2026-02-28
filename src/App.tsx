@@ -72,6 +72,7 @@ const SharedVideo = lazy(() => import("./pages/SharedVideo"));
 const OAuthAuthorize = lazy(() => import("./pages/OAuthAuthorize"));
 const TechniqueEdit = lazy(() => import("./pages/TechniqueEdit"));
 const Curriculum = lazy(() => import("./pages/Curriculum"));
+const KataJudge = lazy(() => import("./pages/KataJudge"));
 
 const queryClient = new QueryClient();
 
@@ -162,6 +163,7 @@ const App = () => (
                         <SuspenseWrapper variant="map"><OpenMatPage /></SuspenseWrapper>
                       </ProtectedRoute>
                     } />
+                    <Route path="kata-judge" element={<SuspenseWrapper><KataJudge /></SuspenseWrapper>} />
                     <Route path="admin" element={<SuspenseWrapper variant="admin"><AdminLogin /></SuspenseWrapper>} />
                     <Route path="admin-dashboard" element={
                       <ProtectedRoute requireAdmin>
@@ -274,6 +276,7 @@ const App = () => (
                       <SuspenseWrapper variant="map"><OpenMatPage /></SuspenseWrapper>
                     </ProtectedRoute>
                   } />
+                  <Route path="/kata-judge" element={<SuspenseWrapper><KataJudge /></SuspenseWrapper>} />
 
                   {/* Admin pages */}
                   <Route path="/admin" element={<SuspenseWrapper variant="admin"><AdminLogin /></SuspenseWrapper>} />

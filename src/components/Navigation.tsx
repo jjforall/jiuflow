@@ -5,13 +5,14 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { translations } from "@/lib/translations";
 import { prefetchRoute } from "@/utils/routePrefetch";
 import { Button } from "@/components/ui/button";
-import { Menu, LogIn, User, LogOut, ShieldCheck, Moon, Sun, Home, Map, Info, UserPlus, ClipboardList, Users, Bell, Trophy } from "lucide-react";
+import { Menu, LogIn, User, LogOut, ShieldCheck, Moon, Sun, Home, Map, Info, UserPlus, ClipboardList, Users, Bell, Trophy, Swords } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { useAuth } from "@/hooks/useAuth";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
@@ -28,7 +29,7 @@ const Navigation = () => {
   const { user, isAdmin, isStaff, signOut } = useAuth();
   const { subscribed, loading: subscriptionLoading } = useSubscription();
   const [showOpenMatBadge, setShowOpenMatBadge] = useState(false);
-  const [hasUnreadNotifications, setHasUnreadNotifications] = useState(false); // Will be true when there are actual notifications
+  const [hasUnreadNotifications, setHasUnreadNotifications] = useState(true); // 3 hardcoded news notifications
 
   const canAccessAdmin = isAdmin || isStaff;
 
@@ -110,25 +111,58 @@ const Navigation = () => {
             
             {user ? (
               <>
-                {/* Notification Bell Button */}
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="relative"
-                  onClick={() => {
-                    // TODO: Navigate to notifications page or open notifications dropdown
-                    setHasUnreadNotifications(false);
-                    toast.info(language === "ja" ? "通知はありません" : language === "pt" ? "Sem notificações" : "No notifications");
-                  }}
-                >
-                  <Bell className="h-5 w-5" />
-                  {hasUnreadNotifications && (
-                    <span className="absolute -top-0.5 -right-0.5 flex h-3 w-3">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
-                    </span>
-                  )}
-                </Button>
+                {/* Notification Bell Dropdown */}
+                <DropdownMenu onOpenChange={(open) => { if (open) setHasUnreadNotifications(false); }}>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="relative">
+                      <Bell className="h-5 w-5" />
+                      {hasUnreadNotifications && (
+                        <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
+                          3
+                        </span>
+                      )}
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-80 p-0">
+                    <div className="px-4 py-3 border-b border-border">
+                      <p className="text-sm font-semibold">通知 / Notifications</p>
+                    </div>
+                    <div>
+                      <div className="p-3 hover:bg-muted/50 cursor-pointer flex items-start gap-3">
+                        <span className="text-lg leading-none mt-0.5">🥋</span>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium line-clamp-2">新しいブログ記事 "AIは柔術を本当に理解できるか？"</p>
+                          <p className="text-xs text-muted-foreground mt-1">数分前</p>
+                        </div>
+                        <span className="mt-1.5 h-2 w-2 flex-shrink-0 rounded-full bg-red-500" />
+                      </div>
+                      <DropdownMenuSeparator className="my-0" />
+                      <div className="p-3 hover:bg-muted/50 cursor-pointer flex items-start gap-3">
+                        <span className="text-lg leading-none mt-0.5">🏆</span>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium line-clamp-2">IBJJF東京国際オープン2026 エントリー受付開始</p>
+                          <p className="text-xs text-muted-foreground mt-1">1日前</p>
+                        </div>
+                        <span className="mt-1.5 h-2 w-2 flex-shrink-0 rounded-full bg-red-500" />
+                      </div>
+                      <DropdownMenuSeparator className="my-0" />
+                      <div className="p-3 hover:bg-muted/50 cursor-pointer flex items-start gap-3">
+                        <span className="text-lg leading-none mt-0.5">📅</span>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium line-clamp-2">JiuFlow春のグラップリング大会2026 開催決定！</p>
+                          <p className="text-xs text-muted-foreground mt-1">2日前</p>
+                        </div>
+                        <span className="mt-1.5 h-2 w-2 flex-shrink-0 rounded-full bg-red-500" />
+                      </div>
+                    </div>
+                    <DropdownMenuSeparator className="my-0" />
+                    <div className="px-4 py-2.5">
+                      <Link to="/news" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
+                        すべて見る / View all
+                      </Link>
+                    </div>
+                  </DropdownMenuContent>
+                </DropdownMenu>
                 
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -159,6 +193,10 @@ const Navigation = () => {
                 <DropdownMenuItem onClick={() => navigate("/tournaments")} className="gap-2 cursor-pointer">
                   <Trophy className="h-4 w-4" />
                   {language === "ja" ? "大会一覧" : language === "pt" ? "Torneios" : "Tournaments"}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate("/kata-judge")} className="gap-2 cursor-pointer">
+                  <Swords className="h-4 w-4" />
+                  {language === "ja" ? "型判定" : language === "pt" ? "Julgamento de Kata" : "Kata Judge"}
                 </DropdownMenuItem>
                   {canAccessAdmin && (
                     <DropdownMenuItem onClick={() => navigate("/admin/dashboard")} className="gap-2 cursor-pointer">
@@ -223,23 +261,57 @@ const Navigation = () => {
           <div className="flex md:hidden items-center gap-3">
             {/* Mobile Notification Bell - only when logged in */}
             {user && (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="relative"
-                onClick={() => {
-                  setHasUnreadNotifications(false);
-                  toast.info(language === "ja" ? "通知はありません" : language === "pt" ? "Sem notificações" : "No notifications");
-                }}
-              >
-                <Bell className="h-5 w-5" />
-                {hasUnreadNotifications && (
-                  <span className="absolute -top-0.5 -right-0.5 flex h-3 w-3">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
-                  </span>
-                )}
-              </Button>
+              <DropdownMenu onOpenChange={(open) => { if (open) setHasUnreadNotifications(false); }}>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="relative">
+                    <Bell className="h-5 w-5" />
+                    {hasUnreadNotifications && (
+                      <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
+                        3
+                      </span>
+                    )}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-80 p-0">
+                  <div className="px-4 py-3 border-b border-border">
+                    <p className="text-sm font-semibold">通知 / Notifications</p>
+                  </div>
+                  <div>
+                    <div className="p-3 hover:bg-muted/50 cursor-pointer flex items-start gap-3">
+                      <span className="text-lg leading-none mt-0.5">🥋</span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium line-clamp-2">新しいブログ記事 "AIは柔術を本当に理解できるか？"</p>
+                        <p className="text-xs text-muted-foreground mt-1">数分前</p>
+                      </div>
+                      <span className="mt-1.5 h-2 w-2 flex-shrink-0 rounded-full bg-red-500" />
+                    </div>
+                    <DropdownMenuSeparator className="my-0" />
+                    <div className="p-3 hover:bg-muted/50 cursor-pointer flex items-start gap-3">
+                      <span className="text-lg leading-none mt-0.5">🏆</span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium line-clamp-2">IBJJF東京国際オープン2026 エントリー受付開始</p>
+                        <p className="text-xs text-muted-foreground mt-1">1日前</p>
+                      </div>
+                      <span className="mt-1.5 h-2 w-2 flex-shrink-0 rounded-full bg-red-500" />
+                    </div>
+                    <DropdownMenuSeparator className="my-0" />
+                    <div className="p-3 hover:bg-muted/50 cursor-pointer flex items-start gap-3">
+                      <span className="text-lg leading-none mt-0.5">📅</span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium line-clamp-2">JiuFlow春のグラップリング大会2026 開催決定！</p>
+                        <p className="text-xs text-muted-foreground mt-1">2日前</p>
+                      </div>
+                      <span className="mt-1.5 h-2 w-2 flex-shrink-0 rounded-full bg-red-500" />
+                    </div>
+                  </div>
+                  <DropdownMenuSeparator className="my-0" />
+                  <div className="px-4 py-2.5">
+                    <Link to="/news" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
+                      すべて見る / View all
+                    </Link>
+                  </div>
+                </DropdownMenuContent>
+              </DropdownMenu>
             )}
 
             <DropdownMenu>
