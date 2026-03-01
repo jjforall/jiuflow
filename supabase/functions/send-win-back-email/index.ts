@@ -274,7 +274,7 @@ serve(async (req) => {
         const offerExpiryDate = expiryDate.toLocaleDateString("ja-JP");
 
         // メール送信
-        const emailHTML = generateWinBackEmail(displayName, user.email, stats, offerExpiryDate);
+        const emailHTML = generateWinBackEmail(displayName, user.email ?? '', stats, offerExpiryDate);
 
         const resendResponse = await fetch("https://api.resend.com/emails", {
           method: "POST",

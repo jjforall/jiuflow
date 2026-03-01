@@ -1,4 +1,4 @@
-import type { PoseFrame } from "../types";
+import type { PoseFrame } from "./types";
 
 export interface AngleDef {
   name: string;

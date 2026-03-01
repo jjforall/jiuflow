@@ -271,7 +271,7 @@ serve(async (req) => {
         // メール送信
         const emailHTML = generateEmailHTML(
           displayName,
-          user.email,
+          user.email ?? '',
           daysLeft,
           stats,
           trialEndDate.toLocaleDateString("ja-JP")
