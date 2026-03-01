@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/accordion";
 import { MapLoadingState } from "@/components/MapLoadingState";
 import mapBackground from "@/assets/jiuflow-map-background.png";
+import TechniqueFlowTree from "@/components/TechniqueFlowTree";
 
 import { NOTATION_CATEGORY_LABELS, type NotationCategory } from "@/types/notation";
 
@@ -471,113 +472,14 @@ const Map = () => {
               </p>
             </div>
           ) : (
-            <div className="animate-fade-up space-y-6 max-w-6xl mx-auto">
-              {/* Search */}
-              <div className="mb-6">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                  <Input
-                    type="text"
-                    placeholder={language === "ja" ? "タグ名・技名で検索..." : language === "pt" ? "Pesquisar por tag ou técnica..." : "Search by tag or technique name..."}
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10 h-12 text-base"
-                  />
-                </div>
-              </div>
-
-              {/* Favorites section */}
-              {favoriteTechniques.length > 0 && (
-                <Accordion type="multiple" defaultValue={["favorites"]} className="w-full space-y-2 mb-4">
-                  <AccordionItem
-                    value="favorites"
-                    className="border rounded-xl bg-gradient-to-r from-amber-500/10 to-yellow-500/10 border-amber-500/30 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all overflow-hidden"
-                  >
-                    <AccordionTrigger className="px-4 md:px-6 py-4 hover:no-underline hover:bg-gradient-to-r hover:from-amber-500/20 hover:to-transparent transition-all [&[data-state=open]>svg]:rotate-180">
-                      <div className="flex items-center justify-between w-full pr-4">
-                        <div className="flex items-center gap-3 md:gap-4 text-left">
-                          <div className="flex items-center justify-center w-10 h-10 md:w-12 md:h-12 rounded-xl font-bold text-base md:text-lg flex-shrink-0 shadow-sm border bg-amber-500/20 border-amber-500 text-amber-600">
-                            <Star className="w-5 h-5 md:w-6 md:h-6 fill-current" />
-                          </div>
-                          <div>
-                            <h3 className="text-base md:text-lg font-semibold text-foreground">
-                              {language === "ja" ? "お気に入り" : language === "pt" ? "Favoritos" : "Favorites"}
-                            </h3>
-                            <p className="text-xs md:text-sm text-muted-foreground mt-0.5">
-                              {favoriteTechniques.length}{language === "ja" ? "本の動画" : " videos"}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    </AccordionTrigger>
-                    <AccordionContent className="px-0 pb-0">
-                      <div className="divide-y divide-border">
-                        {favoriteTechniques.map(tech => renderTechniqueRow(tech))}
-                      </div>
-                    </AccordionContent>
-                  </AccordionItem>
-                </Accordion>
-              )}
-
-              {/* Tag-based sections grouped by category */}
-              {groupedByCategory.map(({ category, notations }) => {
-                const filteredNotations = getFilteredNotations(notations);
-                if (filteredNotations.length === 0) return null;
-
-                const catLabel = getCategoryLabel(category);
-                const catColor = NOTATION_CATEGORY_LABELS[category]?.color || 'bg-muted';
-
-                return (
-                  <div key={category} className="space-y-3">
-                    {/* Category header */}
-                    <div className="flex items-center gap-3 pt-4 pb-1">
-                      <div className={`w-3 h-3 rounded-full ${catColor}`} />
-                      <h2 className="text-lg md:text-xl font-semibold text-foreground">
-                        {catLabel}
-                      </h2>
-                      <span className="text-sm text-muted-foreground">
-                        ({filteredNotations.length})
-                      </span>
-                    </div>
-
-                    <Accordion type="multiple" className="w-full space-y-2">
-                      {filteredNotations.map(notation => (
-                        <AccordionItem
-                          key={notation.id}
-                          value={notation.id}
-                          className="border rounded-xl bg-card/90 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all overflow-hidden"
-                        >
-                          <AccordionTrigger className="px-4 md:px-6 py-4 hover:no-underline hover:bg-gradient-to-r hover:from-muted/30 hover:to-transparent transition-all [&[data-state=open]>svg]:rotate-180">
-                            <div className="flex items-center justify-between w-full pr-4">
-                              <div className="flex items-center gap-3 md:gap-4 text-left">
-                                <div className={`flex items-center justify-center px-3 py-2 rounded-xl font-bold text-sm flex-shrink-0 shadow-sm border ${getNotationCategoryColor(notation.category)}`}>
-                                  <span className="font-mono">{notation.code}</span>
-                                </div>
-                                <div>
-                                  <h3 className="text-base md:text-lg font-semibold text-foreground">
-                                    {getNotationLabel(notation)}
-                                  </h3>
-                                  <p className="text-xs md:text-sm text-muted-foreground mt-0.5">
-                                    {notation.techniques.length}{language === "ja" ? "本の動画" : " videos"}
-                                  </p>
-                                </div>
-                              </div>
-                            </div>
-                          </AccordionTrigger>
-                          <AccordionContent className="px-0 pb-0">
-                            <div className="divide-y divide-border">
-                              {notation.techniques.map(tech => renderTechniqueRow(tech, notation.code))}
-                            </div>
-                          </AccordionContent>
-                        </AccordionItem>
-                      ))}
-                    </Accordion>
-                  </div>
-                );
-              })}
+            <div className="animate-fade-up">
+              <TechniqueFlowTree
+                notationsWithTechniques={notationsWithTechniques}
+                videoViews={videoViews}
+              />
 
               {/* Standard map link */}
-              <div className="mt-12 pt-8 border-t border-border">
+              <div className="mt-12 pt-8 border-t border-border max-w-4xl mx-auto">
                 <Link
                   to={`${langPath}/map`}
                   className="flex items-center justify-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors group"
