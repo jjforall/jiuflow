@@ -122,6 +122,8 @@ const Map = () => {
   const [videoViews, setVideoViews] = useState<Record<string, number>>({});
   const [searchQuery, setSearchQuery] = useState("");
   const [loadingStartTime] = useState(() => Date.now()); // Track when loading started
+  const [fetchError, setFetchError] = useState(false); // Track if fetch failed
+  const fetchAttemptRef = useRef(0); // Track retry attempts
   const observerTarget = useRef<HTMLDivElement>(null);
   const PAGE_SIZE = 50;
 
@@ -216,8 +218,20 @@ const Map = () => {
     }
   }, [authLoading, user, navigate]);
 
-  // Fetch and group techniques with timeout
+  // Fetch and group techniques with timeout and retry limit
   const fetchTechniques = useCallback(async (pageNum: number) => {
+    // Prevent infinite retries - max 3 attempts
+    if (fetchAttemptRef.current >= 3) {
+      console.warn("Max fetch attempts reached, stopping retries");
+      setHasMore(false);
+      setIsLoading(false);
+      setIsLoadingMore(false);
+      setHasFetched(true);
+      setFetchError(true);
+      return;
+    }
+    fetchAttemptRef.current += 1;
+
     if (pageNum === 0) {
       setIsLoading(true);
     } else {
@@ -226,11 +240,10 @@ const Map = () => {
 
     try {
       // Add timeout to prevent hanging forever (longer timeout for slow networks)
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Request timeout')), 30000)
-      );
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000);
       
-      const queryPromise = supabase
+      const { data, error } = await supabase
         .from("techniques")
         .select("*")
         .or("visibility.eq.public,visibility.is.null")
@@ -238,7 +251,7 @@ const Map = () => {
         .order("series_order", { ascending: true, nullsFirst: false })
         .order("display_order", { ascending: true });
 
-      const { data, error } = await Promise.race([queryPromise, timeoutPromise]) as any;
+      clearTimeout(timeoutId);
 
       if (error) throw error;
 
@@ -284,15 +297,22 @@ const Map = () => {
         
         setTechniques(filteredData);
         setSeriesTechniques(sortedSeriesGroups);
-        setHasMore(false);
+        setFetchError(false);
+        fetchAttemptRef.current = 0; // Reset on success
       }
+      setHasMore(false); // Always stop infinite scroll after fetch
     } catch (error) {
       console.error("Error fetching techniques:", error);
-      toast.error(
-        language === "ja" 
-          ? "技の読み込みに失敗しました" 
-          : "Failed to load techniques"
-      );
+      setHasMore(false); // Stop infinite scroll on error
+      setFetchError(true);
+      // Only show toast once (on first attempt)
+      if (fetchAttemptRef.current <= 1) {
+        toast.error(
+          language === "ja" 
+            ? "技の読み込みに失敗しました。再読み込みをお試しください。" 
+            : "Failed to load techniques. Please reload."
+        );
+      }
     } finally {
       setIsLoading(false);
       setIsLoadingMore(false);
@@ -332,11 +352,13 @@ const Map = () => {
     }
   }, [authLoading, user, hasFetched, fetchTechniques, fetchVideoViews]);
 
-  // Infinite scroll
+  // Infinite scroll - only active when hasMore is true and no error
   useEffect(() => {
+    if (!hasMore || fetchError) return;
+
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting && hasMore && !isLoadingMore) {
+        if (entries[0].isIntersecting && hasMore && !isLoadingMore && !fetchError) {
           setPage((prev) => {
             const nextPage = prev + 1;
             fetchTechniques(nextPage);
@@ -357,7 +379,7 @@ const Map = () => {
         observer.unobserve(currentTarget);
       }
     };
-  }, [hasMore, isLoadingMore, fetchTechniques]);
+  }, [hasMore, isLoadingMore, fetchTechniques, fetchError]);
 
   const langPath = language === 'ja' ? '' : `/${language}`;
 

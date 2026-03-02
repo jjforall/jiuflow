@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
@@ -91,6 +91,8 @@ const Map = () => {
   const [notationsWithTechniques, setNotationsWithTechniques] = useState<NotationWithTechniques[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [hasFetched, setHasFetched] = useState(false);
+  const [fetchError, setFetchError] = useState(false);
+  const fetchAttemptRef = useRef(0);
   const [videoViews, setVideoViews] = useState<Record<string, number>>({});
   const [searchQuery, setSearchQuery] = useState("");
   const [loadingStartTime] = useState(() => Date.now());
@@ -149,8 +151,18 @@ const Map = () => {
     }
   }, [authLoading, user, navigate]);
 
-  // Fetch all notations with linked techniques
+  // Fetch all notations with linked techniques (with retry limit)
   const fetchData = useCallback(async () => {
+    // Prevent infinite retries
+    if (fetchAttemptRef.current >= 3) {
+      console.warn("Max fetch attempts reached, stopping retries");
+      setIsLoading(false);
+      setHasFetched(true);
+      setFetchError(true);
+      return;
+    }
+    fetchAttemptRef.current += 1;
+
     setIsLoading(true);
     try {
       // Fetch all active notations
@@ -220,9 +232,15 @@ const Map = () => {
       });
 
       setNotationsWithTechniques(result);
+      setFetchError(false);
+      fetchAttemptRef.current = 0; // Reset on success
     } catch (error) {
       console.error("Error fetching data:", error);
-      toast.error(language === "ja" ? "技の読み込みに失敗しました" : "Failed to load techniques");
+      setFetchError(true);
+      // Only show toast once
+      if (fetchAttemptRef.current <= 1) {
+        toast.error(language === "ja" ? "技の読み込みに失敗しました。再読み込みをお試しください。" : "Failed to load techniques. Please reload.");
+      }
     } finally {
       setIsLoading(false);
       setHasFetched(true);
