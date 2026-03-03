@@ -181,3 +181,6 @@ verify_jwt = false
 
 [functions.send-win-back-email]
 verify_jwt = false
+
+[functions.customer-portal]
+verify_jwt = false

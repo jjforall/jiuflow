@@ -3387,6 +3387,25 @@ const MyPage = () => {
                               : <>For questions about data retention after cancellation, please check our <Link to="/faq" className="text-primary hover:underline">FAQ</Link>.</>
                             }
                           </p>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={async () => {
+                              try {
+                                const { data, error } = await supabase.functions.invoke('customer-portal');
+                                if (error) throw error;
+                                if (data?.url) {
+                                  window.open(data.url, '_blank');
+                                }
+                              } catch (err) {
+                                console.error('Error opening customer portal:', err);
+                                toast.error(language === "ja" ? "ポータルを開けませんでした" : "Failed to open portal");
+                              }
+                            }}
+                          >
+                            <CreditCard className="w-4 h-4 mr-1" />
+                            {language === "ja" ? "支払いカード情報を変更" : "Change Payment Method"}
+                          </Button>
                           <AlertDialog open={showCancelSubscriptionDialog} onOpenChange={setShowCancelSubscriptionDialog}>
                             <AlertDialogTrigger asChild>
                               <Button

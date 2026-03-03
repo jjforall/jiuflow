@@ -39,6 +39,17 @@ const FAQ = () => {
     },
   ];
 
+  const accountFAQs = [
+    {
+      question: "支払いのカード情報を変えるには？",
+      answer:
+        "マイページの「プラン情報」セクションにある「支払いカード情報を変更」ボタンをクリックすると、Stripe社のLink決済管理ポータルが開きます。そちらでカード情報の更新や変更が可能です。",
+      hasLink: true,
+      linkTo: "/mypage",
+      linkText: "→ マイページはこちら",
+    },
+  ];
+
   const featureFAQs = [
     {
       question: "動画を見ただけで強くなれますか？おすすめの学習方法は？",
@@ -110,6 +121,33 @@ const FAQ = () => {
                   </AccordionTrigger>
                   <AccordionContent className="text-muted-foreground leading-relaxed">
                     {faq.answer}
+                  </AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
+          </section>
+
+          {/* Account & Payment Section */}
+          <section className="mb-10">
+            <h2 className="text-lg md:text-xl font-semibold text-foreground mb-4 border-l-4 border-primary pl-3">
+              アカウント・お支払いについて
+            </h2>
+            <Accordion type="multiple" className="w-full">
+              {accountFAQs.map((faq, index) => (
+                <AccordionItem key={index} value={`account-${index}`}>
+                  <AccordionTrigger className="text-left text-sm md:text-base text-foreground hover:text-primary">
+                    {faq.question}
+                  </AccordionTrigger>
+                  <AccordionContent className="text-muted-foreground leading-relaxed">
+                    {faq.answer}
+                    {faq.hasLink && faq.linkTo && (
+                      <Link
+                        to={faq.linkTo}
+                        className="block mt-2 text-primary hover:underline"
+                      >
+                        {faq.linkText}
+                      </Link>
+                    )}
                   </AccordionContent>
                 </AccordionItem>
               ))}
