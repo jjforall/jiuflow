@@ -13,7 +13,7 @@ import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
-import { Eye } from "lucide-react";
+import { Eye, Check, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -1043,6 +1043,137 @@ const Join = () => {
                   </div>
                 </div>
               </div>
+            </div>
+
+            {/* Feature Comparison Table */}
+            <div className="mt-16 animate-fade-up">
+              <h3 className="text-2xl font-light mb-8 text-center border-b border-border pb-4">
+                {language === "ja"
+                  ? "プラン比較"
+                  : language === "pt"
+                  ? "Comparação de Planos"
+                  : "Plan Comparison"}
+              </h3>
+              <div className="overflow-x-auto rounded-xl border border-border/50">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-border/50 bg-muted/30">
+                      <th className="text-left px-4 py-4 font-medium text-muted-foreground w-2/5">
+                        {language === "ja" ? "機能" : language === "pt" ? "Recurso" : "Feature"}
+                      </th>
+                      <th className="text-center px-4 py-4 font-medium text-muted-foreground w-1/5">
+                        {language === "ja" ? "無料" : language === "pt" ? "Grátis" : "Free"}
+                      </th>
+                      <th className="text-center px-4 py-4 font-medium text-muted-foreground w-1/5">
+                        {language === "ja" ? "レギュラー" : language === "pt" ? "Regular" : "Regular"}
+                        <div className="text-xs font-normal text-muted-foreground mt-0.5">¥2,900/月</div>
+                      </th>
+                      <th className="text-center px-4 py-4 font-semibold text-amber-400 w-1/5 bg-amber-500/5 border-x border-amber-500/30">
+                        {language === "ja" ? "ファウンダー" : language === "pt" ? "Fundador" : "Founder"}
+                        <div className="text-xs font-normal text-amber-400/80 mt-0.5">¥980/月</div>
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[
+                      {
+                        feature: { ja: "動画視聴", en: "Video Access", pt: "Acesso a Vídeos" },
+                        free:    { ja: "一部", en: "Partial", pt: "Parcial" },
+                        regular: { ja: "全部", en: "All", pt: "Todos" },
+                        founder: { ja: "全部", en: "All", pt: "Todos" },
+                      },
+                      {
+                        feature: { ja: "テクニック数", en: "Techniques", pt: "Técnicas" },
+                        free:    { type: "text" as const, ja: "50+", en: "50+", pt: "50+" },
+                        regular: { type: "text" as const, ja: "200+", en: "200+", pt: "200+" },
+                        founder: { type: "text" as const, ja: "200+", en: "200+", pt: "200+" },
+                      },
+                      {
+                        feature: { ja: "AI質問機能", en: "AI Q&A", pt: "Perguntas IA" },
+                        free:    false,
+                        regular: true,
+                        founder: true,
+                      },
+                      {
+                        feature: { ja: "道場検索", en: "Dojo Search", pt: "Busca de Dojos" },
+                        free:    true,
+                        regular: true,
+                        founder: true,
+                      },
+                      {
+                        feature: { ja: "選手プロフィール", en: "Athletes", pt: "Atletas" },
+                        free:    true,
+                        regular: true,
+                        founder: true,
+                      },
+                      {
+                        feature: { ja: "証明書発行", en: "Certificates", pt: "Certificados" },
+                        free:    false,
+                        regular: true,
+                        founder: true,
+                      },
+                      {
+                        feature: { ja: "優先サポート", en: "Priority Support", pt: "Suporte Prioritário" },
+                        free:    false,
+                        regular: false,
+                        founder: true,
+                      },
+                      {
+                        feature: { ja: "コミュニティアクセス", en: "Community", pt: "Comunidade" },
+                        free:    false,
+                        regular: true,
+                        founder: true,
+                      },
+                    ].map((row, i) => {
+                      const renderCell = (
+                        val: boolean | { ja: string; en: string; pt: string } | { type: "text"; ja: string; en: string; pt: string },
+                        isFounder = false,
+                      ) => {
+                        const base = isFounder
+                          ? "text-center px-4 py-3.5 bg-amber-500/5 border-x border-amber-500/30"
+                          : "text-center px-4 py-3.5";
+                        if (typeof val === "boolean") {
+                          return val ? (
+                            <td key={String(isFounder)} className={base}>
+                              <Check className="w-4 h-4 text-emerald-400 mx-auto" />
+                            </td>
+                          ) : (
+                            <td key={String(isFounder)} className={base}>
+                              <X className="w-4 h-4 text-muted-foreground/50 mx-auto" />
+                            </td>
+                          );
+                        }
+                        const text = language === "ja" ? val.ja : language === "pt" ? val.pt : val.en;
+                        return (
+                          <td key={String(isFounder)} className={`${base} font-medium ${isFounder ? "text-amber-400" : "text-foreground"}`}>
+                            {text}
+                          </td>
+                        );
+                      };
+                      return (
+                        <tr
+                          key={i}
+                          className={`border-b border-border/30 last:border-0 ${i % 2 === 0 ? "bg-background/20" : ""}`}
+                        >
+                          <td className="px-4 py-3.5 text-muted-foreground font-light">
+                            {language === "ja" ? row.feature.ja : language === "pt" ? row.feature.pt : row.feature.en}
+                          </td>
+                          {renderCell(row.free)}
+                          {renderCell(row.regular)}
+                          {renderCell(row.founder, true)}
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+              <p className="text-xs text-muted-foreground text-center mt-3">
+                {language === "ja"
+                  ? "※ ファウンダープランは限定枠のため、枠が埋まり次第終了します"
+                  : language === "pt"
+                  ? "* O Plano Fundador é limitado e encerra quando as vagas forem preenchidas"
+                  : "* Founder Plan is limited and closes once spots are filled"}
+              </p>
             </div>
 
             {/* FAQ */}

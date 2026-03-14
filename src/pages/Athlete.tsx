@@ -13,6 +13,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { BeltBadge } from "@/components/ui/belt-badge";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
@@ -83,6 +84,7 @@ interface Celebrity {
   death_date: string | null;
   gallery: any;
   achievements: any;
+  video_url: string | null;
 }
 
 interface RelatedCelebrity {
@@ -104,6 +106,30 @@ interface UserVideo {
   is_public: boolean;
   created_at: string;
   user_id: string;
+}
+
+/**
+ * Convert a YouTube or X (Twitter) video URL to an embeddable iframe src.
+ * Returns null if the URL is not a supported video link.
+ */
+function getEmbedSrc(url: string): string | null {
+  if (!url) return null;
+
+  // YouTube: watch?v=ID, youtu.be/ID, embed/ID
+  const ytMatch =
+    url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([A-Za-z0-9_-]{11})/) ||
+    url.match(/youtube\.com\/shorts\/([A-Za-z0-9_-]{11})/);
+  if (ytMatch) {
+    return `https://www.youtube.com/embed/${ytMatch[1]}?rel=0`;
+  }
+
+  // X (Twitter) status: twitter.com/*/status/ID or x.com/*/status/ID
+  const xMatch = url.match(/(?:twitter|x)\.com\/[^/]+\/status\/(\d+)/);
+  if (xMatch) {
+    return `https://platform.twitter.com/embed/Tweet.html?id=${xMatch[1]}`;
+  }
+
+  return null;
 }
 
 const Athlete = () => {
@@ -129,6 +155,8 @@ const Athlete = () => {
   const [claimReason, setClaimReason] = useState("");
   const [relatedCelebrities, setRelatedCelebrities] = useState<RelatedCelebrity[]>([]);
   const [galleryIndex, setGalleryIndex] = useState<number | null>(null);
+  const [embedVideoUrl, setEmbedVideoUrl] = useState("");
+  const [embedVideoInput, setEmbedVideoInput] = useState("");
 
   useEffect(() => {
     loadCelebrity();
@@ -201,11 +229,47 @@ const Athlete = () => {
       if (data) {
         setCelebrity(data);
         setIsOwner(user?.id === data.user_id);
+        // Restore persisted video URL
+        if (data.video_url) {
+          setEmbedVideoUrl(data.video_url);
+          setEmbedVideoInput(data.video_url);
+        }
       }
     } catch (error) {
       console.error('Error loading celebrity:', error);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleSaveVideoUrl = async () => {
+    if (!celebrity) return;
+    const url = embedVideoInput.trim();
+    const src = url ? getEmbedSrc(url) : null;
+    if (url && !src) {
+      toast.error(
+        language === "ja"
+          ? "YouTube または X の URL を入力してください"
+          : "Please enter a valid YouTube or X URL"
+      );
+      return;
+    }
+    try {
+      const { error } = await supabase
+        .from('celebrities')
+        .update({ video_url: url || null })
+        .eq('id', celebrity.id);
+      if (error) throw error;
+      setEmbedVideoUrl(url);
+      setCelebrity({ ...celebrity, video_url: url || null });
+      toast.success(
+        language === "ja" ? "動画URLを保存しました" : "Video URL saved"
+      );
+    } catch (err) {
+      console.error('Error saving video URL:', err);
+      toast.error(
+        language === "ja" ? "保存に失敗しました" : "Failed to save"
+      );
     }
   };
 
@@ -1064,6 +1128,87 @@ const Athlete = () => {
                   </CardContent>
                 </Card>
               )}
+
+              {/* Video URL Embed — persisted to DB */}
+              <Card>
+                <CardHeader className="p-3 sm:p-4 md:p-6 pb-2 sm:pb-3">
+                  <CardTitle className="text-sm sm:text-base md:text-lg">
+                    {language === "ja" ? "動画を見る" : language === "pt" ? "Assistir vídeo" : "Watch Video"}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-3 sm:p-4 md:p-6 pt-0 space-y-3">
+                  <div className="flex gap-2">
+                    <Input
+                      type="url"
+                      placeholder={
+                        language === "ja"
+                          ? "YouTube または X の動画 URL を貼り付け"
+                          : language === "pt"
+                          ? "Cole a URL do YouTube ou X"
+                          : "Paste a YouTube or X video URL"
+                      }
+                      value={embedVideoInput}
+                      onChange={(e) => setEmbedVideoInput(e.target.value)}
+                      className="flex-1 text-sm"
+                    />
+                    <Button
+                      size="sm"
+                      onClick={() => {
+                        const src = getEmbedSrc(embedVideoInput.trim());
+                        if (src) {
+                          setEmbedVideoUrl(embedVideoInput.trim());
+                        } else {
+                          toast.error(
+                            language === "ja"
+                              ? "YouTube または X の URL を入力してください"
+                              : "Please enter a valid YouTube or X URL"
+                          );
+                        }
+                      }}
+                    >
+                      {language === "ja" ? "表示" : "Show"}
+                    </Button>
+                    {(isAdmin || isOwner) && (
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={handleSaveVideoUrl}
+                      >
+                        {language === "ja" ? "保存" : "Save"}
+                      </Button>
+                    )}
+                    {embedVideoUrl && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          setEmbedVideoUrl("");
+                          setEmbedVideoInput("");
+                        }}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+                  {embedVideoUrl && (() => {
+                    const src = getEmbedSrc(embedVideoUrl);
+                    if (!src) return null;
+                    const isX = /(?:twitter|x)\.com/.test(embedVideoUrl);
+                    return (
+                      <div className={`relative w-full overflow-hidden rounded-lg border ${isX ? "h-[500px]" : "aspect-video"}`}>
+                        <iframe
+                          src={src}
+                          title="Embedded video"
+                          className="w-full h-full"
+                          allowFullScreen
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                          loading="lazy"
+                        />
+                      </div>
+                    );
+                  })()}
+                </CardContent>
+              </Card>
 
               {/* Videos */}
               {videos.length > 0 && (

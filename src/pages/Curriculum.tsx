@@ -5,7 +5,8 @@ import { SEOHead, getOGLocale } from "@/components/SEOHead";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Lock, Play, ChevronRight, BookOpen, Award, Video, Target, Shield } from "lucide-react";
+import { Lock, Play, ChevronRight, BookOpen, Award, Video, Target, Shield, Clock } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
 
 // Curriculum data - public-facing technique categories with counts
 // This is a static representation of what's available, not fetched from DB
@@ -21,6 +22,8 @@ const curriculumCategories = [
     icon: Shield,
     techniqueCount: 45,
     videoCount: 60,
+    difficulty: "beginner" as const,
+    sampleProgress: 0,
     color: "bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-500/30",
     subcategories: [
       { ja: "クローズドガード", en: "Closed Guard", pt: "Guarda Fechada", count: 12 },
@@ -43,6 +46,8 @@ const curriculumCategories = [
     icon: Target,
     techniqueCount: 30,
     videoCount: 40,
+    difficulty: "intermediate" as const,
+    sampleProgress: 0,
     color: "bg-green-500/15 text-green-700 dark:text-green-300 border-green-500/30",
     subcategories: [
       { ja: "クローズドガードパス", en: "Closed Guard Pass", pt: "Passagem da Guarda Fechada", count: 8 },
@@ -63,6 +68,8 @@ const curriculumCategories = [
     icon: Award,
     techniqueCount: 35,
     videoCount: 50,
+    difficulty: "intermediate" as const,
+    sampleProgress: 0,
     color: "bg-red-500/15 text-red-700 dark:text-red-300 border-red-500/30",
     subcategories: [
       { ja: "腕十字", en: "Armbar", pt: "Armlock", count: 6 },
@@ -83,6 +90,8 @@ const curriculumCategories = [
     icon: Target,
     techniqueCount: 20,
     videoCount: 25,
+    difficulty: "beginner" as const,
+    sampleProgress: 0,
     color: "bg-orange-500/15 text-orange-700 dark:text-orange-300 border-orange-500/30",
     subcategories: [
       { ja: "シングルレッグ", en: "Single Leg", pt: "Single Leg", count: 5 },
@@ -102,6 +111,8 @@ const curriculumCategories = [
     icon: Shield,
     techniqueCount: 25,
     videoCount: 35,
+    difficulty: "intermediate" as const,
+    sampleProgress: 0,
     color: "bg-purple-500/15 text-purple-700 dark:text-purple-300 border-purple-500/30",
     subcategories: [
       { ja: "マウント", en: "Mount", pt: "Montada", count: 8 },
@@ -121,6 +132,8 @@ const curriculumCategories = [
     icon: Shield,
     techniqueCount: 20,
     videoCount: 25,
+    difficulty: "beginner" as const,
+    sampleProgress: 0,
     color: "bg-yellow-500/15 text-yellow-700 dark:text-yellow-300 border-yellow-500/30",
     subcategories: [
       { ja: "マウントエスケープ", en: "Mount Escape", pt: "Escapada da Montada", count: 5 },
@@ -192,6 +205,7 @@ const Curriculum = () => {
 
   const totalVideos = curriculumCategories.reduce((sum, cat) => sum + cat.videoCount, 0);
   const totalTechniques = curriculumCategories.reduce((sum, cat) => sum + cat.techniqueCount, 0);
+  const estimatedHours = Math.round(totalVideos * 8 / 60);
 
   const seoContent = {
     ja: {
@@ -284,6 +298,13 @@ const Curriculum = () => {
                 <div className="text-3xl font-bold text-primary">3</div>
                 <div className="text-sm text-muted-foreground">{getText("言語対応", "Languages", "Idiomas")}</div>
               </div>
+              <div className="text-center">
+                <div className="text-3xl font-bold text-primary flex items-center justify-center gap-1">
+                  <Clock className="w-6 h-6" />
+                  {getText(`約${estimatedHours}h`, `~${estimatedHours}h`, `~${estimatedHours}h`)}
+                </div>
+                <div className="text-sm text-muted-foreground">{getText("学習時間の目安", "Est. Learning Time", "Tempo Estimado")}</div>
+              </div>
             </div>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -319,17 +340,26 @@ const Curriculum = () => {
                 const title = language === "ja" ? category.titleJa : language === "pt" ? category.titlePt : category.titleEn;
                 const desc = language === "ja" ? category.descJa : language === "pt" ? category.descPt : category.descEn;
 
+                const difficultyBadge = category.difficulty === "beginner"
+                  ? { label: getText("初級 / Beginner", "初級 / Beginner", "初級 / Beginner"), cls: "bg-green-500/15 text-green-700 dark:text-green-300 border-green-500/30" }
+                  : category.difficulty === "intermediate"
+                  ? { label: getText("中級 / Intermediate", "中級 / Intermediate", "中級 / Intermediate"), cls: "bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-500/30" }
+                  : { label: getText("上級 / Advanced", "上級 / Advanced", "上級 / Advanced"), cls: "bg-red-500/15 text-red-700 dark:text-red-300 border-red-500/30" };
+
                 return (
                   <div
                     key={category.id}
-                    className="glass-card rounded-xl p-6 hover:shadow-xl transition-all"
+                    className="glass-card rounded-xl p-6 hover:shadow-xl transition-all flex flex-col"
                   >
                     <div className="flex items-start gap-4 mb-4">
                       <div className={`flex items-center justify-center w-12 h-12 rounded-xl border ${category.color}`}>
                         <Icon className="w-6 h-6" />
                       </div>
                       <div className="flex-1">
-                        <h3 className="text-lg font-semibold mb-1">{title}</h3>
+                        <div className="flex items-center gap-2 mb-1 flex-wrap">
+                          <h3 className="text-lg font-semibold">{title}</h3>
+                          <Badge className={`text-xs ${difficultyBadge.cls}`}>{difficultyBadge.label}</Badge>
+                        </div>
                         <div className="flex items-center gap-3 text-sm text-muted-foreground">
                           <span>{category.techniqueCount} {getText("テクニック", "techniques", "tecnicas")}</span>
                           <span>|</span>
@@ -341,7 +371,7 @@ const Curriculum = () => {
                     <p className="text-sm text-muted-foreground mb-4 line-clamp-2">{desc}</p>
 
                     {/* Subcategories */}
-                    <div className="space-y-1.5">
+                    <div className="space-y-1.5 flex-1">
                       {category.subcategories.map((sub, idx) => (
                         <div key={idx} className="flex items-center justify-between text-sm py-1.5 px-3 rounded-lg bg-muted/30">
                           <span className="flex items-center gap-2">
@@ -353,6 +383,26 @@ const Curriculum = () => {
                           </Badge>
                         </div>
                       ))}
+                    </div>
+
+                    {/* Progress / locked state */}
+                    <div className="mt-4 pt-4 border-t border-border/40">
+                      {category.sampleProgress === 0 ? (
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Lock className="w-4 h-4 shrink-0" />
+                          <span>{getText("会員登録で視聴可能 / Unlock with membership", "会員登録で視聴可能 / Unlock with membership", "会員登録で視聴可能 / Unlock with membership")}</span>
+                        </div>
+                      ) : (
+                        <div className="space-y-1.5">
+                          <div className="flex items-center justify-between text-xs text-muted-foreground">
+                            <span>{getText("視聴済み", "Watched", "Assistido")}</span>
+                            <span>
+                              {Math.round(category.sampleProgress / 100 * category.videoCount)} / {category.videoCount} {getText("動画視聴済み", "videos watched", "videos assistidos")}
+                            </span>
+                          </div>
+                          <Progress value={category.sampleProgress} className="h-2" />
+                        </div>
+                      )}
                     </div>
                   </div>
                 );
@@ -409,6 +459,22 @@ const Curriculum = () => {
                   </div>
                 );
               })}
+            </div>
+          </div>
+        </section>
+
+        {/* Recommended Path Callout */}
+        <section className="px-6 pb-4">
+          <div className="max-w-5xl mx-auto">
+            <div className="glass-card rounded-xl p-5 border-l-4 border-amber-400 flex items-start gap-3">
+              <span className="text-xl leading-none mt-0.5">💡</span>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                {getText(
+                  "初めての方には「白帯 初心者コース」からスタートすることをおすすめします。",
+                  "New practitioners: We recommend starting with the 'White Belt Beginner Course'.",
+                  "Para iniciantes: recomendamos começar pelo 'Curso Iniciante Faixa Branca'."
+                )}
+              </p>
             </div>
           </div>
         </section>

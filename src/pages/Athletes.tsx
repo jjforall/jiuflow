@@ -14,7 +14,8 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { Star, Heart, GitBranch } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Star, Heart, GitBranch, Search } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 
@@ -74,6 +75,9 @@ const Athletes = () => {
   const [followedCelebrities, setFollowedCelebrities] = useState<Set<string>>(new Set());
   const [statusFilter, setStatusFilter] = useState<"all" | "living" | "deceased">("all");
   const [ageRange, setAgeRange] = useState<string>("all");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [beltFilter, setBeltFilter] = useState<string>("all");
+  const [sortBy, setSortBy] = useState<string>("featured");
 
   useEffect(() => {
     loadCelebrities();
@@ -222,7 +226,7 @@ const Athletes = () => {
     // Status filter
     if (statusFilter === "living" && c.death_date) return false;
     if (statusFilter === "deceased" && !c.death_date) return false;
-    
+
     // Age range filter
     if (ageRange !== "all" && c.birth_date) {
       const age = calculateAge(c.birth_date, c.death_date);
@@ -237,18 +241,61 @@ const Athletes = () => {
     } else if (ageRange !== "all" && !c.birth_date) {
       return false; // No birth date, can't filter by age
     }
-    
+
+    // Search query filter
+    if (searchQuery.trim() !== "") {
+      const q = searchQuery.trim().toLowerCase();
+      const haystack = [
+        getNativeName(c),
+        c.name_en,
+        c.name_ja,
+        c.name_pt,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+      if (!haystack.includes(q)) return false;
+    }
+
+    // Belt filter
+    if (beltFilter !== "all") {
+      if (getBeltName(c.belt_history) !== beltFilter) return false;
+    }
+
     return true;
   });
 
-  // Sort celebrities to show followed ones first
+  // Belt rank order for belt sort (higher rank = lower index = sorts first)
+  const beltRankOrder: Record<string, number> = {
+    Black: 0,
+    Coral: 1,
+    Red: 2,
+    Brown: 3,
+    Purple: 4,
+    Blue: 5,
+    White: 6,
+  };
+
+  // Sort celebrities
   const sortedCelebrities = [...filteredCelebrities].sort((a, b) => {
+    if (sortBy === "az") {
+      return getNativeName(a).localeCompare(getNativeName(b));
+    }
+
+    if (sortBy === "belt") {
+      const aRank = beltRankOrder[getBeltName(a.belt_history) ?? ""] ?? 99;
+      const bRank = beltRankOrder[getBeltName(b.belt_history) ?? ""] ?? 99;
+      return aRank - bRank;
+    }
+
+    // "featured" (default): followed first, then featured flag, then sort_order
     const aFollowed = followedCelebrities.has(a.id);
     const bFollowed = followedCelebrities.has(b.id);
-    
     if (aFollowed && !bFollowed) return -1;
     if (!aFollowed && bFollowed) return 1;
-    return 0;
+    if (a.featured && !b.featured) return -1;
+    if (!a.featured && b.featured) return 1;
+    return (a.sort_order ?? 0) - (b.sort_order ?? 0);
   });
 
   const getBeltName = (beltHistory: any[]) => {
@@ -446,6 +493,24 @@ const Athletes = () => {
               {language === "ja" ? "系統図を見る" : language === "pt" ? "Ver Linhagem" : "View Lineage Tree"}
             </Button>
             
+            {/* Search bar */}
+            <div className="relative w-full max-w-md mx-auto mt-4">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+              <Input
+                type="search"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder={
+                  language === "ja"
+                    ? "選手名で検索..."
+                    : language === "pt"
+                    ? "Buscar atletas..."
+                    : "Search athletes..."
+                }
+                className="pl-9 h-9 text-sm"
+              />
+            </div>
+
             {/* Filters */}
             <div className="flex flex-wrap items-center justify-center gap-4 mt-4">
               {/* Status Filter */}
@@ -497,7 +562,79 @@ const Athletes = () => {
                   </SelectContent>
                 </Select>
               </div>
+
+              {/* Belt Filter */}
+              <div className="flex items-center gap-2">
+                <Label className="text-sm text-muted-foreground">
+                  {language === "ja" ? "帯" : language === "pt" ? "Faixa" : "Belt"}:
+                </Label>
+                <Select value={beltFilter} onValueChange={setBeltFilter}>
+                  <SelectTrigger className="w-[120px] h-8 text-sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">
+                      {language === "ja" ? "すべて" : language === "pt" ? "Todos" : "All"}
+                    </SelectItem>
+                    <SelectItem value="White">
+                      {language === "ja" ? "白帯" : language === "pt" ? "Branca" : "White"}
+                    </SelectItem>
+                    <SelectItem value="Blue">
+                      {language === "ja" ? "青帯" : language === "pt" ? "Azul" : "Blue"}
+                    </SelectItem>
+                    <SelectItem value="Purple">
+                      {language === "ja" ? "紫帯" : language === "pt" ? "Roxa" : "Purple"}
+                    </SelectItem>
+                    <SelectItem value="Brown">
+                      {language === "ja" ? "茶帯" : language === "pt" ? "Marrom" : "Brown"}
+                    </SelectItem>
+                    <SelectItem value="Black">
+                      {language === "ja" ? "黒帯" : language === "pt" ? "Preta" : "Black"}
+                    </SelectItem>
+                    <SelectItem value="Coral">
+                      {language === "ja" ? "珊瑚帯" : language === "pt" ? "Coral" : "Coral"}
+                    </SelectItem>
+                    <SelectItem value="Red">
+                      {language === "ja" ? "赤帯" : language === "pt" ? "Vermelha" : "Red"}
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Sort */}
+              <div className="flex items-center gap-2">
+                <Label className="text-sm text-muted-foreground">
+                  {language === "ja" ? "並び順" : language === "pt" ? "Ordenar" : "Sort"}:
+                </Label>
+                <Select value={sortBy} onValueChange={setSortBy}>
+                  <SelectTrigger className="w-[150px] h-8 text-sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="featured">
+                      {language === "ja" ? "おすすめ順" : language === "pt" ? "Destaque" : "Featured first"}
+                    </SelectItem>
+                    <SelectItem value="az">
+                      {language === "ja" ? "A-Z順" : language === "pt" ? "A-Z" : "A-Z"}
+                    </SelectItem>
+                    <SelectItem value="belt">
+                      {language === "ja" ? "帯ランク順" : language === "pt" ? "Por faixa" : "By belt rank"}
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
+
+            {/* Result count */}
+            {!isLoading && (
+              <p className="text-xs text-muted-foreground mt-3">
+                {language === "ja"
+                  ? `${sortedCelebrities.length}人の選手`
+                  : language === "pt"
+                  ? `${sortedCelebrities.length} atletas`
+                  : `${sortedCelebrities.length} athletes`}
+              </p>
+            )}
           </div>
 
           {/* Athletes Grid */}

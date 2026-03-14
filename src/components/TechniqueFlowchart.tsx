@@ -1,496 +1,341 @@
 import { useState } from "react";
-import { ChevronDown, ChevronRight, Circle, ArrowRight } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { cn } from "@/lib/utils";
 
-type Language = "ja" | "en" | "pt" | "es" | "fr" | "de" | "zh" | "ko" | "it" | "ru" | "ar" | "hi";
+type Lang = "ja" | "en" | "pt";
 
-interface TechniqueNode {
+const t = (ja: string, en: string, pt?: string) => ({ ja, en, pt: pt || en });
+
+// ============================================================
+// Data Types
+// ============================================================
+
+interface FlowNode {
   id: string;
-  name: Record<Language, string>;
-  isTransition?: boolean;
-  children?: TechniqueNode[];
+  label: { ja: string; en: string; pt: string };
+  type: "start" | "decision" | "action" | "transition" | "finish";
+  children?: FlowNode[];
 }
 
-// Helper to create multilingual names
-const t = (ja: string, en: string, pt: string, es?: string, fr?: string, de?: string, zh?: string, ko?: string, it?: string, ru?: string, ar?: string, hi?: string): Record<Language, string> => ({
-  ja,
-  en,
-  pt,
-  es: es || en,
-  fr: fr || en,
-  de: de || en,
-  zh: zh || en,
-  ko: ko || en,
-  it: it || en,
-  ru: ru || en,
-  ar: ar || en,
-  hi: hi || en,
-});
+// ============================================================
+// 1. クローズドガード展開 (Closed Guard)
+// ============================================================
 
-// Define positions as reusable building blocks
-const closedGuardTechniques: TechniqueNode[] = [
-  { id: "armbar-cg", name: t("腕十字", "Armbar", "Armlock", "Palanca al brazo", "Clé de bras", "Armhebel", "十字固", "암바", "Leva al braccio", "Рычаг локтя", "قفل الذراع", "आर्मबार") },
-  { id: "triangle-cg", name: t("三角絞め", "Triangle Choke", "Triângulo", "Triángulo", "Triangle", "Dreieckswürger", "三角绞", "삼각조르기", "Triangolo", "Треугольник", "خنق المثلث", "ट्रायंगल चोक") },
-  { id: "omoplata-cg", name: t("オモプラッタ", "Omoplata", "Omoplata", "Omoplata", "Omoplata", "Omoplata", "肩胛骨锁", "오모플라타", "Omoplata", "Омоплата", "أوموبلاتا", "ओमोप्लाटा") },
-  { id: "kimura-cg", name: t("キムラ", "Kimura", "Kimura", "Kimura", "Kimura", "Kimura", "木村锁", "기무라", "Kimura", "Кимура", "كيمورا", "किमुरा") },
-  { id: "hip-bump-sweep", name: t("ヒップバンプスイープ", "Hip Bump Sweep", "Hip Bump Sweep", "Barrida de cadera", "Balayage hip bump", "Hip Bump Sweep", "顶髋扫", "힙범프스윕", "Spazzata hip bump", "Хип-бамп свип", "مسح ضربة الورك", "हिप बंप स्वीप") },
-  { id: "scissor-sweep", name: t("シザースイープ", "Scissor Sweep", "Tesoura", "Tijera", "Ciseaux", "Scherenfeger", "剪刀扫", "시저스윕", "Forbice", "Ножницы", "مسح المقص", "सिज़र स्वीप") },
-];
+const closedGuardFlow: FlowNode = {
+  id: "cg",
+  label: t("クローズドガード", "Closed Guard", "Guarda Fechada"),
+  type: "start",
+  children: [
+    {
+      id: "cg-combat",
+      label: t("相手がコンバットベース", "Opponent in Combat Base", "Oponente em Combat Base"),
+      type: "decision",
+      children: [
+        { id: "cg-cross-grip", label: t("クロスグリップ → テラバンダ", "Cross Grip → Terra Banda", "Cross Grip → Terra Banda"), type: "action" },
+        { id: "cg-roll-guard", label: t("ヒカを取りつつ転がる → コントロール", "Roll taking hika → Control", "Rolar pegando hika → Controle"), type: "finish" },
+      ],
+    },
+    {
+      id: "cg-pass-defense",
+      label: t("パスを防ぐ", "Prevent Pass", "Prevenir Passagem"),
+      type: "decision",
+      children: [
+        { id: "cg-repull", label: t("引き込みし直し", "Re-pull Guard", "Puxar guarda novamente"), type: "action" },
+        { id: "cg-standup", label: t("立ちこみ → スタンド", "Stand Up → Reset", "Levantar → Reset"), type: "action" },
+      ],
+    },
+    {
+      id: "cg-shrimp",
+      label: t("片えびフレーム → オープンガード展開", "Shrimp Frame → Open Guard", "Frame Camarão → Guarda Aberta"),
+      type: "decision",
+      children: [
+        {
+          id: "cg-dlr",
+          label: t("デラヒーバ", "De La Riva", "De La Riva"),
+          type: "action",
+          children: [
+            { id: "dlr-sweep", label: t("DLRスイープ", "DLR Sweep", "Raspagem DLR"), type: "finish" },
+            { id: "dlr-bolo", label: t("ベリンボロ", "Berimbolo", "Berimbolo"), type: "finish" },
+            { id: "dlr-back", label: t("バックテイク", "Back Take", "Pegada de Costas"), type: "finish" },
+          ],
+        },
+        {
+          id: "cg-spider",
+          label: t("スパイダーガード", "Spider Guard", "Guarda Aranha"),
+          type: "action",
+          children: [
+            { id: "sp-tri", label: t("三角絞め", "Triangle", "Triângulo"), type: "finish" },
+            { id: "sp-omo", label: t("オモプラッタ", "Omoplata", "Omoplata"), type: "finish" },
+            { id: "sp-sweep", label: t("スイープ", "Sweep", "Raspagem"), type: "finish" },
+          ],
+        },
+        {
+          id: "cg-lasso",
+          label: t("ラッソーガード", "Lasso Guard", "Guarda Laço"),
+          type: "action",
+          children: [
+            { id: "la-omo", label: t("オモプラッタ", "Omoplata", "Omoplata"), type: "finish" },
+            { id: "la-sweep", label: t("ラッソースイープ", "Lasso Sweep", "Raspagem Laço"), type: "finish" },
+            { id: "la-tri", label: t("三角絞め", "Triangle", "Triângulo"), type: "finish" },
+          ],
+        },
+      ],
+    },
+    {
+      id: "cg-single-dlr",
+      label: t("片足デラヒーバルート", "Single Leg DLR Route", "Rota DLR uma perna"),
+      type: "decision",
+      children: [
+        { id: "sdlr-x", label: t("→ Xガード", "→ X Guard", "→ Guarda X"), type: "transition" },
+        { id: "sdlr-slx", label: t("→ シングルレッグX", "→ Single Leg X", "→ X Uma Perna"), type: "transition" },
+      ],
+    },
+    {
+      id: "cg-compact",
+      label: t("左腕翼 → コンパクトガード", "Left Arm Wing → Compact Guard", "Asa Braço Esq → Guarda Compacta"),
+      type: "decision",
+      children: [
+        { id: "compact-ctrl", label: t("引き付けて右手を抜く", "Pull in, extract right hand", "Puxar, extrair mão direita"), type: "action" },
+      ],
+    },
+    {
+      id: "cg-subs",
+      label: t("キープ → サブミッション", "Keep → Submissions", "Manter → Finalizações"),
+      type: "decision",
+      children: [
+        { id: "sub-arm", label: t("腕十字", "Armbar", "Armlock"), type: "finish" },
+        { id: "sub-tri", label: t("三角絞め", "Triangle", "Triângulo"), type: "finish" },
+        { id: "sub-omo", label: t("オモプラッタ", "Omoplata", "Omoplata"), type: "finish" },
+        { id: "sub-kim", label: t("キムラ", "Kimura", "Kimura"), type: "finish" },
+        { id: "sub-hip", label: t("ヒップバンプ → マウント", "Hip Bump → Mount", "Hip Bump → Montada"), type: "finish" },
+        { id: "sub-sci", label: t("シザースイープ → マウント", "Scissor Sweep → Mount", "Tesoura → Montada"), type: "finish" },
+      ],
+    },
+  ],
+};
 
-const halfGuardTechniques: TechniqueNode[] = [
-  { id: "sweep-hg", name: t("スイープ", "Sweep", "Raspagem", "Barrida", "Balayage", "Sweep", "扫技", "스윕", "Spazzata", "Свип", "مسح", "स्वीप") },
-  { id: "underhook-hg", name: t("アンダーフック", "Underhook", "Underhook", "Gancho bajo", "Crochet bas", "Underhook", "下钩", "언더훅", "Underhook", "Андерхук", "خطاف سفلي", "अंडरहुक") },
-  { id: "deep-half", name: t("ディープハーフ", "Deep Half", "Meia Profunda", "Media profunda", "Demi-garde profonde", "Tiefe Halbgarde", "深半卫", "딥하프", "Mezza guardia profonda", "Глубокий халф", "نصف عميق", "डीप हाफ") },
-  { id: "lockdown", name: t("ロックダウン", "Lockdown", "Lockdown", "Lockdown", "Lockdown", "Lockdown", "锁腿", "락다운", "Lockdown", "Локдаун", "قفل", "लॉकडाउन") },
-];
+// ============================================================
+// 2. ハーフガードリカバリー (Half Guard Recovery)
+// ============================================================
 
-const spiderGuardTechniques: TechniqueNode[] = [
-  { id: "triangle-spider", name: t("三角絞め", "Triangle", "Triângulo", "Triángulo", "Triangle", "Dreieck", "三角绞", "삼각", "Triangolo", "Треугольник", "مثلث", "ट्रायंगल") },
-  { id: "omoplata-spider", name: t("オモプラッタ", "Omoplata", "Omoplata", "Omoplata", "Omoplata", "Omoplata", "肩胛骨锁", "오모플라타", "Omoplata", "Омоплата", "أوموبلاتا", "ओमोप्लाटा") },
-  { id: "spider-sweep", name: t("スパイダースイープ", "Spider Sweep", "Raspagem Aranha", "Barrida araña", "Balayage araignée", "Spinnenfeger", "蜘蛛扫", "스파이더스윕", "Spazzata ragno", "Паук свип", "مسح العنكبوت", "स्पाइडर स्वीप") },
-];
+const halfGuardFlow: FlowNode = {
+  id: "hg",
+  label: t("ハーフガードリカバリー", "Half Guard Recovery", "Recuperação Meia Guarda"),
+  type: "start",
+  children: [
+    {
+      id: "hg1",
+      label: t("① 相手が上体についてくる", "① Opponent follows with upper body", "① Oponente segue com tronco"),
+      type: "decision",
+      children: [
+        { id: "hg1-under", label: t("アンダーフック → 足かけ → クローズドへ", "Underhook → Hook → Closed Guard", "Underhook → Gancho → Guarda Fechada"), type: "action" },
+        { id: "hg1-extract", label: t("内側から足抜き", "Extract leg from inside", "Extrair perna por dentro"), type: "action" },
+      ],
+    },
+    {
+      id: "hg2",
+      label: t("② 腰を押してスペース作る", "② Push hip to create space", "② Empurrar quadril para espaço"),
+      type: "decision",
+      children: [
+        {
+          id: "hg2-tech",
+          label: t("テクニカルスタンドアップ", "Technical Stand-up", "Levantada Técnica"),
+          type: "action",
+          children: [
+            { id: "hg2-reset", label: t("ポジション確認 → 建て直す", "Confirm position → Reset", "Confirmar → Reiniciar"), type: "finish" },
+          ],
+        },
+      ],
+    },
+    {
+      id: "hg3",
+      label: t("③ フレームでガードリカバリ", "③ Frame for guard recovery", "③ Frame para recuperar guarda"),
+      type: "decision",
+      children: [
+        {
+          id: "hg3-frame",
+          label: t("チョイフレーム → 反力で足を回す", "Choi Frame → Swing leg with reaction", "Frame → Girar perna com reação"),
+          type: "action",
+          children: [
+            { id: "hg3-insert", label: t("相手の股に足を入れる → ガードリカバリ", "Insert leg → Guard recovery", "Inserir perna → Recuperação"), type: "finish" },
+          ],
+        },
+      ],
+    },
+    {
+      id: "hg-pass-def",
+      label: t("パスされそうな時", "When about to get passed", "Prestes a ter guarda passada"),
+      type: "decision",
+      children: [
+        { id: "hg-crossface", label: t("枕を防ぐ → 胸元を近づけてスペース作る", "Prevent crossface → Close distance", "Prevenir crossface → Fechar distância"), type: "action" },
+        { id: "hg-seiza", label: t("正座からリカバリ → 確認 → スペース作る", "Kneeling recovery → Assess → Create space", "Recuperação ajoelhado → Avaliar → Criar espaço"), type: "action" },
+        { id: "hg-applied", label: t("技かけられた → リカバリポジションへ → スペース作る", "Technique applied → Recovery position → Space", "Técnica aplicada → Posição de recuperação → Espaço"), type: "action" },
+      ],
+    },
+  ],
+};
 
-const dlrTechniques: TechniqueNode[] = [
-  { id: "berimbolo", name: t("ベリンボロ", "Berimbolo", "Berimbolo", "Berimbolo", "Berimbolo", "Berimbolo", "贝林波罗", "베림볼로", "Berimbolo", "Беримболо", "بيرمبولو", "बेरिम्बोलो") },
-  { id: "dlr-sweep", name: t("DLRスイープ", "DLR Sweep", "Raspagem DLR", "Barrida DLR", "Balayage DLR", "DLR Sweep", "DLR扫", "DLR스윕", "Spazzata DLR", "ДЛР свип", "مسح DLR", "DLR स्वीप") },
-  { id: "back-take-dlr", name: t("バックテイク", "Back Take", "Pegada de Costas", "Toma de espalda", "Prise du dos", "Rücknahme", "背部控制", "백테이크", "Presa schiena", "Взятие спины", "أخذ الظهر", "बैक टेक") },
-];
+// ============================================================
+// 3. ガードパス (Guard Pass)
+// ============================================================
 
-const lassoTechniques: TechniqueNode[] = [
-  { id: "omoplata-lasso", name: t("オモプラッタ", "Omoplata", "Omoplata", "Omoplata", "Omoplata", "Omoplata", "肩胛骨锁", "오모플라타", "Omoplata", "Омоплата", "أوموبلاتا", "ओमोप्लाटा") },
-  { id: "triangle-lasso", name: t("三角絞め", "Triangle", "Triângulo", "Triángulo", "Triangle", "Dreieck", "三角绞", "삼각", "Triangolo", "Треугольник", "مثلث", "ट्रायंगल") },
-  { id: "lasso-sweep", name: t("ラッソースイープ", "Lasso Sweep", "Raspagem Laço", "Barrida lazo", "Balayage lasso", "Lasso Sweep", "套索扫", "라쏘스윕", "Spazzata lasso", "Лассо свип", "مسح اللاسو", "लासो स्वीप") },
-];
+const guardPassFlow: FlowNode = {
+  id: "gp",
+  label: t("ガードパス", "Guard Pass", "Passagem de Guarda"),
+  type: "start",
+  children: [
+    {
+      id: "gp-closed",
+      label: t("クローズドガードパス", "Closed Guard Pass", "Passagem Guarda Fechada"),
+      type: "decision",
+      children: [
+        { id: "gp-stand", label: t("スタンディングパス", "Standing Pass", "Passagem em Pé"), type: "action" },
+        { id: "gp-knee", label: t("ニースライス", "Knee Slice", "Passagem de Joelho"), type: "action" },
+        { id: "gp-double", label: t("ダブルアンダー", "Double Under", "Passagem por Baixo"), type: "action" },
+        { id: "gp-sao", label: t("サンパウロパス", "São Paulo Pass", "Passagem São Paulo"), type: "action" },
+      ],
+    },
+    {
+      id: "gp-half",
+      label: t("ハーフガードパス", "Half Guard Pass", "Passagem Meia Guarda"),
+      type: "decision",
+      children: [
+        { id: "gp-slide", label: t("ニースライド", "Knee Slide", "Deslize de Joelho"), type: "action" },
+        { id: "gp-hip", label: t("ヒップスイッチ", "Hip Switch", "Troca de Quadril"), type: "action" },
+        { id: "gp-back", label: t("バックステップ", "Backstep", "Passo Atrás"), type: "action" },
+        { id: "gp-smash", label: t("スマッシュパス", "Smash Pass", "Passagem Esmagada"), type: "action" },
+      ],
+    },
+    {
+      id: "gp-open",
+      label: t("オープンガードパス", "Open Guard Pass", "Passagem Guarda Aberta"),
+      type: "decision",
+      children: [
+        { id: "gp-tor", label: t("トレアンド", "Toreando", "Toreando"), type: "action" },
+        { id: "gp-drag", label: t("レッグドラッグ", "Leg Drag", "Leg Drag"), type: "action" },
+        { id: "gp-x", label: t("Xパス", "X Pass", "X Pass"), type: "action" },
+        { id: "gp-stack", label: t("スタックパス", "Stack Pass", "Passagem Empilhada"), type: "action" },
+      ],
+    },
+    {
+      id: "gp-result",
+      label: t("→ パス成功後", "→ After Pass", "→ Após Passagem"),
+      type: "transition",
+      children: [
+        { id: "gp-side", label: t("サイドコントロール", "Side Control", "100 Kilos"), type: "finish" },
+        { id: "gp-mount", label: t("マウント", "Mount", "Montada"), type: "finish" },
+        { id: "gp-back-ctrl", label: t("バック", "Back", "Costas"), type: "finish" },
+      ],
+    },
+  ],
+};
 
-const xGuardTechniques: TechniqueNode[] = [
-  { id: "x-sweep", name: t("Xスイープ", "X Sweep", "Raspagem X", "Barrida X", "Balayage X", "X Sweep", "X扫", "X스윕", "Spazzata X", "Х свип", "مسح X", "X स्वीप") },
-  { id: "slx", name: t("シングルレッグX", "Single Leg X", "X de Uma Perna", "X de una pierna", "X une jambe", "Einbein X", "单腿X", "싱글레그X", "X gamba singola", "Одноногий Х", "X ساق واحدة", "सिंगल लेग X") },
-  { id: "tech-standup", name: t("テクニカルスタンドアップ", "Technical Stand-up", "Levantada Técnica", "Levantada técnica", "Relevé technique", "Technisches Aufstehen", "技术起立", "테크니컬스탠드업", "Alzata tecnica", "Технический подъём", "قيام تقني", "टेक्निकल स्टैंडअप") },
-];
+// ============================================================
+// Styles per node type
+// ============================================================
 
-const mountTechniques: TechniqueNode[] = [
-  { id: "armbar-mount", name: t("腕十字", "Armbar", "Armlock", "Palanca al brazo", "Clé de bras", "Armhebel", "十字固", "암바", "Leva al braccio", "Рычаг локтя", "قفل الذراع", "आर्मबार") },
-  { id: "cross-collar", name: t("十字絞め", "Cross Collar Choke", "Estrangulamento Cruzado", "Estrangulación cruzada", "Étranglement croisé", "Kreuzkragen-Würger", "十字绞", "크로스칼라초크", "Strangolamento crociato", "Крест", "خنق متقاطع", "क्रॉस कॉलर चोक") },
-  { id: "ezekiel", name: t("エゼキエル", "Ezekiel Choke", "Ezequiel", "Ezequiel", "Ézéchiel", "Ezekiel", "以西结绞", "에제키엘", "Ezechiele", "Эзекиэль", "خنق حزقيال", "इज़ेकिएल") },
-  { id: "americana-mount", name: t("アメリカーナ", "Americana", "Americana", "Americana", "Americana", "Americana", "美国锁", "아메리카나", "Americana", "Американа", "أمريكانا", "अमेरिकाना") },
-];
+const nodeStyles: Record<FlowNode["type"], { bg: string; border: string; text: string; dot: string }> = {
+  start:      { bg: "bg-blue-600",    border: "border-blue-700",   text: "text-white",                      dot: "bg-blue-600" },
+  decision:   { bg: "bg-amber-50 dark:bg-amber-950/40",    border: "border-amber-400 dark:border-amber-600", text: "text-amber-800 dark:text-amber-200", dot: "bg-amber-500" },
+  action:     { bg: "bg-emerald-50 dark:bg-emerald-950/40", border: "border-emerald-400 dark:border-emerald-600", text: "text-emerald-800 dark:text-emerald-200", dot: "bg-emerald-500" },
+  transition: { bg: "bg-purple-50 dark:bg-purple-950/40",  border: "border-purple-400 dark:border-purple-600", text: "text-purple-800 dark:text-purple-200", dot: "bg-purple-500" },
+  finish:     { bg: "bg-red-50 dark:bg-red-950/40",        border: "border-red-400 dark:border-red-600",    text: "text-red-800 dark:text-red-200",     dot: "bg-red-500" },
+};
 
-const backControlTechniques: TechniqueNode[] = [
-  { id: "rnc", name: t("リアネイキッドチョーク", "Rear Naked Choke", "Mata Leão", "Estrangulación trasera", "Étranglement arrière", "Rear Naked Choke", "裸绞", "리어네이키드초크", "Strangolamento nudo posteriore", "РНЧ", "خنق عاري خلفي", "रियर नेकेड चोक") },
-  { id: "bow-arrow", name: t("ボウ＆アロー", "Bow and Arrow", "Arco e Flecha", "Arco y flecha", "Arc et flèche", "Bogen und Pfeil", "弓箭绞", "보앤애로우", "Arco e freccia", "Лук и стрела", "قوس وسهم", "बो एंड एरो") },
-  { id: "armbar-back", name: t("腕十字", "Armbar", "Armlock", "Palanca al brazo", "Clé de bras", "Armhebel", "十字固", "암바", "Leva al braccio", "Рычаг локтя", "قفل الذراع", "आर्मबार") },
-];
+const typeLabels: Record<FlowNode["type"], { ja: string; en: string }> = {
+  start:      { ja: "起点", en: "Start" },
+  decision:   { ja: "判断", en: "Decision" },
+  action:     { ja: "アクション", en: "Action" },
+  transition: { ja: "移行", en: "Transition" },
+  finish:     { ja: "結果", en: "Result" },
+};
 
-const sideControlTechniques: TechniqueNode[] = [
-  { id: "americana", name: t("アメリカーナ", "Americana", "Americana", "Americana", "Americana", "Americana", "美国锁", "아메리카나", "Americana", "Американа", "أمريكانا", "अमेरिकाना") },
-  { id: "kimura-sc", name: t("キムラ", "Kimura", "Kimura", "Kimura", "Kimura", "Kimura", "木村锁", "기무라", "Kimura", "Кимура", "كيمورا", "किमुरा") },
-  { id: "arm-triangle", name: t("アームトライアングル", "Arm Triangle", "Kata Gatame", "Triángulo de brazo", "Triangle de bras", "Arm Dreieck", "手臂三角", "암트라이앵글", "Triangolo di braccio", "Ката-гатамэ", "مثلث الذراع", "आर्म ट्रायंगल") },
-];
+// ============================================================
+// Visual Flow Chart Node
+// ============================================================
 
-// Guard Pass Techniques
-const closedGuardPassTechniques: TechniqueNode[] = [
-  { id: "standing-pass", name: t("スタンディングパス", "Standing Pass", "Passagem em Pé", "Pasaje de pie", "Passage debout", "Stehender Pass", "站立过腿", "스탠딩패스", "Passaggio in piedi", "Стоячий пасс", "تمرير واقف", "स्टैंडिंग पास") },
-  { id: "knee-slice-cg", name: t("ニースライス", "Knee Slice", "Passagem de Joelho", "Corte de rodilla", "Coupe au genou", "Knieschnitt", "膝切过腿", "니슬라이스", "Taglio di ginocchio", "Ни-слайс", "شريحة الركبة", "नी स्लाइस") },
-  { id: "double-under", name: t("ダブルアンダー", "Double Under", "Passagem por Baixo", "Doble por debajo", "Double dessous", "Doppel Unter", "双下穿", "더블언더", "Doppio sotto", "Двойной андер", "تحت مزدوج", "डबल अंडर") },
-  { id: "sao-paulo-pass", name: t("サンパウロパス", "Sao Paulo Pass", "Passagem São Paulo", "Pase São Paulo", "Passe São Paulo", "São Paulo Pass", "圣保罗过腿", "상파울로패스", "Passaggio São Paulo", "Сан-Паулу пасс", "تمرير ساو باولو", "साओ पाउलो पास") },
-];
-
-const openGuardPassTechniques: TechniqueNode[] = [
-  { id: "torreando", name: t("トレアンド", "Toreando", "Toreando", "Toreando", "Toreando", "Toreando", "斗牛士过腿", "토레안도", "Toreando", "Тореандо", "توريندو", "टोरिंडो") },
-  { id: "leg-drag", name: t("レッグドラッグ", "Leg Drag", "Leg Drag", "Arrastre de pierna", "Traînée de jambe", "Beinzug", "拖腿", "레그드래그", "Trascinamento gamba", "Лег-драг", "سحب الساق", "लेग ड्रैग") },
-  { id: "knee-slice-og", name: t("ニースライス", "Knee Slice", "Passagem de Joelho", "Corte de rodilla", "Coupe au genou", "Knieschnitt", "膝切", "니슬라이스", "Taglio di ginocchio", "Ни-слайс", "شريحة الركبة", "नी स्लाइस") },
-  { id: "x-pass", name: t("Xパス", "X Pass", "X Pass", "Pase X", "Passe X", "X Pass", "X过腿", "X패스", "Passaggio X", "Х-пасс", "تمرير X", "X पास") },
-  { id: "stack-pass", name: t("スタックパス", "Stack Pass", "Passagem Empilhada", "Pase apilado", "Passe empilé", "Stack Pass", "折叠过腿", "스택패스", "Passaggio impilato", "Стек пасс", "تمرير مكدس", "स्टैक पास") },
-];
-
-const halfGuardPassTechniques: TechniqueNode[] = [
-  { id: "knee-slide", name: t("ニースライド", "Knee Slide", "Deslize de Joelho", "Deslizamiento de rodilla", "Glissement du genou", "Knierutsche", "膝滑过腿", "니슬라이드", "Scivolata di ginocchio", "Колено-слайд", "انزلاق الركبة", "नी स्लाइड") },
-  { id: "hip-switch", name: t("ヒップスイッチ", "Hip Switch", "Troca de Quadril", "Cambio de cadera", "Changement de hanche", "Hüftwechsel", "髋部切换", "힙스위치", "Cambio d'anca", "Хип-свитч", "تبديل الورك", "हिप स्विच") },
-  { id: "backstep", name: t("バックステップ", "Backstep", "Passo Atrás", "Paso atrás", "Pas arrière", "Rückschritt", "后退步", "백스텝", "Passo indietro", "Бэкстеп", "خطوة للخلف", "बैकस्टेप") },
-  { id: "smash-pass", name: t("スマッシュパス", "Smash Pass", "Passagem Esmagada", "Pase aplastante", "Passe écrasant", "Smash Pass", "压制过腿", "스매시패스", "Passaggio schiacciante", "Смэш пасс", "تمرير ساحق", "स्मैश पास") },
-];
-
-const dlrPassTechniques: TechniqueNode[] = [
-  { id: "knee-cut-dlr", name: t("ニーカット", "Knee Cut", "Corte de Joelho", "Corte de rodilla", "Coupe au genou", "Knieschnitt", "膝切", "니컷", "Taglio di ginocchio", "Ни-кат", "قطع الركبة", "नी कट") },
-  { id: "leg-weave", name: t("レッグウィーブ", "Leg Weave", "Entrelaçamento", "Entrelazamiento de pierna", "Tissage de jambe", "Beinwebung", "腿编织", "레그위브", "Intreccio di gamba", "Лег-вив", "نسج الساق", "लेग वीव") },
-  { id: "dlr-smash", name: t("DLRスマッシュ", "DLR Smash", "Esmagar DLR", "DLR aplastante", "DLR écrasant", "DLR Smash", "DLR压制", "DLR스매시", "DLR schiacciante", "ДЛР смэш", "سحق DLR", "DLR स्मैश") },
-];
-
-const spiderPassTechniques: TechniqueNode[] = [
-  { id: "grip-break", name: t("グリップブレイク", "Grip Break", "Quebra de Pegada", "Romper agarre", "Casser la prise", "Griffbruch", "解开抓握", "그립브레이크", "Rottura presa", "Срыв захвата", "كسر القبضة", "ग्रिप ब्रेक") },
-  { id: "bull-fighter", name: t("ブルファイター", "Bull Fighter", "Toureiro", "Torero", "Toréro", "Stierkämpfer", "斗牛士", "불파이터", "Torero", "Бульфайтер", "مصارع الثيران", "बुलफाइटर") },
-  { id: "spider-stack", name: t("スタックパス", "Stack Pass", "Passagem Empilhada", "Pase apilado", "Passe empilé", "Stack Pass", "折叠过腿", "스택패스", "Passaggio impilato", "Стек пасс", "تمرير مكدس", "स्टैक पास") },
-];
-
-const techniqueTree: TechniqueNode[] = [
-  {
-    id: "pull",
-    name: t("引き込み", "Guard Pull", "Puxada de Guarda", "Entrada a guardia", "Tirage de garde", "Guard Pull", "拉防守", "가드풀", "Tirata di guardia", "Гард пулл", "سحب الحارس", "गार्ड पुल"),
-    children: [
-      {
-        id: "closed-guard",
-        name: t("クローズドガード", "Closed Guard", "Guarda Fechada", "Guardia cerrada", "Garde fermée", "Geschlossene Garde", "闭合防守", "클로즈드가드", "Guardia chiusa", "Закрытая гарда", "حارس مغلق", "क्लोज़्ड गार्ड"),
-        children: [
-          ...closedGuardTechniques,
-          {
-            id: "cg-transitions",
-            name: t("→ ポジション移行", "→ Position Transitions", "→ Transições", "→ Transiciones", "→ Transitions", "→ Übergänge", "→ 位置转换", "→ 포지션전환", "→ Transizioni", "→ Переходы", "→ انتقالات", "→ पोज़िशन ट्रांज़िशन"),
-            isTransition: true,
-            children: [
-              { 
-                id: "cg-to-open", 
-                name: t("→ オープンガードへ", "→ Open Guard", "→ Guarda Aberta", "→ Guardia abierta", "→ Garde ouverte", "→ Offene Garde", "→ 开放防守", "→ 오픈가드", "→ Guardia aperta", "→ Открытая гарда", "→ حارس مفتوح", "→ ओपन गार्ड"),
-                isTransition: true,
-                children: [
-                  { id: "og-spider-from-cg", name: t("スパイダーガード", "Spider Guard", "Guarda Aranha", "Guardia araña", "Garde araignée", "Spinnengarde", "蜘蛛防守", "스파이더가드", "Guardia ragno", "Паук гарда", "حارس العنكبوت", "स्पाइडर गार्ड"), children: spiderGuardTechniques },
-                  { id: "og-dlr-from-cg", name: t("デラヒーバ", "De La Riva", "De La Riva", "De La Riva", "De La Riva", "De La Riva", "德拉里瓦", "데라히바", "De La Riva", "Де Ла Рива", "دي لا ريفا", "डे ला रिवा"), children: dlrTechniques },
-                  { id: "og-lasso-from-cg", name: t("ラッソーガード", "Lasso Guard", "Guarda Laço", "Guardia lazo", "Garde lasso", "Lasso Garde", "套索防守", "라쏘가드", "Guardia lasso", "Лассо гарда", "حارس لاسو", "लासो गार्ड"), children: lassoTechniques },
-                ],
-              },
-              { 
-                id: "cg-to-half", 
-                name: t("→ ハーフガードへ", "→ Half Guard", "→ Meia Guarda", "→ Media guardia", "→ Demi-garde", "→ Halbgarde", "→ 半防守", "→ 하프가드", "→ Mezza guardia", "→ Полугарда", "→ نصف حارس", "→ हाफ गार्ड"),
-                isTransition: true,
-                children: halfGuardTechniques,
-              },
-              { 
-                id: "cg-to-mount", 
-                name: t("→ マウント（スイープ成功時）", "→ Mount (on sweep)", "→ Montada", "→ Montada", "→ Montée", "→ Mount", "→ 骑乘", "→ 마운트", "→ Montata", "→ Маунт", "→ مونت", "→ माउंट"),
-                isTransition: true,
-                children: mountTechniques,
-              },
-            ],
-          },
-        ],
-      },
-      {
-        id: "open-guard",
-        name: t("オープンガード", "Open Guard", "Guarda Aberta", "Guardia abierta", "Garde ouverte", "Offene Garde", "开放防守", "오픈가드", "Guardia aperta", "Открытая гарда", "حارس مفتوح", "ओपन गार्ड"),
-        children: [
-          {
-            id: "spider-guard",
-            name: t("スパイダーガード", "Spider Guard", "Guarda Aranha", "Guardia araña", "Garde araignée", "Spinnengarde", "蜘蛛防守", "스파이더가드", "Guardia ragno", "Паук гарда", "حارس العنكبوت", "स्पाइडर गार्ड"),
-            children: spiderGuardTechniques,
-          },
-          {
-            id: "de-la-riva",
-            name: t("デラヒーバ", "De La Riva", "De La Riva", "De La Riva", "De La Riva", "De La Riva", "德拉里瓦", "데라히바", "De La Riva", "Де Ла Рива", "دي لا ريفا", "डे ला रिवा"),
-            children: dlrTechniques,
-          },
-          {
-            id: "lasso-guard",
-            name: t("ラッソーガード", "Lasso Guard", "Guarda Laço", "Guardia lazo", "Garde lasso", "Lasso Garde", "套索防守", "라쏘가드", "Guardia lasso", "Лассо гарда", "حارس لاسو", "लासो गार्ड"),
-            children: lassoTechniques,
-          },
-          {
-            id: "og-transitions",
-            name: t("→ ポジション移行", "→ Position Transitions", "→ Transições", "→ Transiciones", "→ Transitions", "→ Übergänge", "→ 位置转换", "→ 포지션전환", "→ Transizioni", "→ Переходы", "→ انتقالات", "→ पोज़िशन ट्रांज़िशन"),
-            isTransition: true,
-            children: [
-              { 
-                id: "og-to-closed", 
-                name: t("→ クローズドガードへ", "→ Closed Guard", "→ Guarda Fechada", "→ Guardia cerrada", "→ Garde fermée", "→ Geschlossene Garde", "→ 闭合防守", "→ 클로즈드가드", "→ Guardia chiusa", "→ Закрытая гарда", "→ حارس مغلق", "→ क्लोज़्ड गार्ड"),
-                isTransition: true,
-                children: closedGuardTechniques,
-              },
-              { 
-                id: "og-to-half", 
-                name: t("→ ハーフガードへ", "→ Half Guard", "→ Meia Guarda", "→ Media guardia", "→ Demi-garde", "→ Halbgarde", "→ 半防守", "→ 하프가드", "→ Mezza guardia", "→ Полугарда", "→ نصف حارس", "→ हाफ गार्ड"),
-                isTransition: true,
-                children: halfGuardTechniques,
-              },
-              { 
-                id: "og-to-xguard", 
-                name: t("→ Xガードへ", "→ X Guard", "→ Guarda X", "→ Guardia X", "→ Garde X", "→ X Garde", "→ X防守", "→ X가드", "→ Guardia X", "→ Х-гарда", "→ حارس X", "→ X गार्ड"),
-                isTransition: true,
-                children: xGuardTechniques,
-              },
-            ],
-          },
-        ],
-      },
-      {
-        id: "half-guard",
-        name: t("ハーフガード", "Half Guard", "Meia Guarda", "Media guardia", "Demi-garde", "Halbgarde", "半防守", "하프가드", "Mezza guardia", "Полугарда", "نصف حارس", "हाफ गार्ड"),
-        children: [
-          ...halfGuardTechniques,
-          {
-            id: "hg-transitions",
-            name: t("→ ポジション移行", "→ Position Transitions", "→ Transições", "→ Transiciones", "→ Transitions", "→ Übergänge", "→ 位置转换", "→ 포지션전환", "→ Transizioni", "→ Переходы", "→ انتقالات", "→ पोज़िशन ट्रांज़िशन"),
-            isTransition: true,
-            children: [
-              { 
-                id: "hg-to-closed", 
-                name: t("→ クローズドガードへ", "→ Closed Guard", "→ Guarda Fechada", "→ Guardia cerrada", "→ Garde fermée", "→ Geschlossene Garde", "→ 闭合防守", "→ 클로즈드가드", "→ Guardia chiusa", "→ Закрытая гарда", "→ حارس مغلق", "→ क्लोज़्ड गार्ड"),
-                isTransition: true,
-                children: closedGuardTechniques,
-              },
-              { 
-                id: "hg-to-open", 
-                name: t("→ オープンガードへ", "→ Open Guard", "→ Guarda Aberta", "→ Guardia abierta", "→ Garde ouverte", "→ Offene Garde", "→ 开放防守", "→ 오픈가드", "→ Guardia aperta", "→ Открытая гарда", "→ حارس مفتوح", "→ ओपन गार्ड"),
-                isTransition: true,
-                children: [
-                  { id: "og-spider-from-hg", name: t("スパイダーガード", "Spider Guard", "Guarda Aranha", "Guardia araña", "Garde araignée", "Spinnengarde", "蜘蛛防守", "스파이더가드", "Guardia ragno", "Паук гарда", "حارس العنكبوت", "स्पाइडर गार्ड"), children: spiderGuardTechniques },
-                  { id: "og-dlr-from-hg", name: t("デラヒーバ", "De La Riva", "De La Riva", "De La Riva", "De La Riva", "De La Riva", "德拉里瓦", "데라히바", "De La Riva", "Де Ла Рива", "دي لا ريفا", "डे ला रिवा"), children: dlrTechniques },
-                ],
-              },
-              { 
-                id: "hg-to-back", 
-                name: t("→ バックテイク", "→ Back Take", "→ Pegada de Costas", "→ Toma de espalda", "→ Prise du dos", "→ Rücknahme", "→ 背部控制", "→ 백테이크", "→ Presa schiena", "→ Взятие спины", "→ أخذ الظهر", "→ बैक टेक"),
-                isTransition: true,
-                children: backControlTechniques,
-              },
-              { 
-                id: "hg-to-mount", 
-                name: t("→ マウント（スイープ成功時）", "→ Mount (on sweep)", "→ Montada", "→ Montada", "→ Montée", "→ Mount", "→ 骑乘", "→ 마운트", "→ Montata", "→ Маунт", "→ مونت", "→ माउंट"),
-                isTransition: true,
-                children: mountTechniques,
-              },
-            ],
-          },
-        ],
-      },
-    ],
-  },
-  {
-    id: "takedown",
-    name: t("テイクダウン", "Takedown", "Takedown", "Derribo", "Amenée au sol", "Takedown", "摔技", "테이크다운", "Atterramento", "Тэйкдаун", "إسقاط", "टेकडाउन"),
-    children: [
-      {
-        id: "single-leg",
-        name: t("シングルレッグ", "Single Leg", "Single Leg", "Una pierna", "Une jambe", "Einbein", "单腿", "싱글레그", "Gamba singola", "Сингл", "ساق واحدة", "सिंगल लेग"),
-        children: [
-          { id: "running-pipe", name: t("ランニングパイプ", "Running the Pipe", "Running the Pipe", "Correr el tubo", "Courir le tuyau", "Running the Pipe", "跑管", "러닝더파이프", "Correre il tubo", "Раннинг пайп", "تشغيل الأنبوب", "रनिंग द पाइप") },
-          { id: "high-crotch", name: t("ハイクロッチ", "High Crotch", "High Crotch", "Entrepierna alta", "Entrejambe haut", "High Crotch", "高叉", "하이크로치", "Cavallo alto", "Хай кроч", "منشعب عالي", "हाई क्रॉच") },
-          { id: "inside-trip", name: t("インサイドトリップ", "Inside Trip", "Inside Trip", "Zancadilla interior", "Croche intérieur", "Innenreise", "内绊", "인사이드트립", "Sgambetto interno", "Инсайд трип", "رحلة داخلية", "इनसाइड ट्रिप") },
-        ],
-      },
-      {
-        id: "double-leg",
-        name: t("ダブルレッグ", "Double Leg", "Double Leg", "Dos piernas", "Deux jambes", "Doppelbein", "双腿", "더블레그", "Doppia gamba", "Дабл", "ساقين", "डबल लेग"),
-        children: [
-          { id: "blast-double", name: t("ブラストダブル", "Blast Double", "Blast Double", "Doble explosivo", "Double explosif", "Blast Double", "爆发双腿", "블라스트더블", "Doppia esplosiva", "Бласт дабл", "انفجار مزدوج", "ब्लास्ट डबल") },
-          { id: "low-single", name: t("ローシングル", "Low Single", "Low Single", "Single bajo", "Simple bas", "Niedrig Single", "低单腿", "로우싱글", "Singola bassa", "Лоу сингл", "فردي منخفض", "लो सिंगल") },
-        ],
-      },
-      {
-        id: "trips",
-        name: t("足払い系", "Trips", "Rasteiras", "Barridos", "Balayages", "Feger", "踢绊", "트립", "Sgambetti", "Подсечки", "عرقلة", "ट्रिप्स"),
-        children: [
-          { id: "osoto-gari", name: t("大外刈り", "Osoto Gari", "Osoto Gari", "Osoto Gari", "Osoto Gari", "Osoto Gari", "大外刈", "오소토가리", "Osoto Gari", "Осото гари", "أوسوتو غاري", "ओसोटो गारी") },
-          { id: "kouchi-gari", name: t("小内刈り", "Kouchi Gari", "Kouchi Gari", "Kouchi Gari", "Kouchi Gari", "Kouchi Gari", "小内刈", "코우치가리", "Kouchi Gari", "Коучи гари", "كوتشي غاري", "कौची गारी") },
-          { id: "ouchi-gari", name: t("大内刈り", "Ouchi Gari", "Ouchi Gari", "Ouchi Gari", "Ouchi Gari", "Ouchi Gari", "大内刈", "오우치가리", "Ouchi Gari", "Оучи гари", "أوتشي غاري", "ओउची गारी") },
-        ],
-      },
-      {
-        id: "td-transitions",
-        name: t("→ トップコントロールへ", "→ Top Control", "→ Controle de Cima", "→ Control superior", "→ Contrôle du dessus", "→ Top Kontrolle", "→ 顶部控制", "→ 탑컨트롤", "→ Controllo superiore", "→ Топ контроль", "→ تحكم علوي", "→ टॉप कंट्रोल"),
-        isTransition: true,
-        children: [
-          {
-            id: "side-control",
-            name: t("サイドコントロール", "Side Control", "100 Kilos", "Control lateral", "Contrôle latéral", "Seitenkontrolle", "侧控制", "사이드컨트롤", "Controllo laterale", "Сайд контроль", "تحكم جانبي", "साइड कंट्रोल"),
-            children: [
-              ...sideControlTechniques,
-              { 
-                id: "sc-to-mount", 
-                name: t("→ マウントへ", "→ Mount", "→ Montada", "→ Montada", "→ Montée", "→ Mount", "→ 骑乘", "→ 마운트", "→ Montata", "→ Маунт", "→ مونت", "→ माउंट"),
-                isTransition: true,
-                children: mountTechniques,
-              },
-              { 
-                id: "sc-to-back", 
-                name: t("→ バックへ", "→ Back", "→ Costas", "→ Espalda", "→ Dos", "→ Rücken", "→ 背部", "→ 백", "→ Schiena", "→ Спина", "→ ظهر", "→ बैक"),
-                isTransition: true,
-                children: backControlTechniques,
-              },
-            ],
-          },
-          {
-            id: "mount",
-            name: t("マウント", "Mount", "Montada", "Montada", "Montée", "Mount", "骑乘", "마운트", "Montata", "Маунт", "مونت", "माउंट"),
-            children: [
-              ...mountTechniques,
-              { 
-                id: "mount-to-back", 
-                name: t("→ バックへ", "→ Back", "→ Costas", "→ Espalda", "→ Dos", "→ Rücken", "→ 背部", "→ 백", "→ Schiena", "→ Спина", "→ ظهر", "→ बैक"),
-                isTransition: true,
-                children: backControlTechniques,
-              },
-            ],
-          },
-          {
-            id: "back-control",
-            name: t("バックコントロール", "Back Control", "Controle de Costas", "Control de espalda", "Contrôle du dos", "Rückenkontrolle", "背部控制", "백컨트롤", "Controllo schiena", "Бэк контроль", "تحكم الظهر", "बैक कंट्रोल"),
-            children: backControlTechniques,
-          },
-        ],
-      },
-    ],
-  },
-  {
-    id: "guard-pass",
-    name: t("ガードパス", "Guard Pass", "Passagem de Guarda", "Pasaje de guardia", "Passage de garde", "Guard Pass", "过腿", "가드패스", "Passaggio di guardia", "Гард пасс", "تمرير الحارس", "गार्ड पास"),
-    children: [
-      {
-        id: "pass-closed-guard",
-        name: t("クローズドガードパス", "Closed Guard Pass", "Passagem de Guarda Fechada", "Pasaje de guardia cerrada", "Passage garde fermée", "Geschlossener Garde Pass", "闭合防守过腿", "클로즈드가드패스", "Passaggio guardia chiusa", "Пасс закрытой гарды", "تمرير الحارس المغلق", "क्लोज़्ड गार्ड पास"),
-        children: [
-          ...closedGuardPassTechniques,
-          {
-            id: "cg-pass-result",
-            name: t("→ パス成功後", "→ After Pass", "→ Após Passar", "→ Después del pase", "→ Après passage", "→ Nach Pass", "→ 过腿后", "→ 패스후", "→ Dopo passaggio", "→ После пасса", "→ بعد التمرير", "→ पास के बाद"),
-            isTransition: true,
-            children: [
-              { id: "cg-pass-to-side", name: t("サイドコントロール", "Side Control", "100 Kilos", "Control lateral", "Contrôle latéral", "Seitenkontrolle", "侧控制", "사이드컨트롤", "Controllo laterale", "Сайд контроль", "تحكم جانبي", "साइड कंट्रोल"), children: sideControlTechniques },
-              { id: "cg-pass-to-mount", name: t("マウント", "Mount", "Montada", "Montada", "Montée", "Mount", "骑乘", "마운트", "Montata", "Маунт", "مونت", "माउंट"), children: mountTechniques },
-            ],
-          },
-        ],
-      },
-      {
-        id: "pass-open-guard",
-        name: t("オープンガードパス", "Open Guard Pass", "Passagem de Guarda Aberta", "Pasaje de guardia abierta", "Passage garde ouverte", "Offener Garde Pass", "开放防守过腿", "오픈가드패스", "Passaggio guardia aperta", "Пасс открытой гарды", "تمرير الحارس المفتوح", "ओपन गार्ड पास"),
-        children: [
-          ...openGuardPassTechniques,
-          {
-            id: "og-pass-result",
-            name: t("→ パス成功後", "→ After Pass", "→ Após Passar", "→ Después del pase", "→ Après passage", "→ Nach Pass", "→ 过腿后", "→ 패스후", "→ Dopo passaggio", "→ После пасса", "→ بعد التمرير", "→ पास के बाद"),
-            isTransition: true,
-            children: [
-              { id: "og-pass-to-side", name: t("サイドコントロール", "Side Control", "100 Kilos", "Control lateral", "Contrôle latéral", "Seitenkontrolle", "侧控制", "사이드컨트롤", "Controllo laterale", "Сайд контроль", "تحكم جانبي", "साइड कंट्रोल"), children: sideControlTechniques },
-              { id: "og-pass-to-mount", name: t("マウント", "Mount", "Montada", "Montada", "Montée", "Mount", "骑乘", "마운트", "Montata", "Маунт", "مونت", "माउंट"), children: mountTechniques },
-              { id: "og-pass-to-back", name: t("バック（レッグドラッグから）", "Back (from Leg Drag)", "Costas", "Espalda", "Dos", "Rücken", "背部", "백", "Schiena", "Спина", "ظهر", "बैक"), children: backControlTechniques },
-            ],
-          },
-        ],
-      },
-      {
-        id: "pass-half-guard",
-        name: t("ハーフガードパス", "Half Guard Pass", "Passagem de Meia Guarda", "Pasaje de media guardia", "Passage demi-garde", "Halbgarde Pass", "半防守过腿", "하프가드패스", "Passaggio mezza guardia", "Пасс полугарды", "تمرير نصف الحارس", "हाफ गार्ड पास"),
-        children: [
-          ...halfGuardPassTechniques,
-          {
-            id: "hg-pass-result",
-            name: t("→ パス成功後", "→ After Pass", "→ Após Passar", "→ Después del pase", "→ Après passage", "→ Nach Pass", "→ 过腿后", "→ 패스후", "→ Dopo passaggio", "→ После пасса", "→ بعد التمرير", "→ पास के बाद"),
-            isTransition: true,
-            children: [
-              { id: "hg-pass-to-side", name: t("サイドコントロール", "Side Control", "100 Kilos", "Control lateral", "Contrôle latéral", "Seitenkontrolle", "侧控制", "사이드컨트롤", "Controllo laterale", "Сайд контроль", "تحكم جانبي", "साइड कंट्रोल"), children: sideControlTechniques },
-              { id: "hg-pass-to-mount", name: t("マウント", "Mount", "Montada", "Montada", "Montée", "Mount", "骑乘", "마운트", "Montata", "Маунт", "مونت", "माउंट"), children: mountTechniques },
-            ],
-          },
-        ],
-      },
-      {
-        id: "pass-dlr",
-        name: t("デラヒーバパス", "De La Riva Pass", "Passagem de DLR", "Pasaje de DLR", "Passage DLR", "DLR Pass", "DLR过腿", "데라히바패스", "Passaggio DLR", "ДЛР пасс", "تمرير DLR", "डे ला रिवा पास"),
-        children: [
-          ...dlrPassTechniques,
-          {
-            id: "dlr-pass-result",
-            name: t("→ パス成功後", "→ After Pass", "→ Após Passar", "→ Después del pase", "→ Après passage", "→ Nach Pass", "→ 过腿后", "→ 패스후", "→ Dopo passaggio", "→ После пасса", "→ بعد التمرير", "→ पास के बाद"),
-            isTransition: true,
-            children: [
-              { id: "dlr-pass-to-side", name: t("サイドコントロール", "Side Control", "100 Kilos", "Control lateral", "Contrôle latéral", "Seitenkontrolle", "侧控制", "사이드컨트롤", "Controllo laterale", "Сайд контроль", "تحكم جانبي", "साइड कंट्रोल"), children: sideControlTechniques },
-              { id: "dlr-pass-to-back", name: t("バック", "Back", "Costas", "Espalda", "Dos", "Rücken", "背部", "백", "Schiena", "Спина", "ظهر", "बैक"), children: backControlTechniques },
-            ],
-          },
-        ],
-      },
-      {
-        id: "pass-spider",
-        name: t("スパイダーガードパス", "Spider Guard Pass", "Passagem de Guarda Aranha", "Pasaje de guardia araña", "Passage garde araignée", "Spinnengarde Pass", "蜘蛛防守过腿", "스파이더가드패스", "Passaggio guardia ragno", "Паук гарда пасс", "تمرير حارس العنكبوت", "स्पाइडर गार्ड पास"),
-        children: [
-          ...spiderPassTechniques,
-          {
-            id: "spider-pass-result",
-            name: t("→ パス成功後", "→ After Pass", "→ Após Passar", "→ Después del pase", "→ Après passage", "→ Nach Pass", "→ 过腿后", "→ 패스후", "→ Dopo passaggio", "→ После пасса", "→ بعد التمرير", "→ पास के बाद"),
-            isTransition: true,
-            children: [
-              { id: "spider-pass-to-side", name: t("サイドコントロール", "Side Control", "100 Kilos", "Control lateral", "Contrôle latéral", "Seitenkontrolle", "侧控制", "사이드컨트롤", "Controllo laterale", "Сайд контроль", "تحكم جانبي", "साइड कंट्रोल"), children: sideControlTechniques },
-            ],
-          },
-        ],
-      },
-    ],
-  },
-];
-
-const CollapsibleNode = ({ 
-  node, 
+const FlowCard = ({
+  node,
+  lang,
   depth = 0,
-  language 
-}: { 
-  node: TechniqueNode; 
+}: {
+  node: FlowNode;
+  lang: Lang;
   depth?: number;
-  language: string;
 }) => {
-  const [isOpen, setIsOpen] = useState(depth < 1);
-  const hasChildren = node.children && node.children.length > 0;
+  const [expanded, setExpanded] = useState(depth < 2);
+  const style = nodeStyles[node.type];
+  const hasKids = node.children && node.children.length > 0;
 
-  const getName = () => {
-    return node.name[language as Language] || node.name.en;
-  };
+  // Start node = full-width header
+  if (node.type === "start") {
+    return (
+      <div className="w-full">
+        <div
+          className={cn(
+            "rounded-2xl px-6 py-4 text-center font-bold text-xl md:text-2xl shadow-lg",
+            style.bg, style.border, style.text, "border-2"
+          )}
+        >
+          {node.label[lang]}
+        </div>
 
-  const getBgColor = () => {
-    if (node.isTransition) return "bg-accent/20 border-accent/40 hover:bg-accent/30";
-    if (depth === 0) return "bg-primary/10 border-primary/30 hover:bg-primary/20";
-    if (depth === 1) return "bg-secondary/50 border-border hover:bg-secondary/70";
-    if (depth === 2) return "bg-muted/50 border-border/50 hover:bg-muted/70";
-    return "bg-card/50 border-border/30 hover:bg-card/70";
-  };
+        {/* Vertical connector */}
+        {hasKids && (
+          <div className="flex justify-center">
+            <div className="w-0.5 h-6 bg-border" />
+          </div>
+        )}
+
+        {/* Children grid */}
+        {hasKids && (
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {node.children!.map((child) => (
+              <FlowCard key={child.id} node={child} lang={lang} depth={depth + 1} />
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
-    <div className={cn("ml-0", depth > 0 && "ml-4 md:ml-6")}>
+    <div className="flex flex-col items-stretch">
+      {/* Node card */}
       <button
-        onClick={() => hasChildren && setIsOpen(!isOpen)}
-        disabled={!hasChildren}
+        onClick={() => hasKids && setExpanded(!expanded)}
         className={cn(
-          "w-full flex items-center gap-2 px-3 py-2 rounded-lg border transition-all text-left",
-          getBgColor(),
-          hasChildren && "cursor-pointer",
-          !hasChildren && "cursor-default opacity-80"
+          "rounded-xl px-4 py-3 border-2 text-left transition-all shadow-sm hover:shadow-md w-full",
+          style.bg, style.border,
+          hasKids && "cursor-pointer"
         )}
       >
-        {hasChildren ? (
-          isOpen ? (
-            <ChevronDown className="w-4 h-4 flex-shrink-0 text-primary" />
-          ) : (
-            <ChevronRight className="w-4 h-4 flex-shrink-0 text-muted-foreground" />
-          )
-        ) : (
-          <Circle className="w-2 h-2 flex-shrink-0 text-muted-foreground fill-current" />
-        )}
-        {node.isTransition && <ArrowRight className="w-3 h-3 flex-shrink-0 text-accent-foreground" />}
-        <span className={cn(
-          "text-sm md:text-base",
-          depth === 0 && "font-semibold text-primary",
-          depth === 1 && "font-medium",
-          node.isTransition && "text-accent-foreground italic",
-          depth > 1 && !node.isTransition && "text-muted-foreground"
-        )}>
-          {getName()}
-        </span>
-        {hasChildren && (
-          <span className="ml-auto text-xs text-muted-foreground">
-            {node.children?.length}
-          </span>
-        )}
+        <div className="flex items-start gap-2">
+          {/* Type dot */}
+          <span className={cn("w-2.5 h-2.5 rounded-full mt-1.5 flex-shrink-0", style.dot)} />
+          <div className="flex-1 min-w-0">
+            <p className={cn("text-sm md:text-base font-medium leading-snug", style.text)}>
+              {node.label[lang]}
+            </p>
+          </div>
+          {/* Expand indicator */}
+          {hasKids && (
+            <span className="text-xs text-muted-foreground flex-shrink-0 mt-1">
+              {expanded ? "▼" : "▶"} {node.children!.length}
+            </span>
+          )}
+        </div>
       </button>
 
-      {hasChildren && isOpen && (
-        <div className={cn(
-          "mt-1 space-y-1 ml-2 pl-2",
-          node.isTransition ? "border-l-2 border-accent/30" : "border-l-2 border-primary/20"
-        )}>
-          {node.children?.map((child) => (
-            <CollapsibleNode
-              key={child.id}
-              node={child}
-              depth={depth + 1}
-              language={language}
-            />
+      {/* Children with connector lines */}
+      {hasKids && expanded && (
+        <div className="ml-4 mt-1 pl-4 border-l-2 border-dashed border-muted-foreground/30 space-y-1">
+          {node.children!.map((child) => (
+            <div key={child.id} className="relative">
+              {/* Horizontal connector */}
+              <div className="absolute -left-4 top-4 w-4 h-0.5 bg-muted-foreground/30" />
+              <FlowCard node={child} lang={lang} depth={depth + 1} />
+            </div>
           ))}
         </div>
       )}
@@ -498,54 +343,100 @@ const CollapsibleNode = ({
   );
 };
 
+// ============================================================
+// Legend
+// ============================================================
+
+const Legend = ({ lang }: { lang: Lang }) => (
+  <div className="flex flex-wrap gap-3 justify-center mb-8">
+    {(Object.keys(nodeStyles) as FlowNode["type"][]).map((type) => (
+      <div
+        key={type}
+        className={cn(
+          "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border",
+          nodeStyles[type].bg, nodeStyles[type].border, nodeStyles[type].text
+        )}
+      >
+        <span className={cn("w-2 h-2 rounded-full", nodeStyles[type].dot)} />
+        {typeLabels[type][lang === "pt" ? "en" : lang]}
+      </div>
+    ))}
+  </div>
+);
+
+// ============================================================
+// Tab Selector
+// ============================================================
+
+const flows = [closedGuardFlow, halfGuardFlow, guardPassFlow];
+
 export const TechniqueFlowchart = () => {
   const { language } = useLanguage();
+  const lang = (language === "ja" || language === "en" || language === "pt" ? language : "en") as Lang;
+  const [activeTab, setActiveTab] = useState(0);
 
-  const titles: Record<Language, string> = {
-    ja: "技のフローチャート",
-    en: "Technique Flowchart",
-    pt: "Fluxograma de Técnicas",
-    es: "Diagrama de Técnicas",
-    fr: "Organigramme des Techniques",
-    de: "Technik-Flussdiagramm",
-    zh: "技术流程图",
-    ko: "기술 플로차트",
-    it: "Diagramma delle Tecniche",
-    ru: "Схема техник",
-    ar: "مخطط التقنيات",
-    hi: "तकनीक फ़्लोचार्ट",
-  };
-
-  const descriptions: Record<Language, string> = {
-    ja: "柔術の技は「引き込み」「テイクダウン」「ガードパス」に分岐します。各項目をクリックして展開し、ポジション移行から次の技を選べます。",
-    en: "BJJ techniques branch into 'Guard Pull', 'Takedown', and 'Guard Pass'. Click to expand and explore transitions.",
-    pt: "As técnicas de BJJ se dividem em 'Puxada', 'Takedown' e 'Passagem'. Clique para expandir e explorar.",
-    es: "Las técnicas de BJJ se dividen en 'Entrada', 'Derribo' y 'Pasaje'. Haz clic para expandir y explorar.",
-    fr: "Les techniques de JJB se divisent en 'Tirage', 'Amenée' et 'Passage'. Cliquez pour développer et explorer.",
-    de: "BJJ-Techniken verzweigen sich in 'Guard Pull', 'Takedown' und 'Guard Pass'. Klicken Sie zum Erweitern.",
-    zh: "巴西柔术技术分为'拉防守'、'摔技'和'过腿'。点击展开并探索转换。",
-    ko: "BJJ 기술은 '가드풀', '테이크다운', '가드패스'로 나뉩니다. 클릭하여 전환을 탐색하세요.",
-    it: "Le tecniche di BJJ si dividono in 'Tirata', 'Atterramento' e 'Passaggio'. Clicca per espandere ed esplorare.",
-    ru: "Техники БЖЖ делятся на 'Гард пулл', 'Тэйкдаун' и 'Гард пасс'. Нажмите для раскрытия и изучения переходов.",
-    ar: "تنقسم تقنيات BJJ إلى 'سحب الحارس' و'الإسقاط' و'تمرير الحارس'. انقر للتوسيع والاستكشاف.",
-    hi: "BJJ तकनीकें 'गार्ड पुल', 'टेकडाउन' और 'गार्ड पास' में विभाजित होती हैं। विस्तार के लिए क्लिक करें।",
-  };
+  const titles = t("実戦テクニックフロー", "Practical Technique Flow", "Fluxo Prático de Técnicas");
+  const descs = t(
+    "状況ごとの判断フロー。クローズド・ハーフガード・パスの展開を一覧で。",
+    "Situational decision flows. Explore closed guard, half guard, and passing trees.",
+    "Fluxos de decisão situacional."
+  );
 
   return (
-    <section className="py-16 max-w-5xl mx-auto">
-      <h2 className="text-4xl font-light mb-4 text-center">
-        {titles[language as Language] || titles.en}
-      </h2>
-      <p className="text-muted-foreground text-center mb-8 max-w-2xl mx-auto">
-        {descriptions[language as Language] || descriptions.en}
+    <section className="py-12 max-w-6xl mx-auto">
+      <h2 className="text-4xl font-light mb-3 text-center">{titles[lang]}</h2>
+      <p className="text-muted-foreground text-center mb-8 max-w-2xl mx-auto text-sm">
+        {descs[lang]}
       </p>
 
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {techniqueTree.map((node) => (
-          <div key={node.id} className="space-y-2">
-            <CollapsibleNode node={node} language={language} />
-          </div>
+      <Legend lang={lang} />
+
+      {/* Tabs */}
+      <div className="flex justify-center gap-2 mb-8">
+        {flows.map((flow, i) => (
+          <button
+            key={flow.id}
+            onClick={() => setActiveTab(i)}
+            className={cn(
+              "px-5 py-2.5 rounded-full text-sm font-medium transition-all border-2",
+              activeTab === i
+                ? "bg-blue-600 text-white border-blue-700 shadow-lg"
+                : "bg-muted/50 text-muted-foreground border-transparent hover:bg-muted hover:border-border"
+            )}
+          >
+            {flow.label[lang]}
+          </button>
         ))}
+      </div>
+
+      {/* Active Flow Chart */}
+      <div className="bg-card/60 backdrop-blur-sm rounded-2xl border p-6 md:p-8 shadow-xl">
+        <FlowCard node={flows[activeTab]} lang={lang} />
+      </div>
+
+      {/* All flows overview (collapsed summary) */}
+      <div className="mt-12 grid md:grid-cols-3 gap-6">
+        {flows.map((flow, i) => {
+          if (i === activeTab) return null;
+          const childCount = flow.children?.length || 0;
+          return (
+            <button
+              key={flow.id}
+              onClick={() => setActiveTab(i)}
+              className="group p-6 rounded-xl border-2 border-dashed border-muted-foreground/20 hover:border-primary/40 hover:bg-muted/30 transition-all text-left"
+            >
+              <div className="flex items-center gap-3 mb-2">
+                <span className={cn("w-3 h-3 rounded-full", nodeStyles.start.dot)} />
+                <h3 className="font-semibold group-hover:text-primary transition-colors">
+                  {flow.label[lang]}
+                </h3>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {lang === "ja" ? `${childCount}つの分岐` : `${childCount} branches`}
+              </p>
+            </button>
+          );
+        })}
       </div>
     </section>
   );

@@ -8,7 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { MapPin, Search, Plus, Globe, Instagram, Facebook, Phone, Mail, Heart } from "lucide-react";
+import { MapPin, Search, Plus, Globe, Instagram, Facebook, Phone, Mail, Heart, Map } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { toast } from "sonner";
 
@@ -38,6 +38,7 @@ export default function Dojos() {
   const [dojos, setDojos] = useState<Dojo[]>([]);
   const [filteredDojos, setFilteredDojos] = useState<Dojo[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [regionFilter, setRegionFilter] = useState<string>("all");
   const [loading, setLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
@@ -79,7 +80,7 @@ export default function Dojos() {
 
   useEffect(() => {
     filterDojos();
-  }, [searchQuery, dojos, favorites]);
+  }, [searchQuery, regionFilter, dojos, favorites]);
 
   const loadFavorites = async (userIdParam?: string) => {
     const id = userIdParam || userId;
@@ -179,9 +180,19 @@ export default function Dojos() {
     }
   };
 
+  const regionKeywords: Record<string, string[]> = {
+    "hokkaido-tohoku": ["北海道", "青森", "岩手", "宮城", "秋田", "山形", "福島", "Hokkaido", "Tohoku", "Sendai", "Sapporo"],
+    "kanto": ["東京", "神奈川", "埼玉", "千葉", "茨城", "栃木", "群馬", "Tokyo", "Kanagawa", "Saitama", "Chiba", "Yokohama", "Kawasaki"],
+    "chubu": ["愛知", "静岡", "岐阜", "三重", "長野", "山梨", "新潟", "富山", "石川", "福井", "Nagoya", "Aichi", "Shizuoka"],
+    "kansai": ["大阪", "京都", "兵庫", "奈良", "和歌山", "滋賀", "Osaka", "Kyoto", "Kobe", "Nara", "Hyogo"],
+    "chugoku-shikoku": ["広島", "岡山", "山口", "鳥取", "島根", "香川", "愛媛", "高知", "徳島"],
+    "kyushu-okinawa": ["福岡", "佐賀", "長崎", "熊本", "大分", "宮崎", "鹿児島", "沖縄", "Fukuoka", "Okinawa"],
+    "international": ["USA", "Brazil", "UK", "France", "Germany", "Australia", "Korea", "China"],
+  };
+
   const filterDojos = () => {
     let filtered = [...dojos];
-    
+
     // Apply search filter
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
@@ -189,6 +200,15 @@ export default function Dojos() {
         const name = language === "ja" ? dojo.name_ja : language === "pt" ? dojo.name_pt : dojo.name;
         const location = dojo.location || "";
         return name.toLowerCase().includes(query) || location.toLowerCase().includes(query);
+      });
+    }
+
+    // Apply region filter
+    if (regionFilter !== "all") {
+      const keywords = regionKeywords[regionFilter] || [];
+      filtered = filtered.filter(dojo => {
+        const location = dojo.location || "";
+        return keywords.some(kw => location.includes(kw));
       });
     }
     
@@ -264,8 +284,19 @@ export default function Dojos() {
             </p>
           </div>
 
+          {/* Stats bar */}
+          {!loading && (
+            <p className="text-xs sm:text-sm text-muted-foreground mb-3 sm:mb-4 animate-fade-in">
+              {language === "ja"
+                ? `${dojos.length}件の道場が登録されています`
+                : language === "pt"
+                ? `${dojos.length} academias cadastradas`
+                : `${dojos.length} dojos registered`}
+            </p>
+          )}
+
           {/* Search and Add */}
-          <div className="flex gap-2 sm:gap-4 mb-4 sm:mb-6 md:mb-8 flex-col sm:flex-row animate-fade-in">
+          <div className="flex gap-2 sm:gap-4 mb-3 sm:mb-4 flex-col sm:flex-row animate-fade-in">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4 sm:w-5 sm:h-5" />
               <Input
@@ -276,6 +307,12 @@ export default function Dojos() {
                 disabled={loading}
               />
             </div>
+            <Link to="/map">
+              <Button variant="outline" className="gap-1.5 sm:gap-2 w-full sm:w-auto h-10 sm:h-11 text-sm active:scale-[0.98]">
+                <Map className="w-4 h-4" />
+                {language === "ja" ? "マップで見る" : language === "pt" ? "Ver no Mapa" : "View on Map"}
+              </Button>
+            </Link>
             {isAuthenticated && (
               <Link to="/dojos/new">
                 <Button className="gap-1.5 sm:gap-2 w-full sm:w-auto h-10 sm:h-11 text-sm active:scale-[0.98]">
@@ -284,6 +321,34 @@ export default function Dojos() {
                 </Button>
               </Link>
             )}
+          </div>
+
+          {/* Region filter chips */}
+          <div className="flex gap-2 overflow-x-auto pb-2 mb-4 sm:mb-6 md:mb-8 animate-fade-in scrollbar-hide">
+            {[
+              { key: "all", ja: "すべて", en: "All", pt: "Todos" },
+              { key: "hokkaido-tohoku", ja: "北海道・東北", en: "Hokkaido & Tohoku", pt: "Hokkaido & Tohoku" },
+              { key: "kanto", ja: "関東", en: "Kanto", pt: "Kanto" },
+              { key: "chubu", ja: "中部", en: "Chubu", pt: "Chubu" },
+              { key: "kansai", ja: "関西", en: "Kansai", pt: "Kansai" },
+              { key: "chugoku-shikoku", ja: "中国・四国", en: "Chugoku & Shikoku", pt: "Chugoku & Shikoku" },
+              { key: "kyushu-okinawa", ja: "九州・沖縄", en: "Kyushu & Okinawa", pt: "Kyushu & Okinawa" },
+              { key: "international", ja: "海外", en: "International", pt: "Internacional" },
+            ].map((region) => {
+              const label = language === "ja" ? region.ja : language === "pt" ? region.pt : region.en;
+              const isActive = regionFilter === region.key;
+              return (
+                <Button
+                  key={region.key}
+                  variant={isActive ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setRegionFilter(region.key)}
+                  className="flex-shrink-0 h-8 text-xs sm:text-sm px-3 active:scale-95"
+                >
+                  {label}
+                </Button>
+              );
+            })}
           </div>
 
           {/* Dojos Grid */}

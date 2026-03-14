@@ -177,6 +177,25 @@ const Home = () => {
               </div>
             </section>
 
+            {/* Stats / Social Proof Bar */}
+            <div className="bg-foreground text-background">
+              <div className="max-w-6xl mx-auto px-6 py-10">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-0 divide-y-2 md:divide-y-0 md:divide-x divide-background/20">
+                  {[
+                    { number: '200+', label: language === 'ja' ? '動画数' : language === 'pt' ? 'Vídeos' : 'Videos' },
+                    { number: '5,000+', label: language === 'ja' ? '受講者' : language === 'pt' ? 'Praticantes' : 'Practitioners' },
+                    { number: '3', label: language === 'ja' ? '言語' : language === 'pt' ? 'Idiomas' : 'Languages' },
+                    { number: language === 'ja' ? '世界王者' : language === 'pt' ? 'Campeão' : 'World Champ', label: language === 'ja' ? '監修' : language === 'pt' ? 'Supervisão' : 'Supervised by' },
+                  ].map((stat, idx) => (
+                    <div key={idx} className="flex flex-col items-center justify-center text-center py-4 md:py-0 md:px-8">
+                      <span className="text-3xl md:text-4xl font-semibold tracking-tight leading-none mb-2">{stat.number}</span>
+                      <span className="text-sm uppercase tracking-widest opacity-70">{stat.label}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
             {/* 4K Overhead Image Section */}
             <AnimatedSection>
               <section className="py-20 px-6 bg-background">
@@ -413,6 +432,79 @@ const Home = () => {
                         {language === 'ja' ? '柔術用語辞典' : language === 'pt' ? 'Dicionário de termos' : 'Terminology dictionary'}
                       </p>
                     </Link>
+                  </div>
+                </div>
+              </section>
+            </AnimatedSection>
+
+            {/* Testimonials Section */}
+            <AnimatedSection delay={225}>
+              <section className="py-20 px-6 bg-muted/30">
+                <div className="max-w-6xl mx-auto">
+                  <div className="text-center mb-12">
+                    <h2 className="text-3xl md:text-4xl font-light mb-3">
+                      {language === 'ja' ? '受講者の声' : language === 'pt' ? 'O Que Nossos Alunos Dizem' : 'What Our Students Say'}
+                    </h2>
+                    <p className="text-muted-foreground">
+                      {language === 'ja' ? '実際に学んでいる方々のリアルな声' : language === 'pt' ? 'Depoimentos reais de quem aprende' : 'Real voices from those who train'}
+                    </p>
+                  </div>
+
+                  <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {[
+                      {
+                        stars: 5,
+                        quote: {
+                          ja: '「理詰めで動く柔術がようやくわかった気がします。動画の解説が素晴らしい。」',
+                          en: '"I finally feel like I understand logic-based jiu-jitsu. The video explanations are excellent."',
+                          pt: '"Finalmente sinto que entendo o jiu-jitsu lógico. As explicações nos vídeos são excelentes."',
+                        },
+                        name: { ja: 'T.K.（東京）', en: 'T.K. (Tokyo)', pt: 'T.K. (Tokyo)' },
+                        belt: { ja: '青帯', en: 'Blue Belt', pt: 'Faixa Azul' },
+                        beltColor: 'bg-blue-600',
+                      },
+                      {
+                        stars: 5,
+                        quote: {
+                          ja: '「40代からはじめた柔術。怪我なく1年続けられているのはJiuFlowのおかげです。」',
+                          en: '"Started BJJ in my 40s. I\'ve trained for a year without injury thanks to JiuFlow."',
+                          pt: '"Comecei o jiu-jitsu aos 40 anos. Treinei um ano sem lesões graças ao JiuFlow."',
+                        },
+                        name: { ja: 'M.S.（大阪）', en: 'M.S. (Osaka)', pt: 'M.S. (Osaka)' },
+                        belt: { ja: '白帯', en: 'White Belt', pt: 'Faixa Branca' },
+                        beltColor: 'bg-gray-200 text-gray-800',
+                      },
+                      {
+                        stars: 5,
+                        quote: {
+                          ja: '「世界チャンピオンの動画を、この価格で見られるのは信じられない。」',
+                          en: '"I can\'t believe I can watch a World Champion\'s videos at this price."',
+                          pt: '"Não acredito que posso assistir vídeos de um Campeão Mundial por esse preço."',
+                        },
+                        name: { ja: 'R.A.（名古屋）', en: 'R.A. (Nagoya)', pt: 'R.A. (Nagoya)' },
+                        belt: { ja: '紫帯', en: 'Purple Belt', pt: 'Faixa Roxa' },
+                        beltColor: 'bg-purple-600',
+                      },
+                    ].map((testimonial, idx) => (
+                      <div key={idx} className="glass-card rounded-xl p-6 flex flex-col gap-4">
+                        <div className="flex items-center gap-0.5 text-yellow-500">
+                          {Array.from({ length: testimonial.stars }).map((_, i) => (
+                            <span key={i} className="text-lg leading-none">★</span>
+                          ))}
+                        </div>
+                        <p className="text-sm sm:text-base font-light leading-relaxed flex-1">
+                          {language === 'ja' ? testimonial.quote.ja : language === 'pt' ? testimonial.quote.pt : testimonial.quote.en}
+                        </p>
+                        <div className="flex items-center gap-3 pt-2 border-t border-border/50">
+                          <span className="font-medium text-sm">
+                            {language === 'ja' ? testimonial.name.ja : language === 'pt' ? testimonial.name.pt : testimonial.name.en}
+                          </span>
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium text-white ${testimonial.beltColor}`}>
+                            {language === 'ja' ? testimonial.belt.ja : language === 'pt' ? testimonial.belt.pt : testimonial.belt.en}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
               </section>
