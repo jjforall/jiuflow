@@ -49,7 +49,7 @@ interface VideoListItem {
 }
 
 export default function VideoList() {
-  const { slug } = useParams<{ slug: string }>();
+  const { slug, token: shareToken } = useParams<{ slug: string; token: string }>();
   const { language } = useLanguage();
   const { user } = useAuth();
   const { subscribed, loading: subLoading } = useSubscription();
@@ -58,23 +58,49 @@ export default function VideoList() {
   const [items, setItems] = useState<VideoListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const isShareMode = !!shareToken;
 
   useEffect(() => {
-    if (slug) {
+    if (slug || shareToken) {
       fetchList();
     }
-  }, [slug]);
+  }, [slug, shareToken]);
 
   const fetchList = async () => {
     setLoading(true);
     setError(null);
 
-    // Fetch list by slug or id
-    const { data: listData, error: listError } = await supabase
-      .from("video_lists")
-      .select("*")
-      .or(`slug.eq.${slug},id.eq.${slug}`)
-      .single();
+    let listData: any = null;
+    let listError: any = null;
+
+    if (shareToken) {
+      // Fetch by share token
+      const result = await supabase
+        .from("video_lists")
+        .select("*")
+        .eq("share_token", shareToken)
+        .single();
+      listData = result.data;
+      listError = result.error;
+
+      if (listData) {
+        // Check expiration
+        if (listData.share_token_expires_at && new Date(listData.share_token_expires_at) < new Date()) {
+          setError("この共有リンクは有効期限切れです");
+          setLoading(false);
+          return;
+        }
+      }
+    } else {
+      // Fetch list by slug or id
+      const result = await supabase
+        .from("video_lists")
+        .select("*")
+        .or(`slug.eq.${slug},id.eq.${slug}`)
+        .single();
+      listData = result.data;
+      listError = result.error;
+    }
 
     if (listError || !listData) {
       setError("リストが見つかりません");
@@ -82,8 +108,8 @@ export default function VideoList() {
       return;
     }
 
-    // Check visibility
-    if (listData.visibility === 'private') {
+    // Check visibility (skip for share token access)
+    if (!shareToken && listData.visibility === 'private') {
       setError("このリストは非公開です");
       setLoading(false);
       return;
