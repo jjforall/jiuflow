@@ -30,6 +30,8 @@ interface VideoList {
   item_count?: number;
   slug: string | null;
   items?: VideoListItem[];
+  share_token: string | null;
+  share_token_expires_at: string | null;
 }
 
 interface Technique {
