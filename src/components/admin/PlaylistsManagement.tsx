@@ -599,6 +599,12 @@ export default function PlaylistsManagement() {
                     </div>
                     <div className="flex items-center gap-2 flex-wrap">
                       {getVisibilityBadge(list.visibility)}
+                      {list.share_token && (
+                        <Badge variant="outline" className="text-xs">
+                          <Share2 className="w-3 h-3 mr-1" />
+                          共有中 〜{list.share_token_expires_at ? new Date(list.share_token_expires_at).toLocaleDateString('ja-JP') : ''}
+                        </Badge>
+                      )}
                       <span className="text-xs text-muted-foreground">
                         {list.item_count || 0}本 • {new Date(list.created_at).toLocaleDateString("ja-JP")}
                       </span>
