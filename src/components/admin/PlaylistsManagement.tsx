@@ -611,6 +611,35 @@ export default function PlaylistsManagement() {
                       動画管理
                     </Button>
                     <div className="flex gap-1">
+                      {list.share_token ? (
+                        <>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => copyShareUrl(list)}
+                            title={`共有リンクをコピー（期限: ${list.share_token_expires_at ? new Date(list.share_token_expires_at).toLocaleDateString('ja-JP') : '無期限'}）`}
+                          >
+                            <Share2 className="w-4 h-4 text-green-500" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleRevokeShareLink(list)}
+                            title="共有リンクを無効化"
+                          >
+                            <X className="w-4 h-4 text-destructive" />
+                          </Button>
+                        </>
+                      ) : (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleGenerateShareLink(list)}
+                          title="共有リンクを生成（1ヶ月有効）"
+                        >
+                          <Share2 className="w-4 h-4" />
+                        </Button>
+                      )}
                       <Button
                         variant="ghost"
                         size="icon"
