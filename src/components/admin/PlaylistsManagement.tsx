@@ -419,7 +419,8 @@ export default function PlaylistsManagement() {
       toast.error("共有リンクの生成に失敗しました");
       console.error(error);
     } else {
-      const shareUrl = `${window.location.origin}/shared-list/${newToken}`;
+      const prodOrigin = 'https://jiuflow.lovable.app';
+      const shareUrl = `${prodOrigin}/shared-list/${newToken}`;
       await navigator.clipboard.writeText(shareUrl);
       toast.success("共有リンクを生成してコピーしました（有効期限: 1ヶ月）");
       fetchLists();
