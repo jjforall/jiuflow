@@ -396,6 +396,58 @@ export default function PlaylistsManagement() {
     toast.success("URLをコピーしました");
   };
 
+  const generateShareToken = (): string => {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let token = '';
+    for (let i = 0; i < 32; i++) {
+      token += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return token;
+  };
+
+  const handleGenerateShareLink = async (list: VideoList) => {
+    const newToken = generateShareToken();
+    const expiresAt = new Date();
+    expiresAt.setMonth(expiresAt.getMonth() + 1);
+
+    const { error } = await supabase
+      .from("video_lists")
+      .update({ share_token: newToken, share_token_expires_at: expiresAt.toISOString() })
+      .eq("id", list.id);
+
+    if (error) {
+      toast.error("共有リンクの生成に失敗しました");
+      console.error(error);
+    } else {
+      const shareUrl = `${window.location.origin}/shared-list/${newToken}`;
+      await navigator.clipboard.writeText(shareUrl);
+      toast.success("共有リンクを生成してコピーしました（有効期限: 1ヶ月）");
+      fetchLists();
+    }
+  };
+
+  const handleRevokeShareLink = async (list: VideoList) => {
+    const { error } = await supabase
+      .from("video_lists")
+      .update({ share_token: null, share_token_expires_at: null })
+      .eq("id", list.id);
+
+    if (error) {
+      toast.error("共有リンクの無効化に失敗しました");
+      console.error(error);
+    } else {
+      toast.success("共有リンクを無効化しました");
+      fetchLists();
+    }
+  };
+
+  const copyShareUrl = (list: VideoList) => {
+    if (list.share_token) {
+      navigator.clipboard.writeText(`${window.location.origin}/shared-list/${list.share_token}`);
+      toast.success("共有リンクをコピーしました");
+    }
+  };
+
   const handleRefresh = async () => {
     const techniques = await fetchTechniques();
     await fetchLists(techniques);
