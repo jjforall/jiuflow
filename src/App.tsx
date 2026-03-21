@@ -265,6 +265,9 @@ const App = () => (
                   <Route path="/athlete/:slugOrUsername" element={<SuspenseWrapper variant="profile"><Athlete /></SuspenseWrapper>} />
                   <Route path="/ryozo" element={<SuspenseWrapper variant="profile"><Athlete /></SuspenseWrapper>} />
                   <Route path="/lists/:slug" element={<SuspenseWrapper variant="map"><VideoList /></SuspenseWrapper>} />
+                  {/* Shared Video/Playlist - public access via share token (must be before catch-all) */}
+                  <Route path="/shared/:token" element={<SuspenseWrapper variant="video"><SharedVideo /></SuspenseWrapper>} />
+                  <Route path="/shared-list/:token" element={<SuspenseWrapper variant="map"><VideoList /></SuspenseWrapper>} />
                   <Route path="/:slugOrUsername" element={<SuspenseWrapper variant="profile"><DojoOrProfile /></SuspenseWrapper>} />
                   <Route path="/practice-records" element={
                     <ProtectedRoute>
@@ -311,10 +314,8 @@ const App = () => (
                     </ProtectedRoute>
                   } />
 
-                  {/* Shared Video - public access via share token */}
-                  <Route path="/shared/:token" element={<SuspenseWrapper variant="video"><SharedVideo /></SuspenseWrapper>} />
-                  {/* Shared Playlist - public access via share token */}
-                  <Route path="/shared-list/:token" element={<SuspenseWrapper variant="map"><VideoList /></SuspenseWrapper>} />
+
+
 
                   {/* 404 */}
                   <Route path="*" element={<SuspenseWrapper><NotFound /></SuspenseWrapper>} />
