@@ -444,7 +444,7 @@ export default function PlaylistsManagement() {
 
   const copyShareUrl = (list: VideoList) => {
     if (list.share_token) {
-      navigator.clipboard.writeText(`${window.location.origin}/shared-list/${list.share_token}`);
+      navigator.clipboard.writeText(`https://jiuflow.lovable.app/shared-list/${list.share_token}`);
       toast.success("共有リンクをコピーしました");
     }
   };
