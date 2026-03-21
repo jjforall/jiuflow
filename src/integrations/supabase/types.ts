@@ -3856,6 +3856,8 @@ export type Database = {
           name: string
           name_ja: string | null
           name_pt: string | null
+          share_token: string | null
+          share_token_expires_at: string | null
           slug: string | null
           updated_at: string
           visibility: Database["public"]["Enums"]["video_list_visibility"]
@@ -3871,6 +3873,8 @@ export type Database = {
           name: string
           name_ja?: string | null
           name_pt?: string | null
+          share_token?: string | null
+          share_token_expires_at?: string | null
           slug?: string | null
           updated_at?: string
           visibility?: Database["public"]["Enums"]["video_list_visibility"]
@@ -3886,6 +3890,8 @@ export type Database = {
           name?: string
           name_ja?: string | null
           name_pt?: string | null
+          share_token?: string | null
+          share_token_expires_at?: string | null
           slug?: string | null
           updated_at?: string
           visibility?: Database["public"]["Enums"]["video_list_visibility"]
