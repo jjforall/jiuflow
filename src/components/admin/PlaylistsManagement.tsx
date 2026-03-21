@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, Pencil, Trash2, Eye, EyeOff, Link2, X, Copy, ExternalLink, Play, RefreshCw, Tag, ListVideo } from "lucide-react";
+import { Plus, Pencil, Trash2, Eye, EyeOff, Link2, X, Copy, ExternalLink, Play, RefreshCw, Tag, ListVideo, Share2, Check } from "lucide-react";
 import { toast } from "sonner";
 import { LocalizationBadges } from "@/components/ui/LocalizationBadges";
 import { VideoPreviewDialog, type VideoPreviewTechnique } from "@/components/admin/VideoPreviewDialog";
@@ -30,6 +30,8 @@ interface VideoList {
   item_count?: number;
   slug: string | null;
   items?: VideoListItem[];
+  share_token: string | null;
+  share_token_expires_at: string | null;
 }
 
 interface Technique {
@@ -394,6 +396,58 @@ export default function PlaylistsManagement() {
     toast.success("URLをコピーしました");
   };
 
+  const generateShareToken = (): string => {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let token = '';
+    for (let i = 0; i < 32; i++) {
+      token += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return token;
+  };
+
+  const handleGenerateShareLink = async (list: VideoList) => {
+    const newToken = generateShareToken();
+    const expiresAt = new Date();
+    expiresAt.setMonth(expiresAt.getMonth() + 1);
+
+    const { error } = await supabase
+      .from("video_lists")
+      .update({ share_token: newToken, share_token_expires_at: expiresAt.toISOString() })
+      .eq("id", list.id);
+
+    if (error) {
+      toast.error("共有リンクの生成に失敗しました");
+      console.error(error);
+    } else {
+      const shareUrl = `${window.location.origin}/shared-list/${newToken}`;
+      await navigator.clipboard.writeText(shareUrl);
+      toast.success("共有リンクを生成してコピーしました（有効期限: 1ヶ月）");
+      fetchLists();
+    }
+  };
+
+  const handleRevokeShareLink = async (list: VideoList) => {
+    const { error } = await supabase
+      .from("video_lists")
+      .update({ share_token: null, share_token_expires_at: null })
+      .eq("id", list.id);
+
+    if (error) {
+      toast.error("共有リンクの無効化に失敗しました");
+      console.error(error);
+    } else {
+      toast.success("共有リンクを無効化しました");
+      fetchLists();
+    }
+  };
+
+  const copyShareUrl = (list: VideoList) => {
+    if (list.share_token) {
+      navigator.clipboard.writeText(`${window.location.origin}/shared-list/${list.share_token}`);
+      toast.success("共有リンクをコピーしました");
+    }
+  };
+
   const handleRefresh = async () => {
     const techniques = await fetchTechniques();
     await fetchLists(techniques);
@@ -545,6 +599,12 @@ export default function PlaylistsManagement() {
                     </div>
                     <div className="flex items-center gap-2 flex-wrap">
                       {getVisibilityBadge(list.visibility)}
+                      {list.share_token && (
+                        <Badge variant="outline" className="text-xs">
+                          <Share2 className="w-3 h-3 mr-1" />
+                          共有中 〜{list.share_token_expires_at ? new Date(list.share_token_expires_at).toLocaleDateString('ja-JP') : ''}
+                        </Badge>
+                      )}
                       <span className="text-xs text-muted-foreground">
                         {list.item_count || 0}本 • {new Date(list.created_at).toLocaleDateString("ja-JP")}
                       </span>
@@ -557,6 +617,35 @@ export default function PlaylistsManagement() {
                       動画管理
                     </Button>
                     <div className="flex gap-1">
+                      {list.share_token ? (
+                        <>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => copyShareUrl(list)}
+                            title={`共有リンクをコピー（期限: ${list.share_token_expires_at ? new Date(list.share_token_expires_at).toLocaleDateString('ja-JP') : '無期限'}）`}
+                          >
+                            <Share2 className="w-4 h-4 text-green-500" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleRevokeShareLink(list)}
+                            title="共有リンクを無効化"
+                          >
+                            <X className="w-4 h-4 text-destructive" />
+                          </Button>
+                        </>
+                      ) : (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleGenerateShareLink(list)}
+                          title="共有リンクを生成（1ヶ月有効）"
+                        >
+                          <Share2 className="w-4 h-4" />
+                        </Button>
+                      )}
                       <Button
                         variant="ghost"
                         size="icon"

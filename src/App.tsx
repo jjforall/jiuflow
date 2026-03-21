@@ -313,6 +313,8 @@ const App = () => (
 
                   {/* Shared Video - public access via share token */}
                   <Route path="/shared/:token" element={<SuspenseWrapper variant="video"><SharedVideo /></SuspenseWrapper>} />
+                  {/* Shared Playlist - public access via share token */}
+                  <Route path="/shared-list/:token" element={<SuspenseWrapper variant="map"><VideoList /></SuspenseWrapper>} />
 
                   {/* 404 */}
                   <Route path="*" element={<SuspenseWrapper><NotFound /></SuspenseWrapper>} />
