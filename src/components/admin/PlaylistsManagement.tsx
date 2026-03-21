@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, Pencil, Trash2, Eye, EyeOff, Link2, X, Copy, ExternalLink, Play, RefreshCw, Tag, ListVideo } from "lucide-react";
+import { Plus, Pencil, Trash2, Eye, EyeOff, Link2, X, Copy, ExternalLink, Play, RefreshCw, Tag, ListVideo, Share2, Check } from "lucide-react";
 import { toast } from "sonner";
 import { LocalizationBadges } from "@/components/ui/LocalizationBadges";
 import { VideoPreviewDialog, type VideoPreviewTechnique } from "@/components/admin/VideoPreviewDialog";
