@@ -22,6 +22,8 @@ interface VideoList {
   visibility: 'public' | 'unlisted' | 'private';
   cover_image_url: string | null;
   slug: string | null;
+  share_token: string | null;
+  share_token_expires_at: string | null;
 }
 
 interface VideoListItem {
