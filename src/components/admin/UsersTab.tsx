@@ -229,6 +229,24 @@ export const UsersTab = () => {
     setShowDeleteDialog(true);
   };
 
+  const handleImpersonate = async (userId: string) => {
+    try {
+      const { data, error } = await supabase.functions.invoke("impersonate-user", {
+        body: { targetUserId: userId },
+      });
+      if (error) throw error;
+      if (data.error) throw new Error(data.error);
+      if (data.url) {
+        window.open(data.url, "_blank");
+        toast.success("新しいタブでログインリンクを開きました");
+      }
+    } catch (error: unknown) {
+      toast.error("エラー", {
+        description: (error instanceof Error ? error.message : String(error)),
+      });
+    }
+  };
+
   const handleDeleteUser = async () => {
     if (!deletingUser) return;
 
