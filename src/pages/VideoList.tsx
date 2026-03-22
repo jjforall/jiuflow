@@ -287,7 +287,7 @@ export default function VideoList() {
         </div>
       );
     }
-    if (!subscribed) {
+    if (!subscribed && !isAdmin && !isStaff) {
       return (
         <div className="min-h-screen bg-background flex items-center justify-center">
           <div className="text-center space-y-4 px-4">
