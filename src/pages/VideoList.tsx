@@ -288,7 +288,7 @@ export default function VideoList() {
 
   // Shared list requires login + active subscription
   if (isShareMode) {
-    if (authLoading || subLoading) {
+    if (authLoading || subLoading || profileLoading) {
       return (
         <div className="min-h-screen bg-background flex items-center justify-center">
           <div className="text-muted-foreground">読み込み中...</div>
@@ -312,7 +312,13 @@ export default function VideoList() {
         </div>
       );
     }
-    if (!subscribed && !isAdmin && !isStaff) {
+
+    // Admin/staff bypass all checks
+    const isPrivileged = isAdmin || isStaff;
+    // Users registered before cutoff can view without subscription
+    const isGrandfathered = userCreatedAt && userCreatedAt < SHARE_CUTOFF_DATE;
+
+    if (!isPrivileged && !isGrandfathered && !subscribed) {
       return (
         <div className="min-h-screen bg-background flex items-center justify-center">
           <div className="text-center space-y-4 px-4">
