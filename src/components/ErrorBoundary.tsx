@@ -18,7 +18,7 @@ interface State {
 }
 
 export class ErrorBoundary extends Component<Props, State> {
-  private countdownInterval?: NodeJS.Timeout;
+  private countdownInterval?: ReturnType<typeof setInterval>;
 
   public state: State = {
     hasError: false,
