@@ -259,6 +259,48 @@ export default function VideoList() {
     }
   };
 
+  // Shared list requires login + active subscription
+  if (isShareMode) {
+    if (authLoading || subLoading) {
+      return (
+        <div className="min-h-screen bg-background flex items-center justify-center">
+          <div className="text-muted-foreground">読み込み中...</div>
+        </div>
+      );
+    }
+    if (!user) {
+      return (
+        <div className="min-h-screen bg-background flex items-center justify-center">
+          <div className="text-center space-y-4 px-4">
+            <Lock className="h-12 w-12 mx-auto text-muted-foreground" />
+            <h2 className="text-xl font-bold">ログインが必要です</h2>
+            <p className="text-muted-foreground">このリストを閲覧するにはログインしてください。</p>
+            <Link to={`/login?redirect=${encodeURIComponent(window.location.pathname)}`}>
+              <Button className="mt-2">
+                <LogIn className="h-4 w-4 mr-2" />
+                ログイン
+              </Button>
+            </Link>
+          </div>
+        </div>
+      );
+    }
+    if (!subscribed) {
+      return (
+        <div className="min-h-screen bg-background flex items-center justify-center">
+          <div className="text-center space-y-4 px-4">
+            <Lock className="h-12 w-12 mx-auto text-muted-foreground" />
+            <h2 className="text-xl font-bold">有料プラン限定コンテンツ</h2>
+            <p className="text-muted-foreground">このリストを閲覧するには有料プランへの加入が必要です。</p>
+            <Link to="/join">
+              <Button className="mt-2">プランを見る</Button>
+            </Link>
+          </div>
+        </div>
+      );
+    }
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
