@@ -51,7 +51,7 @@ interface VideoListItem {
 export default function VideoList() {
   const { slug, token: shareToken } = useParams<{ slug: string; token: string }>();
   const { language } = useLanguage();
-  const { user } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
   const { subscribed, loading: subLoading } = useSubscription();
   
   const [list, setList] = useState<VideoList | null>(null);
