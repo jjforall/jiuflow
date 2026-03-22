@@ -1,32 +1,24 @@
 
 
-## 管理者向け「ユーザーとしてログイン」機能
+## 共有リンクのアクセス制御を更新
 
-### 概要
-管理者が任意のユーザーとして一時的にログインできるEdge Functionを作成する。Supabase Admin APIの`generateLink`を使い、対象ユーザーのマジックリンクを生成する。
+### 変更箇所：`src/pages/VideoList.tsx` のみ
 
-### 仕組み
-1. 管理者が管理画面からユーザーを選択し「このユーザーとしてログイン」ボタンを押す
-2. Edge Functionが対象ユーザーのマジックリンクを生成
-3. そのリンクで新しいタブが開き、対象ユーザーとしてログイン状態になる
+### 新しいアクセスフロー
 
-### 変更内容
+```text
+共有モード:
+  未ログイン → ログイン画面
+  admin/staff → 閲覧OK
+  登録日 < 2025-03-22 → 閲覧OK（課金不問）
+  登録日 >= 2025-03-22 & 課金済み → 閲覧OK
+  登録日 >= 2025-03-22 & 未課金 → プラン案内
+```
 
-**1. Edge Function作成: `supabase/functions/impersonate-user/index.ts`**
-- 管理者認証チェック（adminロールのみ）
-- `supabase.auth.admin.generateLink({ type: 'magiclink', email: targetEmail })` でリンク生成
-- 監査ログに記録
+### 実装内容
 
-**2. 管理画面UIに追加: `src/components/admin/UsersTab.tsx`**
-- 各ユーザー行に「ログイン」ボタンを追加
-- クリック時にEdge Functionを呼び出し、返却されたリンクで新しいタブを開く
-
-### セキュリティ
-- adminロール必須
-- 監査ログに全アクセスを記録
-- テスト完了後、Edge Functionを削除可能
-
-### 注意点
-- マジックリンクでログインすると、現在の管理者セッションは別タブで維持される
-- Supabaseの`auth.admin`はservice_role_keyが必要（既にシークレットに設定済み）
+1. `useEffect`でログインユーザーの`profiles.created_at`を取得
+2. `isShareMode`ブロック内で登録日チェックを追加：
+   - カットオフ日`2025-03-22`より前に登録 → サブスク不要で閲覧可
+   - カットオフ日以降に登録 → 従来通りサブスクチェック
 
