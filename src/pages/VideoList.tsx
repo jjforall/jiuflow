@@ -49,6 +49,8 @@ interface VideoListItem {
   };
 }
 
+const SHARE_CUTOFF_DATE = new Date('2025-03-22T00:00:00Z');
+
 export default function VideoList() {
   const { slug, token: shareToken } = useParams<{ slug: string; token: string }>();
   const { language } = useLanguage();
@@ -59,7 +61,29 @@ export default function VideoList() {
   const [items, setItems] = useState<VideoListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [userCreatedAt, setUserCreatedAt] = useState<Date | null>(null);
+  const [profileLoading, setProfileLoading] = useState(false);
   const isShareMode = !!shareToken;
+
+  // Fetch user's profile created_at for share mode cutoff check
+  useEffect(() => {
+    if (!isShareMode || !user) return;
+    if (isAdmin || isStaff) return;
+    
+    const fetchProfile = async () => {
+      setProfileLoading(true);
+      const { data } = await supabase
+        .from('profiles')
+        .select('created_at')
+        .eq('id', user.id)
+        .single();
+      if (data?.created_at) {
+        setUserCreatedAt(new Date(data.created_at));
+      }
+      setProfileLoading(false);
+    };
+    fetchProfile();
+  }, [isShareMode, user, isAdmin, isStaff]);
 
   useEffect(() => {
     if (slug || shareToken) {
