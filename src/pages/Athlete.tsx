@@ -258,7 +258,7 @@ const Athlete = () => {
     try {
       const { error } = await supabase
         .from('celebrities')
-        .update({ video_url: url || null })
+        .update({ video_url: url || null } as Record<string, unknown>)
         .eq('id', celebrity.id);
       if (error) throw error;
       setEmbedVideoUrl(url);
