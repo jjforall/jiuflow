@@ -7,6 +7,7 @@ import { ArrowLeft, Play, Lock, ListVideo, LogIn } from "lucide-react";
 import { SEOHead } from "@/components/SEOHead";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/hooks/useAuth";
+// useAuth provides isAdmin and isStaff for access bypass
 import { useSubscription } from "@/hooks/useSubscription";
 import { SeriesBadge } from "@/components/ui/series-badge";
 import { LocalizationBadges } from "@/components/ui/LocalizationBadges";
@@ -51,7 +52,7 @@ interface VideoListItem {
 export default function VideoList() {
   const { slug, token: shareToken } = useParams<{ slug: string; token: string }>();
   const { language } = useLanguage();
-  const { user, isLoading: authLoading } = useAuth();
+  const { user, isLoading: authLoading, isAdmin, isStaff } = useAuth();
   const { subscribed, loading: subLoading } = useSubscription();
   
   const [list, setList] = useState<VideoList | null>(null);
@@ -231,6 +232,8 @@ export default function VideoList() {
   };
 
   const canViewVideo = (technique: VideoListItem['technique']) => {
+    // Admins and staff can view all
+    if (isAdmin || isStaff) return true;
     // If the list itself is unlisted, all videos in the list are viewable by anyone with the link
     if (list?.visibility === 'unlisted') return true;
     // Public or unlisted techniques are viewable
@@ -285,7 +288,7 @@ export default function VideoList() {
         </div>
       );
     }
-    if (!subscribed) {
+    if (!subscribed && !isAdmin && !isStaff) {
       return (
         <div className="min-h-screen bg-background flex items-center justify-center">
           <div className="text-center space-y-4 px-4">

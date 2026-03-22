@@ -66,7 +66,7 @@ const PracticeRecordsPage = () => {
   
   // Pending changes for debounced saving
   const [pendingChanges, setPendingChanges] = useState<Map<string, { techniqueId: string; date: Date; count: number }>>(new Map());
-  const saveTimeoutRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
+  const saveTimeoutRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
 
   const locale = language === "ja" ? ja : language === "pt" ? ptBR : enUS;
 

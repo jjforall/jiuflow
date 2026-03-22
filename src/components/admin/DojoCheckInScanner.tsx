@@ -44,7 +44,7 @@ export default function DojoCheckInScanner({ dojoId }: DojoCheckInScannerProps) 
   // バーコードスキャナー対応（キーボード入力を監視）
   useEffect(() => {
     let buffer = "";
-    let timeoutId: NodeJS.Timeout;
+    let timeoutId: ReturnType<typeof setTimeout>;
 
     const handleKeyPress = (e: KeyboardEvent) => {
       // 入力欄にフォーカスがある場合はスキップ

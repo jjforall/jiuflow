@@ -170,7 +170,7 @@ const VideoSubtitleOverlayInner = ({
   const [currentTime, setCurrentTime] = useState(0);
   const [prevCueText, setPrevCueText] = useState<string | null>(null);
   const [visible, setVisible] = useState(false);
-  const fadeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const fadeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const cues = useMemo(() => parseVTT(vttContent), [vttContent]);
 

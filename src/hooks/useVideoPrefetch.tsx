@@ -48,7 +48,7 @@ export const prefetchVideo = (videoUrl: string) => {
 
 export const useVideoPrefetch = () => {
   const prefetchedRef = useRef<Set<string>>(new Set());
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   
   // For desktop hover
   const onMouseEnter = useCallback((videoUrl: string | null | undefined) => {
