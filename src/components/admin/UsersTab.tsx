@@ -319,6 +319,11 @@ export const UsersTab = () => {
           パスワード変更
         </DropdownMenuItem>
         <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={() => handleImpersonate(profile.id)}>
+          <LogIn className="h-4 w-4 mr-2" />
+          このユーザーでログイン
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
         <DropdownMenuItem onClick={() => handleToggleAdmin(profile.id, isAdminUser)} disabled={isLoading}>
           {isAdminUser ? (
             <>
