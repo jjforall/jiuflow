@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Users, Search, UserPlus, Globe, Lock, MoreHorizontal, Edit, Key, Shield, ShieldOff, Trash2 } from "lucide-react";
+import { Users, Search, UserPlus, Globe, Lock, MoreHorizontal, Edit, Key, Shield, ShieldOff, Trash2, LogIn } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Profile, NewUserData } from "@/types/admin";
@@ -229,6 +229,24 @@ export const UsersTab = () => {
     setShowDeleteDialog(true);
   };
 
+  const handleImpersonate = async (userId: string) => {
+    try {
+      const { data, error } = await supabase.functions.invoke("impersonate-user", {
+        body: { targetUserId: userId },
+      });
+      if (error) throw error;
+      if (data.error) throw new Error(data.error);
+      if (data.url) {
+        window.open(data.url, "_blank");
+        toast.success("新しいタブでログインリンクを開きました");
+      }
+    } catch (error: unknown) {
+      toast.error("エラー", {
+        description: (error instanceof Error ? error.message : String(error)),
+      });
+    }
+  };
+
   const handleDeleteUser = async () => {
     if (!deletingUser) return;
 
@@ -299,6 +317,11 @@ export const UsersTab = () => {
         <DropdownMenuItem onClick={() => openPasswordDialog(profile.id)}>
           <Key className="h-4 w-4 mr-2" />
           パスワード変更
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={() => handleImpersonate(profile.id)}>
+          <LogIn className="h-4 w-4 mr-2" />
+          このユーザーでログイン
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={() => handleToggleAdmin(profile.id, isAdminUser)} disabled={isLoading}>
