@@ -227,12 +227,13 @@ const Athlete = () => {
       if (error) throw error;
       
       if (data) {
-        setCelebrity(data);
+        const celebrityData = { ...data, video_url: (data as any).video_url ?? null };
+        setCelebrity(celebrityData);
         setIsOwner(user?.id === data.user_id);
         // Restore persisted video URL
-        if (data.video_url) {
-          setEmbedVideoUrl(data.video_url);
-          setEmbedVideoInput(data.video_url);
+        if (celebrityData.video_url) {
+          setEmbedVideoUrl(celebrityData.video_url);
+          setEmbedVideoInput(celebrityData.video_url);
         }
       }
     } catch (error) {

@@ -81,9 +81,9 @@ const VideoPlayerInner = ({
 
   const containerRef = useRef<HTMLDivElement>(null);
   const lastTapRef = useRef<{ time: number; side: 'left' | 'right' } | null>(null);
-  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const qualityLabelTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const bufferingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const qualityLabelTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const bufferingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Prevent duplicate autoplay calls
   const hasAutoPlayedRef = useRef(false);

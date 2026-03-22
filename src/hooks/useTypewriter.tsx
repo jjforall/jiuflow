@@ -25,7 +25,7 @@ export const useTypewriter = ({
   useEffect(() => {
     if (texts.length === 0) return;
 
-    let timeout: NodeJS.Timeout;
+    let timeout: ReturnType<typeof setTimeout>;
 
     if (isTyping) {
       if (displayText.length < currentText.length) {

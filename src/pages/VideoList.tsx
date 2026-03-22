@@ -7,6 +7,7 @@ import { ArrowLeft, Play, Lock, ListVideo, LogIn } from "lucide-react";
 import { SEOHead } from "@/components/SEOHead";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/hooks/useAuth";
+// useAuth provides isAdmin and isStaff for access bypass
 import { useSubscription } from "@/hooks/useSubscription";
 import { SeriesBadge } from "@/components/ui/series-badge";
 import { LocalizationBadges } from "@/components/ui/LocalizationBadges";
