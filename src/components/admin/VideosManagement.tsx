@@ -3486,17 +3486,99 @@ export const VideosManagement = () => {
                 <NotationSelector techniqueId={editingTechnique.id} />
               </div>
             )}
+            
+            {/* Video File Replacement */}
+            <div className="space-y-2 border rounded-lg p-4 bg-muted/30">
+              <Label className="text-sm font-medium flex items-center gap-2">
+                <Film className="h-4 w-4" />
+                動画ファイルを差し替え / アップロード
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                新しい動画ファイルを選択すると、Cloudflare Streamにアップロードし、このレコード（{editingTechnique?.series_prefix}-{editingTechnique?.series_order}）のみを更新します。
+              </p>
+              
+              {!replaceVideoFile ? (
+                <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed rounded-lg cursor-pointer hover:bg-muted/50 transition-colors border-muted-foreground/30">
+                  <div className="flex flex-col items-center justify-center py-2">
+                    <Upload className="h-6 w-6 text-muted-foreground mb-1" />
+                    <p className="text-sm text-muted-foreground">クリックして動画ファイルを選択</p>
+                    <p className="text-xs text-muted-foreground">MP4, MOV, WebM</p>
+                  </div>
+                  <input
+                    type="file"
+                    className="hidden"
+                    accept="video/*"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) setReplaceVideoFile(file);
+                      e.target.value = '';
+                    }}
+                  />
+                </label>
+              ) : (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between p-2 bg-background rounded border">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <Video className="h-4 w-4 text-primary shrink-0" />
+                      <span className="text-sm truncate">{replaceVideoFile.name}</span>
+                      <span className="text-xs text-muted-foreground shrink-0">
+                        ({(replaceVideoFile.size / 1024 / 1024).toFixed(1)} MB)
+                      </span>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setReplaceVideoFile(null)}
+                      disabled={isReplacingVideo}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  {isReplacingVideo && (
+                    <div className="space-y-1">
+                      <Progress value={replaceProgress} className="h-2" />
+                      <p className="text-xs text-muted-foreground text-center">
+                        アップロード中... {replaceProgress}%
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+              
+              {editingTechnique?.video_url && !replaceVideoFile && (
+                <p className="text-xs text-green-600 flex items-center gap-1">
+                  <Check className="h-3 w-3" />
+                  現在の動画URL設定済み
+                </p>
+              )}
+              {editingTechnique && !editingTechnique.video_url && !replaceVideoFile && (
+                <p className="text-xs text-destructive flex items-center gap-1">
+                  <AlertTriangle className="h-3 w-3" />
+                  動画URLが未設定です（404エラーの可能性）
+                </p>
+              )}
+            </div>
           </div>
           
           <DialogFooter>
             <Button variant="outline" onClick={() => {
               setShowEditDialog(false);
               setEditingTechnique(null);
-            }}>
+              setReplaceVideoFile(null);
+            }} disabled={isReplacingVideo}>
               キャンセル
             </Button>
-            <Button onClick={handleSaveEdit} disabled={!formData.name_ja.trim()}>
-              保存
+            <Button 
+              onClick={handleSaveEdit} 
+              disabled={!formData.name_ja.trim() || isReplacingVideo}
+            >
+              {isReplacingVideo ? (
+                <><Loader2 className="h-4 w-4 mr-1 animate-spin" /> アップロード中...</>
+              ) : replaceVideoFile ? (
+                <><Upload className="h-4 w-4 mr-1" /> 差し替えて保存</>
+              ) : (
+                "保存"
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
