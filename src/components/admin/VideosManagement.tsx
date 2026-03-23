@@ -2384,6 +2384,46 @@ export const VideosManagement = () => {
     if (!editingTechnique) return;
     
     try {
+      let videoUrl = editingTechnique.video_url;
+      let videoUrlJa = editingTechnique.video_url_ja;
+      let thumbnailUrl = editingTechnique.thumbnail_url;
+      let thumbnailUrlJa = editingTechnique.thumbnail_url_ja;
+      let videoMetadata = editingTechnique.video_metadata;
+
+      // Handle video file replacement
+      if (replaceVideoFile) {
+        setIsReplacingVideo(true);
+        setReplaceProgress(5);
+        
+        const result = await startCloudflareUpload(replaceVideoFile, editingTechnique.name_ja || editingTechnique.name || 'video');
+        
+        if (!result) {
+          setIsReplacingVideo(false);
+          setReplaceProgress(0);
+          toast.error("動画のアップロードに失敗しました");
+          return;
+        }
+
+        videoUrl = result.videoUrl;
+        videoUrlJa = result.videoUrl;
+        thumbnailUrl = result.thumbnailUrl;
+        thumbnailUrlJa = result.thumbnailUrl;
+        
+        const currentMetadata = (editingTechnique.video_metadata as Record<string, any>) || {};
+        videoMetadata = {
+          ...currentMetadata,
+          ja: {
+            created_at: currentMetadata?.ja?.created_at || new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            video_url: result.videoUrl,
+            cloudflare_video_id: result.cloudflareVideoId,
+          }
+        };
+        
+        setIsReplacingVideo(false);
+        setReplaceProgress(100);
+      }
+
       await updateTechnique.mutateAsync({
         id: editingTechnique.id,
         name: formData.name,
@@ -2394,15 +2434,24 @@ export const VideosManagement = () => {
         description_pt: formData.description_pt,
         visibility: formData.visibility,
         hashtags: formData.hashtags,
+        video_url: videoUrl,
+        video_url_ja: videoUrlJa,
+        thumbnail_url: thumbnailUrl,
+        thumbnail_url_ja: thumbnailUrlJa,
+        video_metadata: videoMetadata,
       });
       
-      toast.success("更新しました");
+      toast.success(replaceVideoFile ? "動画を差し替えて更新しました" : "更新しました");
       setShowEditDialog(false);
       setEditingTechnique(null);
+      setReplaceVideoFile(null);
+      setReplaceProgress(0);
       refetch();
     } catch (error) {
       console.error('Error updating technique:', error);
       toast.error("更新に失敗しました");
+      setIsReplacingVideo(false);
+      setReplaceProgress(0);
     }
   };
 
