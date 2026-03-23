@@ -67,7 +67,7 @@ export const VideosManagement = () => {
   // Fetch notations for filter dropdown (sorted by video count)
   const { data: notationsForFilter } = useNotations();
   const [videoFile, setVideoFile] = useState<File | null>(null);
-  const { startCloudflareUpload } = useUpload();
+  const { startCloudflareUpload, startCloudflareUploadBackground } = useUpload();
   const [isTranslating, setIsTranslating] = useState(false);
   const [isAutoTranslatingName, setIsAutoTranslatingName] = useState(false);
   const [isAutoTranslatingDesc, setIsAutoTranslatingDesc] = useState(false);
