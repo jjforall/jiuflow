@@ -630,6 +630,33 @@ export function UploadProvider({ children }: { children: ReactNode }) {
     }
   }, [updateUpload]);
 
+  // Fire-and-forget Cloudflare upload with DB update callback
+  const startCloudflareUploadBackground = useCallback((
+    file: File,
+    title: string,
+    label: string,
+    onComplete: (result: CloudflareUploadResult) => Promise<void>
+  ) => {
+    // Run async but don't return the promise — fire and forget
+    (async () => {
+      const result = await startCloudflareUpload(file, title);
+      if (result) {
+        try {
+          await onComplete(result);
+          // Update the label on the completed task
+          setUploads(prev => prev.map(u => 
+            u.cloudflareVideoId === result.cloudflareVideoId && u.status === 'completed'
+              ? { ...u, label }
+              : u
+          ));
+        } catch (err) {
+          console.error('Background upload onComplete error:', err);
+          toast.error(`${label} のDB更新に失敗しました`);
+        }
+      }
+    })();
+  }, [startCloudflareUpload]);
+
   const cancelUpload = useCallback((id: string) => {
     const controller = abortControllers.current.get(id);
     if (controller) {
@@ -643,10 +670,14 @@ export function UploadProvider({ children }: { children: ReactNode }) {
     setUploads(prev => prev.filter(u => u.status !== 'completed' && u.status !== 'error'));
   }, []);
 
+  const dismissUpload = useCallback((id: string) => {
+    setUploads(prev => prev.filter(u => u.id !== id));
+  }, []);
+
   const isUploading = uploads.some(u => u.status === 'uploading' || u.status === 'processing');
 
   return (
-    <UploadContext.Provider value={{ uploads, startUpload, startStorageUpload, startCloudflareUpload, cancelUpload, clearCompletedUploads, isUploading }}>
+    <UploadContext.Provider value={{ uploads, startUpload, startStorageUpload, startCloudflareUpload, startCloudflareUploadBackground, cancelUpload, clearCompletedUploads, dismissUpload, isUploading }}>
       {children}
     </UploadContext.Provider>
   );
