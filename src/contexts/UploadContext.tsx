@@ -16,15 +16,21 @@ interface UploadTask {
   error?: string;
   type: 'bunny' | 'supabase' | 'cloudflare';
   startTime: number;
+  label?: string;
+  dismissed?: boolean;
 }
+
+export type CloudflareUploadResult = { videoUrl: string; thumbnailUrl: string | null; cloudflareVideoId: string };
 
 interface UploadContextType {
   uploads: UploadTask[];
   startUpload: (file: File, title: string) => Promise<{ videoUrl: string; bunnyVideoId: string; fileSize: number } | null>;
   startStorageUpload: (file: File, bucket: string, path: string, onThumbnail?: (url: string) => Promise<string | null>) => Promise<{ videoUrl: string; thumbnailUrl: string | null } | null>;
-  startCloudflareUpload: (file: File, title: string) => Promise<{ videoUrl: string; thumbnailUrl: string | null; cloudflareVideoId: string } | null>;
+  startCloudflareUpload: (file: File, title: string) => Promise<CloudflareUploadResult | null>;
+  startCloudflareUploadBackground: (file: File, title: string, label: string, onComplete: (result: CloudflareUploadResult) => Promise<void>) => void;
   cancelUpload: (id: string) => void;
   clearCompletedUploads: () => void;
+  dismissUpload: (id: string) => void;
   isUploading: boolean;
 }
 
