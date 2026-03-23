@@ -3563,16 +3563,14 @@ export const VideosManagement = () => {
               setShowEditDialog(false);
               setEditingTechnique(null);
               setReplaceVideoFile(null);
-            }} disabled={isReplacingVideo}>
+            }}>
               キャンセル
             </Button>
             <Button 
               onClick={handleSaveEdit} 
-              disabled={!formData.name_ja.trim() || isReplacingVideo}
+              disabled={!formData.name_ja.trim()}
             >
-              {isReplacingVideo ? (
-                <><Loader2 className="h-4 w-4 mr-1 animate-spin" /> アップロード中...</>
-              ) : replaceVideoFile ? (
+              {replaceVideoFile ? (
                 <><Upload className="h-4 w-4 mr-1" /> 差し替えて保存</>
               ) : (
                 "保存"
