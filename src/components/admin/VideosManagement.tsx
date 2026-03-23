@@ -2319,6 +2319,8 @@ export const VideosManagement = () => {
       visibility: (technique.visibility || "public") as "public" | "unlisted" | "private",
     });
     setEditLanguage("ja"); // Reset to Japanese when opening dialog
+    setReplaceVideoFile(null);
+    setReplaceProgress(0);
     setShowEditDialog(true);
   };
   
