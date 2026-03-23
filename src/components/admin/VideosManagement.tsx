@@ -67,7 +67,7 @@ export const VideosManagement = () => {
   // Fetch notations for filter dropdown (sorted by video count)
   const { data: notationsForFilter } = useNotations();
   const [videoFile, setVideoFile] = useState<File | null>(null);
-  const { startCloudflareUpload } = useUpload();
+  const { startCloudflareUpload, startCloudflareUploadBackground } = useUpload();
   const [isTranslating, setIsTranslating] = useState(false);
   const [isAutoTranslatingName, setIsAutoTranslatingName] = useState(false);
   const [isAutoTranslatingDesc, setIsAutoTranslatingDesc] = useState(false);
@@ -2384,46 +2384,7 @@ export const VideosManagement = () => {
     if (!editingTechnique) return;
     
     try {
-      let videoUrl = editingTechnique.video_url;
-      let videoUrlJa = editingTechnique.video_url_ja;
-      let thumbnailUrl = editingTechnique.thumbnail_url;
-      let thumbnailUrlJa = editingTechnique.thumbnail_url_ja;
-      let videoMetadata = editingTechnique.video_metadata;
-
-      // Handle video file replacement
-      if (replaceVideoFile) {
-        setIsReplacingVideo(true);
-        setReplaceProgress(5);
-        
-        const result = await startCloudflareUpload(replaceVideoFile, editingTechnique.name_ja || editingTechnique.name || 'video');
-        
-        if (!result) {
-          setIsReplacingVideo(false);
-          setReplaceProgress(0);
-          toast.error("動画のアップロードに失敗しました");
-          return;
-        }
-
-        videoUrl = result.videoUrl;
-        videoUrlJa = result.videoUrl;
-        thumbnailUrl = result.thumbnailUrl;
-        thumbnailUrlJa = result.thumbnailUrl;
-        
-        const currentMetadata = (editingTechnique.video_metadata as Record<string, any>) || {};
-        videoMetadata = {
-          ...currentMetadata,
-          ja: {
-            created_at: currentMetadata?.ja?.created_at || new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-            video_url: result.videoUrl,
-            cloudflare_video_id: result.cloudflareVideoId,
-          }
-        };
-        
-        setIsReplacingVideo(false);
-        setReplaceProgress(100);
-      }
-
+      // Save non-video fields first
       await updateTechnique.mutateAsync({
         id: editingTechnique.id,
         name: formData.name,
@@ -2434,14 +2395,53 @@ export const VideosManagement = () => {
         description_pt: formData.description_pt,
         visibility: formData.visibility,
         hashtags: formData.hashtags,
-        video_url: videoUrl,
-        video_url_ja: videoUrlJa,
-        thumbnail_url: thumbnailUrl,
-        thumbnail_url_ja: thumbnailUrlJa,
-        video_metadata: videoMetadata,
+        video_url: editingTechnique.video_url,
+        video_url_ja: editingTechnique.video_url_ja,
+        thumbnail_url: editingTechnique.thumbnail_url,
+        thumbnail_url_ja: editingTechnique.thumbnail_url_ja,
+        video_metadata: editingTechnique.video_metadata,
       });
+
+      // If video file selected, start background upload (fire-and-forget)
+      if (replaceVideoFile) {
+        const techniqueId = editingTechnique.id;
+        const techniqueLabel = `${editingTechnique.series_prefix}-${editingTechnique.series_order} ${editingTechnique.name_ja || editingTechnique.name}`;
+        const currentMetadata = (editingTechnique.video_metadata as Record<string, any>) || {};
+        
+        startCloudflareUploadBackground(
+          replaceVideoFile,
+          editingTechnique.name_ja || editingTechnique.name || 'video',
+          techniqueLabel,
+          async (result) => {
+            const videoMetadata = {
+              ...currentMetadata,
+              ja: {
+                created_at: currentMetadata?.ja?.created_at || new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+                video_url: result.videoUrl,
+                cloudflare_video_id: result.cloudflareVideoId,
+              }
+            };
+            
+            await updateTechnique.mutateAsync({
+              id: techniqueId,
+              video_url: result.videoUrl,
+              video_url_ja: result.videoUrl,
+              thumbnail_url: result.thumbnailUrl,
+              thumbnail_url_ja: result.thumbnailUrl,
+              video_metadata: videoMetadata,
+            });
+            
+            toast.success(`${techniqueLabel} の動画差し替えが完了しました`);
+            refetch();
+          }
+        );
+        
+        toast.info("動画のアップロードをバックグラウンドで開始しました。右下で進捗を確認できます。");
+      } else {
+        toast.success("更新しました");
+      }
       
-      toast.success(replaceVideoFile ? "動画を差し替えて更新しました" : "更新しました");
       setShowEditDialog(false);
       setEditingTechnique(null);
       setReplaceVideoFile(null);
@@ -2450,8 +2450,6 @@ export const VideosManagement = () => {
     } catch (error) {
       console.error('Error updating technique:', error);
       toast.error("更新に失敗しました");
-      setIsReplacingVideo(false);
-      setReplaceProgress(0);
     }
   };
 
@@ -3565,16 +3563,14 @@ export const VideosManagement = () => {
               setShowEditDialog(false);
               setEditingTechnique(null);
               setReplaceVideoFile(null);
-            }} disabled={isReplacingVideo}>
+            }}>
               キャンセル
             </Button>
             <Button 
               onClick={handleSaveEdit} 
-              disabled={!formData.name_ja.trim() || isReplacingVideo}
+              disabled={!formData.name_ja.trim()}
             >
-              {isReplacingVideo ? (
-                <><Loader2 className="h-4 w-4 mr-1 animate-spin" /> アップロード中...</>
-              ) : replaceVideoFile ? (
+              {replaceVideoFile ? (
                 <><Upload className="h-4 w-4 mr-1" /> 差し替えて保存</>
               ) : (
                 "保存"

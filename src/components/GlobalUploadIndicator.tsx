@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 export function GlobalUploadIndicator() {
-  const { uploads, cancelUpload, clearCompletedUploads } = useUpload();
+  const { uploads, cancelUpload, clearCompletedUploads, dismissUpload } = useUpload();
 
   const activeUploads = uploads.filter(u => u.status === 'uploading' || u.status === 'processing');
   const completedUploads = uploads.filter(u => u.status === 'completed' || u.status === 'error');
@@ -30,7 +30,7 @@ export function GlobalUploadIndicator() {
     if (upload.uploadedBytes === 0 || upload.status !== 'uploading') return null;
     
     const elapsedMs = Date.now() - upload.startTime;
-    if (elapsedMs < 2000) return null; // Wait at least 2 seconds for stable calculation
+    if (elapsedMs < 2000) return null;
     
     const bytesPerMs = upload.uploadedBytes / elapsedMs;
     if (bytesPerMs <= 0) return null;
@@ -38,12 +38,11 @@ export function GlobalUploadIndicator() {
     const remainingBytes = upload.fileSize - upload.uploadedBytes;
     const remainingMs = remainingBytes / bytesPerMs;
     
-    return remainingMs / 1000; // Return seconds
+    return remainingMs / 1000;
   };
 
   const getActualProgress = (upload: typeof uploads[0]) => {
     if (upload.status === 'processing') return upload.progress;
-    // Calculate real percentage from uploaded bytes
     return Math.round((upload.uploadedBytes / upload.fileSize) * 100);
   };
 
@@ -64,7 +63,7 @@ export function GlobalUploadIndicator() {
             className="h-6 text-xs"
             onClick={clearCompletedUploads}
           >
-            完了を消す
+            すべて消す
           </Button>
         )}
       </div>
@@ -78,18 +77,30 @@ export function GlobalUploadIndicator() {
             <div
               key={upload.id}
               className={cn(
-                "px-4 py-3 border-b last:border-b-0",
-                upload.status === 'error' && "bg-destructive/5"
+                "px-4 py-3 border-b last:border-b-0 cursor-pointer hover:bg-muted/30 transition-colors",
+                upload.status === 'error' && "bg-destructive/5",
+                upload.status === 'completed' && "bg-green-500/5"
               )}
+              onClick={() => {
+                if (upload.status === 'completed' || upload.status === 'error') {
+                  dismissUpload(upload.id);
+                }
+              }}
             >
-              <div className="flex items-start justify-between gap-2 mb-2">
+              <div className="flex items-start justify-between gap-2 mb-1">
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate">{upload.fileName}</p>
+                  <p className="text-sm font-medium truncate">
+                    {upload.label || upload.fileName}
+                  </p>
                   <p className="text-xs text-muted-foreground">
                     {upload.status === 'uploading' ? (
                       <>
                         {formatBytes(upload.uploadedBytes)} / {formatBytes(upload.fileSize)}
                       </>
+                    ) : upload.status === 'completed' ? (
+                      <span className="text-green-600">アップロード完了 — クリックで消す</span>
+                    ) : upload.status === 'error' ? (
+                      <span className="text-destructive">エラー — クリックで消す</span>
                     ) : (
                       formatBytes(upload.fileSize)
                     )}
@@ -113,7 +124,10 @@ export function GlobalUploadIndicator() {
                       variant="ghost"
                       size="icon"
                       className="h-6 w-6"
-                      onClick={() => cancelUpload(upload.id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        cancelUpload(upload.id);
+                      }}
                     >
                       <X className="w-3 h-3" />
                     </Button>
@@ -136,7 +150,7 @@ export function GlobalUploadIndicator() {
               )}
 
               {upload.status === 'error' && upload.error && (
-                <p className="text-xs text-destructive">{upload.error}</p>
+                <p className="text-xs text-destructive mt-1">{upload.error}</p>
               )}
             </div>
           );
