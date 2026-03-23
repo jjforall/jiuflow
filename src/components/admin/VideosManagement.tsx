@@ -86,6 +86,9 @@ export const VideosManagement = () => {
   const [targetLanguage, setTargetLanguage] = useState<"en" | "pt" | "es" | "fr" | "de" | "zh" | "ko" | "it" | "ru" | "ar" | "hi">("en");
   const [editLanguage, setEditLanguage] = useState<"ja" | "en" | "pt">("ja");
   const [isTranslatingField, setIsTranslatingField] = useState(false);
+  const [replaceVideoFile, setReplaceVideoFile] = useState<File | null>(null);
+  const [isReplacingVideo, setIsReplacingVideo] = useState(false);
+  const [replaceProgress, setReplaceProgress] = useState(0);
   const [translationProjectId, setTranslationProjectId] = useState<string | null>(null);
   const [translationStatus, setTranslationStatus] = useState<{
     status: string | null;
