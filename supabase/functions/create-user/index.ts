@@ -96,8 +96,11 @@ serve(async (req) => {
 
     if (createError) {
       console.error('User creation error:', createError);
+      const safeMessage = createError.message?.includes('already registered') 
+        ? 'A user with this email already exists' 
+        : 'Failed to create user. Please try again.';
       return new Response(
-        JSON.stringify({ error: createError.message }),
+        JSON.stringify({ error: safeMessage }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }

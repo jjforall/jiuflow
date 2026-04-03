@@ -1,6 +1,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getCorsHeaders } from "../_shared/cors.ts";
+import { buildSafeIlikeFilter } from "../_shared/search-utils.ts";
+import { checkRateLimit, getClientIdentifier, rateLimitResponse } from "../_shared/rate-limit.ts";
 
 // Environment variables for authentication
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
@@ -593,48 +595,34 @@ async function executeTool(name: string, args: Record<string, unknown>): Promise
       case 'search_database': {
         const searchQuery = args.query as string;
         const table = args.table as string || 'celebrities';
+        const allowedTables = ['celebrities', 'tournaments', 'techniques', 'dojos', 'venues'];
+        
+        if (!allowedTables.includes(table)) {
+          return "不明なテーブルです。";
+        }
         
         let data, error;
         
-        switch (table) {
-          case 'celebrities':
-            ({ data, error } = await supabase
-              .from('celebrities')
-              .select('id, display_name, name_ja, bio, home_dojo')
-              .or(`display_name.ilike.%${searchQuery}%,name_ja.ilike.%${searchQuery}%`)
-              .limit(10));
-            break;
-          case 'tournaments':
-            ({ data, error } = await supabase
-              .from('tournaments')
-              .select('id, name, name_ja, date_start, location')
-              .or(`name.ilike.%${searchQuery}%,name_ja.ilike.%${searchQuery}%`)
-              .limit(10));
-            break;
-          case 'techniques':
-            ({ data, error } = await supabase
-              .from('techniques')
-              .select('id, name, name_ja, category')
-              .or(`name.ilike.%${searchQuery}%,name_ja.ilike.%${searchQuery}%`)
-              .limit(10));
-            break;
-          case 'dojos':
-            ({ data, error } = await supabase
-              .from('dojos')
-              .select('id, name, name_ja, location')
-              .or(`name.ilike.%${searchQuery}%,name_ja.ilike.%${searchQuery}%`)
-              .limit(10));
-            break;
-          case 'venues':
-            ({ data, error } = await supabase
-              .from('venues')
-              .select('id, name, name_ja, city')
-              .or(`name.ilike.%${searchQuery}%,name_ja.ilike.%${searchQuery}%`)
-              .limit(10));
-            break;
-          default:
-            return "不明なテーブルです。";
+        const tableFieldMap: Record<string, { from: string; select: string; fields: string[] }> = {
+          celebrities: { from: 'celebrities', select: 'id, display_name, name_ja, bio, home_dojo', fields: ['display_name', 'name_ja'] },
+          tournaments: { from: 'tournaments', select: 'id, name, name_ja, date_start, location', fields: ['name', 'name_ja'] },
+          techniques: { from: 'techniques', select: 'id, name, name_ja, category', fields: ['name', 'name_ja'] },
+          dojos: { from: 'dojos', select: 'id, name, name_ja, location', fields: ['name', 'name_ja'] },
+          venues: { from: 'venues', select: 'id, name, name_ja, city', fields: ['name', 'name_ja'] },
+        };
+        
+        const config = tableFieldMap[table];
+        const searchFilter = buildSafeIlikeFilter(config.fields, searchQuery);
+        
+        if (!searchFilter) {
+          return `検索クエリが無効です。`;
         }
+        
+        ({ data, error } = await supabase
+          .from(config.from)
+          .select(config.select)
+          .or(searchFilter)
+          .limit(10));
         
         if (error) throw error;
         
@@ -1339,6 +1327,13 @@ serve(async (req) => {
       );
     }
 
+    // Rate limiting: 200 requests per hour per admin user
+    const rateLimitKey = `mcp-chat:${authResult.userId}`;
+    const rateCheck = checkRateLimit(rateLimitKey, { maxRequests: 200, windowMs: 3600000 });
+    if (!rateCheck.allowed) {
+      return rateLimitResponse(rateCheck.resetInMs);
+    }
+
     const { messages, provider, model, apiKeys = {} }: ChatRequest = await req.json();
 
     console.log(`MCP Chat request - Provider: ${provider}, Model: ${model}, User: ${authResult.userId}`);
@@ -1355,7 +1350,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('MCP Chat error:', error);
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
+      JSON.stringify({ error: 'An internal error occurred. Please try again.' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
