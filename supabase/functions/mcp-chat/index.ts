@@ -1,6 +1,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getCorsHeaders } from "../_shared/cors.ts";
+import { buildSafeIlikeFilter } from "../_shared/search-utils.ts";
+import { checkRateLimit, getClientIdentifier, rateLimitResponse } from "../_shared/rate-limit.ts";
 
 // Environment variables for authentication
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
