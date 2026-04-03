@@ -238,7 +238,7 @@ serve(async (req) => {
   } catch (err) {
     logStep("ERROR: Webhook signature verification failed", { error: err });
     console.error("Webhook signature verification failed:", err);
-    return new Response(`Webhook Error: ${err instanceof Error ? err.message : "Unknown error"}`, { 
+    return new Response("Webhook signature verification failed", { 
       status: 400 
     });
   }
