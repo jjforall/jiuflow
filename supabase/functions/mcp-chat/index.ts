@@ -1327,6 +1327,13 @@ serve(async (req) => {
       );
     }
 
+    // Rate limiting: 200 requests per hour per admin user
+    const rateLimitKey = `mcp-chat:${authResult.userId}`;
+    const rateCheck = checkRateLimit(rateLimitKey, { maxRequests: 200, windowMs: 3600000 });
+    if (!rateCheck.allowed) {
+      return rateLimitResponse(rateCheck.resetInMs);
+    }
+
     const { messages, provider, model, apiKeys = {} }: ChatRequest = await req.json();
 
     console.log(`MCP Chat request - Provider: ${provider}, Model: ${model}, User: ${authResult.userId}`);
