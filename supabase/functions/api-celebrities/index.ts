@@ -78,6 +78,12 @@ serve(async (req) => {
     
     // GET - List or get single celebrity
     if (req.method === 'GET') {
+      if (!permissions.includes('read') && !permissions.includes('write') && !permissions.includes('admin')) {
+        return new Response(
+          JSON.stringify({ error: 'Read permission required' }),
+          { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
       if (id) {
         const { data, error } = await supabase
           .from('celebrities')
@@ -188,9 +194,8 @@ serve(async (req) => {
     
   } catch (error: unknown) {
     console.error('API Error:', error);
-    const message = error instanceof Error ? error.message : 'Unknown error';
     return new Response(
-      JSON.stringify({ error: message }),
+      JSON.stringify({ error: 'An internal error occurred' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
