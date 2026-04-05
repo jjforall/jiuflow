@@ -371,6 +371,7 @@ export default function PlaylistsManagement() {
 
   const openItemsDialog = async (list: VideoList) => {
     setSelectedList(list);
+    setVideoSearch("");
     await fetchListItems(list.id);
     setIsItemsDialogOpen(true);
   };
@@ -455,9 +456,21 @@ export default function PlaylistsManagement() {
     toast.success("データを更新しました");
   };
 
+  const [videoSearch, setVideoSearch] = useState("");
+
   const availableTechniques = allTechniques.filter(
     (t) => !listItems.some((item) => item.technique_id === t.id)
   );
+
+  const filteredAvailableTechniques = availableTechniques.filter((t) => {
+    if (!videoSearch.trim()) return true;
+    const q = videoSearch.toLowerCase();
+    return (
+      (t.name && t.name.toLowerCase().includes(q)) ||
+      (t.name_ja && t.name_ja.toLowerCase().includes(q)) ||
+      (t.series_prefix && t.series_prefix.toLowerCase().includes(q))
+    );
+  });
 
   if (loading) {
     return (
@@ -759,7 +772,7 @@ export default function PlaylistsManagement() {
 
       {/* Items Management Dialog */}
       <Dialog open={isItemsDialogOpen} onOpenChange={setIsItemsDialogOpen}>
-        <DialogContent className="max-w-3xl max-h-[80vh] overflow-hidden flex flex-col">
+        <DialogContent className="max-w-[95vw] w-full max-h-[90vh] overflow-hidden flex flex-col">
           <DialogHeader>
             <DialogTitle>
               {selectedList?.name_ja || selectedList?.name} の動画管理
@@ -830,15 +843,21 @@ export default function PlaylistsManagement() {
               {/* Available items */}
               <div className="space-y-2">
                 <h4 className="font-medium text-sm text-muted-foreground">
-                  追加可能な動画 ({availableTechniques.length}本)
+                  追加可能な動画 ({filteredAvailableTechniques.length}/{availableTechniques.length}本)
                 </h4>
+                <Input
+                  placeholder="動画を検索..."
+                  value={videoSearch}
+                  onChange={(e) => setVideoSearch(e.target.value)}
+                  className="mb-2"
+                />
                 <div className="border rounded-lg p-2 max-h-80 overflow-y-auto space-y-1">
-                  {availableTechniques.length === 0 ? (
+                  {filteredAvailableTechniques.length === 0 ? (
                     <p className="text-sm text-muted-foreground p-4 text-center">
-                      追加可能な動画がありません
+                      {videoSearch ? "検索結果がありません" : "追加可能な動画がありません"}
                     </p>
                   ) : (
-                    availableTechniques.map((technique) => (
+                    filteredAvailableTechniques.map((technique) => (
                       <div
                         key={technique.id}
                         className="flex items-center gap-2 p-2 hover:bg-muted/50 rounded cursor-pointer group"
