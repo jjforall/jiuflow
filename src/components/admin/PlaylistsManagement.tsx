@@ -371,6 +371,7 @@ export default function PlaylistsManagement() {
 
   const openItemsDialog = async (list: VideoList) => {
     setSelectedList(list);
+    setVideoSearch("");
     await fetchListItems(list.id);
     setIsItemsDialogOpen(true);
   };
