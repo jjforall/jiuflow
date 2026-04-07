@@ -3619,6 +3619,7 @@ export type Database = {
           share_token: string | null
           thumbnail_url: string | null
           title: string
+          title_en: string | null
           updated_at: string
           user_id: string
           video_type: string
@@ -3637,6 +3638,7 @@ export type Database = {
           share_token?: string | null
           thumbnail_url?: string | null
           title: string
+          title_en?: string | null
           updated_at?: string
           user_id: string
           video_type: string
@@ -3655,6 +3657,7 @@ export type Database = {
           share_token?: string | null
           thumbnail_url?: string | null
           title?: string
+          title_en?: string | null
           updated_at?: string
           user_id?: string
           video_type?: string
