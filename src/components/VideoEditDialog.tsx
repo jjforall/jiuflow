@@ -15,6 +15,7 @@ interface VideoEditDialogProps {
   video: {
     id: string;
     title: string;
+    title_en?: string | null;
     description: string | null;
     video_type: string;
     price: number;
@@ -26,6 +27,7 @@ interface VideoEditDialogProps {
 
 export function VideoEditDialog({ open, onOpenChange, video, onSuccess }: VideoEditDialogProps) {
   const [title, setTitle] = useState("");
+  const [titleEn, setTitleEn] = useState("");
   const [description, setDescription] = useState("");
   const [videoType, setVideoType] = useState<string>("other");
   const [price, setPrice] = useState(0);
@@ -35,6 +37,7 @@ export function VideoEditDialog({ open, onOpenChange, video, onSuccess }: VideoE
   useEffect(() => {
     if (video) {
       setTitle(video.title);
+      setTitleEn(video.title_en || "");
       setDescription(video.description || "");
       setVideoType(video.video_type);
       setPrice(video.price);
@@ -56,6 +59,7 @@ export function VideoEditDialog({ open, onOpenChange, video, onSuccess }: VideoE
         .from('user_videos')
         .update({
           title,
+          title_en: titleEn || null,
           description: description || null,
           video_type: videoType,
           price,
@@ -93,6 +97,16 @@ export function VideoEditDialog({ open, onOpenChange, video, onSuccess }: VideoE
               onChange={(e) => setTitle(e.target.value)}
               placeholder="動画のタイトルを入力"
               required
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="edit-title-en">英語タイトル</Label>
+            <Input
+              id="edit-title-en"
+              value={titleEn}
+              onChange={(e) => setTitleEn(e.target.value)}
+              placeholder="English title (optional)"
             />
           </div>
 
