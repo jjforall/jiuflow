@@ -24,6 +24,7 @@ const ALLOWED_PRICES: Record<string, { trialDays: number; mode: string }> = {
 // Referrer codes that override the requested price
 const REFERRER_CODE_MAP: Record<string, { priceId: string; trialDays: number }> = {
   "MURATABJJ": { priceId: MURATABJJ_PRICE_ID, trialDays: 30 },
+  "OVERLIMITSP": { priceId: MURATABJJ_PRICE_ID, trialDays: 30 },
   "YUKIBJJ": { priceId: FOUNDER_PRICE_ID, trialDays: 90 },
 };
 
