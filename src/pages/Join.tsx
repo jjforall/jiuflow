@@ -166,7 +166,7 @@ const Join = () => {
       }
       
       // Check for special codes
-      if (trimmedCode === 'MURATABJJ') {
+      if (trimmedCode === 'MURATABJJ' || trimmedCode === 'OVERLIMITSP') {
         setIsValidReferralCode(true);
         setReferralPlanType('founder');
         return;
