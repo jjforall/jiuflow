@@ -32,7 +32,7 @@ export const JIUFLOW_PRICE_IDS: string[] = [
 
 // ── Checkout configuration ──────────────────────────────────────
 export const ALLOWED_PRICES: Record<string, { trialDays: number; mode: string }> = {
-  [FOUNDER_PRICE_ID]: { trialDays: 90, mode: "subscription" },
+  [FOUNDER_PRICE_ID]: { trialDays: 30, mode: "subscription" },
   [CAMPAIGN_PRICE_ID]: { trialDays: 30, mode: "subscription" },
   [MONTHLY_PRICE_ID]: { trialDays: 30, mode: "subscription" },
   [ANNUAL_PRICE_ID]: { trialDays: 30, mode: "subscription" },
