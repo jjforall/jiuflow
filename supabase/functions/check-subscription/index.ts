@@ -107,6 +107,7 @@ serve(async (req) => {
       "price_1SYK2lDqLakc8Nxkp6TBKYhT", // Referral Plan
       "price_1SZ5O2DqLakc8Nxk0e6QYg6D", // Discount Monthly - ¥1,900/month
       "price_1SZ5QxDqLakc8NxkAA1RTL3c", // Discount Annual - ¥19,000/year
+      "price_1Sdu0rDqLakc8NxkBt73C3DL", // MURATABJJ - ¥1,480/month
     ];
 
     // Check for both active and trialing subscriptions
