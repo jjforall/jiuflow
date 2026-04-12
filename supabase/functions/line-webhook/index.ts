@@ -1012,7 +1012,7 @@ serve(async (req) => {
       
       if (error) {
         console.error('Error fetching logs:', error);
-        return new Response(JSON.stringify({ error: error.message }), {
+        return new Response(JSON.stringify({ error: 'An error occurred fetching logs' }), {
           status: 500,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
