@@ -721,7 +721,7 @@ async function executeTool(name: string, args: Record<string, unknown>): Promise
     }
   } catch (error) {
     console.error(`Tool execution error for ${name}:`, error);
-    return JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' });
+    return JSON.stringify({ error: 'An error occurred processing the tool request' });
   }
 }
 
