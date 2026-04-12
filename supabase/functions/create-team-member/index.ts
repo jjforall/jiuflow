@@ -280,7 +280,7 @@ serve(async (req) => {
   } catch (error) {
     console.error("[CREATE-TEAM-MEMBER] Unexpected error:", error);
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }),
+      JSON.stringify({ error: "An internal error occurred" }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 500,
