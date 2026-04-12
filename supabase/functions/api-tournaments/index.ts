@@ -27,7 +27,11 @@ serve(async (req) => {
       );
     }
     
-    const { valid, permissions } = await validateApiKey(apiKey);
+    const { valid, permissions, rateLimited, rateLimitResetMs } = await validateApiKeyWithRateLimit(apiKey);
+    
+    if (rateLimited) {
+      return rateLimitResponse(rateLimitResetMs!);
+    }
     
     if (!valid) {
       return new Response(
