@@ -140,11 +140,8 @@ serve(async (req) => {
       });
     }
 
-    // Create refund
     const refundParams: Stripe.RefundCreateParams = {
-      payment_intent: typeof invoice.payment_intent === 'string' 
-        ? invoice.payment_intent 
-        : invoice.payment_intent.id,
+      payment_intent: paymentIntentId,
     };
 
     // Add amount if specified (in cents/minor currency units)
