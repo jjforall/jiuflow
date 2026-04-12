@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { buildSafeIlikeFilter } from "../_shared/search-utils.ts";
+import { validateApiKeyWithRateLimit, rateLimitResponse } from "../_shared/api-key-auth.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -10,43 +11,6 @@ const corsHeaders = {
 
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-
-async function validateApiKey(apiKey: string): Promise<{ valid: boolean; permissions: string[] }> {
-  const supabase = createClient(supabaseUrl, supabaseServiceKey);
-  
-  // Hash the API key for comparison
-  const encoder = new TextEncoder();
-  const data = encoder.encode(apiKey);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  const keyHash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-  
-  const { data: keyData, error } = await supabase
-    .from('api_keys')
-    .select('id, permissions, expires_at, is_active')
-    .eq('key_hash', keyHash)
-    .single();
-  
-  if (error || !keyData) {
-    return { valid: false, permissions: [] };
-  }
-  
-  if (!keyData.is_active) {
-    return { valid: false, permissions: [] };
-  }
-  
-  if (keyData.expires_at && new Date(keyData.expires_at) < new Date()) {
-    return { valid: false, permissions: [] };
-  }
-  
-  // Update last_used_at
-  await supabase
-    .from('api_keys')
-    .update({ last_used_at: new Date().toISOString() })
-    .eq('id', keyData.id);
-  
-  return { valid: true, permissions: keyData.permissions || ['read'] };
-}
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -63,7 +27,11 @@ serve(async (req) => {
       );
     }
     
-    const { valid, permissions } = await validateApiKey(apiKey);
+    const { valid, permissions, rateLimited, rateLimitResetMs } = await validateApiKeyWithRateLimit(apiKey);
+    
+    if (rateLimited) {
+      return rateLimitResponse(rateLimitResetMs!);
+    }
     
     if (!valid) {
       return new Response(

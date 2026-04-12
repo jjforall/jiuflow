@@ -721,7 +721,7 @@ async function executeTool(name: string, args: Record<string, unknown>): Promise
     }
   } catch (error) {
     console.error(`Tool execution error for ${name}:`, error);
-    return JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' });
+    return JSON.stringify({ error: 'An error occurred processing the tool request' });
   }
 }
 
@@ -1012,7 +1012,7 @@ serve(async (req) => {
       
       if (error) {
         console.error('Error fetching logs:', error);
-        return new Response(JSON.stringify({ error: error.message }), {
+        return new Response(JSON.stringify({ error: 'An error occurred fetching logs' }), {
           status: 500,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
