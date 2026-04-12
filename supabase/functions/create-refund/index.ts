@@ -111,23 +111,27 @@ serve(async (req) => {
       latestInvoice: subscription.latest_invoice 
     });
 
-    if (!subscription.latest_invoice) {
-      throw new Error("No invoice found for this subscription");
+    // Try to find a paid invoice - start with latest, then search older ones
+    let paymentIntentId: string | null = null;
+
+    const invoices = await stripe.invoices.list({
+      subscription: subscriptionId,
+      limit: 10,
+    });
+    logStep("Fetched invoices", { count: invoices.data.length });
+
+    for (const inv of invoices.data) {
+      if (inv.payment_intent) {
+        paymentIntentId = typeof inv.payment_intent === 'string' 
+          ? inv.payment_intent 
+          : inv.payment_intent.id;
+        logStep("Found invoice with payment", { invoiceId: inv.id, paymentIntentId });
+        break;
+      }
     }
 
-    // Get the invoice to find the payment intent
-    const invoice = await stripe.invoices.retrieve(
-      typeof subscription.latest_invoice === 'string' 
-        ? subscription.latest_invoice 
-        : subscription.latest_invoice.id
-    );
-    logStep("Invoice retrieved", { 
-      id: invoice.id, 
-      paymentIntent: invoice.payment_intent 
-    });
-
-    if (!invoice.payment_intent) {
-      logStep("No payment intent - likely free trial or unpaid invoice");
+    if (!paymentIntentId) {
+      logStep("No paid invoices found - likely entirely free trial");
       return new Response(JSON.stringify({ 
         error: "返金できません。このサブスクリプションはまだ支払いが発生していません（無料トライアル期間中の可能性があります）" 
       }), {
@@ -136,11 +140,8 @@ serve(async (req) => {
       });
     }
 
-    // Create refund
     const refundParams: Stripe.RefundCreateParams = {
-      payment_intent: typeof invoice.payment_intent === 'string' 
-        ? invoice.payment_intent 
-        : invoice.payment_intent.id,
+      payment_intent: paymentIntentId,
     };
 
     // Add amount if specified (in cents/minor currency units)
