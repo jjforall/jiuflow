@@ -2,31 +2,7 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 import { getCorsHeaders } from "../_shared/cors.ts";
-
-// Whitelist of allowed Stripe price IDs
-const FOUNDER_PRICE_ID = "price_1SR3ZmDqLakc8NxkNdqL5BtO"; // 980 JPY/month (founder)
-const CAMPAIGN_PRICE_ID = "price_1SZ5O2DqLakc8Nxk0e6QYg6D"; // 1900 JPY/month (campaign)
-const MONTHLY_PRICE_ID = "price_1SNQoeDqLakc8NxkEUVTTs3k"; // 2900 JPY/month
-const ANNUAL_PRICE_ID = "price_1SNQoqDqLakc8NxkOaQIL8wX"; // 29000 JPY/year
-const MURATABROS_PRICE_ID = "price_1SY2D0DqLakc8NxkMKonyIi8"; // 50000 one-time
-const MURATABJJ_PRICE_ID = "price_1Sdu0rDqLakc8NxkBt73C3DL"; // 1480 JPY/month
-
-// Map of allowed price IDs with their trial settings
-const ALLOWED_PRICES: Record<string, { trialDays: number; mode: string }> = {
-  [FOUNDER_PRICE_ID]: { trialDays: 90, mode: "subscription" },
-  [CAMPAIGN_PRICE_ID]: { trialDays: 30, mode: "subscription" },
-  [MONTHLY_PRICE_ID]: { trialDays: 30, mode: "subscription" },
-  [ANNUAL_PRICE_ID]: { trialDays: 30, mode: "subscription" },
-  [MURATABROS_PRICE_ID]: { trialDays: 0, mode: "payment" },
-  [MURATABJJ_PRICE_ID]: { trialDays: 30, mode: "subscription" },
-};
-
-// Referrer codes that override the requested price
-const REFERRER_CODE_MAP: Record<string, { priceId: string; trialDays: number }> = {
-  "MURATABJJ": { priceId: MURATABJJ_PRICE_ID, trialDays: 30 },
-  "OVERLIMITSP": { priceId: MURATABJJ_PRICE_ID, trialDays: 30 },
-  "YUKIBJJ": { priceId: FOUNDER_PRICE_ID, trialDays: 90 },
-};
+import { ALLOWED_PRICES, REFERRER_CODE_MAP, MURATABJJ_PRICE_ID, FOUNDER_PRICE_ID } from "../_shared/jiuflow-prices.ts";
 
 serve(async (req) => {
   const corsHeaders = getCorsHeaders(req);
