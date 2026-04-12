@@ -88,18 +88,7 @@ serve(async (req) => {
       });
     }
 
-    // Jiuflow専用のPrice IDs
-    const JIUFLOW_PRICE_IDS = [
-      "price_1SR3ZmDqLakc8NxkNdqL5BtO", // Founder Access - ¥980/month
-      "price_1SNQoeDqLakc8NxkEUVTTs3k", // Monthly Plan - ¥2,900/month
-      "price_1SNQoqDqLakc8NxkOaQIL8wX", // Annual Plan - ¥29,000/year
-      "price_1SY2D0DqLakc8NxkMKonyIi8", // MURATABROS VIP - ¥50,000 one-time
-      "price_1SYK2lDqLakc8Nxkp6TBKYhT", // Referral Plan
-      "price_1SZ5O2DqLakc8Nxk0e6QYg6D", // Discount Monthly - ¥1,900/month
-      "price_1SZ5QxDqLakc8NxkAA1RTL3c", // Discount Annual - ¥19,000/year
-      "price_1Sdu0rDqLakc8NxkBt73C3DL", // MURATABJJ - ¥1,480/month
-      "price_1TE4ndDqLakc8NxkACHiR69G", // MURATABJJ/OVERLIMITSP Referral - ¥1,480/month
-    ];
+    // Use shared price IDs (single source of truth)
 
     const stripe = new Stripe(stripeKey, {
       apiVersion: "2025-08-27.basil",
