@@ -629,7 +629,6 @@ export type Database = {
       }
       community_announcements: {
         Row: {
-          author_email: string | null
           content: string
           content_ja: string | null
           content_pt: string | null
@@ -642,7 +641,6 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
-          author_email?: string | null
           content: string
           content_ja?: string | null
           content_pt?: string | null
@@ -655,7 +653,6 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
-          author_email?: string | null
           content?: string
           content_ja?: string | null
           content_pt?: string | null
