@@ -161,6 +161,11 @@ serve(async (req) => {
     const subscriptionList = await Promise.all(jiuflowSubscriptions.map(async (sub: Stripe.Subscription) => {
       const customer = sub.customer as Stripe.Customer;
       const price = sub.items.data[0]?.price;
+      const item = sub.items.data[0];
+      
+      // In newer Stripe API versions (basil), current_period_start/end are on the item, not the subscription
+      const periodStart = (item as any)?.current_period_start ?? (sub as any).current_period_start;
+      const periodEnd = (item as any)?.current_period_end ?? (sub as any).current_period_end;
       
       // Fetch product separately if needed
       let productName = 'N/A';
@@ -194,8 +199,8 @@ serve(async (req) => {
         currency: price?.currency || 'jpy',
         interval: price?.recurring?.interval || 'month',
         product_name: productName,
-        current_period_start: sub.current_period_start ? new Date(sub.current_period_start * 1000).toISOString() : null,
-        current_period_end: sub.current_period_end ? new Date(sub.current_period_end * 1000).toISOString() : null,
+        current_period_start: periodStart ? new Date(periodStart * 1000).toISOString() : null,
+        current_period_end: periodEnd ? new Date(periodEnd * 1000).toISOString() : null,
         created: sub.created ? new Date(sub.created * 1000).toISOString() : null,
         referral_code: referralInfo?.code || referralInfo?.dojo_friends_code || null,
       };
