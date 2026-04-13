@@ -408,7 +408,7 @@ export const SubscriptionsTab = () => {
                             返金
                           </Button>
                         )}
-                        {sub.status === 'active' && (
+                        {sub.status === 'active' && !sub.cancel_at_period_end && (
                           <Button
                             variant="destructive"
                             size="sm"
@@ -496,7 +496,7 @@ export const SubscriptionsTab = () => {
                       返金
                     </Button>
                   )}
-                  {sub.status === 'active' && (
+                  {sub.status === 'active' && !sub.cancel_at_period_end && (
                     <Button
                       variant="destructive"
                       size="sm"
