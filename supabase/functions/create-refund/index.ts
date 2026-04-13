@@ -12,6 +12,30 @@ const logStep = (step: string, details?: any) => {
   console.log(`[CREATE-REFUND] ${step}${detailsStr}`);
 };
 
+const getRefundSource = (invoice: Stripe.Invoice | null | undefined) => {
+  if (!invoice) return null;
+
+  const paymentIntent = invoice.payment_intent;
+  if (paymentIntent) {
+    return {
+      type: 'payment_intent' as const,
+      id: typeof paymentIntent === 'string' ? paymentIntent : paymentIntent.id,
+      invoiceId: invoice.id,
+    };
+  }
+
+  const charge = (invoice as any).charge;
+  if (charge) {
+    return {
+      type: 'charge' as const,
+      id: typeof charge === 'string' ? charge : charge.id,
+      invoiceId: invoice.id,
+    };
+  }
+
+  return null;
+};
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -105,33 +129,54 @@ serve(async (req) => {
     logStep("Stripe initialized");
 
     // Get the subscription to find the latest payment
-    const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+    const subscription = await stripe.subscriptions.retrieve(subscriptionId, {
+      expand: ['latest_invoice.payment_intent', 'items.data.price'],
+    });
+    const subscriptionItem = subscription.items.data[0];
+    const subscriptionPriceId = subscriptionItem?.price?.id ?? null;
     logStep("Subscription retrieved", { 
       id: subscription.id, 
-      latestInvoice: subscription.latest_invoice 
+      latestInvoice: subscription.latest_invoice,
+      priceId: subscriptionPriceId,
+      status: subscription.status,
     });
 
-    // Try to find a paid invoice - start with latest, then search older ones
-    let paymentIntentId: string | null = null;
+    // Try latest invoice first, then search older paid invoices.
+    let refundSource = getRefundSource(
+      typeof subscription.latest_invoice === 'object' && subscription.latest_invoice
+        ? subscription.latest_invoice as Stripe.Invoice
+        : null
+    );
 
-    const invoices = await stripe.invoices.list({
-      subscription: subscriptionId,
-      limit: 10,
-    });
-    logStep("Fetched invoices", { count: invoices.data.length });
+    if (refundSource) {
+      logStep("Found refundable latest invoice", refundSource);
+    }
 
-    for (const inv of invoices.data) {
-      if (inv.payment_intent) {
-        paymentIntentId = typeof inv.payment_intent === 'string' 
-          ? inv.payment_intent 
-          : inv.payment_intent.id;
-        logStep("Found invoice with payment", { invoiceId: inv.id, paymentIntentId });
-        break;
+    if (!refundSource) {
+      const invoices = await stripe.invoices.list({
+        subscription: subscriptionId,
+        limit: 100,
+        expand: ['data.payment_intent'],
+      });
+      logStep("Fetched invoices", { count: invoices.data.length });
+
+      for (const inv of invoices.data) {
+        const isPaidInvoice = inv.status === 'paid' || inv.paid || (inv.amount_paid ?? 0) > 0;
+        if (!isPaidInvoice) {
+          continue;
+        }
+
+        const candidate = getRefundSource(inv);
+        if (candidate) {
+          refundSource = candidate;
+          logStep("Found refundable paid invoice", candidate);
+          break;
+        }
       }
     }
 
-    if (!paymentIntentId) {
-      logStep("No paid invoices found - likely entirely free trial");
+    if (!refundSource) {
+      logStep("No refundable paid invoice found", { subscriptionId, subscriptionPriceId });
       return new Response(JSON.stringify({ 
         error: "返金できません。このサブスクリプションはまだ支払いが発生していません（無料トライアル期間中の可能性があります）" 
       }), {
@@ -140,9 +185,9 @@ serve(async (req) => {
       });
     }
 
-    const refundParams: Stripe.RefundCreateParams = {
-      payment_intent: paymentIntentId,
-    };
+    const refundParams: Stripe.RefundCreateParams = refundSource.type === 'payment_intent'
+      ? { payment_intent: refundSource.id }
+      : { charge: refundSource.id };
 
     // Add amount if specified (in cents/minor currency units)
     if (amount && amount > 0) {
@@ -158,7 +203,8 @@ serve(async (req) => {
     logStep("Refund created", { 
       id: refund.id, 
       amount: refund.amount, 
-      status: refund.status 
+      status: refund.status,
+      refundSource,
     });
 
     return new Response(JSON.stringify({ 

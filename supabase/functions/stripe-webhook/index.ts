@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 import { z } from "https://deno.land/x/zod@v3.23.8/mod.ts";
+import { PRICE_PLAN_TYPES } from "../_shared/jiuflow-prices.ts";
 
 const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
   apiVersion: "2025-08-27.basil",
@@ -521,15 +522,18 @@ serve(async (req) => {
           
           if (user) {
             const subscriptionMetadata = subscription.metadata as Record<string, string> | undefined;
+            const subscriptionItem = subscription.items.data[0];
+            const periodEnd = (subscriptionItem as any)?.current_period_end ?? (subscription as any).current_period_end;
+            const stripePriceId = subscriptionItem?.price?.id ?? null;
             const { error: subError } = await supabase
               .from("subscriptions")
               .upsert({
                 user_id: user.id,
                 stripe_subscription_id: subscription.id,
-                stripe_price_id: subscription.items.data[0].price.id,
+                stripe_price_id: stripePriceId,
                 status: subscription.status,
-                current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
-                plan_type: "founder",
+                current_period_end: periodEnd ? new Date(periodEnd * 1000).toISOString() : null,
+                plan_type: stripePriceId ? PRICE_PLAN_TYPES[stripePriceId] ?? "subscription" : "subscription",
                 referral_code_id: subscriptionMetadata?.referral_code_id || null,
                 trial_start: subscription.trial_start ? new Date(subscription.trial_start * 1000).toISOString() : null,
                 trial_end: subscription.trial_end ? new Date(subscription.trial_end * 1000).toISOString() : null,
@@ -573,6 +577,9 @@ serve(async (req) => {
       case "customer.subscription.updated":
       case "customer.subscription.deleted": {
         const subscription = event.data.object as Stripe.Subscription;
+        const subscriptionItem = subscription.items.data[0];
+        const periodEnd = (subscriptionItem as any)?.current_period_end ?? (subscription as any).current_period_end;
+        const stripePriceId = subscriptionItem?.price?.id ?? null;
         logStep("Subscription event received", { 
           type: event.type,
           subscriptionId: subscription.id,
@@ -582,8 +589,10 @@ serve(async (req) => {
         const { error: updateError } = await supabase
           .from("subscriptions")
           .update({
+            stripe_price_id: stripePriceId,
             status: subscription.status,
-            current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+            current_period_end: periodEnd ? new Date(periodEnd * 1000).toISOString() : null,
+            plan_type: stripePriceId ? PRICE_PLAN_TYPES[stripePriceId] ?? "subscription" : "subscription",
             trial_start: subscription.trial_start ? new Date(subscription.trial_start * 1000).toISOString() : null,
             trial_end: subscription.trial_end ? new Date(subscription.trial_end * 1000).toISOString() : null,
           })

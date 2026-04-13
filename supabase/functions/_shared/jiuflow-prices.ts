@@ -30,6 +30,31 @@ export const JIUFLOW_PRICE_IDS: string[] = [
   MURATABJJ_REFERRAL_PRICE_ID,
 ];
 
+// ── Display / plan metadata ──────────────────────────────────────
+export const PRICE_DISPLAY_NAMES: Record<string, string> = {
+  [FOUNDER_PRICE_ID]: "Founder Access (Legacy)",
+  [MONTHLY_PRICE_ID]: "Monthly Plan",
+  [ANNUAL_PRICE_ID]: "Annual Plan",
+  [MURATABROS_PRICE_ID]: "Murata Bros Special Access",
+  [REFERRAL_PRICE_ID]: "Referral Plan",
+  [CAMPAIGN_PRICE_ID]: "Campaign Plan",
+  [CAMPAIGN_ANNUAL_PRICE_ID]: "Campaign Annual Plan",
+  [MURATABJJ_PRICE_ID]: "Founder Access 2026",
+  [MURATABJJ_REFERRAL_PRICE_ID]: "Founder Access 2026",
+};
+
+export const PRICE_PLAN_TYPES: Record<string, string> = {
+  [FOUNDER_PRICE_ID]: "founder_legacy",
+  [MONTHLY_PRICE_ID]: "monthly",
+  [ANNUAL_PRICE_ID]: "annual",
+  [MURATABROS_PRICE_ID]: "muratabros",
+  [REFERRAL_PRICE_ID]: "referral",
+  [CAMPAIGN_PRICE_ID]: "campaign_monthly",
+  [CAMPAIGN_ANNUAL_PRICE_ID]: "campaign_annual",
+  [MURATABJJ_PRICE_ID]: "founder_2026",
+  [MURATABJJ_REFERRAL_PRICE_ID]: "founder_2026",
+};
+
 // ── Checkout configuration ──────────────────────────────────────
 export const ALLOWED_PRICES: Record<string, { trialDays: number; mode: string }> = {
   [FOUNDER_PRICE_ID]: { trialDays: 90, mode: "subscription" },  // Founder Access (Legacy) ¥980/month

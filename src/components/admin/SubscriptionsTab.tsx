@@ -167,13 +167,17 @@ export const SubscriptionsTab = () => {
     try {
       setIsRefunding(true);
 
-      // Convert amount to cents (minor currency units)
-      const amountInCents = refundAmount ? Math.round(parseFloat(refundAmount) * 100) : undefined;
+      // Convert amount to Stripe minor units (JPY is zero-decimal)
+      const zeroDecimalCurrencies = new Set([
+        'bif', 'clp', 'djf', 'gnf', 'jpy', 'kmf', 'krw', 'mga', 'pyg', 'rwf', 'ugx', 'vnd', 'vuv', 'xaf', 'xof', 'xpf'
+      ]);
+      const multiplier = zeroDecimalCurrencies.has(selectedSubscription.currency.toLowerCase()) ? 1 : 100;
+      const amountInMinorUnits = refundAmount ? Math.round(parseFloat(refundAmount) * multiplier) : undefined;
 
       const { data, error } = await supabase.functions.invoke("create-refund", {
         body: { 
           subscriptionId: selectedSubscription.id,
-          amount: amountInCents,
+          amount: amountInMinorUnits,
           reason: refundReason || undefined
         }
       });
