@@ -146,7 +146,7 @@ const FAQ = () => {
                   <AccordionTrigger className="text-left text-sm md:text-base text-foreground hover:text-primary">
                     {faq.question}
                   </AccordionTrigger>
-                  <AccordionContent className="text-muted-foreground leading-relaxed">
+                  <AccordionContent className="text-muted-foreground leading-relaxed whitespace-pre-line">
                     {faq.answer}
                     {faq.hasLink && faq.linkTo && (
                       <Link
