@@ -39,6 +39,8 @@ interface Subscription {
   customer_name: string;
   customer_id: string;
   status: string;
+  cancel_at_period_end?: boolean;
+  canceled_at?: string | null;
   amount: number;
   currency: string;
   interval: string;
@@ -255,7 +257,12 @@ export const SubscriptionsTab = () => {
     }).format(amount);
   };
 
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = (sub: Subscription) => {
+    // Check for cancel_at_period_end first (scheduled cancellation)
+    if (sub.cancel_at_period_end && sub.status === 'active') {
+      return <Badge variant="outline" className="border-orange-500 text-orange-600 bg-orange-50">解約予定</Badge>;
+    }
+
     const statusMap: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
       active: { label: "有効", variant: "default" },
       past_due: { label: "支払遅延", variant: "destructive" },
@@ -264,7 +271,7 @@ export const SubscriptionsTab = () => {
       trialing: { label: "トライアル中", variant: "outline" },
     };
 
-    const statusInfo = statusMap[status] || { label: status, variant: "outline" as const };
+    const statusInfo = statusMap[sub.status] || { label: sub.status, variant: "outline" as const };
     return <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>;
   };
 
