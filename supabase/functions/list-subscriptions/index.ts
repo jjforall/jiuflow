@@ -186,6 +186,8 @@ serve(async (req) => {
         customer_name: customer.name || 'N/A',
         customer_id: customer.id,
         status: sub.status,
+        cancel_at_period_end: sub.cancel_at_period_end || false,
+        canceled_at: sub.canceled_at ? new Date(sub.canceled_at * 1000).toISOString() : null,
         is_trialing: isTrialing,
         trial_end: sub.trial_end ? new Date(sub.trial_end * 1000).toISOString() : null,
         amount: price?.unit_amount || 0,
