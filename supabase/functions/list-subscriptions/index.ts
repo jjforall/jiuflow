@@ -194,9 +194,9 @@ serve(async (req) => {
         currency: price?.currency || 'jpy',
         interval: price?.recurring?.interval || 'month',
         product_name: productName,
-        current_period_start: sub.current_period_start ? new Date(sub.current_period_start * 1000).toISOString() : new Date().toISOString(),
-        current_period_end: sub.current_period_end ? new Date(sub.current_period_end * 1000).toISOString() : new Date().toISOString(),
-        created: sub.created ? new Date(sub.created * 1000).toISOString() : new Date().toISOString(),
+        current_period_start: sub.current_period_start ? new Date(sub.current_period_start * 1000).toISOString() : null,
+        current_period_end: sub.current_period_end ? new Date(sub.current_period_end * 1000).toISOString() : null,
+        created: sub.created ? new Date(sub.created * 1000).toISOString() : null,
         referral_code: referralInfo?.code || referralInfo?.dojo_friends_code || null,
       };
     }));
