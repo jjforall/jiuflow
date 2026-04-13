@@ -48,6 +48,14 @@ const FAQ = () => {
       linkTo: "/mypage",
       linkText: "→ マイページはこちら",
     },
+    {
+      question: "サブスクリプションを解約したい（退会方法を教えてください）",
+      answer:
+        "以下の手順でいつでもご自身で解約が可能です。\n\n① マイページにアクセス\n② ページ下部の「設定」タブをクリック\n③ プラン情報のセクションを確認\n④ 「プランを解約する」ボタンをクリック\n\n※ 解約後も、現在の有効期限（次回請求予定日）までは引き続き動画をご視聴いただけます。",
+      hasLink: true,
+      linkTo: "/mypage",
+      linkText: "→ マイページはこちら",
+    },
   ];
 
   const featureFAQs = [
@@ -138,7 +146,7 @@ const FAQ = () => {
                   <AccordionTrigger className="text-left text-sm md:text-base text-foreground hover:text-primary">
                     {faq.question}
                   </AccordionTrigger>
-                  <AccordionContent className="text-muted-foreground leading-relaxed">
+                  <AccordionContent className="text-muted-foreground leading-relaxed whitespace-pre-line">
                     {faq.answer}
                     {faq.hasLink && faq.linkTo && (
                       <Link
