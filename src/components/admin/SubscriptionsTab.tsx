@@ -39,6 +39,8 @@ interface Subscription {
   customer_name: string;
   customer_id: string;
   status: string;
+  cancel_at_period_end?: boolean;
+  canceled_at?: string | null;
   amount: number;
   currency: string;
   interval: string;
@@ -255,7 +257,12 @@ export const SubscriptionsTab = () => {
     }).format(amount);
   };
 
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = (sub: Subscription) => {
+    // Check for cancel_at_period_end first (scheduled cancellation)
+    if (sub.cancel_at_period_end && sub.status === 'active') {
+      return <Badge variant="outline" className="border-orange-500 text-orange-600 bg-orange-50">解約予定</Badge>;
+    }
+
     const statusMap: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
       active: { label: "有効", variant: "default" },
       past_due: { label: "支払遅延", variant: "destructive" },
@@ -264,7 +271,7 @@ export const SubscriptionsTab = () => {
       trialing: { label: "トライアル中", variant: "outline" },
     };
 
-    const statusInfo = statusMap[status] || { label: status, variant: "outline" as const };
+    const statusInfo = statusMap[sub.status] || { label: sub.status, variant: "outline" as const };
     return <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>;
   };
 
@@ -361,7 +368,7 @@ export const SubscriptionsTab = () => {
                       </div>
                     </TableCell>
                     <TableCell>{sub.product_name}</TableCell>
-                    <TableCell>{getStatusBadge(sub.status)}</TableCell>
+                    <TableCell>{getStatusBadge(sub)}</TableCell>
                     <TableCell className="text-right font-medium">
                       {formatCurrency(sub.amount, sub.currency)}
                       <span className="text-xs text-muted-foreground">/{sub.interval === 'month' ? '月' : '年'}</span>
@@ -401,7 +408,7 @@ export const SubscriptionsTab = () => {
                             返金
                           </Button>
                         )}
-                        {sub.status === 'active' && (
+                        {sub.status === 'active' && !sub.cancel_at_period_end && (
                           <Button
                             variant="destructive"
                             size="sm"
@@ -429,7 +436,7 @@ export const SubscriptionsTab = () => {
                     <p className="font-medium truncate">{sub.customer_name}</p>
                     <p className="text-sm text-muted-foreground truncate">{sub.customer_email}</p>
                   </div>
-                  {getStatusBadge(sub.status)}
+                  {getStatusBadge(sub)}
                 </div>
 
                 <div className="space-y-2 text-sm">
@@ -489,7 +496,7 @@ export const SubscriptionsTab = () => {
                       返金
                     </Button>
                   )}
-                  {sub.status === 'active' && (
+                  {sub.status === 'active' && !sub.cancel_at_period_end && (
                     <Button
                       variant="destructive"
                       size="sm"
