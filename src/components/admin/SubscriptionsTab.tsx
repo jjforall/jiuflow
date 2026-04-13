@@ -45,10 +45,10 @@ interface Subscription {
   currency: string;
   interval: string;
   product_name: string;
-  current_period_start: string;
-  current_period_end: string;
-  created: string;
-  trial_end?: string;
+  current_period_start: string | null;
+  current_period_end: string | null;
+  created: string | null;
+  trial_end?: string | null;
   referral_code?: string | null;
 }
 
