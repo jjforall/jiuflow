@@ -112,20 +112,32 @@ serve(async (req) => {
     // Filter for active or trialing subscriptions that are Jiuflow-specific
     const activeOrTrialingSubs = subscriptions.data.filter((sub: any) => {
       const isActiveOrTrialing = sub.status === "active" || sub.status === "trialing";
-      const priceId = sub.items.data[0]?.price?.id;
-      const isJiuflowPrice = JIUFLOW_PRICE_IDS.includes(priceId);
+      const priceIdCheck = sub.items.data[0]?.price?.id;
+      const isJiuflowPrice = JIUFLOW_PRICE_IDS.includes(priceIdCheck);
       return isActiveOrTrialing && isJiuflowPrice;
     });
     
-    const hasActiveSub = activeOrTrialingSubs.length > 0;
+    // Also check for canceled subscriptions whose period has not yet ended (cancel_at_period_end or immediate cancel with remaining access)
+    const canceledButActiveUntilEnd = subscriptions.data.filter((sub: any) => {
+      if (sub.status !== "canceled") return false;
+      const priceIdCheck = sub.items.data[0]?.price?.id;
+      if (!JIUFLOW_PRICE_IDS.includes(priceIdCheck)) return false;
+      // Get period end from item (basil API) or subscription
+      const item = sub.items.data[0];
+      const periodEnd = (item as any)?.current_period_end ?? (sub as any).current_period_end;
+      // Still within the paid period
+      return periodEnd && (periodEnd * 1000) > Date.now();
+    });
+    
+    const hasActiveSub = activeOrTrialingSubs.length > 0 || canceledButActiveUntilEnd.length > 0;
     let productId = null;
     let priceId = null;
     let subscriptionId = null;
     let subscriptionEnd = null;
     let isTrialing = false;
 
-    if (hasActiveSub) {
-      const subscription = activeOrTrialingSubs[0];
+    if (activeOrTrialingSubs.length > 0 || canceledButActiveUntilEnd.length > 0) {
+      const subscription = activeOrTrialingSubs.length > 0 ? activeOrTrialingSubs[0] : canceledButActiveUntilEnd[0];
       isTrialing = subscription.status === "trialing";
       subscriptionId = subscription.id;
       
@@ -135,9 +147,10 @@ serve(async (req) => {
         isTrialing 
       });
       
-      // Safe date conversion with error handling
+      // Safe date conversion - read from item first (basil API), then subscription
       try {
-        const periodEnd = subscription.current_period_end;
+        const item = subscription.items.data[0];
+        const periodEnd = (item as any)?.current_period_end ?? (subscription as any).current_period_end;
         if (periodEnd && typeof periodEnd === 'number') {
           subscriptionEnd = new Date(periodEnd * 1000).toISOString();
         }
