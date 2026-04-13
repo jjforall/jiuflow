@@ -368,7 +368,7 @@ export const SubscriptionsTab = () => {
                       </div>
                     </TableCell>
                     <TableCell>{sub.product_name}</TableCell>
-                    <TableCell>{getStatusBadge(sub.status)}</TableCell>
+                    <TableCell>{getStatusBadge(sub)}</TableCell>
                     <TableCell className="text-right font-medium">
                       {formatCurrency(sub.amount, sub.currency)}
                       <span className="text-xs text-muted-foreground">/{sub.interval === 'month' ? '月' : '年'}</span>
@@ -436,7 +436,7 @@ export const SubscriptionsTab = () => {
                     <p className="font-medium truncate">{sub.customer_name}</p>
                     <p className="text-sm text-muted-foreground truncate">{sub.customer_email}</p>
                   </div>
-                  {getStatusBadge(sub.status)}
+                  {getStatusBadge(sub)}
                 </div>
 
                 <div className="space-y-2 text-sm">
