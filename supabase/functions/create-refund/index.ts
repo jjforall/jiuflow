@@ -130,46 +130,83 @@ serve(async (req) => {
 
     // Get the subscription to find the latest payment
     const subscription = await stripe.subscriptions.retrieve(subscriptionId, {
-      expand: ['latest_invoice.payment_intent', 'items.data.price'],
+      expand: ['latest_invoice', 'items.data.price'],
     });
     const subscriptionItem = subscription.items.data[0];
     const subscriptionPriceId = subscriptionItem?.price?.id ?? null;
+    const latestInvoice = typeof subscription.latest_invoice === 'object' && subscription.latest_invoice
+      ? subscription.latest_invoice as Stripe.Invoice
+      : null;
     logStep("Subscription retrieved", { 
       id: subscription.id, 
-      latestInvoice: subscription.latest_invoice,
+      latestInvoiceId: latestInvoice?.id ?? subscription.latest_invoice,
+      latestInvoiceStatus: latestInvoice?.status,
+      latestInvoiceAmountPaid: latestInvoice?.amount_paid,
       priceId: subscriptionPriceId,
       status: subscription.status,
     });
 
-    // Try latest invoice first, then search older paid invoices.
-    let refundSource = getRefundSource(
-      typeof subscription.latest_invoice === 'object' && subscription.latest_invoice
-        ? subscription.latest_invoice as Stripe.Invoice
-        : null
-    );
+    // Helper: find a refundable charge for a given invoice via charges.list
+    const findChargeForInvoice = async (invoiceId: string): Promise<{ type: 'charge'; id: string; invoiceId: string } | null> => {
+      try {
+        const charges = await stripe.charges.list({ invoice: invoiceId, limit: 5 });
+        logStep("Searched charges for invoice", { invoiceId, chargeCount: charges.data.length });
+        for (const ch of charges.data) {
+          if (ch.paid && !ch.refunded) {
+            logStep("Found refundable charge", { chargeId: ch.id, amount: ch.amount, invoiceId });
+            return { type: 'charge', id: ch.id, invoiceId };
+          }
+          // Even if fully refunded, the charge exists — return it and let Stripe decide
+          if (ch.paid) {
+            logStep("Found paid charge (may be partially refunded)", { chargeId: ch.id, amount: ch.amount, invoiceId });
+            return { type: 'charge', id: ch.id, invoiceId };
+          }
+        }
+      } catch (err) {
+        logStep("Error searching charges for invoice", { invoiceId, error: err instanceof Error ? err.message : String(err) });
+      }
+      return null;
+    };
+
+    // Try latest invoice first
+    let refundSource = getRefundSource(latestInvoice);
 
     if (refundSource) {
-      logStep("Found refundable latest invoice", refundSource);
+      logStep("Found refundable source from latest invoice (payment_intent/charge)", refundSource);
     }
 
+    // Basil API: payment_intent/charge may not be on the invoice object.
+    // If latest invoice is paid but no refund source found, search charges for that invoice.
+    if (!refundSource && latestInvoice && (latestInvoice.status === 'paid' || (latestInvoice.amount_paid ?? 0) > 0)) {
+      logStep("Latest invoice is paid but no payment_intent/charge on object, searching charges...");
+      refundSource = await findChargeForInvoice(latestInvoice.id);
+    }
+
+    // Fallback: search older invoices
     if (!refundSource) {
       const invoices = await stripe.invoices.list({
         subscription: subscriptionId,
         limit: 100,
-        expand: ['data.payment_intent'],
       });
-      logStep("Fetched invoices", { count: invoices.data.length });
+      logStep("Fetched invoices for fallback search", { count: invoices.data.length });
 
       for (const inv of invoices.data) {
-        const isPaidInvoice = inv.status === 'paid' || inv.paid || (inv.amount_paid ?? 0) > 0;
-        if (!isPaidInvoice) {
-          continue;
-        }
+        const isPaidInvoice = inv.status === 'paid' || (inv as any).paid || (inv.amount_paid ?? 0) > 0;
+        logStep("Examining invoice", { id: inv.id, status: inv.status, amountPaid: inv.amount_paid, isPaid: isPaidInvoice });
+        if (!isPaidInvoice) continue;
 
+        // Try extracting payment_intent/charge from invoice object
         const candidate = getRefundSource(inv);
         if (candidate) {
           refundSource = candidate;
-          logStep("Found refundable paid invoice", candidate);
+          logStep("Found refundable source from invoice object", candidate);
+          break;
+        }
+
+        // Basil fallback: search charges for this invoice
+        const chargeSource = await findChargeForInvoice(inv.id);
+        if (chargeSource) {
+          refundSource = chargeSource;
           break;
         }
       }
@@ -199,6 +236,7 @@ serve(async (req) => {
       refundParams.reason = reason as Stripe.RefundCreateParams.Reason;
     }
 
+    logStep("Creating refund", { refundParams, refundSource });
     const refund = await stripe.refunds.create(refundParams);
     logStep("Refund created", { 
       id: refund.id, 
@@ -221,9 +259,11 @@ serve(async (req) => {
       status: 200,
     });
   } catch (error) {
-    logStep("ERROR", { message: error instanceof Error ? error.message : 'Unknown error' });
+    // Extract detailed Stripe error if available
+    const stripeError = (error as any)?.raw?.message || (error as any)?.message;
+    const errorMessage = stripeError || (error instanceof Error ? error.message : 'Unknown error');
+    logStep("ERROR", { message: errorMessage, type: (error as any)?.type, code: (error as any)?.code });
     console.error('Error creating refund:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return new Response(JSON.stringify({ error: errorMessage }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,

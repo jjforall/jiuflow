@@ -184,7 +184,18 @@ export const SubscriptionsTab = () => {
 
       if (error) {
         console.error("Function invocation error:", error);
-        throw error;
+        // Try to extract server error body for better error messages
+        let message = error.message;
+        const anyErr = error as any;
+        if (anyErr?.context?.json) {
+          try {
+            const body = await anyErr.context.json();
+            if (body?.error) message = body.error;
+          } catch {
+            // ignore parse error
+          }
+        }
+        throw new Error(message);
       }
 
       if (data?.error) {
