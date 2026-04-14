@@ -105,7 +105,7 @@ serve(async (req) => {
       const params: Stripe.SubscriptionListParams = {
         status: 'all',
         limit: 100,
-        expand: ['data.customer', 'data.items.data.price.product'],
+        expand: ['data.customer', 'data.items.data.price'],
       };
       if (startingAfter) {
         params.starting_after = startingAfter;
