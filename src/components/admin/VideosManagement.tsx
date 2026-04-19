@@ -479,10 +479,11 @@ export const VideosManagement = () => {
         return next;
       });
 
-      // Send in batches of 100 URLs
-      const BATCH = 100;
+      // Send in batches of 50 URLs (HEAD checks make this slower per item)
+      const BATCH = 50;
       let missing = 0;
       const newMap: Record<string, 'ok' | 'missing'> = {};
+      const missingDetails: Array<{ id: string; reason?: string }> = [];
 
       for (let i = 0; i < items.length; i += BATCH) {
         const slice = items.slice(i, i + BATCH);
@@ -493,20 +494,46 @@ export const VideosManagement = () => {
         );
         if (fnError) {
           console.error('[CF-HEALTH] batch error', fnError);
+          // Mark this batch as missing so UI doesn't stay in "checking" forever
+          slice.forEach((t) => {
+            newMap[t.id] = 'missing';
+            missing++;
+            missingDetails.push({ id: t.id, reason: 'batch_error' });
+          });
           continue;
         }
         const results: Array<{ url: string; ok: boolean; reason?: string }> = data?.results || [];
-        results.forEach((r, idx) => {
-          const t = slice[idx];
-          if (!t) return;
+        // Map by index (Edge function preserves order)
+        slice.forEach((t, idx) => {
+          const r = results[idx];
+          if (!r) {
+            newMap[t.id] = 'missing';
+            missing++;
+            missingDetails.push({ id: t.id, reason: 'no_result' });
+            return;
+          }
           const status: 'ok' | 'missing' = r.ok ? 'ok' : 'missing';
           newMap[t.id] = status;
-          if (!r.ok) missing++;
+          if (!r.ok) {
+            missing++;
+            missingDetails.push({ id: t.id, reason: r.reason });
+          }
         });
+
+        // Incremental UI update so user sees progress and no card stays "checking"
+        setCfHealthMap((prev) => ({ ...prev, ...newMap }));
       }
 
-      setCfHealthMap((prev) => ({ ...prev, ...newMap }));
+      // Final overwrite to ensure map is fully synced (clears any stragglers)
+      setCfHealthMap((prev) => {
+        const next = { ...prev };
+        items.forEach((t) => {
+          next[t.id] = newMap[t.id] ?? 'missing';
+        });
+        return next;
+      });
       setCfMissingCount(missing);
+      console.log('[CF-HEALTH] Summary', { total: items.length, missing, missingDetails: missingDetails.slice(0, 10) });
       if (missing === 0) {
         toast.success(`${items.length}件すべて正常です`);
       } else {
