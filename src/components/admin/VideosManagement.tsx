@@ -2804,10 +2804,12 @@ export const VideosManagement = () => {
               <><Loader2 className="w-4 h-4 mr-2 animate-spin" />チェック中...</>
             ) : cfMissingCount === null ? (
               <><Cloud className="w-4 h-4 mr-2" />動画ファイル健全性チェック</>
-            ) : cfMissingCount === 0 ? (
+            ) : cfMissingCount === 0 && cfUnknownCount === 0 ? (
               <><Cloud className="w-4 h-4 mr-2" />全動画OK ({Object.keys(cfHealthMap).length}件)</>
+            ) : cfMissingCount === 0 ? (
+              <><Cloud className="w-4 h-4 mr-2" />OK / 判定不能 {cfUnknownCount}件</>
             ) : (
-              <><AlertTriangle className="w-4 h-4 mr-2" />動画欠損 {cfMissingCount}件</>
+              <><AlertTriangle className="w-4 h-4 mr-2" />動画欠損 {cfMissingCount}件{cfUnknownCount > 0 ? ` / 不明 ${cfUnknownCount}件` : ''}</>
             )}
           </Button>
         </div>
