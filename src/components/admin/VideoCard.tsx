@@ -45,8 +45,8 @@ interface VideoCardProps {
   processingLanguages?: string[];
   isFetchingDuration?: boolean;
   notations?: NotationBadge[];
-  /** Cloudflare Stream health: 'ok' | 'missing' | 'checking' | undefined (unknown) */
-  cfHealth?: 'ok' | 'missing' | 'checking';
+  /** Cloudflare Stream health: 'ok' | 'missing' | 'unknown' | 'checking' | undefined */
+  cfHealth?: 'ok' | 'missing' | 'unknown' | 'checking';
   onEdit: () => void;
   onPreview: (langCode?: string) => void;
   onTranscribe: () => void;
@@ -170,6 +170,19 @@ export function VideoCard({
               </TooltipTrigger>
               <TooltipContent side="right" className="max-w-xs">
                 <p className="text-xs">Cloudflare Stream上にこの動画ファイルが存在しません (404)。クリックして編集ダイアログから再アップロードしてください。</p>
+              </TooltipContent>
+            </Tooltip>
+          )}
+          {cfHealth === 'unknown' && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Badge className="bg-yellow-500/90 text-black text-[9px] px-1.5 py-0.5 h-auto border-0 flex items-center gap-0.5">
+                  <AlertTriangle className="h-2.5 w-2.5" />
+                  判定不能
+                </Badge>
+              </TooltipTrigger>
+              <TooltipContent side="right" className="max-w-xs">
+                <p className="text-xs">Cloudflare APIが応答しなかった、またはStream IDを抽出できませんでした。動画自体は存在する可能性があります。</p>
               </TooltipContent>
             </Tooltip>
           )}

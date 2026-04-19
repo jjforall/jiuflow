@@ -12,11 +12,23 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const STREAM_ID_RE = /([a-f0-9]{32})/i;
+// Cloudflare Stream IDs are 32-char alphanumeric strings (not strictly hex).
+// Match the same patterns used by the frontend (src/lib/cloudflareStream.ts).
+const STREAM_ID_PATTERNS: RegExp[] = [
+  /customer-[a-z0-9]+\.cloudflarestream\.com\/([a-zA-Z0-9]{20,})/,
+  /iframe\.videodelivery\.net\/([a-zA-Z0-9]{20,})/,
+  /watch\.cloudflarestream\.com\/([a-zA-Z0-9]{20,})/,
+  /cloudflarestream\.com\/([a-zA-Z0-9]{20,})/,
+  /videodelivery\.net\/([a-zA-Z0-9]{20,})/,
+];
 
 function extractId(url: string): string | null {
-  const m = url.match(STREAM_ID_RE);
-  return m?.[1] ?? null;
+  if (!url) return null;
+  for (const pattern of STREAM_ID_PATTERNS) {
+    const m = url.match(pattern);
+    if (m?.[1]) return m[1];
+  }
+  return null;
 }
 
 async function headOk(url: string, timeoutMs = 8000): Promise<{ ok: boolean; status: number }> {
@@ -87,6 +99,7 @@ serve(async (req) => {
       url: string;
       videoId: string | null;
       ok: boolean;
+      status: "ok" | "missing" | "unknown" | "no_id";
       readyToStream?: boolean;
       state?: string;
       manifestStatus?: number;
@@ -100,7 +113,15 @@ serve(async (req) => {
         const i = cursor++;
         const item = inputs[i];
         if (!item.id) {
-          results[i] = { url: item.url, videoId: null, ok: false, reason: "no_id_in_url" };
+          // Cannot extract a Stream ID — likely not a Cloudflare URL. Mark as unknown,
+          // not missing, so we don't false-positive non-Stream videos.
+          results[i] = {
+            url: item.url,
+            videoId: null,
+            ok: false,
+            status: "unknown",
+            reason: "no_id_in_url",
+          };
           continue;
         }
 
@@ -109,45 +130,68 @@ serve(async (req) => {
         let ready = false;
         let state = "unknown";
         let apiReason: string | undefined;
+        let apiHttpStatus = 0;
+        let apiCallFailed = false;
         try {
           const r = await fetch(
             `https://api.cloudflare.com/client/v4/accounts/${accountId}/stream/${item.id}`,
             { headers: { Authorization: `Bearer ${apiToken}` } }
           );
+          apiHttpStatus = r.status;
           if (r.status === 404) {
-            results[i] = { url: item.url, videoId: item.id, ok: false, reason: "api_not_found" };
-            continue;
-          }
-          if (r.status === 401 || r.status === 403) {
+            // Definitively missing on Cloudflare
             results[i] = {
               url: item.url,
               videoId: item.id,
               ok: false,
-              reason: `api_auth_${r.status}`,
+              status: "missing",
+              reason: "api_not_found_404",
             };
             continue;
           }
-          const j = await r.json().catch(() => null);
-          if (!j?.success) {
-            apiReason = j?.errors?.[0]?.message || `api_error_${r.status}`;
+          if (r.status === 401 || r.status === 403) {
+            // Auth/permission problem — do NOT mark as missing
+            apiCallFailed = true;
+            apiReason = `api_auth_${r.status}`;
           } else {
-            ready = !!j.result?.readyToStream;
-            state = j.result?.status?.state || "unknown";
-            apiOk = ready && state === "ready";
-            if (!apiOk) apiReason = `not_ready(state=${state},ready=${ready})`;
+            const j = await r.json().catch(() => null);
+            if (!j?.success) {
+              apiCallFailed = true;
+              apiReason = j?.errors?.[0]?.message || `api_error_${r.status}`;
+            } else {
+              ready = !!j.result?.readyToStream;
+              state = j.result?.status?.state || "unknown";
+              apiOk = ready && state === "ready";
+              if (!apiOk) apiReason = `not_ready(state=${state},ready=${ready})`;
+            }
           }
         } catch (e) {
+          apiCallFailed = true;
           apiReason = e instanceof Error ? e.message : String(e);
         }
 
+        // If the API call itself failed (auth/network), mark as unknown — not missing
+        if (apiCallFailed) {
+          results[i] = {
+            url: item.url,
+            videoId: item.id,
+            ok: false,
+            status: "unknown",
+            reason: apiReason || "api_call_failed",
+          };
+          continue;
+        }
+
+        // If API responded but video is not ready, mark as missing (broken)
         if (!apiOk) {
           results[i] = {
             url: item.url,
             videoId: item.id,
             ok: false,
+            status: "missing",
             readyToStream: ready,
             state,
-            reason: apiReason || "api_failed",
+            reason: apiReason || "not_ready",
           };
           continue;
         }
@@ -160,19 +204,25 @@ serve(async (req) => {
           headOk(thumbnailUrl),
         ]);
 
-        const allOk = manifest.ok && thumb.ok;
-        const reason = !allOk
-          ? !manifest.ok && !thumb.ok
-            ? `manifest_${manifest.status}_thumb_${thumb.status}`
-            : !manifest.ok
-              ? `manifest_${manifest.status}`
-              : `thumb_${thumb.status}`
-          : undefined;
+        // Trust the Cloudflare API as the source of truth.
+        // HEAD requests can fail due to CDN caching, transient network, or anti-hotlink.
+        // Only flag as missing if BOTH manifest and thumbnail return 404 (definitive).
+        const manifest404 = manifest.status === 404;
+        const thumb404 = thumb.status === 404;
+        const definitelyMissing = manifest404 && thumb404;
+        // A single 404 (e.g. thumbnail only) is suspicious — log but treat as ok
+        // since the API confirmed readyToStream.
+        const reason = definitelyMissing
+          ? `manifest_404_thumb_404`
+          : (manifest404 || thumb404)
+            ? `partial: manifest=${manifest.status} thumb=${thumb.status} (API ok)`
+            : undefined;
 
         results[i] = {
           url: item.url,
           videoId: item.id,
-          ok: allOk,
+          ok: !definitelyMissing,
+          status: definitelyMissing ? "missing" : "ok",
           readyToStream: ready,
           state,
           manifestStatus: manifest.status,
@@ -183,14 +233,19 @@ serve(async (req) => {
     }
     await Promise.all(Array.from({ length: Math.min(concurrency, inputs.length) }, worker));
 
-    const okCount = results.filter((r) => r?.ok).length;
-    const missingCount = results.length - okCount;
+    const okCount = results.filter((r) => r?.status === "ok").length;
+    const missingCount = results.filter((r) => r?.status === "missing").length;
+    const unknownCount = results.filter((r) => r?.status === "unknown").length;
     console.log(
-      `[CHECK-CF-HEALTH] checked=${results.length} ok=${okCount} missing=${missingCount}`
+      `[CHECK-CF-HEALTH] checked=${results.length} ok=${okCount} missing=${missingCount} unknown=${unknownCount}`
     );
     if (missingCount > 0) {
-      const sample = results.filter((r) => !r?.ok).slice(0, 5);
+      const sample = results.filter((r) => r?.status === "missing").slice(0, 5);
       console.log("[CHECK-CF-HEALTH] sample missing:", JSON.stringify(sample));
+    }
+    if (unknownCount > 0) {
+      const sample = results.filter((r) => r?.status === "unknown").slice(0, 5);
+      console.log("[CHECK-CF-HEALTH] sample unknown:", JSON.stringify(sample));
     }
 
     return new Response(JSON.stringify({ results }), {
