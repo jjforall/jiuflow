@@ -38,6 +38,7 @@ import { TranscriptionQuickDialog } from "@/components/admin/TranscriptionQuickD
 import { TranslationQuickDialog } from "@/components/admin/TranslationQuickDialog";
 import { NotationSelector } from "@/components/admin/NotationSelector";
 import { useNotations } from "@/hooks/useNotations";
+import { cn } from "@/lib/utils";
 
 // セクションコンポーネント
 const FormSection = ({ icon, title, children }: { icon: React.ReactNode; title: string; children: React.ReactNode }) => (
@@ -89,6 +90,10 @@ export const VideosManagement = () => {
   const [replaceVideoFile, setReplaceVideoFile] = useState<File | null>(null);
   const [isReplacingVideo, setIsReplacingVideo] = useState(false);
   const [replaceProgress, setReplaceProgress] = useState(0);
+  // Cloudflare Stream health-check state
+  const [cfHealthMap, setCfHealthMap] = useState<Record<string, 'ok' | 'missing' | 'checking'>>({});
+  const [isCheckingCfHealth, setIsCheckingCfHealth] = useState(false);
+  const [cfMissingCount, setCfMissingCount] = useState<number | null>(null);
   const [translationProjectId, setTranslationProjectId] = useState<string | null>(null);
   const [translationStatus, setTranslationStatus] = useState<{
     status: string | null;
@@ -446,7 +451,77 @@ export const VideosManagement = () => {
     }
   };
 
-  // Translation provider handler
+  // ===== Cloudflare Stream health check =====
+  // Verifies that every technique's Cloudflare video URL still resolves to an
+  // actual stream asset. Marks 404s as "missing" so the admin can re-upload.
+  const handleCheckCloudflareHealth = async () => {
+    setIsCheckingCfHealth(true);
+    try {
+      const { data: techniques, error } = await supabase
+        .from('techniques')
+        .select('id, video_url')
+        .not('video_url', 'is', null);
+
+      if (error) throw error;
+      const items = (techniques || []).filter(
+        (t) => t.video_url && (t.video_url.includes('videodelivery.net') || t.video_url.includes('cloudflarestream.com'))
+      );
+
+      if (items.length === 0) {
+        toast.info('チェック対象のCloudflare動画がありません');
+        return;
+      }
+
+      // Mark all as checking
+      setCfHealthMap((prev) => {
+        const next = { ...prev };
+        items.forEach((t) => { next[t.id] = 'checking'; });
+        return next;
+      });
+
+      // Send in batches of 100 URLs
+      const BATCH = 100;
+      let missing = 0;
+      const newMap: Record<string, 'ok' | 'missing'> = {};
+
+      for (let i = 0; i < items.length; i += BATCH) {
+        const slice = items.slice(i, i + BATCH);
+        const urls = slice.map((t) => t.video_url!);
+        const { data, error: fnError } = await supabase.functions.invoke(
+          'check-cloudflare-video-health',
+          { body: { urls } }
+        );
+        if (fnError) {
+          console.error('[CF-HEALTH] batch error', fnError);
+          continue;
+        }
+        const results: Array<{ url: string; ok: boolean; reason?: string }> = data?.results || [];
+        results.forEach((r, idx) => {
+          const t = slice[idx];
+          if (!t) return;
+          const status: 'ok' | 'missing' = r.ok ? 'ok' : 'missing';
+          newMap[t.id] = status;
+          if (!r.ok) missing++;
+        });
+      }
+
+      setCfHealthMap((prev) => ({ ...prev, ...newMap }));
+      setCfMissingCount(missing);
+      if (missing === 0) {
+        toast.success(`${items.length}件すべて正常です`);
+      } else {
+        toast.warning(`${missing}件の動画がCloudflare上に存在しません`, {
+          description: '赤バッジ「動画欠損」をクリックして再アップロードしてください',
+        });
+      }
+    } catch (error) {
+      console.error('[CF-HEALTH] error', error);
+      toast.error(error instanceof Error ? error.message : 'チェックに失敗しました');
+    } finally {
+      setIsCheckingCfHealth(false);
+    }
+  };
+
   const handleProviderChange = (value: TranslationProvider) => {
     setTranslationProvider(value);
     localStorage.setItem('translation_provider', value);
@@ -2787,6 +2862,7 @@ export const VideosManagement = () => {
                 dubbedLanguages={getDubbedLanguages(technique)}
                 processingLanguages={getProcessingLanguagesForTechnique(technique.id)}
                 notations={notationMap[technique.id] || []}
+                cfHealth={cfHealthMap[technique.id]}
                 isFetchingDuration={fetchingDurationId === technique.id}
                 onEdit={() => openEditDialog(technique)}
                 onPreview={(langCode) => {
@@ -2924,6 +3000,26 @@ export const VideosManagement = () => {
                   : missingDurationCount > 0 
                     ? `動画時間一括取得 (${missingDurationCount}件)`
                     : '動画時間一括取得'}
+              </Button>
+              <Button
+                onClick={handleCheckCloudflareHealth}
+                disabled={isCheckingCfHealth}
+                variant="outline"
+                size="sm"
+                className={cn(
+                  "text-xs h-7",
+                  cfMissingCount && cfMissingCount > 0 && "border-destructive/50 text-destructive"
+                )}
+              >
+                {isCheckingCfHealth ? (
+                  <><Loader2 className="w-3 h-3 mr-1 animate-spin" />チェック中...</>
+                ) : cfMissingCount === null ? (
+                  <><Cloud className="w-3 h-3 mr-1" />動画ファイル健全性チェック</>
+                ) : cfMissingCount === 0 ? (
+                  <><Cloud className="w-3 h-3 mr-1" />全動画OK ({Object.keys(cfHealthMap).length}件)</>
+                ) : (
+                  <><AlertTriangle className="w-3 h-3 mr-1" />動画欠損 {cfMissingCount}件</>
+                )}
               </Button>
             </div>
             

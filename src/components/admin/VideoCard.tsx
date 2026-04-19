@@ -1,4 +1,5 @@
 import { Edit, FileText, Trash2, Clock, RefreshCw, Loader2, Download, AlertTriangle, Globe, Link2, Lock } from "lucide-react";
+// Loader2 and AlertTriangle are also used by the Cloudflare health badge.
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -44,6 +45,8 @@ interface VideoCardProps {
   processingLanguages?: string[];
   isFetchingDuration?: boolean;
   notations?: NotationBadge[];
+  /** Cloudflare Stream health: 'ok' | 'missing' | 'checking' | undefined (unknown) */
+  cfHealth?: 'ok' | 'missing' | 'checking';
   onEdit: () => void;
   onPreview: (langCode?: string) => void;
   onTranscribe: () => void;
@@ -84,6 +87,7 @@ export function VideoCard({
   processingLanguages = [],
   isFetchingDuration = false,
   notations = [],
+  cfHealth,
   onEdit,
   onPreview,
   onTranscribe,
@@ -134,7 +138,7 @@ export function VideoCard({
           )}
           
         {/* Visibility badge - top left of thumbnail */}
-        <div className="absolute top-1.5 left-1.5 z-10">
+        <div className="absolute top-1.5 left-1.5 z-10 flex flex-col gap-1">
           {technique.visibility === 'public' && (
             <Badge className="bg-green-600/90 text-white text-[9px] px-1.5 py-0.5 h-auto border-0 flex items-center gap-0.5">
               <Globe className="h-2.5 w-2.5" />
@@ -151,6 +155,28 @@ export function VideoCard({
             <Badge className="bg-red-600/90 text-white text-[9px] px-1.5 py-0.5 h-auto border-0 flex items-center gap-0.5">
               <Lock className="h-2.5 w-2.5" />
               非公開
+            </Badge>
+          )}
+          {cfHealth === 'missing' && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Badge
+                  className="bg-destructive/95 text-destructive-foreground text-[9px] px-1.5 py-0.5 h-auto border-0 flex items-center gap-0.5 cursor-pointer animate-pulse"
+                  onClick={(e) => { e.stopPropagation(); onEdit(); }}
+                >
+                  <AlertTriangle className="h-2.5 w-2.5" />
+                  動画欠損
+                </Badge>
+              </TooltipTrigger>
+              <TooltipContent side="right" className="max-w-xs">
+                <p className="text-xs">Cloudflare Stream上にこの動画ファイルが存在しません (404)。クリックして編集ダイアログから再アップロードしてください。</p>
+              </TooltipContent>
+            </Tooltip>
+          )}
+          {cfHealth === 'checking' && (
+            <Badge className="bg-muted text-muted-foreground text-[9px] px-1.5 py-0.5 h-auto border-0 flex items-center gap-0.5">
+              <Loader2 className="h-2.5 w-2.5 animate-spin" />
+              確認中
             </Badge>
           )}
         </div>
