@@ -45,8 +45,8 @@ interface VideoCardProps {
   processingLanguages?: string[];
   isFetchingDuration?: boolean;
   notations?: NotationBadge[];
-  /** Cloudflare Stream health: 'ok' | 'missing' | 'checking' | undefined (unknown) */
-  cfHealth?: 'ok' | 'missing' | 'checking';
+  /** Cloudflare Stream health: 'ok' | 'missing' | 'unknown' | 'checking' | undefined */
+  cfHealth?: 'ok' | 'missing' | 'unknown' | 'checking';
   onEdit: () => void;
   onPreview: (langCode?: string) => void;
   onTranscribe: () => void;
