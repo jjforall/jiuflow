@@ -38,6 +38,7 @@ import { TranscriptionQuickDialog } from "@/components/admin/TranscriptionQuickD
 import { TranslationQuickDialog } from "@/components/admin/TranslationQuickDialog";
 import { NotationSelector } from "@/components/admin/NotationSelector";
 import { useNotations } from "@/hooks/useNotations";
+import { cn } from "@/lib/utils";
 
 // セクションコンポーネント
 const FormSection = ({ icon, title, children }: { icon: React.ReactNode; title: string; children: React.ReactNode }) => (
@@ -2861,6 +2862,7 @@ export const VideosManagement = () => {
                 dubbedLanguages={getDubbedLanguages(technique)}
                 processingLanguages={getProcessingLanguagesForTechnique(technique.id)}
                 notations={notationMap[technique.id] || []}
+                cfHealth={cfHealthMap[technique.id]}
                 isFetchingDuration={fetchingDurationId === technique.id}
                 onEdit={() => openEditDialog(technique)}
                 onPreview={(langCode) => {
