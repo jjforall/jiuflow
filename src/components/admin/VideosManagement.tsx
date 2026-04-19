@@ -483,8 +483,10 @@ export const VideosManagement = () => {
       // Send in batches of 50 URLs (HEAD checks make this slower per item)
       const BATCH = 50;
       let missing = 0;
-      const newMap: Record<string, 'ok' | 'missing'> = {};
+      let unknown = 0;
+      const newMap: Record<string, 'ok' | 'missing' | 'unknown'> = {};
       const missingDetails: Array<{ id: string; reason?: string }> = [];
+      const unknownDetails: Array<{ id: string; reason?: string }> = [];
 
       for (let i = 0; i < items.length; i += BATCH) {
         const slice = items.slice(i, i + BATCH);
@@ -495,29 +497,43 @@ export const VideosManagement = () => {
         );
         if (fnError) {
           console.error('[CF-HEALTH] batch error', fnError);
-          // Mark this batch as missing so UI doesn't stay in "checking" forever
+          // Network/function error → unknown (NOT missing) so we don't false-positive
           slice.forEach((t) => {
-            newMap[t.id] = 'missing';
-            missing++;
-            missingDetails.push({ id: t.id, reason: 'batch_error' });
+            newMap[t.id] = 'unknown';
+            unknown++;
+            unknownDetails.push({ id: t.id, reason: 'batch_error' });
           });
+          setCfHealthMap((prev) => ({ ...prev, ...newMap }));
           continue;
         }
-        const results: Array<{ url: string; ok: boolean; reason?: string }> = data?.results || [];
+        const results: Array<{
+          url: string;
+          ok: boolean;
+          status?: 'ok' | 'missing' | 'unknown' | 'no_id';
+          reason?: string;
+        }> = data?.results || [];
         // Map by index (Edge function preserves order)
         slice.forEach((t, idx) => {
           const r = results[idx];
           if (!r) {
-            newMap[t.id] = 'missing';
-            missing++;
-            missingDetails.push({ id: t.id, reason: 'no_result' });
+            newMap[t.id] = 'unknown';
+            unknown++;
+            unknownDetails.push({ id: t.id, reason: 'no_result' });
             return;
           }
-          const status: 'ok' | 'missing' = r.ok ? 'ok' : 'missing';
+          // Trust the explicit status field from the Edge Function
+          let status: 'ok' | 'missing' | 'unknown';
+          if (r.status === 'missing') status = 'missing';
+          else if (r.status === 'ok' || r.ok) status = 'ok';
+          else status = 'unknown';
+
           newMap[t.id] = status;
-          if (!r.ok) {
+          if (status === 'missing') {
             missing++;
             missingDetails.push({ id: t.id, reason: r.reason });
+          } else if (status === 'unknown') {
+            unknown++;
+            unknownDetails.push({ id: t.id, reason: r.reason });
           }
         });
 
@@ -525,22 +541,33 @@ export const VideosManagement = () => {
         setCfHealthMap((prev) => ({ ...prev, ...newMap }));
       }
 
-      // Final overwrite to ensure map is fully synced (clears any stragglers)
+      // Final overwrite to ensure map is fully synced (clears any stragglers as unknown)
       setCfHealthMap((prev) => {
         const next = { ...prev };
         items.forEach((t) => {
-          next[t.id] = newMap[t.id] ?? 'missing';
+          next[t.id] = newMap[t.id] ?? 'unknown';
         });
         return next;
       });
       setCfMissingCount(missing);
-      console.log('[CF-HEALTH] Summary', { total: items.length, missing, missingDetails: missingDetails.slice(0, 10) });
-      if (missing === 0) {
+      setCfUnknownCount(unknown);
+      console.log('[CF-HEALTH] Summary', {
+        total: items.length,
+        ok: items.length - missing - unknown,
+        missing,
+        unknown,
+        missingSample: missingDetails.slice(0, 10),
+        unknownSample: unknownDetails.slice(0, 10),
+      });
+      if (missing === 0 && unknown === 0) {
         toast.success(`${items.length}件すべて正常です`);
+      } else if (missing === 0) {
+        toast.info(`${items.length - unknown}件OK / ${unknown}件は判定不能（API/ネットワーク要確認）`);
       } else {
-        toast.warning(`${missing}件の動画がCloudflare上に存在しません`, {
-          description: '赤バッジ「動画欠損」をクリックして再アップロードしてください',
-        });
+        toast.warning(
+          `動画欠損: ${missing}件${unknown > 0 ? ` / 判定不能: ${unknown}件` : ''}`,
+          { description: '赤バッジ「動画欠損」をクリックして再アップロードしてください' }
+        );
       }
     } catch (error) {
       console.error('[CF-HEALTH] error', error);
