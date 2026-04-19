@@ -173,6 +173,19 @@ export function VideoCard({
               </TooltipContent>
             </Tooltip>
           )}
+          {cfHealth === 'unknown' && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Badge className="bg-yellow-500/90 text-black text-[9px] px-1.5 py-0.5 h-auto border-0 flex items-center gap-0.5">
+                  <AlertTriangle className="h-2.5 w-2.5" />
+                  判定不能
+                </Badge>
+              </TooltipTrigger>
+              <TooltipContent side="right" className="max-w-xs">
+                <p className="text-xs">Cloudflare APIが応答しなかった、またはStream IDを抽出できませんでした。動画自体は存在する可能性があります。</p>
+              </TooltipContent>
+            </Tooltip>
+          )}
           {cfHealth === 'checking' && (
             <Badge className="bg-muted text-muted-foreground text-[9px] px-1.5 py-0.5 h-auto border-0 flex items-center gap-0.5">
               <Loader2 className="h-2.5 w-2.5 animate-spin" />
