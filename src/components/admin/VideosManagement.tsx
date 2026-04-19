@@ -91,9 +91,10 @@ export const VideosManagement = () => {
   const [isReplacingVideo, setIsReplacingVideo] = useState(false);
   const [replaceProgress, setReplaceProgress] = useState(0);
   // Cloudflare Stream health-check state
-  const [cfHealthMap, setCfHealthMap] = useState<Record<string, 'ok' | 'missing' | 'checking'>>({});
+  const [cfHealthMap, setCfHealthMap] = useState<Record<string, 'ok' | 'missing' | 'unknown' | 'checking'>>({});
   const [isCheckingCfHealth, setIsCheckingCfHealth] = useState(false);
   const [cfMissingCount, setCfMissingCount] = useState<number | null>(null);
+  const [cfUnknownCount, setCfUnknownCount] = useState<number>(0);
   const [translationProjectId, setTranslationProjectId] = useState<string | null>(null);
   const [translationStatus, setTranslationStatus] = useState<{
     status: string | null;
