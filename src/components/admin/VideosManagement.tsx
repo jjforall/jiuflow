@@ -2999,6 +2999,26 @@ export const VideosManagement = () => {
                     ? `動画時間一括取得 (${missingDurationCount}件)`
                     : '動画時間一括取得'}
               </Button>
+              <Button
+                onClick={handleCheckCloudflareHealth}
+                disabled={isCheckingCfHealth}
+                variant="outline"
+                size="sm"
+                className={cn(
+                  "text-xs h-7",
+                  cfMissingCount && cfMissingCount > 0 && "border-destructive/50 text-destructive"
+                )}
+              >
+                {isCheckingCfHealth ? (
+                  <><Loader2 className="w-3 h-3 mr-1 animate-spin" />チェック中...</>
+                ) : cfMissingCount === null ? (
+                  <><Cloud className="w-3 h-3 mr-1" />動画ファイル健全性チェック</>
+                ) : cfMissingCount === 0 ? (
+                  <><Cloud className="w-3 h-3 mr-1" />全動画OK ({Object.keys(cfHealthMap).length}件)</>
+                ) : (
+                  <><AlertTriangle className="w-3 h-3 mr-1" />動画欠損 {cfMissingCount}件</>
+                )}
+              </Button>
             </div>
             
             {/* Translation Provider Settings */}
