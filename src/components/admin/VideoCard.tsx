@@ -86,6 +86,7 @@ export function VideoCard({
   processingLanguages = [],
   isFetchingDuration = false,
   notations = [],
+  cfHealth,
   onEdit,
   onPreview,
   onTranscribe,
