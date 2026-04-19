@@ -2737,6 +2737,24 @@ export const VideosManagement = () => {
               <SelectItem value="created">追加日順</SelectItem>
             </SelectContent>
           </Select>
+          {/* Cloudflare health-check button (always visible next to search/filters) */}
+          <Button
+            onClick={handleCheckCloudflareHealth}
+            disabled={isCheckingCfHealth}
+            variant={cfMissingCount && cfMissingCount > 0 ? "destructive" : "default"}
+            size="default"
+            className="whitespace-nowrap"
+          >
+            {isCheckingCfHealth ? (
+              <><Loader2 className="w-4 h-4 mr-2 animate-spin" />チェック中...</>
+            ) : cfMissingCount === null ? (
+              <><Cloud className="w-4 h-4 mr-2" />動画ファイル健全性チェック</>
+            ) : cfMissingCount === 0 ? (
+              <><Cloud className="w-4 h-4 mr-2" />全動画OK ({Object.keys(cfHealthMap).length}件)</>
+            ) : (
+              <><AlertTriangle className="w-4 h-4 mr-2" />動画欠損 {cfMissingCount}件</>
+            )}
+          </Button>
         </div>
       </div>
 
