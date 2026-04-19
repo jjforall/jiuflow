@@ -3648,6 +3648,96 @@ export const VideosManagement = () => {
               </Select>
             </div>
             
+            {/* Legacy Series / Numbering Editor */}
+            <div className="space-y-2 border rounded-lg p-4 bg-muted/20">
+              <Label className="text-sm font-medium">
+                シリーズ / ナンバリング
+                <span className="ml-2 text-xs text-muted-foreground font-normal">
+                  (旧マップ表示用 例: A-8)
+                </span>
+              </Label>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <div className="space-y-1 sm:col-span-2">
+                  <Label htmlFor="edit-series-name" className="text-xs text-muted-foreground">
+                    シリーズ名
+                  </Label>
+                  <InputWithSuggestions
+                    id="edit-series-name"
+                    value={formData.series_name}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      const existing = seriesMapping.find(m => m.series_name === val);
+                      setFormData(prev => ({
+                        ...prev,
+                        series_name: val,
+                        series_prefix: existing
+                          ? existing.series_prefix
+                          : (prev.series_prefix || (val ? getNextAvailablePrefix() : '')),
+                      }));
+                    }}
+                    onSelectSuggestion={(val) => {
+                      const existing = seriesMapping.find(m => m.series_name === val);
+                      setFormData(prev => ({
+                        ...prev,
+                        series_name: val,
+                        series_prefix: existing ? existing.series_prefix : prev.series_prefix,
+                      }));
+                    }}
+                    suggestions={seriesNameSuggestions}
+                    placeholder="例: クローズドガードからのスイープ"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="edit-series-prefix" className="text-xs text-muted-foreground">
+                    プレフィックス
+                  </Label>
+                  <Input
+                    id="edit-series-prefix"
+                    value={formData.series_prefix}
+                    onChange={(e) =>
+                      setFormData(prev => ({ ...prev, series_prefix: e.target.value.toUpperCase() }))
+                    }
+                    placeholder="A"
+                    maxLength={3}
+                    className="font-mono uppercase"
+                  />
+                </div>
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="edit-series-order" className="text-xs text-muted-foreground">
+                  ナンバー (順番)
+                  {maxSeriesOrder !== null && formData.series_prefix && (
+                    <span className="ml-2 text-muted-foreground/70">
+                      現在の最大: {maxSeriesOrder}
+                    </span>
+                  )}
+                </Label>
+                <Input
+                  id="edit-series-order"
+                  type="number"
+                  min={1}
+                  value={formData.series_order ?? ''}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    setFormData(prev => ({
+                      ...prev,
+                      series_order: v === '' ? null : Number(v),
+                    }));
+                  }}
+                  placeholder="例: 8"
+                  className="font-mono"
+                />
+              </div>
+              {(formData.series_prefix || formData.series_order) && (
+                <p className="text-xs text-muted-foreground">
+                  プレビュー:{' '}
+                  <span className="font-mono font-medium text-foreground">
+                    {formData.series_prefix || '?'}-{formData.series_order ?? '?'}
+                  </span>
+                </p>
+              )}
+            </div>
+
             {/* Notation Selector - 技術タグ */}
             {editingTechnique && (
               <div className="space-y-2">
