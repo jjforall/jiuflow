@@ -12,11 +12,23 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const STREAM_ID_RE = /([a-f0-9]{32})/i;
+// Cloudflare Stream IDs are 32-char alphanumeric strings (not strictly hex).
+// Match the same patterns used by the frontend (src/lib/cloudflareStream.ts).
+const STREAM_ID_PATTERNS: RegExp[] = [
+  /customer-[a-z0-9]+\.cloudflarestream\.com\/([a-zA-Z0-9]{20,})/,
+  /iframe\.videodelivery\.net\/([a-zA-Z0-9]{20,})/,
+  /watch\.cloudflarestream\.com\/([a-zA-Z0-9]{20,})/,
+  /cloudflarestream\.com\/([a-zA-Z0-9]{20,})/,
+  /videodelivery\.net\/([a-zA-Z0-9]{20,})/,
+];
 
 function extractId(url: string): string | null {
-  const m = url.match(STREAM_ID_RE);
-  return m?.[1] ?? null;
+  if (!url) return null;
+  for (const pattern of STREAM_ID_PATTERNS) {
+    const m = url.match(pattern);
+    if (m?.[1]) return m[1];
+  }
+  return null;
 }
 
 async function headOk(url: string, timeoutMs = 8000): Promise<{ ok: boolean; status: number }> {
