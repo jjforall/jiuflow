@@ -606,8 +606,25 @@ export function UploadProvider({ children }: { children: ReactNode }) {
         throw new Error('動画の処理がタイムアウトしました。しばらく待ってから再試行してください。');
       }
 
-      updateUpload(uploadId, { 
-        progress: 100, 
+      // Step 4: Final asset existence check (defense in depth).
+      // Cloudflare may report ready=true but the manifest is occasionally not yet
+      // reachable from the edge. Verify the m3u8 actually responds before we let
+      // the caller persist the URL into the database.
+      try {
+        const verify = await fetch(videoUrl, { method: 'HEAD', cache: 'no-store' });
+        if (verify.status === 404) {
+          throw new Error('Cloudflare上に動画ファイルが見つかりません (404)。再アップロードしてください。');
+        }
+      } catch (verifyErr) {
+        console.warn('[CloudflareUpload] post-upload verify failed:', verifyErr);
+        // Re-throw only on hard 404; transient network issues should not block.
+        if (verifyErr instanceof Error && verifyErr.message.includes('404')) {
+          throw verifyErr;
+        }
+      }
+
+      updateUpload(uploadId, {
+        progress: 100,
         status: 'completed',
         videoUrl,
         thumbnailUrl: thumbnailUrl || undefined,
