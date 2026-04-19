@@ -1,4 +1,5 @@
 import { Edit, FileText, Trash2, Clock, RefreshCw, Loader2, Download, AlertTriangle, Globe, Link2, Lock } from "lucide-react";
+// Loader2 and AlertTriangle are also used by the Cloudflare health badge.
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
