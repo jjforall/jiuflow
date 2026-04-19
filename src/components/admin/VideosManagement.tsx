@@ -450,7 +450,77 @@ export const VideosManagement = () => {
     }
   };
 
-  // Translation provider handler
+  // ===== Cloudflare Stream health check =====
+  // Verifies that every technique's Cloudflare video URL still resolves to an
+  // actual stream asset. Marks 404s as "missing" so the admin can re-upload.
+  const handleCheckCloudflareHealth = async () => {
+    setIsCheckingCfHealth(true);
+    try {
+      const { data: techniques, error } = await supabase
+        .from('techniques')
+        .select('id, video_url')
+        .not('video_url', 'is', null);
+
+      if (error) throw error;
+      const items = (techniques || []).filter(
+        (t) => t.video_url && (t.video_url.includes('videodelivery.net') || t.video_url.includes('cloudflarestream.com'))
+      );
+
+      if (items.length === 0) {
+        toast.info('チェック対象のCloudflare動画がありません');
+        return;
+      }
+
+      // Mark all as checking
+      setCfHealthMap((prev) => {
+        const next = { ...prev };
+        items.forEach((t) => { next[t.id] = 'checking'; });
+        return next;
+      });
+
+      // Send in batches of 100 URLs
+      const BATCH = 100;
+      let missing = 0;
+      const newMap: Record<string, 'ok' | 'missing'> = {};
+
+      for (let i = 0; i < items.length; i += BATCH) {
+        const slice = items.slice(i, i + BATCH);
+        const urls = slice.map((t) => t.video_url!);
+        const { data, error: fnError } = await supabase.functions.invoke(
+          'check-cloudflare-video-health',
+          { body: { urls } }
+        );
+        if (fnError) {
+          console.error('[CF-HEALTH] batch error', fnError);
+          continue;
+        }
+        const results: Array<{ url: string; ok: boolean; reason?: string }> = data?.results || [];
+        results.forEach((r, idx) => {
+          const t = slice[idx];
+          if (!t) return;
+          const status: 'ok' | 'missing' = r.ok ? 'ok' : 'missing';
+          newMap[t.id] = status;
+          if (!r.ok) missing++;
+        });
+      }
+
+      setCfHealthMap((prev) => ({ ...prev, ...newMap }));
+      setCfMissingCount(missing);
+      if (missing === 0) {
+        toast.success(`${items.length}件すべて正常です`);
+      } else {
+        toast.warning(`${missing}件の動画がCloudflare上に存在しません`, {
+          description: '赤バッジ「動画欠損」をクリックして再アップロードしてください',
+        });
+      }
+    } catch (error) {
+      console.error('[CF-HEALTH] error', error);
+      toast.error(error instanceof Error ? error.message : 'チェックに失敗しました');
+    } finally {
+      setIsCheckingCfHealth(false);
+    }
+  };
+
   const handleProviderChange = (value: TranslationProvider) => {
     setTranslationProvider(value);
     localStorage.setItem('translation_provider', value);
