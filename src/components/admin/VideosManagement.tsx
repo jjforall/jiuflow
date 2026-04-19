@@ -3664,7 +3664,8 @@ export const VideosManagement = () => {
                   <InputWithSuggestions
                     id="edit-series-name"
                     value={formData.series_name}
-                    onChange={(val) => {
+                    onChange={(e) => {
+                      const val = e.target.value;
                       const existing = seriesMapping.find(m => m.series_name === val);
                       setFormData(prev => ({
                         ...prev,
@@ -3672,6 +3673,14 @@ export const VideosManagement = () => {
                         series_prefix: existing
                           ? existing.series_prefix
                           : (prev.series_prefix || (val ? getNextAvailablePrefix() : '')),
+                      }));
+                    }}
+                    onSelectSuggestion={(val) => {
+                      const existing = seriesMapping.find(m => m.series_name === val);
+                      setFormData(prev => ({
+                        ...prev,
+                        series_name: val,
+                        series_prefix: existing ? existing.series_prefix : prev.series_prefix,
                       }));
                     }}
                     suggestions={seriesNameSuggestions}
