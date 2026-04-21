@@ -1,0 +1,1 @@
+UPDATE public.video_lists SET share_token_expires_at = '2026-04-27 23:59:59+09' WHERE share_token = 'iJJaGAi8AGK3QKMwkwXHrPfGAyZ1ziQ1';
