@@ -221,14 +221,14 @@ export function AdminSidebar({ activeTab, onTabChange, embedded = false }: Admin
     }
   };
 
-  return (
-    <Sidebar collapsible="icon" className="bg-background border-r">
-      <div className="p-4 border-b flex items-center justify-between bg-background">
-        {!isCollapsed && (
-          <Link to="/admin/stats" className="text-xl font-light tracking-tight animate-fade-in hover:opacity-80 transition-opacity">
-            JiuF<span className="text-red-500">l</span>ow
-          </Link>
-        )}
+  const header = (
+    <div className="p-4 border-b flex items-center justify-between bg-background">
+      {!isCollapsed && (
+        <Link to="/admin/stats" className="text-xl font-light tracking-tight animate-fade-in hover:opacity-80 transition-opacity">
+          JiuF<span className="text-red-500">l</span>ow
+        </Link>
+      )}
+      {!embedded && (
         <button
           onClick={toggleSidebar}
           className="hover:bg-muted rounded p-1 transition-colors"
@@ -239,8 +239,128 @@ export function AdminSidebar({ activeTab, onTabChange, embedded = false }: Admin
             <PanelLeftClose className="h-5 w-5 text-foreground" />
           )}
         </button>
-      </div>
+      )}
+    </div>
+  );
 
+  const menuContent = (
+    <SidebarGroup>
+      <SidebarMenu>
+        {menuGroups.map((group) => {
+          const isExpanded = expandedGroups.includes(group.id);
+          const hasActiveItem = group.items.some(item => item.id === activeTab);
+          const GroupIcon = group.icon;
+          return renderGroup(group, GroupIcon, isExpanded, hasActiveItem);
+        })}
+      </SidebarMenu>
+    </SidebarGroup>
+  );
+
+  function renderGroup(
+    group: MenuGroup,
+    GroupIcon: LucideIcon,
+    isExpanded: boolean,
+    hasActiveItem: boolean,
+  ) {
+    return (
+      <div key={group.id} className="mb-1">
+        <SidebarMenuItem>
+          <SidebarMenuButton
+            onClick={() => !isCollapsed && toggleGroup(group.id)}
+            className={cn(
+              "hover:bg-muted text-foreground font-medium",
+              hasActiveItem && "text-primary"
+            )}
+          >
+            <GroupIcon className="h-4 w-4" />
+            {!isCollapsed && (
+              <>
+                <span className="flex-1">{group.label}</span>
+                {isExpanded ? (
+                  <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                ) : (
+                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                )}
+              </>
+            )}
+          </SidebarMenuButton>
+        </SidebarMenuItem>
+        {!isCollapsed && isExpanded && (
+          <SidebarGroupContent className="ml-2 border-l border-border/50 pl-2">
+            <SidebarMenu>
+              {group.items.map((item) => {
+                const ItemIcon = item.icon;
+                return (
+                  <SidebarMenuItem key={item.id}>
+                    <SidebarMenuButton
+                      onClick={() => handleTabChange(item.id)}
+                      className={cn(
+                        "hover:bg-muted text-foreground text-sm py-1.5",
+                        activeTab === item.id
+                          ? "bg-primary/10 text-primary font-medium border-l-2 border-primary -ml-[9px] pl-[7px]"
+                          : "hover:text-foreground"
+                      )}
+                    >
+                      <ItemIcon className="h-3.5 w-3.5" />
+                      <span className="flex items-center gap-2">
+                        {item.label}
+                        {item.showBadge && unreadContactCount > 0 && (
+                          <Badge variant="destructive" className="h-5 min-w-5 px-1.5 text-xs">
+                            {unreadContactCount}
+                          </Badge>
+                        )}
+                      </span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        )}
+        {isCollapsed && (
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {group.items.map((item) => {
+                const ItemIcon = item.icon;
+                return (
+                  <SidebarMenuItem key={item.id}>
+                    <SidebarMenuButton
+                      onClick={() => handleTabChange(item.id)}
+                      className={cn(
+                        "hover:bg-muted text-foreground relative",
+                        activeTab === item.id
+                          ? "bg-primary/10 text-primary"
+                          : "hover:text-foreground"
+                      )}
+                      title={item.label}
+                    >
+                      <ItemIcon className="h-4 w-4" />
+                      {item.showBadge && unreadContactCount > 0 && (
+                        <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-destructive" />
+                      )}
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        )}
+      </div>
+    );
+  }
+
+  if (embedded) {
+    return (
+      <div className="flex h-full w-full flex-col bg-background overflow-y-auto">
+        {header}
+        <div className="flex-1 overflow-y-auto">{menuContent}</div>
+      </div>
+    );
+  }
+
+  return (
+    <Sidebar collapsible="icon" className="bg-background border-r">
+      {header}
       <SidebarContent className="bg-background">
         <SidebarGroup>
           <SidebarMenu>
