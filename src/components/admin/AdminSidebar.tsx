@@ -54,6 +54,11 @@ import { cn } from "@/lib/utils";
 interface AdminSidebarProps {
   activeTab: string;
   onTabChange: (tab: string) => void;
+  /**
+   * When true, render the menu content without the Sidebar/Sheet wrapper.
+   * Use this when embedding inside another Sheet (e.g. mobile drawer).
+   */
+  embedded?: boolean;
 }
 
 interface MenuItem {
