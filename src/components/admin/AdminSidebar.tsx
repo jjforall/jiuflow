@@ -175,8 +175,10 @@ const menuGroups: MenuGroup[] = [
   },
 ];
 
-export function AdminSidebar({ activeTab, onTabChange }: AdminSidebarProps) {
-  const { state, toggleSidebar } = useSidebar();
+export function AdminSidebar({ activeTab, onTabChange, embedded = false }: AdminSidebarProps) {
+  const sidebarCtx = useSidebar();
+  const state = embedded ? "expanded" : sidebarCtx.state;
+  const toggleSidebar = sidebarCtx.toggleSidebar;
   const [expandedGroups, setExpandedGroups] = useState<string[]>(() => {
     // Initially expand the group containing the active tab
     const activeGroup = menuGroups.find(g => g.items.some(i => i.id === activeTab));
