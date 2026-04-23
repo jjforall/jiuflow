@@ -307,7 +307,7 @@ const AdminStats = () => {
                   </Button>
                 </SheetTrigger>
                 <SheetContent side="left" className="p-0 w-72">
-                  <AdminSidebar activeTab="dashboard" onTabChange={handleTabChange} />
+                  <AdminSidebar activeTab="dashboard" onTabChange={handleTabChange} embedded />
                 </SheetContent>
               </Sheet>
               <h1 className="text-lg md:text-2xl font-light">Admin Dashboard</h1>
