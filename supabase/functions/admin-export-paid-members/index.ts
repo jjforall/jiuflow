@@ -21,18 +21,22 @@ serve(async (req) => {
       { auth: { persistSession: false } }
     );
 
-    // admin check
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader) throw new Error("No auth");
-    const token = authHeader.replace("Bearer ", "");
-    const { data: userData, error: userErr } = await supabase.auth.getUser(token);
-    if (userErr || !userData.user) throw new Error("Auth failed");
-    const { data: roleRows } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", userData.user.id);
-    const isAdmin = roleRows?.some((r: any) => r.role === "admin");
-    if (!isAdmin) throw new Error("Not admin");
+    // admin check: either admin user JWT or service-role secret
+    const adminSecret = req.headers.get("x-admin-secret");
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+    if (adminSecret !== serviceKey) {
+      const authHeader = req.headers.get("Authorization");
+      if (!authHeader) throw new Error("No auth");
+      const token = authHeader.replace("Bearer ", "");
+      const { data: userData, error: userErr } = await supabase.auth.getUser(token);
+      if (userErr || !userData.user) throw new Error("Auth failed");
+      const { data: roleRows } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", userData.user.id);
+      const isAdmin = roleRows?.some((r: any) => r.role === "admin");
+      if (!isAdmin) throw new Error("Not admin");
+    }
 
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
 
