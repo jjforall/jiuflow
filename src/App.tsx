@@ -191,6 +191,11 @@ const App = () => (
                         <SuspenseWrapper variant="admin"><TranscriptionDetail /></SuspenseWrapper>
                       </ProtectedRoute>
                     } />
+                    <Route path="admin/bulk-upload" element={
+                      <ProtectedRoute requireAdmin>
+                        <SuspenseWrapper variant="admin"><AdminBulkUpload /></SuspenseWrapper>
+                      </ProtectedRoute>
+                    } />
                     <Route path="generate-images" element={
                       <ProtectedRoute requireAdmin>
                         <SuspenseWrapper variant="admin"><GenerateImages /></SuspenseWrapper>
@@ -307,6 +312,11 @@ const App = () => (
                   <Route path="/admin/transcription/:id" element={
                     <ProtectedRoute requireAdmin>
                       <SuspenseWrapper variant="admin"><TranscriptionDetail /></SuspenseWrapper>
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/admin/bulk-upload" element={
+                    <ProtectedRoute requireAdmin>
+                      <SuspenseWrapper variant="admin"><AdminBulkUpload /></SuspenseWrapper>
                     </ProtectedRoute>
                   } />
                   <Route path="/generate-images" element={
