@@ -73,6 +73,7 @@ const OAuthAuthorize = lazy(() => import("./pages/OAuthAuthorize"));
 const TechniqueEdit = lazy(() => import("./pages/TechniqueEdit"));
 const Curriculum = lazy(() => import("./pages/Curriculum"));
 const KataJudge = lazy(() => import("./pages/KataJudge"));
+const AdminBulkUpload = lazy(() => import("./pages/AdminBulkUpload"));
 
 const queryClient = new QueryClient();
 
@@ -188,6 +189,11 @@ const App = () => (
                     <Route path="admin/transcription/:id" element={
                       <ProtectedRoute requireAdmin>
                         <SuspenseWrapper variant="admin"><TranscriptionDetail /></SuspenseWrapper>
+                      </ProtectedRoute>
+                    } />
+                    <Route path="admin/bulk-upload" element={
+                      <ProtectedRoute requireAdmin>
+                        <SuspenseWrapper variant="admin"><AdminBulkUpload /></SuspenseWrapper>
                       </ProtectedRoute>
                     } />
                     <Route path="generate-images" element={
@@ -306,6 +312,11 @@ const App = () => (
                   <Route path="/admin/transcription/:id" element={
                     <ProtectedRoute requireAdmin>
                       <SuspenseWrapper variant="admin"><TranscriptionDetail /></SuspenseWrapper>
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/admin/bulk-upload" element={
+                    <ProtectedRoute requireAdmin>
+                      <SuspenseWrapper variant="admin"><AdminBulkUpload /></SuspenseWrapper>
                     </ProtectedRoute>
                   } />
                   <Route path="/generate-images" element={
