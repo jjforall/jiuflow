@@ -73,6 +73,7 @@ const OAuthAuthorize = lazy(() => import("./pages/OAuthAuthorize"));
 const TechniqueEdit = lazy(() => import("./pages/TechniqueEdit"));
 const Curriculum = lazy(() => import("./pages/Curriculum"));
 const KataJudge = lazy(() => import("./pages/KataJudge"));
+const AdminBulkUpload = lazy(() => import("./pages/AdminBulkUpload"));
 
 const queryClient = new QueryClient();
 
