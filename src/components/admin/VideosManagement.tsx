@@ -2603,7 +2603,77 @@ export const VideosManagement = () => {
         )}
       </div>
 
-      {/* Active Translations Section */}
+      {/* Cloudflare Stream Cleanup - Prominent card for admin */}
+      {isAdmin && (
+        <div className="mb-6 border rounded-lg p-4 bg-muted/50">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-lg font-semibold flex items-center gap-2">
+              <Cloud className="h-5 w-5 text-primary" />
+              Cloudflare Stream クリーンアップ
+            </h3>
+            <div className="flex gap-2">
+              <Button onClick={handleCloudflarePreview} disabled={isCfLoading} variant="outline" size="sm">
+                {isCfLoading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
+                使用状況確認
+              </Button>
+              {cfCleanupPreview && cfCleanupPreview.summary.videosToDelete > 0 && (
+                <Button onClick={handleCloudflareExecute} disabled={isCfDeleting} variant="destructive" size="sm">
+                  {isCfDeleting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Trash2 className="h-4 w-4 mr-2" />}
+                  不要動画削除 ({cfCleanupPreview.summary.videosToDelete}本)
+                </Button>
+              )}
+            </div>
+          </div>
+          <p className="text-sm text-muted-foreground mb-3">
+            DBに登録がないのにCloudflare Streamに残っている孤立動画を検出・削除できます。
+            毎週日曜3時に自動スキャンも実行されます。
+          </p>
+          {cfCleanupPreview && (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+              <div className="p-3 bg-background rounded border">
+                <span className="text-muted-foreground text-xs">総動画</span>
+                <p className="font-medium text-lg">{cfCleanupPreview.summary.totalVideosInCloudflare}本</p>
+              </div>
+              <div className="p-3 bg-background rounded border">
+                <span className="text-muted-foreground text-xs">使用量</span>
+                <p className="font-medium text-lg">{cfCleanupPreview.summary.totalMinutesInCloudflare.toFixed(1)}分</p>
+              </div>
+              <div className="p-3 bg-background rounded border">
+                <span className="text-muted-foreground text-xs">保持</span>
+                <p className="font-medium text-lg text-primary">{cfCleanupPreview.summary.videosToKeep}本</p>
+              </div>
+              <div className="p-3 bg-background rounded border">
+                <span className="text-muted-foreground text-xs">削除対象（孤立動画）</span>
+                <p className="font-medium text-lg text-destructive">{cfCleanupPreview.summary.videosToDelete}本</p>
+              </div>
+            </div>
+          )}
+          {cfCleanupPreview && cfCleanupPreview.summary.videosToDelete > 0 && (
+            <div className="mt-3 p-3 bg-destructive/5 rounded border border-destructive/20">
+              <p className="text-xs font-medium text-destructive mb-2">削除対象動画一覧:</p>
+              <div className="max-h-40 overflow-y-auto space-y-1">
+                {cfCleanupPreview.toDelete.map((video) => (
+                  <div key={video.uid} className="flex items-center justify-between text-xs py-1 px-2 bg-background rounded">
+                    <span className="font-mono text-muted-foreground">{video.uid}</span>
+                    <div className="flex items-center gap-3 text-muted-foreground">
+                      <span>{video.duration.toFixed(1)}分</span>
+                      <span>{new Date(video.created).toLocaleDateString('ja-JP')}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          {cfCleanupPreview && cfCleanupPreview.summary.videosToDelete === 0 && (
+            <div className="mt-3 p-3 bg-green-500/5 rounded border border-green-500/20">
+              <p className="text-sm text-green-600 flex items-center gap-2">
+                <Check className="h-4 w-4" />
+                孤立動画は検出されませんでした。Cloudflare Streamはクリーンです。
+              </p>
+            </div>
+          )}
+        </div>
+      )}
       {activeTranslations.length > 0 && (
         <div className="mb-6 border rounded-lg p-4 bg-muted/50">
           <div className="flex items-center justify-between mb-4">
