@@ -173,6 +173,35 @@ export const useDeleteTechnique = () => {
 
   return useMutation({
     mutationFn: async (id: string) => {
+      // First, fetch the technique to collect Cloudflare Stream URLs
+      const { data: tech } = await supabase
+        .from('techniques')
+        .select('video_url, video_url_ja, video_url_pt, video_metadata')
+        .eq('id', id)
+        .maybeSingle();
+
+      // Best-effort: delete from Cloudflare Stream (don't block DB delete on failure)
+      if (tech) {
+        try {
+          const { data: cfRes, error: cfErr } = await supabase.functions.invoke(
+            'delete-cloudflare-video',
+            {
+              body: {
+                videoUrls: [tech.video_url, tech.video_url_ja, tech.video_url_pt],
+                videoMetadata: tech.video_metadata,
+              },
+            }
+          );
+          if (cfErr) {
+            console.warn('[deleteTechnique] Cloudflare delete failed:', cfErr);
+          } else {
+            console.log('[deleteTechnique] Cloudflare delete result:', cfRes);
+          }
+        } catch (e) {
+          console.warn('[deleteTechnique] Cloudflare delete threw:', e);
+        }
+      }
+
       const { error } = await supabase
         .from('techniques')
         .delete()
