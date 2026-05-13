@@ -171,8 +171,8 @@ export const VideosManagement = () => {
       minutesToDelete: number;
       estimatedSpaceRecovery: string;
     };
-    toDelete: Array<{ uid: string; duration: number; name: string }>;
-    toKeep: Array<{ uid: string; duration: number; name: string }>;
+    toDelete: Array<{ uid: string; duration: number; created: string; name: string }>;
+    toKeep: Array<{ uid: string; duration: number; created: string; name: string }>;
   }
   const [cfCleanupPreview, setCfCleanupPreview] = useState<CloudflareCleanupPreview | null>(null);
   const [isCfLoading, setIsCfLoading] = useState(false);
