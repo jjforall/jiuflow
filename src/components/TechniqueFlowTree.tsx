@@ -459,6 +459,41 @@ export default function TechniqueFlowTree({
           {/* Level 1: Entry point selection */}
           {!selectedEntry && (
             <div className="space-y-4">
+              {/* Featured: Spider Guard shortcut */}
+              {(() => {
+                const featured = notationsWithTechniques.find((n) => n.code === "SG");
+                if (!featured) return null;
+                return (
+                  <button
+                    onClick={() => {
+                      setSelectedEntry("hikikomi");
+                      setSelectedCategory(featured.category);
+                      setSelectedNotation(featured.id);
+                    }}
+                    className="group relative w-full flex items-center gap-4 p-5 rounded-2xl border-2 border-primary/40 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent hover:border-primary/70 hover:from-primary/15 transition-all shadow-lg hover:shadow-xl text-left"
+                  >
+                    <span className={`px-3 py-1.5 rounded-lg text-sm font-mono font-bold border flex-shrink-0 ${getCatColor(featured.category)}`}>
+                      {featured.code}
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-primary">
+                          {language === "ja" ? "注目" : "Featured"}
+                        </span>
+                      </div>
+                      <h3 className="text-base md:text-lg font-bold text-foreground group-hover:text-primary transition-colors">
+                        {getNotationLabel(featured)}
+                      </h3>
+                      <p className="text-xs text-muted-foreground">
+                        {featured.techniques.length}
+                        {language === "ja" ? " 本の動画" : " videos"}
+                      </p>
+                    </div>
+                    <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
+                  </button>
+                );
+              })()}
+
               <div className="flex items-center gap-2 mb-2">
                 <GitBranch className="w-5 h-5 text-primary" />
                 <h2 className="text-lg font-semibold">
