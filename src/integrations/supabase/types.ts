@@ -4594,6 +4594,15 @@ export type Database = {
           username: string
         }[]
       }
+      get_shared_list_items: {
+        Args: { p_share_token: string }
+        Returns: {
+          display_order: number
+          id: string
+          list_id: string
+          technique_id: string
+        }[]
+      }
       get_subscriptions_masked: {
         Args: never
         Returns: {
