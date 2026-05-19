@@ -142,30 +142,70 @@ export default function VideoList() {
 
     setList(listData);
 
-    // Fetch items with technique data
-    const { data: itemsData, error: itemsError } = await supabase
-      .from("video_list_items")
-      .select(`
-        id,
-        technique_id,
-        display_order,
-        techniques:technique_id (
+    // Fetch items with technique data.
+    // When accessed via share token, RLS is bypassed via a secure RPC that
+    // requires the actual token; otherwise rely on standard RLS.
+    let itemsData: any[] | null = null;
+    let itemsError: any = null;
+
+    if (shareToken) {
+      const { data: rpcItems, error: rpcErr } = await supabase.rpc(
+        "get_shared_list_items",
+        { p_share_token: shareToken }
+      );
+      if (rpcErr) {
+        itemsError = rpcErr;
+      } else if (rpcItems && rpcItems.length > 0) {
+        const techIds = rpcItems.map((i: any) => i.technique_id).filter(Boolean);
+        const { data: techs, error: techErr } = await supabase
+          .from("techniques")
+          .select(
+            "id,name,name_ja,name_pt,series_prefix,series_order,thumbnail_url,video_url,video_url_ja,video_url_pt,video_metadata,visibility"
+          )
+          .in("id", techIds);
+        if (techErr) {
+          itemsError = techErr;
+        } else {
+          const techMap = new Map((techs || []).map((t: any) => [t.id, t]));
+          itemsData = rpcItems
+            .map((i: any) => ({
+              id: i.id,
+              technique_id: i.technique_id,
+              display_order: i.display_order,
+              techniques: techMap.get(i.technique_id) || null,
+            }))
+            .sort((a: any, b: any) => a.display_order - b.display_order);
+        }
+      } else {
+        itemsData = [];
+      }
+    } else {
+      const result = await supabase
+        .from("video_list_items")
+        .select(`
           id,
-          name,
-          name_ja,
-          name_pt,
-          series_prefix,
-          series_order,
-          thumbnail_url,
-          video_url,
-          video_url_ja,
-          video_url_pt,
-          video_metadata,
-          visibility
-        )
-      `)
-      .eq("list_id", listData.id)
-      .order("display_order", { ascending: true });
+          technique_id,
+          display_order,
+          techniques:technique_id (
+            id,
+            name,
+            name_ja,
+            name_pt,
+            series_prefix,
+            series_order,
+            thumbnail_url,
+            video_url,
+            video_url_ja,
+            video_url_pt,
+            video_metadata,
+            visibility
+          )
+        `)
+        .eq("list_id", listData.id)
+        .order("display_order", { ascending: true });
+      itemsData = result.data;
+      itemsError = result.error;
+    }
 
     if (!itemsError && itemsData) {
       // Get technique IDs to fetch subtitle info
