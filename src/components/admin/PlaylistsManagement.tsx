@@ -389,7 +389,7 @@ export default function PlaylistsManagement() {
 
   const getListUrl = (list: VideoList) => {
     const slug = list.slug || list.id;
-    return `https://jiuflow.art/lists/${slug}`;
+    return `${window.location.origin}/lists/${slug}`;
   };
 
   const copyListUrl = (list: VideoList) => {
