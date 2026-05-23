@@ -441,9 +441,9 @@ export default function VideoList() {
                       </div>
 
                       {/* Thumbnail */}
-                      {canView ? (
-                        <Link 
-                          to={`/video/${item.technique.id}${list.visibility === 'unlisted' ? `?list=${list.id}` : ''}`}
+                       {canView ? (
+                         <Link 
+                           to={`/video/${item.technique.id}${shareToken ? `?share=${shareToken}` : list.visibility === 'unlisted' ? `?list=${list.id}` : ''}`}
                           className="relative w-40 aspect-video flex-shrink-0 rounded overflow-hidden bg-muted group"
                         >
                           {item.technique.thumbnail_url ? (
@@ -481,9 +481,9 @@ export default function VideoList() {
                       )}
 
                       {/* Video info */}
-                      <div className="flex-1 min-w-0 py-1">
-                        {canView ? (
-                          <Link to={`/video/${item.technique.id}${list.visibility === 'unlisted' ? `?list=${list.id}` : ''}`}>
+                       <div className="flex-1 min-w-0 py-1">
+                         {canView ? (
+                           <Link to={`/video/${item.technique.id}${shareToken ? `?share=${shareToken}` : list.visibility === 'unlisted' ? `?list=${list.id}` : ''}`}>
                             <h3 className="font-medium line-clamp-2 hover:text-primary transition-colors">
                               {getLocalizedName(item.technique)}
                             </h3>
