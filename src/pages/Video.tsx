@@ -106,6 +106,9 @@ const Video = () => {
   const [pendingSeekTime, setPendingSeekTime] = useState<number | null>(null);
   const [isFromUnlistedList, setIsFromUnlistedList] = useState<boolean>(false);
   const [listAccessChecked, setListAccessChecked] = useState<boolean>(false);
+  // Share-token (playlist share link) states
+  const [isFromShareToken, setIsFromShareToken] = useState<boolean>(false);
+  const [shareAccessChecked, setShareAccessChecked] = useState<boolean>(false);
   // Invite link states
   const [isFromInviteLink, setIsFromInviteLink] = useState<boolean>(false);
   const [inviteAccessChecked, setInviteAccessChecked] = useState<boolean>(false);
@@ -225,6 +228,32 @@ const Video = () => {
     };
     
     checkInviteAccess();
+  }, [searchParams, id]);
+
+  // Check if accessing via a playlist share token
+  useEffect(() => {
+    const shareToken = searchParams.get("share");
+    if (!shareToken || !id) {
+      setShareAccessChecked(true);
+      return;
+    }
+
+    const checkShareAccess = async () => {
+      try {
+        const { data, error } = await supabase.rpc("get_shared_list_items", {
+          p_share_token: shareToken,
+        });
+        if (!error && Array.isArray(data) && data.some((item: any) => item.technique_id === id)) {
+          setIsFromShareToken(true);
+        }
+      } catch (err) {
+        console.error("Error checking share token access:", err);
+      } finally {
+        setShareAccessChecked(true);
+      }
+    };
+
+    checkShareAccess();
   }, [searchParams, id]);
 
   // 動画ページに来たら、音楽が再生中で音量が25%以上なら25%にフェードダウン
@@ -939,7 +968,7 @@ const Video = () => {
   };
 
   // 統合ローディング - 認証やテクニックデータ読み込み中、またはリストアクセスチェック中、または招待リンクチェック中はスケルトン表示
-  if (!isReady || authLoading || !listAccessChecked || !inviteAccessChecked) {
+  if (!isReady || authLoading || !listAccessChecked || !inviteAccessChecked || !shareAccessChecked) {
     return (
       <div className="min-h-screen">
         <Navigation />
@@ -1025,7 +1054,7 @@ const Video = () => {
   // Only show membership page to non-authenticated users
   // Logged-in users can view regardless of subscription status per memory features/subscription-access-logic
   // Users accessing from unlisted video lists or valid invite links can also view without authentication
-  if (!user && !isFromUnlistedList && !isFromInviteLink) {
+  if (!user && !isFromUnlistedList && !isFromInviteLink && !isFromShareToken) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/20">
         <Navigation />
