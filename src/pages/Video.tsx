@@ -968,7 +968,7 @@ const Video = () => {
   };
 
   // 統合ローディング - 認証やテクニックデータ読み込み中、またはリストアクセスチェック中、または招待リンクチェック中はスケルトン表示
-  if (!isReady || authLoading || !listAccessChecked || !inviteAccessChecked) {
+  if (!isReady || authLoading || !listAccessChecked || !inviteAccessChecked || !shareAccessChecked) {
     return (
       <div className="min-h-screen">
         <Navigation />
@@ -1054,7 +1054,7 @@ const Video = () => {
   // Only show membership page to non-authenticated users
   // Logged-in users can view regardless of subscription status per memory features/subscription-access-logic
   // Users accessing from unlisted video lists or valid invite links can also view without authentication
-  if (!user && !isFromUnlistedList && !isFromInviteLink) {
+  if (!user && !isFromUnlistedList && !isFromInviteLink && !isFromShareToken) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/20">
         <Navigation />
