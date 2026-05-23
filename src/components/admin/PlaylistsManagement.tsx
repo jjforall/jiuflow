@@ -389,7 +389,7 @@ export default function PlaylistsManagement() {
 
   const getListUrl = (list: VideoList) => {
     const slug = list.slug || list.id;
-    return `https://jiuflow.art/lists/${slug}`;
+    return `${window.location.origin}/lists/${slug}`;
   };
 
   const copyListUrl = (list: VideoList) => {
@@ -445,7 +445,7 @@ export default function PlaylistsManagement() {
 
   const copyShareUrl = (list: VideoList) => {
     if (list.share_token) {
-      navigator.clipboard.writeText(`https://jiuflow.lovable.app/shared-list/${list.share_token}`);
+      navigator.clipboard.writeText(`${window.location.origin}/shared-list/${list.share_token}`);
       toast.success("共有リンクをコピーしました");
     }
   };
