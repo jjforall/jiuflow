@@ -3,12 +3,10 @@ import { useParams, useSearchParams, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, Play, Lock, ListVideo, LogIn } from "lucide-react";
+import { ArrowLeft, Play, Lock, ListVideo } from "lucide-react";
 import { SEOHead } from "@/components/SEOHead";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/hooks/useAuth";
-// useAuth provides isAdmin and isStaff for access bypass
-import { useSubscription } from "@/hooks/useSubscription";
 import { SeriesBadge } from "@/components/ui/series-badge";
 import { LocalizationBadges } from "@/components/ui/LocalizationBadges";
 
@@ -48,8 +46,6 @@ interface VideoListItem {
     visibility: string;
   };
 }
-
-const SHARE_CUTOFF_DATE = new Date('2025-03-22T00:00:00Z');
 
 export default function VideoList() {
   const { slug, token: shareToken } = useParams<{ slug: string; token: string }>();
