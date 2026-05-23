@@ -405,7 +405,7 @@ export default function VideoList() {
                   {/* Play all button */}
                   {items.length > 0 && (
                     <Button asChild className="w-full mt-4">
-                      <Link to={`/video/${items[0].technique.id}${list.visibility === 'unlisted' ? `?list=${list.id}` : ''}`}>
+                      <Link to={`/video/${items[0].technique.id}${shareToken ? `?share=${shareToken}` : list.visibility === 'unlisted' ? `?list=${list.id}` : ''}`}>
                         <Play className="w-4 h-4 mr-2 fill-current" />
                         すべて再生
                       </Link>
