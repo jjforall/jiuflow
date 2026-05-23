@@ -54,36 +54,13 @@ const SHARE_CUTOFF_DATE = new Date('2025-03-22T00:00:00Z');
 export default function VideoList() {
   const { slug, token: shareToken } = useParams<{ slug: string; token: string }>();
   const { language } = useLanguage();
-  const { user, isLoading: authLoading, isAdmin, isStaff } = useAuth();
-  const { subscribed, loading: subLoading } = useSubscription();
+  const { isAdmin, isStaff } = useAuth();
   
   const [list, setList] = useState<VideoList | null>(null);
   const [items, setItems] = useState<VideoListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [userCreatedAt, setUserCreatedAt] = useState<Date | null>(null);
-  const [profileLoading, setProfileLoading] = useState(false);
   const isShareMode = !!shareToken;
-
-  // Fetch user's profile created_at for share mode cutoff check
-  useEffect(() => {
-    if (!isShareMode || !user) return;
-    if (isAdmin || isStaff) return;
-    
-    const fetchProfile = async () => {
-      setProfileLoading(true);
-      const { data } = await supabase
-        .from('profiles')
-        .select('created_at')
-        .eq('id', user.id)
-        .single();
-      if (data?.created_at) {
-        setUserCreatedAt(new Date(data.created_at));
-      }
-      setProfileLoading(false);
-    };
-    fetchProfile();
-  }, [isShareMode, user, isAdmin, isStaff]);
 
   useEffect(() => {
     if (slug || shareToken) {
@@ -298,12 +275,12 @@ export default function VideoList() {
   const canViewVideo = (technique: VideoListItem['technique']) => {
     // Admins and staff can view all
     if (isAdmin || isStaff) return true;
+    // Share-token access: anyone with the link can view all videos in the list
+    if (isShareMode) return true;
     // If the list itself is unlisted, all videos in the list are viewable by anyone with the link
     if (list?.visibility === 'unlisted') return true;
     // Public or unlisted techniques are viewable
     if (technique.visibility === 'unlisted') return true;
-    // Subscribers can view all
-    if (subscribed) return true;
     // Sample videos are viewable by all
     return false;
   };
@@ -326,53 +303,7 @@ export default function VideoList() {
     }
   };
 
-  // Shared list requires login + active subscription
-  if (isShareMode) {
-    if (authLoading || subLoading || profileLoading) {
-      return (
-        <div className="min-h-screen bg-background flex items-center justify-center">
-          <div className="text-muted-foreground">読み込み中...</div>
-        </div>
-      );
-    }
-    if (!user) {
-      return (
-        <div className="min-h-screen bg-background flex items-center justify-center">
-          <div className="text-center space-y-4 px-4">
-            <Lock className="h-12 w-12 mx-auto text-muted-foreground" />
-            <h2 className="text-xl font-bold">ログインが必要です</h2>
-            <p className="text-muted-foreground">このリストを閲覧するにはログインしてください。</p>
-            <Link to={`/login?redirect=${encodeURIComponent(window.location.pathname)}`}>
-              <Button className="mt-2">
-                <LogIn className="h-4 w-4 mr-2" />
-                ログイン
-              </Button>
-            </Link>
-          </div>
-        </div>
-      );
-    }
-
-    // Admin/staff bypass all checks
-    const isPrivileged = isAdmin || isStaff;
-    // Users registered before cutoff can view without subscription
-    const isGrandfathered = userCreatedAt && userCreatedAt < SHARE_CUTOFF_DATE;
-
-    if (!isPrivileged && !isGrandfathered && !subscribed) {
-      return (
-        <div className="min-h-screen bg-background flex items-center justify-center">
-          <div className="text-center space-y-4 px-4">
-            <Lock className="h-12 w-12 mx-auto text-muted-foreground" />
-            <h2 className="text-xl font-bold">有料プラン限定コンテンツ</h2>
-            <p className="text-muted-foreground">このリストを閲覧するには有料プランへの加入が必要です。</p>
-            <Link to="/join">
-              <Button className="mt-2">プランを見る</Button>
-            </Link>
-          </div>
-        </div>
-      );
-    }
-  }
+  // Shared list: anyone with the token can view, no login required
 
   if (loading) {
     return (
