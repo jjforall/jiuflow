@@ -1,0 +1,1 @@
+UPDATE public.bjj_notations SET code = 'I' WHERE id = '122c6dcc-3090-4d30-b9d3-f25af8b5b3dc';
