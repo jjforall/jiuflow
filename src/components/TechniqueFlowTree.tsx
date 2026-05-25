@@ -461,7 +461,7 @@ export default function TechniqueFlowTree({
             <div className="space-y-4">
               {/* Featured: Spider Guard shortcut */}
               {(() => {
-                const featured = notationsWithTechniques.find((n) => n.code === "I");
+                const featured = notationsWithTechniques.find((n) => n.code === "SG");
                 if (!featured) return null;
                 return (
                   <button
