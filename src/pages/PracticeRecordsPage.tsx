@@ -63,7 +63,8 @@ const PracticeRecordsPage = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [videoModalOpen, setVideoModalOpen] = useState(false);
   const [selectedTechnique, setSelectedTechnique] = useState<Technique | null>(null);
-  
+  const [myKumiId, setMyKumiId] = useState<string | null>(null);
+
   // Pending changes for debounced saving
   const [pendingChanges, setPendingChanges] = useState<Map<string, { techniqueId: string; date: Date; count: number }>>(new Map());
   const saveTimeoutRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
@@ -145,15 +146,17 @@ const PracticeRecordsPage = () => {
     if (!user) return;
     setLoading(true);
     try {
-      const [techniquesRes, viewsRes, recordsRes] = await Promise.all([
+      const [techniquesRes, viewsRes, recordsRes, kumiRes] = await Promise.all([
         supabase.from("techniques").select("id, name, name_ja, name_pt, category, thumbnail_url, series_name, series_prefix, series_order, video_url, video_url_ja, video_url_pt"),
         supabase.from("video_views").select("*").eq("user_id", user.id),
         supabase.from("practice_records").select("id, technique_id, practice_date, repetition_count").eq("user_id", user.id),
+        supabase.from("kumi_members").select("kumi_id").eq("user_id", user.id).limit(1).single(),
       ]);
 
       if (techniquesRes.data) setTechniques(techniquesRes.data);
       if (viewsRes.data) setVideoViews(viewsRes.data);
       if (recordsRes.data) setPracticeRecords(recordsRes.data);
+      if (kumiRes.data) setMyKumiId(kumiRes.data.kumi_id);
     } finally {
       setLoading(false);
     }
@@ -392,6 +395,7 @@ const PracticeRecordsPage = () => {
             technique_id: techniqueId,
             practice_date: dateStr,
             repetition_count: count,
+            ...(myKumiId ? { kumi_id: myKumiId } : {}),
           })
           .select()
           .single();
