@@ -408,12 +408,10 @@ export default function PlaylistsManagement() {
 
   const handleGenerateShareLink = async (list: VideoList) => {
     const newToken = generateShareToken();
-    const expiresAt = new Date();
-    expiresAt.setMonth(expiresAt.getMonth() + 1);
 
     const { error } = await supabase
       .from("video_lists")
-      .update({ share_token: newToken, share_token_expires_at: expiresAt.toISOString() })
+      .update({ share_token: newToken, share_token_expires_at: null })
       .eq("id", list.id);
 
     if (error) {
@@ -423,7 +421,7 @@ export default function PlaylistsManagement() {
       const prodOrigin = 'https://jiuflow.lovable.app';
       const shareUrl = `${prodOrigin}/shared-list/${newToken}`;
       await navigator.clipboard.writeText(shareUrl);
-      toast.success("共有リンクを生成してコピーしました（有効期限: 1ヶ月）");
+      toast.success("共有リンクを生成してコピーしました（無期限）");
       fetchLists();
     }
   };
@@ -637,7 +635,7 @@ export default function PlaylistsManagement() {
                             variant="ghost"
                             size="icon"
                             onClick={() => copyShareUrl(list)}
-                            title={`共有リンクをコピー（期限: ${list.share_token_expires_at ? new Date(list.share_token_expires_at).toLocaleDateString('ja-JP') : '無期限'}）`}
+                            title={`共有リンクをコピー（${list.share_token_expires_at ? '期限: ' + new Date(list.share_token_expires_at).toLocaleDateString('ja-JP') : '無期限'}）`}
                           >
                             <Share2 className="w-4 h-4 text-green-500" />
                           </Button>
@@ -655,7 +653,7 @@ export default function PlaylistsManagement() {
                           variant="ghost"
                           size="icon"
                           onClick={() => handleGenerateShareLink(list)}
-                          title="共有リンクを生成（1ヶ月有効）"
+                          title="共有リンクを生成（無期限）"
                         >
                           <Share2 className="w-4 h-4" />
                         </Button>
