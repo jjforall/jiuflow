@@ -28,6 +28,7 @@ import {
   type Technique
 } from "@/hooks/usePaginatedTechniques";
 import { supabase } from "@/integrations/supabase/client";
+import { getCanonicalSeriesName } from "@/lib/seriesMap";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -1504,6 +1505,15 @@ export const VideosManagement = () => {
           }
         } else {
           updates.series_prefix = '';
+        }
+      }
+
+      // series_prefix が直接編集された場合は series_name を正規名で同期
+      if (editingCell.field === 'series_prefix') {
+        const newPrefix = ((value as string) || '').trim();
+        const canonical = getCanonicalSeriesName(newPrefix);
+        if (canonical) {
+          updates.series_name = canonical;
         }
       }
       

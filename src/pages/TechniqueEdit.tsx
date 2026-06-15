@@ -36,6 +36,7 @@ import { useUpload } from "@/contexts/UploadContext";
 import { NotationSelector } from "@/components/admin/NotationSelector";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
+import { syncSeriesFields } from "@/lib/seriesMap";
 // セクションコンポーネント
 const FormSection = ({ icon, title, children }: { icon: React.ReactNode; title: string; children: React.ReactNode }) => (
   <Card>
@@ -440,6 +441,13 @@ const TechniqueEdit = () => {
         display_order: technique?.display_order || 0,
         hashtags: formData.hashtags,
       };
+
+      // series_prefix / series_name のどちらかだけ変更されても整合を取る
+      const seriesPatch = syncSeriesFields(
+        { series_prefix: formData.series_prefix, series_name: formData.series_name },
+        { series_prefix: technique?.series_prefix, series_name: technique?.series_name }
+      );
+      Object.assign(techniqueData, seriesPatch);
 
       if (technique) {
         await updateTechnique.mutateAsync({

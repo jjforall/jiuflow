@@ -424,7 +424,10 @@ const Video = () => {
       const { data: seriesDataResult } = await supabase
         .from("techniques")
         .select("*")
-        .eq("series_name", techniqueData.series_name)
+        .eq(
+          techniqueData.series_prefix ? "series_prefix" : "series_name",
+          techniqueData.series_prefix || techniqueData.series_name
+        )
         .neq("id", videoId)
         .order("series_order", { ascending: true });
 
@@ -562,7 +565,10 @@ const Video = () => {
             const { data: seriesDataResult } = await supabase
               .from("techniques")
               .select("*")
-              .eq("series_name", techniqueData.series_name)
+              .eq(
+                techniqueData.series_prefix ? "series_prefix" : "series_name",
+                techniqueData.series_prefix || techniqueData.series_name
+              )
               .neq("id", id)
               .order("series_order", { ascending: true });
 
