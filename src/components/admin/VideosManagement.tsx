@@ -1511,7 +1511,7 @@ export const VideosManagement = () => {
       // series_prefix が直接編集された場合は series_name を正規名で同期
       if (editingCell.field === 'series_prefix') {
         const newPrefix = ((value as string) || '').trim();
-        const canonical = (await import('@/lib/seriesMap')).getCanonicalSeriesName(newPrefix);
+        const canonical = getCanonicalSeriesName(newPrefix);
         if (canonical) {
           updates.series_name = canonical;
         }
