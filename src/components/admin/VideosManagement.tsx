@@ -1506,6 +1506,15 @@ export const VideosManagement = () => {
           updates.series_prefix = '';
         }
       }
+
+      // series_prefix が直接編集された場合は series_name を正規名で同期
+      if (editingCell.field === 'series_prefix') {
+        const newPrefix = ((value as string) || '').trim();
+        const canonical = (await import('@/lib/seriesMap')).getCanonicalSeriesName(newPrefix);
+        if (canonical) {
+          updates.series_name = canonical;
+        }
+      }
       
       await updateTechnique.mutateAsync(updates as { id: string } & Record<string, unknown>);
       toast.success("更新しました");
