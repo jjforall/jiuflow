@@ -28,6 +28,7 @@ import {
   type Technique
 } from "@/hooks/usePaginatedTechniques";
 import { supabase } from "@/integrations/supabase/client";
+import { getCanonicalSeriesName } from "@/lib/seriesMap";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { useLanguage } from "@/contexts/LanguageContext";
