@@ -74,6 +74,8 @@ const TechniqueEdit = lazy(() => import("./pages/TechniqueEdit"));
 const Curriculum = lazy(() => import("./pages/Curriculum"));
 const KataJudge = lazy(() => import("./pages/KataJudge"));
 const AdminBulkUpload = lazy(() => import("./pages/AdminBulkUpload"));
+const KumiPage = lazy(() => import("./pages/KumiPage"));
+const KumiJoinPage = lazy(() => import("./pages/KumiJoinPage"));
 
 const queryClient = new QueryClient();
 
@@ -286,6 +288,14 @@ const App = () => (
                     </ProtectedRoute>
                   } />
                   <Route path="/kata-judge" element={<SuspenseWrapper><KataJudge /></SuspenseWrapper>} />
+
+                  {/* Kumi (training group) pages */}
+                  <Route path="/kumi/join/:code" element={<SuspenseWrapper><KumiJoinPage /></SuspenseWrapper>} />
+                  <Route path="/kumi/:id" element={
+                    <ProtectedRoute>
+                      <SuspenseWrapper><KumiPage /></SuspenseWrapper>
+                    </ProtectedRoute>
+                  } />
 
                   {/* Admin pages */}
                   <Route path="/admin" element={<SuspenseWrapper variant="admin"><AdminLogin /></SuspenseWrapper>} />
